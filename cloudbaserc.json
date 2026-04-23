@@ -1,0 +1,151 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "catboy-d0gg4yc4ief533dea",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "register",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "login",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "initDb",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "debugUsers",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "createCase",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getCases",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getCaseDetail",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "deleteCase",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "updateCaseProfile",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getTimeline",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "createTimeline",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "deleteTimeline",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "reassess",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getAISettings",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "updateAISettings",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "testAIConnection",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    }
+  ]
+}

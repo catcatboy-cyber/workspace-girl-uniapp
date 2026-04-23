@@ -1,0 +1,9 @@
+{
+  "name": "initDb",
+  "version": "1.0.0",
+  "description": "Initialize CloudBase collections",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.4.0"
+  }
+}

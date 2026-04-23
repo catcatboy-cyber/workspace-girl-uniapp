@@ -1,0 +1,104 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
+		},
+		{
+			"path": "pages/new/new",
+			"style": {
+				"navigationBarTitleText": "新建案例"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "default"
+			}
+		},
+		{
+			"path": "pages/register/register",
+			"style": {
+				"navigationBarTitleText": "注册",
+				"navigationStyle": "default"
+			}
+		},
+		{
+			"path": "pages/cases/cases",
+			"style": {
+				"navigationBarTitleText": "我的案例"
+			}
+		},
+		{
+			"path": "pages/case-detail/case-detail",
+			"style": {
+				"navigationBarTitleText": "关系主页"
+			}
+		},
+		{
+			"path": "pages/timeline/timeline",
+			"style": {
+				"navigationBarTitleText": "时间线"
+			}
+		},
+		{
+			"path": "pages/assessments/assessments",
+			"style": {
+				"navigationBarTitleText": "评估历史"
+			}
+		},
+		{
+			"path": "pages/reassess/reassess",
+			"style": {
+				"navigationBarTitleText": "重新评估"
+			}
+		},
+		{
+			"path": "pages/edit-profile/edit-profile",
+			"style": {
+				"navigationBarTitleText": "编辑画像"
+			}
+		},
+		{
+			"path": "pages/me/me",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/ai-settings/ai-settings",
+			"style": {
+				"navigationBarTitleText": "AI 设置"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "关系评估",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#143f3a",
+		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/cases/cases",
+				"text": "案例"
+			},
+			{
+				"pagePath": "pages/me/me",
+				"text": "我的"
+			}
+		]
+	}
+}
