@@ -1,0 +1,8 @@
+{
+  "type": "app-android",
+  "projectPath": ".",
+  "platform": "android",
+  "certificate": {
+    "usePublicCert": true
+  }
+}
