@@ -13,6 +13,10 @@
         <text class="h1">给同一个 case 再做一次评估</text>
         <text class="hero-subtext">提交后不会覆盖历史，会追加成新的 assessment 记录。</text>
         <text class="muted">对象名称、关系类型和画像不在这里修改，避免你改了但本次提交并不会保存。</text>
+        <view class="actions">
+          <button class="btn-secondary" @click="goCaseDetail">返回关系主页</button>
+          <button class="btn-secondary" @click="goTimeline">打开时间线</button>
+        </view>
       </view>
 
       <AssessmentForm
@@ -87,6 +91,14 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
     showError(e?.message || '评估失败')
   }
 }
+
+function goCaseDetail() {
+  uni.navigateTo({ url: `/pages/case-detail/case-detail?caseId=${caseId.value}` })
+}
+
+function goTimeline() {
+  uni.navigateTo({ url: `/pages/timeline/timeline?caseId=${caseId.value}` })
+}
 </script>
 
 <style scoped>
@@ -98,4 +110,6 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
 .h1 { display: block; font-size: 36rpx; font-weight: 700; color: #143f3a; margin: 8rpx 0; }
 .hero-subtext { display: block; font-size: 26rpx; color: #786857; line-height: 1.6; }
 .muted { display: block; font-size: 24rpx; color: #786857; margin: 6rpx 0; }
+.actions { display: flex; gap: 12rpx; margin-top: 16rpx; }
+.btn-secondary { height: 64rpx; line-height: 64rpx; background: #fff; color: #143f3a; border: 2rpx solid #143f3a; border-radius: 12rpx; font-size: 26rpx; }
 </style>

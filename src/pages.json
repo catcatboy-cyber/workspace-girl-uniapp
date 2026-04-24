@@ -92,6 +92,10 @@
 				"text": "首页"
 			},
 			{
+				"pagePath": "pages/new/new",
+				"text": "新建"
+			},
+			{
 				"pagePath": "pages/cases/cases",
 				"text": "案例"
 			},

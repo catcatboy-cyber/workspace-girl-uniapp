@@ -9,11 +9,20 @@ const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_share
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 
-function pickString(value, fallback) {
-  if (typeof value === 'string' && value.trim()) {
-    return value.trim()
+function buildNonJsonResponseMessage(responseText, baseUrl, status) {
+  const trimmed = String(responseText || '').trim()
+  const preview = trimmed.replace(/\s+/g, ' ').slice(0, 120)
+  const looksLikeHtml = /^<!doctype html\b/i.test(trimmed) || /^<html[\s>]/i.test(trimmed) || /^</.test(trimmed)
+
+  if (looksLikeHtml) {
+    return `AI 接口返回了 HTML 页面（HTTP ${status}），请检查 Base URL 是否填写成了官网页面而不是 API 地址：${baseUrl}`
   }
-  return fallback
+
+  if (!preview) {
+    return `AI 接口返回了空响应（HTTP ${status}），请检查 Base URL 和模型服务状态。`
+  }
+
+  return `AI 接口返回的不是 JSON（HTTP ${status}）：${preview}`
 }
 
 exports.main = async (event) => {
@@ -26,27 +35,45 @@ exports.main = async (event) => {
       .get()
 
     const savedSettings = data && data.length > 0 ? data[0] : null
-    const apiKeyInput = typeof event.aiApiKey === 'string' ? event.aiApiKey.trim() : ''
 
-    const settings = {
-      provider: pickString(event.aiProvider, pickString(savedSettings?.aiProvider, 'openai-compatible')),
-      apiKey: apiKeyInput || pickString(savedSettings?.aiApiKey, ''),
-      baseUrl: pickString(event.aiBaseUrl, pickString(savedSettings?.aiBaseUrl, 'https://api.openai.com/v1')),
-      model: pickString(event.aiModel, pickString(savedSettings?.aiModel, 'gpt-4o-mini'))
+    // 新版：通过 modelId 在 aiModels 中查找
+    const modelId = event.modelId
+    let apiKey = ''
+    let baseUrl = ''
+    let modelName = ''
+    let provider = ''
+
+    if (modelId && savedSettings?.aiModels) {
+      const matched = savedSettings.aiModels.find((m) => m.id === modelId)
+      if (matched) {
+        provider = matched.provider || 'openai-compatible'
+        apiKey = matched.apiKey || ''
+        baseUrl = matched.baseUrl || 'https://api.openai.com/v1'
+        modelName = matched.model || 'gpt-4o-mini'
+      }
     }
 
-    if (!settings.apiKey) {
+    // 如果没找到指定模型或没有 modelId，使用 event 中的参数（兼容旧版/单次测试）
+    if (!apiKey) {
+      provider = typeof event.aiProvider === 'string' ? event.aiProvider.trim() : (savedSettings?.aiProvider || 'openai-compatible')
+      apiKey = typeof event.aiApiKey === 'string' ? event.aiApiKey.trim() : (savedSettings?.aiApiKey || '')
+      baseUrl = typeof event.aiBaseUrl === 'string' && event.aiBaseUrl.trim() ? event.aiBaseUrl.trim() : (savedSettings?.aiBaseUrl || 'https://api.openai.com/v1')
+      modelName = typeof event.aiModel === 'string' && event.aiModel.trim() ? event.aiModel.trim() : (savedSettings?.aiModel || 'gpt-4o-mini')
+    }
+
+    if (!apiKey) {
       return { success: false, message: '请先填写 API Key' }
     }
 
     const response = await postChatCompletions({
-      apiKey: settings.apiKey,
-      baseUrl: settings.baseUrl,
-      model: settings.model,
+      provider,
+      apiKey,
+      baseUrl,
+      model: modelName,
       timeoutMs: AI_REQUEST_TIMEOUT_MS,
       messages: [
         { role: 'system', content: '你是一个用于测试 API 连通性的助手。' },
-        { role: 'user', content: '请用一句中文回复“连接成功”，并补 12 个字以内的说明。' }
+        { role: 'user', content: '请用一句中文回复"连接成功"，并补 12 个字以内的说明。' }
       ],
       temperature: 0.2,
       maxTokens: 80
@@ -60,7 +87,23 @@ exports.main = async (event) => {
       }
     }
 
-    const payload = await response.json()
+    let payload = null
+
+    if (typeof response.text === 'function') {
+      const responseText = await response.text().catch(() => '')
+
+      try {
+        payload = responseText ? JSON.parse(responseText) : null
+      } catch {
+        return {
+          success: false,
+          message: buildNonJsonResponseMessage(responseText, baseUrl, response.status)
+        }
+      }
+    } else {
+      payload = await response.json()
+    }
+
     const summary = typeof payload?.choices?.[0]?.message?.content === 'string'
       ? payload.choices[0].message.content.trim().slice(0, 120)
       : '模型已响应'
@@ -68,8 +111,9 @@ exports.main = async (event) => {
     return {
       success: true,
       message: '连接成功',
-      provider: settings.provider,
-      model: payload?.model || settings.model,
+      provider,
+      model: payload?.model || modelName,
+      modelId,
       summary
     }
   } catch (error) {

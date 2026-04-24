@@ -8,18 +8,79 @@ function trimTrailingSlash(value) {
   return String(value || '').replace(/\/+$/, '')
 }
 
-function buildChatCompletionUrls(baseUrl) {
-  const normalized = trimTrailingSlash(baseUrl || 'https://api.openai.com/v1')
-  const urls = [`${normalized}/chat/completions`]
+function normalizeProvider(provider) {
+  return String(provider || 'openai-compatible').trim().toLowerCase() || 'openai-compatible'
+}
 
-  if (!normalized.endsWith('/v1')) {
-    urls.push(`${normalized}/v1/chat/completions`)
+function getDefaultBaseUrl(provider) {
+  return normalizeProvider(provider) === 'anthropic'
+    ? 'https://api.anthropic.com'
+    : 'https://api.openai.com/v1'
+}
+
+function buildChatCompletionUrls(baseUrl, provider) {
+  const normalizedProvider = normalizeProvider(provider)
+  const normalized = trimTrailingSlash(baseUrl || getDefaultBaseUrl(normalizedProvider))
+
+  if (normalizedProvider === 'anthropic') {
+    const urls = normalized.endsWith('/v1')
+      ? [`${normalized}/messages`]
+      : [`${normalized}/v1/messages`, `${normalized}/messages`]
+
+    return [...new Set(urls)]
   }
+
+  const urls = normalized.endsWith('/v1')
+    ? [`${normalized}/chat/completions`]
+    : [`${normalized}/v1/chat/completions`, `${normalized}/chat/completions`]
 
   return [...new Set(urls)]
 }
 
-function requestText(urlString, body, timeoutMs, apiKey) {
+function normalizeAnthropicMessages(messages) {
+  const list = Array.isArray(messages) ? messages : []
+  const system = list
+    .filter((item) => item && item.role === 'system' && typeof item.content === 'string' && item.content.trim())
+    .map((item) => item.content.trim())
+    .join('\n\n')
+
+  const normalizedMessages = list
+    .filter((item) => item && item.role !== 'system')
+    .map((item) => ({
+      role: item.role === 'assistant' ? 'assistant' : 'user',
+      content: typeof item.content === 'string' ? item.content : String(item.content || '')
+    }))
+
+  if (normalizedMessages.length === 0) {
+    normalizedMessages.push({ role: 'user', content: '' })
+  }
+
+  return { system, messages: normalizedMessages }
+}
+
+function normalizeAnthropicResponse(payload) {
+  const text = Array.isArray(payload?.content)
+    ? payload.content
+      .filter((item) => item && item.type === 'text' && typeof item.text === 'string')
+      .map((item) => item.text)
+      .join('\n')
+      .trim()
+    : ''
+
+  return {
+    model: payload?.model || '',
+    choices: [
+      {
+        message: {
+          content: text
+        }
+      }
+    ],
+    raw: payload
+  }
+}
+
+function requestText(urlString, body, timeoutMs, headers, responseNormalizer) {
   return new Promise((resolve, reject) => {
     const url = new URL(urlString)
     const transport = url.protocol === 'http:' ? http : https
@@ -34,7 +95,7 @@ function requestText(urlString, body, timeoutMs, apiKey) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(payload),
-        Authorization: `Bearer ${apiKey}`
+        ...headers
       }
     }, (res) => {
       const chunks = []
@@ -46,7 +107,10 @@ function requestText(urlString, body, timeoutMs, apiKey) {
           status: res.statusCode || 0,
           statusText: res.statusMessage || '',
           text: async () => text,
-          json: async () => JSON.parse(text)
+          json: async () => {
+            const payload = JSON.parse(text)
+            return typeof responseNormalizer === 'function' ? responseNormalizer(payload) : payload
+          }
         })
       })
     })
@@ -62,17 +126,45 @@ function requestText(urlString, body, timeoutMs, apiKey) {
 }
 
 async function postChatCompletions(params) {
-  const urls = buildChatCompletionUrls(params.baseUrl)
+  const provider = normalizeProvider(params.provider)
+  const urls = buildChatCompletionUrls(params.baseUrl, provider)
   let lastResponse = null
 
+  const isAnthropic = provider === 'anthropic'
+  const anthropicPayload = normalizeAnthropicMessages(params.messages)
+  const requestBody = isAnthropic
+    ? {
+        model: params.model,
+        system: anthropicPayload.system || undefined,
+        messages: anthropicPayload.messages,
+        temperature: params.temperature,
+        max_tokens: params.maxTokens || 256
+      }
+    : {
+        model: params.model,
+        messages: params.messages,
+        temperature: params.temperature,
+        response_format: params.responseFormat,
+        max_tokens: params.maxTokens
+      }
+
+  const headers = isAnthropic
+    ? {
+        'x-api-key': params.apiKey,
+        'anthropic-version': '2023-06-01'
+      }
+    : {
+        Authorization: `Bearer ${params.apiKey}`
+      }
+
   for (const url of urls) {
-    const response = await requestText(url, {
-      model: params.model,
-      messages: params.messages,
-      temperature: params.temperature,
-      response_format: params.responseFormat,
-      max_tokens: params.maxTokens
-    }, params.timeoutMs || DEFAULT_TIMEOUT_MS, params.apiKey)
+    const response = await requestText(
+      url,
+      requestBody,
+      params.timeoutMs || DEFAULT_TIMEOUT_MS,
+      headers,
+      isAnthropic ? normalizeAnthropicResponse : null
+    )
 
     if (response.status === 404 && url !== urls[urls.length - 1]) {
       lastResponse = response
@@ -118,6 +210,7 @@ function getAIErrorMessage(error, timeoutMs) {
 module.exports = {
   AI_REQUEST_TIMEOUT_MS: DEFAULT_TIMEOUT_MS,
   buildChatCompletionUrls,
+  getDefaultBaseUrl,
   postChatCompletions,
   parseJSONContent,
   getAIErrorMessage

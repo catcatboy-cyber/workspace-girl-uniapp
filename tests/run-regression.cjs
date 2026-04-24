@@ -478,6 +478,132 @@ async function main() {
     assert.equal(capturedParams.model, 'gpt-4.1-mini')
   })
 
+  await runCase('AI connection test reports HTML responses clearly', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const updateAISettings = loadFunction('updateAISettings')
+    asUser(fake, 'user_ai_html_owner')
+    await updateAISettings({
+      models: [{
+        id: 'model_html',
+        name: 'HTML 响应模型',
+        provider: 'openai-compatible',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+        apiKey: 'sk-html-1234'
+      }],
+      defaultModelId: 'model_html',
+      aiEnabled: true,
+      aiFallbackToRules: true
+    })
+
+    clearCloudFunctionCache(projectRoot)
+    const aiHttpPath = path.join(projectRoot, 'cloudfunctions', 'testAIConnection', '_shared', 'ai-http.js')
+    const originalAiHttp = require(aiHttpPath)
+
+    require.cache[aiHttpPath] = {
+      id: aiHttpPath,
+      filename: aiHttpPath,
+      loaded: true,
+      exports: {
+        ...originalAiHttp,
+        postChatCompletions: async () => ({
+          ok: true,
+          status: 200,
+          text: async () => '<!doctype html><html><body>Not JSON</body></html>'
+        })
+      }
+    }
+
+    const testAIConnection = require(path.join(projectRoot, 'cloudfunctions', 'testAIConnection', 'index.js')).main
+    asUser(fake, 'user_ai_html_owner')
+    const result = await testAIConnection({
+      modelId: 'model_html'
+    })
+
+    assert.equal(result.success, false)
+    assert.match(result.message, /HTML 页面/)
+    assert.match(result.message, /https:\/\/example\.com/)
+  })
+
+  await runCase('AI connection test passes anthropic provider through', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const updateAISettings = loadFunction('updateAISettings')
+    asUser(fake, 'user_ai_anthropic_owner')
+    await updateAISettings({
+      models: [{
+        id: 'model_anthropic',
+        name: 'Claude',
+        provider: 'anthropic',
+        baseUrl: 'https://api.anthropic.com',
+        model: 'claude-3-5-sonnet-20241022',
+        apiKey: 'sk-ant-1234'
+      }],
+      defaultModelId: 'model_anthropic',
+      aiEnabled: true,
+      aiFallbackToRules: true
+    })
+
+    clearCloudFunctionCache(projectRoot)
+    const aiHttpPath = path.join(projectRoot, 'cloudfunctions', 'testAIConnection', '_shared', 'ai-http.js')
+    const originalAiHttp = require(aiHttpPath)
+    let capturedParams = null
+
+    require.cache[aiHttpPath] = {
+      id: aiHttpPath,
+      filename: aiHttpPath,
+      loaded: true,
+      exports: {
+        ...originalAiHttp,
+        postChatCompletions: async (params) => {
+          capturedParams = params
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              model: 'claude-3-5-sonnet-20241022',
+              choices: [{ message: { content: '连接成功，Anthropic 正常。' } }]
+            })
+          }
+        }
+      }
+    }
+
+    const testAIConnection = require(path.join(projectRoot, 'cloudfunctions', 'testAIConnection', 'index.js')).main
+    asUser(fake, 'user_ai_anthropic_owner')
+    const result = await testAIConnection({
+      modelId: 'model_anthropic'
+    })
+
+    assert.equal(result.success, true)
+    assert.equal(capturedParams.provider, 'anthropic')
+    assert.equal(capturedParams.baseUrl, 'https://api.anthropic.com')
+    assert.equal(capturedParams.model, 'claude-3-5-sonnet-20241022')
+  })
+
+  await runCase('AI HTTP prefers /v1 endpoints before root endpoints', async () => {
+    const aiHttp = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'ai-http.js'))
+
+    assert.deepEqual(
+      aiHttp.buildChatCompletionUrls('https://proxy.example.com', 'openai-compatible'),
+      [
+        'https://proxy.example.com/v1/chat/completions',
+        'https://proxy.example.com/chat/completions'
+      ]
+    )
+
+    assert.deepEqual(
+      aiHttp.buildChatCompletionUrls('https://proxy.example.com', 'anthropic'),
+      [
+        'https://proxy.example.com/v1/messages',
+        'https://proxy.example.com/messages'
+      ]
+    )
+  })
+
   await runCase('deleteCase removes case, assessments and timeline records', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)

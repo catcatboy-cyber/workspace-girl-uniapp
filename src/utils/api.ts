@@ -348,6 +348,15 @@ export async function reassess(data: {
 
 // ==================== AI 设置 ====================
 
+export type AIModelConfig = {
+  id: string
+  name: string
+  provider: string
+  baseUrl: string
+  model: string
+  apiKey: string
+}
+
 /**
  * 获取 AI 设置
  */
@@ -360,16 +369,14 @@ export async function getAISettings(_userId?: string) {
 }
 
 /**
- * 更新 AI 设置
+ * 更新 AI 设置（新版本，支持多模型）
  */
 export async function updateAISettings(data: {
   userId?: string
   aiEnabled: boolean
-  aiProvider: string
-  aiApiKey?: string
-  aiBaseUrl: string
-  aiModel: string
   aiFallbackToRules: boolean
+  models: AIModelConfig[]
+  defaultModelId: string
 }) {
   const { userId: _userId, ...payload } = data
   const res = await callFunction({
@@ -380,10 +387,11 @@ export async function updateAISettings(data: {
 }
 
 /**
- * 测试 AI 连接
+ * 测试 AI 连接（支持通过 modelId 测试指定模型）
  */
 export async function testAIConnection(data: {
   userId?: string
+  modelId?: string
   aiProvider?: string
   aiApiKey?: string
   aiBaseUrl?: string

@@ -6,79 +6,107 @@
       <view class="hero-card card">
         <text class="hero-topline">Settings / AI</text>
         <text class="h1">AI 事件研判设置</text>
-        <text class="hero-subtext">配置模型、Base URL 和 API Key。配置后，新增时间线事件时会优先用 AI 做结构化事件理解；失败时可回退到规则模式。</text>
+        <text class="hero-subtext">支持配置多个模型，可随时切换默认使用的模型。新增时间线事件时会优先用 AI 做结构化事件理解。</text>
       </view>
 
+      <!-- 保存/测试结果反馈 -->
       <view v-if="saved" class="card status-card success">
         <text class="status-title">设置已保存</text>
-        <text class="muted">新的模型 / Base URL / Key 已写入配置。</text>
+        <text class="muted">模型配置和默认模型已更新。</text>
       </view>
 
       <view v-if="tested" :class="['card', 'status-card', testOk ? 'success' : 'warning']">
         <text class="status-title">{{ testOk ? '✅ 连接测试成功' : '⚠️ 连接测试失败' }}</text>
-        <text class="muted">{{ testMessage || (testOk ? '模型接口可用，并已返回结构化 JSON。' : '当前没有拿到有效测试结果。') }}</text>
-        <text v-if="testModel" class="muted">模型：{{ testModel }}</text>
+        <text class="muted">{{ testMessage || (testOk ? '模型接口可用。' : '当前没有拿到有效测试结果。') }}</text>
+        <text v-if="testModelName" class="muted">模型：{{ testModelName }}</text>
         <text v-if="testSummary" class="muted">返回摘要：{{ testSummary }}</text>
       </view>
 
+      <!-- 启用状态 -->
       <view class="card">
         <text class="h2">启用状态</text>
         <view class="switch-row">
           <text class="switch-label">启用 AI 事件研判</text>
-          <switch :checked="form.enabled" color="#143f3a" @change="onEnabledChange" />
+          <switch :checked="enabled" color="#143f3a" @change="onEnabledChange" />
         </view>
         <view class="switch-row">
           <text class="switch-label">AI 调用失败时自动回退规则模式</text>
-          <switch :checked="form.fallbackToRules" color="#143f3a" @change="onFallbackChange" />
+          <switch :checked="fallbackToRules" color="#143f3a" @change="onFallbackChange" />
         </view>
       </view>
 
+      <!-- 模型列表 -->
       <view class="card">
-        <text class="h2">模型连接配置</text>
-        <view class="field">
-          <text class="field-label">Provider</text>
-          <input v-model="form.provider" class="text-input" placeholder="openai-compatible" />
+        <view class="section-head">
+          <text class="h2">模型配置</text>
+          <text class="muted">默认模型会在 AI 事件分析中使用。可添加多个模型以便切换。</text>
+          <text class="muted">切换模型时，点击对应卡片左侧“设为默认”，再点底部“保存所有设置”。</text>
         </view>
-        <view class="field">
-          <text class="field-label">Model</text>
-          <input v-model="form.model" class="text-input" placeholder="例如：gpt-4o-mini" />
+
+        <view v-for="(model, index) in models" :key="model.id" class="model-card">
+          <view class="model-header">
+            <view class="model-name-row">
+              <view
+                class="default-badge"
+                :class="{ active: defaultModelId === model.id }"
+                @click="setDefault(model.id)"
+              >
+                {{ defaultModelId === model.id ? '⭐ 默认' : '○ 设为默认' }}
+              </view>
+              <text class="model-label">{{ model.name || '未命名模型' }}</text>
+            </view>
+            <view v-if="models.length > 1" class="model-actions">
+              <text class="delete-btn" @click="removeModel(index)">删除</text>
+            </view>
+          </view>
+
+          <view class="field">
+            <text class="field-label">名称</text>
+            <input v-model="model.name" class="text-input" placeholder="例如：GPT-4o、Claude" />
+          </view>
+          <view class="grid two">
+            <view class="field">
+              <text class="field-label">Provider</text>
+              <input v-model="model.provider" class="text-input" placeholder="openai-compatible" />
+            </view>
+            <view class="field">
+              <text class="field-label">Model</text>
+              <input v-model="model.model" class="text-input" placeholder="gpt-4o-mini" />
+            </view>
+          </view>
+          <view class="field">
+            <text class="field-label">Base URL</text>
+            <input v-model="model.baseUrl" class="text-input" placeholder="https://api.openai.com/v1" />
+          </view>
+          <view class="field">
+            <text class="field-label">API Key</text>
+            <input v-model="model.apiKey" type="text" password class="text-input" placeholder="sk-..." />
+            <text v-if="model._hasStoredKey && !model.apiKey" class="muted">当前已保存 Key（{{ model._maskedKey }}），留空保持不变。</text>
+            <text v-else-if="model.apiKey" class="muted">将使用此 Key 覆盖保存。</text>
+            <text v-else class="muted">未配置 API Key。</text>
+          </view>
+
+          <view class="actions">
+            <button class="btn-secondary compact" :disabled="testingId === model.id" @click="runModelTest(model)">
+              {{ testingId === model.id ? '测试中...' : '测试连接' }}
+            </button>
+            <text v-if="model._lastTestResult !== undefined" class="test-result" :class="model._lastTestResult ? 'pass' : 'fail'">
+              {{ model._lastTestResult ? '✅ 测试通过' : '❌ 测试失败' }}
+            </text>
+          </view>
         </view>
-        <view class="field">
-          <text class="field-label">Base URL</text>
-          <input v-model="form.baseUrl" class="text-input" placeholder="https://api.openai.com/v1" />
-        </view>
-        <view class="field">
-          <text class="field-label">API Key</text>
-          <input v-model="form.apiKey" type="text" password class="text-input" placeholder="sk-..." />
-          <text v-if="hasStoredApiKey" class="muted">当前已保存：{{ maskedApiKey }}。这里留空则保持不变。</text>
-          <text v-else class="muted">当前未保存 API Key。</text>
+
+        <view class="actions" style="margin-top: 20rpx;">
+          <button class="btn-secondary" @click="addModel">+ 添加模型</button>
         </view>
       </view>
 
-      <view class="card">
-        <text class="h2">当前状态</text>
-        <view class="kpis">
-          <view class="kpi-item">
-            <text class="kpi-label">AI 开关</text>
-            <text class="kpi-value">{{ form.enabled ? 'ON' : 'OFF' }}</text>
-          </view>
-          <view class="kpi-item">
-            <text class="kpi-label">当前模型</text>
-            <text class="kpi-value small">{{ form.model || '--' }}</text>
-          </view>
-        </view>
-        <text class="muted">API Key 状态：{{ hasStoredApiKey || form.apiKey ? '已配置' : '未配置' }} / Fallback：{{ form.fallbackToRules ? '开启' : '关闭' }}</text>
-      </view>
-
+      <!-- 操作按钮 -->
       <view class="card">
         <view class="actions vertical">
           <button class="btn-primary" :disabled="submitting" @click="onSave">
-            {{ submitting ? '保存中...' : '保存 AI 设置' }}
+            {{ submitting ? '保存中...' : '保存所有设置' }}
           </button>
-          <button class="btn-secondary" :disabled="testing" @click="onTest">
-            {{ testing ? '测试中...' : '测试连接' }}
-          </button>
-          <text class="muted">测试连接最长等待约 15 秒，超时会直接返回错误提示。</text>
           <button class="btn-secondary" @click="goBack">返回</button>
         </view>
       </view>
@@ -91,56 +119,104 @@ import { ref, onMounted } from 'vue'
 import { getAISettings, updateAISettings, testAIConnection, getCurrentUserId } from '@/utils/api'
 import { showError, showSuccess } from '@/utils/helpers'
 
+let modelIdCounter = 1
+
+type EditableModel = {
+  id: string
+  name: string
+  provider: string
+  baseUrl: string
+  model: string
+  apiKey: string
+  _hasStoredKey?: boolean
+  _maskedKey?: string
+  _lastTestResult?: boolean
+}
+
+function generateModelId() {
+  return `model_${Date.now()}_${modelIdCounter++}`
+}
+
+function createEmptyModel(): EditableModel {
+  return {
+    id: generateModelId(),
+    name: '',
+    provider: 'openai-compatible',
+    baseUrl: 'https://api.openai.com/v1',
+    model: '',
+    apiKey: '',
+    _hasStoredKey: false,
+    _maskedKey: ''
+  }
+}
+
 const loading = ref(true)
 const submitting = ref(false)
-const testing = ref(false)
 const saved = ref(false)
+const enabled = ref(false)
+const fallbackToRules = ref(true)
+const models = ref<EditableModel[]>([])
+const defaultModelId = ref('')
+
 const tested = ref(false)
 const testOk = ref(false)
 const testMessage = ref('')
-const testModel = ref('')
+const testModelName = ref('')
 const testSummary = ref('')
-const hasStoredApiKey = ref(false)
-const maskedApiKey = ref('')
 
-const defaultForm = () => ({
-  enabled: false,
-  provider: 'openai-compatible',
-  apiKey: '',
-  baseUrl: 'https://api.openai.com/v1',
-  model: 'gpt-4o-mini',
-  fallbackToRules: true
-})
-
-const form = ref(defaultForm())
+const testingId = ref('')
 
 onMounted(() => {
   loadData()
 })
 
 function redactKey(key: string) {
-  if (!key) return ''
+  if (!key || typeof key !== 'string') return ''
   if (key.length <= 4) return '***'
   return `***${key.slice(-4)}`
 }
 
 function applySettings(settings: any) {
   if (!settings) {
-    form.value = defaultForm()
-    hasStoredApiKey.value = false
-    maskedApiKey.value = ''
+    enabled.value = false
+    fallbackToRules.value = true
+    const m = createEmptyModel()
+    m.name = '默认模型'
+    models.value = [m]
+    defaultModelId.value = m.id
     return
   }
 
-  hasStoredApiKey.value = Boolean(settings.aiApiKey)
-  maskedApiKey.value = settings.aiApiKey || ''
-  form.value = {
-    enabled: Boolean(settings.aiEnabled),
-    provider: settings.aiProvider || 'openai-compatible',
-    apiKey: '',
-    baseUrl: settings.aiBaseUrl || 'https://api.openai.com/v1',
-    model: settings.aiModel || 'gpt-4o-mini',
-    fallbackToRules: settings.aiFallbackToRules !== false
+  enabled.value = Boolean(settings.aiEnabled)
+  fallbackToRules.value = settings.aiFallbackToRules !== false
+
+  if (settings.settingsVersion === 2 && Array.isArray(settings.aiModels)) {
+    models.value = settings.aiModels.map((m: any) => ({
+      id: m.id || generateModelId(),
+      name: m.name || '',
+      provider: m.provider || 'openai-compatible',
+      baseUrl: m.baseUrl || 'https://api.openai.com/v1',
+      model: m.model || '',
+      apiKey: '',
+      _hasStoredKey: Boolean(m.apiKey),
+      _maskedKey: m.apiKey ? redactKey(m.apiKey) : ''
+    }))
+    defaultModelId.value = settings.aiDefaultModelId || (settings.aiModels[0]?.id || '')
+  } else {
+    // 旧版格式兼容
+    const m = createEmptyModel()
+    m.name = '默认模型'
+    m.provider = settings.aiProvider || 'openai-compatible'
+    m.baseUrl = settings.aiBaseUrl || 'https://api.openai.com/v1'
+    m.model = settings.aiModel || 'gpt-4o-mini'
+    m._hasStoredKey = Boolean(settings.aiApiKey)
+    m._maskedKey = settings.aiApiKey ? redactKey(settings.aiApiKey) : ''
+    models.value = [m]
+    defaultModelId.value = m.id
+  }
+
+  if (!models.value.find((m) => m.id === defaultModelId.value)) {
+    defaultModelId.value = models.value[0]?.id || ''
   }
 }
 
@@ -162,11 +238,41 @@ async function loadData() {
 }
 
 function onEnabledChange(e: any) {
-  form.value.enabled = Boolean(e.detail.value)
+  enabled.value = Boolean(e.detail.value)
 }
 
 function onFallbackChange(e: any) {
-  form.value.fallbackToRules = Boolean(e.detail.value)
+  fallbackToRules.value = Boolean(e.detail.value)
+}
+
+function addModel() {
+  models.value.push(createEmptyModel())
+}
+
+function removeModel(index: number) {
+  const removed = models.value[index]
+  models.value.splice(index, 1)
+
+  // 如果删除的是默认模型，重新设置
+  if (removed.id === defaultModelId.value && models.value.length > 0) {
+    defaultModelId.value = models.value[0].id
+  }
+}
+
+function setDefault(modelId: string) {
+  defaultModelId.value = modelId
+  saved.value = false
+}
+
+function collectNonEmptyModels() {
+  return models.value.map((m) => ({
+    id: m.id,
+    name: m.name || '未命名模型',
+    provider: m.provider || 'openai-compatible',
+    baseUrl: m.baseUrl || 'https://api.openai.com/v1',
+    model: m.model || 'gpt-4o-mini',
+    apiKey: m.apiKey || ''
+  }))
 }
 
 async function onSave() {
@@ -176,21 +282,25 @@ async function onSave() {
   submitting.value = true
   saved.value = false
   try {
-    const apiKey = form.value.apiKey.trim()
+    const collected = collectNonEmptyModels()
     await updateAISettings({
       userId: uid,
-      aiEnabled: form.value.enabled,
-      aiProvider: form.value.provider,
-      ...(apiKey ? { aiApiKey: apiKey } : {}),
-      aiBaseUrl: form.value.baseUrl,
-      aiModel: form.value.model,
-      aiFallbackToRules: form.value.fallbackToRules
+      aiEnabled: enabled.value,
+      aiFallbackToRules: fallbackToRules.value,
+      models: collected,
+      defaultModelId: defaultModelId.value
     })
-    if (apiKey) {
-      hasStoredApiKey.value = true
-      maskedApiKey.value = redactKey(apiKey)
-      form.value.apiKey = ''
-    }
+
+    // 清空已提交的 apiKey 显示
+    models.value.forEach((m) => {
+      if (m.apiKey) {
+        m._hasStoredKey = true
+        m._maskedKey = redactKey(m.apiKey)
+        m.apiKey = ''
+      }
+    })
+
+    await loadData()
     saved.value = true
     showSuccess('设置已保存')
   } catch (e: any) {
@@ -200,45 +310,62 @@ async function onSave() {
   }
 }
 
-async function onTest() {
+async function runModelTest(model: EditableModel) {
   const uid = getCurrentUserId()
   if (!uid) return
 
-  if (!form.value.apiKey.trim() && !hasStoredApiKey.value) {
-    showError('请先配置 API Key')
+  const hasUsableKey = Boolean(model.apiKey || model._hasStoredKey)
+  if (!hasUsableKey) {
+    showError('请先填写此模型的 API Key')
     return
   }
 
-  testing.value = true
+  testingId.value = model.id
   tested.value = false
+  testMessage.value = ''
+  testSummary.value = ''
+  testModelName.value = model.name || model.model || model.id
 
   try {
+    if (models.value.some((item) => item.apiKey)) {
+      // 仅在存在新输入 key 时先保存，避免把已存 key 覆盖成空字符串。
+      const allModels = collectNonEmptyModels()
+      await updateAISettings({
+        userId: uid,
+        aiEnabled: enabled.value,
+        aiFallbackToRules: fallbackToRules.value,
+        models: allModels,
+        defaultModelId: defaultModelId.value
+      })
+    }
+
     const result = await testAIConnection({
       userId: uid,
-      aiProvider: form.value.provider,
-      ...(form.value.apiKey.trim() ? { aiApiKey: form.value.apiKey.trim() } : {}),
-      aiBaseUrl: form.value.baseUrl,
-      aiModel: form.value.model
+      modelId: model.id
     })
 
     tested.value = true
-    testOk.value = result.success
-    testMessage.value = result.message
-    testModel.value = result.model || ''
+    testOk.value = Boolean(result.success)
+    testMessage.value = result.message || (result.success ? '连接成功' : '测试失败')
+    testModelName.value = result.model || model.name || model.model || model.id
     testSummary.value = result.summary || ''
 
+    model._lastTestResult = result.success
+
     if (result.success) {
-      showSuccess('连接测试成功')
+      showSuccess(`"${model.name || model.model || model.id}" 连接成功`)
     } else {
-      showError(result.message)
+      showError(`"${model.name || model.model || model.id}" 测试失败：${result.message}`)
     }
   } catch (e: any) {
     tested.value = true
     testOk.value = false
     testMessage.value = e?.message || '测试失败'
-    showError('测试连接失败')
+    testSummary.value = ''
+    model._lastTestResult = false
+    showError(e?.message || '测试失败')
   } finally {
-    testing.value = false
+    testingId.value = ''
   }
 }
 
@@ -258,6 +385,8 @@ function goBack() {
 .hero-subtext { display: block; font-size: 26rpx; color: #786857; line-height: 1.6; margin-top: 8rpx; }
 .muted { display: block; font-size: 24rpx; color: #786857; margin: 6rpx 0; }
 
+.section-head { margin-bottom: 20rpx; }
+
 .status-card { border-left: 8rpx solid #143f3a; }
 .status-card.success { border-left-color: #14633a; background: #dff5e8; }
 .status-card.warning { border-left-color: #b85c38; background: #f9d8d2; }
@@ -266,18 +395,73 @@ function goBack() {
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 24rpx; margin: 16rpx 0; }
 .switch-label { flex: 1; font-size: 26rpx; color: #241b12; line-height: 1.5; }
 
-.field { margin: 20rpx 0; }
+.model-card {
+  background: #fff;
+  border: 2rpx solid #e5ddd0;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.model-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.model-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.default-badge {
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  border: 2rpx solid #e5ddd0;
+  color: #786857;
+}
+
+.default-badge.active {
+  background: #143f3a;
+  color: #fff;
+  border-color: #143f3a;
+}
+
+.model-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #241b12;
+}
+
+.model-actions {
+  display: flex;
+  gap: 8rpx;
+}
+
+.delete-btn {
+  color: #b85c38;
+  font-size: 24rpx;
+  padding: 4rpx 12rpx;
+}
+
+.field { margin: 16rpx 0; }
 .field-label { display: block; font-size: 24rpx; color: #241b12; margin-bottom: 8rpx; }
-.text-input { width: 100%; height: 72rpx; padding: 0 22rpx; background: #fff; border: 2rpx solid #e5ddd0; border-radius: 12rpx; font-size: 26rpx; color: #241b12; box-sizing: border-box; }
+.text-input { width: 100%; height: 72rpx; padding: 0 22rpx; background: #fbf6ee; border: 2rpx solid #e5ddd0; border-radius: 12rpx; font-size: 26rpx; color: #241b12; box-sizing: border-box; }
 
-.kpis { display: flex; gap: 16rpx; margin: 16rpx 0; }
-.kpi-item { flex: 1; background: #fff; border-radius: 12rpx; padding: 20rpx; }
-.kpi-label { display: block; font-size: 22rpx; color: #786857; }
-.kpi-value { display: block; font-size: 36rpx; font-weight: 700; color: #143f3a; margin-top: 4rpx; }
-.kpi-value.small { font-size: 28rpx; }
+.grid.two { display: flex; gap: 16rpx; }
+.grid.two .field { flex: 1; }
 
-.actions { display: flex; gap: 12rpx; }
+.actions { display: flex; gap: 12rpx; align-items: center; flex-wrap: wrap; }
 .actions.vertical { flex-direction: column; }
+
 .btn-primary { height: 80rpx; line-height: 80rpx; background: #143f3a; color: #fff; border: none; border-radius: 12rpx; font-size: 28rpx; }
 .btn-secondary { height: 80rpx; line-height: 80rpx; background: #fff; color: #143f3a; border: 2rpx solid #143f3a; border-radius: 12rpx; font-size: 28rpx; }
+.btn-secondary.compact { height: 56rpx; line-height: 56rpx; font-size: 24rpx; padding: 0 20rpx; }
+
+.test-result { font-size: 24rpx; font-weight: 500; }
+.test-result.pass { color: #14633a; }
+.test-result.fail { color: #b85c38; }
 </style>

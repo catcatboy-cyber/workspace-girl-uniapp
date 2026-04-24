@@ -40,11 +40,49 @@ function serializeCaseProfile(profile) {
 }
 
 function normalizeSettings(settings) {
+  // 新版多模型格式
+  if (settings?.settingsVersion === 2 && Array.isArray(settings?.aiModels)) {
+    const defaultId = settings.aiDefaultModelId || 'default'
+    const defaultModel = settings.aiModels.find((m) => m.id === defaultId) || settings.aiModels[0] || {}
+    const provider = typeof defaultModel.provider === 'string' && defaultModel.provider.trim()
+      ? defaultModel.provider.trim()
+      : 'openai-compatible'
+    return {
+      enabled: Boolean(settings.aiEnabled),
+      provider,
+      apiKey: typeof defaultModel.apiKey === 'string' ? defaultModel.apiKey.trim() : '',
+      baseUrl: typeof defaultModel.baseUrl === 'string' && defaultModel.baseUrl.trim()
+        ? defaultModel.baseUrl.trim()
+        : provider.toLowerCase() === 'anthropic'
+          ? 'https://api.anthropic.com'
+          : 'https://api.openai.com/v1',
+      model: typeof defaultModel.model === 'string' && defaultModel.model.trim()
+        ? defaultModel.model.trim()
+        : provider.toLowerCase() === 'anthropic'
+          ? 'claude-3-5-sonnet-20241022'
+          : 'gpt-4o-mini',
+      fallbackToRules: settings.aiFallbackToRules !== false
+    }
+  }
+
+  // 旧版单模型格式（兼容）
+  const provider = typeof settings?.aiProvider === 'string' && settings.aiProvider.trim()
+    ? settings.aiProvider.trim()
+    : 'openai-compatible'
   return {
     enabled: Boolean(settings?.aiEnabled),
+    provider,
     apiKey: typeof settings?.aiApiKey === 'string' ? settings.aiApiKey.trim() : '',
-    baseUrl: typeof settings?.aiBaseUrl === 'string' && settings.aiBaseUrl.trim() ? settings.aiBaseUrl.trim() : 'https://api.openai.com/v1',
-    model: typeof settings?.aiModel === 'string' && settings.aiModel.trim() ? settings.aiModel.trim() : 'gpt-4o-mini',
+    baseUrl: typeof settings?.aiBaseUrl === 'string' && settings.aiBaseUrl.trim()
+      ? settings.aiBaseUrl.trim()
+      : provider.toLowerCase() === 'anthropic'
+        ? 'https://api.anthropic.com'
+        : 'https://api.openai.com/v1',
+    model: typeof settings?.aiModel === 'string' && settings.aiModel.trim()
+      ? settings.aiModel.trim()
+      : provider.toLowerCase() === 'anthropic'
+        ? 'claude-3-5-sonnet-20241022'
+        : 'gpt-4o-mini',
     fallbackToRules: settings?.aiFallbackToRules !== false
   }
 }
@@ -100,6 +138,7 @@ async function inferTimelineRecord(params) {
 
   try {
     const response = await postChatCompletions({
+      provider: settings.provider,
       apiKey: settings.apiKey,
       baseUrl: settings.baseUrl,
       model: settings.model,
