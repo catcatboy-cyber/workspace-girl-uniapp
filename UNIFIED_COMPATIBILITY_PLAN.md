@@ -97,7 +97,7 @@ import uniCloud from '@dcloudio/uni-cloud'
 // 初始化
 const app = uniCloud.init({
   provider: 'tencent',
-  spaceId: 'catboy-d0gg4yc4ief533dea'
+  spaceId: 'cloud1-d8gqh3f5g49993a5a'
 })
 
 export const auth = app.auth()

@@ -55,7 +55,7 @@
 如果只是想快速测试，可以：
 
 1. **使用 H5 版本**（已部署）
-   - 在手机浏览器访问：https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+   - 在手机浏览器访问：https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
    - 添加到主屏幕，体验类似 App
 
 2. **使用微信小程序**
@@ -79,7 +79,7 @@
 ## 下载链接
 
 - **GitHub 仓库**: https://github.com/catcatboy-cyber/workspace-girl-uniapp
-- **H5 在线版**: https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+- **H5 在线版**: https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
 - **HBuilderX 下载**: https://www.dcloud.io/hbuilderx.html
 
 ## 注意事项

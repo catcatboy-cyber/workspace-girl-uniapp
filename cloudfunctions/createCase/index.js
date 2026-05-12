@@ -14,7 +14,7 @@ function randomHex(n) {
 exports.main = async (event) => {
   const { name, answers, profile } = event
   try {
-    const userId = await requireAuthenticatedUserId(app)
+    const userId = await requireAuthenticatedUserId(app, event)
     if (!name || typeof name !== 'string' || !name.trim()) {
       return { success: false, message: '名称不能为空' }
     }

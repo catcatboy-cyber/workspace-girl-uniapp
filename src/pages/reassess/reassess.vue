@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeVars">
     <view v-if="loading" class="muted center">加载中...</view>
 
     <view v-else-if="!caseFile" class="card">
@@ -36,14 +36,18 @@ import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import { getCaseDetail, reassess, getCurrentUserId } from '@/utils/api'
-import { showError, showSuccess } from '@/utils/helpers'
+import { setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const loading = ref(true)
 const caseFile = ref<any>(null)
 const userId = ref('')
 const caseId = ref('')
+const themeVars = ref(getThemeStyle())
 
 onLoad((options) => {
+  themeVars.value = getThemeStyle()
+  applyThemeChrome()
   caseId.value = options?.caseId || ''
   loadData()
 })
@@ -81,7 +85,8 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
     if (res.success) {
       showSuccess('评估完成')
       setTimeout(() => {
-        uni.redirectTo({ url: `/pages/case-detail/case-detail?caseId=${caseId.value}` })
+        setActiveCaseId(caseId.value)
+        uni.switchTab({ url: '/pages/case-detail/case-detail' })
       }, 600)
     } else {
       showError(res.message || '评估失败')
@@ -93,11 +98,14 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
 }
 
 function goCaseDetail() {
-  uni.navigateTo({ url: `/pages/case-detail/case-detail?caseId=${caseId.value}` })
+  setActiveCaseId(caseId.value)
+  uni.switchTab({ url: '/pages/case-detail/case-detail' })
 }
 
 function goTimeline() {
-  uni.navigateTo({ url: `/pages/timeline/timeline?caseId=${caseId.value}` })
+  setActiveCaseId(caseId.value)
+  setPendingTimelineContext({ caseId: caseId.value })
+  uni.switchTab({ url: '/pages/timeline/timeline' })
 }
 </script>
 
@@ -112,4 +120,88 @@ function goTimeline() {
 .muted { display: block; font-size: 24rpx; color: #786857; margin: 6rpx 0; }
 .actions { display: flex; gap: 12rpx; margin-top: 16rpx; }
 .btn-secondary { height: 64rpx; line-height: 64rpx; background: #fff; color: #143f3a; border: 2rpx solid #143f3a; border-radius: 12rpx; font-size: 26rpx; }
+
+/* Premium visual pass */
+.page {
+  background:
+    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 360rpx),
+    var(--app-bg, #f6f1e8);
+  padding: 28rpx;
+}
+
+.card {
+  background: var(--card-bg, rgba(255, 252, 247, 0.96));
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  border-radius: 18rpx;
+  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
+}
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-color: rgba(201, 164, 92, 0.25);
+  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  left: 32rpx;
+  right: 32rpx;
+  top: 0;
+  height: 3rpx;
+  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
+}
+
+.hero-topline {
+  color: rgba(255, 252, 247, 0.72);
+  letter-spacing: 3rpx;
+}
+
+.hero-card .h1 {
+  color: #fffaf0;
+  font-size: 42rpx;
+  line-height: 1.25;
+}
+
+.hero-subtext,
+.hero-card .muted {
+  color: rgba(255, 252, 247, 0.76);
+}
+
+.h1 {
+  color: var(--text-main, #201914);
+}
+
+.muted {
+  color: var(--text-muted, #76695c);
+}
+
+.btn-secondary {
+  background: rgba(255, 252, 247, 0.92);
+  border: 1rpx solid rgba(18, 60, 54, 0.25);
+  color: var(--primary, #123c36);
+  border-radius: 14rpx;
+  font-weight: 600;
+}
+
+/* Second visual pass */
+.card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
+    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
+    var(--card-bg, #fffcf7);
+  box-shadow:
+    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+}
+
+.hero-card {
+  background:
+    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+}
 </style>

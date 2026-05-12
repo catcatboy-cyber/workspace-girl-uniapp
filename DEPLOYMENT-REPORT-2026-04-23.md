@@ -1,7 +1,7 @@
 # 部署完成报告
 
 **部署时间**: 2026-04-23 11:32  
-**环境**: catboy-d0gg4yc4ief533dea (体验版)
+**环境**: cloud1-d8gqh3f5g49993a5a (体验版)
 
 ---
 
@@ -16,7 +16,7 @@
 ### ✅ 前端部署
 - **构建状态**: 成功
 - **部署文件**: 40 个文件全部上传成功
-- **访问地址**: https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+- **访问地址**: https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
 
 ---
 
@@ -34,7 +34,7 @@
 ## 下一步：功能测试
 
 ### 立即测试项
-1. **访问应用**: https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+1. **访问应用**: https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
    - 如果页面未更新，使用无痕模式或等待 CDN 刷新（通常几分钟内）
 
 2. **基础功能测试**:
@@ -60,10 +60,10 @@
 ### 监控命令
 ```bash
 # 查看 createTimeline 日志
-cloudbase functions:log createTimeline -e catboy-d0gg4yc4ief533dea --limit 50
+cloudbase functions:log createTimeline -e cloud1-d8gqh3f5g49993a5a --limit 50
 
 # 查看错误日志
-cloudbase functions:log createTimeline -e catboy-d0gg4yc4ief533dea --level error
+cloudbase functions:log createTimeline -e cloud1-d8gqh3f5g49993a5a --level error
 ```
 
 ---
@@ -86,10 +86,10 @@ cloudbase functions:log createTimeline -e catboy-d0gg4yc4ief533dea --level error
 
 ```bash
 # 回滚云函数（需要之前的版本 ID）
-cloudbase functions:deploy createTimeline -e catboy-d0gg4yc4ief533dea --code-secret <previous-version>
+cloudbase functions:deploy createTimeline -e cloud1-d8gqh3f5g49993a5a --code-secret <previous-version>
 
 # 回滚前端（重新部署之前的构建）
-cloudbase hosting:deploy <previous-build-path> -e catboy-d0gg4yc4ief533dea
+cloudbase hosting:deploy <previous-build-path> -e cloud1-d8gqh3f5g49993a5a
 ```
 
 ---
@@ -106,4 +106,4 @@ cloudbase hosting:deploy <previous-build-path> -e catboy-d0gg4yc4ief533dea
 
 **部署状态**: ✅ 成功  
 **可以开始测试**: 是  
-**访问地址**: https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+**访问地址**: https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com

@@ -6,6 +6,13 @@ const {
 } = require('./ai-http')
 
 const EVENT_TYPES = ['positive', 'risk', 'verification', 'note']
+const SEMANTIC_SCENES = ['offline_meet', 'movie', 'meal', 'coffee_tea', 'walk_shop', 'group_social', 'trip', 'chat']
+const SEMANTIC_BEHAVIORS = ['target_side', 'self_initiated', 'both_interaction', 'target_initiated']
+const SEMANTIC_OUTCOMES = ['planned', 'fulfilled', 'cancelled_delayed', 'pending', 'ai_reviewed']
+const SEMANTIC_RISKS = ['risk_event', 'rejected', 'cold', 'vague_delay']
+const INITIATORS = ['target', 'self', 'both', 'unknown']
+const RESPONSES = ['accepted', 'rejected', 'pending', 'unclear', 'none']
+const COMMITMENT_TYPES = ['meal_invitation', 'movie_invitation', 'meet_invitation', 'chat_followup', 'gift_or_help', 'other', 'none']
 
 function trimText(value) {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
@@ -37,6 +44,19 @@ function serializeCaseProfile(profile) {
   }
 
   return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'
+}
+
+function describeSubjectRole(role) {
+  if (role === 'self') {
+    return 'self：这条记录主要描述用户自己。文本里的“我”是用户本人，不是关系对象。不要把用户的穿着、化妆、准备、情绪、表达当成对方释放的信号；请分析它可能怎样影响互动，以及后续应该观察对方什么反应。'
+  }
+  if (role === 'both') {
+    return 'both：这条记录描述双方互动。请先拆开“用户做了什么”和“关系对象回应/做了什么”，不要把用户自己的主动当成对方主动；只有对方的回应、承诺、兑现、回避等动作才能作为对方信号。'
+  }
+  if (role === 'unknown') {
+    return 'unknown：行为主体不确定。请弱化权重，优先判为 note；除非文本明确写出对方回应、承诺、兑现、回避或失约，否则不要把它当成对方意向或风险信号。'
+  }
+  return 'target：这条记录主要描述关系对象。文本里的“他/她/对方”才是主要分析对象，请分析对方行为释放的关系信号。'
 }
 
 function normalizeSettings(settings) {
@@ -109,11 +129,123 @@ function classifyTimelineEvent(description) {
   return 'note'
 }
 
-function fallbackUnderstandEvent(params) {
+function includesAnyText(text, keywords) {
+  return keywords.some((item) => text.includes(item))
+}
+
+function pushUnique(list, value) {
+  if (value && !list.includes(value)) list.push(value)
+}
+
+function normalizeSemanticList(value, allowed) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => String(item || '').trim())
+    .filter((item, index, list) => allowed.includes(item) && list.indexOf(item) === index)
+}
+
+function normalizeEnum(value, allowed, fallback) {
+  const normalized = String(value || '').trim()
+  return allowed.includes(normalized) ? normalized : fallback
+}
+
+function fallbackSemanticTags(params) {
+  const text = String(params.description || '').toLowerCase()
+  const scene = []
+  const behavior = []
+  const outcome = []
+  const risk = []
+
+  if (includesAnyText(text, ['见面', '碰面', '线下见', '出来见', '约会', '赴约', '见到了', '碰面了', '出来了'])) pushUnique(scene, 'offline_meet')
+  if (includesAnyText(text, ['电影', '影院', '看电影'])) pushUnique(scene, 'movie')
+  if (includesAnyText(text, ['吃饭', '晚饭', '午饭', '早餐', '夜宵', '火锅', '烧烤', '餐厅'])) pushUnique(scene, 'meal')
+  if (includesAnyText(text, ['咖啡', '奶茶', '喝咖啡', '喝奶茶'])) pushUnique(scene, 'coffee_tea')
+  if (includesAnyText(text, ['散步', '逛街', '走走', '压马路'])) pushUnique(scene, 'walk_shop')
+  if (includesAnyText(text, ['朋友局', '朋友一起', '同学聚会', '多人活动', '聚会', '带我见朋友', '介绍朋友'])) pushUnique(scene, 'group_social')
+  if (includesAnyText(text, ['旅行', '旅游', '出游', '郊游', '露营'])) pushUnique(scene, 'trip')
+  if (includesAnyText(text, ['聊天', '微信', '消息', '回复', '发消息', '语音', '电话', '视频'])) pushUnique(scene, 'chat')
+
+  const subjectRole = ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target'
+  if (subjectRole === 'target') pushUnique(behavior, 'target_side')
+  if (subjectRole === 'self') pushUnique(behavior, 'self_initiated')
+  if (subjectRole === 'both') pushUnique(behavior, 'both_interaction')
+  if (includesAnyText(text, ['主动约我', '主动找我', '主动联系我', '他主动', '她主动', '对方主动', '邀请我', '来找我', '主动确认'])) pushUnique(behavior, 'target_initiated')
+  if (includesAnyText(text, ['我主动', '我先', '我约', '我问', '我发', '我联系'])) pushUnique(behavior, 'self_initiated')
+
+  if (includesAnyText(text, ['答应', '说好', '确定', '确认', '约好', '安排', '计划', '下次', '改天', '周末'])) pushUnique(outcome, 'planned')
+  if (includesAnyText(text, [
+    '兑现', '落实', '说到做到', '真的来了', '来了', '到了', '赴约', '见到了',
+    '一起去了', '一起看了', '一起吃了', '一起吃饭了', '一起吃饭', '吃完饭',
+    '吃过饭', '实际吃饭', '真的一起吃', '真的去吃', '按时到了', '到场了',
+    '安排好了', '定好了'
+  ])) pushUnique(outcome, 'fulfilled')
+  if (includesAnyText(text, ['取消', '改期', '推迟', '放鸽子', '失约', '没来', '拖延', '改口'])) pushUnique(outcome, 'cancelled_delayed')
+  if (includesAnyText(text, ['待确认', '再看', '看情况', '以后再说', '不确定', '到时候再说'])) pushUnique(outcome, 'pending')
+
+  if (classifyTimelineEvent(params.description) === 'risk') pushUnique(risk, 'risk_event')
+  if (includesAnyText(text, ['拒绝', '被拒', '婉拒', '不去', '不想', '没答应', '算了', '推掉', '来不了'])) pushUnique(risk, 'rejected')
+  if (includesAnyText(text, ['已读不回', '没回', '不回', '冷淡', '敷衍', '消失', '回避'])) pushUnique(risk, 'cold')
+  if (includesAnyText(text, ['再看', '看情况', '以后再说', '不确定', '拖延', '改口'])) pushUnique(risk, 'vague_delay')
+
+  let commitmentType = 'none'
+  if (scene.includes('meal')) commitmentType = 'meal_invitation'
+  else if (scene.includes('movie')) commitmentType = 'movie_invitation'
+  else if (scene.includes('offline_meet')) commitmentType = 'meet_invitation'
+  else if (scene.includes('chat')) commitmentType = 'chat_followup'
+
   return {
-    eventType: classifyTimelineEvent(params.description),
-    eventTitle: buildTimelineRecordTitle(params.description) || '关系记录',
-    summary: '当前使用规则自动识别事件类型与标题。',
+    scene,
+    behavior,
+    outcome,
+    risk,
+    initiator: behavior.includes('target_initiated') ? 'target' : behavior.includes('self_initiated') ? 'self' : subjectRole === 'both' ? 'both' : subjectRole,
+    response: risk.includes('rejected') ? 'rejected' : outcome.includes('fulfilled') || outcome.includes('planned') ? 'accepted' : outcome.includes('pending') ? 'pending' : 'unclear',
+    commitment: {
+      exists: outcome.includes('planned') || outcome.includes('fulfilled') || commitmentType !== 'none',
+      type: commitmentType,
+      promisedBy: subjectRole === 'self' ? 'self' : subjectRole === 'both' ? 'unknown' : 'target',
+      fulfilled: outcome.includes('fulfilled')
+    },
+    source: 'rules'
+  }
+}
+
+function normalizeSemanticTags(value, params, source = 'ai') {
+  const semantic = value && typeof value === 'object' ? value : {}
+  const fallback = fallbackSemanticTags(params)
+  const commitment = semantic.commitment && typeof semantic.commitment === 'object' ? semantic.commitment : {}
+  const scene = normalizeSemanticList(semantic.scene, SEMANTIC_SCENES)
+  const behavior = normalizeSemanticList(semantic.behavior, SEMANTIC_BEHAVIORS)
+  const outcome = normalizeSemanticList(semantic.outcome, SEMANTIC_OUTCOMES)
+  const risk = normalizeSemanticList(semantic.risk, SEMANTIC_RISKS)
+  return {
+    scene: scene.length ? scene : fallback.scene,
+    behavior: behavior.length ? behavior : fallback.behavior,
+    outcome: outcome.length ? outcome : fallback.outcome,
+    risk: risk.length ? risk : fallback.risk,
+    initiator: normalizeEnum(semantic.initiator, INITIATORS, fallback.initiator),
+    response: normalizeEnum(semantic.response, RESPONSES, fallback.response),
+    commitment: {
+      exists: typeof commitment.exists === 'boolean' ? commitment.exists : fallback.commitment.exists,
+      type: normalizeEnum(commitment.type, COMMITMENT_TYPES, fallback.commitment.type),
+      promisedBy: normalizeEnum(commitment.promisedBy, INITIATORS, fallback.commitment.promisedBy),
+      fulfilled: typeof commitment.fulfilled === 'boolean' ? commitment.fulfilled : fallback.commitment.fulfilled
+    },
+    source
+  }
+}
+
+function fallbackUnderstandEvent(params) {
+  const subjectRole = ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target'
+  const isWeakContext = subjectRole === 'self' || subjectRole === 'unknown'
+  const semanticTags = fallbackSemanticTags(params)
+  return {
+    eventType: isWeakContext ? 'note' : classifyTimelineEvent(params.description),
+    eventTitle: buildTimelineRecordTitle(params.description) || (subjectRole === 'self' ? '我的状态记录' : '关系记录'),
+    summary: isWeakContext
+      ? '这条记录先作为上下文记录，不直接当作对方信号。'
+      : '当前使用规则自动识别事件类型与标题。',
+    semanticTags,
     usedAI: false
   }
 }
@@ -130,10 +262,22 @@ async function inferTimelineRecord(params) {
     'eventType 只能是 positive、risk、verification、note 四选一。',
     'eventTitle 要求简短中文，适合时间线展示，尽量不超过 20 个字。',
     'summary 用一句中文简短说明你为什么这么判断。',
+    'semanticTags 是标准语义维度，必须输出对象：',
+    '- scene: 数组，可选 offline_meet/movie/meal/coffee_tea/walk_shop/group_social/trip/chat。',
+    '- behavior: 数组，可选 target_side/self_initiated/both_interaction/target_initiated。',
+    '- outcome: 数组，可选 planned/fulfilled/cancelled_delayed/pending。已真实发生、到场、吃完饭、赴约等都算 fulfilled。',
+    '- risk: 数组，可选 risk_event/rejected/cold/vague_delay。',
+    '- initiator: target/self/both/unknown。',
+    '- response: accepted/rejected/pending/unclear/none。',
+    '- commitment: { exists:boolean, type: meal_invitation/movie_invitation/meet_invitation/chat_followup/gift_or_help/other/none, promisedBy: target/self/both/unknown, fulfilled:boolean }。',
+    describeSubjectRole(params.subjectRole),
+    '如果 subjectRole=self，eventTitle 可以写成“我做了某个准备/我当时的状态”；eventType 通常使用 note，除非描述中明确包含对方的回应或承诺。',
+    '如果 subjectRole=both，必须区分用户动作和对方动作，不能因为“我主动”就推高对方意向。',
+    '如果 subjectRole=unknown，除非文本明确写出对方动作，否则 eventType 使用 note，summary 提醒后续补清主体。',
     '拒绝、婉拒、回避、失约、冷淡、拖延等负向边界或退缩信号，应优先判为 risk。',
     `对象画像（辅助信息）：${serializeCaseProfile(params.caseProfile)}`,
     `最近时间线（辅助信息）：${JSON.stringify((params.recentTimeline || []).slice(0, 3))}`,
-    `新事件描述：${JSON.stringify({ description: params.description })}`
+    `新事件描述：${JSON.stringify({ subjectRole: ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target', description: params.description })}`
   ].join('\n')
 
   try {
@@ -149,7 +293,7 @@ async function inferTimelineRecord(params) {
         { role: 'user', content: prompt }
       ],
       temperature: 0.1,
-      maxTokens: 180
+      maxTokens: 420
     })
 
     if (!response.ok) {
@@ -181,6 +325,7 @@ async function inferTimelineRecord(params) {
       eventType,
       eventTitle,
       summary: typeof parsed.summary === 'string' ? parsed.summary : 'AI 已完成事件理解。',
+      semanticTags: normalizeSemanticTags(parsed.semanticTags, params, 'ai'),
       usedAI: true
     }
   } catch (error) {

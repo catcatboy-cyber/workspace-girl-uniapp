@@ -1,17 +1,80 @@
-<script>
-export default {
-  onLaunch: function () {
-    console.log('App Launch')
-  },
-  onShow: function () {
-    console.log('App Show')
-  },
-  onHide: function () {
-    console.log('App Hide')
-  },
-}
+<script setup lang="ts">
+import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+
+onLaunch(() => { console.log('[app] Launch') })
+onShow(() => { console.log('[app] Show') })
+onHide(() => { console.log('[app] Hide') })
 </script>
 
 <style>
-/*每个页面公共css */
+page {
+  background: #f6f1e8;
+  color: #201914;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+button {
+  box-sizing: border-box;
+}
+
+button::after {
+  border: none;
+}
+
+.page .card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0) 150rpx),
+    linear-gradient(135deg, rgba(201, 164, 92, 0.08), rgba(18, 60, 54, 0.025) 52%, rgba(255, 255, 255, 0) 100%),
+    var(--card-bg, #fffcf7);
+  border-color: rgba(18, 60, 54, 0.1);
+  box-shadow:
+    0 18rpx 38rpx rgba(32, 25, 20, 0.07),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78);
+}
+
+.page .hero-card {
+  background:
+    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+}
+
+.page .card .h2,
+.page .card .h3,
+.page .card .row-title,
+.page .card .a-title,
+.page .card .metric-title,
+.page .card .question-title,
+.assessment-form .card .h2 {
+  padding-left: 16rpx;
+  border-left: 6rpx solid var(--accent, #c9a45c);
+  line-height: 1.35;
+}
+
+.page .hero-card .h2,
+.page .hero-card .h3 {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.page .kpi-item,
+.page .trend-box,
+.page .question,
+.page .model-card,
+.page .timeline-item,
+.page .case-mini,
+.page .achievement-item,
+.assessment-form .question {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 120rpx),
+    var(--card-soft, #fffaf3);
+  border: 1rpx solid rgba(18, 60, 54, 0.1);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.85),
+    0 8rpx 18rpx rgba(32, 25, 20, 0.035);
+}
+
+.page .badge,
+.page .pill,
+.assessment-form .toggle-chip {
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.45);
+}
 </style>

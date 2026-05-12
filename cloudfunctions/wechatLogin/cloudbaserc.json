@@ -1,0 +1,10 @@
+{
+  "envId": "cloud1-d8gqh3f5g49993a5a",
+  "functionRoot": "./",
+  "functions": [
+    {
+      "name": "wechatLogin",
+      "timeout": 15
+    }
+  ]
+}

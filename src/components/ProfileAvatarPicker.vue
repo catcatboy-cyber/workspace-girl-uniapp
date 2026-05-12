@@ -2,13 +2,13 @@
   <view class="avatar-picker">
     <view class="avatar-preview">
       <view class="profile-avatar lg">
-        <image v-if="avatarValue" :src="avatarValue" mode="aspectFill" />
+        <image v-if="avatarPreviewSrc" :src="avatarPreviewSrc" mode="aspectFill" />
         <text v-else class="avatar-placeholder">像</text>
       </view>
       <view class="avatar-info">
         <text class="field-label">头像</text>
         <text class="muted">{{ currentLabel }}</text>
-        <text class="muted">可选本地动漫头像，也可以直接从相册选照片。</text>
+        <text class="muted">可选本地动漫头像，也可以直接从相册选择照片。</text>
       </view>
     </view>
 
@@ -27,20 +27,24 @@
     </view>
 
     <view class="avatar-actions">
-      <button class="btn-secondary" @click="chooseImage">从相册选择照片</button>
-      <button v-if="avatarValue" class="btn-secondary" @click="clearAvatar">清空头像</button>
+      <button class="btn-secondary" :disabled="uploading" @click="chooseImage">
+        {{ uploading ? '上传中...' : '从相册选择照片' }}
+      </button>
+      <button v-if="avatarValue" class="btn-secondary" :disabled="uploading" @click="clearAvatar">清空头像</button>
     </view>
 
-    <text v-if="!isPresetAvatar(avatarValue) && avatarValue.startsWith('data:image/')" class="muted">
-      当前使用的是你本地选取的照片。
+    <text v-if="!isPresetAvatar(avatarValue) && avatarValue" class="muted">
+      当前使用的是你上传到云存储的自定义头像。
     </text>
     <text v-if="uploadError" class="error-text">{{ uploadError }}</text>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { presetAvatarOptions, isPresetAvatar } from '@/utils/avatar-options'
+import { uploadFile } from '@/utils/api'
+import { createAvatarCloudPath, resolveAvatarSrc } from '@/utils/avatar'
 
 const props = defineProps<{
   modelValue?: string
@@ -48,16 +52,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
+  (e: 'preview-change', value: string): void
 }>()
 
-const avatarValue = ref(props.modelValue || '')
+const avatarValue = ref('')
+const avatarPreviewSrc = ref('')
 const uploadError = ref('')
+const uploading = ref(false)
 
 const currentLabel = computed(() => {
   if (!avatarValue.value) return '未设置头像'
   const preset = presetAvatarOptions.find((item) => item.value === avatarValue.value)
   if (preset) return `当前已选：${preset.label}`
-  if (avatarValue.value.startsWith('data:image/')) return '当前已选：本地照片'
   return '当前已选：自定义头像'
 })
 
@@ -65,14 +71,21 @@ watch(avatarValue, (newVal) => {
   emit('update:modelValue', newVal)
 })
 
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== avatarValue.value) {
-    avatarValue.value = newVal || ''
-  }
+watch(avatarPreviewSrc, (newVal) => {
+  emit('preview-change', newVal)
 })
+
+watch(() => props.modelValue, async (newVal) => {
+  const nextValue = newVal || ''
+  if (nextValue !== avatarValue.value) {
+    avatarValue.value = nextValue
+  }
+  avatarPreviewSrc.value = await resolveAvatarSrc(nextValue)
+}, { immediate: true })
 
 function selectPreset(value: string) {
   avatarValue.value = value
+  avatarPreviewSrc.value = value
   uploadError.value = ''
 }
 
@@ -84,7 +97,6 @@ function chooseImage() {
     success: (res) => {
       const tempFilePath = res.tempFilePaths[0]
 
-      // 获取文件信息检查大小
       uni.getFileInfo({
         filePath: tempFilePath,
         success: (fileInfo) => {
@@ -93,32 +105,41 @@ function chooseImage() {
             return
           }
 
-          // 转换为 base64
-          uni.getFileSystemManager().readFile({
-            filePath: tempFilePath,
-            encoding: 'base64',
-            success: (readRes) => {
-              avatarValue.value = `data:image/jpeg;base64,${readRes.data}`
+          ;(async () => {
+            try {
+              uploading.value = true
               uploadError.value = ''
-            },
-            fail: () => {
-              uploadError.value = '读取图片失败'
+
+              let uploadSource: any = tempFilePath
+              // #ifdef H5
+              uploadSource = (res.tempFiles && (res.tempFiles[0] as any)?.file) || (res.tempFiles && res.tempFiles[0]) || tempFilePath
+              // #endif
+
+              const fileID = await uploadFile(uploadSource, createAvatarCloudPath(tempFilePath))
+              avatarValue.value = fileID
+              avatarPreviewSrc.value = await resolveAvatarSrc(fileID)
+            } catch (error) {
+              console.error('avatar upload failed:', error)
+              uploadError.value = '上传图片失败'
+            } finally {
+              uploading.value = false
             }
-          })
+          })()
         },
         fail: () => {
-          uploadError.value = '获取文件信息失败'
+          uploadError.value = '获��文件信息失败'
         }
       })
     },
     fail: () => {
-      // 用户取消选择，不显示错误
+      // 用户取消选择
     }
   })
 }
 
 function clearAvatar() {
   avatarValue.value = ''
+  avatarPreviewSrc.value = ''
   uploadError.value = ''
 }
 </script>
@@ -234,5 +255,48 @@ function clearAvatar() {
   font-size: 24rpx;
   color: #b85c38;
   margin-top: 12rpx;
+}
+
+/* Premium visual pass */
+.profile-avatar {
+  background: var(--accent-soft, #efe6d6);
+  border: 2rpx solid rgba(201, 164, 92, 0.42);
+  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.1);
+}
+
+.avatar-placeholder {
+  color: var(--text-muted, #76695c);
+}
+
+.field-label,
+.preset-label {
+  color: var(--text-main, #201914);
+}
+
+.muted {
+  color: var(--text-muted, #76695c);
+}
+
+.avatar-preset {
+  background: var(--card-soft, #fffaf3);
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+}
+
+.avatar-preset.active {
+  background: var(--accent-soft, #efe6d6);
+  border-color: var(--accent, #c9a45c);
+  box-shadow: 0 10rpx 22rpx rgba(32, 25, 20, 0.08);
+}
+
+.btn-secondary {
+  background: rgba(255, 252, 247, 0.92);
+  border: 1rpx solid rgba(18, 60, 54, 0.25);
+  color: var(--primary, #123c36);
+  border-radius: 14rpx;
+  font-weight: 600;
+}
+
+.error-text {
+  color: var(--risk, #b84a3a);
 }
 </style>

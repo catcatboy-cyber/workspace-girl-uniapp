@@ -39,7 +39,7 @@ location.reload()
 
 **当前配置**:
 ```typescript
-export const ENV_ID = 'catboy-d0gg4yc4ief533dea'
+export const ENV_ID = 'cloud1-d8gqh3f5g49993a5a'
 ```
 
 **验证**: 访问 https://console.cloud.tencent.com/tcb 确认环境 ID 正确
@@ -50,19 +50,19 @@ export const ENV_ID = 'catboy-d0gg4yc4ief533dea'
 **解决方案**: 在腾讯云控制台配置安全域名
 1. 访问 https://console.cloud.tencent.com/tcb/env/safety
 2. 添加你的域名到 WEB 安全域名列表
-3. 添加：`https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com`
+3. 添加：`https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com`
 
 #### D. 云函数未部署或部署失败
 **检查**:
 ```bash
-cloudbase functions:list -e catboy-d0gg4yc4ief533dea | grep getCaseDetail
+cloudbase functions:list -e cloud1-d8gqh3f5g49993a5a | grep getCaseDetail
 ```
 
 **预期输出**: 应该看到 getCaseDetail 且状态为 "Deployment completed"
 
 #### E. 网络连接问题
 **检查**: 
-- 是否能访问 https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+- 是否能访问 https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
 - 是否能访问腾讯云 API 域名
 
 ### 3. 临时解决方案
@@ -124,7 +124,7 @@ import('@/utils/cloudbase').then(({ auth }) => {
 cloudbase functions:log getCaseDetail -e catboy-yc4ief533dea --limit 20
 
 # 查看错误日志
-cloudbase functions:log getCaseDetail -e catboy-d0gg4yc4ief533dea --level error
+cloudbase functions:log getCaseDetail -e cloud1-d8gqh3f5g49993a5a --level error
 ```
 
 ### 6. 前端代码检查点
@@ -187,7 +187,7 @@ export async function getCaseDetail(_userId: string, caseId: string) {
 重新部署云函数：
 ```bash
 cd "C:\Users\catca\.openclaw\workspace-girl-uniapp"
-echo "y" | cloudbase functions:deploy getCaseDetail -e catboy-d0gg4yc4ief533dea
+echo "y" | cloudbase functions:deploy getCaseDetail -e cloud1-d8gqh3f5g49993a5a
 ```
 
 ### 8. 收集错误信息

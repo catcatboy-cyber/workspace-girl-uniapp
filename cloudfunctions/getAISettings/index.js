@@ -3,6 +3,12 @@ const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_share
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
+const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
+
+function normalizeDoc(res) {
+  if (Array.isArray(res?.data)) return res.data[0] || null
+  return res?.data || null
+}
 
 function redactKey(key) {
   if (!key || typeof key !== 'string') return ''
@@ -70,18 +76,32 @@ function migrateToV2(settings) {
 
 exports.main = async (event) => {
   try {
-    const userId = await requireAuthenticatedUserId(app)
+    const userId = await requireAuthenticatedUserId(app, event)
 
-    const { data } = await db.collection('system_settings')
-      .where({ userId })
-      .limit(1)
-      .get()
+    const globalDocRes = await db.collection('system_settings').doc(GLOBAL_AI_SETTINGS_ID).get().catch(() => null)
+    let rawSettings = normalizeDoc(globalDocRes)
 
-    if (!data || data.length === 0) {
+    if (!rawSettings) {
+      const globalScopeRes = await db.collection('system_settings')
+        .where({ scope: 'global', key: 'ai' })
+        .limit(1)
+        .get()
+      rawSettings = globalScopeRes.data && globalScopeRes.data.length > 0 ? globalScopeRes.data[0] : null
+    }
+
+    if (!rawSettings) {
+      const { data } = await db.collection('system_settings')
+        .where({ userId })
+        .limit(1)
+        .get()
+      rawSettings = data && data.length > 0 ? data[0] : null
+    }
+
+    if (!rawSettings) {
       return { success: true, settings: null }
     }
 
-    const settings = migrateToV2({ ...data[0] })
+    const settings = migrateToV2({ ...rawSettings })
 
     return { success: true, settings }
   } catch (error) {

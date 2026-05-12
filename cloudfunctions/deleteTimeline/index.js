@@ -6,6 +6,35 @@ const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = req
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
+const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
+
+function normalizeDoc(res) {
+  if (Array.isArray(res?.data)) return res.data[0] || null
+  return res?.data || null
+}
+
+async function getAISettings(userId) {
+  const globalDocRes = await db.collection('system_settings').doc(GLOBAL_AI_SETTINGS_ID).get().catch(() => null)
+  let settings = normalizeDoc(globalDocRes)
+
+  if (!settings) {
+    const globalScopeRes = await db.collection('system_settings')
+      .where({ scope: 'global', key: 'ai' })
+      .limit(1)
+      .get()
+    settings = globalScopeRes.data && globalScopeRes.data.length > 0 ? globalScopeRes.data[0] : null
+  }
+
+  if (!settings) {
+    const userSettingsRes = await db.collection('system_settings')
+      .where({ userId })
+      .limit(1)
+      .get()
+    settings = userSettingsRes.data && userSettingsRes.data.length > 0 ? userSettingsRes.data[0] : null
+  }
+
+  return settings
+}
 
 function randomHex(n) {
   return crypto.randomBytes(n).toString('hex')
@@ -67,7 +96,7 @@ exports.main = async (event) => {
   const { caseId, recordId } = event
 
   try {
-    const userId = await requireAuthenticatedUserId(app)
+    const userId = await requireAuthenticatedUserId(app, event)
     if (!caseId) return { success: false, message: '缺少档案ID' }
     if (!recordId) return { success: false, message: '缺少记录ID' }
 
@@ -113,11 +142,7 @@ exports.main = async (event) => {
       snapshot.timeline.filter((item) => !isSystemTimelineRecord(item) && item._id !== recordId)
     )
 
-    const settingsRes = await db.collection('system_settings')
-      .where({ userId })
-      .limit(1)
-      .get()
-    const aiSettings = settingsRes.data && settingsRes.data.length > 0 ? settingsRes.data[0] : null
+    const aiSettings = await getAISettings(userId)
 
     try {
       await db.collection('assessments').where({ caseId }).remove()

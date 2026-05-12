@@ -4,10 +4,72 @@ const {
   postChatCompletions,
   getAIErrorMessage
 } = require('./_shared/ai-http')
-const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { buildAuthErrorResponse } = require('./_shared/auth')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
+const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
+
+function normalizeList(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+function normalizeDoc(res) {
+  if (Array.isArray(res?.data)) return res.data[0] || null
+  return res?.data || null
+}
+
+async function getStrictAuthUserId() {
+  const userInfo = await app.auth().getUserInfo()
+  const candidates = [
+    userInfo?.customUserId,
+    userInfo?.uid,
+    userInfo?.userInfo?.customUserId,
+    userInfo?.userInfo?.uid,
+    userInfo?.user?.customUserId,
+    userInfo?.user?.uid
+  ]
+
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+
+  const error = new Error('UNAUTHENTICATED')
+  error.code = 'UNAUTHENTICATED'
+  throw error
+}
+
+async function requireAdminUserId() {
+  const userId = await getStrictAuthUserId()
+  const userRes = await db.collection('users').doc(userId).get()
+  const user = normalizeDoc(userRes)
+  const adminEmails = normalizeList(process.env.ADMIN_EMAILS)
+  const email = String(user?.email || '').trim().toLowerCase()
+  const isAdmin = Boolean(user?.isAdmin) || user?.role === 'admin' || adminEmails.includes(email)
+
+  if (!isAdmin) {
+    const error = new Error('ADMIN_REQUIRED')
+    error.code = 'ADMIN_REQUIRED'
+    throw error
+  }
+}
+
+async function getGlobalAISettingsRaw() {
+  const byDoc = await db.collection('system_settings').doc(GLOBAL_AI_SETTINGS_ID).get().catch(() => null)
+  const doc = normalizeDoc(byDoc)
+  if (doc) return doc
+
+  const byScope = await db.collection('system_settings')
+    .where({ scope: 'global', key: 'ai' })
+    .limit(1)
+    .get()
+  if (byScope.data && byScope.data.length > 0) return byScope.data[0]
+
+  return null
+}
 
 function buildNonJsonResponseMessage(responseText, baseUrl, status) {
   const trimmed = String(responseText || '').trim()
@@ -27,14 +89,9 @@ function buildNonJsonResponseMessage(responseText, baseUrl, status) {
 
 exports.main = async (event) => {
   try {
-    const userId = await requireAuthenticatedUserId(app)
+    await requireAdminUserId()
 
-    const { data } = await db.collection('system_settings')
-      .where({ userId })
-      .limit(1)
-      .get()
-
-    const savedSettings = data && data.length > 0 ? data[0] : null
+    const savedSettings = await getGlobalAISettingsRaw()
 
     // 新版：通过 modelId 在 aiModels 中查找
     const modelId = event.modelId
@@ -117,6 +174,9 @@ exports.main = async (event) => {
       summary
     }
   } catch (error) {
+    if (error?.code === 'ADMIN_REQUIRED') {
+      return { success: false, message: '当前账号没有后台管理权限' }
+    }
     const authError = buildAuthErrorResponse(error)
     if (authError) return authError
     console.error('testAIConnection error:', error)

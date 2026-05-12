@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>微信小程序 UI 方案预览</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #eef0f4;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .board {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    .top {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+    .sub {
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 22px;
+      align-items: start;
+    }
+    .option {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .option-head {
+      min-height: 106px;
+      padding: 18px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    .option-name {
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .option-desc {
+      display: block;
+      margin-top: 8px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .phone {
+      width: 100%;
+      max-width: 344px;
+      margin: 0 auto;
+      border-radius: 34px;
+      padding: 12px;
+      background: #111827;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+    }
+    .screen {
+      min-height: 720px;
+      overflow: hidden;
+      border-radius: 26px;
+      position: relative;
+      padding: 18px 16px 82px;
+    }
+    .statusbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      opacity: 0.86;
+    }
+    .hero {
+      padding: 18px;
+      border-radius: 24px;
+      margin-bottom: 14px;
+    }
+    .eyebrow {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.72;
+    }
+    .title {
+      display: block;
+      margin-top: 6px;
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+    .copy {
+      display: block;
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.55;
+      opacity: 0.78;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .kpi, .card, .input, .mini-card {
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0.66;
+    }
+    .num {
+      display: block;
+      margin-top: 4px;
+      font-size: 23px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .card {
+      margin-top: 12px;
+    }
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 850;
+      margin-bottom: 10px;
+    }
+    .tagrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .input {
+      min-height: 82px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .fake-textarea {
+      height: 34px;
+      border-radius: 12px;
+      padding: 9px 10px;
+      font-size: 12px;
+    }
+    .btn {
+      height: 42px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 850;
+    }
+    .trend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .bars {
+      display: flex;
+      align-items: end;
+      gap: 5px;
+      height: 52px;
+      margin-top: 10px;
+    }
+    .bar {
+      flex: 1;
+      border-radius: 999px 999px 4px 4px;
+      min-height: 10px;
+    }
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .event {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 9px;
+      align-items: start;
+    }
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      margin: 5px auto 0;
+    }
+    .event-text {
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+    .event-sub {
+      margin-top: 3px;
+      font-size: 10px;
+      opacity: 0.62;
+    }
+    .tabbar {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      height: 58px;
+      border-radius: 22px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+      padding: 6px;
+      gap: 4px;
+    }
+    .tab {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 750;
+      opacity: 0.64;
+    }
+    .tab.active { opacity: 1; }
+    .icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 7px;
+      margin: 0 auto 4px;
+    }
+
+    .a .screen { background: radial-gradient(circle at 20% 0%, #ffd5e5 0, transparent 32%), linear-gradient(180deg, #fff1f2, #fff7ed); color: #881337; }
+    .a .hero { background: linear-gradient(135deg, #e11d48, #fb7185 48%, #ea580c); color: white; box-shadow: 0 18px 38px rgba(225, 29, 72, 0.26); }
+    .a .kpi, .a .card, .a .input { background: rgba(255,255,255,0.78); border: 1px solid rgba(251,113,133,0.26); box-shadow: 0 12px 28px rgba(136,19,55,0.08); backdrop-filter: blur(8px); }
+    .a .tag { background: #ffe4e6; color: #9f1239; }
+    .a .fake-textarea { background: #fff1f2; color: #9f1239; }
+    .a .btn { background: linear-gradient(135deg, #e11d48, #fb7185); color: white; }
+    .a .bar:nth-child(odd), .a .dot { background: #e11d48; }
+    .a .bar:nth-child(even) { background: #fb7185; }
+    .a .tabbar { background: rgba(255,255,255,0.82); border: 1px solid rgba(251,113,133,0.24); }
+    .a .tab.active, .a .num { color: #e11d48; }
+    .a .icon { background: #fecdd3; }
+
+    .b .screen { background: #fffdf5; color: #111; }
+    .b .hero, .b .kpi, .b .card, .b .input, .b .tabbar { background: #fff; border: 3px solid #111; box-shadow: 5px 5px 0 #111; }
+    .b .hero { background: #ff6b6b; color: #111; transform: rotate(-1deg); }
+    .b .title { text-transform: uppercase; }
+    .b .tag { background: #ffd93d; color: #111; border: 2px solid #111; }
+    .b .fake-textarea { background: #e6e6fa; border: 2px solid #111; }
+    .b .btn { background: #4ecdc4; color: #111; border: 3px solid #111; box-shadow: 3px 3px 0 #111; }
+    .b .bar:nth-child(odd), .b .dot { background: #ff6b6b; }
+    .b .bar:nth-child(even) { background: #4ecdc4; }
+    .b .tab.active, .b .num { color: #ff5252; }
+    .b .icon { background: #ffd93d; border: 2px solid #111; }
+
+    .c .screen { background: linear-gradient(180deg, #f8f1fa, #fff7f1); color: #332f3a; }
+    .c .hero { background: rgba(255,255,255,0.7); border: 1px solid rgba(167,139,250,0.22); box-shadow: inset -3px -3px 10px rgba(255,255,255,0.9), 10px 12px 24px rgba(124,58,237,0.12); }
+    .c .title { color: #7c3aed; }
+    .c .kpi, .c .card, .c .input { background: rgba(255,255,255,0.74); border: 1px solid rgba(219,39,119,0.12); box-shadow: inset -2px -2px 8px rgba(255,255,255,0.9), 8px 10px 22px rgba(124,58,237,0.08); }
+    .c .tag { background: #fce7f3; color: #9d174d; }
+    .c .fake-textarea { background: #f4f1fa; color: #635f69; }
+    .c .btn { background: linear-gradient(135deg, #a78bfa, #db2777); color: white; }
+    .c .bar:nth-child(odd), .c .dot { background: #7c3aed; }
+    .c .bar:nth-child(even) { background: #db2777; }
+    .c .tabbar { background: rgba(255,255,255,0.82); box-shadow: 0 12px 28px rgba(124,58,237,0.12); }
+    .c .tab.active, .c .num { color: #7c3aed; }
+    .c .icon { background: #e9d5ff; }
+
+    .d .screen { background: #f7faf9; color: #10201f; }
+    .d .hero { background: #10201f; color: white; box-shadow: 0 16px 36px rgba(16,32,31,0.18); }
+    .d .kpi, .d .card, .d .input { background: white; border: 1px solid #d8e4e1; box-shadow: 0 8px 20px rgba(16,32,31,0.05); border-radius: 14px; }
+    .d .tag { background: #e6f7f0; color: #0f766e; }
+    .d .fake-textarea { background: #f1f5f4; color: #64748b; }
+    .d .btn { background: #0f766e; color: white; border-radius: 12px; }
+    .d .bar:nth-child(odd), .d .dot { background: #0f766e; }
+    .d .bar:nth-child(even) { background: #ef4444; }
+    .d .tabbar { background: white; border: 1px solid #d8e4e1; }
+    .d .tab.active, .d .num { color: #0f766e; }
+    .d .icon { background: #ccfbf1; }
+
+    @media (max-width: 1180px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .board { padding: 18px; }
+      .top { display: block; }
+      .grid { grid-template-columns: 1fr; }
+      .phone { max-width: 390px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="top">
+      <div>
+        <h1>微信小程序 UI 方案预览</h1>
+        <p class="sub">只展示纯界面方向。底部入口、页面顺序、数据字段和交互逻辑保持现有产品不变。</p>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="option a">
+        <div class="option-head">
+          <span class="option-name">A. Aurora Crush</span>
+          <span class="option-desc">恋爱类默认推荐。年轻、明亮、轻松，适合大学生暧昧/恋爱记录。</span>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>12:30</span><span>5G 100%</span></div>
+            <div class="hero">
+              <span class="eyebrow">Home / Active Crush</span>
+              <span class="title">优先追录新事件</span>
+              <span class="copy">当前对象：林同学。先记下刚刚发生了什么，再看 AI 即时研判。</span>
+              <div class="kpis">
+                <div class="kpi"><span class="label">意向</span><span class="num">76</span></div>
+                <div class="kpi"><span class="label">风险</span><span class="num">34</span></div>
+                <div class="kpi"><span class="label">记录</span><span class="num">18</span></div>
+              </div>
+            </div>
+            <div class="input">
+              <div class="card-title">一句话快速记录 <span class="tag">双方互动</span></div>
+              <div class="fake-textarea">他约我下课后去喝奶茶...</div>
+              <div class="btn">保存到当前对象</div>
+            </div>
+            <div class="card">
+              <div class="card-title">即时反馈 <span class="tag">AI 已参与</span></div>
+              <span class="copy">这次是轻微升温信号，重点看他是否继续主动确认时间。</span>
+              <div class="tagrow"><span class="tag">意向 +8</span><span class="tag">风险 -3</span><span class="tag">升温中</span></div>
+            </div>
+            <div class="card">
+              <div class="card-title">趋势数据</div>
+              <div class="trend">
+                <div><span class="label">意向走势</span><div class="bars"><div class="bar" style="height:30%"></div><div class="bar" style="height:42%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:76%"></div></div></div>
+                <div><span class="label">风险走势</span><div class="bars"><div class="bar" style="height:62%"></div><div class="bar" style="height:48%"></div><div class="bar" style="height:39%"></div><div class="bar" style="height:34%"></div></div></div>
+              </div>
+            </div>
+            <nav class="tabbar"><div class="tab active"><div class="icon"></div>首页</div><div class="tab"><div class="icon"></div>关系</div><div class="tab"><div class="icon"></div>时间轴</div><div class="tab"><div class="icon"></div>案例</div><div class="tab"><div class="icon"></div>我的</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <article class="option b">
+        <div class="option-head">
+          <span class="option-name">B. Campus Pop</span>
+          <span class="option-desc">校园贴纸感。高辨识度、强截图传播，但要控制信息不要太吵。</span>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>12:30</span><span>5G 100%</span></div>
+            <div class="hero">
+              <span class="eyebrow">Signal Board</span>
+              <span class="title">今天他有戏吗？</span>
+              <span class="copy">别靠脑补，先把真实互动记下来。</span>
+            </div>
+            <div class="kpis">
+              <div class="kpi"><span class="label">意向</span><span class="num">76</span></div>
+              <div class="kpi"><span class="label">风险</span><span class="num">34</span></div>
+              <div class="kpi"><span class="label">证据</span><span class="num">E4</span></div>
+            </div>
+            <div class="input">
+              <div class="card-title">快速记录 <span class="tag">别脑补</span></div>
+              <div class="fake-textarea">他说下次一起去图书馆...</div>
+              <div class="btn">记一笔</div>
+            </div>
+            <div class="card">
+              <div class="card-title">本次判定</div>
+              <span class="copy">主动推进 + 具体场景，意向上升；但还没确认时间。</span>
+              <div class="tagrow"><span class="tag">升温</span><span class="tag">待验证</span><span class="tag">+8</span></div>
+            </div>
+            <div class="card">
+              <div class="card-title">关键事件</div>
+              <div class="timeline">
+                <div class="event"><div class="dot"></div><div><div class="event-text">主动提到周末见面</div><div class="event-sub">意向 +9 / 风险 -2</div></div></div>
+                <div class="event"><div class="dot"></div><div><div class="event-text">回复间隔变短</div><div class="event-sub">意向 +4</div></div></div>
+              </div>
+            </div>
+            <nav class="tabbar"><div class="tab active"><div class="icon"></div>首页</div><div class="tab"><div class="icon"></div>关系</div><div class="tab"><div class="icon"></div>时间轴</div><div class="tab"><div class="icon"></div>案例</div><div class="tab"><div class="icon"></div>我的</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <article class="option c">
+        <div class="option-head">
+          <span class="option-name">C. Soft Diary</span>
+          <span class="option-desc">私密手账。更温柔，适合女大学生长期记录和夜间复盘。</span>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>12:30</span><span>5G 100%</span></div>
+            <div class="hero">
+              <span class="eyebrow">Relationship Diary</span>
+              <span class="title">今天的关系小记</span>
+              <span class="copy">不用急着下结论，先把发生过的事情温柔地放好。</span>
+            </div>
+            <div class="input">
+              <div class="card-title">一句话记录</div>
+              <div class="fake-textarea">我今天见他前有点紧张...</div>
+              <div class="btn">保存这条记录</div>
+            </div>
+            <div class="card">
+              <div class="card-title">最近阶段判断</div>
+              <span class="copy">整体有升温，但还需要看对方是否持续主动。</span>
+              <div class="tagrow"><span class="tag">暧昧推进</span><span class="tag">波动中等</span><span class="tag">证据 8 条</span></div>
+            </div>
+            <div class="card">
+              <div class="card-title">后续验证重点</div>
+              <div class="timeline">
+                <div class="event"><div class="dot"></div><div><div class="event-text">最该看：他是否会主动确认下次见面</div><div class="event-sub">依据证据：主动提到下次、聊天延续、约定尚未落地</div></div></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">趋势数据</div>
+              <div class="tagrow"><span class="tag">意向 76</span><span class="tag">+12/14天</span><span class="tag">风险 34</span></div>
+            </div>
+            <nav class="tabbar"><div class="tab active"><div class="icon"></div>首页</div><div class="tab"><div class="icon"></div>关系</div><div class="tab"><div class="icon"></div>时间轴</div><div class="tab"><div class="icon"></div>案例</div><div class="tab"><div class="icon"></div>我的</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <article class="option d">
+        <div class="option-head">
+          <span class="option-name">D. Signal Lab</span>
+          <span class="option-desc">理性数据工作台。男女都能接受，适合强调 AI 判断和证据链。</span>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>12:30</span><span>5G 100%</span></div>
+            <div class="hero">
+              <span class="eyebrow">Relationship Signal Lab</span>
+              <span class="title">当前对象总览</span>
+              <span class="copy">用真实事件减少误判，所有判断都回到证据链。</span>
+              <div class="kpis">
+                <div class="kpi"><span class="label">意向</span><span class="num">76</span></div>
+                <div class="kpi"><span class="label">风险</span><span class="num">34</span></div>
+                <div class="kpi"><span class="label">稳定性</span><span class="num">72%</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">趋势数据 <span class="tag">14 天</span></div>
+              <div class="trend">
+                <div><span class="label">意向 +12</span><div class="bars"><div class="bar" style="height:35%"></div><div class="bar" style="height:54%"></div><div class="bar" style="height:68%"></div><div class="bar" style="height:76%"></div></div></div>
+                <div><span class="label">风险 -7</span><div class="bars"><div class="bar" style="height:58%"></div><div class="bar" style="height:51%"></div><div class="bar" style="height:40%"></div><div class="bar" style="height:34%"></div></div></div>
+              </div>
+            </div>
+            <div class="input">
+              <div class="card-title">快速记录</div>
+              <div class="fake-textarea">输入真实发生的互动...</div>
+              <div class="btn">保存并重算</div>
+            </div>
+            <div class="card">
+              <div class="card-title">关键拐点 Top 3</div>
+              <div class="timeline">
+                <div class="event"><div class="dot"></div><div><div class="event-text">主动约见</div><div class="event-sub">意向 +9 / 风险 -3</div></div></div>
+                <div class="event"><div class="dot"></div><div><div class="event-text">兑现承诺</div><div class="event-sub">意向 +7 / 风险 -5</div></div></div>
+              </div>
+            </div>
+            <nav class="tabbar"><div class="tab active"><div class="icon"></div>首页</div><div class="tab"><div class="icon"></div>关系</div><div class="tab"><div class="icon"></div>时间轴</div><div class="tab"><div class="icon"></div>案例</div><div class="tab"><div class="icon"></div>我的</div></nav>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

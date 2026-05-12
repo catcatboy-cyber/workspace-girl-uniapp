@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
-  "envId": "catboy-d0gg4yc4ief533dea",
+  "envId": "cloud1-d8gqh3f5g49993a5a",
   "functionRoot": "./cloudfunctions",
   "functions": [
     {
@@ -22,8 +22,8 @@
       "installDependency": true
     },
     {
-      "name": "initDb",
-      "timeout": 30,
+      "name": "wechatLogin",
+      "timeout": 15,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -31,8 +31,26 @@
       "installDependency": true
     },
     {
-      "name": "debugUsers",
+      "name": "adminManage",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "userProfile",
       "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "initDb",
+      "timeout": 30,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -141,6 +159,15 @@
     {
       "name": "testAIConnection",
       "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "weeklyReview",
+      "timeout": 30,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,

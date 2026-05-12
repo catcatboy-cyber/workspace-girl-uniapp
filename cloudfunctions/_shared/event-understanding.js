@@ -39,6 +39,19 @@ function serializeCaseProfile(profile) {
   return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'
 }
 
+function describeSubjectRole(role) {
+  if (role === 'self') {
+    return 'self：这条记录主要描述用户自己。文本里的“我”是用户本人，不是关系对象。不要把用户的穿着、化妆、准备、情绪、表达当成对方释放的信号；请分析它可能怎样影响互动，以及后续应该观察对方什么反应。'
+  }
+  if (role === 'both') {
+    return 'both：这条记录描述双方互动。请先拆开“用户做了什么”和“关系对象回应/做了什么”，不要把用户自己的主动当成对方主动；只有对方的回应、承诺、兑现、回避等动作才能作为对方信号。'
+  }
+  if (role === 'unknown') {
+    return 'unknown：行为主体不确定。请弱化权重，优先判为 note；除非文本明确写出对方回应、承诺、兑现、回避或失约，否则不要把它当成对方意向或风险信号。'
+  }
+  return 'target：这条记录主要描述关系对象。文本里的“他/她/对方”才是主要分析对象，请分析对方行为释放的关系信号。'
+}
+
 function normalizeSettings(settings) {
   // 新版多模型格式
   if (settings?.settingsVersion === 2 && Array.isArray(settings?.aiModels)) {
@@ -110,10 +123,14 @@ function classifyTimelineEvent(description) {
 }
 
 function fallbackUnderstandEvent(params) {
+  const subjectRole = ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target'
+  const isWeakContext = subjectRole === 'self' || subjectRole === 'unknown'
   return {
-    eventType: classifyTimelineEvent(params.description),
-    eventTitle: buildTimelineRecordTitle(params.description) || '关系记录',
-    summary: '当前使用规则自动识别事件类型与标题。',
+    eventType: isWeakContext ? 'note' : classifyTimelineEvent(params.description),
+    eventTitle: buildTimelineRecordTitle(params.description) || (subjectRole === 'self' ? '我的状态记录' : '关系记录'),
+    summary: isWeakContext
+      ? '这条记录先作为上下文记录，不直接当作对方信号。'
+      : '当前使用规则自动识别事件类型与标题。',
     usedAI: false
   }
 }
@@ -130,10 +147,14 @@ async function inferTimelineRecord(params) {
     'eventType 只能是 positive、risk、verification、note 四选一。',
     'eventTitle 要求简短中文，适合时间线展示，尽量不超过 20 个字。',
     'summary 用一句中文简短说明你为什么这么判断。',
+    describeSubjectRole(params.subjectRole),
+    '如果 subjectRole=self，eventTitle 可以写成“我做了某个准备/我当时的状态”；eventType 通常使用 note，除非描述中明确包含对方的回应或承诺。',
+    '如果 subjectRole=both，必须区分用户动作和对方动作，不能因为“我主动”就推高对方意向。',
+    '如果 subjectRole=unknown，除非文本明确写出对方动作，否则 eventType 使用 note，summary 提醒后续补清主体。',
     '拒绝、婉拒、回避、失约、冷淡、拖延等负向边界或退缩信号，应优先判为 risk。',
     `对象画像（辅助信息）：${serializeCaseProfile(params.caseProfile)}`,
     `最近时间线（辅助信息）：${JSON.stringify((params.recentTimeline || []).slice(0, 3))}`,
-    `新事件描述：${JSON.stringify({ description: params.description })}`
+    `新事件描述：${JSON.stringify({ subjectRole: ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target', description: params.description })}`
   ].join('\n')
 
   try {

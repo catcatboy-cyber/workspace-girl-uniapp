@@ -46,7 +46,7 @@ uni-app CLI 无法直接生成 APK，需要使用 HBuilderX 或云打包服务�
 ### 方案 A：使用 H5 版本（已部署，立即可用）
 
 **在线访问**：
-https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
 
 **手机使用**：
 1. 用手机浏览器打开上述链接
@@ -95,7 +95,7 @@ https://nativesupport.dcloud.net.cn/AppDocs/download/android
 ## 🎯 当前最佳实践
 
 **立即可用**：
-- 使用 H5 版本：https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+- 使用 H5 版本：https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
 - 手机浏览器"添加到主屏幕"
 
 **需要 APK**：
@@ -128,7 +128,7 @@ https://nativesupport.dcloud.net.cn/AppDocs/download/android
 ## 🔗 相关链接
 
 - GitHub 仓库：https://github.com/catcatboy-cyber/workspace-girl-uniapp
-- H5 在线版：https://catboy-d0gg4yc4ief533dea-1422348600.tcloudbaseapp.com
+- H5 在线版：https://cloud1-d8gqh3f5g49993a5a-1422348600.tcloudbaseapp.com
 - HBuilderX 下载：https://www.dcloud.io/hbuilderx.html
 - uni-app 文档：https://uniapp.dcloud.net.cn/
 

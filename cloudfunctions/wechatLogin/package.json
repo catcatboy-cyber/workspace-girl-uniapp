@@ -1,0 +1,10 @@
+{
+  "name": "wechatLogin",
+  "version": "1.0.0",
+  "description": "WeChat phone number login cloud function",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.4.0",
+    "wx-server-sdk": "^3.0.1"
+  }
+}

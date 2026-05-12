@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeVars">
     <view v-if="loading" class="muted center">加载中...</view>
 
     <template v-else>
@@ -115,9 +115,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { getAISettings, updateAISettings, testAIConnection, getCurrentUserId } from '@/utils/api'
 import { showError, showSuccess } from '@/utils/helpers'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 let modelIdCounter = 1
 
@@ -165,8 +167,11 @@ const testModelName = ref('')
 const testSummary = ref('')
 
 const testingId = ref('')
+const themeVars = ref(getThemeStyle())
 
-onMounted(() => {
+onShow(() => {
+  themeVars.value = getThemeStyle()
+  applyThemeChrome()
   loadData()
 })
 
@@ -464,4 +469,181 @@ function goBack() {
 .test-result { font-size: 24rpx; font-weight: 500; }
 .test-result.pass { color: #14633a; }
 .test-result.fail { color: #b85c38; }
+
+/* Premium visual pass */
+.page {
+  background:
+    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 360rpx),
+    var(--app-bg, #f6f1e8);
+  padding: 28rpx;
+}
+
+.card {
+  background: var(--card-bg, rgba(255, 252, 247, 0.96));
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  border-radius: 18rpx;
+  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
+}
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-color: rgba(201, 164, 92, 0.25);
+  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  left: 32rpx;
+  right: 32rpx;
+  top: 0;
+  height: 3rpx;
+  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
+}
+
+.hero-topline {
+  color: rgba(255, 252, 247, 0.72);
+  letter-spacing: 3rpx;
+}
+
+.hero-card .h1 {
+  color: #fffaf0;
+  font-size: 42rpx;
+  line-height: 1.25;
+}
+
+.hero-subtext {
+  color: rgba(255, 252, 247, 0.76);
+}
+
+.h1,
+.h2,
+.status-title,
+.switch-label,
+.model-label,
+.field-label {
+  color: var(--text-main, #201914);
+}
+
+.muted {
+  color: var(--text-muted, #76695c);
+}
+
+.model-card {
+  background: var(--card-soft, #fffaf3);
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
+}
+
+.default-badge {
+  border: 1rpx solid rgba(18, 60, 54, 0.18);
+  color: var(--text-muted, #76695c);
+  background: rgba(255, 252, 247, 0.72);
+}
+
+.default-badge.active {
+  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-color: transparent;
+  color: #fffaf0;
+}
+
+.text-input {
+  background: var(--card-bg, #fffcf7);
+  border: 1rpx solid rgba(18, 60, 54, 0.12);
+  color: var(--text-main, #201914);
+}
+
+.btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-radius: 14rpx;
+  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
+  font-weight: 650;
+}
+
+.btn-secondary {
+  background: rgba(255, 252, 247, 0.92);
+  border: 1rpx solid rgba(18, 60, 54, 0.25);
+  color: var(--primary, #123c36);
+  border-radius: 14rpx;
+  font-weight: 600;
+  padding: 0 28rpx;
+}
+
+.status-card {
+  border-left-width: 6rpx;
+  box-shadow: 0 14rpx 28rpx rgba(32, 25, 20, 0.05);
+}
+
+.status-card.success {
+  background: #eef7ef;
+  border-left-color: var(--success, #0f6b45);
+}
+
+.status-card.warning {
+  background: var(--risk-soft, #f7dfd8);
+  border-left-color: var(--risk, #b84a3a);
+}
+
+.delete-btn,
+.test-result.fail {
+  color: var(--risk, #b84a3a);
+}
+
+.test-result.pass {
+  color: var(--success, #0f6b45);
+}
+
+/* Second visual pass */
+.card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
+    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
+    var(--card-bg, #fffcf7);
+  box-shadow:
+    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+}
+
+.hero-card {
+  background:
+    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+}
+
+.card .h2 {
+  padding-left: 16rpx;
+  border-left: 6rpx solid var(--accent, #c9a45c);
+  line-height: 1.35;
+}
+
+.model-card {
+  border-left: 6rpx solid rgba(201, 164, 92, 0.72);
+  border-radius: 18rpx;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 110rpx),
+    var(--card-soft, #fffaf3);
+}
+
+.model-header {
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid rgba(18, 60, 54, 0.08);
+}
+
+.switch-row {
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid rgba(18, 60, 54, 0.07);
+}
+
+.switch-row:last-child {
+  border-bottom: 0;
+}
+
+.text-input {
+  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
+}
 </style>

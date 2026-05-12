@@ -21,14 +21,19 @@ function getDefaultBaseUrl(provider) {
 function buildChatCompletionUrls(baseUrl, provider) {
   const normalizedProvider = normalizeProvider(provider)
   const normalized = trimTrailingSlash(baseUrl || getDefaultBaseUrl(normalizedProvider))
+  const pathname = new URL(normalized).pathname.toLowerCase()
 
   if (normalizedProvider === 'anthropic') {
+    if (pathname.endsWith('/messages')) return [normalized]
+
     const urls = normalized.endsWith('/v1')
       ? [`${normalized}/messages`]
       : [`${normalized}/v1/messages`, `${normalized}/messages`]
 
     return [...new Set(urls)]
   }
+
+  if (pathname.endsWith('/chat/completions')) return [normalized]
 
   const urls = normalized.endsWith('/v1')
     ? [`${normalized}/chat/completions`]

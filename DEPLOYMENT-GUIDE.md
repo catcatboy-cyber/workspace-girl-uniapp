@@ -13,7 +13,7 @@
 ```bash
 # 1. 检查 CloudBase 环境 ID
 grep "ENV_ID" src/utils/cloudbase.ts
-# 应显示: export const ENV_ID = 'catboy-d0gg4yc4ief533dea'
+# 应显示: export const ENV_ID = 'cloud1-d8gqh3f5g49993a5a'
 
 # 2. 检查云函数配置
 cat cloudbaserc.json
@@ -44,18 +44,18 @@ done
 cloudbase login
 
 # 部署所有云函数
-cloudbase functions:deploy --all -e catboy-d0gg4yc4ief533dea
+cloudbase functions:deploy --all -e cloud1-d8gqh3f5g49993a5a
 
 # 或单独部署关键云函数
-cloudbase functions:deploy createTimeline -e catboy-d0gg4yc4ief533dea
-cloudbase functions:deploy getCaseDetail -e catboy-d0gg4yc4ief533dea
-cloudbase functions:deploy getCases -e catboy-d0gg4yc4ief533dea
+cloudbase functions:deploy createTimeline -e cloud1-d8gqh3f5g49993a5a
+cloudbase functions:deploy getCaseDetail -e cloud1-d8gqh3f5g49993a5a
+cloudbase functions:deploy getCases -e cloud1-d8gqh3f5g49993a5a
 ```
 
 ### 3. 验证部署
 ```bash
 # 查看云函数列表
-cloudbase functions:list -e catboy-d0gg4yc4ief533dea
+cloudbase functions:list -e cloud1-d8gqh3f5g49993a5a
 
 # 确认 debugUsers 不在列表中
 ```
@@ -66,7 +66,7 @@ cloudbase functions:list -e catboy-d0gg4yc4ief533dea
 npm run build:h5
 
 # 部署到静态托管
-cloudbase hosting:deploy dist/build/h5 -e catboy-d0gg4yc4ief533dea
+cloudbase hosting:deploy dist/build/h5 -e cloud1-d8gqh3f5g49993a5a
 ```
 
 ---
@@ -204,10 +204,10 @@ await Promise.all(promises)
 ### 监控方法
 ```bash
 # 查看云函数日志
-cloudbase functions:log createTimeline -e catboy-d0gg4yc4ief533dea --limit 100
+cloudbase functions:log createTimeline -e cloud1-d8gqh3f5g49993a5a --limit 100
 
 # 查看错误日志
-cloudbase functions:log createTimeline -e catboy-d0gg4yc4ief533dea --level error
+cloudbase functions:log createTimeline -e cloud1-d8gqh3f5g49993a5a --level error
 ```
 
 ---
@@ -235,10 +235,10 @@ cloudbase functions:log createTimeline -e catboy-d0gg4yc4ief533dea --level error
 ### 快速回滚
 ```bash
 # 1. 回滚云函数到上一版本
-cloudbase functions:deploy createTimeline -e catboy-d0gg4yc4ief533dea --code-secret <previous-version>
+cloudbase functions:deploy createTimeline -e cloud1-d8gqh3f5g49993a5a --code-secret <previous-version>
 
 # 2. 回滚前端
-cloudbase hosting:deploy <previous-build> -e catboy-d0gg4yc4ief533dea
+cloudbase hosting:deploy <previous-build> -e cloud1-d8gqh3f5g49993a5a
 ```
 
 ### 数据修复

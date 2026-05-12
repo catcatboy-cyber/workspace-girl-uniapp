@@ -7,7 +7,7 @@ exports.main = async (event) => {
   const { caseId } = event
   // let transaction = null
   try {
-    const userId = await requireAuthenticatedUserId(app)
+    const userId = await requireAuthenticatedUserId(app, event)
     if (!caseId) return { success: false, message: '缺少档案ID' }
 
     // 先验证权限（事务外）

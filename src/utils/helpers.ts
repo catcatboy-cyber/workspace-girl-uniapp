@@ -218,3 +218,98 @@ export function confirm(content: string, title = '提示'): Promise<boolean> {
     })
   })
 }
+
+const ACTIVE_CASE_KEY = 'homeActiveCaseId'
+const PROFILE_UPDATED_KEY = 'activeCaseProfileUpdated'
+const PENDING_TIMELINE_CONTEXT_KEY = 'pendingTimelineContext'
+
+export type PendingTimelineContext = {
+  caseId?: string
+  classified?: boolean
+  eventType?: string
+  recorded?: boolean
+  targetEventId?: string
+}
+
+export function getActiveCaseId(): string {
+  try {
+    return String(uni.getStorageSync(ACTIVE_CASE_KEY) || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+export function setActiveCaseId(caseId?: string) {
+  const normalized = String(caseId || '').trim()
+  if (!normalized) return
+  try {
+    uni.setStorageSync(ACTIVE_CASE_KEY, normalized)
+  } catch {}
+}
+
+export function markActiveCaseProfileUpdated(caseId?: string) {
+  const normalized = String(caseId || '').trim()
+  if (!normalized) return
+  try {
+    uni.setStorageSync(PROFILE_UPDATED_KEY, normalized)
+  } catch {}
+}
+
+export function consumeActiveCaseProfileUpdated(caseId?: string): boolean {
+  const normalized = String(caseId || '').trim()
+  if (!normalized) return false
+  try {
+    const stored = String(uni.getStorageSync(PROFILE_UPDATED_KEY) || '').trim()
+    if (stored !== normalized) return false
+    uni.removeStorageSync(PROFILE_UPDATED_KEY)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function setPendingTimelineContext(context: PendingTimelineContext = {}) {
+  const payload = {
+    caseId: String(context.caseId || '').trim(),
+    classified: Boolean(context.classified),
+    eventType: String(context.eventType || '').trim(),
+    recorded: Boolean(context.recorded),
+    targetEventId: String(context.targetEventId || '').trim()
+  }
+
+  if (!payload.caseId && !payload.classified && !payload.recorded && !payload.targetEventId && !payload.eventType) {
+    try {
+      uni.removeStorageSync(PENDING_TIMELINE_CONTEXT_KEY)
+    } catch {}
+    return
+  }
+
+  try {
+    uni.setStorageSync(PENDING_TIMELINE_CONTEXT_KEY, payload)
+  } catch {}
+}
+
+export function consumePendingTimelineContext(): PendingTimelineContext | null {
+  try {
+    const raw = uni.getStorageSync(PENDING_TIMELINE_CONTEXT_KEY)
+    uni.removeStorageSync(PENDING_TIMELINE_CONTEXT_KEY)
+    if (!raw || typeof raw !== 'object') return null
+
+    const payload = raw as PendingTimelineContext
+    const normalized = {
+      caseId: String(payload.caseId || '').trim(),
+      classified: Boolean(payload.classified),
+      eventType: String(payload.eventType || '').trim(),
+      recorded: Boolean(payload.recorded),
+      targetEventId: String(payload.targetEventId || '').trim()
+    }
+
+    if (!normalized.caseId && !normalized.classified && !normalized.recorded && !normalized.targetEventId && !normalized.eventType) {
+      return null
+    }
+
+    return normalized
+  } catch {
+    return null
+  }
+}

@@ -8,7 +8,7 @@
 
 访问：https://console.cloud.tencent.com/tcb
 
-选择你的环境：`catboy-d0gg4yc4ief533dea`
+选择你的环境：`cloud1-d8gqh3f5g49993a5a`
 
 ### 步骤 2：创建云函数
 
@@ -59,10 +59,10 @@
 cd C:\Users\catca\.openclaw\workspace-girl-uniapp
 
 # 部署 login 云函数
-cloudbase functions:deploy login --envId catboy-d0gg4yc4ief533dea
+cloudbase functions:deploy login --envId cloud1-d8gqh3f5g49993a5a
 
 # 部署 register 云函数
-cloudbase functions:deploy register --envId catboy-d0gg4yc4ief533dea
+cloudbase functions:deploy register --envId cloud1-d8gqh3f5g49993a5a
 ```
 
 ---

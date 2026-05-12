@@ -332,4 +332,97 @@ function handleSubmit() {
   font-size: 32rpx;
   font-weight: 600;
 }
+
+/* Premium visual pass */
+.card {
+  background: var(--card-bg, rgba(255, 252, 247, 0.96));
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  border-radius: 18rpx;
+  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
+}
+
+.h2,
+.field-label,
+.q-title {
+  color: var(--text-main, #201914);
+}
+
+.muted {
+  color: var(--text-muted, #76695c);
+}
+
+.text-input,
+.text-area,
+.picker-view,
+.option,
+.toggle-chip {
+  background: var(--card-soft, #fffaf3);
+  border: 1rpx solid rgba(18, 60, 54, 0.12);
+  color: var(--text-main, #201914);
+}
+
+.question {
+  background: var(--card-soft, #fffaf3);
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
+}
+
+.toggle-chip.active,
+.option.selected {
+  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-color: transparent;
+  color: #fffaf0;
+  box-shadow: 0 8rpx 18rpx rgba(18, 60, 54, 0.14);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-radius: 14rpx;
+  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
+}
+
+/* Second visual pass */
+.card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
+    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
+    var(--card-bg, #fffcf7);
+  box-shadow:
+    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+}
+
+.h2 {
+  padding-left: 16rpx;
+  border-left: 6rpx solid var(--accent, #c9a45c);
+  line-height: 1.35;
+}
+
+.question {
+  border-radius: 18rpx;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 110rpx),
+    var(--card-soft, #fffaf3);
+}
+
+.q-title {
+  font-size: 29rpx;
+}
+
+.option {
+  border-radius: 14rpx;
+}
+
+.option.selected {
+  box-shadow:
+    0 10rpx 22rpx rgba(18, 60, 54, 0.16),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
+}
+
+.text-area {
+  min-height: 190rpx;
+  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
+}
 </style>

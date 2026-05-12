@@ -1,15 +1,10 @@
 {
-  "envId": "catboy-d0gg4yc4ief533dea",
+  "envId": "cloud1-d8gqh3f5g49993a5a",
   "functionRoot": "./",
   "functions": [
     {
       "name": "register",
-      "timeout": 5,
-      "envVariables": {
-        "TCB_CUSTOM_LOGIN_ENV_ID": "catboy-d0gg4yc4ief533dea",
-        "TCB_CUSTOM_LOGIN_PRIVATE_KEY_ID": "bb840272-a6e3-4769-8255-fb9ae68b71b9",
-        "TCB_CUSTOM_LOGIN_PRIVATE_KEY": "-----BEGIN RSA PRIVATE KEY-----\\nMIICXQIBAAKBgQDEqv89mSNUNGfM9vzuOE0lHG+9lAspihTI78qKOnS64DTmfBqS\\nz8ay5+yisUBECcHnES/+owuLC/cgY2v73m9MTFtApo1n+JiTA6YPcxH1mm9Ymfhj\\nP2PuWOoLa5wbtHqDS43ERp4js93+OEmrrsMPugCDZQlIaFN378HA1Og8pQIDAQAB\\nAoGAC9OQl76uvjCMkWnE2fpuwS2NlqPha/UOvOqWjmtne5lh9P4/htaRx05lD3+D\\nMtQ3YdLJxRE+73SfvsXbx4CfxqbBIGLb4BYOqMWtlron7KEiN+oNcjoSavZgSZFy\\nEpErJTa5xriMXUzfg2P79TcGjyDIpqdP4Vc0Nh+EwlN6U0ECQQDR+0MxpFJfwIy4\\ncYIIXtTIBLnuIzzm/2hwpjVH8MXp9PYcZDHRj87tCBZczcO7dKLoSEeEzFYkYEMv\\nAL5NTWcVAkEA78TLw8CvGPUzrXanSWYaEAG1lXauuUSw/OfLX6YjPO5/vwuY7pZM\\nYbU28a1Thav0bfVUwd4x6z8OULV1GbfjUQJBAJ+ZLpVIpCOLImn+PCtIiMoObZOG\\nzP92GVelvNGVO5h7S6SAsyzo9QpMH1MiQib0m+2ZImLZPJAham8LTZlLv5ECQQDn\\nG+fUnaupAOB4+P+yTgodF6ixkp5D0iRPAhYT8g3RM4pK2aDliFXDcGqvdQQmumJ2\\ngpzZ6ZRwTm07+kwPKCKhAkA+7SjS04VuDzvdKFxYdqtQVBLJn7JrBxDl0JB8xb8b\\nKBru0oBcGNkMv1inlZK2dYh91Eq36dxJHFadBV1zTtV3\\n-----END RSA PRIVATE KEY-----\\n"
-      }
+      "timeout": 5
     }
   ]
 }

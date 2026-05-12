@@ -2,11 +2,40 @@ const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { recalculateAssessmentFromEvent } = require('./_shared/event-recalculate')
 const { compareAssessments, buildTrendTimelineRecords } = require('./_shared/trend')
-const { buildTimelineRecordTitle, classifyTimelineEvent } = require('./_shared/event-understanding')
+const { buildTimelineRecordTitle, classifyTimelineEvent, inferTimelineRecord } = require('./_shared/event-understanding')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
+const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
+
+function normalizeDoc(res) {
+  if (Array.isArray(res?.data)) return res.data[0] || null
+  return res?.data || null
+}
+
+async function getAISettings(userId) {
+  const globalDocRes = await db.collection('system_settings').doc(GLOBAL_AI_SETTINGS_ID).get().catch(() => null)
+  let settings = normalizeDoc(globalDocRes)
+
+  if (!settings) {
+    const globalScopeRes = await db.collection('system_settings')
+      .where({ scope: 'global', key: 'ai' })
+      .limit(1)
+      .get()
+    settings = globalScopeRes.data && globalScopeRes.data.length > 0 ? globalScopeRes.data[0] : null
+  }
+
+  if (!settings) {
+    const userSettingsRes = await db.collection('system_settings')
+      .where({ userId })
+      .limit(1)
+      .get()
+    settings = userSettingsRes.data && userSettingsRes.data.length > 0 ? userSettingsRes.data[0] : null
+  }
+
+  return settings
+}
 
 function randomHex(n) {
   return crypto.randomBytes(n).toString('hex')
@@ -22,6 +51,48 @@ function toISOStringOrUndefined(value) {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString()
 }
 
+function normalizeSubjectRole(value) {
+  return ['target', 'self', 'both', 'unknown'].includes(value) ? value : 'target'
+}
+
+function normalizeSubjectRoleConfidence(value) {
+  return ['user_selected', 'confirmed'].includes(value) ? value : 'user_selected'
+}
+
+function sanitizeAttachment(item) {
+  if (!item || typeof item !== 'object') return null
+  const type = ['image', 'audio'].includes(item.type) ? item.type : ''
+  const fileID = typeof item.fileID === 'string' ? item.fileID.trim() : ''
+  if (!type || !fileID) return null
+
+  const analysis = item.analysis && typeof item.analysis === 'object'
+    ? {
+        isChatRecord: Boolean(item.analysis.isChatRecord),
+        extractedText: typeof item.analysis.extractedText === 'string' ? item.analysis.extractedText.slice(0, 4000) : '',
+        summary: typeof item.analysis.summary === 'string' ? item.analysis.summary.slice(0, 500) : '',
+        confidence: ['low', 'medium', 'high'].includes(item.analysis.confidence) ? item.analysis.confidence : 'medium'
+      }
+    : undefined
+
+  const attachment = {
+    type,
+    fileID,
+    name: typeof item.name === 'string' ? item.name.slice(0, 80) : '',
+    size: Number.isFinite(Number(item.size)) ? Number(item.size) : 0
+  }
+  if (Number.isFinite(Number(item.duration))) attachment.duration = Number(item.duration)
+  if (analysis) attachment.analysis = analysis
+  return attachment
+}
+
+function sanitizeAttachments(value) {
+  if (!Array.isArray(value)) return []
+  return value
+    .slice(0, 6)
+    .map(sanitizeAttachment)
+    .filter(Boolean)
+}
+
 function mapCreateTimelineError(error) {
   if (error?.message === 'LATEST_RESULT_REQUIRED' || error?.message === 'LATEST_RESULT_NOT_FOUND') {
     return '当前档案缺少有效评估结果，请先重新评估后再记录时间线'
@@ -35,11 +106,11 @@ function mapCreateTimelineError(error) {
 }
 
 exports.main = async (event) => {
-  const { caseId, description, occurrenceAt, dateLabel } = event
+  const { caseId, description, occurrenceAt, dateLabel, subjectRole, subjectRoleConfidence } = event
   let transaction = null
 
   try {
-    const userId = await requireAuthenticatedUserId(app)
+    const userId = await requireAuthenticatedUserId(app, event)
     if (!caseId) return { success: false, message: '缺少档案ID' }
 
     const safeDescription = typeof description === 'string' ? description.trim() : ''
@@ -60,13 +131,19 @@ exports.main = async (event) => {
     const now = new Date()
     const parsedOccurrenceAt = occurrenceAt ? new Date(occurrenceAt) : now
     const occursAt = isValidDate(parsedOccurrenceAt) ? parsedOccurrenceAt : now
+    const safeSubjectRole = normalizeSubjectRole(subjectRole)
+    const safeSubjectRoleConfidence = normalizeSubjectRoleConfidence(subjectRoleConfidence)
+    const safeAttachments = sanitizeAttachments(event.attachments)
 
     const draftRecord = {
       id: recordId,
       title: buildTimelineRecordTitle(safeDescription) || '关系记录',
       type: classifyTimelineEvent(safeDescription),
+      subjectRole: safeSubjectRole,
+      subjectRoleConfidence: safeSubjectRoleConfidence,
       dateLabel: dateLabel || '',
       description: safeDescription,
+      attachments: safeAttachments,
       occurrenceAt: occursAt,
       createdAt: now
     }
@@ -88,6 +165,8 @@ exports.main = async (event) => {
         id: item._id || item.id,
         title: item.title,
         type: item.type,
+        subjectRole: normalizeSubjectRole(item.subjectRole),
+        subjectRoleConfidence: normalizeSubjectRoleConfidence(item.subjectRoleConfidence),
         dateLabel: item.dateLabel || '',
         description: item.description || '',
         occurrenceAt: toISOStringOrUndefined(item.occurrenceAt),
@@ -97,6 +176,8 @@ exports.main = async (event) => {
       id: draftRecord.id,
       title: draftRecord.title,
       type: draftRecord.type,
+      subjectRole: draftRecord.subjectRole,
+      subjectRoleConfidence: draftRecord.subjectRoleConfidence,
       dateLabel: draftRecord.dateLabel,
       description: draftRecord.description,
       occurrenceAt: toISOStringOrUndefined(draftRecord.occurrenceAt),
@@ -105,26 +186,45 @@ exports.main = async (event) => {
     const trimmedRecentTimeline = recentTimeline
       .slice(0, 8)
 
-    const settingsRes = await db.collection('system_settings')
-      .where({ userId })
-      .limit(1)
-      .get()
-    const aiSettings = settingsRes.data && settingsRes.data.length > 0 ? settingsRes.data[0] : null
+    const aiSettings = await getAISettings(userId)
+    const understoodEvent = await inferTimelineRecord({
+      description: safeDescription,
+      subjectRole: draftRecord.subjectRole,
+      recentTimeline: trimmedRecentTimeline,
+      caseProfile: caseDoc.profile,
+      settings: aiSettings
+    })
+    const understoodRecord = {
+      ...draftRecord,
+      title: understoodEvent.eventTitle || draftRecord.title,
+      type: understoodEvent.eventType || draftRecord.type,
+      semanticTags: understoodEvent.semanticTags,
+      eventUnderstanding: {
+        summary: understoodEvent.summary || '',
+        usedAI: Boolean(understoodEvent.usedAI)
+      }
+    }
+    trimmedRecentTimeline[0] = {
+      ...trimmedRecentTimeline[0],
+      title: understoodRecord.title,
+      type: understoodRecord.type,
+      semanticTags: understoodRecord.semanticTags
+    }
 
     const recalculated = await recalculateAssessmentFromEvent({
       previous,
-      event: draftRecord,
+      event: understoodRecord,
       assessmentId,
       recentTimeline: trimmedRecentTimeline,
       caseProfile: caseDoc.profile,
       aiSettings
     })
 
-    const aiUsed = recalculated.explanation?.headline?.startsWith('AI 研判后：') || false
+    const aiUsed = Boolean(understoodEvent.usedAI || recalculated.explanation?.headline?.startsWith('AI 研判后：'))
     const finalRecord = {
-      ...draftRecord,
-      title: recalculated.triggerEventTitle || draftRecord.title,
-      type: recalculated.triggerEventType || draftRecord.type
+      ...understoodRecord,
+      title: recalculated.triggerEventTitle || understoodRecord.title,
+      type: recalculated.triggerEventType || understoodRecord.type
     }
 
     // 预计算趋势记录（在事务外完成）
@@ -160,10 +260,16 @@ exports.main = async (event) => {
       caseId,
       title: finalRecord.title,
       type: finalRecord.type,
+      subjectRole: finalRecord.subjectRole,
+      subjectRoleConfidence: finalRecord.subjectRoleConfidence,
       dateLabel: finalRecord.dateLabel,
       description: finalRecord.description,
+      attachments: finalRecord.attachments,
+      semanticTags: finalRecord.semanticTags,
+      eventUnderstanding: finalRecord.eventUnderstanding,
       occurrenceAt: finalRecord.occurrenceAt,
-      createdAt: finalRecord.createdAt
+      createdAt: finalRecord.createdAt,
+      aiUsed
     })
 
     await transaction.collection('assessments').add({
@@ -198,6 +304,8 @@ exports.main = async (event) => {
       recordId,
       assessmentId,
       aiUsed,
+      subjectRole: finalRecord.subjectRole,
+      subjectRoleConfidence: finalRecord.subjectRoleConfidence,
       eventType: finalRecord.type,
       eventTitle: finalRecord.title
     }

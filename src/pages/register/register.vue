@@ -1,5 +1,5 @@
 <template>
-  <view class="register-page">
+  <view class="register-page" :style="themeVars">
     <view class="container">
       <view class="header">
         <text class="title">创建账号</text>
@@ -59,13 +59,21 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { register } from '@/utils/api'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
+const themeVars = ref(getThemeStyle())
+
+onShow(() => {
+  themeVars.value = getThemeStyle()
+  applyThemeChrome()
+})
 
 const clearError = () => {
   errorMessage.value = ''
@@ -107,9 +115,7 @@ const handleRegister = async () => {
 
     if (result.success) {
       // 注册成功，跳转到首页
-      uni.switchTab({
-        url: '/pages/index/index'
-      })
+      uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
     } else {
       errorMessage.value = result.message || '注册失败'
     }
@@ -224,5 +230,88 @@ const goLogin = () => {
   font-size: 26rpx;
   color: #143f3a;
   text-decoration: underline;
+}
+
+/* Premium entry pass */
+.register-page {
+  background:
+    linear-gradient(180deg, rgba(18, 60, 54, 0.12), rgba(18, 60, 54, 0) 420rpx),
+    var(--app-bg, #f6f1e8);
+}
+
+.header {
+  text-align: left;
+  padding-top: 18rpx;
+}
+
+.title {
+  color: var(--primary, #123c36);
+  font-size: 54rpx;
+  line-height: 1.15;
+}
+
+.subtitle {
+  color: var(--text-muted, #76695c);
+}
+
+.form {
+  position: relative;
+  overflow: hidden;
+  background: var(--card-bg, rgba(255, 252, 247, 0.96));
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  border-radius: 20rpx;
+  box-shadow: 0 18rpx 42rpx rgba(32, 25, 20, 0.08);
+}
+
+.form::before {
+  content: "";
+  position: absolute;
+  left: 36rpx;
+  right: 36rpx;
+  top: 0;
+  height: 3rpx;
+  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
+}
+
+.form-item input {
+  background: var(--card-soft, #fffaf3);
+  border: 1rpx solid rgba(18, 60, 54, 0.12);
+  border-radius: 14rpx;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-radius: 14rpx;
+  box-shadow: 0 12rpx 24rpx rgba(18, 60, 54, 0.18);
+}
+
+.link {
+  color: var(--primary, #123c36);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* Second visual pass */
+.form {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 160rpx),
+    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 60%),
+    var(--card-bg, #fffcf7);
+  box-shadow:
+    0 22rpx 46rpx rgba(32, 25, 20, 0.09),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+}
+
+.form-item {
+  padding-bottom: 4rpx;
+}
+
+.form-item input {
+  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
+}
+
+.error-message {
+  border: 1rpx solid rgba(184, 74, 58, 0.18);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.55);
 }
 </style>

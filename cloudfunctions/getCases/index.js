@@ -6,7 +6,7 @@ const _ = db.command
 
 exports.main = async (event) => {
   try {
-    const userId = await requireAuthenticatedUserId(app)
+    const userId = await requireAuthenticatedUserId(app, event)
 
     const { data: cases } = await db.collection('cases')
       .where({ userId })

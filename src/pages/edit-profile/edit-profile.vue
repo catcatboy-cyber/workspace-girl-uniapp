@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="page" :style="themeVars">
     <view v-if="loading" class="muted center">加载中...</view>
 
     <view v-else-if="!caseFile" class="card">
@@ -12,7 +12,7 @@
         <text class="hero-topline">编辑画像 / {{ caseFile.name }}</text>
         <view class="hero-head">
           <view class="profile-avatar lg">
-            <image v-if="profile.avatar" :src="profile.avatar" mode="aspectFill" />
+            <image v-if="profile.avatar" :src="profile.avatarPreviewUrl || profile.avatar" mode="aspectFill" />
             <text v-else class="avatar-placeholder">{{ avatarLabel(caseName || caseFile.name) }}</text>
           </view>
           <view class="hero-copy">
@@ -94,7 +94,7 @@
 
         <view class="field">
           <text class="field-label">头像</text>
-          <ProfileAvatarPicker v-model="profile.avatar" />
+          <ProfileAvatarPicker v-model="profile.avatar" @preview-change="onAvatarPreviewChange" />
         </view>
       </view>
 
@@ -111,9 +111,10 @@
 import { ref, reactive, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getCaseDetail, updateCaseProfile, getCurrentUserId } from '@/utils/api'
-import { showError, showSuccess } from '@/utils/helpers'
+import { markActiveCaseProfileUpdated, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
 import { buildProfileInsight, buildProfileItems } from '@/utils/insights'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const loading = ref(true)
 const saving = ref(false)
@@ -121,6 +122,7 @@ const caseFile = ref<any>(null)
 const userId = ref('')
 const caseId = ref('')
 const caseName = ref('')
+const themeVars = ref(getThemeStyle())
 
 const relationTypeOptions = ['romantic', 'close_friend']
 const relationTypeLabels = ['恋爱对象', '亲密朋友']
@@ -138,7 +140,8 @@ const profile = reactive({
   occupation: '',
   zodiac: '',
   constellation: '',
-  avatar: ''
+  avatar: '',
+  avatarPreviewUrl: ''
 })
 
 const relationTypeIndex = computed(() => Math.max(0, relationTypeOptions.indexOf(profile.relationType)))
@@ -162,6 +165,7 @@ function onRelationTypeChange(e: any) { profile.relationType = relationTypeOptio
 function onGenderChange(e: any) { profile.gender = genderOptions[e.detail.value] }
 function onZodiacChange(e: any) { profile.zodiac = zodiacOptions[e.detail.value] }
 function onConstellationChange(e: any) { profile.constellation = constellationOptions[e.detail.value] }
+function onAvatarPreviewChange(value: string) { profile.avatarPreviewUrl = value }
 
 function avatarLabel(name?: string) {
   const normalized = String(name || '').trim()
@@ -169,6 +173,8 @@ function avatarLabel(name?: string) {
 }
 
 onLoad((options) => {
+  themeVars.value = getThemeStyle()
+  applyThemeChrome()
   caseId.value = options?.caseId || ''
   loadData()
 })
@@ -197,6 +203,7 @@ async function loadData() {
       profile.zodiac = p.zodiac || ''
       profile.constellation = p.constellation || ''
       profile.avatar = p.avatar || ''
+      profile.avatarPreviewUrl = p.avatarUrl || p.avatar || ''
     }
   } catch (e: any) {
     showError(e?.message || '加载失败')
@@ -212,16 +219,19 @@ async function onSave() {
   }
   saving.value = true
   try {
+    const { avatarPreviewUrl: _avatarPreviewUrl, ...profilePayload } = { ...profile }
     const res = await updateCaseProfile({
       userId: userId.value,
       caseId: caseId.value,
       name: caseName.value.trim(),
-      profile: { ...profile }
+      profile: profilePayload
     })
     if (res.success) {
       showSuccess('已保存')
       setTimeout(() => {
-        uni.redirectTo({ url: `/pages/case-detail/case-detail?caseId=${caseId.value}&profileUpdated=1` })
+        setActiveCaseId(caseId.value)
+        markActiveCaseProfileUpdated(caseId.value)
+        uni.switchTab({ url: '/pages/case-detail/case-detail' })
       }, 600)
     } else {
       showError(res.message || '保存失败')
@@ -234,11 +244,14 @@ async function onSave() {
 }
 
 function goCaseDetail() {
-  uni.navigateTo({ url: `/pages/case-detail/case-detail?caseId=${caseId.value}` })
+  setActiveCaseId(caseId.value)
+  uni.switchTab({ url: '/pages/case-detail/case-detail' })
 }
 
 function goTimeline() {
-  uni.navigateTo({ url: `/pages/timeline/timeline?caseId=${caseId.value}` })
+  setActiveCaseId(caseId.value)
+  setPendingTimelineContext({ caseId: caseId.value })
+  uni.switchTab({ url: '/pages/timeline/timeline' })
 }
 </script>
 
@@ -278,4 +291,139 @@ function goTimeline() {
 .picker-view { height: 80rpx; line-height: 80rpx; padding: 0 24rpx; background: #fff; border: 2rpx solid #e5ddd0; border-radius: 12rpx; font-size: 28rpx; }
 .btn-primary { width: 100%; height: 88rpx; line-height: 88rpx; background: #143f3a; color: #fff; border: none; border-radius: 12rpx; font-size: 32rpx; font-weight: 600; }
 .btn-secondary { height: 76rpx; line-height: 76rpx; background: #fff; color: #143f3a; border: 2rpx solid #143f3a; border-radius: 12rpx; font-size: 28rpx; padding: 0 24rpx; }
+
+/* Premium visual pass */
+.page {
+  background:
+    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 360rpx),
+    var(--app-bg, #f6f1e8);
+  padding: 28rpx;
+}
+
+.card {
+  background: var(--card-bg, rgba(255, 252, 247, 0.96));
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  border-radius: 18rpx;
+  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
+}
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-color: rgba(201, 164, 92, 0.25);
+  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  left: 32rpx;
+  right: 32rpx;
+  top: 0;
+  height: 3rpx;
+  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
+}
+
+.hero-topline {
+  color: rgba(255, 252, 247, 0.72);
+  letter-spacing: 3rpx;
+}
+
+.hero-card .h1 {
+  color: #fffaf0;
+  font-size: 42rpx;
+  line-height: 1.25;
+}
+
+.hero-subtext {
+  color: rgba(255, 252, 247, 0.76);
+}
+
+.h1,
+.h2,
+.field-label,
+.insight-item {
+  color: var(--text-main, #201914);
+}
+
+.muted {
+  color: var(--text-muted, #76695c);
+}
+
+.badge {
+  background: var(--accent-soft, rgba(201, 164, 92, 0.14));
+  border: 1rpx solid rgba(201, 164, 92, 0.24);
+  color: #6f5225;
+}
+
+.profile-avatar {
+  border: 2rpx solid rgba(201, 164, 92, 0.45);
+  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.1);
+}
+
+.text-input,
+.picker-view {
+  background: var(--card-soft, #fffaf3);
+  border: 1rpx solid rgba(18, 60, 54, 0.12);
+  color: var(--text-main, #201914);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-radius: 14rpx;
+  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
+}
+
+.btn-secondary {
+  background: rgba(255, 252, 247, 0.92);
+  border: 1rpx solid rgba(18, 60, 54, 0.25);
+  color: var(--primary, #123c36);
+  border-radius: 14rpx;
+  font-weight: 600;
+}
+
+/* Second visual pass */
+.card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
+    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
+    var(--card-bg, #fffcf7);
+  box-shadow:
+    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+}
+
+.hero-card {
+  background:
+    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+}
+
+.card .h2 {
+  padding-left: 16rpx;
+  border-left: 6rpx solid var(--accent, #c9a45c);
+  line-height: 1.35;
+}
+
+.hero-card .h2 {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.field {
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid rgba(18, 60, 54, 0.07);
+}
+
+.field:last-child {
+  border-bottom: 0;
+}
+
+.text-input,
+.picker-view {
+  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
+}
 </style>

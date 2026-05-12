@@ -91,22 +91,22 @@ exports.main = async (event) => {
       _id: userId,
       email: normalizedEmail,
       passwordHash,
+      selfProfile: null,
       createdAt: now,
       seedFromLegacy: false
     })
 
-    ensureCustomLoginConfigured()
-
     // 创建自定义登录票据（7天有效期）
-    const ticket = await app.auth().createTicket(userId, {
+    const ticket = getCustomLoginCredentials() ? await app.auth().createTicket(userId, {
       refresh: 7 * 24 * 60 * 60 * 1000 // 7天（毫秒）
-    })
+    }) : undefined
 
     return {
       success: true,
       ticket,
       userId,
-      email: normalizedEmail
+      email: normalizedEmail,
+      selfProfile: null
     }
   } catch (error) {
     const customLoginError = buildCustomLoginErrorResponse(error)

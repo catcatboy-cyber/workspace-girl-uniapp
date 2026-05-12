@@ -1,9 +1,10 @@
 /**
- * API 封装层
- * 封装所有云函数调用
+ * API 灏佽灞?
+ * 灏佽鎵€鏈変簯鍑芥暟璋冪敤
  */
 import app, { callFunction, auth, storage } from './cloudbase'
 import { resetCloudAuthState } from './cloudbase'
+import { normalizeAvatarValue, resolveAvatarSrc } from './avatar'
 
 function toTimestamp(value: any): number | null {
   if (!value) return null
@@ -42,22 +43,64 @@ function normalizeTimelineRecord(record: any) {
   }
 }
 
-function normalizeCase(caseItem: any) {
+async function normalizeCase(caseItem: any) {
   if (!caseItem || typeof caseItem !== 'object') return caseItem
 
   const timeline = Array.isArray(caseItem.timeline)
     ? caseItem.timeline.map(normalizeTimelineRecord)
     : []
 
+  const profile = caseItem.profile && typeof caseItem.profile === 'object'
+    ? { ...caseItem.profile }
+    : caseItem.profile
+
+  if (profile?.avatar) {
+    profile.avatar = normalizeAvatarValue(profile.avatar)
+    const avatarUrl = await resolveAvatarSrc(profile.avatar)
+    profile.avatarUrl = avatarUrl || profile.avatar
+  } else if (profile?.avatarUrl) {
+    delete profile.avatarUrl
+  }
+
   return {
     ...caseItem,
     caseId: caseItem.caseId || caseItem._id,
+    profile,
     timeline
+  }
+}
+
+function normalizeProfilePayload(profile: any) {
+  if (!profile || typeof profile !== 'object') return profile
+  return {
+    ...profile,
+    avatar: normalizeAvatarValue(profile.avatar)
   }
 }
 
 async function clearLocalAuthState() {
   await resetCloudAuthState()
+}
+
+function safeSetStorage(key: string, value: string) {
+  try {
+    uni.setStorageSync(key, value)
+  } catch (error) {
+    console.warn(`[api] setStorage ${key} failed:`, error)
+  }
+}
+
+function safeSetStorageAny(key: string, value: any) {
+  try {
+    uni.setStorageSync(key, value)
+  } catch (error) {
+    console.warn(`[api] setStorage ${key} failed:`, error)
+  }
+}
+
+function cacheSelfProfile(profile: any) {
+  if (!profile || typeof profile !== 'object') return
+  safeSetStorageAny('selfProfile', profile)
 }
 
 async function ensureAnonymousAuth() {
@@ -104,7 +147,7 @@ async function signInWithCustomTicketCompat(ticket: string) {
     return
   }
 
-  throw new Error('当前 SDK 不支持自定义票据登录')
+  throw new Error('褰撳墠 SDK 涓嶆敮鎸佽嚜瀹氫箟绁ㄦ嵁鐧诲綍')
 }
 
 async function verifyTicketLogin(expectedUserId: string, maxRetries = 10): Promise<boolean> {
@@ -129,107 +172,232 @@ async function verifyTicketLogin(expectedUserId: string, maxRetries = 10): Promi
   return false
 }
 
-// ==================== 认证相关 ====================
+// ==================== 璁よ瘉鐩稿叧 ====================
 
 /**
- * 用户登录
+ * 鐢ㄦ埛鐧诲綍
  */
 export async function login(email: string, password: string) {
+  console.log('[api] login start')
   await clearLocalAuthState()
   await ensureAnonymousAuth()
 
+  console.log('[api] login call cloud function')
   const res = await app.callFunction({
     name: 'login',
     data: { email, password }
   })
+  console.log('[api] login cloud function returned', res?.result)
+
+  // #ifdef MP-WEIXIN
+  if (res.result.success) {
+    safeSetStorage('userId', res.result.userId)
+    safeSetStorage('userEmail', res.result.email)
+    cacheSelfProfile(res.result.selfProfile)
+    return res.result
+  }
+  // #endif
 
   if (res.result.success && res.result.ticket) {
     try {
       await signInWithCustomTicketCompat(res.result.ticket)
     } catch (e) {
-      console.error('票据登录失败:', e)
-      return { success: false, message: '登录凭证校验失败，请重试' }
+      console.error('绁ㄦ嵁鐧诲綍澶辫触:', e)
+      return { success: false, message: '鐧诲綍鍑瘉鏍￠獙澶辫触锛岃閲嶈瘯' }
     }
 
     const verified = await verifyTicketLogin(res.result.userId)
     if (!verified) {
-      console.error('登录态校验未通过')
-      return { success: false, message: '登录态未生效，请重试' }
+      console.error('鐧诲綍鎬佹牎楠屾湭閫氳繃')
+      return { success: false, message: '鐧诲綍鎬佹湭鐢熸晥锛岃閲嶈瘯' }
     }
 
-    uni.setStorageSync('userId', res.result.userId)
-    uni.setStorageSync('userEmail', res.result.email)
+    safeSetStorage('userId', res.result.userId)
+    safeSetStorage('userEmail', res.result.email)
+    cacheSelfProfile(res.result.selfProfile)
   }
 
   return res.result
 }
 
 /**
- * 用户注册
+ * 鐢ㄦ埛娉ㄥ唽
  */
+export async function wechatLogin(code: string) {
+  console.log('[api] wechatLogin start')
+  await clearLocalAuthState()
+
+  const res = await app.callFunction({
+    name: 'wechatLogin',
+    data: { code }
+  })
+  console.log('[api] wechatLogin cloud function returned', res?.result)
+
+  if (res.result?.success) {
+    safeSetStorage('userId', res.result.userId)
+    safeSetStorage('userEmail', res.result.email || res.result.displayName || '')
+    cacheSelfProfile(res.result.selfProfile)
+    if (res.result.phoneMasked) {
+      safeSetStorage('userPhone', res.result.phoneMasked)
+    }
+  }
+
+  return res.result
+}
+
 export async function register(email: string, password: string) {
+  console.log('[api] register start')
   await clearLocalAuthState()
   await ensureAnonymousAuth()
 
+  console.log('[api] register call cloud function')
   const res = await app.callFunction({
     name: 'register',
     data: { email, password }
   })
+  console.log('[api] register cloud function returned', res?.result)
+
+  // #ifdef MP-WEIXIN
+  if (res.result.success) {
+    safeSetStorage('userId', res.result.userId)
+    safeSetStorage('userEmail', res.result.email)
+    cacheSelfProfile(res.result.selfProfile)
+    return res.result
+  }
+  // #endif
 
   if (res.result.success && res.result.ticket) {
     try {
       await signInWithCustomTicketCompat(res.result.ticket)
     } catch (e) {
-      console.error('票据登录失败:', e)
-      return { success: false, message: '登录凭证校验失败，请重试' }
+      console.error('绁ㄦ嵁鐧诲綍澶辫触:', e)
+      return { success: false, message: '鐧诲綍鍑瘉鏍￠獙澶辫触锛岃閲嶈瘯' }
     }
 
     const verified = await verifyTicketLogin(res.result.userId)
     if (!verified) {
-      console.error('登录态校验未通过')
-      return { success: false, message: '登录态未生效，请重试' }
+      console.error('鐧诲綍鎬佹牎楠屾湭閫氳繃')
+      return { success: false, message: '鐧诲綍鎬佹湭鐢熸晥锛岃閲嶈瘯' }
     }
 
-    uni.setStorageSync('userId', res.result.userId)
-    uni.setStorageSync('userEmail', res.result.email)
+    safeSetStorage('userId', res.result.userId)
+    safeSetStorage('userEmail', res.result.email)
+    cacheSelfProfile(res.result.selfProfile)
   }
 
   return res.result
 }
 
 /**
- * 用户登出
+ * 鐢ㄦ埛鐧诲嚭
  */
 export async function logout() {
   await auth.signOut()
 
-  // 清除本地存储
+  // 娓呴櫎鏈湴瀛樺偍
   uni.removeStorageSync('userId')
   uni.removeStorageSync('userEmail')
+  uni.removeStorageSync('userPhone')
+  uni.removeStorageSync('selfProfile')
 }
 
 /**
- * 获取当前用户 ID
+ * 鑾峰彇褰撳墠鐢ㄦ埛 ID
  */
 export function getCurrentUserId(): string | null {
-  return uni.getStorageSync('userId') || null
+  try {
+    return uni.getStorageSync('userId') || null
+  } catch (error) {
+    console.warn('[api] getCurrentUserId storage read failed:', error)
+    return null
+  }
 }
 
-// ==================== 案例管理 ====================
+export type SelfProfile = {
+  gender?: string
+  ageRange?: string
+  identity?: string
+  zodiac?: string
+  constellation?: string
+  completedAt?: string
+  updatedAt?: string
+}
+
+export function hasUsableSelfProfile(profile: any): boolean {
+  if (!profile || typeof profile !== 'object') return false
+  return Boolean(profile.gender && profile.ageRange && profile.identity)
+}
+
+export function isSelfProfileSkipped(userId?: string | null): boolean {
+  const uid = String(userId || getCurrentUserId() || '').trim()
+  if (!uid) return false
+  try {
+    return Boolean(uni.getStorageSync(`selfProfileSkipped:${uid}`))
+  } catch {
+    return false
+  }
+}
+
+export function markSelfProfileSkipped(userId?: string | null) {
+  const uid = String(userId || getCurrentUserId() || '').trim()
+  if (!uid) return
+  try {
+    uni.setStorageSync(`selfProfileSkipped:${uid}`, true)
+  } catch {}
+}
+
+export function getCachedSelfProfile(): SelfProfile | null {
+  try {
+    const profile = uni.getStorageSync('selfProfile')
+    return profile && typeof profile === 'object' ? profile : null
+  } catch {
+    return null
+  }
+}
+
+export function shouldCompleteSelfProfile(resultOrProfile?: any): boolean {
+  const userId = resultOrProfile?.userId || getCurrentUserId()
+  const profile = resultOrProfile?.selfProfile || resultOrProfile || getCachedSelfProfile()
+  return !hasUsableSelfProfile(profile) && !isSelfProfileSkipped(userId)
+}
+
+export async function getSelfProfile() {
+  const res = await callFunction({
+    name: 'userProfile',
+    data: { action: 'get' }
+  })
+  if (res.result?.success) {
+    cacheSelfProfile(res.result.selfProfile)
+  }
+  return res.result
+}
+
+export async function updateSelfProfile(profile: SelfProfile) {
+  const res = await callFunction({
+    name: 'userProfile',
+    data: { action: 'update', profile }
+  })
+  if (res.result?.success) {
+    cacheSelfProfile(res.result.selfProfile)
+  }
+  return res.result
+}
+
+// ==================== 妗堜緥绠＄悊 ====================
 
 /**
- * 获取案例列表
+ * 鑾峰彇妗堜緥鍒楄〃
  */
 export async function getCases(_userId?: string) {
   const res = await callFunction({
     name: 'getCases',
     data: {}
   })
-  return (res.result.cases || []).map(normalizeCase)
+  return Promise.all((res.result.cases || []).map(normalizeCase))
 }
 
 /**
- * 创建案例
+ * 鍒涘缓妗堜緥
  */
 export async function createCase(data: {
   userId?: string
@@ -238,6 +406,7 @@ export async function createCase(data: {
   profile: any
 }) {
   const { userId: _userId, ...payload } = data
+  payload.profile = normalizeProfilePayload(payload.profile)
   const res = await callFunction({
     name: 'createCase',
     data: payload
@@ -246,7 +415,7 @@ export async function createCase(data: {
 }
 
 /**
- * 获取案例详情
+ * 鑾峰彇妗堜緥璇︽儏
  */
 export async function getCaseDetail(_userId: string, caseId: string) {
   const res = await callFunction({
@@ -254,13 +423,13 @@ export async function getCaseDetail(_userId: string, caseId: string) {
     data: { caseId }
   })
   if (!res.result?.success) {
-    throw new Error(res.result?.message || '获取档案详情失败')
+    throw new Error(res.result?.message || '鑾峰彇妗ｆ璇︽儏澶辫触')
   }
-  return normalizeCase(res.result.case)
+  return await normalizeCase(res.result.case)
 }
 
 /**
- * 删除案例
+ * 鍒犻櫎妗堜緥
  */
 export async function deleteCase(_userId: string, caseId: string) {
   const res = await callFunction({
@@ -271,7 +440,7 @@ export async function deleteCase(_userId: string, caseId: string) {
 }
 
 /**
- * 更新案例画像
+ * 鏇存柊妗堜緥鐢诲儚
  */
 export async function updateCaseProfile(data: {
   userId?: string
@@ -280,6 +449,7 @@ export async function updateCaseProfile(data: {
   profile: any
 }) {
   const { userId: _userId, ...payload } = data
+  payload.profile = normalizeProfilePayload(payload.profile)
   const res = await callFunction({
     name: 'updateCaseProfile',
     data: payload
@@ -287,10 +457,10 @@ export async function updateCaseProfile(data: {
   return res.result
 }
 
-// ==================== 时间线管理 ====================
+// ==================== 鏃堕棿绾跨鐞?====================
 
 /**
- * 获取时间线记录
+ * 鑾峰彇鏃堕棿绾胯褰?
  */
 export async function getTimeline(_userId: string, caseId: string) {
   const res = await callFunction({
@@ -301,7 +471,7 @@ export async function getTimeline(_userId: string, caseId: string) {
 }
 
 /**
- * 创建时间线记录
+ * 鍒涘缓鏃堕棿绾胯褰?
  */
 export async function createTimeline(data: {
   userId?: string
@@ -309,6 +479,9 @@ export async function createTimeline(data: {
   title?: string
   type?: string
   description: string
+  attachments?: any[]
+  subjectRole?: 'target' | 'self' | 'both' | 'unknown' | string
+  subjectRoleConfidence?: 'user_selected' | 'confirmed' | string
   occurrenceAt: string
 }) {
   const { userId: _userId, ...payload } = data
@@ -320,7 +493,7 @@ export async function createTimeline(data: {
 }
 
 /**
- * 删除时间线记录
+ * 鍒犻櫎鏃堕棿绾胯褰?
  */
 export async function deleteTimeline(_userId: string, caseId: string, recordId: string) {
   const res = await callFunction({
@@ -331,7 +504,7 @@ export async function deleteTimeline(_userId: string, caseId: string, recordId: 
 }
 
 /**
- * 重新评估
+ * 閲嶆柊璇勪及
  */
 export async function reassess(data: {
   userId?: string
@@ -346,7 +519,42 @@ export async function reassess(data: {
   return res.result
 }
 
-// ==================== AI 设置 ====================
+export async function analyzeAttachment(data: {
+  fileID: string
+  mediaType: 'image' | string
+}) {
+  const res = await callFunction({
+    name: 'analyzeAttachment',
+    data
+  })
+  return res.result
+}
+
+// ==================== 周复盘 ====================
+
+export async function getWeeklyReviews(_userId: string, caseId: string) {
+  const res = await callFunction({
+    name: 'weeklyReview',
+    data: { action: 'list', caseId }
+  })
+  if (!res.result?.success) {
+    throw new Error(res.result?.message || '获取周复盘失败')
+  }
+  return res.result
+}
+
+export async function generateWeeklyReview(_userId: string, caseId: string, weekStart?: string) {
+  const res = await callFunction({
+    name: 'weeklyReview',
+    data: { action: 'generate', caseId, weekStart }
+  })
+  if (!res.result?.success) {
+    throw new Error(res.result?.message || '生成周复盘失败')
+  }
+  return res.result
+}
+
+// ==================== AI 璁剧疆 ====================
 
 export type AIModelConfig = {
   id: string
@@ -358,7 +566,7 @@ export type AIModelConfig = {
 }
 
 /**
- * 获取 AI 设置
+ * 鑾峰彇 AI 璁剧疆
  */
 export async function getAISettings(_userId?: string) {
   const res = await callFunction({
@@ -369,7 +577,7 @@ export async function getAISettings(_userId?: string) {
 }
 
 /**
- * 更新 AI 设置（新版本，支持多模型）
+ * 鏇存柊 AI 璁剧疆锛堟柊鐗堟湰锛屾敮鎸佸妯″瀷锛?
  */
 export async function updateAISettings(data: {
   userId?: string
@@ -386,8 +594,40 @@ export async function updateAISettings(data: {
   return res.result
 }
 
+export async function adminGetOverview() {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getOverview' }
+  })
+  return res.result
+}
+
+export async function adminGetUserDetail(userId: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getUserDetail', userId }
+  })
+  return res.result
+}
+
+export async function adminUpdateAISettings(data: {
+  aiEnabled: boolean
+  aiFallbackToRules: boolean
+  models: AIModelConfig[]
+  defaultModelId: string
+}) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: {
+      action: 'updateAISettings',
+      ...data
+    }
+  })
+  return res.result
+}
+
 /**
- * 测试 AI 连接（支持通过 modelId 测试指定模型）
+ * 娴嬭瘯 AI 杩炴帴锛堟敮鎸侀€氳繃 modelId 娴嬭瘯鎸囧畾妯″瀷锛?
  */
 export async function testAIConnection(data: {
   userId?: string
@@ -405,12 +645,12 @@ export async function testAIConnection(data: {
   return res.result
 }
 
-// ==================== 云存储 ====================
+// ==================== 浜戝瓨鍌?====================
 
 /**
- * 上传文件到云存储
+ * 涓婁紶鏂囦欢鍒颁簯瀛樺偍
  */
-export async function uploadFile(filePath: string, cloudPath: string) {
+export async function uploadFile(filePath: any, cloudPath: string) {
   const result = await storage({
     cloudPath,
     filePath
@@ -419,7 +659,7 @@ export async function uploadFile(filePath: string, cloudPath: string) {
 }
 
 /**
- * 获取文件临时 URL
+ * 鑾峰彇鏂囦欢涓存椂 URL
  */
 export async function getTempFileURL(fileID: string) {
   const { fileList } = await app.getTempFileURL({

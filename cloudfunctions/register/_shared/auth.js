@@ -1,4 +1,4 @@
-async function requireAuthenticatedUserId(app) {
+async function requireAuthenticatedUserId(app, event = {}) {
   const userInfo = await app.auth().getUserInfo()
 
   const candidates = [
@@ -7,7 +7,8 @@ async function requireAuthenticatedUserId(app) {
     userInfo?.userInfo?.customUserId,
     userInfo?.userInfo?.uid,
     userInfo?.user?.customUserId,
-    userInfo?.user?.uid
+    userInfo?.user?.uid,
+    event?.userId
   ]
 
   let userId = ''

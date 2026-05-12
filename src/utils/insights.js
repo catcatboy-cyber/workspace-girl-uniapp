@@ -46,6 +46,110 @@ export function isSystemTimelineRecord(record) {
     || /^t\d+$/.test(recordId)
 }
 
+function getTimelineTagText(record) {
+  return `${record?.title || ''} ${record?.description || ''} ${record?.dateLabel || ''}`.toLowerCase()
+}
+
+function pushUnique(list, value) {
+  if (!list.includes(value)) list.push(value)
+}
+
+function normalizeStoredSemanticTags(record) {
+  const semantic = record?.semanticTags
+  if (!semantic || typeof semantic !== 'object') return null
+
+  const scene = Array.isArray(semantic.scene) ? semantic.scene.filter(Boolean) : []
+  const behavior = Array.isArray(semantic.behavior) ? semantic.behavior.filter(Boolean) : []
+  const outcome = Array.isArray(semantic.outcome) ? semantic.outcome.filter(Boolean) : []
+  const risk = Array.isArray(semantic.risk) ? semantic.risk.filter(Boolean) : []
+
+  if (semantic.initiator === 'target') pushUnique(behavior, 'target_initiated')
+  if (semantic.initiator === 'self') pushUnique(behavior, 'self_initiated')
+  if (semantic.response === 'rejected') pushUnique(risk, 'rejected')
+  if (semantic.response === 'pending') pushUnique(outcome, 'pending')
+  if (semantic.commitment?.fulfilled) pushUnique(outcome, 'fulfilled')
+  if (semantic.commitment?.exists && !semantic.commitment?.fulfilled) pushUnique(outcome, 'planned')
+
+  const hasAny = scene.length || behavior.length || outcome.length || risk.length
+  if (!hasAny) return null
+
+  return {
+    scene,
+    behavior,
+    outcome,
+    risk,
+    all: [...scene, ...behavior, ...outcome, ...risk]
+  }
+}
+
+export function getTimelineRecordTags(record) {
+  const semanticTags = normalizeStoredSemanticTags(record)
+  if (semanticTags) return semanticTags
+
+  const text = getTimelineTagText(record)
+  const scene = []
+  const behavior = []
+  const outcome = []
+  const risk = []
+
+  if (includesAny(text, ['见面', '碰面', '线下见', '出来见', '约会', '赴约', '见到了', '碰面了', '出来了'])) pushUnique(scene, 'offline_meet')
+  if (includesAny(text, ['电影', '影院', '看电影'])) pushUnique(scene, 'movie')
+  if (includesAny(text, ['吃饭', '晚饭', '午饭', '早餐', '夜宵', '火锅', '烧烤', '餐厅'])) pushUnique(scene, 'meal')
+  if (includesAny(text, ['咖啡', '奶茶', '喝咖啡', '喝奶茶'])) pushUnique(scene, 'coffee_tea')
+  if (includesAny(text, ['散步', '逛街', '走走', '压马路'])) pushUnique(scene, 'walk_shop')
+  if (includesAny(text, ['朋友局', '朋友一起', '同学聚会', '多人活动', '聚会', '带我见朋友', '介绍朋友'])) pushUnique(scene, 'group_social')
+  if (includesAny(text, ['旅行', '旅游', '出游', '郊游', '露营'])) pushUnique(scene, 'trip')
+  if (includesAny(text, ['聊天', '微信', '消息', '回复', '发消息', '语音', '电话', '视频'])) pushUnique(scene, 'chat')
+
+  if (record?.subjectRole === 'self') pushUnique(behavior, 'self_initiated')
+  if (record?.subjectRole === 'target') pushUnique(behavior, 'target_side')
+  if (record?.subjectRole === 'both') pushUnique(behavior, 'both_interaction')
+  if (includesAny(text, ['主动约我', '主动找我', '主动联系我', '他主动', '她主动', '对方主动', '邀请我', '来找我', '主动确认'])) pushUnique(behavior, 'target_initiated')
+  if (includesAny(text, ['我主动', '我先', '我约', '我问', '我发', '我联系'])) pushUnique(behavior, 'self_initiated')
+
+  if (includesAny(text, ['答应', '说好', '确定', '确认', '约好', '安排', '计划', '下次', '改天', '周末'])) pushUnique(outcome, 'planned')
+  if (includesAny(text, [
+    '兑现', '落实', '说到做到', '真的来了', '来了', '到了', '赴约', '见到了',
+    '一起去了', '一起看了', '一起吃了', '一起吃饭了', '一起吃饭', '吃完饭',
+    '吃过饭', '实际吃饭', '真的一起吃', '真的去吃', '按时到了', '到场了',
+    '安排好了', '定好了'
+  ])) pushUnique(outcome, 'fulfilled')
+  if (includesAny(text, ['取消', '改期', '推迟', '放鸽子', '失约', '没来', '拖延', '改口'])) pushUnique(outcome, 'cancelled_delayed')
+  if (includesAny(text, ['待确认', '再看', '看情况', '以后再说', '不确定', '到时候再说'])) pushUnique(outcome, 'pending')
+
+  if (record?.type === 'risk') pushUnique(risk, 'risk_event')
+  if (includesAny(text, ['拒绝', '被拒', '婉拒', '不去', '不想', '没答应', '算了', '推掉', '来不了'])) pushUnique(risk, 'rejected')
+  if (includesAny(text, ['已读不回', '没回', '不回', '冷淡', '敷衍', '消失', '回避'])) pushUnique(risk, 'cold')
+  if (includesAny(text, ['再看', '看情况', '以后再说', '不确定', '拖延', '改口'])) pushUnique(risk, 'vague_delay')
+  if (record?.aiUsed) pushUnique(outcome, 'ai_reviewed')
+
+  return {
+    scene,
+    behavior,
+    outcome,
+    risk,
+    all: [...scene, ...behavior, ...outcome, ...risk]
+  }
+}
+
+export function buildTimelineStats(records) {
+  const manualRecords = (records || []).filter((item) => !isSystemTimelineRecord(item))
+  const count = (tag) => manualRecords.filter((item) => getTimelineRecordTags(item).all.includes(tag)).length
+
+  return {
+    totalCount: manualRecords.length,
+    offlineMeetCount: count('offline_meet'),
+    movieCount: count('movie'),
+    mealCount: count('meal'),
+    coffeeTeaCount: count('coffee_tea'),
+    targetInitiatedCount: count('target_initiated'),
+    fulfilledCount: count('fulfilled'),
+    rejectedCount: count('rejected'),
+    cancelledDelayedCount: count('cancelled_delayed'),
+    aiReviewedCount: count('ai_reviewed')
+  }
+}
+
 // ============================================================================
 // Trend comparison (from trend.ts)
 // ============================================================================
@@ -364,7 +468,8 @@ function toFocusEvidence(event, sequenceLabel) {
     occurrenceTime: event.date || '时间未说明',
     recordedAt: formatRecordedAt(event),
     sequenceLabel,
-    type: event.type
+    type: event.type,
+    aiUsed: Boolean(event.aiUsed)
   }
 }
 
@@ -417,28 +522,73 @@ function scoreEvidence(label, event) {
   return score
 }
 
+function isPlainRejectionEvent(text) {
+  return includesAny(text, ['拒绝', '被拒', '婉拒', '没答应', '不去', '不想', '算了', '推掉', '来不了'])
+}
+
+function hasCommitmentOrArrangementText(text) {
+  return includesAny(text, [
+    '答应', '说好', '确定', '确认', '约好', '安排', '计划', '时间', '地点',
+    '兑现', '落实', '定了', '订了', '下次', '周末', '今晚', '明天', '改天补上',
+    '取消', '推迟', '改期', '放鸽子', '失约', '没来', '拖延', '改口', '没有兑现'
+  ])
+}
+
+function isFocusEvidenceCompatible(label, event) {
+  const text = eventText(event)
+
+  if (label === '口头热情，行动不足') {
+    if (!hasCommitmentOrArrangementText(text)) return false
+    // 单纯“被拒绝一次”不能证明“之前答应过的安排是否落地”。
+    // 只有同时出现承诺/安排/改期/兑现语义时，才归入这个验证重点。
+    if (isPlainRejectionEvent(text) && !includesAny(text, ['答应', '说好', '约好', '安排', '计划', '确定', '确认', '取消', '推迟', '改期', '失约', '改口', '没有兑现'])) {
+      return false
+    }
+    return true
+  }
+
+  if (label === '单向投入') {
+    return includesAny(text, ['我主动', '我先', '我约', '我问', '我发', '没找我', '没有主动', '只有我', '回得慢', '敷衍'])
+  }
+
+  if (label === '关键问题难验证') {
+    return event.type === 'verification' || includesAny(text, ['验证', '核实', '查证', '对不上', '解释', '真假', '承诺', '说法'])
+  }
+
+  if (label === '节奏明显不稳定') {
+    return includesAny(text, ['忽冷忽热', '失联', '突然', '又', '反复', '回避', '拖延', '取消', '推迟', '改口', '补偿', '解释清楚'])
+  }
+
+  if (label === '证据不足') {
+    return event.type === 'note' || includesAny(text, ['不确定', '感觉', '猜', '说不清'])
+  }
+
+  return true
+}
+
 function pickEvidence(caseFile, label) {
   const sequenceMap = buildSequenceMap(caseFile)
   const manualTimeline = caseFile.timeline.filter((item) => item.type !== 'assessment')
   const scored = manualTimeline
+    .filter((event) => isFocusEvidenceCompatible(label, event))
     .map((event) => ({ event, score: scoreEvidence(label, event) }))
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
     .map((item) => ({
-      ...toFocusEvidence(item.event, sequenceMap.get(item.event.id))
+      ...toFocusEvidence(item.event, sequenceMap.get(item.event.id || item.event._id))
     }))
 
   if (scored.length > 0) return scored
 
-  return manualTimeline.slice(0, 2).map((item) => toFocusEvidence(item, sequenceMap.get(item.id)))
+  return []
 }
 
 function buildStatus(label, evidences) {
   const latest = evidences[0]
   if (!latest) return '样本偏少'
   if (label === '证据不足') return '继续补样本'
-  if (latest.type === 'risk') return '升温中'
+  if (latest.type === 'risk') return '待验证'
   if (latest.type === 'verification' || latest.type === 'positive') return '观察中'
   return '暂时持平'
 }
@@ -446,17 +596,17 @@ function buildStatus(label, evidences) {
 function buildNextPrompt(label) {
   switch (label) {
     case '单向投入':
-      return '下一次重点记录：如果你先停一下，对方会不会自己来推进。'
+      return '本次重点记录：如果你先停一下，对方会不会自己来推进。'
     case '口头热情，行动不足':
-      return '下一次重点记录：答应过的见面、安排或回应，这次有没有真正落地。'
+      return '本次重点记录：答应过的见面、安排或回应，这次有没有真正落地。'
     case '关键问题难验证':
-      return '下一次重点记录：有没有新的可核实事实，或者原说法能不能对上。'
+      return '本次重点记录：有没有新的可核实事实，或者原说法能不能对上。'
     case '节奏明显不稳定':
-      return '下一次重点记录：后续两三次互动是继续反复，还是开始稳定。'
+      return '本次重点记录：后续两三次互动是继续反复，还是开始稳定。'
     case '证据不足':
-      return '下一次重点记录：一条具体、可复盘、不是纯感觉的真实互动。'
+      return '本次重点记录：一条具体、可复盘、不是纯感觉的真实互动。'
     default:
-      return '下一次重点记录：能直接改变判断方向的一条真实事件。'
+      return '本次重点记录：能直接改变判断方向的一条真实事件。'
   }
 }
 
@@ -475,7 +625,7 @@ export function buildFocusItems(caseFile) {
       meaning: '当前没有特别突出的结构性提醒，重点不是下结论，而是看后续动作能不能持续。',
       action: '继续记录关键互动，优先盯兑现、主动和明确回应。',
       status: '暂时平稳',
-      nextRecordPrompt: '下一次重点记录：有没有新的主动推进，或者有没有一次明确兑现。',
+      nextRecordPrompt: '本次重点记录：有没有新的主动推进，或者有没有一次明确兑现。',
       evidences: caseFile.timeline.slice(0, 2).map((item) => toFocusEvidence(item, sequenceMap.get(item.id)))
     }]
   }
@@ -504,6 +654,7 @@ export function buildObjectStatusCard(caseFile) {
   const previous = caseFile.assessments.length > 1 ? caseFile.assessments[caseFile.assessments.length - 2] : null
   const trend = compareAssessments(previous, latest)
   const latestEvent = latest.triggerEventTitle || caseFile.timeline.find((item) => !isSystemTimelineRecord(item))?.title || caseFile.timeline[0]?.title || ''
+  const recentSignals = analyzeRecentManualSignals(caseFile)
 
   let phase = '观察期'
   if (latest.evidenceLevel === 'E1' || latest.evidenceLevel === 'E2') phase = '试探期'
@@ -526,7 +677,7 @@ export function buildObjectStatusCard(caseFile) {
   else if (trend.intentDirection === 'up' && trend.riskDirection === 'down') weather = '转晴'
   else if (trend.riskDirection === 'up') weather = '起风'
 
-  const summary =
+  let summary =
     latest.nextAction === 'verify'
       ? '当前最重要的不是继续猜，而是把关键说法和承诺核实清楚。'
       : latest.nextAction === 'pause'
@@ -539,13 +690,28 @@ export function buildObjectStatusCard(caseFile) {
     ? `最近的关键触发点是"${latestEvent}"。`
     : '最近还没有足够强的关键触发点。'
 
-  const caution =
+  let caution =
     trend.warningText
       ?? (latest.consistencyRiskScore >= 60
         ? '近期风险已经不低，后面要优先看有没有解释、兑现和补动作。'
         : latest.evidenceLevel === 'E1' || latest.evidenceLevel === 'E2'
           ? '证据还薄，任何强烈感觉都先别急着定性。'
           : '下一次最值得记录的是：对方会不会主动、会不会落地、会不会持续。')
+
+  if (recentSignals.rejectionCount >= 2) {
+    phase = '降温期'
+    state = '连续受阻'
+    weather = '雷阵雨'
+    summary = '最近连续两次互动都出现了明确拒绝或婉拒，这已经不是单次波动，当前更应该按真实受阻信号理解。'
+    caution = '先暂停新邀约和补偿式推进，重点看对方后面会不会主动补解释、补安排或补行动。'
+  } else if (recentSignals.negativeCount >= 2) {
+    if (phase === '升温期') phase = '拉扯期'
+    if (state === '稳步推进') state = '明显转弱'
+    else if (state === '继续观察') state = '有热度但不稳'
+    if (weather === '晴' || weather === '转晴') weather = '阵风'
+    summary = '最近两三次互动已经连续偏负向或偏被动，当前状态不能再按单次正向信号理解。'
+    caution = '先别继续加码投入，优先观察对方会不会主动补回应、补兑现或补安排。'
+  }
 
   return {
     phase,
@@ -554,6 +720,573 @@ export function buildObjectStatusCard(caseFile) {
     summary,
     spotlight,
     caution
+  }
+}
+
+function normalizeMeaningText(parts) {
+  return parts
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+function hasAnyMeaning(text, keywords) {
+  return keywords.some((keyword) => text.includes(keyword))
+}
+
+function getActionEventText(event, current) {
+  return normalizeMeaningText([
+    event?.title,
+    event?.description,
+    current?.triggerEventTitle,
+    current?.explanation?.headline,
+    ...(Array.isArray(current?.primaryLabels) ? current.primaryLabels : [])
+  ])
+}
+
+function inferActionScene(event, current) {
+  const text = getActionEventText(event, current)
+  const hasMeet = hasAnyMeaning(text, ['见面', '约', '吃饭', '电影', '咖啡', '散步', '出来', '线下', '碰面', '聚会', '旅行', '活动', '打掼蛋'])
+  const hasChat = hasAnyMeaning(text, ['消息', '微信', '聊天', '回复', '电话', '语音', '视频', '已读', '不回'])
+  const hasCommitment = hasAnyMeaning(text, ['承诺', '答应', '确定', '安排', '计划', '时间', '地点', '兑现', '改口', '临时', '取消'])
+  const hasClarify = hasAnyMeaning(text, ['解释', '澄清', '误会', '问清', '确认', '说法', '理由'])
+  const rejected = hasAnyMeaning(text, ['拒绝', '被拒', '婉拒', '没答应', '不去', '不想', '算了', '推掉'])
+  const delayed = hasAnyMeaning(text, ['再看', '看情况', '改天', '下次吧', '以后再说', '不确定', '到时候再说', '先这样'])
+  const broken = hasAnyMeaning(text, ['取消', '推迟', '改期', '放鸽子', '失约', '没来', '拖延', '改口'])
+  const cold = hasAnyMeaning(text, ['没回', '已读不回', '冷淡', '敷衍', '消失', '回避'])
+
+  if (hasClarify) return 'clarify'
+  if ((event?.type === 'risk' || current?.nextAction === 'pause') && (rejected || delayed || broken || cold)) return 'risk_after_pullback'
+  if (hasMeet && rejected) return 'meet_rejected'
+  if (hasMeet && (delayed || broken)) return 'meet_unstable'
+  if (hasCommitment && (broken || delayed)) return 'commitment_unstable'
+  if (hasCommitment || event?.type === 'verification' || current?.nextAction === 'verify') return 'commitment'
+  if (hasChat && cold) return 'chat_cold'
+  if (hasChat) return 'chat'
+  if (event?.type === 'risk' || current?.nextAction === 'pause') return 'risk'
+  if (hasMeet || event?.type === 'positive') return 'meet'
+  return 'general'
+}
+
+function buildSceneAdvice(scene, eventTitle) {
+  switch (scene) {
+    case 'meet_rejected':
+      return {
+        do: `“${eventTitle}”已经出现明确拒绝，这次不要继续补邀约，也不要立刻换一个新活动再试。穿着和状态都回到自己的日常安排，把注意力放回自己，不为了挽回局面刻意表现。`,
+        say: '可以简短回：“好，没事，你先忙。”或者“收到，那这次就先这样。”点到为止，不再追问原因。',
+        tone: '表情和语气保持自然、平静、不过度失落。不要阴阳怪气，也不要立刻热情找补。',
+        observe: '重点看拒绝之后，对方后面会不会主动补一个新时间、新安排，或者至少给出更明确解释。如果后面完全没有补动作，这次拒绝就要按真实负向信号记。'
+      }
+    case 'meet_unstable':
+      return {
+        do: `“${eventTitle}”涉及邀约但节奏已经不稳，这次不要急着重新约。先把节奏降下来，保留正常回应，不主动承担安排者角色。`,
+        say: '可以说：“那你这边确定好了再和我说。”把球放回对方，不替他继续推进。',
+        tone: '状态轻一点、礼貌一点，不催、不逼、不长篇解释。',
+        observe: '重点看他后面是否会主动补时间、补地点、补解释，而不是继续让你等、让你猜。'
+      }
+    case 'commitment_unstable':
+      return {
+        do: `“${eventTitle}”已经显示安排或承诺不稳，这次重点不是继续投入，而是把不一致的地方记清楚。先别替对方圆场，也别自己脑补合理化。`,
+        say: '可以说：“那你确定下来再告诉我。”或者“这件事现在就先按没定算。”把事实落稳，不帮对方模糊过去。',
+        tone: '语气平、短、清楚，像确认事实，不像情绪对抗。',
+        observe: '重点看他后面会不会主动修正、补兑现、补说明。如果还是反复变动，就按连续不稳定信号看。'
+      }
+    case 'chat_cold':
+      return {
+        do: `如果“${eventTitle}”主要是聊天冷掉或敷衍，这次不要继续用更多消息把气氛拉回来。先停在一个自然句号上，别追着补话题。`,
+        say: '可以收一句：“好，先这样。”或者“你忙你的，回头再说。”不给自己加更多暴露感。',
+        tone: '情绪压低一点，表情和话都收一点。重点是稳住自己，不表现出急着求回应。',
+        observe: '重点看后面是不是只有你主动时他才回，还是他会自己回来补一句、补解释、补互动。'
+      }
+    case 'commitment':
+      return {
+        do: `把“${eventTitle}”里的时间、地点、承诺或安排单独拎出来验证，不要只听态度。`,
+        say: '可以说：“这个安排现在能确定吗？”或者“你前面说的那件事，准备怎么落实？”',
+        tone: '像确认事实一样问，不要像质问。你要看的是兑现能力，不是逼对方马上表态。',
+        observe: '重点看他说法是否前后一致、有没有明确时间点、是否主动推进落实。说得好听但迟迟不落地，要继续记录。'
+      }
+    case 'clarify':
+      return {
+        do: `围绕“${eventTitle}”只问一个最关键的问题，先把事实问清楚。`,
+        say: '可以说：“我想确认一下，你刚刚说的意思是……吗？”或者“这件事你现在是怎么想的？”',
+        tone: '少评价，多确认；先听对方怎么解释，不急着马上反驳或下判断。',
+        observe: '重点看他是否愿意把话说清楚、解释后有没有对应行动。如果解释很顺但行动没有变化，仍然要按行动记录。'
+      }
+    case 'risk_after_pullback':
+    case 'risk':
+      return {
+        do: `如果“${eventTitle}”已经让你感觉不稳，先降低主动推进，不要继续用更高投入换回应。把注意力先放回自己，减少主动试探。`,
+        say: '可以简短说：“我知道了，那你先处理你的事。”或者“好，那就先这样。”先把空间留出来。',
+        tone: '保持冷静、少补偿、少追问。你的目标是观察对方会不会主动修复，而不是马上把关系拉回来。',
+        observe: '重点看他是否主动补解释、补行动，还是只有在你追问时才回应。反复失约、改口、回避或拒绝要单独记录。'
+      }
+    case 'chat':
+      return {
+        do: `如果“${eventTitle}”主要发生在聊天里，先围绕一个具体点回应，不要把话题扩大成关系审判。`,
+        say: '可以说：“我想确认一下，你刚刚这句话是指已经确定了，还是只是先这样想？”',
+        tone: '语气尽量短、清楚，把情绪放低；不要连续追问，也不要用很长一段话证明自己在意。',
+        observe: '重点看他是否正面回答、回复是否具体、后续是否主动补充。如果他只用“再说吧”“看情况”带过，就把它记录成含糊信号。'
+      }
+    case 'meet':
+      return {
+        do: `如果“${eventTitle}”涉及见面或邀约，而且没有出现拒绝、取消或拖延，可以正常赴约，但不要一上来就急着定关系。穿着保持干净舒服，不用刻意讨好；聊天多围绕当下安排、近况和具体计划。`,
+        say: '可以轻松问：“这次你想怎么安排？”或者“你后面那天大概几点方便？”让对方把想法说具体。',
+        tone: '保持松弛和有边界感：热情可以有，但别因为一次邀约就主动把节奏推太满。',
+        observe: '重点看他是否提前确认时间地点、见面中是否自然投入、见面后是否有后续联系。如果他主动补充下一次安排，比单纯说好听话更有参考价值。'
+      }
+    default:
+      return {
+        do: `围绕“${eventTitle}”继续看后续动作，不要只凭这一次就做最终判断。`,
+        say: '可以保持自然互动，必要时只问一个具体问题，不要一次问太多。',
+        tone: '节奏放稳，既不要过度热情，也不要突然冷处理。',
+        observe: '重点看后续是否主动、是否兑现、回应是否具体，以及这次信号能不能连续出现。'
+      }
+  }
+}
+
+function buildRecentPatternNote(caseFile) {
+  const manualRecords = sortTimelineRecordsDesc(caseFile?.timeline || [])
+    .filter((item) => !isSystemTimelineRecord(item))
+    .slice(0, 3)
+
+  if (manualRecords.length < 2) return null
+
+  const negativeCount = manualRecords.filter((item) => {
+    const text = normalizeMeaningText([item?.title, item?.description])
+    return item?.type === 'risk' || hasAnyMeaning(text, ['拒绝', '被拒', '取消', '推迟', '失约', '没回', '冷淡', '敷衍', '回避', '再看', '看情况'])
+  }).length
+
+  if (negativeCount >= 2) {
+    return {
+      do: '最近两三次事件已经连续偏被动或偏负向，这次不要再追加新邀约或长解释。',
+      tone: '表情和语气都收一点，礼貌、稳定就够，不要急着救场。',
+      observe: '如果后面没有对方主动补邀约、补解释或补行动，就按连续负向信号看。'
+    }
+  }
+
+  return null
+}
+
+function analyzeRecentManualSignals(caseFile) {
+  const manualRecords = sortTimelineRecordsDesc(caseFile?.timeline || [])
+    .filter((item) => !isSystemTimelineRecord(item))
+    .slice(0, 3)
+
+  const counts = {
+    rejectionCount: 0,
+    delayedCount: 0,
+    coldCount: 0,
+    negativeCount: 0
+  }
+
+  manualRecords.forEach((item) => {
+    const text = normalizeMeaningText([item?.title, item?.description])
+    const rejected = hasAnyMeaning(text, ['拒绝', '被拒', '婉拒', '没答应', '不去', '不想', '算了', '推掉'])
+    const delayed = hasAnyMeaning(text, ['再看', '看情况', '改天', '下次吧', '以后再说', '不确定', '到时候再说', '先这样', '取消', '推迟', '改期', '放鸽子', '失约', '没来', '拖延', '改口'])
+    const cold = item?.type === 'risk' || hasAnyMeaning(text, ['没回', '已读不回', '冷淡', '敷衍', '消失', '回避'])
+    if (rejected) counts.rejectionCount += 1
+    if (delayed) counts.delayedCount += 1
+    if (cold) counts.coldCount += 1
+    if (rejected || delayed || cold) counts.negativeCount += 1
+  })
+
+  return counts
+}
+
+function isUserFacingTimelineRecord(item) {
+  return Boolean(
+    item
+    && !isSystemTimelineRecord(item)
+    && (item.type === 'positive' || item.type === 'risk' || item.type === 'verification' || item.type === 'note')
+  )
+}
+
+function isWithinRecentDays(timestamp, now, days) {
+  if (!timestamp) return false
+  return timestamp >= now.getTime() - days * 24 * 60 * 60 * 1000
+}
+
+function formatRelativeTime(timestamp, now = new Date()) {
+  if (!timestamp) return '暂无'
+  const diff = Math.max(0, now.getTime() - timestamp)
+  const minute = 60 * 1000
+  const hour = 60 * minute
+  const day = 24 * hour
+
+  if (diff < hour) return `${Math.max(1, Math.floor(diff / minute))} 分钟前`
+  if (diff < day) return `${Math.max(1, Math.floor(diff / hour))} 小时前`
+  if (diff < day * 30) return `${Math.max(1, Math.floor(diff / day))} 天前`
+  return `${Math.max(1, Math.floor(diff / (day * 30)))} 个月前`
+}
+
+function isNegativeManualSignal(item) {
+  const text = normalizeMeaningText([item?.title, item?.description])
+  const rejected = hasAnyMeaning(text, ['拒绝', '被拒', '婉拒', '没答应', '不去', '不想', '算了', '推掉'])
+  const delayed = hasAnyMeaning(text, ['再看', '看情况', '改天', '下次吧', '以后再说', '不确定', '到时候再说', '先这样', '取消', '推迟', '改期', '放鸽子', '失约', '没来', '拖延', '改口'])
+  const cold = item?.type === 'risk' || hasAnyMeaning(text, ['没回', '已读不回', '冷淡', '敷衍', '消失', '回避'])
+  return rejected || delayed || cold
+}
+
+function hasTargetInitiative(item) {
+  if (!item || item.subjectRole === 'self') return false
+  const text = normalizeMeaningText([item?.title, item?.description])
+  if (item.subjectRole === 'target' && item.type === 'positive' && hasAnyMeaning(text, ['主动', '约我', '找我', '联系我', '发我', '问我', '确认', '安排', '邀请', '解释', '补'])) {
+    return true
+  }
+  return hasAnyMeaning(text, ['主动约我', '主动找我', '主动联系我', '他约我', '她约我', '他找我', '她找我', '他主动', '她主动', '对方主动', '邀请我', '给我发', '来找我', '主动确认'])
+}
+
+function isTargetSideRecord(item) {
+  return Boolean(item && item.subjectRole !== 'self')
+}
+
+function summarizeRecordTitle(item) {
+  if (!item) return '还没有事件记录'
+  return item.title || item.description || '最近一次互动'
+}
+
+const commitmentTopicLibrary = [
+  { key: 'movie', keywords: ['看电影', '电影', '影院'] },
+  { key: 'meal', keywords: ['吃饭', '晚饭', '午饭', '早餐', '夜宵', '火锅', '烧烤'] },
+  { key: 'coffee', keywords: ['咖啡', '喝咖啡'] },
+  { key: 'walk', keywords: ['散步', '遛弯', '走走'] },
+  { key: 'meet', keywords: ['见面', '碰面', '线下见', '出来见', '约会', '赴约'] },
+  { key: 'trip', keywords: ['旅行', '旅游', '出游', '郊游'] },
+  { key: 'game', keywords: ['打掼蛋', '掼蛋', '打牌', '桌游'] },
+  { key: 'gift_bag', keywords: ['买包', '包包', '包'] },
+  { key: 'gift_flower', keywords: ['花', '鲜花'] },
+  { key: 'gift_general', keywords: ['礼物', '送我', '送你', '送东西'] },
+  { key: 'pickup', keywords: ['接我', '来接', '送我回', '送我'] },
+  { key: 'contact', keywords: ['联系我', '找我', '回我', '回复我', '给我发消息', '给我打电话'] }
+]
+
+function extractCommitmentTopics(item) {
+  const text = normalizeMeaningText([item?.title, item?.description])
+  const topics = new Set()
+
+  commitmentTopicLibrary.forEach((entry) => {
+    if (hasAnyMeaning(text, entry.keywords)) topics.add(entry.key)
+  })
+
+  if (topics.has('gift_bag')) topics.delete('gift_general')
+  if (topics.has('movie') || topics.has('meal') || topics.has('coffee') || topics.has('walk') || topics.has('trip') || topics.has('game')) {
+    topics.add('meet')
+  }
+
+  return [...topics]
+}
+
+function extractCommitmentRole(item) {
+  const topics = extractCommitmentTopics(item)
+  if (topics.some((topic) => topic.startsWith('gift_'))) return 'gift'
+  if (topics.includes('contact')) return 'contact'
+  if (topics.includes('meet')) return 'meet'
+  const text = normalizeMeaningText([item?.title, item?.description])
+  if (hasAnyMeaning(text, ['时间', '地点', '周末', '今晚', '明天', '周六', '周日', '赴约', '见面', '碰面', '出来'])) return 'meet'
+  if (hasAnyMeaning(text, ['买', '送', '礼物', '包', '花', '收到', '拿到'])) return 'gift'
+  if (hasAnyMeaning(text, ['联系我', '找我', '回我', '回复我', '回电', '消息', '电话'])) return 'contact'
+  return 'generic'
+}
+
+function hasCommitmentStarter(text) {
+  return hasAnyMeaning(text, [
+    '答应', '说好', '确定', '确认', '约好', '安排好', '定了', '订了',
+    '会来', '会去', '会找我', '会联系', '下次一定', '改天补上', '到时候见', '之后见',
+    '给我买', '送我', '帮我买'
+  ])
+}
+
+function isCommitmentRecord(item) {
+  if (!isTargetSideRecord(item)) return false
+  const text = normalizeMeaningText([item?.title, item?.description])
+  const topics = extractCommitmentTopics(item)
+  return hasCommitmentStarter(text) && (topics.length > 0 || extractCommitmentRole(item) !== 'generic' || hasAnyMeaning(text, ['时间', '地点', '安排', '计划']))
+}
+
+function isCommitmentDeliveredRecord(item) {
+  if (!isTargetSideRecord(item)) return false
+  const text = normalizeMeaningText([item?.title, item?.description])
+  const role = extractCommitmentRole(item)
+  const topics = extractCommitmentTopics(item)
+  return hasAnyMeaning(text, [
+    '兑现', '落实', '说到做到', '安排好了', '定好了', '订好了', '准时', '按时',
+    '来了', '到了', '赴约', '见到了', '补上了', '真的来了', '确认好了'
+  ]) || (
+    topics.length > 0
+    && hasAnyMeaning(text, ['收到', '拿到', '一起去了', '一起看了', '一起吃了', '已经买了', '已经送了'])
+  ) || (
+    role === 'meet'
+    && hasAnyMeaning(text, ['赴约', '见到了', '碰面了', '出来了', '一起去了', '一起看了', '一起吃了', '到场了'])
+  ) || (
+    role === 'gift'
+    && hasAnyMeaning(text, ['收到', '拿到', '已经买了', '已经送了', '送到了'])
+  ) || (
+    role === 'contact'
+    && hasAnyMeaning(text, ['联系我了', '找我了', '回我了', '回复我了', '给我发消息了', '给我打电话了'])
+  )
+}
+
+function isCommitmentBrokenRecord(item) {
+  if (!isTargetSideRecord(item)) return false
+  const text = normalizeMeaningText([item?.title, item?.description])
+  const role = extractCommitmentRole(item)
+  return hasAnyMeaning(text, [
+    '取消', '推迟', '改期', '放鸽子', '失约', '没来', '拖延', '改口', '再看', '看情况', '下次吧', '以后再说'
+  ]) || (
+    role === 'meet'
+    && hasAnyMeaning(text, ['来不了', '不去了', '临时取消', '临时改期'])
+  ) || (
+    role === 'gift'
+    && hasAnyMeaning(text, ['没买', '没送', '不给了'])
+  ) || (
+    role === 'contact'
+    && hasAnyMeaning(text, ['没回', '不回', '不联系', '没消息'])
+  )
+}
+
+function isSameCommitmentTopic(pending, item) {
+  const currentTopics = extractCommitmentTopics(item)
+
+  if (pending.topics.length > 0 && currentTopics.length > 0) {
+    return pending.topics.some((topic) => currentTopics.includes(topic))
+  }
+
+  if (pending.role !== 'generic') {
+    return pending.role === extractCommitmentRole(item)
+  }
+
+  return currentTopics.length === 0
+}
+
+function summarizeCommitmentDeliveryStats(records) {
+  const chronological = [...records].sort((a, b) => {
+    const left = getTimelineRecordTimestamp(a) || 0
+    const right = getTimelineRecordTimestamp(b) || 0
+    return left - right
+  })
+
+  let commitmentCount = 0
+  let deliveredCount = 0
+  const pendingCommitments = []
+
+  chronological.forEach((item) => {
+    if (isCommitmentRecord(item)) {
+      commitmentCount += 1
+      pendingCommitments.push({
+        topics: extractCommitmentTopics(item),
+        role: extractCommitmentRole(item)
+      })
+      return
+    }
+
+    if (pendingCommitments.length <= 0) return
+
+    if (isCommitmentDeliveredRecord(item)) {
+      const matchedIndex = pendingCommitments.findIndex((pending) => isSameCommitmentTopic(pending, item))
+      if (matchedIndex >= 0) {
+        deliveredCount += 1
+        pendingCommitments.splice(matchedIndex, 1)
+      }
+      return
+    }
+
+    if (isCommitmentBrokenRecord(item)) {
+      const matchedIndex = pendingCommitments.findIndex((pending) => isSameCommitmentTopic(pending, item))
+      if (matchedIndex >= 0) {
+        pendingCommitments.splice(matchedIndex, 1)
+      }
+    }
+  })
+
+  return { commitmentCount, deliveredCount }
+}
+
+function isActualMeetRecord(item) {
+  if (!isTargetSideRecord(item)) return false
+
+  const text = normalizeMeaningText([item?.title, item?.description])
+  const topics = extractCommitmentTopics(item)
+  const meetRelated = topics.includes('meet') || topics.includes('pickup')
+
+  if (!meetRelated) return false
+
+  if (hasAnyMeaning(text, [
+    '见到了', '碰面了', '赴约', '出来了', '线下见了', '约会了',
+    '一起去了', '一起看了', '一起吃了', '一起喝了咖啡', '一起散步了',
+    '看了电影', '吃了饭', '喝了咖啡', '散了步', '到场了', '来接我了'
+  ])) {
+    return true
+  }
+
+  if (item?.type !== 'positive') return false
+  if (hasAnyMeaning(text, ['答应', '约好', '安排', '计划', '打算', '准备', '下次', '周末再', '改天'])) return false
+
+  return hasAnyMeaning(text, [
+    '见面', '碰面', '线下见', '出来见', '约会',
+    '看电影', '吃饭', '喝咖啡', '散步', '旅行', '出游', '郊游', '打掼蛋', '桌游', '接我'
+  ])
+}
+
+export function buildCaseOverviewStats(caseFile, now = new Date()) {
+  const manualTimeline = sortTimelineRecordsDesc((caseFile?.timeline || []).filter((item) => isUserFacingTimelineRecord(item)))
+  const latestRecord = manualTimeline[0] || null
+  const recent7Days = manualTimeline.filter((item) => isWithinRecentDays(getTimelineRecordTimestamp(item), now, 7))
+  const recent14Days = manualTimeline.filter((item) => isWithinRecentDays(getTimelineRecordTimestamp(item), now, 14))
+  const recent10Records = manualTimeline.slice(0, 10)
+
+  let blockedStreak = 0
+  for (const item of manualTimeline) {
+    if (!isNegativeManualSignal(item)) break
+    blockedStreak += 1
+  }
+
+  const targetInitiatedCount = recent14Days.filter((item) => hasTargetInitiative(item)).length
+  const recentMeetCount = recent14Days.filter((item) => isActualMeetRecord(item)).length
+  const { commitmentCount, deliveredCount } = summarizeCommitmentDeliveryStats(recent10Records)
+  const trendAssessments = [...(caseFile?.assessments || [])]
+    .sort((a, b) => {
+      const left = new Date(a?.createdAt || 0).getTime() || 0
+      const right = new Date(b?.createdAt || 0).getTime() || 0
+      return left - right
+    })
+    .slice(-4)
+
+  return {
+    items: [
+      {
+        key: 'last-contact',
+        label: '最近互动',
+        value: latestRecord ? formatRelativeTime(getTimelineRecordTimestamp(latestRecord), now) : '暂无',
+        hint: summarizeRecordTitle(latestRecord)
+      },
+      {
+        key: 'week-records',
+        label: '本周记录',
+        value: `${recent7Days.length} 条`,
+        hint: recent7Days.length > 0 ? '最近 7 天新增的真实事件数' : '最近 7 天还没有新记录'
+      },
+      {
+        key: 'target-initiative',
+        label: '对方主动',
+        value: `${targetInitiatedCount} 次`,
+        hint: '近 14 天里由对方发起或推进的次数'
+      },
+      {
+        key: 'recent-meetings',
+        label: '近14天见面',
+        value: `${recentMeetCount} 次`,
+        hint: recentMeetCount > 0 ? '只统计已实际发生的线下见面，不把计划中的约见算进去' : '近 14 天还没有记录到实际发生的线下见面'
+      },
+      {
+        key: 'blocked-streak',
+        label: '连续受阻',
+        value: `${blockedStreak} 次`,
+        hint: blockedStreak > 0 ? '从最近一次开始连续出现拒绝、拖延或冷淡' : '最近没有连续受阻信号',
+        tone: blockedStreak >= 2 ? 'risk' : 'neutral'
+      },
+      {
+        key: 'commitment-delivery',
+        label: '承诺兑现',
+        value: commitmentCount > 0 ? `${Math.min(deliveredCount, commitmentCount)}/${commitmentCount}` : '--',
+        hint: commitmentCount > 0
+          ? '口径：先识别对方答应过的具体事项，再只和后续同事项的落地或失约配对。约看电影不会和收到包串在一起。'
+          : '近10条里还没有识别到对方明确答应、确认或安排过的具体承诺事项'
+      }
+    ],
+    trendAssessments
+  }
+}
+
+export function buildReadableActionAdvice(caseFile, current, event, primaryFocus) {
+  const eventTitle = event?.title || current?.triggerEventTitle || '这次互动'
+  const sceneAdvice = buildSceneAdvice(inferActionScene(event, current), eventTitle)
+  const focusPrompt = primaryFocus?.nextRecordPrompt || '本次重点记录：看他后续是否主动、是否兑现、是否持续稳定。'
+  const focusAction = primaryFocus?.action || '继续把后续真实发生的互动记录下来。'
+  const intentScore = Number(current?.intentScore || 0)
+  const riskScore = Number(current?.consistencyRiskScore || 0)
+  const recentPattern = buildRecentPatternNote(caseFile)
+
+  const withRecentDo = recentPattern ? `${sceneAdvice.do} ${recentPattern.do}` : sceneAdvice.do
+  const withRecentTone = recentPattern ? `${sceneAdvice.tone} ${recentPattern.tone}` : sceneAdvice.tone
+  const withRecentObserve = recentPattern ? `${sceneAdvice.observe} ${recentPattern.observe}` : sceneAdvice.observe
+  const role = event?.subjectRole || current?.triggerSubjectRole || 'target'
+  const roleAdvice = buildSubjectRoleActionAdvice(role, eventTitle)
+
+  switch (current?.nextAction) {
+    case 'clarify':
+      return {
+        title: '先别急着定性，找机会问清一个具体点',
+        dont: `${roleAdvice.dont} 不要带着情绪质问“你到底什么意思”，也不要一次把很多旧账都翻出来。`,
+        do: `${roleAdvice.do} ${withRecentDo} 同时把“${focusAction}”作为这次行动的主线。`,
+        say: roleAdvice.say || sceneAdvice.say,
+        tone: `${roleAdvice.tone} ${withRecentTone}`,
+        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
+      }
+    case 'verify':
+      return {
+        title: '先验证关键事实，不急着继续投入',
+        dont: `${roleAdvice.dont} 不要只听一句解释就马上放心，也不要靠猜测补全对方没说清楚的部分。`,
+        do: `${roleAdvice.do} ${withRecentDo} 这次重点不是听态度，而是看能不能落到具体事实。`,
+        say: roleAdvice.say || sceneAdvice.say,
+        tone: `${roleAdvice.tone} ${withRecentTone}`,
+        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
+      }
+    case 'pause':
+      return {
+        title: '先降速观察，别继续加码投入',
+        dont: `${roleAdvice.dont} 不要反复追问，也不要用更高投入去换对方回应。`,
+        do: riskScore >= 60 ? `${roleAdvice.do} ${withRecentDo} 把注意力先放回自己，减少主动推进。` : `${roleAdvice.do} ${withRecentDo} 暂时放慢节奏，给这段关系一点观察空间。`,
+        say: roleAdvice.say || sceneAdvice.say,
+        tone: `${roleAdvice.tone} ${withRecentTone}`,
+        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
+      }
+    case 'insufficient_data':
+      return {
+        title: '样本还不够，先别急着下结论',
+        dont: `${roleAdvice.dont} 不要把一次热情或一次冷淡直接当成最终答案。`,
+        do: `${roleAdvice.do} ${withRecentDo} 继续记录主动、兑现、回避、失约这些可验证行为。`,
+        say: roleAdvice.say || sceneAdvice.say,
+        tone: `${roleAdvice.tone} ${withRecentTone}`,
+        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
+      }
+    case 'observe':
+    default:
+      return {
+        title: intentScore >= 60 && riskScore < 45 ? '继续观察兑现，不急着加码' : '先稳住节奏，继续看连续表现',
+        dont: `${roleAdvice.dont} 不要因为一次正向信号就马上投入更多，也不要因为一次波动就彻底否定。`,
+        do: `${roleAdvice.do} ${withRecentDo} ${focusAction}`,
+        say: roleAdvice.say || sceneAdvice.say,
+        tone: `${roleAdvice.tone} ${withRecentTone}`,
+        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
+      }
+  }
+}
+
+function buildSubjectRoleActionAdvice(role, eventTitle) {
+  if (role === 'self') {
+    return {
+      dont: '这条主要是你的心理感受，不要把它直接当成对方已经有明确态度。',
+      do: '先把自己的情绪、期待和触发点分开写清楚；下一条最好补一个对方真实动作。',
+      say: '如果要表达，可以短一点说：“我刚才有点在意这件事，想先确认一下你的想法。”',
+      tone: '语气先稳住，少解释、少试探，不用急着证明自己为什么会这样想。',
+      observe: `这次“${eventTitle}”更适合作为自我状态记录；下一次重点看对方有没有清楚动作、明确回应或主动补充。`
+    }
+  }
+  if (role === 'both') {
+    return {
+      dont: '不要把“我主动做了什么”和“对方真实回应了什么”混在一起下结论。',
+      do: '把这次互动拆成三件事：谁先发起、谁同意或拒绝、后面有没有兑现。',
+      say: '',
+      tone: '表达可以自然，但记录时要冷静拆主体，避免因为互动氛围好就自动推高判断。',
+      observe: `围绕“${eventTitle}”，重点看对方那一侧的动作：是否主动、是否明确、是否有后续。`
+    }
+  }
+  return {
+    dont: '不要替对方补动机，也不要只看一句话的情绪浓度。',
+    do: '重点看对方有没有主动、明确、兑现和持续，而不是只看当下氛围。',
+    say: '',
+    tone: '保持自然、有边界，不因为一次对方动作就立刻把节奏推满。',
+    observe: `围绕“${eventTitle}”，下一步继续看对方是否会主动补动作或把说法落到具体安排。`
   }
 }
 
@@ -698,44 +1431,243 @@ function buildOccupationMeaning(occupation, event) {
   return `工作是"${occupation}"，这次行为更适合放进他的现实节奏里理解。重点不是他忙不忙，而是忙的时候会不会仍然给你交代。`
 }
 
-export function buildEventEntertainmentInsight(params) {
-  const { profile, event } = params
-  if (!hasProfile(profile) || !event) return null
+function hasSelfProfile(profile) {
+  if (!profile) return false
+  return [profile.gender, profile.ageRange, profile.identity, profile.zodiac, profile.constellation].some(isFilled)
+}
 
-  const eventReadBase =
-    event.type === 'risk'
-      ? `这次是"${event.title}"。动作往后缩了，重点要看这是不是一次真实的回避或风险抬头。`
-      : event.type === 'positive'
-        ? `这次是"${event.title}"。动作已经往前走了一步，重点要看后续会不会继续落地。`
-        : event.type === 'verification'
-          ? `这次是"${event.title}"。关键不在气氛，而在能不能把事实和承诺对上。`
-          : `这次是"${event.title}"。先记下来，后面要看它会不会和更多事件连成方向。`
+function getSelfGenderLabel(value) {
+  switch (value) {
+    case 'male': return '男生'
+    case 'female': return '女生'
+    case 'private': return '暂不说性别'
+    default: return value || ''
+  }
+}
 
-  const occupationMeaning = buildOccupationMeaning(profile?.occupation, event)
-  const sections = [
-    {
-      label: '事件怎么读',
-      text: occupationMeaning ? `${eventReadBase} ${occupationMeaning}` : eventReadBase
-    },
-    profile?.zodiac ? {
-      label: `属相怎么看${profile.zodiac ? ` (${profile.zodiac})` : ''}`,
-      text: buildZodiacMeaning(profile.zodiac, event)
-    } : null,
-    profile?.constellation ? {
-      label: `星座怎么看${profile.constellation ? ` (${profile.constellation})` : ''}`,
-      text: buildConstellationMeaning(profile.constellation, event)
-    } : null
-  ].filter((item) => Boolean(item && item.text))
+function getAgeRangeLabel(value) {
+  switch (value) {
+    case 'under18': return '18 岁以下'
+    case '18_22': return '18-22 岁'
+    case '23_26': return '23-26 岁'
+    case '27_plus': return '27 岁以上'
+    default: return value || ''
+  }
+}
+
+function getIdentityLabel(value) {
+  switch (value) {
+    case 'high_school': return '高中 / 中专'
+    case 'college': return '大学生'
+    case 'graduate': return '研究生'
+    case 'worker': return '已工作'
+    case 'other': return '其他身份'
+    default: return value || ''
+  }
+}
+
+function buildSelfProfileFacts(profile) {
+  if (!profile) return []
+  return [
+    getSelfGenderLabel(profile.gender),
+    getAgeRangeLabel(profile.ageRange),
+    getIdentityLabel(profile.identity),
+    profile.zodiac ? `属${profile.zodiac}` : '',
+    profile.constellation || ''
+  ].filter(Boolean)
+}
+
+function buildZodiacPairMeaning(selfZodiac, targetZodiac, event) {
+  if (!selfZodiac || !targetZodiac) return ''
+  const scenario = event ? inferEventScenario(event) : 'daily_interaction'
+  const pair = `${selfZodiac}-${targetZodiac}`
+  const reversePair = `${targetZodiac}-${selfZodiac}`
+  const eventTail = scenario === 'retreat_or_delay'
+    ? '放到这次事件里，重点不是继续加情绪，而是看对方会不会主动补一个明确动作。'
+    : scenario === 'direct_invitation'
+      ? '放到这次事件里，重点看邀约之后有没有具体时间、地点和兑现。'
+      : '放到这次事件里，重点仍然是连续行为，而不是只靠性格想象。'
+
+  if (pair === '牛-羊' || reversePair === '牛-羊') {
+    return `按传统属相说法，牛和羊常被看成节奏不太一样：牛更重稳定、兑现和慢慢确认，羊更重氛围、感受和被照顾的体感。${eventTail}`
+  }
+  if (selfZodiac === targetZodiac) {
+    return `按传统属相说法，同属${selfZodiac}容易在熟悉节奏上有共鸣，但也可能把相似的犹豫或固执放大。${eventTail}`
+  }
+  return `按传统属相看，你属${selfZodiac}、对方属${targetZodiac}，更适合当作一个互动节奏的小切口：谁更重行动，谁更重感受，要回到这次事件里的具体表现。${eventTail}`
+}
+
+function buildConstellationPairMeaning(selfConstellation, targetConstellation, event) {
+  if (!selfConstellation || !targetConstellation) return ''
+  const scenario = event ? inferEventScenario(event) : 'daily_interaction'
+  const pair = `${selfConstellation}-${targetConstellation}`
+  const reversePair = `${targetConstellation}-${selfConstellation}`
+  const eventTail = scenario === 'retreat_or_delay'
+    ? '这次如果出现拖延、冷淡或模糊回应，就不要只解读成性格慢热，要看后续有没有补解释、补时间。'
+    : scenario === 'direct_invitation'
+      ? '这次如果涉及邀约，就看对方有没有把暧昧氛围变成可执行安排。'
+      : '这次更适合把星座当观察角度，最后仍然落回行动证据。'
+
+  if (pair === '双鱼座-处女座' || reversePair === '双鱼座-处女座') {
+    return `从西方星座的趣味视角看，双鱼更容易被氛围、语气和想象牵动，处女更看细节、确定性和兑现。${eventTail}`
+  }
+  if (selfConstellation === targetConstellation) {
+    return `你和对方同为${selfConstellation}，趣味上容易理解彼此的表达习惯，但也可能互相放大同一种敏感点。${eventTail}`
+  }
+  return `从星座侧写看，你是${selfConstellation}、对方是${targetConstellation}，可以把它当成沟通风格差异的小提示：一个人怎么表达热度，另一个人怎么确认安全感。${eventTail}`
+}
+
+export function buildProfileSideRead(params) {
+  const { profile, selfProfile, event, latestResult, trend } = params
+  return buildZodiacConstellationSideRead({ profile, selfProfile, event })
+  if ((!hasProfile(profile) && !hasSelfProfile(selfProfile)) || !latestResult) return null
+
+  const intentScore = Number(latestResult.intentScore || 0)
+  const riskScore = Number(latestResult.consistencyRiskScore || 0)
+  const relationType = getRelationTypeLabel(profile?.relationType)
+  const eventTitle = event?.title || latestResult.triggerEventTitle || ''
+  const eventType = event?.type || latestResult.triggerEventType || 'note'
+
+  const trendText = trend?.hasPrevious
+    ? `最近一次变化是意向${trend.intentDelta > 0 ? '+' : ''}${trend.intentDelta}、风险${trend.riskDelta > 0 ? '+' : ''}${trend.riskDelta}。`
+    : '当前还缺少足够多的连续评估来判断长期趋势。'
+
+  const eventBase =
+    eventTitle
+      ? eventType === 'risk'
+        ? `这次围绕"${eventTitle}"，更适合先看退缩、拖延或一致性风险是否真实存在。`
+        : eventType === 'positive'
+          ? `这次围绕"${eventTitle}"，更适合看主动和投入是否会继续落地。`
+          : eventType === 'verification'
+            ? `这次围绕"${eventTitle}"，重点是事实、承诺和说法能不能对上。`
+            : `这次围绕"${eventTitle}"，先把它放进连续行为里看，不单独下结论。`
+      : '当前还没有明确触发事件，侧写会更多参考画像和当前分数。'
+
+  const facts = [
+    profile?.age ? `${profile.age}岁` : '',
+    profile?.gender || '',
+    profile?.occupation ? `工作是${profile.occupation}` : '',
+    relationType ? `对象类别是${relationType}` : '',
+    profile?.zodiac ? `属${profile.zodiac}` : '',
+    profile?.constellation || ''
+  ].filter(Boolean)
+
+  const sections = []
+  const selfFacts = []
+
+  if (false && (selfFacts.length > 0 || facts.length > 0)) {
+    sections.push({
+      label: '画像对照',
+      text: `${selfFacts.length ? `你这边：${selfFacts.join('、')}。` : ''}${facts.length ? `对方这边：${facts.join('、')}。` : ''}这部分只作为侧写入口，不参与意向和风险评分。`
+    })
+  }
+
+  sections.push({
+    label: '综合侧写',
+    text: `${facts.length > 0 ? `结合${facts.join('、')}来看，` : ''}${eventBase} 当前意向分是${intentScore}，风险分是${riskScore}。${trendText}${intentScore >= 60 && riskScore < 45
+      ? '这类组合更适合看持续兑现，不要只看一时热度。'
+      : riskScore >= 60
+        ? '这类组合需要优先看稳定性和可验证性，避免被局部积极信号带偏。'
+        : '这类组合还处在需要继续积累样本的阶段，重点看后续是否连续。'}${event && profile?.occupation ? ` ${buildOccupationMeaning(profile.occupation, event)}` : ''}`
+  })
+
+  if (false && (eventTitle || profile?.occupation)) {
+    const occupationMeaning = event ? buildOccupationMeaning(profile?.occupation, event) : occupationNote(profile?.occupation)
+    sections.push({
+      label: '事件与现实节奏',
+      text: occupationMeaning ? `${eventBase} ${occupationMeaning}` : eventBase
+    })
+  }
+
+  if (false && profile?.zodiac) {
+    sections.push({
+      label: `属相角度 (${profile.zodiac})`,
+      text: event
+        ? buildZodiacMeaning(profile.zodiac, event)
+        : zodiacNotes[profile.zodiac] || '属相只能作为轻量观察角度，真正要看的仍然是连续行为和事实证据。'
+    })
+  }
+
+  if (selfProfile?.zodiac && profile?.zodiac) {
+    sections.push({
+      label: `属相相处 (${selfProfile.zodiac} / ${profile.zodiac})`,
+      text: buildZodiacPairMeaning(selfProfile.zodiac, profile.zodiac, event)
+    })
+  }
+
+  if (false && profile?.constellation) {
+    sections.push({
+      label: `星座角度 (${profile.constellation})`,
+      text: event
+        ? buildConstellationMeaning(profile.constellation, event)
+        : constellationNotes[profile.constellation] || '星座只能帮助增加一点观察角度，不能替代实际沟通和证据。'
+    })
+  }
+
+  if (selfProfile?.constellation && profile?.constellation) {
+    sections.push({
+      label: `星座相处 (${selfProfile.constellation} / ${profile.constellation})`,
+      text: buildConstellationPairMeaning(selfProfile.constellation, profile.constellation, event)
+    })
+  }
 
   return {
     title: '侧写',
-    summary: event.type === 'risk'
-      ? '这次更像在看他为什么会缩回去。'
-      : event.type === 'positive'
-        ? '这次更像在看他到底愿不愿意往前动一下。'
-        : '这次更像在看他遇到事情时会怎么表现。',
-    sections,
-    disclaimer: '这是娱乐向观察，不参与评分，也不能代替真实沟通和证据。'
+    summary: '结合本人画像、对方画像、最新事件和趋势变化做趣味解读，不参与核心评分。',
+    sections: sections.filter((item) => item.text)
+  }
+}
+
+export function buildZodiacConstellationSideRead(params) {
+  const { profile, selfProfile, event } = params || {}
+  const targetZodiac = profile?.zodiac
+  const targetConstellation = profile?.constellation
+  const selfZodiac = selfProfile?.zodiac
+  const selfConstellation = selfProfile?.constellation
+  const hasSelfAstroProfile = Boolean(selfZodiac || selfConstellation)
+  const sections = []
+
+  if (hasSelfAstroProfile) {
+    if (selfZodiac && targetZodiac) {
+      sections.push({
+        label: `属相相处 (${selfZodiac} / ${targetZodiac})`,
+        text: buildZodiacPairMeaning(selfZodiac, targetZodiac, event)
+      })
+    }
+    if (selfConstellation && targetConstellation) {
+      sections.push({
+        label: `星座相处 (${selfConstellation} / ${targetConstellation})`,
+        text: buildConstellationPairMeaning(selfConstellation, targetConstellation, event)
+      })
+    }
+  } else {
+    if (targetZodiac) {
+      sections.push({
+        label: `属相侧写 (${targetZodiac})`,
+        text: event
+          ? buildZodiacMeaning(targetZodiac, event)
+          : zodiacNotes[targetZodiac] || '属相只能作为轻量观察角度，真正要看的仍然是连续行为和事实证据。'
+      })
+    }
+    if (targetConstellation) {
+      sections.push({
+        label: `星座侧写 (${targetConstellation})`,
+        text: event
+          ? buildConstellationMeaning(targetConstellation, event)
+          : constellationNotes[targetConstellation] || '星座只能帮助增加一点观察角度，不能替代实际沟通和证据。'
+      })
+    }
+  }
+
+  const availableSections = sections.filter((item) => item.text)
+  if (availableSections.length === 0) return null
+
+  return {
+    title: hasSelfAstroProfile ? '相处侧写参考' : '对象侧写参考',
+    summary: hasSelfAstroProfile
+      ? '根据你和对象的属相、星座做相处参考，不参与意向和风险评分。'
+      : '根据对象的属相、星座做轻量参考，不参与意向和风险评分。',
+    sections: availableSections
   }
 }
 
@@ -766,6 +1698,39 @@ function buildSystemTimelineDate(value, fallback) {
   return fallback
 }
 
+function mapIntentBucketLabel(bucket) {
+  switch (bucket) {
+    case 'low': return '低意向'
+    case 'low_medium': return '偏低意向'
+    case 'medium': return '中等意向'
+    case 'medium_high': return '中高意向'
+    case 'high': return '高意向'
+    default: return '意向未评估'
+  }
+}
+
+function mapRiskBucketLabel(bucket) {
+  switch (bucket) {
+    case 'low': return '低风险'
+    case 'low_medium': return '偏低风险'
+    case 'medium': return '中等风险'
+    case 'medium_high': return '中高风险'
+    case 'high': return '高风险'
+    default: return '风险未评估'
+  }
+}
+
+function mapEvidenceLabel(level) {
+  switch (level) {
+    case 'E1': return '证据很少（E1）'
+    case 'E2': return '证据偏少（E2）'
+    case 'E3': return '已有初步模式（E3）'
+    case 'E4': return '证据较充分（E4）'
+    case 'E5': return '证据很充分（E5）'
+    default: return level || '证据未评估'
+  }
+}
+
 export function buildTimelineFromLatestResult(latestResult) {
   if (!latestResult) return []
 
@@ -777,7 +1742,7 @@ export function buildTimelineFromLatestResult(latestResult) {
       type: 'assessment',
       date: '刚刚',
       dateLabel: '刚刚',
-      description: `当前结果：${latestResult.intentBucket} / ${latestResult.riskBucket} / ${latestResult.evidenceLevel}`,
+      description: `当前判断：${mapIntentBucketLabel(latestResult.intentBucket)}，${mapRiskBucketLabel(latestResult.riskBucket)}，${mapEvidenceLabel(latestResult.evidenceLevel)}。`,
       occurrenceAt: createdAt,
       createdAt
     }

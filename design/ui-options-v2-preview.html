@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UI 方案 V2 - 更好玩版本</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #101116;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .board { max-width: 1440px; margin: 0 auto; padding: 32px; }
+    h1 { margin: 0; font-size: 30px; }
+    .sub { margin: 8px 0 24px; color: #a8b0c2; line-height: 1.6; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+    .option-head { min-height: 118px; padding: 18px; border-radius: 22px; background: #181b24; border: 1px solid rgba(255,255,255,.08); margin-bottom: 12px; }
+    .name { display: block; font-size: 18px; font-weight: 900; }
+    .desc { display: block; margin-top: 8px; color: #a8b0c2; font-size: 13px; line-height: 1.55; }
+    .phone { max-width: 344px; margin: 0 auto; padding: 12px; border-radius: 36px; background: #05060a; box-shadow: 0 28px 80px rgba(0,0,0,.5); }
+    .screen { min-height: 724px; position: relative; overflow: hidden; border-radius: 28px; padding: 18px 16px 82px; }
+    .status { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; margin-bottom: 14px; opacity: .8; }
+    .hero, .card, .input, .pill, .tabbar { position: relative; }
+    .hero { padding: 18px; border-radius: 24px; margin-bottom: 12px; }
+    .eyebrow { display: block; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; opacity: .72; }
+    .title { display: block; margin-top: 6px; font-size: 27px; font-weight: 950; line-height: 1.08; }
+    .copy { display: block; margin-top: 8px; font-size: 12px; line-height: 1.55; opacity: .78; }
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+    .kpi, .card, .input { border-radius: 20px; padding: 14px; }
+    .label { display: block; font-size: 11px; font-weight: 800; opacity: .68; }
+    .num { display: block; margin-top: 4px; font-size: 24px; font-weight: 950; line-height: 1; }
+    .card, .input { margin-top: 12px; }
+    .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 900; margin-bottom: 10px; }
+    .tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .tag { min-height: 24px; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 850; white-space: nowrap; }
+    .textarea { height: 38px; border-radius: 14px; padding: 10px 11px; font-size: 12px; }
+    .btn { height: 42px; margin-top: 10px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 950; }
+    .progress { height: 10px; overflow: hidden; border-radius: 999px; margin-top: 8px; }
+    .fill { height: 100%; border-radius: 999px; }
+    .events { display: flex; flex-direction: column; gap: 9px; }
+    .event { display: grid; grid-template-columns: 34px 1fr; gap: 8px; align-items: start; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; margin: 4px auto 0; }
+    .event-title { font-size: 12px; font-weight: 850; line-height: 1.35; }
+    .event-sub { margin-top: 3px; font-size: 10px; opacity: .62; }
+    .tabbar { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 58px; border-radius: 22px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; padding: 6px; }
+    .tab { text-align: center; font-size: 10px; font-weight: 850; opacity: .58; }
+    .tab.active { opacity: 1; }
+    .ico { width: 18px; height: 18px; border-radius: 7px; margin: 0 auto 4px; }
+
+    .e .screen { background: radial-gradient(circle at 20% 0%, rgba(255,0,153,.35), transparent 34%), radial-gradient(circle at 88% 18%, rgba(0,208,255,.32), transparent 34%), #151019; color: #fff; }
+    .e .hero { background: linear-gradient(135deg, #ff2f92, #7c3aed 55%, #00d0ff); box-shadow: 0 18px 38px rgba(255,47,146,.28); }
+    .e .kpi, .e .card, .e .input { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); backdrop-filter: blur(12px); }
+    .e .tag { background: rgba(0,208,255,.18); color: #8beaff; border: 1px solid rgba(139,234,255,.35); }
+    .e .textarea { background: rgba(255,255,255,.12); color: #ffd5ea; }
+    .e .btn { background: linear-gradient(135deg, #ffe600, #ff2f92); color: #151019; }
+    .e .progress { background: rgba(255,255,255,.14); }
+    .e .fill, .e .dot, .e .ico { background: #00d0ff; }
+    .e .tabbar { background: rgba(12,10,18,.82); border: 1px solid rgba(255,255,255,.14); }
+
+    .f .screen { background: #fdfbf7; color: #2d2d2d; }
+    .f .hero, .f .card, .f .input, .f .kpi { background: #fff; border: 3px solid #2d2d2d; box-shadow: 4px 4px 0 #2d2d2d; }
+    .f .hero { background: #fff9c4; transform: rotate(-1deg); border-radius: 18px 26px 20px 14px; }
+    .f .title { color: #ff4d4d; }
+    .f .tag { background: #fff9c4; color: #2d2d2d; border: 2px dashed #2d2d2d; }
+    .f .textarea { background: #eef6ff; border: 2px solid #2d5da1; }
+    .f .btn { background: #ff4d4d; color: #fff; border: 3px solid #2d2d2d; box-shadow: 3px 3px 0 #2d2d2d; }
+    .f .dot, .f .ico { background: #ff4d4d; }
+    .f .tabbar { background: #fff; border: 3px solid #2d2d2d; box-shadow: 4px 4px 0 #2d2d2d; }
+
+    .g .screen { background: linear-gradient(180deg, #ecfeff, #fff1f2); color: #12323a; }
+    .g .hero { background: #fff; box-shadow: 0 16px 38px rgba(8,145,178,.13); }
+    .g .hero:after { content: ""; position: absolute; right: 18px; bottom: -10px; width: 22px; height: 22px; background: #fff; transform: rotate(45deg); }
+    .g .card, .g .input, .g .kpi { background: rgba(255,255,255,.82); border: 1px solid rgba(8,145,178,.14); box-shadow: 0 10px 26px rgba(8,145,178,.08); }
+    .g .card:nth-of-type(odd) { border-radius: 24px 24px 24px 8px; }
+    .g .tag { background: #cffafe; color: #0e7490; }
+    .g .textarea { background: #f0f9ff; color: #164e63; }
+    .g .btn { background: linear-gradient(135deg, #06b6d4, #fb7185); color: white; }
+    .g .dot, .g .ico { background: #06b6d4; }
+    .g .fill { background: #fb7185; }
+    .g .progress { background: #e0f2fe; }
+    .g .tabbar { background: rgba(255,255,255,.9); border: 1px solid rgba(8,145,178,.14); }
+
+    .h .screen { background: #f8fafc; color: #0f172a; }
+    .h .hero { background: #0f172a; color: #f8fafc; border: 1px solid #334155; }
+    .h .kpi, .h .card, .h .input { background: #fff; border: 1px solid #dbe3ea; box-shadow: 0 8px 22px rgba(15,23,42,.06); border-radius: 16px; }
+    .h .tag { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; }
+    .h .textarea { background: #f1f5f9; color: #64748b; }
+    .h .btn { background: #111827; color: #fff; border-radius: 12px; }
+    .h .progress { background: #e2e8f0; }
+    .h .fill, .h .dot, .h .ico { background: #22c55e; }
+    .h .tabbar { background: #fff; border: 1px solid #dbe3ea; }
+
+    @media (max-width: 1180px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 720px) { .board { padding: 18px; } .grid { grid-template-columns: 1fr; } .phone { max-width: 390px; } }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <h1>UI 方案 V2：更好玩版本</h1>
+    <p class="sub">仍然保持首页、关系、时间轴、案例、我的这些入口不变；这里展示的是视觉语言和页面气质。</p>
+    <section class="grid">
+      <article class="option e">
+        <div class="option-head"><span class="name">E. Crush Arcade</span><span class="desc">恋爱信号小游戏。适合男生和想要强留存、强传播的版本。</span></div>
+        <div class="phone"><div class="screen">
+          <div class="status"><span>12:30</span><span>5G 100%</span></div>
+          <div class="hero"><span class="eyebrow">Level 04 / Active Crush</span><span class="title">今日恋爱信号</span><span class="copy">完成今日任务：记录一条真实互动，刷新信号值。</span><div class="kpis"><div class="kpi"><span class="label">信号</span><span class="num">76</span></div><div class="kpi"><span class="label">风险</span><span class="num">34</span></div><div class="kpi"><span class="label">证据</span><span class="num">E4</span></div></div></div>
+          <div class="input"><div class="head">今日任务 <span class="tag">双方互动</span></div><div class="textarea">他下课后主动问我要不要一起走...</div><div class="btn">提交事件，刷新判定</div></div>
+          <div class="card"><div class="head">过关结算 <span class="tag">AI 已参与</span></div><span class="copy">意向上升，风险下降。下一关：看他是否主动确认下次见面。</span><div class="tagrow"><span class="tag">意向 +8</span><span class="tag">风险 -3</span><span class="tag">升温中</span></div></div>
+          <div class="card"><div class="head">信号能量条</div><span class="label">主动推进</span><div class="progress"><div class="fill" style="width:76%"></div></div><span class="label">兑现稳定</span><div class="progress"><div class="fill" style="width:58%"></div></div></div>
+          <nav class="tabbar"><div class="tab active"><div class="ico"></div>首页</div><div class="tab"><div class="ico"></div>关系</div><div class="tab"><div class="ico"></div>时间轴</div><div class="tab"><div class="ico"></div>案例</div><div class="tab"><div class="ico"></div>我的</div></nav>
+        </div></div>
+      </article>
+
+      <article class="option f">
+        <div class="option-head"><span class="name">F. Campus Sticker</span><span class="desc">校园便签墙。适合朋友/同学关系，也适合作为未成年人友谊模式。</span></div>
+        <div class="phone"><div class="screen">
+          <div class="status"><span>12:30</span><span>5G 100%</span></div>
+          <div class="hero"><span class="eyebrow">Campus Board</span><span class="title">今天发生了啥？</span><span class="copy">别急着猜，先把真实互动贴到板上。</span></div>
+          <div class="kpis"><div class="kpi"><span class="label">互动</span><span class="num">8</span></div><div class="kpi"><span class="label">主动</span><span class="num">3</span></div><div class="kpi"><span class="label">稳定</span><span class="num">72%</span></div></div>
+          <div class="input"><div class="head">贴一张便签 <span class="tag">朋友互动</span></div><div class="textarea">她今天主动问我作业写完没...</div><div class="btn">贴到时间轴</div></div>
+          <div class="card"><div class="head">后续验证重点</div><div class="events"><div class="event"><div class="dot"></div><div><div class="event-title">最该看：是否继续主动开启话题</div><div class="event-sub">依据证据：最近 3 次互动里，对方有 2 次主动发起。</div></div></div></div></div></div>
+          <nav class="tabbar"><div class="tab active"><div class="ico"></div>首页</div><div class="tab"><div class="ico"></div>关系</div><div class="tab"><div class="ico"></div>时间轴</div><div class="tab"><div class="ico"></div>案例</div><div class="tab"><div class="ico"></div>我的</div></nav>
+        </div></div>
+      </article>
+
+      <article class="option g">
+        <div class="option-head"><span class="name">G. Bubble Chat Lab</span><span class="desc">聊天气泡式 AI 助手。好玩但不幼稚，我认为最适合默认主风格。</span></div>
+        <div class="phone"><div class="screen">
+          <div class="status"><span>12:30</span><span>5G 100%</span></div>
+          <div class="hero"><span class="eyebrow">AI Chat Insight</span><span class="title">把刚刚那句发给我</span><span class="copy">像聊天一样记录，系统帮你整理信号、风险和下一步。</span></div>
+          <div class="input"><div class="head">你说</div><div class="textarea">他说周五可以一起去看电影...</div><div class="btn">发送给 AI 研判</div></div>
+          <div class="card"><div class="head">AI 回复 <span class="tag">即时反馈</span></div><span class="copy">这不是单纯客套，里面有具体安排。但重点看他后面是否主动确认时间。</span><div class="tagrow"><span class="tag">意向 +9</span><span class="tag">风险 -2</span><span class="tag">待确认</span></div></div>
+          <div class="card"><div class="head">关系置顶信息</div><div class="kpis"><div class="kpi"><span class="label">意向</span><span class="num">76</span></div><div class="kpi"><span class="label">风险</span><span class="num">34</span></div><div class="kpi"><span class="label">稳定</span><span class="num">72%</span></div></div></div>
+          <nav class="tabbar"><div class="tab active"><div class="ico"></div>首页</div><div class="tab"><div class="ico"></div>关系</div><div class="tab"><div class="ico"></div>时间轴</div><div class="tab"><div class="ico"></div>案例</div><div class="tab"><div class="ico"></div>我的</div></nav>
+        </div></div>
+      </article>
+
+      <article class="option h">
+        <div class="option-head"><span class="name">H. Signal Game</span><span class="desc">年轻化数据 HUD。适合既要好玩，又不能丢掉 AI 判断可信度。</span></div>
+        <div class="phone"><div class="screen">
+          <div class="status"><span>12:30</span><span>5G 100%</span></div>
+          <div class="hero"><span class="eyebrow">Signal HUD</span><span class="title">当前任务：别脑补</span><span class="copy">所有分数只来自真实事件。记录越准，判断越稳。</span><div class="kpis"><div class="kpi"><span class="label">信号</span><span class="num">76</span></div><div class="kpi"><span class="label">警报</span><span class="num">34</span></div><div class="kpi"><span class="label">样本</span><span class="num">18</span></div></div></div>
+          <div class="card"><div class="head">下一步任务 <span class="tag">验证</span></div><span class="copy">不要继续加码。看对方是否主动补一个具体时间。</span></div>
+          <div class="input"><div class="head">新增证据</div><div class="textarea">输入真实发生的互动...</div><div class="btn">保存并重算</div></div>
+          <div class="card"><div class="head">关键拐点</div><div class="events"><div class="event"><div class="dot"></div><div><div class="event-title">主动约见</div><div class="event-sub">信号 +9 / 警报 -3</div></div></div><div class="event"><div class="dot"></div><div><div class="event-title">兑现承诺</div><div class="event-sub">信号 +7 / 警报 -5</div></div></div></div></div>
+          <nav class="tabbar"><div class="tab active"><div class="ico"></div>首页</div><div class="tab"><div class="ico"></div>关系</div><div class="tab"><div class="ico"></div>时间轴</div><div class="tab"><div class="ico"></div>案例</div><div class="tab"><div class="ico"></div>我的</div></nav>
+        </div></div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
