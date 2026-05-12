@@ -190,28 +190,20 @@
           <view v-if="latestActionAdvice" class="quick-guidance-panel">
             <text class="ai-panel-label">你接下来怎么做</text>
             <view class="guidance-item">
-              <text class="guidance-label">先别这样做</text>
-              <text class="guidance-text">{{ latestActionAdvice.dont }}</text>
+              <text class="guidance-label">接下来可以做什么</text>
+              <text class="guidance-text">{{ latestActionAdvice.action || latestActionAdvice.do }}</text>
             </view>
             <view class="guidance-item">
-              <text class="guidance-label">怎么做</text>
-              <text class="guidance-text">{{ latestActionAdvice.do }}</text>
-            </view>
-            <view class="guidance-item">
-              <text class="guidance-label">可以这样说</text>
+              <text class="guidance-label">线上/线下可以这样说</text>
               <text class="guidance-text">{{ latestActionAdvice.say }}</text>
             </view>
             <view class="guidance-item">
-              <text class="guidance-label">表情和情绪节奏</text>
-              <text class="guidance-text">{{ latestActionAdvice.tone }}</text>
+              <text class="guidance-label">{{ latestActionAdvice.contextLabel || '情绪和场合细节' }}</text>
+              <text class="guidance-text">{{ latestActionAdvice.context || latestActionAdvice.tone }}</text>
             </view>
             <view class="guidance-item">
-              <text class="guidance-label">这次观察重点</text>
-              <text class="guidance-text">{{ latestActionAdvice.observe }}</text>
-            </view>
-            <view v-if="latestPrimaryFocus?.nextRecordPrompt" class="guidance-item">
-              <text class="guidance-label">下一次重点记录什么</text>
-              <text class="guidance-text">{{ formatFocusPrompt(latestPrimaryFocus.nextRecordPrompt) }}</text>
+              <text class="guidance-label">观察与记录重点</text>
+              <text class="guidance-text">{{ latestActionAdvice.observeAndRecord || latestActionAdvice.observe }}</text>
             </view>
           </view>
           <view class="actions">

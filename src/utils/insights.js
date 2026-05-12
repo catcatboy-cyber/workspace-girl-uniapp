@@ -1199,7 +1199,8 @@ export function buildCaseOverviewStats(caseFile, now = new Date()) {
 
 export function buildReadableActionAdvice(caseFile, current, event, primaryFocus) {
   const eventTitle = event?.title || current?.triggerEventTitle || '这次互动'
-  const sceneAdvice = buildSceneAdvice(inferActionScene(event, current), eventTitle)
+  const semanticAdvice = buildSemanticActionAdvice(event, current, eventTitle)
+  const sceneAdvice = semanticAdvice || buildSceneAdvice(inferActionScene(event, current), eventTitle)
   const focusPrompt = primaryFocus?.nextRecordPrompt || '本次重点记录：看他后续是否主动、是否兑现、是否持续稳定。'
   const focusAction = primaryFocus?.action || '继续把后续真实发生的互动记录下来。'
   const intentScore = Number(current?.intentScore || 0)
@@ -1211,55 +1212,148 @@ export function buildReadableActionAdvice(caseFile, current, event, primaryFocus
   const withRecentObserve = recentPattern ? `${sceneAdvice.observe} ${recentPattern.observe}` : sceneAdvice.observe
   const role = event?.subjectRole || current?.triggerSubjectRole || 'target'
   const roleAdvice = buildSubjectRoleActionAdvice(role, eventTitle)
+  const rolePrefix = role === 'self'
+    ? '这条更像你的感受记录，先把自己的情绪和事实分开；'
+    : role === 'both'
+      ? '先拆清楚谁发起、谁回应、有没有兑现；'
+      : ''
+  const titleMap = {
+    clarify: '先问清一个具体点，再决定下一步',
+    verify: '先验证关键事实，再继续投入',
+    pause: '先降速，把主动权放回真实行动',
+    insufficient_data: '样本还少，先补一条可验证互动',
+    observe: intentScore >= 60 && riskScore < 45 ? '顺着正向信号轻推进' : '稳住节奏，看连续表现'
+  }
+  const actionTailMap = {
+    clarify: '下一步只确认一个关键点，别把问题扩大成关系审判。',
+    verify: '把重点放在时间、地点、安排、兑现这些可核实信息上。',
+    pause: riskScore >= 60 ? '先减少主动推进，把空间留出来看对方是否会补动作。' : '节奏放慢一点，先看对方后续会不会自然补充。',
+    insufficient_data: '先补充一条真实互动记录，再判断关系方向。',
+    observe: focusAction
+  }
+  const action = `${rolePrefix}${withRecentDo} ${actionTailMap[current?.nextAction] || actionTailMap.observe}`
+  const say = roleAdvice.say || sceneAdvice.say
+  const context = `${roleAdvice.tone} ${withRecentTone}`
+  const contextLabel = sceneAdvice.contextLabel || '情绪和场合细节'
+  const observeAndRecord = `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
 
   switch (current?.nextAction) {
     case 'clarify':
-      return {
-        title: '先别急着定性，找机会问清一个具体点',
-        dont: `${roleAdvice.dont} 不要带着情绪质问“你到底什么意思”，也不要一次把很多旧账都翻出来。`,
-        do: `${roleAdvice.do} ${withRecentDo} 同时把“${focusAction}”作为这次行动的主线。`,
-        say: roleAdvice.say || sceneAdvice.say,
-        tone: `${roleAdvice.tone} ${withRecentTone}`,
-        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
-      }
     case 'verify':
-      return {
-        title: '先验证关键事实，不急着继续投入',
-        dont: `${roleAdvice.dont} 不要只听一句解释就马上放心，也不要靠猜测补全对方没说清楚的部分。`,
-        do: `${roleAdvice.do} ${withRecentDo} 这次重点不是听态度，而是看能不能落到具体事实。`,
-        say: roleAdvice.say || sceneAdvice.say,
-        tone: `${roleAdvice.tone} ${withRecentTone}`,
-        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
-      }
     case 'pause':
-      return {
-        title: '先降速观察，别继续加码投入',
-        dont: `${roleAdvice.dont} 不要反复追问，也不要用更高投入去换对方回应。`,
-        do: riskScore >= 60 ? `${roleAdvice.do} ${withRecentDo} 把注意力先放回自己，减少主动推进。` : `${roleAdvice.do} ${withRecentDo} 暂时放慢节奏，给这段关系一点观察空间。`,
-        say: roleAdvice.say || sceneAdvice.say,
-        tone: `${roleAdvice.tone} ${withRecentTone}`,
-        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
-      }
     case 'insufficient_data':
-      return {
-        title: '样本还不够，先别急着下结论',
-        dont: `${roleAdvice.dont} 不要把一次热情或一次冷淡直接当成最终答案。`,
-        do: `${roleAdvice.do} ${withRecentDo} 继续记录主动、兑现、回避、失约这些可验证行为。`,
-        say: roleAdvice.say || sceneAdvice.say,
-        tone: `${roleAdvice.tone} ${withRecentTone}`,
-        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
-      }
     case 'observe':
     default:
       return {
-        title: intentScore >= 60 && riskScore < 45 ? '继续观察兑现，不急着加码' : '先稳住节奏，继续看连续表现',
-        dont: `${roleAdvice.dont} 不要因为一次正向信号就马上投入更多，也不要因为一次波动就彻底否定。`,
-        do: `${roleAdvice.do} ${withRecentDo} ${focusAction}`,
-        say: roleAdvice.say || sceneAdvice.say,
-        tone: `${roleAdvice.tone} ${withRecentTone}`,
-        observe: `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
+        title: titleMap[current?.nextAction] || titleMap.observe,
+        action,
+        say,
+        contextLabel,
+        context,
+        observeAndRecord,
+        dont: '',
+        do: action,
+        tone: context,
+        observe: observeAndRecord
       }
   }
+}
+
+function buildSemanticActionAdvice(event, current, eventTitle) {
+  const semantic = event?.semanticTags || current?.semanticTags || event?.eventUnderstanding?.semanticTags || null
+  const fallbackTags = event ? getTimelineRecordTags(event) : null
+  const role = event?.subjectRole || current?.triggerSubjectRole || 'target'
+  const scene = new Set([...(semantic?.scene || []), ...(fallbackTags?.scene || [])])
+  const outcome = new Set([...(semantic?.outcome || []), ...(fallbackTags?.outcome || [])])
+  const risk = new Set([...(semantic?.risk || []), ...(fallbackTags?.risk || [])])
+  const response = semantic?.response || (risk.has('rejected') ? 'rejected' : outcome.has('pending') ? 'pending' : outcome.has('fulfilled') ? 'accepted' : '')
+  const commitment = semantic?.commitment || {}
+  const fulfilled = outcome.has('fulfilled') || commitment.fulfilled
+  const planned = outcome.has('planned') || commitment.exists
+  const pending = outcome.has('pending') || response === 'pending'
+  const rejected = risk.has('rejected') || response === 'rejected'
+  const cancelled = outcome.has('cancelled_delayed') || risk.has('vague_delay')
+  const cold = risk.has('cold')
+  const hasMeal = scene.has('meal')
+  const hasMovie = scene.has('movie')
+  const hasCoffee = scene.has('coffee_tea')
+  const hasMeet = scene.has('offline_meet') || scene.has('walk_shop') || scene.has('group_social') || hasMeal || hasMovie || hasCoffee
+  const hasChat = scene.has('chat')
+  const selfFeelingAfterEvent = role === 'self' && fulfilled
+
+  if (selfFeelingAfterEvent) {
+    return {
+      do: `“${eventTitle}”更像你对这次互动的感受记录。下一步不要把自己的开心或不安直接当成对方态度，先用一个轻松动作承接：正常聊天一次，看看对方会不会自然延续。`,
+      say: '可以说：“今天这个安排我感觉还挺舒服的。” 或“刚才聊到的那个话题挺有意思，下次可以继续说。” 重点是分享体验，不急着要对方表态。',
+      contextLabel: '情绪处理',
+      tone: '先把情绪落回事实：你感到开心、紧张或在意，都可以记录，但暂时不需要因此准备礼物、换穿搭或加大投入。保持自然回应，让下一次互动来验证对方态度。',
+      observe: '观察与记录重点：记录对方后续有没有主动找你、有没有延续你提到的话题、有没有把下一次互动说具体；同时记录你的感受是否来自事实变化，还是来自期待上升。'
+    }
+  }
+
+  if (hasMeal && fulfilled) {
+    return {
+      do: `“${eventTitle}”已经是线下吃饭并且真实发生了，下一步适合轻轻承接这次愉快体验，不要立刻把话题推成表白或关系确认。可以隔几个小时或当天晚些时候自然跟进一次，再顺手埋一个低压力的下次机会。`,
+      say: '线上可以说：“今天吃得挺开心，那家店比我想的舒服。下次你说的那家咖啡/电影也可以试试。” 线下收尾可以说：“今天挺开心的，回去路上注意安全，到了说一声。”',
+      contextLabel: '后续推进节奏',
+      tone: '这是见面后承接，不是见面前准备。重点放在轻松复盘和下一次话题，不需要再补穿着、小礼物这类建议；聊天节奏自然一点，别因为一次开心就突然升温太猛。',
+      observe: '观察与记录重点：饭后对方是否主动延续聊天、是否提到下次、是否记得你说过的小细节、是否愿意把下一次安排说得更具体。'
+    }
+  }
+
+  if (hasMeet && fulfilled) {
+    return {
+      do: `“${eventTitle}”已经兑现，先把这次线下体验当成正向样本。下一步可以轻推进一次具体但轻量的后续安排，别连续加码多个邀约。`,
+      say: '可以说：“今天见面感觉挺自然的，下次有个轻松点的安排也可以一起。” 如果对方主动提到某个兴趣，就顺着说：“那下次可以按你刚说的那个来。”',
+      contextLabel: '后续推进节奏',
+      tone: '这是见面后的推进阶段，重点不是再准备穿着或礼物，而是保持稳定、轻松、可继续的联系。回应及时即可，不用突然变得很黏。',
+      observe: '观察与记录重点：对方见面后的主动性、回复速度是否稳定、是否愿意给出下次时间，以及线下热度能不能延续到线上。'
+    }
+  }
+
+  if ((hasMeet || planned) && (rejected || cancelled)) {
+    return {
+      do: `“${eventTitle}”里出现了拒绝、取消或拖延，下一步不要马上补一个新邀约。先把球放回对方，看对方会不会主动补时间、补解释或补安排。`,
+      say: '可以短一点说：“好，那你确定方便的时候再跟我说。” 或“没事，那这次先这样。” 说完就停，不连续解释也不追问。',
+      contextLabel: '被拒或改期后的状态',
+      tone: '语气平稳、表情正常，别显得生气，也别用更热情去补偿。当天穿着和状态回到自己的正常节奏，不为挽回场面额外表现。',
+      observe: '观察与记录重点：对方后面是否主动补新时间、是否给出清楚原因、是否只用“再看”“以后”带过。'
+    }
+  }
+
+  if (hasChat && cold) {
+    return {
+      do: `“${eventTitle}”主要是聊天冷淡或断联，下一步先停止连续补消息。保留一个自然收口，观察对方会不会自己回来接话。`,
+      say: '线上可以说：“好，你先忙。” 或“那回头再说。” 之后不要再追加解释型长消息。线下见到时正常打招呼，不把线上冷淡拿出来当场审问。',
+      contextLabel: '聊天节奏',
+      tone: '情绪压低一点，语气短、清楚、体面。不要用阴阳怪气、连续表情包或长篇说明来要回应。',
+      observe: '观察与记录重点：对方是否主动回来补一句、是否解释消失原因、是否只有你发起时才回应。'
+    }
+  }
+
+  if (pending || planned) {
+    return {
+      do: `“${eventTitle}”里有计划或待确认信息，下一步要把模糊意向落到一个具体点：时间、地点、由谁安排，三选一先确认一个。`,
+      say: '可以说：“那我们先定个大概时间吧，你周五晚还是周末更方便？” 或“你确定以后告诉我，我这边就按没定先安排自己的事。”',
+      contextLabel: hasMeet ? '见面前准备' : '确认节奏',
+      tone: hasMeet
+        ? '如果接下来确实要见面，穿着按场合干净舒服即可：吃饭偏轻松、电影偏舒适、咖啡偏自然。小礼物只有在对方明确提过喜好、且价值很轻时才适合；否则不要用礼物制造压力。'
+        : '语气像确认日程，不像逼问态度。线上文字短一点；线下可以带笑说，别让气氛变成压力测试。',
+      observe: '观察与记录重点：对方是否愿意给具体选项、是否主动推进安排、是否反复停在“再看”“有空再说”。'
+    }
+  }
+
+  if (hasChat) {
+    return {
+      do: `“${eventTitle}”主要发生在线上，下一步围绕一个具体信息回应，不要把一次聊天直接扩大成关系判断。`,
+      say: '可以说：“我理解你的意思是……对吗？” 或“那这件事你更倾向怎么安排？” 如果气氛轻松，可以接一句和当下话题有关的具体回应。',
+      contextLabel: '聊天节奏',
+      tone: '文字少一点、清楚一点，别连续追问。表情包和语气词可以少量用来降压，但不要代替关键问题。',
+      observe: '观察与记录重点：对方是否正面回答、是否给具体信息、是否主动延续话题，还是只用模糊话带过。'
+    }
+  }
+
+  return null
 }
 
 function buildSubjectRoleActionAdvice(role, eventTitle) {
