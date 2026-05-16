@@ -209,8 +209,8 @@ export function confirm(content: string, title = '提示'): Promise<boolean> {
     uni.showModal({
       title,
       content,
-      success: (res) => {
-        resolve(res.confirm)
+      success: (res: any = {}) => {
+        resolve(Boolean(res?.confirm))
       },
       fail: () => {
         resolve(false)

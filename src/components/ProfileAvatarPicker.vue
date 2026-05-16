@@ -94,13 +94,14 @@ function chooseImage() {
     count: 1,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
-    success: (res) => {
-      const tempFilePath = res.tempFilePaths[0]
+    success: (res: any = {}) => {
+      const tempFilePath = res?.tempFilePaths?.[0] || res?.tempFiles?.[0]?.path || res?.tempFiles?.[0]?.tempFilePath
+      if (!tempFilePath) return
 
       uni.getFileInfo({
         filePath: tempFilePath,
-        success: (fileInfo) => {
-          if (fileInfo.size > 2 * 1024 * 1024) {
+        success: (fileInfo: any = {}) => {
+          if (Number(fileInfo?.size || 0) > 2 * 1024 * 1024) {
             uploadError.value = '图片请控制在 2MB 以内。'
             return
           }

@@ -1,14 +1,15 @@
-const cloudbase = require('@cloudbase/node-sdk')
+﻿const cloudbase = require('@cloudbase/node-sdk')
 const cloud = require('wx-server-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
 const { AI_REQUEST_TIMEOUT_MS, postChatCompletions, parseJSONContent } = require('./_shared/ai-http')
+const { recordTokenUsage } = require('./_shared/token-usage')
+const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
-
 function normalizeDoc(res) {
   if (Array.isArray(res?.data)) return res.data[0] || null
   return res?.data || null
@@ -40,7 +41,10 @@ function normalizeSettings(settings) {
       provider: String(model.provider || 'openai-compatible').trim(),
       apiKey: String(model.apiKey || '').trim(),
       baseUrl: String(model.baseUrl || 'https://api.openai.com/v1').trim(),
-      model: String(model.model || 'gpt-4o-mini').trim()
+      model: String(model.model || 'gpt-4o-mini').trim(),
+      runtimeConfig: settings.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {},
+      promptConfig: settings.promptConfig && typeof settings.promptConfig === 'object' ? settings.promptConfig : {},
+      promptModules: settings.promptModules && typeof settings.promptModules === 'object' ? settings.promptModules : {}
     }
   }
   return {
@@ -48,7 +52,25 @@ function normalizeSettings(settings) {
     provider: String(settings?.aiProvider || 'openai-compatible').trim(),
     apiKey: String(settings?.aiApiKey || '').trim(),
     baseUrl: String(settings?.aiBaseUrl || 'https://api.openai.com/v1').trim(),
-    model: String(settings?.aiModel || 'gpt-4o-mini').trim()
+    model: String(settings?.aiModel || 'gpt-4o-mini').trim(),
+    runtimeConfig: settings?.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {},
+    promptConfig: settings?.promptConfig && typeof settings.promptConfig === 'object' ? settings.promptConfig : {},
+    promptModules: settings?.promptModules && typeof settings.promptModules === 'object' ? settings.promptModules : {}
+  }
+}
+
+function clampRuntimeNumber(value, fallback, min, max, integer = false) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  const clamped = Math.min(max, Math.max(min, parsed))
+  return integer ? Math.round(clamped) : Number(clamped.toFixed(2))
+}
+
+function getRuntimeConfig(settings = {}) {
+  const source = settings.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {}
+  return {
+    attachmentMaxTokens: clampRuntimeNumber(source.attachmentMaxTokens, 1200, 400, 2400, true),
+    attachmentTemperature: clampRuntimeNumber(source.attachmentTemperature, 0.1, 0, 1)
   }
 }
 
@@ -77,7 +99,9 @@ exports.main = async (event = {}) => {
     if (!fileID) return { success: false, message: '缺少附件 fileID' }
     if (mediaType !== 'image') return { success: false, message: '当前仅支持图片识别' }
 
-    const settings = normalizeSettings(await getAISettings(userId))
+    const rawSettings = await getAISettings(userId)
+    const settings = normalizeSettings(rawSettings)
+    const runtimeConfig = getRuntimeConfig(rawSettings)
     if (!settings.enabled || !settings.apiKey) {
       return { success: true, analysis: { isChatRecord: false, extractedText: '', summary: 'AI 未开启，图片已作为附件保存。', confidence: 'low' } }
     }
@@ -85,12 +109,17 @@ exports.main = async (event = {}) => {
     const imageUrl = await getTempUrl(fileID)
     if (!imageUrl) return { success: false, message: '无法读取图片临时地址' }
 
-    const prompt = [
-      '你是聊天截图识别助手。请判断图片是否是聊天记录截图。',
-      '如果是聊天记录，请尽量按原顺序提取可读文字，保留说话人/时间/关键语气，不要编造看不清的内容。',
-      '如果不是聊天记录，不要提取正文，只简短说明图片内容。',
-      '只输出 JSON：{"isChatRecord":boolean,"extractedText":"...","suggestedTitle":"...","summary":"...","confidence":"low|medium|high"}'
-    ].join('\n')
+    const promptMessages = buildPromptMessages({
+      moduleKey: 'attachmentAnalysis',
+      settings,
+      contextLines: [
+        'Input: one image attachment URL is provided as image_url content.'
+      ]
+    })
+    if (!promptMessages) {
+      return { success: true, analysis: { isChatRecord: false, extractedText: '', summary: 'Attachment prompt is disabled in admin.', confidence: 'low' } }
+    }
+    const prompt = promptMessages.map((item) => item.content).join('\n\n')
 
     const response = await postChatCompletions({
       provider: settings.provider,
@@ -99,8 +128,8 @@ exports.main = async (event = {}) => {
       model: settings.model,
       timeoutMs: AI_REQUEST_TIMEOUT_MS,
       responseFormat: { type: 'json_object' },
-      maxTokens: 1200,
-      temperature: 0.1,
+      maxTokens: runtimeConfig.attachmentMaxTokens,
+      temperature: runtimeConfig.attachmentTemperature,
       messages: [
         {
           role: 'user',
@@ -120,6 +149,13 @@ exports.main = async (event = {}) => {
 
     const data = await response.json()
     const raw = data?.choices?.[0]?.message?.content || ''
+    await recordTokenUsage(db, {
+      userId,
+      feature: 'attachmentAnalysis',
+      provider: settings.provider,
+      model: settings.model,
+      usage: data?.usage
+    })
     return { success: true, analysis: normalizeAnalysis(parseJSONContent(raw)) }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)
@@ -128,3 +164,4 @@ exports.main = async (event = {}) => {
     return { success: false, message: '附件识别失败' }
   }
 }
+

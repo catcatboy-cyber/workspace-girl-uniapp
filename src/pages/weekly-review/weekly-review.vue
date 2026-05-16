@@ -6,10 +6,10 @@
       <view class="hero-card card">
         <text class="hero-topline">Weekly Review / {{ caseName }}</text>
         <text class="h1">本周复盘</text>
-        <text class="hero-subtext">按周回看真实事件和分数变化，避免被单次热情或单次冷淡带着走。</text>
+        <text class="hero-subtext">按周回看真实事件和分数净变化，避免被单次情绪带着走。</text>
         <view class="actions">
           <button class="btn-secondary" @click="goCaseDetail">返回关系主页</button>
-          <button class="btn-secondary" @click="goTimeline">打开时间线</button>
+          <button class="btn-secondary" @click="goTimeline">打开时间轴</button>
         </view>
       </view>
 
@@ -17,7 +17,7 @@
         <view class="section-head">
           <view>
             <text class="h2">本周 AI 复盘</text>
-            <text class="muted">生成后会保存为历史周复盘；再次生成会覆盖本周版本。</text>
+            <text class="muted">上下文只看基础画像、本周真实事件和分数净变化；再次生成会覆盖本周复盘版本。</text>
           </view>
         </view>
         <view class="actions">
@@ -38,7 +38,7 @@
             <text v-if="currentReview.aiUsed" class="ai-badge">AI 已参与研判</text>
           </view>
         </view>
-        <text class="review-summary">{{ currentReview.summary }}</text>
+        <text class="review-summary" user-select>{{ currentReview.summary }}</text>
         <view class="score-strip">
           <text class="score-chip">事件 {{ currentReview.eventCount }}</text>
           <text class="score-chip">评估 {{ currentReview.assessmentCount }}</text>
@@ -47,25 +47,50 @@
         </view>
         <view class="review-section">
           <text class="section-title">本周关键变化</text>
-          <text v-for="item in currentReview.keyChanges" :key="item" class="bullet">• {{ item }}</text>
+          <text v-for="item in currentReview.keyChanges" :key="item" class="bullet" user-select>• {{ item }}</text>
         </view>
         <view class="review-section">
           <text class="section-title">关键事件</text>
-          <text v-for="item in currentReview.keyEvents" :key="item" class="bullet">• {{ item }}</text>
+          <text v-for="item in currentReview.keyEvents" :key="item" class="bullet" user-select>• {{ item }}</text>
         </view>
         <view class="review-section">
           <text class="section-title">下周观察重点</text>
-          <text v-for="item in currentReview.nextWeekFocus" :key="item" class="bullet">• {{ item }}</text>
+          <text v-for="item in currentReview.nextWeekFocus" :key="item" class="bullet" user-select>• {{ item }}</text>
         </view>
         <view class="review-section">
           <text class="section-title">本周避免误判</text>
-          <text v-for="item in currentReview.avoidMisread" :key="item" class="bullet">• {{ item }}</text>
+          <text v-for="item in currentReview.avoidMisread" :key="item" class="bullet" user-select>• {{ item }}</text>
         </view>
       </view>
 
       <view v-else class="card empty-card">
         <text class="h2">本周还没有复盘</text>
-        <text class="muted">可以先生成一次。后续每周都会沉淀成历史记录，方便对比长期趋势。</text>
+        <text class="muted">先生成一次本周复盘，后续会沉淀为历史周复盘，方便对比长期趋势。</text>
+      </view>
+
+      <view class="card side-read-card">
+        <view class="section-head">
+          <view>
+            <text class="h2">本周侧写</text>
+            <text class="muted">单独触发 AI 生成。结合属相、星座和本周事件，给出本周侧写。</text>
+          </view>
+        </view>
+        <view class="actions">
+          <button class="btn-primary" :disabled="!currentReview || sideReadLoading" @click="generateCurrentWeeklySideRead">
+            {{ sideReadLoading ? '生成中...' : currentWeeklySideRead ? '重新生成本周侧写' : '生成本周属相星座侧写' }}
+          </button>
+        </view>
+
+        <view v-if="currentWeeklySideRead" class="side-read-body">
+          <text class="review-title">{{ currentWeeklySideRead.title }}</text>
+          <text class="side-read-summary" user-select>{{ currentWeeklySideRead.summary }}</text>
+          <view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-read-section">
+            <text class="side-read-label">{{ item.label }}</text>
+            <text class="side-read-text" user-select>{{ item.text }}</text>
+          </view>
+        </view>
+        <text v-else-if="currentReview" class="muted empty-inline">这周还没有侧写，可以单独生成。</text>
+        <text v-else class="muted empty-inline">请先生成本周复盘，再生成本周侧写。</text>
       </view>
 
       <view class="card">
@@ -86,7 +111,7 @@
             </view>
             <text class="trend-pill">{{ item.trendLabel }}</text>
           </view>
-          <text class="review-summary">{{ item.summary }}</text>
+          <text class="review-summary" user-select>{{ item.summary }}</text>
           <view class="score-strip">
             <text class="score-chip">意向 {{ formatDelta(item.intentDelta) }}</text>
             <text class="score-chip">风险 {{ formatDelta(item.riskDelta) }}</text>
@@ -99,14 +124,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getWeeklyReviews, generateWeeklyReview, getCaseDetail, getCases } from '@/utils/api'
-import { getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import {
+  generateWeeklyReview,
+  generateWeeklySideRead,
+  getCaseDetail,
+  getCases,
+  getCurrentUserId,
+  getWeeklyReviews
+} from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 
 const loading = ref(true)
 const generating = ref(false)
+const sideReadLoading = ref(false)
 const userId = ref('')
 const caseId = ref('')
 const caseName = ref('当前对象')
@@ -117,6 +150,10 @@ const initialized = ref(false)
 
 const currentReview = computed(() => {
   return reviews.value.find((item) => item.weekStart === currentWeekStart.value) || null
+})
+
+const currentWeeklySideRead = computed(() => {
+  return currentReview.value?.weeklySideRead || null
 })
 
 const historyReviews = computed(() => {
@@ -195,11 +232,26 @@ async function generateCurrentWeek() {
     const res = await generateWeeklyReview(userId.value, caseId.value, currentWeekStart.value)
     reviews.value = res.reviews || []
     currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
-    showSuccess('已生成周复盘')
+    showSuccess('已生成本周复盘')
   } catch (error: any) {
-    showError(error?.message || '生成失败')
+    showError(error?.message || '生成周复盘失败')
   } finally {
     generating.value = false
+  }
+}
+
+async function generateCurrentWeeklySideRead() {
+  if (sideReadLoading.value || !currentReview.value) return
+  sideReadLoading.value = true
+  try {
+    const res = await generateWeeklySideRead(userId.value, caseId.value, currentWeekStart.value)
+    reviews.value = res.reviews || reviews.value
+    currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
+    showSuccess('已生成本周侧写')
+  } catch (error: any) {
+    showError(error?.message || '生成本周侧写失败')
+  } finally {
+    sideReadLoading.value = false
   }
 }
 
@@ -280,7 +332,10 @@ function goTimeline() {
 .h2,
 .review-title,
 .review-summary,
-.section-title {
+.section-title,
+.side-read-label,
+.side-read-text,
+.side-read-summary {
   color: var(--text-main, #201914);
 }
 
@@ -306,7 +361,8 @@ function goTimeline() {
 .hero-subtext,
 .muted,
 .review-week,
-.bullet {
+.bullet,
+.empty-inline {
   display: block;
   font-size: 24rpx;
   line-height: 1.6;
@@ -316,6 +372,13 @@ function goTimeline() {
 .hero-subtext {
   font-size: 26rpx;
   color: rgba(255, 252, 247, 0.76);
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16rpx;
 }
 
 .actions {
@@ -350,7 +413,8 @@ function goTimeline() {
   color: var(--primary, #123c36);
 }
 
-.review-card {
+.review-card,
+.side-read-card {
   border-left: 6rpx solid rgba(201, 164, 92, 0.72);
 }
 
@@ -414,7 +478,9 @@ function goTimeline() {
   color: #6f5225;
 }
 
-.review-summary {
+.review-summary,
+.side-read-summary,
+.side-read-text {
   display: block;
   margin-top: 18rpx;
   font-size: 28rpx;
@@ -422,7 +488,8 @@ function goTimeline() {
   font-weight: 650;
 }
 
-.review-section {
+.review-section,
+.side-read-section {
   margin-top: 22rpx;
   padding: 20rpx;
   border-radius: 16rpx;
@@ -430,7 +497,8 @@ function goTimeline() {
   background: var(--card-soft, #fffaf3);
 }
 
-.section-title {
+.section-title,
+.side-read-label {
   display: block;
   margin-bottom: 10rpx;
   font-size: 26rpx;
@@ -440,6 +508,10 @@ function goTimeline() {
 
 .bullet {
   margin-top: 8rpx;
+}
+
+.empty-inline {
+  margin-top: 16rpx;
 }
 
 .history-list {

@@ -1,4 +1,4 @@
-const cloudbase = require('@cloudbase/node-sdk')
+﻿const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { isSystemTimelineRecord, compareAssessments, buildTrendTimelineRecords } = require('./_shared/trend')
 const { recalculateAssessmentFromEvent } = require('./_shared/event-recalculate')
@@ -257,3 +257,4 @@ exports.main = async (event) => {
     return { success: false, message: '删除时间线记录失败' }
   }
 }
+

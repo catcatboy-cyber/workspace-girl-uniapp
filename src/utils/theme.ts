@@ -162,6 +162,10 @@ function isCurrentTabBarPage() {
 
 export function applyThemeChrome(theme = getCurrentTheme()) {
   // #ifdef MP-WEIXIN
+  // Skip runtime chrome APIs on WeChat Mini Program.
+  return
+  // #endif
+  // #ifdef MP-WEIXIN
   // 微信开发者工具/基础库 3.15.x 偶发在动态原生 chrome API 内部读取空 errMsg。
   // 小程序端全部使用 pages.json 静态 navigationBar/tabBar 配置，页面色彩由 CSS 变量承接主题。
   return

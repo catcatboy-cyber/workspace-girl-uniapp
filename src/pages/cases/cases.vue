@@ -43,8 +43,13 @@
             <text class="muted">更新于 {{ formatDateTime(item.updatedAt) }}</text>
           </view>
 
-          <view v-if="profileItems(item.profile).length > 0" class="badges">
-            <text v-for="p in profileItems(item.profile)" :key="p" class="badge">{{ p }}</text>
+          <view v-if="item.cardTypeLabel || item.cardStatusTags.length" class="badges object-card-tags">
+            <text v-if="item.cardTypeLabel" class="badge badge-primary">{{ item.cardTypeLabel }}</text>
+            <text v-for="tag in item.cardStatusTags" :key="tag" class="badge badge-soft">{{ tag }}</text>
+          </view>
+
+          <view v-if="item.cardProfileItems.length > 0" class="badges profile-meta-badges">
+            <text v-for="p in item.cardProfileItems" :key="p" class="badge">{{ p }}</text>
           </view>
 
           <view class="case-kpis">
@@ -82,16 +87,22 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCases, getCurrentUserId } from '@/utils/api'
 import { formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
+import { buildObjectStatusCard } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
 const loading = ref(true)
 const cases = ref<any[]>([])
 const userId = ref('')
 const deleted = ref(false)
 const themeVars = ref(getThemeStyle())
+
+onShareAppMessage(() => buildSafeShareMessage())
+
+onShareTimeline(() => buildSafeTimelineShare())
 const activeCaseId = ref('')
 
 onLoad((options) => {
@@ -119,12 +130,25 @@ async function loadData() {
   loading.value = true
   try {
     const list = await getCases(uid)
-    cases.value = (list || []).map((c: any) => ({ ...c, caseId: c.caseId || c._id }))
+    cases.value = (list || []).map((c: any) => ({
+      ...c,
+      caseId: c.caseId || c._id,
+      cardTypeLabel: getRelationTypeLabel(c.profile),
+      cardProfileItems: profileItems(c.profile),
+      cardStatusTags: buildCaseStatusTags(c)
+    }))
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
     loading.value = false
   }
+}
+
+function getRelationTypeLabel(p: any): string {
+  const relationType = String(p?.relationType || '').trim()
+  if (relationType === 'close_friend') return '亲密朋友'
+  if (relationType === 'romantic') return '恋爱对象'
+  return ''
 }
 
 function profileItems(p: any): string[] {
@@ -136,6 +160,22 @@ function profileItems(p: any): string[] {
   if (p.zodiac) items.push(`属${p.zodiac}`)
   if (p.constellation) items.push(p.constellation)
   return items
+}
+
+function buildCaseStatusTags(caseItem: any): string[] {
+  try {
+    if (!caseItem?.latestResult) return []
+    const status = buildObjectStatusCard({
+      ...caseItem,
+      assessments: Array.isArray(caseItem.assessments) && caseItem.assessments.length
+        ? caseItem.assessments
+        : [caseItem.latestResult],
+      timeline: Array.isArray(caseItem.timeline) ? caseItem.timeline : []
+    })
+    return [status?.phase, status?.state, status?.weather].filter(Boolean).slice(0, 3)
+  } catch {
+    return []
+  }
 }
 
 function avatarLabel(name?: string) {
@@ -214,6 +254,22 @@ function switchActiveCase(caseId: string) {
 .avatar-placeholder { font-size: 24rpx; font-weight: 700; color: #786857; }
 .badges { margin: 12rpx 0; }
 .badge { display: inline-block; padding: 8rpx 16rpx; background: #efe7d8; border-radius: 999rpx; font-size: 22rpx; color: #241b12; margin: 4rpx; }
+.object-card-tags {
+  margin-top: 14rpx;
+  margin-bottom: 4rpx;
+}
+.profile-meta-badges {
+  margin-top: 8rpx;
+}
+.badge-primary {
+  background: rgba(18, 60, 54, 0.12);
+  border: 1rpx solid rgba(18, 60, 54, 0.22);
+  color: #123c36;
+  font-weight: 700;
+}
+.badge-soft {
+  background: rgba(201, 164, 92, 0.12);
+}
 .case-kpis { display: flex; gap: 12rpx; margin: 16rpx 0; flex-wrap: wrap; }
 .kpi-item { flex: 1 1 28%; background: #fff; border-radius: 12rpx; padding: 16rpx; min-width: 180rpx; }
 .kpi-label { display: block; font-size: 22rpx; color: #786857; }
@@ -335,6 +391,16 @@ function switchActiveCase(caseId: string) {
   background: var(--accent-soft, rgba(201, 164, 92, 0.14));
   border: 1rpx solid rgba(201, 164, 92, 0.24);
   color: #6f5225;
+}
+
+.case-card .badge-primary {
+  background: rgba(18, 60, 54, 0.12);
+  border-color: rgba(18, 60, 54, 0.22);
+  color: #123c36;
+}
+
+.case-card .badge-soft {
+  background: rgba(201, 164, 92, 0.12);
 }
 
 .profile-avatar {

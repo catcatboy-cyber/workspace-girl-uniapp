@@ -9,7 +9,8 @@ const COLLECTIONS = [
   'assessments',
   'timeline_records',
   'system_settings',
-  'weekly_reviews'
+  'weekly_reviews',
+  'token_usage_records'
 ]
 
 exports.main = async () => {

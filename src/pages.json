@@ -81,6 +81,12 @@
 			}
 		},
 		{
+			"path": "pages/token-usage/token-usage",
+			"style": {
+				"navigationBarTitleText": "Token 消费明细"
+			}
+		},
+		{
 			"path": "pages/ai-settings/ai-settings",
 			"style": {
 				"navigationBarTitleText": "AI 设置"

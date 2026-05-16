@@ -12,6 +12,23 @@ function normalizeProvider(provider) {
   return String(provider || 'openai-compatible').trim().toLowerCase() || 'openai-compatible'
 }
 
+function normalizeModelName(model) {
+  return String(model || '').trim().toLowerCase()
+}
+
+function shouldSendResponseFormat(params, provider) {
+  if (!params.responseFormat) return false
+  if (provider === 'anthropic') return false
+
+  const model = normalizeModelName(params.model)
+  const baseUrl = String(params.baseUrl || '').toLowerCase()
+  // Some OpenAI-compatible proxies accept response_format but return empty or
+  // truncated content for DeepSeek-style models. Prompt-only JSON is steadier.
+  if (model.includes('deepseek') || baseUrl.includes('deepseek')) return false
+
+  return true
+}
+
 function getDefaultBaseUrl(provider) {
   return normalizeProvider(provider) === 'anthropic'
     ? 'https://api.anthropic.com'
@@ -25,16 +42,20 @@ function buildChatCompletionUrls(baseUrl, provider) {
 
   if (normalizedProvider === 'anthropic') {
     if (pathname.endsWith('/messages')) return [normalized]
+
     const urls = normalized.endsWith('/v1')
       ? [`${normalized}/messages`]
       : [`${normalized}/v1/messages`, `${normalized}/messages`]
+
     return [...new Set(urls)]
   }
 
   if (pathname.endsWith('/chat/completions')) return [normalized]
+
   const urls = normalized.endsWith('/v1')
     ? [`${normalized}/chat/completions`]
     : [`${normalized}/v1/chat/completions`, `${normalized}/chat/completions`]
+
   return [...new Set(urls)]
 }
 
@@ -52,7 +73,9 @@ function normalizeAnthropicMessages(messages) {
       content: typeof item.content === 'string' ? item.content : String(item.content || '')
     }))
 
-  if (normalizedMessages.length === 0) normalizedMessages.push({ role: 'user', content: '' })
+  if (normalizedMessages.length === 0) {
+    normalizedMessages.push({ role: 'user', content: '' })
+  }
 
   return { system, messages: normalizedMessages }
 }
@@ -67,8 +90,64 @@ function normalizeAnthropicResponse(payload) {
     : ''
 
   return {
+    usage: {
+      prompt_tokens: payload?.usage?.input_tokens || 0,
+      completion_tokens: payload?.usage?.output_tokens || 0,
+      total_tokens: (payload?.usage?.input_tokens || 0) + (payload?.usage?.output_tokens || 0)
+    },
     model: payload?.model || '',
-    choices: [{ message: { content: text } }],
+    choices: [
+      {
+        message: {
+          content: text
+        }
+      }
+    ],
+    raw: payload
+  }
+}
+
+function extractTextContent(value) {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === 'string') return item
+        if (typeof item?.text === 'string') return item.text
+        if (typeof item?.content === 'string') return item.content
+        return ''
+      })
+      .filter(Boolean)
+      .join('\n')
+      .trim()
+  }
+  if (value && typeof value === 'object') {
+    if (typeof value.text === 'string') return value.text
+    if (typeof value.content === 'string') return value.content
+  }
+  return ''
+}
+
+function normalizeOpenAICompatibleResponse(payload) {
+  const choice = Array.isArray(payload?.choices) ? payload.choices[0] : null
+  const message = choice?.message || {}
+  const content = extractTextContent(message.content)
+    || extractTextContent(message.reasoning_content)
+    || extractTextContent(choice?.text)
+    || extractTextContent(payload?.output_text)
+    || extractTextContent(payload?.content)
+
+  return {
+    ...payload,
+    choices: [
+      {
+        ...choice,
+        message: {
+          ...message,
+          content
+        }
+      }
+    ],
     raw: payload
   }
 }
@@ -131,15 +210,18 @@ async function postChatCompletions(params) {
         system: anthropicPayload.system || undefined,
         messages: anthropicPayload.messages,
         temperature: params.temperature,
-        max_tokens: params.maxTokens || 512
+        max_tokens: params.maxTokens || 256
       }
     : {
         model: params.model,
         messages: params.messages,
         temperature: params.temperature,
-        response_format: params.responseFormat,
         max_tokens: params.maxTokens
       }
+
+  if (!isAnthropic && shouldSendResponseFormat(params, provider)) {
+    requestBody.response_format = params.responseFormat
+  }
 
   const headers = isAnthropic
     ? {
@@ -156,7 +238,7 @@ async function postChatCompletions(params) {
       requestBody,
       params.timeoutMs || DEFAULT_TIMEOUT_MS,
       headers,
-      isAnthropic ? normalizeAnthropicResponse : null
+      isAnthropic ? normalizeAnthropicResponse : normalizeOpenAICompatibleResponse
     )
 
     if (response.status === 404 && url !== urls[urls.length - 1]) {
@@ -178,11 +260,15 @@ function parseJSONContent(raw) {
     return JSON.parse(trimmed)
   } catch {
     const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
-    if (fenced && fenced[1]) return JSON.parse(fenced[1])
+    if (fenced && fenced[1]) {
+      return JSON.parse(fenced[1])
+    }
 
     const start = trimmed.indexOf('{')
     const end = trimmed.lastIndexOf('}')
-    if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1))
+    if (start >= 0 && end > start) {
+      return JSON.parse(trimmed.slice(start, end + 1))
+    }
 
     throw new Error('模型返回内容不是有效 JSON。')
   }
@@ -198,6 +284,9 @@ function getAIErrorMessage(error, timeoutMs) {
 
 module.exports = {
   AI_REQUEST_TIMEOUT_MS: DEFAULT_TIMEOUT_MS,
+  buildChatCompletionUrls,
+  getDefaultBaseUrl,
+  normalizeOpenAICompatibleResponse,
   postChatCompletions,
   parseJSONContent,
   getAIErrorMessage

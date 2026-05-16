@@ -81,23 +81,14 @@
             </view>
           </view>
         </view>
-        <view v-if="latestActionAdvice" class="guidance-panel">
+        <view v-if="latestActionPlanPanel.show" class="guidance-panel">
           <text class="ai-panel-label">你接下来怎么做</text>
-          <view class="guidance-item">
-            <text class="guidance-label">接下来可以做什么</text>
-            <text class="guidance-text">{{ latestActionAdvice.action || latestActionAdvice.do }}</text>
-          </view>
-          <view class="guidance-item">
-            <text class="guidance-label">线上/线下可以这样说</text>
-            <text class="guidance-text">{{ latestActionAdvice.say }}</text>
-          </view>
-          <view class="guidance-item">
-            <text class="guidance-label">{{ latestActionAdvice.contextLabel || '情绪和场合细节' }}</text>
-            <text class="guidance-text">{{ latestActionAdvice.context || latestActionAdvice.tone }}</text>
-          </view>
-          <view class="guidance-item">
-            <text class="guidance-label">观察与记录重点</text>
-            <text class="guidance-text">{{ latestActionAdvice.observeAndRecord || latestActionAdvice.observe }}</text>
+          <text v-if="latestActionPlanPanel.missing" class="raw-ai-reply-text muted">{{ latestActionPlanPanel.text }}</text>
+          <view v-else>
+            <view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="guidance-item">
+              <text class="guidance-label">{{ item.label }}</text>
+              <text class="guidance-text">{{ item.text }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -193,7 +184,7 @@
         <view class="section-head">
           <view>
             <text class="h2">评估历史流</text>
-            <text class="muted">按评估时间倒序查看每一次即时反馈、触发事件、附件链接和侧写快照。</text>
+            <text class="muted">按评估时间倒序查看每一次即时反馈，结构和首页保持一致。</text>
           </view>
           <button class="link-button secondary" @click="goCaseDetail">返回关系主页</button>
         </view>
@@ -229,33 +220,21 @@
             </view>
             <view class="assessment-flow-item">
               <view class="history-instant-card">
-              <view class="assessment-flow-head">
-                <view>
-                  <text class="case-kpi-label">即时反馈快照</text>
-                  <text class="assessment-flow-title">{{ entry.item.triggerEventTitle || mapSourceLabel(entry.item.source) }}</text>
-                  <text class="assessment-flow-time">{{ formatAssessmentTime(entry.item.createdAt) }}</text>
+                <view class="assessment-flow-head">
+                  <view>
+                    <text class="status-strong">已记录：{{ getAssessmentTitle(entry.item) }}</text>
+                    <text class="assessment-flow-time">{{ formatAssessmentTime(entry.item.createdAt) }}</text>
+                  </view>
+                  <view class="assessment-flow-tags">
+                    <text v-if="hasAIReview(entry.item)" class="ai-badge">AI 已参与研判</text>
+                  </view>
                 </view>
-                <view class="assessment-flow-tags">
-                  <text class="badge">{{ mapSourceLabel(entry.item.source) }}</text>
-                  <text v-if="hasAIReview(entry.item)" class="ai-badge">AI 已参与研判</text>
-                </view>
-              </view>
-              <text v-if="entry.item.explanation?.headline" class="latest-trend-desc">{{ entry.item.explanation.headline }}</text>
-              <view class="feedback-badges">
-                <text v-if="getAssessmentEvent(entry.item)?.subjectRole" class="badge subject-badge">{{ mapSubjectRoleLabel(getAssessmentEvent(entry.item).subjectRole) }}</text>
-                <text class="badge">{{ mapTimelineTypeLabel(getAssessmentType(entry.item)) }}</text>
-                <text class="badge">{{ mapAction(entry.item.nextAction) }}</text>
-                <text class="badge">证据 {{ entry.item.evidenceLevel || '--' }}</text>
-                <text class="badge">可信度 {{ mapConfidenceLabel(entry.item.confidenceLevel) }}</text>
-              </view>
 
               <view class="quick-section">
                 <view class="section-mini-head">
-                  <text class="mini-title">系统当前判断</text>
-                  <text class="mini-sub">帮助你快速恢复当时记忆</text>
+                  <text class="mini-title">本次记录</text>
                 </view>
-                <text v-if="entry.item.explanation?.headline" class="feedback-headline strong">{{ entry.item.explanation.headline }}</text>
-                <text v-if="getAssessmentKeywordText(entry.item)" class="muted keyword-line">判断关键词：{{ getAssessmentKeywordText(entry.item) }}</text>
+                <text class="feedback-headline strong" user-select>{{ getAssessmentOriginalRecordText(entry.item) }}</text>
               </view>
 
               <view class="score-panel instant-score-panel">
@@ -297,43 +276,58 @@
               </view>
               <text v-if="false && entry.trend.summaryText" class="trend-summary-text">{{ entry.trend.summaryText }}</text>
               <text v-if="false" class="trend-summary-text">这是第一条评估记录，后续新增事件或手动重评后会开始形成趋势对比。</text>
-              <text v-if="entry.trend.warningText" class="trend-warning">{{ entry.trend.warningText }}</text>
+              <text v-if="entry.trend.warningText" class="trend-warning" user-select>{{ entry.trend.warningText }}</text>
 
               <view v-if="getAssessmentReasonBullets(entry.item).length > 0" class="quick-reason-panel">
                 <view class="section-mini-head">
                   <text class="mini-title">判断依据</text>
                   <text class="mini-sub">为什么这次会这么判断</text>
                 </view>
-                <text v-for="reason in getAssessmentReasonBullets(entry.item)" :key="reason" class="quick-reason">• {{ reason }}</text>
+                <text v-for="reason in getAssessmentReasonBullets(entry.item)" :key="reason" class="quick-reason" user-select>• {{ reason }}</text>
               </view>
 
               <view v-if="assessmentStatusSnapshots[entry.index]" class="quick-status-panel">
                 <view class="section-mini-head">
-                  <text class="mini-title">当前状态</text>
-                  <text class="mini-sub">把阶段和状态合成一句话看</text>
+                  <view class="mini-title-row">
+                    <text class="mini-title">当前状态</text>
+                    <text class="info-icon" @click="openAssessmentStatusInfo(entry.item, assessmentStatusSnapshots[entry.index])">i</text>
+                  </view>
                 </view>
-                <text class="status-meta">{{ getAssessmentStatusMeta(assessmentStatusSnapshots[entry.index]) }}</text>
-                <text class="status-summary">{{ assessmentStatusSnapshots[entry.index].summary }}</text>
-                <text v-if="getAssessmentStatusCautionText(assessmentStatusSnapshots[entry.index], entry.item)" class="muted">{{ getAssessmentStatusCautionText(assessmentStatusSnapshots[entry.index], entry.item) }}</text>
+                <view class="status-tag-groups">
+                  <view v-if="getAssessmentStatusStateTags(entry.item, assessmentStatusSnapshots[entry.index]).length" class="status-tag-row">
+                    <view class="feedback-badges status-tags">
+                      <text
+                        v-for="tag in getAssessmentStatusStateTags(entry.item, assessmentStatusSnapshots[entry.index])"
+                        :key="tag"
+                        class="badge"
+                      >
+                        {{ tag }}
+                      </text>
+                    </view>
+                  </view>
+                  <view v-if="getAssessmentProblemTypeTags(entry.item).length" class="status-tag-row">
+                    <text class="status-tag-title">问题类型</text>
+                    <view class="feedback-badges status-tags">
+                      <text
+                        v-for="tag in getAssessmentProblemTypeTags(entry.item)"
+                        :key="tag"
+                        class="badge muted-badge"
+                      >
+                        {{ tag }}
+                      </text>
+                    </view>
+                  </view>
+                </view>
               </view>
 
-              <view v-if="getAssessmentActionAdvice(entry.item)" class="guidance-panel history-guidance">
+              <view v-if="getAssessmentActionPlanPanel(entry.item).show" class="guidance-panel history-guidance">
                 <text class="ai-panel-label">你接下来怎么做</text>
-                <view class="guidance-item">
-                  <text class="guidance-label">接下来可以做什么</text>
-                  <text class="guidance-text">{{ getAssessmentActionAdvice(entry.item).action || getAssessmentActionAdvice(entry.item).do }}</text>
-                </view>
-                <view class="guidance-item">
-                  <text class="guidance-label">线上/线下可以这样说</text>
-                  <text class="guidance-text">{{ getAssessmentActionAdvice(entry.item).say }}</text>
-                </view>
-                <view class="guidance-item">
-                  <text class="guidance-label">{{ getAssessmentActionAdvice(entry.item).contextLabel || '情绪和场合细节' }}</text>
-                  <text class="guidance-text">{{ getAssessmentActionAdvice(entry.item).context || getAssessmentActionAdvice(entry.item).tone }}</text>
-                </view>
-                <view class="guidance-item">
-                  <text class="guidance-label">观察与记录重点</text>
-                  <text class="guidance-text">{{ getAssessmentActionAdvice(entry.item).observeAndRecord || getAssessmentActionAdvice(entry.item).observe }}</text>
+                <text v-if="getAssessmentActionPlanPanel(entry.item).missing" class="raw-ai-reply-text muted" user-select>{{ getAssessmentActionPlanPanel(entry.item).text }}</text>
+                <view v-else>
+                  <view v-for="item in getAssessmentActionPlanPanel(entry.item).sections" :key="item.label" class="guidance-item">
+                    <text class="guidance-label">{{ item.label }}</text>
+                    <text class="guidance-text" user-select>{{ item.text }}</text>
+                  </view>
                 </view>
               </view>
 
@@ -411,44 +405,6 @@
               </view>
             </view>
 
-            <view v-if="false && assessmentStatusSnapshots[entry.index]" class="assessment-trace-box status-snapshot">
-              <view class="status-head">
-                <text class="case-kpi-label">对象状态</text>
-                <view class="feedback-badges status-tags">
-                  <text class="badge">{{ assessmentStatusSnapshots[entry.index].phase }}</text>
-                  <text class="badge">{{ assessmentStatusSnapshots[entry.index].state }}</text>
-                  <text class="badge">{{ assessmentStatusSnapshots[entry.index].weather }}</text>
-                </view>
-              </view>
-              <text class="timeline-desc strong">{{ assessmentStatusSnapshots[entry.index].summary }}</text>
-              <text class="timeline-desc">{{ assessmentStatusSnapshots[entry.index].caution }}</text>
-            </view>
-            <view v-if="getAssessmentEvent(entry.item)" class="assessment-trace-box">
-              <text class="case-kpi-label">触发事件</text>
-              <text class="timeline-title">{{ getAssessmentEvent(entry.item).title }}</text>
-              <text class="timeline-desc">{{ getAssessmentEvent(entry.item).description }}</text>
-              <button class="link-button compact-link" @click="goTimelineEvent(getAssessmentEvent(entry.item).id || getAssessmentEvent(entry.item)._id)">定位到关键事件</button>
-            </view>
-            <view v-if="entry.item.explanation?.bullets?.length || entry.item.explanation?.cautions?.length" class="assessment-trace-box">
-              <text class="case-kpi-label">{{ hasAIReview(entry.item) ? 'AI研判内容' : '研判内容' }}</text>
-              <view v-if="entry.item.explanation?.bullets?.length" class="bullets">
-                <text v-for="bullet in entry.item.explanation.bullets.slice(0, 3)" :key="bullet" class="bullet">• {{ bullet }}</text>
-              </view>
-              <view v-if="entry.item.explanation?.cautions?.length" class="caution-list">
-                <text class="case-kpi-label">使用提醒</text>
-                <text v-for="caution in entry.item.explanation.cautions.slice(0, 2)" :key="caution" class="bullet">• {{ caution }}</text>
-              </view>
-            </view>
-            <view v-if="false" class="assessment-trace-box side-snapshot">
-              <text class="case-kpi-label">{{ assessmentSideSnapshots[entry.index].title || '侧写快照' }}</text>
-              <text class="timeline-desc strong">{{ assessmentSideSnapshots[entry.index].summary }}</text>
-              <view class="side-read-list">
-                <view v-for="section in assessmentSideSnapshots[entry.index].sections" :key="section.label" class="side-read-item">
-                  <text class="side-read-label">{{ section.label }}</text>
-                  <text class="side-read-text">{{ section.text }}</text>
-                </view>
-              </view>
-            </view>
             </view>
           </view>
         </view>
@@ -479,24 +435,70 @@
                 <text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text>
               </view>
               <text class="timeline-title">{{ item.title || mapSystemTrackTypeLabel(item.type) }}</text>
-              <text v-if="item.description" class="timeline-desc">{{ item.description }}</text>
+            <text v-if="item.description" class="timeline-desc" user-select>{{ item.description }}</text>
             </view>
           </view>
         </view>
       </view>
     </template>
+
+    <view v-if="selectedStatusInfo" class="info-modal-mask" @click="selectedStatusInfo = null">
+      <view class="info-modal" @click.stop>
+        <view class="info-modal-head">
+          <view class="info-head-copy">
+            <text class="info-modal-title">当前状态怎么看</text>
+            <text class="info-modal-subtitle">这些标签走同一套规则口径，AI 只参与事件分析和变化量判断。</text>
+          </view>
+          <text class="info-modal-close" @click="selectedStatusInfo = null">×</text>
+        </view>
+        <scroll-view scroll-y class="info-modal-body">
+          <view v-if="selectedStatusInfo.summary || selectedStatusInfo.caution" class="info-section relation">
+            <text class="info-section-title">这次状态说明</text>
+            <text v-if="selectedStatusInfo.summary" class="info-section-copy strong" user-select>{{ selectedStatusInfo.summary }}</text>
+            <text v-if="selectedStatusInfo.caution" class="info-section-copy" user-select>{{ selectedStatusInfo.caution }}</text>
+          </view>
+          <view class="info-section">
+            <text class="info-section-title">状态标签</text>
+            <text class="info-section-copy">从事件性质、阶段、状态、天气和证据强度几个角度看当前切面。</text>
+            <view class="info-meaning-list">
+              <view v-for="item in selectedStatusStateItems" :key="`${item.group}-${item.tag}`" class="info-meaning-row">
+                <text class="info-chip">{{ item.tag }}</text>
+                <view class="info-meaning-copy-box">
+                  <text class="info-meaning-title">{{ item.group }}</text>
+                  <text class="info-meaning-copy">{{ item.description }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="info-section">
+            <text class="info-section-title">问题类型</text>
+            <text class="info-section-copy">这组标签只在命中结构性问题时出现，用来提醒你别被单次体感带偏。</text>
+            <view class="info-meaning-list">
+              <view v-for="item in selectedProblemItems" :key="item.tag" class="info-meaning-row">
+                <text class="info-chip muted">{{ item.tag }}</text>
+                <view class="info-meaning-copy-box">
+                  <text class="info-meaning-title">问题类型</text>
+                  <text class="info-meaning-copy">{{ item.description }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShareTimeline, onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import { getCaseDetail, getCurrentUserId, getCases, getCachedSelfProfile, getSelfProfile, getTempFileURL } from '@/utils/api'
 import { consumePendingTimelineContext, getActiveCaseId, setActiveCaseId, showError } from '@/utils/helpers'
-import { buildProfileItems } from '@/utils/insights'
+import { buildProfileItems, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { buildTimelineFromLatestResult, compareAssessments, sortTimelineRecordsDesc, isSystemTimelineRecord, getTimelineRecordTimestamp } from '@/utils/insights'
-import { buildTimelineStats, getTimelineRecordTags, buildProfileSideRead, buildObjectStatusCard, buildFocusItems, buildReadableActionAdvice } from '@/utils/insights'
+import { buildTimelineStats, getTimelineRecordTags, buildObjectStatusCard } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
 const loading = ref(true)
 const caseFile = ref<any>(null)
@@ -508,6 +510,10 @@ const classifiedType = ref('')
 const recorded = ref(false)
 const targetEventId = ref('')
 const themeVars = ref(getThemeStyle())
+
+onShareAppMessage(() => buildSafeShareMessage())
+
+onShareTimeline(() => buildSafeTimelineShare())
 const manualTimelineExpanded = ref(false)
 const activeTimelineView = ref<'events' | 'assessments' | 'system'>('events')
 const activeTimelineFilter = ref('all')
@@ -515,6 +521,7 @@ const activeAssessmentFilter = ref('all')
 const initialized = ref(false)
 const skipNextShowRefresh = ref(false)
 const imageUrlMap = ref<Record<string, string>>({})
+const selectedStatusInfo = ref<any>(null)
 
 const profileItems = computed(() => buildProfileItems(caseFile.value?.profile))
 
@@ -617,30 +624,52 @@ const immediateTrend = computed(() => {
 })
 
 const profileSideRead = computed(() => {
-  if (!caseFile.value?.profile || !latestResult.value) return null
-  return buildProfileSideRead({
-    profile: caseFile.value.profile,
-    selfProfile: selfProfile.value,
-    event: triggerEvent.value,
-    latestResult: latestResult.value,
-    trend: immediateTrend.value
-  })
+  const sideRead = latestResult.value?.sideReadAdvice
+  return sideRead?.summary || sideRead?.sections?.length ? sideRead : null
 })
 
-const latestPrimaryFocus = computed(() => {
-  if (!caseFile.value?.latestResult) return null
-  const persistedFocus = caseFile.value.latestResult.nextRecordFocus
-  if (persistedFocus && typeof persistedFocus === 'object') return persistedFocus
-  return buildFocusItems({
-    ...caseFile.value,
-    timeline: caseFile.value?.timeline || [],
-    assessments: caseFile.value?.assessments || [caseFile.value.latestResult]
-  })[0] || null
+const latestRawReply = computed(() => {
+  return String(latestResult.value?.rawReply || '').trim()
 })
 
-const latestActionAdvice = computed(() => {
-  if (!latestResult.value) return null
-  return buildReadableActionAdvice(caseFile.value, latestResult.value, triggerEvent.value, latestPrimaryFocus.value)
+function parseRawReplySections(text: string) {
+  const source = String(text || '').trim()
+  if (!source) return []
+  const labels = ['对方可能的心理', '你下一步怎么做', '重点观察什么']
+  const normalized = source
+    .replace(/\r/g, '')
+    .replace(/(对方可能的心理|你下一步怎么做|重点观察什么)\s*[：:]/g, '\n$1：')
+    .trim()
+  const sections = labels.map((label, index) => {
+    const start = normalized.indexOf(`${label}：`)
+    if (start < 0) return null
+    const contentStart = start + label.length + 1
+    const nextStarts = labels
+      .slice(index + 1)
+      .map((nextLabel) => normalized.indexOf(`${nextLabel}：`, contentStart))
+      .filter((pos) => pos >= 0)
+    const end = nextStarts.length ? Math.min(...nextStarts) : normalized.length
+    const text = normalized.slice(contentStart, end).replace(/^\s+|\s+$/g, '')
+    return text ? { label, text } : null
+  }).filter(Boolean) as Array<{ label: string; text: string }>
+  return sections.length ? sections : [{ label: '回复建议', text: source }]
+}
+
+const latestActionPlanPanel = computed(() => {
+  if (latestRawReply.value) {
+    return { show: true, text: latestRawReply.value, missing: false, sections: parseRawReplySections(latestRawReply.value) }
+  }
+  if (latestResult.value?.source === 'event_recalculation') {
+    return {
+      show: true,
+      text: latestResult.value.aiUsed === false
+        ? '这次 AI 原文回复没有生成：模型响应超时，系统先用了规则兜底。'
+        : '这次 AI 原文回复没有返回，下面先显示结构化建议。',
+      missing: true,
+      sections: []
+    }
+  }
+  return { show: false, text: '', missing: false, sections: [] }
 })
 
 const isLatestResultAIReviewed = computed(() => {
@@ -749,23 +778,6 @@ const assessmentStatusSnapshots = computed(() => {
   })
 })
 
-const assessmentSideSnapshots = computed(() => {
-  return assessmentTimeline.value.map((item: any, index: number) => {
-    const chronologicalIndex = chronologicalAssessments.value.findIndex((candidate: any) => getAssessmentKey(candidate) === getAssessmentKey(item))
-    const history = chronologicalIndex >= 0
-      ? chronologicalAssessments.value.slice(0, chronologicalIndex + 1)
-      : chronologicalAssessments.value.filter((candidate: any) => getAssessmentTimestamp(candidate) <= getAssessmentTimestamp(item))
-    return buildProfileSideRead({
-      profile: caseFile.value?.profile,
-      selfProfile: selfProfile.value,
-      event: getAssessmentEvent(item),
-      latestResult: item,
-      trend: assessmentTrendSummaries.value[index],
-      history
-    })
-  })
-})
-
 function toneClass(type: string) {
   switch (type) {
     case 'positive': return 'positive'
@@ -818,15 +830,6 @@ function mapRiskLabel(bucket?: string) {
   }
 }
 
-function mapConfidenceLabel(level?: string) {
-  switch (level) {
-    case 'low': return '低'
-    case 'medium': return '中'
-    case 'high': return '高'
-    default: return level || '--'
-  }
-}
-
 function clampScore(score: any) {
   const numeric = Number(score)
   if (!Number.isFinite(numeric)) return 0
@@ -855,11 +858,6 @@ function deltaClass(delta: number) {
   if (delta > 0) return 'up'
   if (delta < 0) return 'down'
   return 'flat'
-}
-
-function formatSignedNumber(value: number) {
-  const numeric = Number(value || 0)
-  return numeric > 0 ? `+${numeric}` : String(numeric)
 }
 
 function getAssessmentTrend(index: number) {
@@ -924,6 +922,17 @@ function getAssessmentEvent(item: any) {
   return eventId ? timelineById.value.get(eventId) || null : null
 }
 
+function getAssessmentTitle(item: any) {
+  return getAssessmentEvent(item)?.title || item?.triggerEventTitle || mapSourceLabel(item?.source)
+}
+
+function getAssessmentOriginalRecordText(item: any) {
+  const event = getAssessmentEvent(item)
+  const description = String(event?.description || '').trim()
+  if (description) return description
+  return getAssessmentTitle(item)
+}
+
 function getAssessmentImageLinkItems(item: any) {
   return getImageAttachments(getAssessmentEvent(item)).map((attachment: any, index: number) => ({
     fileID: attachment.fileID,
@@ -939,39 +948,41 @@ function getAssessmentHistory(item: any) {
     : chronologicalAssessments.value.filter((candidate: any) => getAssessmentTimestamp(candidate) <= getAssessmentTimestamp(item))
 }
 
-function getAssessmentFocus(item: any) {
-  const persistedFocus = item?.nextRecordFocus
-  if (persistedFocus && typeof persistedFocus === 'object') return persistedFocus
-  const history = getAssessmentHistory(item)
-  return buildFocusItems({
-    ...caseFile.value,
-    latestResult: item,
-    assessments: history.length > 0 ? history : [item],
-    timeline: caseFile.value?.timeline || []
-  })[0] || null
-}
-
 function getAssessmentReasonBullets(item: any) {
   const bullets = item?.explanation?.bullets
   return Array.isArray(bullets) ? bullets.slice(0, 3) : []
 }
 
-function getAssessmentKeywordText(item: any) {
+function getAssessmentStatusStateTags(item: any, status: any) {
+  const tags = [
+    mapTimelineTypeLabel(getAssessmentType(item)),
+    ...(Array.isArray(status?.tags) ? status.tags : [])
+  ]
+  return [...new Set(tags.filter(Boolean))].slice(0, 5)
+}
+
+function getAssessmentProblemTypeTags(item: any) {
   const labels = Array.isArray(item?.primaryLabels) ? item.primaryLabels : []
-  return labels.slice(0, 4).join(' / ')
+  const list = labels.filter(Boolean).slice(0, 4)
+  return list.length ? list : ['暂无突出问题']
 }
 
-function getAssessmentStatusMeta(status: any) {
-  if (!status) return ''
-  return `当前处于${status.phase}，整体表现更像${status.state}，关系体感偏${status.weather}。`
+function openAssessmentStatusInfo(item: any, status: any) {
+  selectedStatusInfo.value = {
+    stateTags: getAssessmentStatusStateTags(item, status),
+    problemTags: getAssessmentProblemTypeTags(item),
+    summary: String(status?.summary || '').trim(),
+    caution: String(status?.caution || '').trim()
+  }
 }
 
-function getAssessmentStatusCautionText(status: any, item: any) {
-  const caution = String(status?.caution || '').trim()
-  if (!caution) return ''
-  if (caution.startsWith('下一次最值得记录的是：') && getAssessmentFocus(item)) return ''
-  return caution
-}
+const selectedStatusStateItems = computed(() => {
+  return (selectedStatusInfo.value?.stateTags || []).map((tag: string) => explainStatusTag(tag))
+})
+
+const selectedProblemItems = computed(() => {
+  return (selectedStatusInfo.value?.problemTags || []).map((tag: string) => explainProblemLabel(tag))
+})
 
 function getRecentTrendAssessments(item: any) {
   const history = getAssessmentHistory(item)
@@ -981,25 +992,26 @@ function getRecentTrendAssessments(item: any) {
     .slice(-4)
 }
 
-function getAssessmentActionAdvice(item: any) {
-  if (!item) return null
-  return buildReadableActionAdvice(
-    {
-      ...caseFile.value,
-      latestResult: item,
-      assessments: getAssessmentHistory(item),
-      timeline: caseFile.value?.timeline || []
-    },
-    item,
-    getAssessmentEvent(item),
-    getAssessmentFocus(item)
-  )
+function getAssessmentRawReply(item: any) {
+  return String(item?.rawReply || '').trim()
 }
 
-function formatFocusPrompt(value?: string) {
-  return String(value || '')
-    .replace(/^本次重点记录[:：]\s*/, '')
-    .trim()
+function getAssessmentActionPlanPanel(item: any) {
+  const rawReply = getAssessmentRawReply(item)
+  if (rawReply) {
+    return { show: true, text: rawReply, missing: false, sections: parseRawReplySections(rawReply) }
+  }
+  if (item?.source === 'event_recalculation') {
+    return {
+      show: true,
+      text: item.aiUsed === false
+        ? '这次 AI 原文回复没有生成：模型响应超时，系统先用了规则兜底。'
+        : '这次 AI 原文回复没有返回。',
+      missing: true,
+      sections: []
+    }
+  }
+  return { show: false, text: '', missing: false, sections: [] }
 }
 
 function getAttachmentBadges(item: any) {
@@ -1245,6 +1257,14 @@ onShow(() => {
   loadData()
 })
 
+onHide(() => {
+  selectedStatusInfo.value = null
+})
+
+onUnload(() => {
+  selectedStatusInfo.value = null
+})
+
 async function ensureCaseId(uid: string) {
   if (caseId.value) return true
   const active = getActiveCaseId()
@@ -1393,6 +1413,11 @@ async function loadData() {
   background: var(--accent-soft, rgba(201, 164, 92, 0.14));
   color: #6f5225;
   font-size: 22rpx;
+}
+
+.muted-badge {
+  background: rgba(18, 60, 54, 0.06);
+  color: var(--text-muted, #76695c);
 }
 
 .subject-badge {
@@ -1704,6 +1729,7 @@ async function loadData() {
 .quick-section,
 .quick-status-panel,
 .quick-reason-panel,
+.raw-ai-reply-panel,
 .quick-guidance-panel,
 .quick-trend-panel {
   margin-top: 18rpx;
@@ -1721,6 +1747,12 @@ async function loadData() {
   margin-bottom: 12rpx;
 }
 
+.mini-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
 .legacy-hidden {
   display: none;
 }
@@ -1729,6 +1761,190 @@ async function loadData() {
   color: var(--text-main, #201914);
   font-size: 26rpx;
   font-weight: 700;
+}
+
+.info-icon {
+  flex-shrink: 0;
+  width: 34rpx;
+  height: 34rpx;
+  line-height: 34rpx;
+  border-radius: 50%;
+  border: 1rpx solid rgba(18, 60, 54, 0.24);
+  background: rgba(255, 252, 247, 0.84);
+  color: var(--primary, #123c36);
+  font-size: 22rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.info-modal-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 34rpx;
+  background: rgba(24, 18, 12, 0.42);
+  box-sizing: border-box;
+}
+
+.info-modal {
+  width: 100%;
+  max-height: 82vh;
+  overflow: hidden;
+  border-radius: 22rpx;
+  border: 1rpx solid rgba(201, 164, 92, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 180rpx),
+    var(--card-bg, #fffcf7);
+  box-shadow: 0 30rpx 70rpx rgba(18, 60, 54, 0.24);
+}
+
+.info-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 30rpx 30rpx 20rpx;
+  border-bottom: 1rpx solid rgba(18, 60, 54, 0.08);
+}
+
+.info-head-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-modal-title {
+  display: block;
+  color: var(--text-main, #201914);
+  font-size: 32rpx;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.info-modal-subtitle {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--text-muted, #76695c);
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.info-modal-close {
+  flex-shrink: 0;
+  width: 46rpx;
+  height: 46rpx;
+  line-height: 42rpx;
+  border-radius: 50%;
+  background: rgba(18, 60, 54, 0.08);
+  color: var(--primary, #123c36);
+  font-size: 36rpx;
+  text-align: center;
+}
+
+.info-modal-body {
+  max-height: 62vh;
+  padding: 24rpx 30rpx 30rpx;
+  box-sizing: border-box;
+}
+
+.info-section {
+  padding: 20rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(18, 60, 54, 0.07);
+  background: var(--card-soft, #fffaf3);
+}
+
+.info-section + .info-section {
+  margin-top: 18rpx;
+}
+
+.info-section.relation {
+  background: rgba(201, 164, 92, 0.12);
+}
+
+.info-section-title {
+  display: block;
+  color: var(--primary, #123c36);
+  font-size: 27rpx;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.info-section-copy {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--text-muted, #76695c);
+  font-size: 23rpx;
+  line-height: 1.55;
+}
+
+.info-section-copy.strong {
+  color: var(--text-main, #201914);
+  font-weight: 700;
+}
+
+.info-meaning-list {
+  margin-top: 16rpx;
+}
+
+.info-meaning-row + .info-meaning-row {
+  margin-top: 14rpx;
+}
+
+.info-meaning-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding: 14rpx 0;
+  border-top: 1rpx solid rgba(18, 60, 54, 0.06);
+}
+
+.info-meaning-row:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.info-chip {
+  flex-shrink: 0;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(201, 164, 92, 0.24);
+  background: rgba(201, 164, 92, 0.14);
+  color: #6f5225;
+  font-size: 22rpx;
+  line-height: 1.2;
+}
+
+.info-chip.muted {
+  border-color: rgba(18, 60, 54, 0.12);
+  background: rgba(18, 60, 54, 0.06);
+  color: var(--text-muted, #76695c);
+}
+
+.info-meaning-copy-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-meaning-title {
+  display: block;
+  color: var(--primary, #123c36);
+  font-size: 23rpx;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.info-meaning-copy {
+  display: block;
+  margin-top: 4rpx;
+  color: var(--text-muted, #76695c);
+  font-size: 23rpx;
+  line-height: 1.55;
 }
 
 .mini-sub {
@@ -1740,12 +1956,42 @@ async function loadData() {
   margin-top: 8rpx;
 }
 
+.status-tag-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.status-tag-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.status-tag-title {
+  color: var(--text-muted, #76695c);
+  font-size: 22rpx;
+  font-weight: 650;
+}
+
 .quick-reason {
   display: block;
   margin-top: 10rpx;
   color: var(--text-main, #201914);
   font-size: 24rpx;
   line-height: 1.55;
+}
+
+.raw-ai-reply-text {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--text-main, #201914);
+  font-size: 25rpx;
+  line-height: 1.6;
+}
+
+.history-raw-reply {
+  background: rgba(255, 250, 243, 0.74);
 }
 
 .status-meta {

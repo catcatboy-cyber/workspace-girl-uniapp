@@ -1,3 +1,7 @@
+function isMpRuntime() {
+  return Boolean(process.env.WX_CONTEXT_KEYS || process.env.TENCENTCLOUD_RUNENV)
+}
+
 async function requireAuthenticatedUserId(app, event = {}) {
   const userInfo = await app.auth().getUserInfo()
 
@@ -7,9 +11,14 @@ async function requireAuthenticatedUserId(app, event = {}) {
     userInfo?.userInfo?.customUserId,
     userInfo?.userInfo?.uid,
     userInfo?.user?.customUserId,
-    userInfo?.user?.uid,
-    event?.userId
+    userInfo?.user?.uid
   ]
+
+  // In WeChat cloud functions the business user id is carried explicitly.
+  // H5 admin-sensitive calls must not trust arbitrary client-provided ids.
+  if (isMpRuntime()) {
+    candidates.push(event?.userId)
+  }
 
   let userId = ''
   for (const value of candidates) {

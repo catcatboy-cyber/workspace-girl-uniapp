@@ -655,6 +655,7 @@ export function buildObjectStatusCard(caseFile) {
   const trend = compareAssessments(previous, latest)
   const latestEvent = latest.triggerEventTitle || caseFile.timeline.find((item) => !isSystemTimelineRecord(item))?.title || caseFile.timeline[0]?.title || ''
   const recentSignals = analyzeRecentManualSignals(caseFile)
+  const aiStatus = latest.currentStatus && typeof latest.currentStatus === 'object' ? latest.currentStatus : null
 
   let phase = '观察期'
   if (latest.evidenceLevel === 'E1' || latest.evidenceLevel === 'E2') phase = '试探期'
@@ -686,6 +687,11 @@ export function buildObjectStatusCard(caseFile) {
           ? '关系信号在往前走，但真正的加分点仍然是连续兑现。'
           : '现在还没到可以下重结论的时候，继续看后续动作更重要。'
 
+  const aiNature = cleanShortText(latest.actionAdvice?.nature || latest.explanation?.headline || '', 76)
+  if (aiNature) {
+    summary = aiNature
+  }
+
   const spotlight = latestEvent
     ? `最近的关键触发点是"${latestEvent}"。`
     : '最近还没有足够强的关键触发点。'
@@ -713,14 +719,143 @@ export function buildObjectStatusCard(caseFile) {
     caution = '先别继续加码投入，优先观察对方会不会主动补回应、补兑现或补安排。'
   }
 
+  if (aiStatus) {
+    const aiSummary = cleanShortText(aiStatus.summary || '', 120)
+    const aiCaution = cleanShortText(aiStatus.caution || '', 120)
+
+    if (aiSummary) summary = aiSummary
+    if (aiCaution) caution = aiCaution
+
+    return {
+      phase,
+      state,
+      weather,
+      tags: buildStatusTags(latest, { phase, state, weather }),
+      summary,
+      spotlight,
+      caution
+    }
+  }
+
   return {
     phase,
     state,
     weather,
+    tags: buildStatusTags(latest, { phase, state, weather }),
     summary,
     spotlight,
     caution
   }
+}
+
+function buildStatusTags(result, status) {
+  return [
+    status.phase,
+    status.state,
+    status.weather,
+    result?.evidenceLevel ? `证据${result.evidenceLevel}` : ''
+  ].filter(Boolean)
+}
+
+const EVENT_TYPE_TAG_DESCRIPTIONS = {
+  '推进事件': '这次记录整体更偏正向推进，重点看对方是否继续主动、兑现和延续相处。',
+  '风险事件': '这次记录整体更偏风险信号，重点看有没有回避、拖延、失约或边界压力。',
+  '验证事件': '这次记录更像一次核实机会，重点不是体感，而是说法能不能对上事实。',
+  '普通记录': '这次记录先作为普通上下文保留，说明它暂时还不是强推进或强风险证据。',
+  '关系记录': '这是关系中的一条普通切片，用来补上下文，不直接代表结论。'
+}
+
+const PHASE_TAG_DESCRIPTIONS = {
+  '观察期': '样本还不够稳，当前重点是继续看后续动作是否持续，而不是急着下结论。',
+  '试探期': '证据还薄，对方或你们还在试探阶段，很多感受都需要更多事实来支撑。',
+  '验证期': '当前更适合核实承诺、身份、说法或安排是否能落地，先看事实再谈判断。',
+  '降温期': '关系节奏需要放慢，说明继续加码投入的收益偏低，先看对方会不会补动作。',
+  '升温期': '整体信号在往前走，但真正有效的升温还是要看连续兑现，而不是单次高点。',
+  '拉扯期': '既有热度也有不稳，关系里存在反复，不能只抓住某一次好的感觉。'
+}
+
+const STATE_TAG_DESCRIPTIONS = {
+  '继续观察': '当前还没有形成足够强的单向结论，更重要的是看下一轮互动怎么接。',
+  '稳步推进': '意向和稳定性都相对不错，说明关系有推进基础，但仍要看持续性。',
+  '忽冷忽热': '热度存在，但前后反复明显，不能把局部热度直接当成整体趋势。',
+  '高消耗信号': '你的心理负担和不确定性已经偏高，这段关系正在消耗你的精力。',
+  '有热度但不稳': '对方不是完全没兴趣，但稳定性不足，推进时要防止只热不落地。',
+  '投入偏弱': '当前看到的主动和投入偏弱，不适合继续单方面加码。',
+  '连续受阻': '最近不是单次卡住，而是连续出现拒绝、婉拒或明显受阻信号。',
+  '明显转弱': '和之前相比，整体状态已经往弱走，不适合继续按旧印象判断。'
+}
+
+const WEATHER_TAG_DESCRIPTIONS = {
+  '晴': '当前体感最稳，说明风险较低、热度较好，关系氛围偏顺。',
+  '转晴': '最近走势是在变好，说明意向上升且风险回落，值得继续观察延续性。',
+  '多云': '状态一般，没有特别强的顺风或逆风，先看后续动作。',
+  '起风': '已经有不稳定苗头，说明风险在抬头，后面要更留意细节变化。',
+  '阵风': '波动感偏明显，关系里有热度也有干扰，容易出现前后落差。',
+  '雷阵雨': '风险明显偏高，当前不适合只凭感觉推进，先看对方有没有补动作和解释。'
+}
+
+const PROBLEM_TYPE_DESCRIPTIONS = {
+  '单向投入': '大部分推进成本还在你这边，对方没有持续拿出相称的主动和投入。',
+  '口头热情，行动不足': '嘴上不差，但真正落到见面、兑现、安排这些动作上还不够。',
+  '关键问题难验证': '一些关键说法、承诺、身份或时间线当前还对不上，或者很难核实。',
+  '节奏明显不稳定': '热度、态度或推进节奏前后反复，单次高点不代表整体趋势。',
+  '证据不足': '现阶段样本还太少，很多判断仍停留在感觉层，不够稳。',
+  '暂无突出问题': '当前没有特别突出的结构性问题标签，说明系统暂时没抓到明显红旗。'
+}
+
+function explainEvidenceTag(tag) {
+  const match = /^证据(E[1-5])$/.exec(tag || '')
+  if (!match) return null
+
+  const level = match[1]
+  const descriptions = {
+    E1: '证据最薄，几乎还在感觉和单点样本层，不能下重结论。',
+    E2: '证据仍然偏薄，已经有少量事实，但还不够稳。',
+    E3: '证据进入中档，已经能看出一些模式，但仍需继续验证。',
+    E4: '证据较强，说明判断不只靠体感，已经有连续事实支撑。',
+    E5: '证据最强，代表有较多连续样本和落地事实支撑当前判断。'
+  }
+
+  return {
+    tag,
+    group: '证据',
+    description: descriptions[level] || '这是当前判断的证据强度等级。'
+  }
+}
+
+export function explainStatusTag(tag) {
+  if (EVENT_TYPE_TAG_DESCRIPTIONS[tag]) {
+    return { tag, group: '事件性质', description: EVENT_TYPE_TAG_DESCRIPTIONS[tag] }
+  }
+  if (PHASE_TAG_DESCRIPTIONS[tag]) {
+    return { tag, group: '阶段', description: PHASE_TAG_DESCRIPTIONS[tag] }
+  }
+  if (STATE_TAG_DESCRIPTIONS[tag]) {
+    return { tag, group: '状态', description: STATE_TAG_DESCRIPTIONS[tag] }
+  }
+  if (WEATHER_TAG_DESCRIPTIONS[tag]) {
+    return { tag, group: '天气', description: WEATHER_TAG_DESCRIPTIONS[tag] }
+  }
+  const evidenceTag = explainEvidenceTag(tag)
+  if (evidenceTag) return evidenceTag
+  return {
+    tag,
+    group: '状态标签',
+    description: '这是当前关系状态的一部分标签，用来辅助理解，不单独代表最终结论。'
+  }
+}
+
+export function explainProblemLabel(tag) {
+  return {
+    tag,
+    description: PROBLEM_TYPE_DESCRIPTIONS[tag] || '这是系统识别到的一类结构性提醒，用来帮助你复盘关系模式。'
+  }
+}
+
+function cleanShortText(value, maxLength = 80) {
+  const text = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
+  if (!text) return ''
+  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text
 }
 
 function normalizeMeaningText(parts) {
@@ -1199,6 +1334,9 @@ export function buildCaseOverviewStats(caseFile, now = new Date()) {
 
 export function buildReadableActionAdvice(caseFile, current, event, primaryFocus) {
   const eventTitle = event?.title || current?.triggerEventTitle || '这次互动'
+  const aiActionAdvice = normalizeReadableAIActionAdvice(current?.actionAdvice)
+  if (aiActionAdvice) return aiActionAdvice
+
   const semanticAdvice = buildSemanticActionAdvice(event, current, eventTitle)
   const sceneAdvice = semanticAdvice || buildSceneAdvice(inferActionScene(event, current), eventTitle)
   const focusPrompt = primaryFocus?.nextRecordPrompt || '本次重点记录：看他后续是否主动、是否兑现、是否持续稳定。'
@@ -1236,6 +1374,11 @@ export function buildReadableActionAdvice(caseFile, current, event, primaryFocus
   const context = `${roleAdvice.tone} ${withRecentTone}`
   const contextLabel = sceneAdvice.contextLabel || '情绪和场合细节'
   const observeAndRecord = `${roleAdvice.observe} ${withRecentObserve} ${focusPrompt}`
+  const nature = sceneAdvice.nature || `${eventTitle}：需要继续观察的互动信号`
+  const psychology = sceneAdvice.psychology || '对方可能只是按自己的节奏互动，也可能还没有准备推进；现在不要只凭一次热度或一次落差下结论。'
+  const overread = sceneAdvice.overread || '不要把单次表现直接解读成“很喜欢”或“没兴趣”，关键看下一次他会不会主动、明确、愿意兑现。'
+  const nextMove = sceneAdvice.nextMove || action
+  const masterAdvice = sceneAdvice.masterAdvice || `${say} ${observeAndRecord}`
 
   switch (current?.nextAction) {
     case 'clarify':
@@ -1246,6 +1389,11 @@ export function buildReadableActionAdvice(caseFile, current, event, primaryFocus
     default:
       return {
         title: titleMap[current?.nextAction] || titleMap.observe,
+        nature,
+        psychology,
+        overread,
+        nextMove,
+        masterAdvice,
         action,
         say,
         contextLabel,
@@ -1259,10 +1407,40 @@ export function buildReadableActionAdvice(caseFile, current, event, primaryFocus
   }
 }
 
+function normalizeReadableAIActionAdvice(value) {
+  const input = value && typeof value === 'object' ? value : null
+  if (!input) return null
+  const nature = typeof input.nature === 'string' ? input.nature.trim() : ''
+  const psychology = typeof input.psychology === 'string' ? input.psychology.trim() : ''
+  const overread = typeof input.overread === 'string' ? input.overread.trim() : ''
+  const nextMove = typeof input.nextMove === 'string' ? input.nextMove.trim() : ''
+  const masterAdvice = typeof input.masterAdvice === 'string' ? input.masterAdvice.trim() : ''
+  if (!nature && !psychology && !overread && !nextMove && !masterAdvice) return null
+  const action = nextMove || masterAdvice || '你先按这次事件的具体反应往下接，不要用模板动作硬推。'
+  return {
+    title: nature || '这次互动需要按具体语义处理',
+    nature,
+    psychology,
+    overread,
+    nextMove: action,
+    masterAdvice,
+    action,
+    say: masterAdvice,
+    contextLabel: 'AI建议',
+    context: psychology,
+    observeAndRecord: masterAdvice || overread,
+    dont: '',
+    do: action,
+    tone: psychology,
+    observe: masterAdvice || overread
+  }
+}
+
 function buildSemanticActionAdvice(event, current, eventTitle) {
   const semantic = event?.semanticTags || current?.semanticTags || event?.eventUnderstanding?.semanticTags || null
   const fallbackTags = event ? getTimelineRecordTags(event) : null
   const role = event?.subjectRole || current?.triggerSubjectRole || 'target'
+  const text = getActionEventText(event, current)
   const scene = new Set([...(semantic?.scene || []), ...(fallbackTags?.scene || [])])
   const outcome = new Set([...(semantic?.outcome || []), ...(fallbackTags?.outcome || [])])
   const risk = new Set([...(semantic?.risk || []), ...(fallbackTags?.risk || [])])
@@ -1277,12 +1455,51 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
   const hasMeal = scene.has('meal')
   const hasMovie = scene.has('movie')
   const hasCoffee = scene.has('coffee_tea')
+  const hasSport = hasAnyMeaning(text, ['打球', '羽毛球', '篮球', '网球', '乒乓', '运动', '健身', '跑步'])
   const hasMeet = scene.has('offline_meet') || scene.has('walk_shop') || scene.has('group_social') || hasMeal || hasMovie || hasCoffee
   const hasChat = scene.has('chat')
+  const hasSexualAdvance = hasAnyMeaning(text, ['开房', '酒店', '宾馆', '过夜', '睡一起', '睡一晚', '上床', '发生关系', '亲密关系', '身体接触', '抱抱', '拥抱', '亲我', '亲吻', '接吻', '摸', '暧昧身体', '性', '想要我'])
+  const noAfterPlan = hasAnyMeaning(text, ['没请', '没有请', '没吃饭', '没有吃饭', '没约饭', '直接走', '各回各家', '结束就走', '打完就走', '散场'])
+  const userUpset = hasAnyMeaning(text, ['不开心', '失落', '难受', '委屈', '有点气', '不舒服', '落差', '失望'])
   const selfFeelingAfterEvent = role === 'self' && fulfilled
+
+  if (hasSexualAdvance) {
+    return {
+      nature: `“${eventTitle}”不是普通邀约，核心已经碰到身体亲密或性兴趣。这个信号很强，但不等于他一定想认真推进关系。`,
+      psychology: '他可能对你有明显身体吸引，也可能在试探你的边界和可得性；如果他说得很快、很直接、又没有给情感承诺，更多像是在先推身体节奏。',
+      overread: '不要把“想开房/想亲密”自动解读成“他很喜欢你、想确定关系”。身体兴趣是真的，但关系意愿要看他是否尊重你的节奏、是否愿意继续约会、是否愿意认真沟通。',
+      nextMove: '你先问自己想不想、舒不舒服、能不能承受后果。只要你有一点犹豫，就不要为了留住他而答应。你可以把节奏拉回正常约会：吃饭、散步、看电影，先看他能不能尊重。',
+      masterAdvice: '你可以直接说：“我对你是有好感的，但我不想这么快到开房这一步。我们可以先正常约会，多相处看看。” 他如果尊重你，还愿意继续约你，是加分；如果冷掉、施压或说你扫兴，那就说明他更在意身体推进。',
+      do: '先确认自己的边界，再把节奏拉回正常约会，不用为了证明喜欢就答应亲密要求。',
+      say: '“我对你有好感，但我不想这么快到开房这一步。我们先正常约会，多相处看看。”',
+      contextLabel: '亲密边界',
+      tone: '语气可以温柔但要明确。你不是拒绝他这个人，而是在保护自己的节奏。不要含糊到让他以为还能继续磨你。',
+      observe: '观察与记录重点：他是否尊重你的边界、是否还愿意正常约会、是否开始冷淡或施压。尊重边界才是认真程度的关键。'
+    }
+  }
+
+  if ((hasSport || hasMeet) && noAfterPlan && userUpset) {
+    return {
+      nature: `“${eventTitle}”是见面后没有延展，加上你的情绪落差；它是一个需要测试的信号，不是直接判死刑的信号。`,
+      psychology: '他可能真的后面有事，也可能把打球当成普通活动，没有意识到你期待继续吃饭；也可能是他想维持轻松节奏，不想一下子推进太快。',
+      overread: '不要马上解读成“他不重视我”，也不要立刻质问为什么不请吃饭。真正有价值的是：你给一个低压力的下次延展机会，他接不接。',
+      nextMove: '你下次就轻轻把饭局带出来，别问他为什么这次没请。比如打完球前就笑着说一句：“等会儿打完要不要顺便吃点东西？” 这样自然，也能看他愿不愿意多待一会儿。',
+      masterAdvice: '你可以发：“今天打球还挺开心的，就是打完有点饿。下次我们是不是顺便找个地方吃点东西？” 他如果接店名或时间，就继续；如果只回“哈哈”，你就先别加码。',
+      do: '用低压力后续邀约测试他是否愿意把见面延展到更多相处时间。',
+      say: '“今天打球还挺开心的，就是打完有点饿。下次我们是不是可以顺便找个地方吃点东西？”',
+      contextLabel: '高手判断',
+      tone: '语气要轻，像分享感受和顺手提议，不像抱怨。不要提“你为什么不请我吃饭”。',
+      observe: '观察与记录重点：他是否接具体安排、是否主动补一个吃饭/喝东西的提议、是否连续只停留在运动本身。'
+    }
+  }
 
   if (selfFeelingAfterEvent) {
     return {
+      nature: `“${eventTitle}”更像你的主观感受记录，不是直接证明对方态度的证据。`,
+      psychology: '你会开心、失落或在意，通常说明你对这段互动有期待；但对方未必已经意识到你的期待，也未必在同一节奏上。',
+      overread: '不要把“我很开心”自动等同于“他也想推进”，也不要把“我不安”自动等同于“他在退”。',
+      nextMove: '你先别急着要答案，找一个共同话题轻轻接一下就行。让他有机会接住你，而不是被你逼着表态。',
+      masterAdvice: '你可以说：“刚才聊到的那个话题挺有意思，下次可以继续说。” 他如果顺着聊、追问你、或者主动开新话题，就说明他接住了。',
       do: `“${eventTitle}”更像你对这次互动的感受记录。下一步不要把自己的开心或不安直接当成对方态度，先用一个轻松动作承接：正常聊天一次，看看对方会不会自然延续。`,
       say: '可以说：“今天这个安排我感觉还挺舒服的。” 或“刚才聊到的那个话题挺有意思，下次可以继续说。” 重点是分享体验，不急着要对方表态。',
       contextLabel: '情绪处理',
@@ -1293,6 +1510,11 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
 
   if (hasMeal && fulfilled) {
     return {
+      nature: `“${eventTitle}”是吃饭已经兑现，属于正向样本；重点从“有没有见面”转为“见面后有没有延续”。`,
+      psychology: '如果对方体验不错，通常会愿意延续话题、回应饭后的轻松复盘，甚至顺手提下次；如果他只礼貌收尾，也可能只是把这次当普通饭局。',
+      overread: '不要因为一顿饭开心就急着确认关系，也不要因为饭后没立刻热聊就判定没戏。',
+      nextMove: '你可以当天晚点或者第二天提一个饭里的小细节，再顺手带一句下次。不要突然上价值，也不要急着确认关系。',
+      masterAdvice: '你可以说：“今天那家店比我想的舒服，下次你说的那家咖啡/电影也可以试试。” 他如果接“下次”或者给选项，就继续往前走。',
       do: `“${eventTitle}”已经是线下吃饭并且真实发生了，下一步适合轻轻承接这次愉快体验，不要立刻把话题推成表白或关系确认。可以隔几个小时或当天晚些时候自然跟进一次，再顺手埋一个低压力的下次机会。`,
       say: '线上可以说：“今天吃得挺开心，那家店比我想的舒服。下次你说的那家咖啡/电影也可以试试。” 线下收尾可以说：“今天挺开心的，回去路上注意安全，到了说一声。”',
       contextLabel: '后续推进节奏',
@@ -1302,7 +1524,21 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
   }
 
   if (hasMeet && fulfilled) {
+    const sceneName = hasMovie ? '电影/活动后' : hasCoffee ? '咖啡/轻约会后' : hasSport ? '运动见面后' : '线下见面后'
     return {
+      nature: `“${eventTitle}”是${sceneName}的已兑现互动，重点看对方是否愿意把这次相处延展成下一次。`,
+      psychology: '他可能对这次体验有好感，但还在试探舒适度；也可能只是完成一次约定。真正的区别在于后续是否主动接话、补安排、记住细节。',
+      overread: '不要只看现场氛围，也不要要求对方马上给关系答案。线下之后的延续能力，比当场热闹更能说明问题。',
+      nextMove: hasMovie
+        ? '从电影剧情、角色、吐槽点切入聊天，再自然问下次想看什么类型。'
+        : hasCoffee
+          ? '从聊天里一个轻松细节继续，不急着再约正式饭局，可以先约下次咖啡或散步。'
+          : hasSport
+            ? '你下次可以从运动体验切进去，顺手说打完去喝点东西或吃点东西。'
+            : '你轻轻复盘一个具体细节，再给他一个很容易接住的下次机会。',
+      masterAdvice: hasSport
+        ? '你可以说：“今天运动量还挺够，下次打完可以顺便喝点东西缓一下。” 他如果接时间地点，就是真的愿意多相处。'
+        : '你可以说：“今天见面感觉挺自然的，下次有个轻松点的安排也可以一起。” 他如果推进具体安排，你就接；只礼貌回应，你就先放慢。',
       do: `“${eventTitle}”已经兑现，先把这次线下体验当成正向样本。下一步可以轻推进一次具体但轻量的后续安排，别连续加码多个邀约。`,
       say: '可以说：“今天见面感觉挺自然的，下次有个轻松点的安排也可以一起。” 如果对方主动提到某个兴趣，就顺着说：“那下次可以按你刚说的那个来。”',
       contextLabel: '后续推进节奏',
@@ -1313,6 +1549,11 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
 
   if ((hasMeet || planned) && (rejected || cancelled)) {
     return {
+      nature: `“${eventTitle}”出现拒绝、取消或拖延，是一次边界/节奏信号。`,
+      psychology: '他可能确实临时有事，也可能对推进有犹豫，或者把选择权留在自己手里。区别在于：他会不会主动补新时间。',
+      overread: '不要立刻理解成彻底没兴趣，也不要急着再补一个新邀约替他圆场。',
+      nextMove: '你就把球放回给他，别继续追着补安排。你越替他圆场，他越不用给明确态度。',
+      masterAdvice: '你可以说：“好，那你确定方便的时候再跟我说。” 然后停。之后他补具体时间，你再接；他继续“再看”，你就别主动推了。',
       do: `“${eventTitle}”里出现了拒绝、取消或拖延，下一步不要马上补一个新邀约。先把球放回对方，看对方会不会主动补时间、补解释或补安排。`,
       say: '可以短一点说：“好，那你确定方便的时候再跟我说。” 或“没事，那这次先这样。” 说完就停，不连续解释也不追问。',
       contextLabel: '被拒或改期后的状态',
@@ -1323,6 +1564,11 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
 
   if (hasChat && cold) {
     return {
+      nature: `“${eventTitle}”是线上回应变冷或断联，核心不是一句话，而是回应节奏是否由你单方面维持。`,
+      psychology: '他可能忙、分心、社交能量低，也可能在降温或不想继续深入。真正要看的不是解释，而是他会不会自己回来接话。',
+      overread: '不要连续补消息证明自己在意，也不要用阴阳怪气逼回应。',
+      nextMove: '你发一句自然收口就停，不要连发解释。让他自己回来接话，这比你多发三句更能看清态度。',
+      masterAdvice: '你可以说：“好，你先忙，回头再说。” 然后别补。若他回来开新话题，说明还有连接；若一直不回，你就别再追。',
       do: `“${eventTitle}”主要是聊天冷淡或断联，下一步先停止连续补消息。保留一个自然收口，观察对方会不会自己回来接话。`,
       say: '线上可以说：“好，你先忙。” 或“那回头再说。” 之后不要再追加解释型长消息。线下见到时正常打招呼，不把线上冷淡拿出来当场审问。',
       contextLabel: '聊天节奏',
@@ -1333,6 +1579,11 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
 
   if (pending || planned) {
     return {
+      nature: `“${eventTitle}”是有意向但细节未落地，属于“口头推进/待确认”信号。`,
+      psychology: '他可能愿意，但还没把这件事放到优先级；也可能用模糊计划保持关系热度。要区分这两种，只能看他是否愿意定具体点。',
+      overread: '不要把“下次/改天/有空”直接当成已兑现，也不要马上追着定全部细节。',
+      nextMove: '你不要问太大，只问一个具体点。给他两个选项，让他好回答，也让你看清他到底想不想落地。',
+      masterAdvice: '你可以说：“那我们先定个大概时间吧，你周五晚还是周末更方便？” 他给选项就推进；他继续“再看”，你就先别期待太满。',
       do: `“${eventTitle}”里有计划或待确认信息，下一步要把模糊意向落到一个具体点：时间、地点、由谁安排，三选一先确认一个。`,
       say: '可以说：“那我们先定个大概时间吧，你周五晚还是周末更方便？” 或“你确定以后告诉我，我这边就按没定先安排自己的事。”',
       contextLabel: hasMeet ? '见面前准备' : '确认节奏',
@@ -1345,6 +1596,11 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
 
   if (hasChat) {
     return {
+      nature: `“${eventTitle}”主要是线上互动，重点看信息是否具体、是否延续、是否有主动来回。`,
+      psychology: '线上热度容易被情绪、时间和聊天习惯影响；他可能只是轻松聊，也可能在试探你是否好接近。',
+      overread: '不要把一句暧昧话当承诺，也不要把一次短回复当退场。',
+      nextMove: '你就抓住一个具体点往下聊，别突然审关系。轻一点，他更容易接。',
+      masterAdvice: '你可以说：“你刚刚说的那个还挺有意思，后来呢？” 或“那你更倾向哪种安排？” 他继续展开就有戏，只敷衍收尾你就别硬聊。',
       do: `“${eventTitle}”主要发生在线上，下一步围绕一个具体信息回应，不要把一次聊天直接扩大成关系判断。`,
       say: '可以说：“我理解你的意思是……对吗？” 或“那这件事你更倾向怎么安排？” 如果气氛轻松，可以接一句和当下话题有关的具体回应。',
       contextLabel: '聊天节奏',
@@ -1613,7 +1869,9 @@ function buildConstellationPairMeaning(selfConstellation, targetConstellation, e
 
 export function buildProfileSideRead(params) {
   const { profile, selfProfile, event, latestResult, trend } = params
-  return buildZodiacConstellationSideRead({ profile, selfProfile, event })
+  const aiSideRead = normalizeAISideRead(latestResult?.sideReadAdvice)
+  if (aiSideRead) return aiSideRead
+  return buildZodiacConstellationSideRead({ profile, selfProfile, event, latestResult })
   if ((!hasProfile(profile) && !hasSelfProfile(selfProfile)) || !latestResult) return null
 
   const intentScore = Number(latestResult.intentScore || 0)
@@ -1713,7 +1971,9 @@ export function buildProfileSideRead(params) {
 }
 
 export function buildZodiacConstellationSideRead(params) {
-  const { profile, selfProfile, event } = params || {}
+  const { profile, selfProfile, event, latestResult } = params || {}
+  const aiSideRead = normalizeAISideRead(latestResult?.sideReadAdvice)
+  if (aiSideRead) return aiSideRead
   const targetZodiac = profile?.zodiac
   const targetConstellation = profile?.constellation
   const selfZodiac = selfProfile?.zodiac
@@ -1725,13 +1985,13 @@ export function buildZodiacConstellationSideRead(params) {
     if (selfZodiac && targetZodiac) {
       sections.push({
         label: `属相相处 (${selfZodiac} / ${targetZodiac})`,
-        text: buildZodiacPairMeaning(selfZodiac, targetZodiac, event)
+        text: withAISideReadAnchor(buildZodiacPairMeaning(selfZodiac, targetZodiac, event), latestResult)
       })
     }
     if (selfConstellation && targetConstellation) {
       sections.push({
         label: `星座相处 (${selfConstellation} / ${targetConstellation})`,
-        text: buildConstellationPairMeaning(selfConstellation, targetConstellation, event)
+        text: withAISideReadAnchor(buildConstellationPairMeaning(selfConstellation, targetConstellation, event), latestResult)
       })
     }
   } else {
@@ -1739,7 +1999,7 @@ export function buildZodiacConstellationSideRead(params) {
       sections.push({
         label: `属相侧写 (${targetZodiac})`,
         text: event
-          ? buildZodiacMeaning(targetZodiac, event)
+          ? withAISideReadAnchor(buildZodiacMeaning(targetZodiac, event), latestResult)
           : zodiacNotes[targetZodiac] || '属相只能作为轻量观察角度，真正要看的仍然是连续行为和事实证据。'
       })
     }
@@ -1747,7 +2007,7 @@ export function buildZodiacConstellationSideRead(params) {
       sections.push({
         label: `星座侧写 (${targetConstellation})`,
         text: event
-          ? buildConstellationMeaning(targetConstellation, event)
+          ? withAISideReadAnchor(buildConstellationMeaning(targetConstellation, event), latestResult)
           : constellationNotes[targetConstellation] || '星座只能帮助增加一点观察角度，不能替代实际沟通和证据。'
       })
     }
@@ -1757,12 +2017,44 @@ export function buildZodiacConstellationSideRead(params) {
   if (availableSections.length === 0) return null
 
   return {
-    title: hasSelfAstroProfile ? '相处侧写参考' : '对象侧写参考',
+    title: '侧写',
     summary: hasSelfAstroProfile
-      ? '根据你和对象的属相、星座做相处参考，不参与意向和风险评分。'
-      : '根据对象的属相、星座做轻量参考，不参与意向和风险评分。',
+      ? '结合你们的属相、星座和本次事件来看，不参与评分。'
+      : '结合对象的属相、星座和本次事件来看，不参与评分。',
     sections: availableSections
   }
+}
+
+function normalizeAISideRead(value) {
+  const input = value && typeof value === 'object' ? value : null
+  if (!input) return null
+  const title = cleanShortText(input.title || '侧写', 24) || '侧写'
+  const summary = cleanShortText(input.summary || '', 120)
+  const sections = Array.isArray(input.sections)
+    ? input.sections.slice(0, 3).map((item) => ({
+        label: cleanShortText(item?.label || '', 24),
+        text: cleanShortText(item?.text || '', 180)
+      })).filter((item) => item.label && item.text)
+    : []
+  if (!summary && sections.length === 0) return null
+  return { title, summary, sections }
+}
+
+function withAISideReadAnchor(text, latestResult) {
+  const base = cleanShortText(text, 120)
+  const anchor = cleanShortText(
+    latestResult?.actionAdvice?.nature
+      || latestResult?.actionAdvice?.psychology
+      || latestResult?.eventInsight?.coreMeaning
+      || latestResult?.eventInsight?.relationshipSignal
+      || latestResult?.explanation?.bullets?.[0]
+      || latestResult?.explanation?.headline
+      || '',
+    72
+  )
+  if (!base) return anchor ? `结合本次事件：${anchor}` : ''
+  if (!anchor) return base
+  return `${base} 结合本次事件：${anchor}`
 }
 
 // ============================================================================

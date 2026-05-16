@@ -90,9 +90,9 @@
               <text class="delta-pill" :class="deltaClass(trendSummaries[index].riskDelta)">风险 {{ formatDelta(trendSummaries[index].riskDelta) }}</text>
               <text v-if="trendSummaries[index].evidenceChanged" class="delta-pill evidence-delta">证据变化</text>
             </view>
-            <text v-if="trendSummaries[index].summaryText" class="trend-summary">{{ trendSummaries[index].summaryText }}</text>
-            <text v-if="trendNote(trendSummaries[index])" class="trend-summary">{{ trendNote(trendSummaries[index]) }}</text>
-            <text v-if="trendSummaries[index].warningText" class="trend-warning">{{ trendSummaries[index].warningText }}</text>
+            <text v-if="trendSummaries[index].summaryText" class="trend-summary" user-select>{{ trendSummaries[index].summaryText }}</text>
+            <text v-if="trendNote(trendSummaries[index])" class="trend-summary" user-select>{{ trendNote(trendSummaries[index]) }}</text>
+            <text v-if="trendSummaries[index].warningText" class="trend-warning" user-select>{{ trendSummaries[index].warningText }}</text>
           </view>
 
           <view v-else class="trend-summary-box first-summary">
@@ -108,8 +108,8 @@
                 <text class="status-chip">{{ statusSnapshots[index].weather }}</text>
               </view>
             </view>
-            <text class="status-summary">{{ statusSnapshots[index].summary }}</text>
-            <text class="status-caution">{{ statusSnapshots[index].caution }}</text>
+            <text class="status-summary" user-select>{{ statusSnapshots[index].summary }}</text>
+            <text class="status-caution" user-select>{{ statusSnapshots[index].caution }}</text>
           </view>
 
           <view v-if="item.nextAction || getImageLinkItems(item).length > 0" class="trace-panel">
@@ -133,24 +133,24 @@
 
           <view v-if="sideSnapshots[index]" class="side-snapshot-box">
             <text class="ai-panel-label">侧写快照</text>
-            <text class="headline">{{ sideSnapshots[index].summary }}</text>
+            <text class="headline" user-select>{{ sideSnapshots[index].summary }}</text>
             <view class="side-grid">
               <view v-for="section in sideSnapshots[index].sections" :key="section.label" class="side-item">
                 <text class="side-label">{{ section.label }}</text>
-                <text class="side-text">{{ section.text }}</text>
+                <text class="side-text" user-select>{{ section.text }}</text>
               </view>
             </view>
           </view>
 
           <view v-if="item.explanation?.headline || item.explanation?.bullets?.length" class="ai-panel">
             <text class="ai-panel-label">{{ hasAIReview(item) ? 'AI研判内容' : '研判内容' }}</text>
-            <text v-if="item.explanation?.headline" class="headline">{{ item.explanation.headline }}</text>
+            <text v-if="item.explanation?.headline" class="headline" user-select>{{ item.explanation.headline }}</text>
             <view v-if="item.explanation?.bullets?.length" class="bullets">
-              <text v-for="bullet in item.explanation.bullets?.slice(0, 3)" :key="bullet" class="bullet">• {{ bullet }}</text>
+              <text v-for="bullet in item.explanation.bullets?.slice(0, 3)" :key="bullet" class="bullet" user-select>• {{ bullet }}</text>
             </view>
             <view v-if="item.explanation?.cautions?.length" class="caution-list">
               <text class="ai-panel-label">使用提醒</text>
-              <text v-for="caution in item.explanation.cautions?.slice(0, 2)" :key="caution" class="bullet">• {{ caution }}</text>
+              <text v-for="caution in item.explanation.cautions?.slice(0, 2)" :key="caution" class="bullet" user-select>• {{ caution }}</text>
             </view>
           </view>
         </view>

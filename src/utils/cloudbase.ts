@@ -140,6 +140,9 @@ export async function resetCloudAuthState(options: { clearBusinessUser?: boolean
     removeLocalStorageKey('userId')
     removeLocalStorageKey('userEmail')
     removeLocalStorageKey('userPhone')
+    removeLocalStorageKey('userRole')
+    removeLocalStorageKey('userIsAdmin')
+    removeLocalStorageKey('currentUser')
   }
 }
 
@@ -177,6 +180,9 @@ export async function resetCloudAuthState(options: { clearBusinessUser?: boolean
     removeLocalStorageKey('userId')
     removeLocalStorageKey('userEmail')
     removeLocalStorageKey('userPhone')
+    removeLocalStorageKey('userRole')
+    removeLocalStorageKey('userIsAdmin')
+    removeLocalStorageKey('currentUser')
   }
 
   await withTimeout(auth.signOut(), 1500, 'CloudBase signOut').catch((error) => {
@@ -242,14 +248,22 @@ export function ensureCloudAuthReady(): Promise<void> {
       if (customUserId) {
         console.log('ensureCloudAuthReady: authenticated as', customUserId)
         return
+        /*
       }
 
       if (hasStoredUser) {
+        console.warn('ensureCloudAuthReady: stored business user exists but no CloudBase custom login state, using business auth payload')
+        await resetCloudAuthState({ clearBusinessUser: false })
+        if (!loginState) {
+          await auth.anonymousAuthProvider().signIn()
+        }
+        return
         console.warn('ensureCloudAuthReady: stored userId exists but no CloudBase login state, clearing auth')
         await resetCloudAuthState()
         const error = new Error('登录状态已失效，请重新登录')
         ;(error as any).code = 'AUTH_SESSION_REQUIRED'
         throw error
+        */
       }
 
       console.log('ensureCloudAuthReady: no stored user, signing in anonymously')
@@ -268,10 +282,22 @@ export const callFunction: typeof _rawCallFunction = (async (...args: any[]) => 
   try {
     await ensureCloudAuthReady()
   } catch (error: any) {
-    if (error?.code === 'AUTH_SESSION_REQUIRED') {
+    const storedUserId = getStoredUserId()
+    if (error?.code === 'AUTH_SESSION_REQUIRED' && !storedUserId) {
       uni.reLaunch({ url: '/pages/login/login' })
     }
-    throw error
+    if (!storedUserId) throw error
+  }
+  const options = args[0] || {}
+  const storedUserId = getStoredUserId()
+  if (storedUserId && options && typeof options === 'object') {
+    return _rawCallFunction({
+      ...options,
+      data: {
+        ...(options.data || {}),
+        authUserId: storedUserId
+      }
+    })
   }
   return _rawCallFunction(...args)
 }) as any

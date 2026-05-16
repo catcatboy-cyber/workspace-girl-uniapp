@@ -48,8 +48,8 @@
             <text v-if="rememberLogin">✓</text>
           </view>
           <view class="remember-copy">
-            <text class="remember-title">记住用户名和密码</text>
-            <text class="remember-note">仅保存在当前设备，方便下次自动填充。</text>
+            <text class="remember-title">记住邮箱</text>
+            <text class="remember-note">仅保存在当前设备，不保存密码。</text>
           </view>
         </view>
 
@@ -117,9 +117,8 @@ const clearError = () => {
 function loadRememberedLogin() {
   try {
     const saved = uni.getStorageSync(REMEMBER_LOGIN_KEY)
-    if (saved?.remember && saved?.email && saved?.password) {
+    if (saved?.remember && saved?.email) {
       email.value = saved.email
-      password.value = saved.password
       rememberLogin.value = true
     }
   } catch (error) {
@@ -132,8 +131,7 @@ function saveRememberedLogin() {
     if (rememberLogin.value) {
       uni.setStorageSync(REMEMBER_LOGIN_KEY, {
         remember: true,
-        email: email.value.trim(),
-        password: password.value
+        email: email.value.trim()
       })
     } else {
       uni.removeStorageSync(REMEMBER_LOGIN_KEY)
@@ -155,6 +153,10 @@ function toggleRemember() {
 }
 
 function goAfterLogin(result: any) {
+  if (result?.isAdmin || result?.role === 'admin') {
+    uni.redirectTo({ url: '/pages/admin/admin' })
+    return
+  }
   if (shouldCompleteSelfProfile(result)) {
     uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
     return

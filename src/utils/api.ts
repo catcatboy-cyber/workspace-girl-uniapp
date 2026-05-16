@@ -103,6 +103,26 @@ function cacheSelfProfile(profile: any) {
   safeSetStorageAny('selfProfile', profile)
 }
 
+function cacheLoginUser(result: any) {
+  if (!result || typeof result !== 'object') return
+  safeSetStorage('userId', result.userId || '')
+  safeSetStorage('userEmail', result.email || '')
+  safeSetStorage('userRole', result.role || (result.isAdmin ? 'admin' : 'user'))
+  safeSetStorageAny('userIsAdmin', Boolean(result.isAdmin || result.role === 'admin'))
+  safeSetStorageAny('currentUser', {
+    id: result.userId || '',
+    email: result.email || '',
+    role: result.role || (result.isAdmin ? 'admin' : 'user'),
+    isAdmin: Boolean(result.isAdmin || result.role === 'admin')
+  })
+  cacheSelfProfile(result.selfProfile)
+}
+
+function getBusinessAuthPayload() {
+  const userId = getCurrentUserId()
+  return userId ? { userId, authUserId: userId } : {}
+}
+
 async function ensureAnonymousAuth() {
   try {
     const loginState = await auth.getLoginState()
@@ -147,7 +167,7 @@ async function signInWithCustomTicketCompat(ticket: string) {
     return
   }
 
-  throw new Error('褰撳墠 SDK 涓嶆敮鎸佽嚜瀹氫箟绁ㄦ嵁鐧诲綍')
+  throw new Error('当前 SDK 不支持自定义票据登录')
 }
 
 async function verifyTicketLogin(expectedUserId: string, maxRetries = 10): Promise<boolean> {
@@ -191,9 +211,7 @@ export async function login(email: string, password: string) {
 
   // #ifdef MP-WEIXIN
   if (res.result.success) {
-    safeSetStorage('userId', res.result.userId)
-    safeSetStorage('userEmail', res.result.email)
-    cacheSelfProfile(res.result.selfProfile)
+    cacheLoginUser(res.result)
     return res.result
   }
   // #endif
@@ -202,19 +220,17 @@ export async function login(email: string, password: string) {
     try {
       await signInWithCustomTicketCompat(res.result.ticket)
     } catch (e) {
-      console.error('绁ㄦ嵁鐧诲綍澶辫触:', e)
-      return { success: false, message: '鐧诲綍鍑瘉鏍￠獙澶辫触锛岃閲嶈瘯' }
+      console.warn('票据登录失败，继续使用业务登录态:', e)
     }
+
+    cacheLoginUser(res.result)
 
     const verified = await verifyTicketLogin(res.result.userId)
     if (!verified) {
-      console.error('鐧诲綍鎬佹牎楠屾湭閫氳繃')
-      return { success: false, message: '鐧诲綍鎬佹湭鐢熸晥锛岃閲嶈瘯' }
+      console.warn('CloudBase 登录态未及时生效，已使用业务登录态继续')
     }
-
-    safeSetStorage('userId', res.result.userId)
-    safeSetStorage('userEmail', res.result.email)
-    cacheSelfProfile(res.result.selfProfile)
+  } else if (res.result.success) {
+    cacheLoginUser(res.result)
   }
 
   return res.result
@@ -234,9 +250,10 @@ export async function wechatLogin(code: string) {
   console.log('[api] wechatLogin cloud function returned', res?.result)
 
   if (res.result?.success) {
-    safeSetStorage('userId', res.result.userId)
-    safeSetStorage('userEmail', res.result.email || res.result.displayName || '')
-    cacheSelfProfile(res.result.selfProfile)
+    cacheLoginUser(res.result)
+    if (!res.result.email && res.result.displayName) {
+      safeSetStorage('userEmail', res.result.displayName)
+    }
     if (res.result.phoneMasked) {
       safeSetStorage('userPhone', res.result.phoneMasked)
     }
@@ -259,9 +276,7 @@ export async function register(email: string, password: string) {
 
   // #ifdef MP-WEIXIN
   if (res.result.success) {
-    safeSetStorage('userId', res.result.userId)
-    safeSetStorage('userEmail', res.result.email)
-    cacheSelfProfile(res.result.selfProfile)
+    cacheLoginUser(res.result)
     return res.result
   }
   // #endif
@@ -270,19 +285,17 @@ export async function register(email: string, password: string) {
     try {
       await signInWithCustomTicketCompat(res.result.ticket)
     } catch (e) {
-      console.error('绁ㄦ嵁鐧诲綍澶辫触:', e)
-      return { success: false, message: '鐧诲綍鍑瘉鏍￠獙澶辫触锛岃閲嶈瘯' }
+      console.warn('票据登录失败，继续使用业务登录态:', e)
     }
+
+    cacheLoginUser(res.result)
 
     const verified = await verifyTicketLogin(res.result.userId)
     if (!verified) {
-      console.error('鐧诲綍鎬佹牎楠屾湭閫氳繃')
-      return { success: false, message: '鐧诲綍鎬佹湭鐢熸晥锛岃閲嶈瘯' }
+      console.warn('CloudBase 登录态未及时生效，已使用业务登录态继续')
     }
-
-    safeSetStorage('userId', res.result.userId)
-    safeSetStorage('userEmail', res.result.email)
-    cacheSelfProfile(res.result.selfProfile)
+  } else if (res.result.success) {
+    cacheLoginUser(res.result)
   }
 
   return res.result
@@ -298,6 +311,9 @@ export async function logout() {
   uni.removeStorageSync('userId')
   uni.removeStorageSync('userEmail')
   uni.removeStorageSync('userPhone')
+  uni.removeStorageSync('userRole')
+  uni.removeStorageSync('userIsAdmin')
+  uni.removeStorageSync('currentUser')
   uni.removeStorageSync('selfProfile')
 }
 
@@ -313,12 +329,23 @@ export function getCurrentUserId(): string | null {
   }
 }
 
+export type AIStyleValue =
+  | 'gentle_bestie'
+  | 'calm_strategist'
+  | 'playful_flirty'
+  | 'direct_sharp'
+  | 'careful_guardian'
+
+export type AIBoldnessValue = 'conservative' | 'balanced' | 'bold'
+
 export type SelfProfile = {
   gender?: string
   ageRange?: string
   identity?: string
   zodiac?: string
   constellation?: string
+  aiStyle?: AIStyleValue
+  aiBoldness?: AIBoldnessValue
   completedAt?: string
   updatedAt?: string
 }
@@ -423,7 +450,7 @@ export async function getCaseDetail(_userId: string, caseId: string) {
     data: { caseId }
   })
   if (!res.result?.success) {
-    throw new Error(res.result?.message || '鑾峰彇妗ｆ璇︽儏澶辫触')
+    throw new Error(res.result?.message || '获取档案详情失败')
   }
   return await normalizeCase(res.result.case)
 }
@@ -492,6 +519,28 @@ export async function createTimeline(data: {
   return res.result
 }
 
+export async function generateAssessmentAI(data: {
+  caseId: string
+  assessmentId: string
+  recordId?: string
+}) {
+  const res = await callFunction({
+    name: 'generateAssessmentAI',
+    data
+  })
+  return res.result
+}
+
+export async function generateSideRead(data: {
+  caseId: string
+}) {
+  const res = await callFunction({
+    name: 'generateSideRead',
+    data
+  })
+  return res.result
+}
+
 /**
  * 鍒犻櫎鏃堕棿绾胯褰?
  */
@@ -530,6 +579,26 @@ export async function analyzeAttachment(data: {
   return res.result
 }
 
+export async function speechToText(data: {
+  fileID: string
+  fileName?: string
+  durationMs?: number
+}) {
+  const res = await callFunction({
+    name: 'speechToText',
+    data
+  })
+  return res.result
+}
+
+export async function getTokenUsage(limit = 50) {
+  const res = await callFunction({
+    name: 'getTokenUsage',
+    data: { limit }
+  })
+  return res.result
+}
+
 // ==================== 周复盘 ====================
 
 export async function getWeeklyReviews(_userId: string, caseId: string) {
@@ -554,6 +623,17 @@ export async function generateWeeklyReview(_userId: string, caseId: string, week
   return res.result
 }
 
+export async function generateWeeklySideRead(_userId: string, caseId: string, weekStart?: string) {
+  const res = await callFunction({
+    name: 'weeklyReview',
+    data: { action: 'generateSideRead', caseId, weekStart }
+  })
+  if (!res.result?.success) {
+    throw new Error(res.result?.message || '生成本周侧写失败')
+  }
+  return res.result
+}
+
 // ==================== AI 璁剧疆 ====================
 
 export type AIModelConfig = {
@@ -563,6 +643,33 @@ export type AIModelConfig = {
   baseUrl: string
   model: string
   apiKey: string
+}
+
+export type AIPromptModuleConfig = {
+  enabled: boolean
+  goal: string
+  rules: string[]
+  extraPrompt: string
+}
+
+export type AIPromptConfig = {
+  eventAssessment: AIPromptModuleConfig
+  eventUnderstanding: AIPromptModuleConfig
+  weeklyReview: AIPromptModuleConfig
+  sideRead: AIPromptModuleConfig
+  attachmentAnalysis: AIPromptModuleConfig
+}
+
+export type AIPersonaItemConfig = {
+  labelZh: string
+  labelEn: string
+  promptZh: string
+  promptEn: string
+}
+
+export type AIPersonaConfig = {
+  styles: Record<string, AIPersonaItemConfig>
+  boldness: Record<string, AIPersonaItemConfig>
 }
 
 /**
@@ -585,6 +692,10 @@ export async function updateAISettings(data: {
   aiFallbackToRules: boolean
   models: AIModelConfig[]
   defaultModelId: string
+  promptConfig?: Partial<AIPromptConfig>
+  promptModules?: Record<string, any>
+  personaConfig?: Partial<AIPersonaConfig>
+  runtimeConfig?: Record<string, number>
 }) {
   const { userId: _userId, ...payload } = data
   const res = await callFunction({
@@ -597,7 +708,7 @@ export async function updateAISettings(data: {
 export async function adminGetOverview() {
   const res = await callFunction({
     name: 'adminManage',
-    data: { action: 'getOverview' }
+    data: { action: 'getOverview', ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -605,7 +716,7 @@ export async function adminGetOverview() {
 export async function adminGetUserDetail(userId: string) {
   const res = await callFunction({
     name: 'adminManage',
-    data: { action: 'getUserDetail', userId }
+    data: { action: 'getUserDetail', targetUserId: userId, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -615,11 +726,16 @@ export async function adminUpdateAISettings(data: {
   aiFallbackToRules: boolean
   models: AIModelConfig[]
   defaultModelId: string
+  promptConfig?: Partial<AIPromptConfig>
+  promptModules?: Record<string, any>
+  personaConfig?: Partial<AIPersonaConfig>
+  runtimeConfig?: Record<string, number>
 }) {
   const res = await callFunction({
     name: 'adminManage',
     data: {
       action: 'updateAISettings',
+      ...getBusinessAuthPayload(),
       ...data
     }
   })
@@ -629,6 +745,23 @@ export async function adminUpdateAISettings(data: {
 /**
  * 娴嬭瘯 AI 杩炴帴锛堟敮鎸侀€氳繃 modelId 娴嬭瘯鎸囧畾妯″瀷锛?
  */
+export async function adminPreviewPrompt(data: {
+  moduleKey?: string
+  caseId?: string
+  recordContent: string
+  draftSettings?: Record<string, any>
+}) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: {
+      action: 'previewPrompt',
+      ...getBusinessAuthPayload(),
+      ...data
+    }
+  })
+  return res.result
+}
+
 export async function testAIConnection(data: {
   userId?: string
   modelId?: string

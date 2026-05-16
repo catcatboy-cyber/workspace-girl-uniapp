@@ -6,6 +6,9 @@ const {
   parseJSONContent,
   getAIErrorMessage
 } = require('./_shared/ai-http')
+const { recordTokenUsage } = require('./_shared/token-usage')
+const { buildPromptMessages } = require('./_shared/ai-prompt-config')
+const { buildPersonaPrompt } = require('./_shared/persona-config')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -14,7 +17,6 @@ const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
 const REVIEW_COLLECTION = 'weekly_reviews'
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const TZ_OFFSET_MS = 8 * 60 * 60 * 1000
-
 function pad(value) {
   return String(value).padStart(2, '0')
 }
@@ -52,6 +54,99 @@ function normalizeDoc(res) {
   return res?.data || null
 }
 
+function cleanText(value, maxLength = 160) {
+  return typeof value === 'string'
+    ? value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
+    : ''
+}
+
+function clampRuntimeNumber(value, fallback, min, max, integer = false) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  const clamped = Math.min(max, Math.max(min, parsed))
+  return integer ? Math.round(clamped) : Number(clamped.toFixed(2))
+}
+
+function getRuntimeConfig(settings = {}) {
+  const source = settings.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {}
+  return {
+    weeklyEventLimit: clampRuntimeNumber(source.weeklyEventLimit, 10, 5, 20, true),
+    weeklySideEventLimit: clampRuntimeNumber(source.weeklySideEventLimit, 8, 3, 12, true),
+    weeklyMaxTokens: clampRuntimeNumber(source.weeklyMaxTokens, 650, 300, 1600, true),
+    sideReadMaxTokens: clampRuntimeNumber(source.sideReadMaxTokens, 380, 200, 1200, true),
+    weeklyTemperature: clampRuntimeNumber(source.weeklyTemperature, 0.25, 0, 1),
+    sideReadTemperature: clampRuntimeNumber(source.sideReadTemperature, 0.35, 0, 1)
+  }
+}
+
+function mapRelationTypeLabel(value) {
+  if (value === 'close_friend') return '亲密朋友'
+  if (value === 'romantic') return '恋爱对象'
+  return cleanText(String(value || ''), 24)
+}
+
+function serializeSelfProfile(profile) {
+  const payload = {
+    gender: cleanText(profile?.gender, 24),
+    ageRange: cleanText(profile?.ageRange, 24),
+    identity: cleanText(profile?.identity, 24),
+    zodiac: cleanText(profile?.zodiac, 12),
+    constellation: cleanText(profile?.constellation, 24),
+    aiStyle: cleanText(profile?.aiStyle, 24),
+    aiBoldness: cleanText(profile?.aiBoldness, 24)
+  }
+  return Object.values(payload).some(Boolean) ? JSON.stringify(payload) : '未提供'
+}
+
+function serializeCaseProfile(profile) {
+  const payload = {
+    relationType: mapRelationTypeLabel(profile?.relationType),
+    gender: cleanText(profile?.gender, 24),
+    age: cleanText(String(profile?.age || ''), 12),
+    occupation: cleanText(profile?.occupation, 24),
+    zodiac: cleanText(profile?.zodiac, 12),
+    constellation: cleanText(profile?.constellation, 24)
+  }
+  return Object.values(payload).some(Boolean) ? JSON.stringify(payload) : '未提供'
+}
+
+function hasWeeklySideReadProfile(selfProfile, caseProfile) {
+  return Boolean(
+    selfProfile?.zodiac ||
+    selfProfile?.constellation ||
+    caseProfile?.zodiac ||
+    caseProfile?.constellation
+  )
+}
+
+function normalizeWeeklySideRead(value) {
+  const input = value && typeof value === 'object' ? value : {}
+  const title = cleanText(input.title, 24) || '本周侧写'
+  const summary = cleanText(input.summary, 120)
+  const sections = Array.isArray(input.sections)
+    ? input.sections
+      .slice(0, 2)
+      .map((item) => ({
+        label: cleanText(item?.label, 24),
+        text: cleanText(item?.text, 120)
+      }))
+      .filter((item) => item.label && item.text)
+    : []
+
+  if (!summary && sections.length === 0) {
+    throw new Error('WEEKLY_SIDE_READ_EMPTY')
+  }
+
+  return { title, summary, sections }
+}
+
+function normalizeStringArray(value, fallback, maxItems = 4, maxLength = 80) {
+  const items = Array.isArray(value)
+    ? value.map((item) => cleanText(item, maxLength)).filter(Boolean).slice(0, maxItems)
+    : []
+  return items.length > 0 ? items : fallback
+}
+
 async function ensureReviewCollection() {
   try {
     await db.createCollection(REVIEW_COLLECTION)
@@ -84,7 +179,11 @@ function normalizeSettings(settings) {
         : provider.toLowerCase() === 'anthropic'
           ? 'claude-3-5-sonnet-20241022'
           : 'gpt-4o-mini',
-      fallbackToRules: settings.aiFallbackToRules !== false
+      fallbackToRules: settings.aiFallbackToRules !== false,
+      runtimeConfig: settings.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {},
+      promptConfig: settings.promptConfig && typeof settings.promptConfig === 'object' ? settings.promptConfig : {},
+      promptModules: settings.promptModules && typeof settings.promptModules === 'object' ? settings.promptModules : {},
+      personaConfig: settings.personaConfig && typeof settings.personaConfig === 'object' ? settings.personaConfig : {}
     }
   }
 
@@ -105,7 +204,11 @@ function normalizeSettings(settings) {
       : provider.toLowerCase() === 'anthropic'
         ? 'claude-3-5-sonnet-20241022'
         : 'gpt-4o-mini',
-    fallbackToRules: settings?.aiFallbackToRules !== false
+    fallbackToRules: settings?.aiFallbackToRules !== false,
+    runtimeConfig: settings?.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {},
+    promptConfig: settings?.promptConfig && typeof settings.promptConfig === 'object' ? settings.promptConfig : {},
+    promptModules: settings?.promptModules && typeof settings.promptModules === 'object' ? settings.promptModules : {},
+    personaConfig: settings?.personaConfig && typeof settings.personaConfig === 'object' ? settings.personaConfig : {}
   }
 }
 
@@ -152,11 +255,7 @@ function pickPreviousAssessment(assessments, start) {
 }
 
 function compareAssessments(previous, current) {
-  if (!current) {
-    return { intentDelta: 0, riskDelta: 0, intentDirection: 'flat', riskDirection: 'flat' }
-  }
-
-  if (!previous) {
+  if (!current || !previous) {
     return { intentDelta: 0, riskDelta: 0, intentDirection: 'flat', riskDirection: 'flat' }
   }
 
@@ -181,44 +280,33 @@ function classifyTrend(intentDelta, riskDelta) {
 function compactEvent(item) {
   return {
     id: item._id || item.id,
-    title: item.title || '关系记录',
-    type: item.type || 'note',
+    title: cleanText(item.title || '关系记录', 60),
+    type: cleanText(item.type || 'note', 24),
     date: item.dateLabel || item.date || item.occurrenceAt || item.createdAt,
-    description: String(item.description || '').slice(0, 220),
+    description: cleanText(String(item.description || ''), 220),
     aiUsed: Boolean(item.aiUsed)
   }
 }
 
-function compactAssessment(item) {
-  return {
-    id: item._id || item.assessmentId,
-    createdAt: item.createdAt,
-    source: item.source,
-    triggerEventTitle: item.triggerEventTitle,
-    intentScore: item.intentScore,
-    riskScore: item.consistencyRiskScore,
-    evidenceLevel: item.evidenceLevel,
-    confidenceLevel: item.confidenceLevel,
-    headline: item.explanation?.headline
-  }
-}
-
 function fallbackReview(params) {
-  const { caseDoc, weekStart, weekEnd, weekEvents, weekAssessments, previousAssessment, latestAssessment } = params
+  const { caseDoc, weekEvents, weekAssessments, previousAssessment, latestAssessment } = params
   const trend = compareAssessments(previousAssessment, latestAssessment)
   const trendLabel = classifyTrend(trend.intentDelta, trend.riskDelta)
-  const keyEvents = weekEvents.slice(0, 4).map((item) => item.title || item.description || '关系记录')
+  const keyEvents = weekEvents
+    .slice(0, 4)
+    .map((item) => cleanText(item.title || item.description || '关系记录', 60))
+    .filter(Boolean)
 
   const summary = weekEvents.length === 0
-    ? '本周还没有新增事件。现在不适合靠单次感受下结论，可以等下一次真实互动出现后再复盘。'
+    ? '这周还没有新增事件。现在不适合下重结论，先继续记录真实互动。'
     : trend.riskDelta >= 10
-      ? '本周风险分有明显抬头，重点不是继续猜测对方态度，而是回看是否出现了回避、拖延、失约或说法变化。'
+      ? '这周风险分明显抬头，重点不是继续猜，而是回看是否出现回避、拖延、失约或说法变化。'
       : trend.intentDelta >= 8 && trend.riskDelta <= 3
-        ? '本周意向信号有所增强，但仍建议观察这种推进是否会持续落地，而不是只看一次热度。'
-        : '本周关系有新变化，但还没有形成足够强的单向结论，适合继续积累连续证据。'
+        ? '这周意向信号有增强，但重点仍是看推进是否持续落地，而不是只看一次热度。'
+        : '这周关系有变化，但还没形成足够强的单向结论，适合继续积累连续证据。'
 
   return {
-    title: `${caseDoc.name || '当前对象'} · 本周复盘`,
+    title: `${cleanText(caseDoc.name, 24) || '当前对象'} · 本周复盘`,
     trendLabel,
     summary,
     keyChanges: [
@@ -228,9 +316,9 @@ function fallbackReview(params) {
     ],
     keyEvents: keyEvents.length > 0 ? keyEvents : ['本周暂无新增关键事件。'],
     nextWeekFocus: [
-      '观察对方是否主动推进，而不是只看聊天氛围。',
-      '关注答应过的事情是否兑现。',
-      '如果出现含糊或拖延，优先记录事实，不急着脑补原因。'
+      '下一次最该验证的一件事：看对方是否有明确的后续动作，而不只是停在聊天气氛里。',
+      '关注答应过的事情有没有兑现。',
+      '如果出现含糊或拖延，先记录事实，不急着脑补原因。'
     ],
     avoidMisread: [
       '不要把单次热情直接等同于长期投入。',
@@ -246,20 +334,27 @@ async function buildAIReview(params) {
   if (!settings.enabled || !settings.apiKey) return fallbackReview(params)
 
   const fallback = fallbackReview(params)
-  const prompt = [
-    '你是关系周复盘助手。你的任务不是替用户裁决感情真假，而是帮助用户从一周维度看清事实、趋势和下周该观察什么。',
-    '请根据本周事件、本周评估变化、周初/周末分数，输出 JSON，不要 markdown。',
-    '语气要冷静、具体、克制，适合给情绪困惑中的用户看。',
-    '不要鼓励冲动表白、纠缠、测试、控制或过度解读。强调连续行为和事实证据。',
-    'JSON 字段：title, trendLabel, summary, keyChanges, keyEvents, nextWeekFocus, avoidMisread。',
-    'trendLabel 从以下选择：升温、降温、有波动、风险抬头、基本持平。',
-    'summary 是 1 段中文，keyChanges/keyEvents/nextWeekFocus/avoidMisread 都是中文数组，每个数组 2-4 条。',
-    `对象：${params.caseDoc.name}`,
-    `复盘周：${params.weekStart} 至 ${params.weekEnd}`,
-    `分数变化：${JSON.stringify(params.scoreTrend)}`,
-    `本周事件：${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, 12))}`,
-    `本周评估：${JSON.stringify(params.weekAssessments.map(compactAssessment).slice(0, 8))}`
-  ].join('\n')
+  const personaPrompt = buildPersonaPrompt(settings, params.selfProfile)
+  const runtimeConfig = getRuntimeConfig(settings)
+  const messages = buildPromptMessages({
+    moduleKey: 'weeklyReview',
+    settings,
+    systemExtra: personaPrompt.systemPrompt,
+    contextLines: [
+      personaPrompt.userPrompt,
+      `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
+      `Target name: ${cleanText(params.caseDoc.name, 24) || 'current target'}`,
+      `Target profile: ${serializeCaseProfile(params.caseDoc.profile)}`,
+      `Review week: ${params.weekStart} to ${params.weekEnd}`,
+      `Weekly stats: ${JSON.stringify({
+        eventCount: params.weekEvents.length,
+        assessmentCount: params.weekAssessments.length,
+        scoreTrend: params.scoreTrend
+      })}`,
+      `Weekly key events, max ${runtimeConfig.weeklyEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklyEventLimit))}`
+    ]
+  })
+  if (!messages) return fallback
 
   try {
     const response = await postChatCompletions({
@@ -269,12 +364,9 @@ async function buildAIReview(params) {
       model: settings.model,
       timeoutMs: AI_REQUEST_TIMEOUT_MS,
       responseFormat: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: '你是严谨、克制的关系周复盘助手。' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.25,
-      maxTokens: 900
+      messages,
+      temperature: runtimeConfig.weeklyTemperature,
+      maxTokens: runtimeConfig.weeklyMaxTokens
     })
 
     if (!response.ok) {
@@ -284,15 +376,23 @@ async function buildAIReview(params) {
 
     const data = await response.json()
     const raw = data?.choices?.[0]?.message?.content
+    await recordTokenUsage(db, {
+      userId: params.userId,
+      caseId: params.caseDoc?._id || params.caseId,
+      feature: 'weeklyReview',
+      provider: settings.provider,
+      model: settings.model,
+      usage: data?.usage
+    })
     const parsed = parseJSONContent(raw)
     return {
-      title: typeof parsed.title === 'string' ? parsed.title : fallback.title,
-      trendLabel: typeof parsed.trendLabel === 'string' ? parsed.trendLabel : fallback.trendLabel,
-      summary: typeof parsed.summary === 'string' ? parsed.summary : fallback.summary,
-      keyChanges: Array.isArray(parsed.keyChanges) ? parsed.keyChanges.map(String).slice(0, 4) : fallback.keyChanges,
-      keyEvents: Array.isArray(parsed.keyEvents) ? parsed.keyEvents.map(String).slice(0, 4) : fallback.keyEvents,
-      nextWeekFocus: Array.isArray(parsed.nextWeekFocus) ? parsed.nextWeekFocus.map(String).slice(0, 4) : fallback.nextWeekFocus,
-      avoidMisread: Array.isArray(parsed.avoidMisread) ? parsed.avoidMisread.map(String).slice(0, 4) : fallback.avoidMisread,
+      title: cleanText(parsed.title, 40) || fallback.title,
+      trendLabel: cleanText(parsed.trendLabel, 12) || fallback.trendLabel,
+      summary: cleanText(parsed.summary, 220) || fallback.summary,
+      keyChanges: normalizeStringArray(parsed.keyChanges, fallback.keyChanges),
+      keyEvents: normalizeStringArray(parsed.keyEvents, fallback.keyEvents),
+      nextWeekFocus: normalizeStringArray(parsed.nextWeekFocus, fallback.nextWeekFocus),
+      avoidMisread: normalizeStringArray(parsed.avoidMisread, fallback.avoidMisread),
       aiUsed: true
     }
   } catch (error) {
@@ -315,19 +415,25 @@ async function generateReview(params) {
   await ensureReviewCollection()
   const { caseDoc, caseId, userId, weekStart } = params
   const range = getWeekRange(weekStart)
+  const reviewId = `weekly_${caseId}_${range.weekStart}`
 
-  const timelineRes = await db.collection('timeline_records')
-    .where({ caseId })
-    .orderBy('occurrenceAt', 'desc')
-    .get()
-
-  const assessmentsRes = await db.collection('assessments')
-    .where({ caseId })
-    .orderBy('createdAt', 'asc')
-    .get()
+  const [timelineRes, assessmentsRes, userRes, existingReviewRes] = await Promise.all([
+    db.collection('timeline_records')
+      .where({ caseId })
+      .orderBy('occurrenceAt', 'desc')
+      .get(),
+    db.collection('assessments')
+      .where({ caseId })
+      .orderBy('createdAt', 'asc')
+      .get(),
+    db.collection('users').doc(userId).get().catch(() => null),
+    db.collection(REVIEW_COLLECTION).doc(reviewId).get().catch(() => null)
+  ])
 
   const allTimeline = timelineRes.data || []
   const allAssessments = assessmentsRes.data || []
+  const userDoc = normalizeDoc(userRes)
+  const existingReview = normalizeDoc(existingReviewRes)
   const weekEvents = allTimeline
     .filter((item) => !['assessment', 'trend'].includes(item.type))
     .filter((item) => inRange(item, 'occurrenceAt', range.start, range.end))
@@ -338,6 +444,7 @@ async function generateReview(params) {
 
   const aiReview = await buildAIReview({
     userId,
+    selfProfile: userDoc?.selfProfile || null,
     caseDoc,
     weekStart: range.weekStart,
     weekEnd: range.weekEnd,
@@ -349,13 +456,13 @@ async function generateReview(params) {
   })
 
   const now = new Date()
-  const reviewId = `weekly_${caseId}_${range.weekStart}`
   const review = {
     userId,
     caseId,
     caseName: caseDoc.name || '',
     weekStart: range.weekStart,
     weekEnd: range.weekEnd,
+    createdAt: existingReview?.createdAt || now,
     generatedAt: now,
     updatedAt: now,
     eventCount: weekEvents.length,
@@ -370,11 +477,131 @@ async function generateReview(params) {
     },
     sourceEventIds: weekEvents.map((item) => item._id || item.id).filter(Boolean),
     sourceAssessmentIds: weekAssessments.map((item) => item._id || item.assessmentId).filter(Boolean),
+    ...(existingReview?.weeklySideRead ? {
+      weeklySideRead: existingReview.weeklySideRead,
+      weeklySideReadGeneratedAt: existingReview.weeklySideReadGeneratedAt || null
+    } : {}),
     ...aiReview
   }
 
   await db.collection(REVIEW_COLLECTION).doc(reviewId).set(review)
   return { _id: reviewId, ...review }
+}
+
+async function buildAIWeeklySideRead(params) {
+  const settings = await getAISettings(params.userId)
+  if (!settings.enabled || !settings.apiKey) {
+    throw new Error('AI_DISABLED')
+  }
+
+  const personaPrompt = buildPersonaPrompt(settings, params.selfProfile)
+  const runtimeConfig = getRuntimeConfig(settings)
+  const messages = buildPromptMessages({
+    moduleKey: 'sideRead',
+    settings,
+    systemExtra: personaPrompt.systemPrompt,
+    contextLines: [
+      personaPrompt.userPrompt,
+      `Week: ${params.weekStart} to ${params.weekEnd}`,
+      `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
+      `Target name: ${cleanText(params.caseDoc.name, 24) || 'current target'}`,
+      `Target profile: ${serializeCaseProfile(params.caseDoc.profile)}`,
+      `Weekly review summary: ${cleanText(params.review?.summary, 160) || 'not provided'}`,
+      `Weekly score change: ${JSON.stringify(params.scoreTrend)}`,
+      `Weekly key events, max ${runtimeConfig.weeklySideEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklySideEventLimit))}`
+    ]
+  })
+  if (!messages) {
+    throw new Error('SIDE_READ_PROMPT_DISABLED')
+  }
+
+  const response = await postChatCompletions({
+    provider: settings.provider,
+    apiKey: settings.apiKey,
+    baseUrl: settings.baseUrl,
+    model: settings.model,
+    timeoutMs: AI_REQUEST_TIMEOUT_MS,
+    responseFormat: { type: 'json_object' },
+    messages,
+    temperature: runtimeConfig.sideReadTemperature,
+    maxTokens: runtimeConfig.sideReadMaxTokens
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '')
+    throw new Error(`AI 接口返回 ${response.status}${errorText ? ` / ${errorText.slice(0, 180)}` : ''}`)
+  }
+
+  const data = await response.json()
+  const raw = data?.choices?.[0]?.message?.content
+  await recordTokenUsage(db, {
+    userId: params.userId,
+    caseId: params.caseDoc?._id || params.caseId,
+    feature: 'weeklySideRead',
+    provider: settings.provider,
+    model: settings.model,
+    usage: data?.usage
+  })
+  return normalizeWeeklySideRead(parseJSONContent(raw))
+}
+
+async function generateWeeklySideRead(params) {
+  await ensureReviewCollection()
+  const { caseDoc, caseId, userId, weekStart } = params
+  const range = getWeekRange(weekStart)
+  const reviewId = `weekly_${caseId}_${range.weekStart}`
+
+  const [reviewRes, userRes, timelineRes] = await Promise.all([
+    db.collection(REVIEW_COLLECTION).doc(reviewId).get().catch(() => null),
+    db.collection('users').doc(userId).get().catch(() => null),
+    db.collection('timeline_records')
+      .where({ caseId })
+      .orderBy('occurrenceAt', 'desc')
+      .get()
+  ])
+
+  const review = normalizeDoc(reviewRes)
+  if (!review) {
+    throw new Error('WEEKLY_REVIEW_REQUIRED')
+  }
+
+  const userDoc = normalizeDoc(userRes)
+  const selfProfile = userDoc?.selfProfile || null
+  const caseProfile = caseDoc?.profile || {}
+
+  if (!hasWeeklySideReadProfile(selfProfile, caseProfile)) {
+    throw new Error('WEEKLY_SIDE_READ_PROFILE_MISSING')
+  }
+
+  const allTimeline = timelineRes.data || []
+  const weekEvents = allTimeline
+    .filter((item) => !['assessment', 'trend'].includes(item.type))
+    .filter((item) => inRange(item, 'occurrenceAt', range.start, range.end))
+
+  const weeklySideRead = await buildAIWeeklySideRead({
+    userId,
+    selfProfile,
+    caseDoc,
+    review,
+    weekStart: range.weekStart,
+    weekEnd: range.weekEnd,
+    weekEvents,
+    scoreTrend: {
+      intentDelta: review.intentDelta || 0,
+      riskDelta: review.riskDelta || 0
+    }
+  })
+
+  const now = new Date()
+  await db.collection(REVIEW_COLLECTION).doc(reviewId).update({
+    weeklySideRead: _.set(weeklySideRead),
+    weeklySideReadGeneratedAt: _.set(now),
+    updatedAt: _.set(now)
+  })
+
+  const reviews = await getReviews(caseId)
+  const nextReview = reviews.find((item) => item.weekStart === range.weekStart) || null
+  return { review: nextReview, reviews }
 }
 
 exports.main = async (event = {}) => {
@@ -392,11 +619,30 @@ exports.main = async (event = {}) => {
       return { success: true, review, reviews }
     }
 
+    if (action === 'generateSideRead') {
+      const result = await generateWeeklySideRead({ caseDoc, caseId, userId, weekStart })
+      return { success: true, ...result }
+    }
+
     const reviews = await getReviews(caseId)
     return { success: true, reviews, currentWeekStart: getWeekRange(weekStart).weekStart }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)
     if (authError) return authError
+
+    if (error?.message === 'WEEKLY_REVIEW_REQUIRED') {
+      return { success: false, message: '请先生成本周复盘' }
+    }
+    if (error?.message === 'WEEKLY_SIDE_READ_PROFILE_MISSING') {
+      return { success: false, message: '请先完善你或对象的属相、星座信息' }
+    }
+    if (error?.message === 'AI_DISABLED') {
+      return { success: false, message: 'AI 未启用' }
+    }
+    if (error?.message === 'AI_REQUEST_TIMEOUT') {
+      return { success: false, message: 'AI 生成超时，请稍后再试' }
+    }
+
     console.error('weeklyReview error:', error)
     return { success: false, message: '周复盘处理失败' }
   }

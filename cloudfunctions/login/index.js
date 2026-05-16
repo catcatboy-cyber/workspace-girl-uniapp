@@ -41,6 +41,18 @@ function buildCustomLoginErrorResponse(error) {
   return null
 }
 
+function buildUserLoginPayload(user, ticket) {
+  return {
+    success: true,
+    ticket,
+    userId: user._id,
+    email: user.email,
+    selfProfile: user.selfProfile || null,
+    role: user.role || (user.isAdmin ? 'admin' : 'user'),
+    isAdmin: Boolean(user.isAdmin) || user.role === 'admin'
+  }
+}
+
 const credentials = getCustomLoginCredentials()
 const app = cloudbase.init({
   env: (credentials && credentials.env_id) || cloudbase.SYMBOL_CURRENT_ENV,
@@ -110,15 +122,7 @@ exports.main = async (event) => {
         refresh: 7 * 24 * 60 * 60 * 1000
       }) : undefined
 
-      return {
-        success: true,
-        ticket,
-        userId: user._id,
-        email: user.email,
-        selfProfile: user.selfProfile || null,
-        role: 'admin',
-        isAdmin: true
-      }
+      return buildUserLoginPayload(user, ticket)
     }
 
     if (users.length === 0) {
@@ -146,13 +150,7 @@ exports.main = async (event) => {
       refresh: 7 * 24 * 60 * 60 * 1000 // 7天（毫秒）
     }) : undefined
 
-    return {
-      success: true,
-      ticket,
-      userId: user._id,
-      email: user.email,
-      selfProfile: user.selfProfile || null
-    }
+    return buildUserLoginPayload(user, ticket)
   } catch (error) {
     const customLoginError = buildCustomLoginErrorResponse(error)
     if (customLoginError) {

@@ -1,4 +1,4 @@
-const cloudbase = require('@cloudbase/node-sdk')
+﻿const cloudbase = require('@cloudbase/node-sdk')
 const {
   AI_REQUEST_TIMEOUT_MS,
   postChatCompletions,
@@ -42,19 +42,52 @@ async function getStrictAuthUserId() {
   throw error
 }
 
-async function requireAdminUserId() {
-  const userId = await getStrictAuthUserId()
-  const userRes = await db.collection('users').doc(userId).get()
-  const user = normalizeDoc(userRes)
-  const adminEmails = normalizeList(process.env.ADMIN_EMAILS)
-  const email = String(user?.email || '').trim().toLowerCase()
-  const isAdmin = Boolean(user?.isAdmin) || user?.role === 'admin' || adminEmails.includes(email)
+function getEventAuthUserId(event = {}) {
+  const candidates = [
+    event.authUserId,
+    event.userId
+  ]
 
-  if (!isAdmin) {
-    const error = new Error('ADMIN_REQUIRED')
-    error.code = 'ADMIN_REQUIRED'
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+
+  return ''
+}
+
+async function requireAdminUserId(event = {}) {
+  const adminEmails = normalizeList(process.env.ADMIN_EMAILS)
+  const userIds = []
+
+  try {
+    userIds.push(await getStrictAuthUserId())
+  } catch (error) {
+    if (error?.code !== 'UNAUTHENTICATED' && error?.message !== 'UNAUTHENTICATED') {
+      throw error
+    }
+  }
+
+  const eventUserId = getEventAuthUserId(event)
+  if (eventUserId) userIds.push(eventUserId)
+
+  for (const userId of [...new Set(userIds)]) {
+    const userRes = await db.collection('users').doc(userId).get()
+    const user = normalizeDoc(userRes)
+    const email = String(user?.email || '').trim().toLowerCase()
+    const isAdmin = Boolean(user?.isAdmin) || user?.role === 'admin' || adminEmails.includes(email)
+
+    if (isAdmin) return userId
+  }
+
+  if (userIds.length === 0) {
+    const error = new Error('UNAUTHENTICATED')
+    error.code = 'UNAUTHENTICATED'
     throw error
   }
+
+  const error = new Error('ADMIN_REQUIRED')
+  error.code = 'ADMIN_REQUIRED'
+  throw error
 }
 
 async function getGlobalAISettingsRaw() {
@@ -77,11 +110,11 @@ function buildNonJsonResponseMessage(responseText, baseUrl, status) {
   const looksLikeHtml = /^<!doctype html\b/i.test(trimmed) || /^<html[\s>]/i.test(trimmed) || /^</.test(trimmed)
 
   if (looksLikeHtml) {
-    return `AI 接口返回了 HTML 页面（HTTP ${status}），请检查 Base URL 是否填写成了官网页面而不是 API 地址：${baseUrl}`
+    return `AI 接口返回 HTML 页面（HTTP ${status}），请检查 Base URL 是否填成了网页地址：${baseUrl || ''}`
   }
 
   if (!preview) {
-    return `AI 接口返回了空响应（HTTP ${status}），请检查 Base URL 和模型服务状态。`
+    return `AI 接口返回空响应（HTTP ${status}），请检查 Base URL 和模型服务状态。`
   }
 
   return `AI 接口返回的不是 JSON（HTTP ${status}）：${preview}`
@@ -89,11 +122,11 @@ function buildNonJsonResponseMessage(responseText, baseUrl, status) {
 
 exports.main = async (event) => {
   try {
-    await requireAdminUserId()
+    await requireAdminUserId(event)
 
     const savedSettings = await getGlobalAISettingsRaw()
 
-    // 新版：通过 modelId 在 aiModels 中查找
+    // v2 model lookup by modelId.
     const modelId = event.modelId
     let apiKey = ''
     let baseUrl = ''
@@ -110,7 +143,7 @@ exports.main = async (event) => {
       }
     }
 
-    // 如果没找到指定模型或没有 modelId，使用 event 中的参数（兼容旧版/单次测试）
+    // Fallback to event params or saved legacy fields when modelId is absent or unmatched.
     if (!apiKey) {
       provider = typeof event.aiProvider === 'string' ? event.aiProvider.trim() : (savedSettings?.aiProvider || 'openai-compatible')
       apiKey = typeof event.aiApiKey === 'string' ? event.aiApiKey.trim() : (savedSettings?.aiApiKey || '')
@@ -121,7 +154,6 @@ exports.main = async (event) => {
     if (!apiKey) {
       return { success: false, message: '请先填写 API Key' }
     }
-
     const response = await postChatCompletions({
       provider,
       apiKey,
@@ -129,8 +161,7 @@ exports.main = async (event) => {
       model: modelName,
       timeoutMs: AI_REQUEST_TIMEOUT_MS,
       messages: [
-        { role: 'system', content: '你是一个用于测试 API 连通性的助手。' },
-        { role: 'user', content: '请用一句中文回复"连接成功"，并补 12 个字以内的说明。' }
+        { role: 'user', content: 'ping' }
       ],
       temperature: 0.2,
       maxTokens: 80

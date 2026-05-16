@@ -1,7 +1,5 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
-const { recalculateAssessmentFromEvent } = require('./_shared/event-recalculate')
-const { compareAssessments, buildTrendTimelineRecords } = require('./_shared/trend')
 const { buildTimelineRecordTitle, classifyTimelineEvent, inferTimelineRecord } = require('./_shared/event-understanding')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 
@@ -35,6 +33,12 @@ async function getAISettings(userId) {
   }
 
   return settings
+}
+
+async function getSelfProfile(userId) {
+  const result = await db.collection('users').doc(userId).get().catch(() => null)
+  const user = normalizeDoc(result)
+  return user?.selfProfile || null
 }
 
 function randomHex(n) {
@@ -108,9 +112,21 @@ function mapCreateTimelineError(error) {
 exports.main = async (event) => {
   const { caseId, description, occurrenceAt, dateLabel, subjectRole, subjectRoleConfidence } = event
   let transaction = null
+  const perfStart = Date.now()
+  const traceId = `ct_${perfStart}_${randomHex(3)}`
+  const markPerf = (stage, extra = {}) => {
+    console.log('[createTimeline perf]', JSON.stringify({
+      traceId,
+      stage,
+      elapsedMs: Date.now() - perfStart,
+      ...extra
+    }))
+  }
 
   try {
+    markPerf('start')
     const userId = await requireAuthenticatedUserId(app, event)
+    markPerf('auth_ok')
     if (!caseId) return { success: false, message: '缺少档案ID' }
 
     const safeDescription = typeof description === 'string' ? description.trim() : ''
@@ -121,6 +137,7 @@ exports.main = async (event) => {
     const ownedCase = await getOwnedCase(db, caseId, userId)
     if (ownedCase.error) return ownedCase.error
     const caseDoc = ownedCase.caseDoc
+    markPerf('case_loaded')
 
     if (!caseDoc.latestResultId) {
       return { success: false, message: '当前档案缺少有效评估结果，请先重新评估后再记录时间线' }
@@ -149,15 +166,28 @@ exports.main = async (event) => {
     }
 
     const latestResultRes = await db.collection('assessments').doc(caseDoc.latestResultId).get()
-    const previous = latestResultRes.data && latestResultRes.data.length > 0 ? latestResultRes.data[0] : null
+    let previous = latestResultRes.data && latestResultRes.data.length > 0 ? latestResultRes.data[0] : null
+    if (!previous) {
+      const fallbackRes = await db.collection('assessments')
+        .where({ caseId })
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get()
+      previous = fallbackRes.data && fallbackRes.data.length > 0 ? fallbackRes.data[0] : null
+      if (previous) {
+        console.warn('latestResultId missing, fallback to latest assessment:', caseDoc.latestResultId, previous._id || previous.assessmentId)
+      }
+    }
     if (!previous) {
       throw new Error('LATEST_RESULT_NOT_FOUND')
     }
+    markPerf('previous_assessment_loaded')
 
     const { data: timelineItems } = await db.collection('timeline_records')
       .where({ caseId })
       .orderBy('occurrenceAt', 'desc')
       .get()
+    markPerf('timeline_loaded', { count: Array.isArray(timelineItems) ? timelineItems.length : 0 })
 
     const recentTimeline = (timelineItems || [])
       .filter((item) => item.type !== 'assessment' && item.type !== 'trend')
@@ -186,14 +216,16 @@ exports.main = async (event) => {
     const trimmedRecentTimeline = recentTimeline
       .slice(0, 8)
 
-    const aiSettings = await getAISettings(userId)
     const understoodEvent = await inferTimelineRecord({
       description: safeDescription,
       subjectRole: draftRecord.subjectRole,
       recentTimeline: trimmedRecentTimeline,
       caseProfile: caseDoc.profile,
-      settings: aiSettings
+      // 保存时间线时不能串行等待两次 AI，否则很容易撞到云函数 30 秒上限。
+      // 事件语义先用规则快速结构化，后面的评估重算仍会使用 AI 做完整研判。
+      settings: { aiEnabled: false, aiFallbackToRules: true }
     })
+    markPerf('event_understood', { usedAI: Boolean(understoodEvent.usedAI) })
     const understoodRecord = {
       ...draftRecord,
       title: understoodEvent.eventTitle || draftRecord.title,
@@ -211,41 +243,42 @@ exports.main = async (event) => {
       semanticTags: understoodRecord.semanticTags
     }
 
-    const recalculated = await recalculateAssessmentFromEvent({
-      previous,
-      event: understoodRecord,
+    const aiUsed = false
+    const finalRecord = understoodRecord
+
+    const {
+      _id: _previousDocId,
+      caseId: _previousCaseId,
+      ...previousSnapshot
+    } = previous
+
+    const pendingAssessment = {
+      ...previousSnapshot,
       assessmentId,
-      recentTimeline: trimmedRecentTimeline,
-      caseProfile: caseDoc.profile,
-      aiSettings
-    })
-
-    const aiUsed = Boolean(understoodEvent.usedAI || recalculated.explanation?.headline?.startsWith('AI 研判后：'))
-    const finalRecord = {
-      ...understoodRecord,
-      title: recalculated.triggerEventTitle || understoodRecord.title,
-      type: recalculated.triggerEventType || understoodRecord.type
+      createdAt: now,
+      source: 'ai_pending',
+      triggerEventId: recordId,
+      triggerEventTitle: finalRecord.title,
+      triggerEventType: finalRecord.type,
+      rawReply: '',
+      actionAdvice: null,
+      eventInsight: null,
+      sideReadAdvice: null,
+      currentStatus: null,
+      aiUsed: false,
+      aiPending: true,
+      aiFailed: false,
+      previousAssessmentId: previous._id || previous.assessmentId || caseDoc.latestResultId,
+      explanation: {
+        headline: 'AI 正在分析这次记录。',
+        bullets: [],
+        cautions: ['后台正在生成即时反馈，完成后会自动更新。']
+      }
     }
-
-    // 预计算趋势记录（在事务外完成）
-    const { data: assessments } = await db.collection('assessments')
-      .where({ caseId })
-      .orderBy('createdAt', 'asc')
-      .get()
-
-    const trend = compareAssessments(previous, recalculated)
-    const autoRecords = buildTrendTimelineRecords({
-      assessmentIndex: assessments.length + 1, // +1 因为新评估还未写入
-      intentBucket: recalculated.intentBucket,
-      riskBucket: recalculated.riskBucket,
-      evidenceLevel: recalculated.evidenceLevel,
-      intentDelta: trend.intentDelta,
-      riskDelta: trend.riskDelta,
-      warningText: trend.warningText
-    })
 
     // 开启事务，仅用于数据库写入
     transaction = await db.startTransaction()
+    markPerf('transaction_started')
 
     // 事务内验证 case 归属和版本
     const transactionalCase = await getOwnedCase(transaction, caseId, userId)
@@ -273,23 +306,10 @@ exports.main = async (event) => {
     })
 
     await transaction.collection('assessments').add({
+      ...pendingAssessment,
       _id: assessmentId,
-      caseId,
-      ...recalculated
+      caseId
     })
-
-    for (const autoRecord of autoRecords) {
-      await transaction.collection('timeline_records').add({
-        _id: autoRecord.id,
-        caseId,
-        title: autoRecord.title,
-        type: autoRecord.type,
-        dateLabel: autoRecord.dateLabel,
-        description: autoRecord.description,
-        occurrenceAt: new Date(autoRecord.occurrenceAt),
-        createdAt: new Date(autoRecord.createdAt)
-      })
-    }
 
     await transaction.collection('cases').doc(caseId).update({
       updatedAt: now,
@@ -298,18 +318,21 @@ exports.main = async (event) => {
 
     await transaction.commit()
     transaction = null
+    markPerf('committed')
 
     return {
       success: true,
       recordId,
       assessmentId,
       aiUsed,
+      aiPending: true,
       subjectRole: finalRecord.subjectRole,
       subjectRoleConfidence: finalRecord.subjectRoleConfidence,
       eventType: finalRecord.type,
       eventTitle: finalRecord.title
     }
   } catch (error) {
+    markPerf('error', { message: error instanceof Error ? error.message : String(error) })
     if (transaction) {
       await transaction.rollback().catch(() => {})
     }

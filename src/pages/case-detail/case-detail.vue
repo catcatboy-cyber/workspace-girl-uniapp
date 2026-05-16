@@ -30,7 +30,7 @@
         <view class="section-head">
           <view>
             <text class="h2">对象画像</text>
-            <text class="muted">仅作辅助理解和趣味补充，不参与核心评分。</text>
+            <text class="object-card-name-head">{{ caseFile.name }}</text>
           </view>
         </view>
         <view v-if="overviewStats.length > 0" class="overview-stats-legacy">
@@ -55,7 +55,10 @@
             <image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" />
             <text v-else class="avatar-placeholder">{{ avatarLabel(caseFile.name) }}</text>
           </view>
-          <text class="profile-name">{{ caseFile.name }}</text>
+        </view>
+        <view v-if="objectTypeLabel || objectStatusTags.length" class="object-card-tag-row">
+          <text v-if="objectTypeLabel" class="badge badge-primary">{{ objectTypeLabel }}</text>
+          <text v-for="tag in objectStatusTags" :key="tag" class="badge badge-soft">{{ tag }}</text>
         </view>
         <view v-if="profileItems.length > 0" class="badges">
           <text v-for="item in profileItems" :key="item" class="badge">{{ item }}</text>
@@ -157,9 +160,6 @@
             </view>
           </view>
         </view>
-        <view class="actions">
-          <button class="btn-secondary" @click="goEditProfile">{{ profileItems.length > 0 ? '编辑画像' : '去补充画像' }}</button>
-        </view>
       </view>
 
       <!-- 本周复盘 -->
@@ -170,82 +170,119 @@
             <text class="muted">把本周复盘、当前状态、最近变化和下一步验证重点收在一起。</text>
           </view>
         </view>
-        <view v-if="weeklyPreview || statusCard || trend || primaryFocusItem" class="weekly-preview-content">
+        <view v-if="aiWeeklyPreview" class="weekly-preview-content">
           <view class="weekly-preview-head">
             <view>
-              <text v-if="weeklyPreview" class="preview-time">{{ weeklyPreview.weekStart }} 至 {{ weeklyPreview.weekEnd }}</text>
-              <text class="preview-title">{{ weeklyPreview?.title || '本周复盘' }}</text>
+              <text class="preview-time">{{ aiWeeklyPreview.weekStart }} 至 {{ aiWeeklyPreview.weekEnd }}</text>
+              <text class="preview-title">{{ aiWeeklyPreview.title }}</text>
             </view>
             <view class="preview-chip-row">
+              <text class="badge">{{ aiWeeklyPreview.trendLabel }}</text>
               <text v-if="statusCard" class="badge">{{ statusCard.phase }}</text>
               <text v-if="statusCard" class="badge">{{ statusCard.state }}</text>
               <text v-if="statusCard" class="badge">{{ statusCard.weather }}</text>
+              <text class="ai-badge">AI 已参与研判</text>
             </view>
           </view>
-          <text class="preview-desc strong">{{ weeklyPreview?.summary || statusCard?.summary }}</text>
-          <view v-if="weeklyPreview" class="preview-chip-row">
-            <text class="badge">事件 {{ weeklyPreview.eventCount }}</text>
-            <text class="badge">评估 {{ weeklyPreview.assessmentCount }}</text>
-            <text class="badge">意向 {{ formatDelta(weeklyPreview.intentDelta) }}</text>
-            <text class="badge">风险 {{ formatDelta(weeklyPreview.riskDelta) }}</text>
-          </view>
-          <view v-if="trend && trend.hasPrevious" class="weekly-detail-box">
-            <text class="case-kpi-label">最近变化</text>
-            <text class="preview-desc">{{ trend.summaryText }}</text>
-            <text v-if="trend.warningText" class="preview-desc">{{ trend.warningText }}</text>
-          </view>
-          <view v-if="statusCard" class="weekly-detail-box">
-            <text class="case-kpi-label">当前状态说明</text>
-            <text class="preview-desc">{{ statusCard.summary }}</text>
-            <text class="preview-desc">{{ statusCard.caution }}</text>
+          <text class="preview-desc strong" user-select>{{ aiWeeklyPreview.summary }}</text>
+          <view class="preview-chip-row">
+            <text class="badge">事件 {{ aiWeeklyPreview.eventCount }}</text>
+            <text class="badge">评估 {{ aiWeeklyPreview.assessmentCount }}</text>
+            <text class="badge">意向 {{ formatDelta(aiWeeklyPreview.intentDelta) }}</text>
+            <text class="badge">风险 {{ formatDelta(aiWeeklyPreview.riskDelta) }}</text>
           </view>
           <view class="weekly-detail-grid">
-            <view v-if="weeklyPreview?.keyChanges?.length" class="weekly-detail-box">
+            <view v-if="aiWeeklyPreview.keyChanges?.length" class="weekly-detail-box">
               <text class="case-kpi-label">最近阶段关键变化</text>
-              <text v-for="item in weeklyPreview.keyChanges.slice(0, 2)" :key="item" class="bullet">• {{ item }}</text>
+              <text v-for="item in aiWeeklyPreview.keyChanges" :key="item" class="bullet" user-select>• {{ item }}</text>
             </view>
-            <view v-if="weeklyPreview?.keyEvents?.length" class="weekly-detail-box">
+            <view v-if="aiWeeklyPreview.keyEvents?.length" class="weekly-detail-box">
               <text class="case-kpi-label">关键事件</text>
-              <text v-for="item in weeklyPreview.keyEvents.slice(0, 2)" :key="item" class="bullet">• {{ item }}</text>
+              <text v-for="item in aiWeeklyPreview.keyEvents" :key="item" class="bullet" user-select>• {{ item }}</text>
             </view>
-            <view v-if="weeklyPreview?.avoidMisread?.length" class="weekly-detail-box">
+            <view v-if="aiWeeklyPreview.avoidMisread?.length" class="weekly-detail-box">
               <text class="case-kpi-label">这一阶段避免误判</text>
-              <text v-for="item in weeklyPreview.avoidMisread.slice(0, 2)" :key="item" class="bullet">• {{ item }}</text>
+              <text v-for="item in aiWeeklyPreview.avoidMisread" :key="item" class="bullet" user-select>• {{ item }}</text>
             </view>
           </view>
 
-          <view v-if="primaryFocusItem" class="weekly-focus-block">
+          <view v-if="weeklyFocusItems.length > 0" class="weekly-focus-block">
             <view class="section-mini-head">
               <text class="mini-title">后续验证重点</text>
               <text class="mini-sub">下一次只看这一件事</text>
             </view>
             <view class="focus-verify-card">
               <text class="case-kpi-label">最该看</text>
-              <text class="focus-verify-question">{{ focusVerifyQuestion }}</text>
+              <text class="focus-verify-question" user-select>{{ primaryWeeklyFocus }}</text>
             </view>
-            <view v-if="focusEvidenceItems.length > 0" class="focus-evidence-simple">
-              <text class="case-kpi-label">依据证据</text>
-              <view class="focus-evidence-list">
-                <view v-for="ev in focusEvidenceItems" :key="ev.id" class="focus-evidence-row" @click="goTimelineEvent(ev.id)">
-                  <text class="focus-evidence-index">{{ ev.index }}</text>
-                  <view class="focus-evidence-content">
-                    <text class="focus-evidence-title">{{ ev.title }}</text>
-                    <text class="focus-evidence-time">{{ ev.timeText }}</text>
-                  </view>
-                </view>
-              </view>
+            <view v-if="weeklyFocusItems.length > 1" class="weekly-focus-list">
+              <text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet" user-select>• {{ item }}</text>
             </view>
           </view>
+          <view v-if="false" class="weekly-focus-block">
+            <view class="section-mini-head">
+              <text class="mini-title">本周侧写</text>
+              <text class="mini-sub">{{ currentWeeklySideRead ? '属相和星座本周侧写' : '进入复盘页后可单独生成' }}</text>
+            </view>
+            <template v-if="currentWeeklySideRead">
+              <text v-if="currentWeeklySideRead.summary" class="preview-desc strong" user-select>{{ currentWeeklySideRead.summary }}</text>
+              <view v-if="currentWeeklySideRead.sections?.length" class="weekly-detail-grid">
+                <view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="weekly-detail-box">
+                  <text class="case-kpi-label">{{ item.label }}</text>
+                  <text class="bullet" user-select>• {{ item.text }}</text>
+                </view>
+              </view>
+            </template>
+            <text v-else class="muted">本周侧写还没有生成。</text>
+          </view>
+        </view>
+        <view v-else-if="hasFallbackWeeklyPreview" class="weekly-empty">
+          <text class="muted">本周只生成了规则兜底版本。关系主页不再展示这类文案，请去周复盘页重新生成 AI 版本。</text>
         </view>
         <view v-else class="weekly-empty">
-          <text class="muted">本周还没有形成明确复盘，先继续记录关键事件，后面会沉淀成本周复盘。</text>
+          <text class="muted">本周还没有 AI 复盘。这张卡现在只接 AI 周复盘的结果，请先去生成。</text>
         </view>
-        <view class="preview-actions">
-          <button class="link-button secondary" @click="goWeeklyReview">看复盘历史记录</button>
+        <view v-if="false" class="preview-actions">
+          <button class="link-button secondary" @click="goWeeklyReview">
+            {{ aiWeeklyPreview ? '看复盘历史记录' : '去生成本周 AI 复盘' }}
+          </button>
         </view>
       </view>
 
       <!-- 趋势变化 -->
+      <view class="card weekly-preview-card">
+        <view class="section-head">
+          <view>
+            <text class="h2">本周侧写</text>
+            <text class="muted">属相和星座本周侧写，和本周复盘并列展示。</text>
+          </view>
+        </view>
+        <view v-if="currentWeeklySideRead" class="weekly-preview-content">
+          <text v-if="currentWeeklySideRead.title" class="preview-title">{{ currentWeeklySideRead.title }}</text>
+          <text v-if="currentWeeklySideRead.summary" class="preview-desc strong" user-select>{{ currentWeeklySideRead.summary }}</text>
+          <view v-if="currentWeeklySideRead.sections?.length" class="weekly-detail-grid">
+            <view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="weekly-detail-box">
+              <text class="case-kpi-label">{{ item.label }}</text>
+              <text class="bullet" user-select>• {{ item.text }}</text>
+            </view>
+          </view>
+        </view>
+        <view v-else class="weekly-empty">
+          <text class="muted">{{ weeklyPreview ? '本周侧写还没有生成，进入复盘页后可单独生成。' : '请先生成本周复盘，再生成本周侧写。' }}</text>
+        </view>
+        <view v-if="false" class="preview-actions">
+          <button class="link-button secondary" @click="goWeeklyReview">
+            {{ currentWeeklySideRead ? '看复盘历史记录' : '去本周复盘页生成侧写' }}
+          </button>
+        </view>
+      </view>
+
+      <view class="preview-actions single-bottom-action">
+        <button class="link-button secondary" @click="goWeeklyReview">
+          {{ weeklyPreview ? '看复盘历史记录' : '去生成本周 AI 复盘' }}
+        </button>
+      </view>
+
       <view v-if="showRelationshipLegacySections && trend && trend.hasPrevious" class="card trend-card">
         <view class="section-head">
           <view>
@@ -254,8 +291,8 @@
           </view>
           <text class="muted">{{ trend.hasPrevious ? '上次 vs 这次' : '首次评估' }}</text>
         </view>
-        <text class="status-summary">{{ trend.summaryText }}</text>
-        <text v-if="trend.warningText" class="trend-warning">{{ trend.warningText }}</text>
+        <text class="status-summary" user-select>{{ trend.summaryText }}</text>
+        <text v-if="trend.warningText" class="trend-warning" user-select>{{ trend.warningText }}</text>
         <view class="grid two">
           <view class="trend-box">
             <text class="case-kpi-label">意向变化</text>
@@ -320,11 +357,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCaseDetail, getCurrentUserId, getWeeklyReviews, getCases } from '@/utils/api'
 import { consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
 const loading = ref(true)
 const caseFile = ref<any>(null)
@@ -332,6 +370,10 @@ const userId = ref('')
 const caseId = ref('')
 const profileUpdated = ref(false)
 const themeVars = ref(getThemeStyle())
+
+onShareAppMessage(() => buildSafeShareMessage())
+
+onShareTimeline(() => buildSafeTimelineShare())
 const showRelationshipLegacySections = false
 const weeklyReviews = ref<any[]>([])
 const currentWeekStart = ref('')
@@ -349,9 +391,14 @@ const profileItems = computed(() => {
   if (p.occupation) items.push(p.occupation)
   if (p.zodiac) items.push(`属${p.zodiac}`)
   if (p.constellation) items.push(p.constellation)
-  if (p.relationType === 'close_friend') items.push('亲密朋友')
-  else if (p.relationType === 'romantic') items.push('恋爱对象')
   return items
+})
+
+const objectTypeLabel = computed(() => {
+  const relationType = String(caseFile.value?.profile?.relationType || '').trim()
+  if (relationType === 'close_friend') return '亲密朋友'
+  if (relationType === 'romantic') return '恋爱对象'
+  return ''
 })
 
 const overviewStatsData = computed(() => {
@@ -387,6 +434,11 @@ const focusEvidenceItems = computed(() => {
 const statusCard = computed(() => {
   if (!caseFile.value?.latestResult || !caseFile.value?.assessments || !caseFile.value?.timeline) return null
   return buildObjectStatusCard(caseFile.value)
+})
+
+const objectStatusTags = computed(() => {
+  if (!statusCard.value) return []
+  return [statusCard.value.phase, statusCard.value.state, statusCard.value.weather].filter(Boolean)
 })
 
 const trend = computed(() => {
@@ -504,6 +556,28 @@ const trendDataPanel = computed(() => {
 const weeklyPreview = computed(() => {
   if (!weeklyReviews.value.length) return null
   return weeklyReviews.value.find((item: any) => item.weekStart === currentWeekStart.value) || weeklyReviews.value[0]
+})
+
+const aiWeeklyPreview = computed(() => {
+  return weeklyPreview.value || null
+})
+
+const hasFallbackWeeklyPreview = computed(() => {
+  return false
+})
+
+const currentWeeklySideRead = computed(() => {
+  return weeklyPreview.value?.weeklySideRead || null
+})
+
+const weeklyFocusItems = computed(() => {
+  return (weeklyPreview.value?.nextWeekFocus || [])
+    .map((item: any) => String(item || '').trim())
+    .filter(Boolean)
+})
+
+const primaryWeeklyFocus = computed(() => {
+  return weeklyFocusItems.value[0] || ''
 })
 
 const triggerEvent = computed(() => {
@@ -794,7 +868,39 @@ function goWeeklyReview() {
 .pill.neutral { background: #efe7d8; color: #241b12; }
 .badges { margin: 8rpx 0; }
 .badge { display: inline-block; padding: 8rpx 16rpx; background: #efe7d8; border-radius: 999rpx; font-size: 22rpx; color: #241b12; margin: 4rpx; }
+.badge-primary {
+  background: rgba(18, 60, 54, 0.12);
+  border: 1rpx solid rgba(18, 60, 54, 0.22);
+  color: #123c36;
+  font-weight: 700;
+}
+.badge-soft {
+  background: rgba(201, 164, 92, 0.12);
+}
 .ai-badge { display: inline-block; padding: 7rpx 14rpx; margin: 4rpx; background: #e7f3ef; border: 1rpx solid rgba(15, 107, 69, 0.22); border-radius: 999rpx; color: #0f6b45; font-size: 21rpx; font-weight: 650; line-height: 1.35; }
+.profile-inline-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.object-card-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  width: 100%;
+  margin-top: 12rpx;
+  margin-bottom: 4rpx;
+}
+.object-card-tag-row .badge {
+  margin: 0;
+}
+.object-card-name-head {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #143f3a;
+}
 .bullets { display: flex; flex-direction: column; gap: 8rpx; }
 .bullet { font-size: 26rpx; color: #241b12; line-height: 1.6; }
 .grid.two { display: flex; gap: 16rpx; flex-wrap: wrap; }
@@ -2182,6 +2288,12 @@ function goWeeklyReview() {
   display: flex;
   justify-content: flex-end;
   margin-top: 18rpx;
+}
+
+.single-bottom-action {
+  justify-content: center;
+  margin-top: 0;
+  margin-bottom: 24rpx;
 }
 
 .preview-actions .link-button {
