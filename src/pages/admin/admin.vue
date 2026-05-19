@@ -1,5 +1,6 @@
 ﻿<template>
-  <view class="admin-page">
+  <view :class="['admin-page', showV2 ? 'v2-mode' : '']">
+    <view class="version-toggle"><view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view><view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view></view>
     <view class="admin-shell">
       <view class="topbar">
         <view>
@@ -561,6 +562,7 @@ const runtimeFields = [
 
 const activeTab = ref<'users' | 'ai'>('users')
 const users = ref<AdminUser[]>([])
+const showV2 = ref(true)
 const selectedUserId = ref('')
 const currentUserId = ref('')
 const selectedDetail = ref<AdminDetail | null>(null)
@@ -1869,4 +1871,11 @@ input {
     box-sizing: border-box;
   }
 }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 </style>

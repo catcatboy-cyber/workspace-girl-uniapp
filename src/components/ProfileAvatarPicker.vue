@@ -146,158 +146,32 @@ function clearAvatar() {
 </script>
 
 <style scoped>
+/* ===== ProfileAvatarPicker — Campus Pop ===== */
 .avatar-picker { padding: 24rpx 0; }
 
-.avatar-preview {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-  margin-bottom: 32rpx;
-}
+.avatar-preview { display: flex; align-items: center; gap: 24rpx; margin-bottom: 32rpx; }
 
-.profile-avatar {
-  border-radius: 50%;
-  overflow: hidden;
-  background: #efe7d8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.profile-avatar { border-radius: 50%; overflow: hidden; background: #FFD93D; display: flex; align-items: center; justify-content: center; border: 3rpx solid #111; }
+.profile-avatar.lg { width: 120rpx; height: 120rpx; }
+.profile-avatar.md { width: 80rpx; height: 80rpx; }
+.profile-avatar image { width: 100%; height: 100%; }
 
-.profile-avatar.lg {
-  width: 120rpx;
-  height: 120rpx;
-}
+.avatar-placeholder { font-size: 48rpx; font-weight: 900; color: #111; }
 
-.profile-avatar.md {
-  width: 80rpx;
-  height: 80rpx;
-}
+.avatar-info { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
+.field-label { font-size: 24rpx; color: #111; font-weight: 800; }
+.muted { display: block; font-size: 22rpx; color: #666; line-height: 1.5; font-weight: 600; }
 
-.profile-avatar image {
-  width: 100%;
-  height: 100%;
-}
+.avatar-presets { display: flex; gap: 16rpx; margin-bottom: 24rpx; flex-wrap: wrap; }
+.avatar-preset { display: flex; flex-direction: column; align-items: center; gap: 8rpx; padding: 16rpx; border: 2rpx solid #111; background: #fff; }
+.avatar-preset.active { background: #111; }
+.avatar-preset.active .preset-label { color: #FFD93D; }
 
-.avatar-placeholder {
-  font-size: 48rpx;
-  font-weight: 700;
-  color: #786857;
-}
+.preset-label { font-size: 22rpx; font-weight: 700; color: #111; }
 
-.avatar-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-}
+.avatar-actions { display: flex; gap: 12rpx; margin-bottom: 16rpx; }
+.btn-secondary { flex: 1; height: 72rpx; line-height: 72rpx; background: #fff; color: #111; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; }
+.btn-secondary[disabled] { opacity: 0.6; }
 
-.field-label {
-  font-size: 24rpx;
-  color: #241b12;
-  font-weight: 600;
-}
-
-.muted {
-  display: block;
-  font-size: 22rpx;
-  color: #786857;
-  line-height: 1.5;
-}
-
-.avatar-presets {
-  display: flex;
-  gap: 20rpx;
-  margin-bottom: 24rpx;
-  flex-wrap: wrap;
-}
-
-.avatar-preset {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-  padding: 16rpx;
-  border-radius: 12rpx;
-  background: #fff;
-  border: 2rpx solid transparent;
-  transition: all 0.2s;
-}
-
-.avatar-preset.active {
-  border-color: #143f3a;
-  background: #dff5e8;
-}
-
-.preset-label {
-  font-size: 22rpx;
-  color: #241b12;
-}
-
-.avatar-actions {
-  display: flex;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
-}
-
-.btn-secondary {
-  flex: 1;
-  height: 72rpx;
-  line-height: 72rpx;
-  background: #fff;
-  color: #143f3a;
-  border: 2rpx solid #143f3a;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-}
-
-.error-text {
-  display: block;
-  font-size: 24rpx;
-  color: #b85c38;
-  margin-top: 12rpx;
-}
-
-/* Premium visual pass */
-.profile-avatar {
-  background: var(--accent-soft, #efe6d6);
-  border: 2rpx solid rgba(201, 164, 92, 0.42);
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.1);
-}
-
-.avatar-placeholder {
-  color: var(--text-muted, #76695c);
-}
-
-.field-label,
-.preset-label {
-  color: var(--text-main, #201914);
-}
-
-.muted {
-  color: var(--text-muted, #76695c);
-}
-
-.avatar-preset {
-  background: var(--card-soft, #fffaf3);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.avatar-preset.active {
-  background: var(--accent-soft, #efe6d6);
-  border-color: var(--accent, #c9a45c);
-  box-shadow: 0 10rpx 22rpx rgba(32, 25, 20, 0.08);
-}
-
-.btn-secondary {
-  background: rgba(255, 252, 247, 0.92);
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  color: var(--primary, #123c36);
-  border-radius: 14rpx;
-  font-weight: 600;
-}
-
-.error-text {
-  color: var(--risk, #b84a3a);
-}
+.error-text { display: block; font-size: 24rpx; color: #FF5252; margin-top: 12rpx; font-weight: 600; }
 </style>

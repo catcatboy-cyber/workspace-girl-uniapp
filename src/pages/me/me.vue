@@ -1,5 +1,11 @@
 <template>
-  <view class="page" :style="themeVars">
+  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
+    <view class="version-toggle">
+      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
+      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
+    </view>
+
+    <block v-if="!showV2">
     <view class="card hero-card">
       <text class="hero-topline">Me / Settings</text>
       <text class="h1">我的</text>
@@ -329,6 +335,31 @@
         </view>
       </view>
     </view>
+    </block>
+    <!-- /经典版 -->
+
+    <!-- Campus Pop -->
+    <block v-if="showV2">
+      <view class="hero-block-v2"><text class="hero-tag-v2">SETTINGS</text><text class="hero-title-v2">我<text class="hl-v2">的</text></text><text class="hero-copy-v2">管理账号、系统能力说明和个人设置。</text></view>
+      <!-- Account -->
+      <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">关系对象数：{{ caseCount }}</text><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
+      <!-- Profile (moved here) -->
+      <view class="card-v2"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
+      <!-- Token (fixed button) -->
+      <view class="card-v2"><text class="section-title-v2">Token 消费</text><text class="card-text-v2">统计当前账号触发大模型调用后返回的 token 用量。</text><view class="stats-grid-v2"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">总 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出 token</text></view></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="loadTokenUsage">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
+      <!-- Theme picker -->
+      <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
+      <!-- AI style -->
+      <view class="card-v2"><text class="section-title-v2">AI 陪伴风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
+      <view class="card-v2"><text class="section-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
+      <view class="card-v2"><text class="section-title-v2">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
+      <!-- Judgment explanations -->
+      <view class="card-v2"><text class="section-title-v2">判断说明</text><text class="card-text-v2">汇总系统里实际会出现的判断标签。</text>
+        <view v-for="section in explainSections" :key="section.key" class="explain-v2"><view class="explain-head-v2" @click="toggleSection(section.key)"><text class="explain-title-v2">{{ section.label }}</text><text class="explain-arrow-v2">{{ expandedSections[section.key] ? '收起' : '展开' }}</text></view><view v-if="expandedSections[section.key]" class="explain-body-v2"><view v-for="item in section.items" :key="item.label" class="explain-item-v2"><text class="explain-item-title-v2">{{ item.label }}<text v-if="item.range"> · {{ item.range }}</text></text><text class="explain-item-desc-v2">{{ item.description }}</text></view></view></view>
+      </view>
+    </block>
+    <!-- /Campus Pop -->
+
   </view>
 </template>
 
@@ -351,6 +382,7 @@ import {
 import { applyThemeChrome, getCurrentThemeId, getThemeStyle, setCurrentTheme, themeOptions, type ThemeId } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
+const showV2 = ref(true)
 const userEmail = ref('')
 const caseCount = ref(0)
 const selfProfileSummary = ref('还没填写。系统会用它调整措辞、入口推荐和未成年人保护表达。')
@@ -370,6 +402,16 @@ const tokenUsageSummary = ref({
   unavailableCount: 0
 })
 const canSaveAIPersona = computed(() => hasUsableSelfProfile(currentSelfProfile.value) && !aiSaving.value)
+const explainSections = computed(() => [
+  { key: 'intent' as const, label: '意向倾向', items: intentLevels },
+  { key: 'risk' as const, label: '风险等级', items: riskLevels },
+  { key: 'evidence' as const, label: '证据等级与判断把握', items: evidenceLevels },
+  { key: 'status' as const, label: '对象状态标签', items: [...phaseItems, ...stateItems, ...weatherItems] },
+  { key: 'weeklyTrend' as const, label: '周复盘趋势标签', items: weeklyTrendItems },
+  { key: 'action' as const, label: '下一步动作标签', items: nextActionItems },
+  { key: 'problem' as const, label: '问题类型', items: problemItems },
+  { key: 'record' as const, label: '记录与系统标签', items: [...eventTypeItems, ...subjectRoleItems, ...relationTypeItems] }
+])
 const expandedSections = ref({
   intent: false,
   risk: false,
@@ -673,93 +715,92 @@ async function onLogout() {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f4ede2;
-  padding: 24rpx;
+  background: var(--app-bg, #f4ede2);
+  padding: var(--spacing-page, 24rpx);
   box-sizing: border-box;
 }
 
 .card {
-  background: #fbf6ee;
-  border-radius: 20rpx;
-  padding: 32rpx;
+  background: var(--card-bg, #fbf6ee);
+  border-radius: var(--radius-md, 20rpx);
+  padding: var(--spacing-card, 32rpx);
   margin-bottom: 24rpx;
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  box-shadow: var(--shadow-md, 0 16rpx 36rpx rgba(32, 25, 20, 0.06));
 }
 
 .hero-card {
-  background: linear-gradient(135deg, #fbf6ee 0%, #f4ede2 100%);
+  background: linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-color: rgba(201, 164, 92, 0.25);
+  box-shadow: var(--shadow-hero, 0 22rpx 44rpx rgba(18, 60, 54, 0.18));
 }
 
 .hero-topline {
   display: block;
   font-size: 22rpx;
-  color: #786857;
+  color: rgba(255, 252, 247, 0.72);
+  letter-spacing: 3rpx;
 }
 
 .h1 {
   display: block;
   font-size: 40rpx;
-  font-weight: 700;
-  color: #143f3a;
+  font-weight: var(--font-weight-hero, 700);
+  color: var(--primary, #143f3a);
   margin: 8rpx 0;
+  line-height: var(--text-line-height-heading, 1.25);
 }
+
+.hero-card .h1 { color: #fffaf0; }
 
 .h2 {
   display: block;
   font-size: 32rpx;
-  font-weight: 600;
-  color: #241b12;
+  font-weight: var(--font-weight-strong, 600);
+  color: var(--text-main, #241b12);
   margin-bottom: 10rpx;
 }
 
 .h3 {
   display: block;
   font-size: 28rpx;
-  font-weight: 600;
-  color: #241b12;
+  font-weight: var(--font-weight-strong, 600);
+  color: var(--text-main, #241b12);
   margin-top: 12rpx;
 }
 
 .hero-subtext {
   display: block;
   font-size: 26rpx;
-  color: #786857;
-  line-height: 1.6;
+  line-height: var(--text-line-height, 1.6);
 }
+
+.hero-card .hero-subtext { color: rgba(255, 252, 247, 0.76); }
 
 .muted {
   display: block;
   font-size: 24rpx;
-  color: #786857;
+  color: var(--text-muted, #786857);
   margin: 6rpx 0;
-  line-height: 1.6;
+  line-height: var(--text-line-height, 1.6);
 }
 
 .row {
   padding: 16rpx 0;
-  border-top: 2rpx solid #efe7d8;
+  border-top: 2rpx solid var(--accent-soft, #efe7d8);
 }
 
-.row:first-of-type {
-  border-top: 0;
-}
+.row:first-of-type { border-top: 0; }
 
-.row-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
+.row-item { display: flex; flex-direction: column; gap: 8rpx; }
 
 .row-title {
   font-size: 28rpx;
-  font-weight: 600;
-  color: #241b12;
+  font-weight: var(--font-weight-strong, 600);
+  color: var(--text-main, #241b12);
 }
 
-.actions {
-  display: flex;
-  gap: 14rpx;
-  margin-top: 18rpx;
-}
+.actions { display: flex; gap: 14rpx; margin-top: 18rpx; }
 
 .section-head {
   display: flex;
@@ -771,13 +812,14 @@ async function onLogout() {
 .btn-secondary {
   height: 76rpx;
   line-height: 76rpx;
-  background: #fff;
-  color: #143f3a;
-  border: 2rpx solid #143f3a;
-  border-radius: 12rpx;
+  background: var(--card-bg, rgba(255, 252, 247, 0.92));
+  color: var(--primary, #143f3a);
+  border: 1rpx solid rgba(18, 60, 54, 0.25);
+  border-radius: var(--radius-sm, 14rpx);
   font-size: 28rpx;
   padding: 0 24rpx;
   align-self: flex-start;
+  font-weight: var(--font-weight-strong, 600);
 }
 
 .mini-button {
@@ -797,8 +839,8 @@ async function onLogout() {
 
 .token-summary-item {
   padding: 18rpx;
-  border-radius: 14rpx;
-  background: #fff;
+  border-radius: var(--radius-sm, 14rpx);
+  background: var(--card-soft, #fff);
   border: 1rpx solid rgba(20, 63, 58, 0.08);
 }
 
@@ -806,38 +848,28 @@ async function onLogout() {
   display: block;
   font-size: 34rpx;
   font-weight: 750;
-  color: #143f3a;
+  color: var(--primary, #143f3a);
 }
 
-.token-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-top: 18rpx;
-}
+.token-list { display: flex; flex-direction: column; gap: 12rpx; margin-top: 18rpx; }
 
-.token-actions {
-  display: flex;
-}
+.token-actions { display: flex; }
 
 .token-row {
   display: flex;
   justify-content: space-between;
   gap: 16rpx;
   padding: 18rpx;
-  border-radius: 14rpx;
-  background: #fff;
+  border-radius: var(--radius-sm, 14rpx);
+  background: var(--card-soft, #fff);
   border: 1rpx solid rgba(20, 63, 58, 0.08);
 }
 
-.token-counts {
-  min-width: 150rpx;
-  text-align: right;
-}
+.token-counts { min-width: 150rpx; text-align: right; }
 
 .token-total {
   display: block;
-  color: #143f3a;
+  color: var(--primary, #143f3a);
   font-size: 30rpx;
   font-weight: 750;
 }
@@ -846,10 +878,10 @@ async function onLogout() {
   flex: 1;
   height: 80rpx;
   line-height: 80rpx;
-  background: #b85c38;
+  background: var(--risk, #b85c38);
   color: #fff;
   border: none;
-  border-radius: 12rpx;
+  border-radius: var(--radius-sm, 12rpx);
   font-size: 28rpx;
 }
 
@@ -862,7 +894,7 @@ async function onLogout() {
 
 .explain-section {
   margin-top: 16rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm, 16rpx);
   border: 1rpx solid rgba(18, 60, 54, 0.08);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 90rpx),
@@ -893,37 +925,25 @@ async function onLogout() {
   border-top: 1rpx solid rgba(18, 60, 54, 0.07);
 }
 
-.level-item {
-  padding: 14rpx 0;
-}
-
-.level-item.compact {
-  padding: 10rpx 0;
-}
+.level-item { padding: 14rpx 0; }
+.level-item.compact { padding: 10rpx 0; }
 
 .level-title {
   display: block;
   font-size: 26rpx;
-  color: #241b12;
+  color: var(--text-main, #241b12);
   font-weight: 600;
 }
 
-.path-block {
-  margin-top: 14rpx;
-}
+.path-block { margin-top: 14rpx; }
 
-.path-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10rpx;
-  margin: 12rpx 0 8rpx;
-}
+.path-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin: 12rpx 0 8rpx; }
 
 .path-chip {
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
   font-size: 22rpx;
-  color: #143f3a;
+  color: var(--primary, #143f3a);
   background: rgba(18, 60, 54, 0.08);
 }
 
@@ -934,15 +954,15 @@ async function onLogout() {
 
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16rpx;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14rpx;
   margin-top: 14rpx;
 }
 
 .theme-card {
   padding: 14rpx;
-  border-radius: 16rpx;
-  background: rgba(255, 252, 247, 0.8);
+  border-radius: var(--radius-sm, 16rpx);
+  background: var(--card-soft, rgba(255, 252, 247, 0.8));
   border: 1rpx solid rgba(18, 60, 54, 0.08);
 }
 
@@ -985,9 +1005,7 @@ async function onLogout() {
   background: rgba(18, 60, 54, 0.16);
 }
 
-.preview-line.wide {
-  width: 82%;
-}
+.preview-line.wide { width: 82%; }
 
 .preview-button {
   width: 56rpx;
@@ -1001,7 +1019,7 @@ async function onLogout() {
   margin-top: 10rpx;
   font-size: 24rpx;
   font-weight: 600;
-  color: #241b12;
+  color: var(--text-main, #241b12);
 }
 
 .theme-desc {
@@ -1009,7 +1027,7 @@ async function onLogout() {
   margin-top: 4rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: #786857;
+  color: var(--text-muted, #786857);
 }
 
 .persona-grid,
@@ -1019,20 +1037,15 @@ async function onLogout() {
   margin-top: 12rpx;
 }
 
-.persona-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.persona-inline-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
+.persona-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.persona-inline-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .persona-card,
 .persona-inline-card {
   padding: 16rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm, 16rpx);
   border: 1rpx solid rgba(18, 60, 54, 0.08);
-  background: rgba(255, 252, 247, 0.82);
+  background: var(--card-soft, rgba(255, 252, 247, 0.82));
 }
 
 .persona-card.active,
@@ -1046,7 +1059,7 @@ async function onLogout() {
   display: block;
   font-size: 24rpx;
   font-weight: 600;
-  color: #241b12;
+  color: var(--text-main, #241b12);
 }
 
 .persona-desc {
@@ -1054,10 +1067,69 @@ async function onLogout() {
   margin-top: 6rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: #786857;
+  color: var(--text-muted, #786857);
 }
 
-.profile-button {
-  margin-top: 10rpx;
-}
+.profile-button { margin-top: 10rpx; }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
+
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
+.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 6rpx; }
+.v2-mode .card-text-v2.muted { color: #999; font-size: 20rpx; }
+
+.v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 14rpx; }
+.v2-mode .btn-v2-me { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-me.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .btn-v2-me.danger { background: #fff; color: #FF5252; border-color: #FF5252; }
+.v2-mode .btn-v2-me.outline { background: #fff; }
+.v2-mode .btn-v2-me.sm { width: auto; flex: 0; padding: 0 20rpx; height: 52rpx; line-height: 52rpx; font-size: 22rpx; }
+.v2-mode .btn-v2-me[disabled] { opacity: 0.6; }
+
+.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; margin-top: 12rpx; }
+.v2-mode .stat-box-v2 { padding: 16rpx 8rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
+.v2-mode .stat-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 4rpx; }
+
+.v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
+.v2-mode .theme-card-v2 { padding: 14rpx 10rpx; border: 2rpx solid #111; background: #fff; text-align: center; }
+.v2-mode .theme-card-v2.active { background: #111; }
+.v2-mode .theme-dot-v2 { width: 32rpx; height: 32rpx; border-radius: 50%; border: 2rpx solid #111; margin: 0 auto 6rpx; }
+.v2-mode .theme-card-v2.active .theme-dot-v2 { border-color: #FFD93D; }
+.v2-mode .theme-name-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .theme-card-v2.active .theme-name-v2 { color: #FFD93D; }
+.v2-mode .theme-desc-v2 { display: block; font-size: 16rpx; font-weight: 600; color: #999; margin-top: 4rpx; line-height: 1.3; }
+.v2-mode .theme-card-v2.active .theme-desc-v2 { color: rgba(255,255,255,0.5); }
+
+.v2-mode .chip-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-top: 12rpx; }
+.v2-mode .chip-grid-v2.cols3 { grid-template-columns: repeat(3, 1fr); }
+.v2-mode .chip-v2 { padding: 14rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .chip-v2.active { background: #111; }
+.v2-mode .chip-label-v2 { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
+.v2-mode .chip-v2.active .chip-label-v2 { color: #FFD93D; }
+.v2-mode .chip-desc-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 4rpx; line-height: 1.4; }
+.v2-mode .chip-v2.active .chip-desc-v2 { color: rgba(255,255,255,0.6); }
+
+.v2-mode .explain-v2 { margin-top: 14rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .explain-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 18rpx; }
+.v2-mode .explain-title-v2 { font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 18rpx; font-weight: 800; color: #111; }
+.v2-mode .explain-body-v2 { padding: 0 18rpx 18rpx; border-top: 2rpx solid #111; }
+.v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #e0e0e0; }
+.v2-mode .explain-item-v2:last-child { border-bottom: none; }
+.v2-mode .explain-item-title-v2 { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
+.v2-mode .explain-item-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #999; margin-top: 2rpx; line-height: 1.4; }
 </style>

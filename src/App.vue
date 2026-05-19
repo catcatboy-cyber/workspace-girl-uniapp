@@ -8,8 +8,8 @@ onHide(() => { console.log('[app] Hide') })
 
 <style>
 page {
-  background: #f6f1e8;
-  color: #201914;
+  background: var(--app-bg, #f6f1e8);
+  color: var(--text-main, #201914);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
@@ -21,20 +21,24 @@ button::after {
   border: none;
 }
 
+/* ===== Shared card styles (applied by global .page class) ===== */
 .page .card {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0) 150rpx),
-    linear-gradient(135deg, rgba(201, 164, 92, 0.08), rgba(18, 60, 54, 0.025) 52%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(var(--card-gradient-angle, 135deg), var(--accent-soft, rgba(201, 164, 92, 0.08)), rgba(18, 60, 54, 0.025) 52%, rgba(255, 255, 255, 0) 100%),
     var(--card-bg, #fffcf7);
-  border-color: rgba(18, 60, 54, 0.1);
+  border: 1rpx var(--card-border-style, solid) rgba(18, 60, 54, 0.1);
+  border-radius: var(--radius-md, 18rpx);
   box-shadow:
-    0 18rpx 38rpx rgba(32, 25, 20, 0.07),
+    var(--shadow-lg, 0 18rpx 38rpx rgba(32, 25, 20, 0.07)),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.78);
 }
 
 .page .hero-card {
   background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+    linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-radius: var(--radius-md, 18rpx);
+  box-shadow: var(--shadow-hero, 0 22rpx 44rpx rgba(18, 60, 54, 0.18));
 }
 
 .page .card .h2,
@@ -46,7 +50,7 @@ button::after {
 .assessment-form .card .h2 {
   padding-left: 16rpx;
   border-left: 6rpx solid var(--accent, #c9a45c);
-  line-height: 1.35;
+  line-height: var(--text-line-height-heading, 1.35);
 }
 
 .page .hero-card .h2,
@@ -67,14 +71,29 @@ button::after {
     linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 120rpx),
     var(--card-soft, #fffaf3);
   border: 1rpx solid rgba(18, 60, 54, 0.1);
+  border-radius: var(--radius-sm, 12rpx);
   box-shadow:
     inset 0 1rpx 0 rgba(255, 255, 255, 0.85),
-    0 8rpx 18rpx rgba(32, 25, 20, 0.035);
+    var(--shadow-sm, 0 8rpx 18rpx rgba(32, 25, 20, 0.035));
 }
 
 .page .badge,
 .page .pill,
 .assessment-form .toggle-chip {
+  border-radius: var(--radius-sm, 12rpx);
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Typography helpers */
+.page .h1 {
+  font-weight: var(--font-weight-hero, 700);
+  line-height: var(--text-line-height-heading, 1.3);
+}
+.page .h2, .page .h3 {
+  font-weight: var(--font-weight-strong, 600);
+  line-height: var(--text-line-height-heading, 1.35);
+}
+.page .muted {
+  line-height: var(--text-line-height, 1.55);
 }
 </style>

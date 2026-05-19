@@ -1,16 +1,17 @@
 <template>
-  <view class="page" :style="themeVars">
-    <view class="hero-card card">
-      <text class="hero-topline">New Relationship Case</text>
-      <text class="h1">新建一个关系对象</text>
-      <text class="hero-subtext">只有当你要开始判断一个新的对象时，才需要重新填写这份初次评估。已有对象更适合继续追加事件和滚动观察。</text>
-      <view class="actions">
-        <button class="btn-secondary" @click="goHome">返回首页</button>
-        <button class="btn-secondary" @click="goCases">查看已有对象</button>
-      </view>
+  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
+    <view class="version-toggle">
+      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
+      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
     </view>
-
+    <block v-if="!showV2">
+    <view class="hero-card card"><text class="hero-topline">New Relationship Case</text><text class="h1">新建一个关系对象</text><text class="hero-subtext">只有当你要开始判断一个新的对象时，才需要重新填写这份初次评估。已有对象更适合继续追加事件和滚动观察。</text><view class="actions"><button class="btn-secondary" @click="goHome">返回首页</button><button class="btn-secondary" @click="goCases">查看已有对象</button></view></view>
     <AssessmentForm @submit="onSubmit" />
+    </block>
+    <block v-if="showV2">
+    <view class="hero-block-v2"><text class="hero-tag-v2">NEW CASE</text><text class="hero-title-v2">新建<text class="hl-v2">对象</text></text><text class="hero-copy-v2">只有当你要开始判断一个新的对象时，才需要重新填写这份初次评估。已有对象更适合继续追加事件和滚动观察。</text><view class="btn-row-v2"><button class="btn-v2-n" @click="goHome">返回首页</button><button class="btn-v2-n" @click="goCases">查看已有对象</button></view></view>
+    <AssessmentForm @submit="onSubmit" />
+    </block>
   </view>
 </template>
 
@@ -22,6 +23,7 @@ import { setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
+const showV2 = ref(true)
 const themeVars = ref(getThemeStyle())
 
 onShow(() => {
@@ -156,8 +158,21 @@ function goCases() {
     inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
 }
 
-.hero-card {
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-}
+.hero-card { background: linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b)); }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
+
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+
+.v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
+.v2-mode .btn-v2-n { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
 </style>

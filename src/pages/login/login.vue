@@ -1,74 +1,34 @@
 <template>
-  <view class="login-page" :style="themeVars">
+  <view :class="['login-page', showV2 ? 'v2-mode' : '']" :style="themeVars">
+    <view class="version-toggle">
+      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
+      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
+    </view>
     <view class="container">
-      <view class="header">
-        <text class="title">关系评估</text>
-        <text class="subtitle">登录您的账号</text>
-      </view>
+      <block v-if="!showV2">
+      <view class="header"><text class="title">关系评估</text><text class="subtitle">登录您的账号</text></view>
+      <view v-if="isWechatMiniProgram" class="wechat-panel"><button class="btn-primary wechat-btn" open-type="getPhoneNumber" :disabled="wechatLoading" @getphonenumber="handleWechatPhoneLogin"><text>{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</text></button><text class="privacy-note">{{ privacyCopy }}</text><text v-if="wechatErrorMessage" class="wechat-error">{{ wechatErrorMessage }}</text><button class="btn-secondary email-toggle" @click="showEmailLogin = !showEmailLogin">{{ showEmailLogin ? hideEmailCopy : useEmailCopy }}</button></view>
+      <view v-if="showEmailLogin" class="form email-form"><view class="form-item"><input v-model="email" type="text" placeholder="请输入邮箱" placeholder-class="placeholder" @input="clearError" /></view><view class="form-item"><input v-model="password" type="password" placeholder="请输入密码" placeholder-class="placeholder" @input="clearError" /></view><view class="remember-row" @click="toggleRemember"><view :class="['remember-check', rememberLogin ? 'checked' : '']"><text v-if="rememberLogin">✓</text></view><view class="remember-copy"><text class="remember-title">记住邮箱</text><text class="remember-note">仅保存在当前设备，不保存密码。</text></view></view><view v-if="errorMessage" class="error-message">{{ errorMessage }}</view><button class="btn-primary" :disabled="loading" @click="handleLogin">{{ loading ? '登录中...' : '登录' }}</button><view class="footer"><text class="link" @click="goRegister">还没有账号？立即注册</text></view></view>
+      </block>
 
-      <view v-if="isWechatMiniProgram" class="wechat-panel">
-        <button
-          class="btn-primary wechat-btn"
-          open-type="getPhoneNumber"
-          :disabled="wechatLoading"
-          @getphonenumber="handleWechatPhoneLogin"
-        >
-          <text>{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</text>
-        </button>
-        <text class="privacy-note">{{ privacyCopy }}</text>
-        <text v-if="wechatErrorMessage" class="wechat-error">{{ wechatErrorMessage }}</text>
-        <button class="btn-secondary email-toggle" @click="showEmailLogin = !showEmailLogin">
-          {{ showEmailLogin ? hideEmailCopy : useEmailCopy }}
-        </button>
-      </view>
-
-      <view v-if="showEmailLogin" class="form email-form">
-        <view class="form-item">
-          <input
-            v-model="email"
-            type="text"
-            placeholder="请输入邮箱"
-            placeholder-class="placeholder"
-            @input="clearError"
-          />
+      <!-- Campus Pop -->
+      <block v-if="showV2">
+        <view class="header-v2"><text class="title-v2">关系<text class="hl-v2">评估</text></text><text class="subtitle-v2">登录您的账号</text></view>
+        <view v-if="isWechatMiniProgram" class="card-v2">
+          <button class="btn-v2-l primary" open-type="getPhoneNumber" :disabled="wechatLoading" @getphonenumber="handleWechatPhoneLogin">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
+          <text class="privacy-v2">{{ privacyCopy }}</text>
+          <text v-if="wechatErrorMessage" class="error-v2">{{ wechatErrorMessage }}</text>
+          <button class="btn-v2-l" @click="showEmailLogin = !showEmailLogin">{{ showEmailLogin ? hideEmailCopy : useEmailCopy }}</button>
         </view>
-
-        <view class="form-item">
-          <input
-            v-model="password"
-            type="password"
-            placeholder="请输入密码"
-            placeholder-class="placeholder"
-            @input="clearError"
-          />
+        <view v-if="showEmailLogin" class="card-v2">
+          <input v-model="email" type="text" placeholder="请输入邮箱" class="input-v2" @input="clearError" />
+          <input v-model="password" type="password" placeholder="请输入密码" class="input-v2" @input="clearError" style="margin-top:20rpx;" />
+          <view class="remember-v2" @click="toggleRemember"><view :class="['check-v2', rememberLogin ? 'checked' : '']"><text v-if="rememberLogin">✓</text></view><text class="remember-text-v2">记住邮箱</text><text class="remember-note-v2">仅保存在当前设备，不保存密码。</text></view>
+          <view v-if="errorMessage" class="error-v2">{{ errorMessage }}</view>
+          <button class="btn-v2-l primary" :disabled="loading" @click="handleLogin">{{ loading ? '登录中...' : '登录' }}</button>
+          <text class="footer-v2" @click="goRegister">还没有账号？立即注册 →</text>
         </view>
-
-        <view class="remember-row" @click="toggleRemember">
-          <view :class="['remember-check', rememberLogin ? 'checked' : '']">
-            <text v-if="rememberLogin">✓</text>
-          </view>
-          <view class="remember-copy">
-            <text class="remember-title">记住邮箱</text>
-            <text class="remember-note">仅保存在当前设备，不保存密码。</text>
-          </view>
-        </view>
-
-        <view v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </view>
-
-        <button
-          class="btn-primary"
-          :disabled="loading"
-          @click="handleLogin"
-        >
-          {{ loading ? '登录中...' : '登录' }}
-        </button>
-
-        <view class="footer">
-          <text class="link" @click="goRegister">还没有账号？立即注册</text>
-        </view>
-      </view>
+      </block>
     </view>
   </view>
 </template>
@@ -80,6 +40,7 @@ import { login, shouldCompleteSelfProfile, wechatLogin } from '@/utils/api'
 import { resetCloudAuthState } from '@/utils/cloudbase'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
+const showV2 = ref(true)
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -531,8 +492,38 @@ const goRegister = () => {
   box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
 }
 
-.error-message {
-  border: 1rpx solid rgba(184, 74, 58, 0.18);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.55);
-}
+.error-message { border: 1rpx solid rgba(184, 74, 58, 0.18); box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.55); }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
+
+.v2-mode .header-v2 { text-align: left; padding: 40rpx 0 32rpx; }
+.v2-mode .title-v2 { display: block; font-size: 54rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
+.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .subtitle-v2 { display: block; font-size: 28rpx; font-weight: 600; color: #666; margin-top: 10rpx; }
+
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
+
+.v2-mode .btn-v2-l { width: 100%; height: 80rpx; line-height: 80rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 28rpx; font-weight: 800; color: #111; margin-top: 14rpx; }
+.v2-mode .btn-v2-l:first-child { margin-top: 0; }
+.v2-mode .btn-v2-l.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .btn-v2-l[disabled] { opacity: 0.6; }
+
+.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: 22rpx; font-weight: 600; color: #999; text-align: center; line-height: 1.5; }
+.v2-mode .error-v2 { display: block; margin: 0 0 18rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 22rpx; font-weight: 600; color: #FF5252; }
+
+.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 28rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }
+.v2-mode .input-v2::placeholder { color: #ccc; }
+
+.v2-mode .remember-v2 { display: flex; align-items: center; gap: 10rpx; margin: 20rpx 0; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .check-v2 { width: 34rpx; height: 34rpx; line-height: 32rpx; border: 2rpx solid #111; text-align: center; font-size: 22rpx; font-weight: 900; color: #fff; }
+.v2-mode .check-v2.checked { background: #111; }
+.v2-mode .remember-text-v2 { font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .remember-note-v2 { font-size: 18rpx; font-weight: 600; color: #999; margin-left: auto; }
+
+.v2-mode .footer-v2 { display: block; margin-top: 24rpx; text-align: center; font-size: 26rpx; font-weight: 700; color: #111; text-decoration: underline; }
 </style>

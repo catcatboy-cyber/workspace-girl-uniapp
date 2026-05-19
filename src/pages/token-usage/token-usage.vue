@@ -1,46 +1,17 @@
 <template>
-  <view class="page">
-    <view class="card hero-card">
-      <text class="hero-topline">Token Usage</text>
-      <text class="h1">消费明细</text>
-      <text class="hero-subtext">这里展示当前账号最近的大模型调用 token 记录。</text>
-    </view>
-
-    <view class="card">
-      <view class="section-head">
-        <view>
-          <text class="h2">汇总</text>
-          <text class="muted">最近 {{ records.length }} 条记录</text>
-        </view>
-        <button class="btn-secondary mini-button" :disabled="loading" @click="loadData">{{ loading ? '读取中' : '刷新' }}</button>
-      </view>
-      <view class="summary-grid">
-        <view class="summary-item"><text class="summary-number">{{ summary.totalTokens }}</text><text class="muted">总 token</text></view>
-        <view class="summary-item"><text class="summary-number">{{ summary.callCount }}</text><text class="muted">调用次数</text></view>
-        <view class="summary-item"><text class="summary-number">{{ summary.promptTokens }}</text><text class="muted">输入 token</text></view>
-        <view class="summary-item"><text class="summary-number">{{ summary.completionTokens }}</text><text class="muted">输出 token</text></view>
-      </view>
-      <text v-if="summary.unavailableCount" class="muted">有 {{ summary.unavailableCount }} 次模型没有返回 usage，用量按 0 记录。</text>
-    </view>
-
-    <view class="card">
-      <text class="h2">明细</text>
-      <view v-if="records.length > 0" class="usage-list">
-        <view v-for="item in records" :key="item.id" class="usage-row">
-          <view class="usage-main">
-            <text class="row-title">{{ mapFeature(item.feature) }}</text>
-            <text class="muted">{{ item.model || '未知模型' }}</text>
-            <text class="muted">{{ formatDate(item.createdAt) }}</text>
-          </view>
-          <view class="usage-counts">
-            <text class="token-total">{{ item.totalTokens }}</text>
-            <text class="muted">in {{ item.promptTokens }}</text>
-            <text class="muted">out {{ item.completionTokens }}</text>
-          </view>
-        </view>
-      </view>
-      <text v-else class="muted">{{ loading ? '正在读取...' : '暂无 token 消费记录。' }}</text>
-    </view>
+  <view :class="['page', showV2 ? 'v2-mode' : '']">
+    <view class="version-toggle"><view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view><view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view></view>
+    <block v-if="!showV2">
+    <view class="card hero-card"><text class="hero-topline">Token Usage</text><text class="h1">消费明细</text><text class="hero-subtext">这里展示当前账号最近的大模型调用 token 记录。</text></view>
+    <view class="card"><view class="section-head"><view><text class="h2">汇总</text><text class="muted">最近 {{ records.length }} 条记录</text></view><button class="btn-secondary mini-button" :disabled="loading" @click="loadData">{{ loading ? '读取中' : '刷新' }}</button></view><view class="summary-grid"><view class="summary-item"><text class="summary-number">{{ summary.totalTokens }}</text><text class="muted">总 token</text></view><view class="summary-item"><text class="summary-number">{{ summary.callCount }}</text><text class="muted">调用次数</text></view><view class="summary-item"><text class="summary-number">{{ summary.promptTokens }}</text><text class="muted">输入 token</text></view><view class="summary-item"><text class="summary-number">{{ summary.completionTokens }}</text><text class="muted">输出 token</text></view></view><text v-if="summary.unavailableCount" class="muted">有 {{ summary.unavailableCount }} 次模型没有返回 usage，用量按 0 记录。</text></view>
+    <view class="card"><text class="h2">明细</text><view v-if="records.length > 0" class="usage-list"><view v-for="item in records" :key="item.id" class="usage-row"><view class="usage-main"><text class="row-title">{{ mapFeature(item.feature) }}</text><text class="muted">{{ item.model || '未知模型' }}</text><text class="muted">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts"><text class="token-total">{{ item.totalTokens }}</text><text class="muted">in {{ item.promptTokens }}</text><text class="muted">out {{ item.completionTokens }}</text></view></view></view><text v-else class="muted">{{ loading ? '正在读取...' : '暂无 token 消费记录。' }}</text></view>
+    </block>
+    <!-- Campus Pop -->
+    <block v-if="showV2">
+      <view class="hero-block-v2"><text class="hero-tag-v2">TOKEN USAGE</text><text class="hero-title-v2">消费<text class="hl-v2">明细</text></text><text class="hero-copy-v2">当前账号最近的大模型调用 token 记录。</text></view>
+      <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">汇总</text><button class="btn-v2-t sm" :disabled="loading" @click="loadData">{{ loading ? '读取中' : '刷新' }}</button></view><text class="card-text-v2">最近 {{ records.length }} 条记录</text><view class="stats-grid-v2"><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.totalTokens }}</text><text class="stat-lbl-v2">总 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.promptTokens }}</text><text class="stat-lbl-v2">输入 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.completionTokens }}</text><text class="stat-lbl-v2">输出 token</text></view></view><text v-if="summary.unavailableCount" class="card-text-v2 muted">有 {{ summary.unavailableCount }} 次未返回 usage。</text></view>
+      <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature) }}</text><text class="usage-meta-v2">{{ item.model || '未知模型' }} · {{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text class="usage-total-v2">{{ item.totalTokens }}</text><text class="usage-meta-v2">in {{ item.promptTokens }} / out {{ item.completionTokens }}</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
+    </block>
   </view>
 </template>
 
@@ -49,6 +20,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, getTokenUsage } from '@/utils/api'
 
+const showV2 = ref(true)
 const loading = ref(false)
 const summary = ref({ promptTokens: 0, completionTokens: 0, totalTokens: 0, callCount: 0, unavailableCount: 0 })
 const records = ref<Array<any>>([])
@@ -130,4 +102,39 @@ function formatDate(value: string) {
 .usage-main { flex: 1; }
 .usage-counts { min-width: 150rpx; text-align: right; }
 .token-total { font-size: 32rpx; }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
+
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10rpx; }
+.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; }
+.v2-mode .card-text-v2.muted { color: #999; font-size: 20rpx; }
+
+.v2-mode .btn-v2-t { height: 52rpx; line-height: 52rpx; padding: 0 20rpx; background: #fff; border: 2rpx solid #111; font-size: 22rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-t.sm { flex-shrink: 0; }
+
+.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; margin-top: 12rpx; }
+.v2-mode .stat-box-v2 { padding: 16rpx 8rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
+.v2-mode .stat-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 4rpx; }
+
+.v2-mode .usage-list-v2 { display: flex; flex-direction: column; gap: 10rpx; margin-top: 12rpx; }
+.v2-mode .usage-row-v2 { display: flex; justify-content: space-between; align-items: center; gap: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .usage-main-v2 { flex: 1; min-width: 0; }
+.v2-mode .usage-feature-v2 { display: block; font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .usage-meta-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
+.v2-mode .usage-counts-v2 { text-align: right; flex-shrink: 0; }
+.v2-mode .usage-total-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; }
 </style>

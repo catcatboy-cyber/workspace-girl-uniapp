@@ -1,5 +1,12 @@
 <template>
-  <view class="page" :style="themeVars">
+  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
+    <view class="version-toggle">
+      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
+      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
+    </view>
+
+    <!-- ========== 经典版 ========== -->
+    <block v-if="!showV2">
     <view v-if="loading" class="muted center">加载中...</view>
 
     <view v-else-if="!caseFile" class="card">
@@ -486,6 +493,63 @@
         </scroll-view>
       </view>
     </view>
+    </block>
+    <!-- /经典版 -->
+
+    <!-- Campus Pop -->
+    <block v-if="showV2">
+      <view v-if="loading" class="loading-v2">LOADING...</view>
+      <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">时间轴不可用</text><text class="empty-sub-v2">当前对象不存在或已被删除。</text></view>
+      <template v-else>
+        <view class="hero-block-v2"><text class="hero-tag-v2">关系记录 / {{ caseFile.name }}</text><text class="hero-title-v2">互动<text class="hl-v2">时间轴</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
+        <view v-if="classified" :class="['notice-v2', classifiedType === 'risk' ? 'warn' : 'ok']"><text class="notice-title-v2">{{ mapTimelineTypeLabel(classifiedType) }}</text><text class="notice-sub-v2">{{ mapTimelineTypeMessage(classifiedType) }}</text></view>
+        <view v-if="recorded && triggerEvent && latestResult" class="card-v2"><text class="section-title-v2">即时反馈</text><text class="feedback-title-v2">{{ triggerEvent.title }}</text><text class="feedback-desc-v2">{{ latestResult.explanation?.headline }}</text><view class="tag-row-v2"><text v-if="triggerEvent.subjectRole" class="tag-v2">{{ mapSubjectRoleLabel(triggerEvent.subjectRole) }}</text><text class="tag-v2 black">{{ mapTimelineTypeLabel(classifiedType) }}</text><text class="tag-v2">{{ mapAction(latestResult.nextAction) }}</text><text class="tag-v2">证据 {{ latestResult.evidenceLevel }}</text><text v-if="isLatestResultAIReviewed" class="tag-v2 black">AI 研判</text></view><view v-if="triggerImageLinkItems.length > 0" class="attach-v2"><text class="section-title-v2">图片链接</text><view v-for="(item, idx) in triggerImageLinkItems" :key="item.fileID" class="attach-link-v2" @click="previewTriggerImage(idx)"><text class="attach-name-v2">{{ item.name }}</text></view></view><view class="trend-grid-v2" style="margin-top:12rpx;"><view class="trend-item-v2"><text class="trend-num-v2">{{ immediateTrend.intentDelta > 0 ? '+' : '' }}{{ immediateTrend.intentDelta }}</text><text class="trend-unit-v2">意向变化 · 当前 {{ latestResult.intentScore }}</text></view><view class="trend-item-v2"><text class="trend-num-v2 risk">{{ immediateTrend.riskDelta > 0 ? '+' : '' }}{{ immediateTrend.riskDelta }}</text><text class="trend-unit-v2">风险变化 · 当前 {{ latestResult.consistencyRiskScore }}</text></view></view><text class="trend-summary-v2">{{ immediateTrend.summaryText }}</text><text v-if="immediateTrend.warningText" class="trend-warn-v2">{{ immediateTrend.warningText }}</text><view v-if="profileSideRead" class="side-inline-v2"><text class="focus-label-v2">{{ profileSideRead.title }}</text><text class="weekly-desc-v2">{{ profileSideRead.summary }}</text></view><view v-if="latestActionPlanPanel.show" class="action-box-v2"><text class="action-label-v2">你接下来怎么做</text><text v-if="latestActionPlanPanel.missing" class="trend-summary-v2">{{ latestActionPlanPanel.text }}</text><view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item-v2"><text class="action-item-label-v2">{{ item.label }}</text><text class="action-item-text-v2">{{ item.text }}</text></view></view></view></view>
+        <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
+        <view v-if="activeTimelineView === 'events'">
+          <view class="card-v2" style="border-color:#4ECDC4;"><view class="stats-grid-v2"><view v-for="item in timelineStatItems" :key="item.key" class="stat-box-v2"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view><scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view></view>
+          <view class="card-v2"><text class="section-title-v2">关键事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="getAttachmentBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAttachmentBadges(item)" :key="badge" :class="['tag-v2 sm', isImageAttachmentBadge(badge) ? 'clickable' : '']" @click="isImageAttachmentBadge(badge) && previewTimelineImages(item)">{{ badge }}</text></view></view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
+        </view>
+        <view v-if="activeTimelineView === 'assessments'">
+          <view class="card-v2"><view class="stats-grid-v2"><view v-for="item in assessmentStatItems" :key="item.key" class="stat-box-v2"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view><scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in assessmentFilterOptions" :key="item.key" :class="['filter-chip-v2', activeAssessmentFilter === item.key ? 'active' : '']" @click="setAssessmentFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view></view>
+          <view v-if="filteredAssessmentEntries.length > 0" class="event-list-v2">
+            <view v-for="entry in visibleAssessmentEntriesV2" :key="getAssessmentKey(entry.item)" class="event-row-v2">
+              <view class="event-time-v2"><text class="event-date-v2">{{ formatAssessmentAxisDate(entry.item) }}</text><text class="event-clock-v2">{{ formatAssessmentAxisTime(entry.item) }}</text><view class="event-dot-v2 assessment"></view></view>
+              <view class="event-body-v2 assessment-card-v2">
+                <text class="event-title-v2">已记录：{{ getAssessmentTitle(entry.item) }}</text>
+                <view class="tag-row-v2" style="margin:6rpx 0;"><text v-if="hasAIReview(entry.item)" class="tag-v2 black sm">AI 研判</text></view>
+                <text class="event-desc-v2">{{ getAssessmentOriginalRecordText(entry.item) }}</text>
+                <!-- Scores -->
+                <view class="score-block-v2">
+                  <view class="score-row-v2"><text class="score-lbl-v2">意向</text><text class="score-val-v2">{{ clampScore(entry.item.intentScore) }}</text><text class="score-tag-v2">{{ mapIntentLabel(entry.item.intentBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2" :style="'width:' + clampScore(entry.item.intentScore) + '%'"></view></view></view>
+                  <view class="score-row-v2"><text class="score-lbl-v2">风险</text><text class="score-val-v2 risk">{{ clampScore(entry.item.consistencyRiskScore) }}</text><text class="score-tag-v2">{{ mapRiskLabel(entry.item.riskBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2 risk" :style="'width:' + clampScore(entry.item.consistencyRiskScore) + '%'"></view></view></view>
+                </view>
+                <!-- Deltas -->
+                <view class="delta-row-v2"><view class="delta-item-v2"><text class="delta-lbl-v2">意向变化</text><text :class="['delta-val-v2', deltaClass(entry.trend.intentDelta)]">{{ formatDelta(entry.trend.intentDelta) }}</text></view><view class="delta-item-v2"><text class="delta-lbl-v2">风险变化</text><text :class="['delta-val-v2', deltaClass(entry.trend.riskDelta)]">{{ formatDelta(entry.trend.riskDelta) }}</text></view></view>
+                <text v-if="entry.trend.warningText" class="trend-warn-v2">{{ entry.trend.warningText }}</text>
+                <!-- Reason bullets -->
+                <view v-if="getAssessmentReasonBullets(entry.item).length > 0" class="reason-box-v2"><text class="section-title-v2">判断依据</text><text v-for="reason in getAssessmentReasonBullets(entry.item)" :key="reason" class="reason-line-v2">• {{ reason }}</text></view>
+                <!-- Status tags -->
+                <view v-if="assessmentStatusSnapshots[entry.index]" class="status-box-v2">
+                  <view class="status-head-v2"><text class="section-title-v2">当前状态</text><text class="info-icon-v2" @click="openAssessmentStatusInfo(entry.item, assessmentStatusSnapshots[entry.index])">i</text></view>
+                  <view v-if="getAssessmentStatusStateTags(entry.item, assessmentStatusSnapshots[entry.index]).length" class="tag-row-v2"><text v-for="tag in getAssessmentStatusStateTags(entry.item, assessmentStatusSnapshots[entry.index])" :key="tag" class="tag-v2 sm">{{ tag }}</text></view>
+                  <view v-if="getAssessmentProblemTypeTags(entry.item).length" class="tag-row-v2"><text class="tag-v2 muted sm" v-for="tag in getAssessmentProblemTypeTags(entry.item)" :key="tag">{{ tag }}</text></view>
+                </view>
+                <!-- Action plan -->
+                <view v-if="getAssessmentActionPlanPanel(entry.item).show" class="action-box-v2"><text class="action-label-v2">你接下来怎么做</text><text v-if="getAssessmentActionPlanPanel(entry.item).missing" class="trend-summary-v2">{{ getAssessmentActionPlanPanel(entry.item).text }}</text><view v-else><view v-for="item in getAssessmentActionPlanPanel(entry.item).sections" :key="item.label" class="action-item-v2"><text class="action-item-label-v2">{{ item.label }}</text><text class="action-item-text-v2">{{ item.text }}</text></view></view></view>
+                <!-- Image links -->
+                <view v-if="getAssessmentImageLinkItems(entry.item).length > 0" class="attach-v2"><text class="section-title-v2">图片链接</text><view v-for="(link, li) in getAssessmentImageLinkItems(entry.item)" :key="link.fileID" class="attach-link-v2" @click="previewAssessmentImages(entry.item, li)"><text class="attach-name-v2">{{ link.name }}</text></view></view>
+              </view>
+            </view>
+          </view>
+          <view v-if="filteredAssessmentEntries.length > assessmentVisibleMax" class="expand-row-v2"><view class="tag-v2" @click="assessmentVisibleMax = assessmentVisibleMax + 7">加载更多（还有 {{ filteredAssessmentEntries.length - assessmentVisibleMax }} 条）</view></view>
+        </view>
+        <view v-if="activeTimelineView === 'system'" class="card-v2" style="border-style:dashed;"><text class="section-title-v2">系统轨迹 · {{ supportTimeline.length }} 条</text><view v-if="supportTimeline.length === 0" class="empty-sub-v2">还没有系统轨迹。</view><view v-else class="event-list-v2"><view v-for="item in visibleSystemTracksV2" :key="item._id || item.id" class="event-row-v2 system"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>{{ mapSystemTrackTypeLabel(item.type) }}</text><text v-if="item.date">发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title || mapSystemTrackTypeLabel(item.type) }}</text><text v-if="item.description" class="event-desc-v2" user-select>{{ item.description }}</text></view></view></view><view v-if="supportTimeline.length > systemVisibleMax" class="expand-row-v2"><view class="tag-v2" @click="systemVisibleMax = systemVisibleMax + 7">加载更多（还有 {{ supportTimeline.length - systemVisibleMax }} 条）</view></view></view>
+        <view v-if="selectedStatusInfo" class="info-mask-v2" @click="selectedStatusInfo = null"><view class="info-modal-v2" @click.stop><view class="info-head-v2"><text class="info-title-v2">当前状态怎么看</text><text class="info-close-v2" @click="selectedStatusInfo = null">X</text></view><scroll-view scroll-y class="info-body-v2"><view v-if="selectedStatusInfo.summary || selectedStatusInfo.caution" class="info-section-v2 ylw"><text class="info-sec-title-v2">这次状态说明</text><text v-if="selectedStatusInfo.summary" class="info-sec-copy-v2 strong">{{ selectedStatusInfo.summary }}</text><text v-if="selectedStatusInfo.caution" class="info-sec-copy-v2">{{ selectedStatusInfo.caution }}</text></view><view class="info-section-v2"><text class="info-sec-title-v2">状态标签</text><view v-for="item in selectedStatusStateItems" :key="`${item.group}-${item.tag}`" class="info-tag-row-v2"><text class="info-chip-v2">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">{{ item.group }}</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view><view class="info-section-v2"><text class="info-sec-title-v2">问题类型</text><view v-for="item in selectedProblemItems" :key="item.tag" class="info-tag-row-v2"><text class="info-chip-v2 muted">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">问题类型</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view></scroll-view></view></view>
+        <view class="bottom-action-v2"><button class="btn-v2-bottom" @click="goCaseDetail">返回关系主页</button></view>
+      </template>
+    </block>
+    <!-- /Campus Pop -->
+
   </view>
 </template>
 
@@ -500,8 +564,11 @@ import { buildTimelineStats, getTimelineRecordTags, buildObjectStatusCard } from
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
+const showV2 = ref(true)
 const loading = ref(true)
 const caseFile = ref<any>(null)
+const assessmentVisibleMax = ref(7)
+const systemVisibleMax = ref(7)
 const userId = ref('')
 const caseId = ref('')
 const selfProfile = ref<any>(getCachedSelfProfile())
@@ -762,6 +829,8 @@ const filteredAssessmentEntries = computed(() => {
 })
 
 const visibleAssessmentEntries = computed(() => filteredAssessmentEntries.value)
+const visibleAssessmentEntriesV2 = computed(() => filteredAssessmentEntries.value.slice(0, assessmentVisibleMax.value))
+const visibleSystemTracksV2 = computed(() => supportTimeline.value.slice(0, systemVisibleMax.value))
 
 const assessmentStatusSnapshots = computed(() => {
   return assessmentTimeline.value.map((item: any) => {
@@ -1328,76 +1397,52 @@ async function loadData() {
 .page {
   min-height: 100vh;
   box-sizing: border-box;
-  padding: 28rpx;
+  padding: var(--spacing-page, 28rpx);
   background:
     linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 390rpx),
     var(--app-bg, #f6f1e8);
 }
 
-.center {
-  text-align: center;
-  padding: 80rpx 0;
-}
+.center { text-align: center; padding: 80rpx 0; }
 
 .card {
   margin-bottom: 24rpx;
-  padding: 32rpx;
-  border-radius: 18rpx;
+  padding: var(--spacing-card, 32rpx);
+  border-radius: var(--radius-md, 18rpx);
   border: 1rpx solid rgba(18, 60, 54, 0.08);
   background: var(--card-bg, rgba(255, 252, 247, 0.96));
-  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
+  box-shadow: var(--shadow-md, 0 16rpx 36rpx rgba(32, 25, 20, 0.06));
 }
 
 .hero-card {
   position: relative;
   overflow: hidden;
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+  background: linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
   border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
+  box-shadow: var(--shadow-hero, 0 22rpx 44rpx rgba(18, 60, 54, 0.18));
 }
 
-.hero-topline {
-  display: block;
-  color: rgba(255, 252, 247, 0.72);
-  font-size: 22rpx;
-  letter-spacing: 3rpx;
-}
+.hero-topline { display: block; color: rgba(255, 252, 247, 0.72); font-size: 22rpx; letter-spacing: 3rpx; }
 
 .h1 {
-  display: block;
-  margin: 8rpx 0;
+  display: block; margin: 8rpx 0;
   color: var(--text-main, #201914);
-  font-size: 42rpx;
-  font-weight: 700;
-  line-height: 1.25;
+  font-size: 42rpx; font-weight: var(--font-weight-hero, 700);
+  line-height: var(--text-line-height-heading, 1.25);
 }
 
-.hero-card .h1 {
-  color: #fffaf0;
-}
+.hero-card .h1 { color: #fffaf0; }
 
 .h2 {
-  display: block;
-  margin-bottom: 10rpx;
+  display: block; margin-bottom: 10rpx;
   color: var(--text-main, #201914);
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: 32rpx; font-weight: var(--font-weight-strong, 600);
+  line-height: var(--text-line-height-heading, 1.35);
 }
 
-.hero-subtext {
-  display: block;
-  color: rgba(255, 252, 247, 0.76);
-  font-size: 26rpx;
-  line-height: 1.6;
-}
+.hero-subtext { display: block; color: rgba(255, 252, 247, 0.76); font-size: 26rpx; line-height: var(--text-line-height, 1.6); }
 
-.muted {
-  display: block;
-  margin: 6rpx 0;
-  color: var(--text-muted, #76695c);
-  font-size: 24rpx;
-}
+.muted { display: block; margin: 6rpx 0; color: var(--text-muted, #76695c); font-size: 24rpx; line-height: var(--text-line-height, 1.55); }
 
 .badges,
 .feedback-badges {
@@ -1475,16 +1520,16 @@ async function loadData() {
   line-height: 64rpx;
   padding: 0 20rpx;
   border: none;
-  border-radius: 10rpx;
-  background: #143f3a;
+  border-radius: var(--radius-sm, 10rpx);
+  background: var(--primary, #143f3a);
   color: #fff;
   font-size: 24rpx;
 }
 
 .link-button.secondary {
-  border: 2rpx solid #143f3a;
-  background: #fff;
-  color: #143f3a;
+  border: 1rpx solid rgba(18, 60, 54, 0.25);
+  background: var(--card-bg, rgba(255, 252, 247, 0.92));
+  color: var(--primary, #143f3a);
 }
 
 .grid {
@@ -1508,7 +1553,7 @@ async function loadData() {
   min-width: 280rpx;
   padding: 20rpx;
   border: 1rpx solid rgba(18, 60, 54, 0.07);
-  border-radius: 12rpx;
+  border-radius: var(--radius-sm, 12rpx);
   background: var(--card-soft, #fffaf3);
 }
 
@@ -1540,7 +1585,7 @@ async function loadData() {
   gap: 8rpx;
   min-height: 64rpx;
   padding: 0 10rpx;
-  border-radius: 14rpx;
+  border-radius: var(--radius-sm, 14rpx);
   border: 1rpx solid rgba(18, 60, 54, 0.12);
   background: rgba(255, 252, 247, 0.78);
   color: var(--text-muted, #76695c);
@@ -1553,6 +1598,12 @@ async function loadData() {
   background: var(--primary, #123c36);
   color: #fffaf0;
 }
+
+.timeline-view-tab.active .timeline-view-count { background: rgba(255, 252, 247, 0.22); }
+
+.timeline-filter-chip.active { border-color: rgba(18, 60, 54, 0.36); background: var(--primary, #123c36); color: #fffaf0; }
+
+.timeline-filter-chip.active .timeline-filter-count { background: rgba(255, 252, 247, 0.2); }
 
 .timeline-view-count {
   min-width: 32rpx;
@@ -1585,7 +1636,7 @@ async function loadData() {
 .timeline-stat-box {
   min-width: 0;
   padding: 16rpx;
-  border-radius: 14rpx;
+  border-radius: var(--radius-sm, 14rpx);
   border: 1rpx solid rgba(18, 60, 54, 0.07);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 90rpx),
@@ -1625,26 +1676,6 @@ async function loadData() {
   color: var(--text-main, #201914);
   font-size: 23rpx;
   font-weight: 650;
-}
-
-.timeline-filter-chip.active {
-  border-color: rgba(18, 60, 54, 0.36);
-  background: var(--primary, #123c36);
-  color: #fffaf0;
-}
-
-.timeline-filter-count {
-  min-width: 30rpx;
-  height: 30rpx;
-  line-height: 30rpx;
-  border-radius: 999rpx;
-  background: rgba(18, 60, 54, 0.08);
-  text-align: center;
-  font-size: 20rpx;
-}
-
-.timeline-filter-chip.active .timeline-filter-count {
-  background: rgba(255, 252, 247, 0.2);
 }
 
 .trend-number {
@@ -2148,7 +2179,7 @@ async function loadData() {
   gap: 18rpx;
   padding: 18rpx;
   border: 1rpx solid rgba(18, 60, 54, 0.07);
-  border-radius: 14rpx;
+  border-radius: var(--radius-sm, 14rpx);
   background: var(--card-soft, #fffaf3);
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
 }
@@ -2485,7 +2516,146 @@ async function loadData() {
   font-weight: 650;
 }
 
-.system-track-list {
-  margin-top: 22rpx;
-}
+.system-track-list { margin-top: 22rpx; }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
+
+.v2-mode .loading-v2 { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .empty-v2 { padding: 40rpx; border: 3rpx solid #111; background: #fff; margin-bottom: 18rpx; }
+.v2-mode .empty-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
+.v2-mode .empty-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.5; }
+
+.v2-mode .notice-v2 { padding: 20rpx; border: 3rpx solid #111; margin-bottom: 18rpx; }
+.v2-mode .notice-v2.ok { background: #E0FFF0; }
+.v2-mode .notice-v2.warn { background: #FFEEEC; }
+.v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
+.v2-mode .notice-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; }
+
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
+.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .tag-v2.black { background: #111; color: #fff; }
+.v2-mode .tag-v2.sm { min-height: 28rpx; padding: 2rpx 10rpx; font-size: 18rpx; }
+
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+
+.v2-mode .feedback-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1.3; }
+.v2-mode .feedback-desc-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 6rpx; }
+
+.v2-mode .trend-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; }
+.v2-mode .trend-item-v2 { padding: 18rpx; border: 2rpx solid #111; text-align: center; background: #f9f9f9; }
+.v2-mode .trend-num-v2 { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .trend-num-v2.risk { color: #FF5252; }
+.v2-mode .trend-unit-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 4rpx; }
+.v2-mode .trend-summary-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 10rpx; }
+.v2-mode .trend-warn-v2 { display: block; font-size: 22rpx; font-weight: 700; color: #FF5252; margin-top: 6rpx; }
+
+.v2-mode .side-inline-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #FFFBEB; }
+.v2-mode .focus-label-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 1rpx; }
+.v2-mode .weekly-desc-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 4rpx; }
+
+.v2-mode .action-box-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx solid #111; background: #f5f5ff; }
+.v2-mode .action-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
+.v2-mode .action-item-v2 { padding: 10rpx; border: 2rpx solid #111; background: #fff; margin-top: 8rpx; }
+.v2-mode .action-item-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; }
+.v2-mode .action-item-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; margin-top: 4rpx; }
+
+.v2-mode .tab-switch-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8rpx; margin-bottom: 24rpx; }
+.v2-mode .tab-btn-v2 { text-align: center; padding: 16rpx 8rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .tab-btn-v2.active { background: #111; color: #FFD93D; }
+
+.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-bottom: 14rpx; }
+.v2-mode .stat-box-v2 { padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
+.v2-mode .stat-num-v2 { display: block; font-size: 30rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 2rpx; }
+
+.v2-mode .filter-scroll-v2 { width: 100%; margin-top: 8rpx; white-space: nowrap; }
+.v2-mode .filter-row-v2 { display: inline-flex; gap: 8rpx; }
+.v2-mode .filter-chip-v2 { display: inline-flex; align-items: center; min-height: 48rpx; padding: 0 16rpx; border: 2rpx solid #111; background: #fff; font-size: 20rpx; font-weight: 700; color: #111; }
+.v2-mode .filter-chip-v2.active { background: #111; color: #fff; }
+
+.v2-mode .event-list-v2 { display: flex; flex-direction: column; gap: 14rpx; margin-top: 14rpx; }
+.v2-mode .event-row-v2 { display: flex; gap: 14rpx; padding: 18rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .event-row-v2.system { background: #fff; border-style: dashed; }
+.v2-mode .event-time-v2 { display: flex; flex-direction: column; align-items: center; width: 80rpx; flex-shrink: 0; }
+.v2-mode .event-date-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .event-clock-v2 { font-size: 16rpx; font-weight: 600; color: #999; }
+.v2-mode .event-dot-v2 { width: 14rpx; height: 14rpx; border-radius: 50%; margin-top: 6rpx; border: 2rpx solid #111; }
+.v2-mode .event-dot-v2.positive { background: #4ECDC4; }
+.v2-mode .event-dot-v2.risk { background: #FF5252; }
+.v2-mode .event-dot-v2.verification { background: #FFD93D; }
+.v2-mode .event-dot-v2.assessment { background: #111; }
+.v2-mode .event-dot-v2.trend { background: #666; }
+.v2-mode .event-dot-v2.note { background: #ccc; }
+.v2-mode .event-body-v2 { flex: 1; min-width: 0; }
+.v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
+.v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }
+.v2-mode .event-title-v2 { display: block; font-size: 26rpx; font-weight: 800; color: #111; line-height: 1.4; }
+.v2-mode .event-desc-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 4rpx; }
+
+.v2-mode .assessment-card-v2 { background: #fff; padding: 16rpx; border: 2rpx solid #111; }
+.v2-mode .score-block-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .score-row-v2 { display: flex; align-items: center; gap: 8rpx; margin-top: 8rpx; }
+.v2-mode .score-row-v2:first-child { margin-top: 0; }
+.v2-mode .score-lbl-v2 { width: 40rpx; font-size: 18rpx; font-weight: 700; color: #666; }
+.v2-mode .score-val-v2 { width: 44rpx; font-size: 28rpx; font-weight: 900; color: #111; }
+.v2-mode .score-val-v2.risk { color: #FF5252; }
+.v2-mode .score-tag-v2 { font-size: 18rpx; font-weight: 600; color: #999; margin-right: 6rpx; }
+.v2-mode .score-bar-v2 { flex: 1; height: 10rpx; border: 2rpx solid #ccc; background: #fff; }
+.v2-mode .score-fill-v2 { height: 10rpx; background: #111; }
+.v2-mode .score-fill-v2.risk { background: #FF5252; }
+
+.v2-mode .delta-val-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; }
+.v2-mode .delta-val-v2.up { color: #4ECDC4; }
+.v2-mode .delta-val-v2.down { color: #FF5252; }
+.v2-mode .delta-val-v2.flat { color: #999; }
+
+.v2-mode .reason-box-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #FFFBEB; }
+.v2-mode .reason-line-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 2rpx; }
+
+.v2-mode .status-box-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .status-head-v2 { display: flex; align-items: center; gap: 8rpx; margin-bottom: 8rpx; }
+.v2-mode .info-icon-v2 { width: 30rpx; height: 30rpx; line-height: 28rpx; text-align: center; border: 2rpx solid #111; font-size: 18rpx; font-weight: 900; color: #111; }
+.v2-mode .tag-v2.muted { background: #e8e8e8; color: #666; }
+
+.v2-mode .delta-row-v2 { display: flex; gap: 8rpx; }
+.v2-mode .delta-item-v2 { flex: 1; padding: 10rpx; border: 2rpx solid #111; text-align: center; background: #fff; }
+.v2-mode .delta-lbl-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
+
+.v2-mode .expand-row-v2 { margin-top: 12rpx; text-align: center; }
+
+.v2-mode .attach-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #FFFBEB; }
+.v2-mode .attach-link-v2 { padding: 8rpx 0; }
+.v2-mode .attach-name-v2 { font-size: 22rpx; font-weight: 700; color: #111; }
+
+.v2-mode .info-mask-v2 { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }
+.v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: #fff; border: 3rpx solid #111; box-shadow: 10rpx 10rpx 0 #111; }
+.v2-mode .info-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 24rpx; border-bottom: 3rpx solid #111; }
+.v2-mode .info-title-v2 { font-size: 32rpx; font-weight: 900; color: #111; }
+.v2-mode .info-close-v2 { width: 48rpx; height: 48rpx; line-height: 46rpx; text-align: center; border: 2rpx solid #111; font-size: 28rpx; font-weight: 900; color: #111; }
+.v2-mode .info-body-v2 { max-height: 60vh; padding: 20rpx 24rpx 24rpx; box-sizing: border-box; }
+.v2-mode .info-section-v2 { padding: 20rpx; border: 2rpx solid #111; margin-top: 16rpx; }
+.v2-mode .info-section-v2.ylw { background: #FFFBEB; }
+.v2-mode .info-sec-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
+.v2-mode .info-sec-copy-v2 { display: block; font-size: 22rpx; color: #555; line-height: 1.6; margin-top: 6rpx; }
+.v2-mode .info-sec-copy-v2.strong { font-weight: 700; color: #111; }
+.v2-mode .info-tag-row-v2 { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #e8e8e8; }
+.v2-mode .info-chip-v2 { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .info-chip-v2.muted { background: #e8e8e8; }
+.v2-mode .info-chip-copy-v2 { flex: 1; }
+.v2-mode .info-chip-title-v2 { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
+.v2-mode .info-chip-desc-v2 { display: block; font-size: 20rpx; color: #666; line-height: 1.5; margin-top: 4rpx; }
+
+.v2-mode .bottom-action-v2 { text-align: center; margin: 10rpx 0 24rpx; }
+.v2-mode .btn-v2-bottom { display: inline-block; padding: 14rpx 40rpx; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
 </style>

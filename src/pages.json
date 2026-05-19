@@ -107,10 +107,10 @@
 		"backgroundColor": "#F8F8F8"
 	},
 	"tabBar": {
-		"color": "#7A7E83",
-		"selectedColor": "#143f3a",
+		"color": "#999999",
+		"selectedColor": "#111111",
 		"borderStyle": "black",
-		"backgroundColor": "#ffffff",
+		"backgroundColor": "#FFFDF5",
 		"list": [
 			{
 				"pagePath": "pages/index/index",
@@ -121,8 +121,8 @@
 			{
 				"pagePath": "pages/case-detail/case-detail",
 				"text": "关系",
-				"iconPath": "static/tabbar/cases.png",
-				"selectedIconPath": "static/tabbar/cases-active.png"
+				"iconPath": "static/tabbar/relation.png",
+				"selectedIconPath": "static/tabbar/relation-active.png"
 			},
 			{
 				"pagePath": "pages/timeline/timeline",
@@ -133,8 +133,8 @@
 			{
 				"pagePath": "pages/cases/cases",
 				"text": "案例",
-				"iconPath": "static/tabbar/cases.png",
-				"selectedIconPath": "static/tabbar/cases-active.png"
+				"iconPath": "static/tabbar/cases-list.png",
+				"selectedIconPath": "static/tabbar/cases-list-active.png"
 			},
 			{
 				"pagePath": "pages/me/me",

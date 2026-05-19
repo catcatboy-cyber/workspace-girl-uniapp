@@ -1,4 +1,4 @@
-export type ThemeId = 'pine-mist' | 'rose-mist' | 'moon-almond' | 'sea-fog' | 'cocoa-night'
+export type ThemeId = 'campus-pop' | 'sea-salt-lemon' | 'peach-oolong'
 
 export type ThemeOption = {
   id: ThemeId
@@ -6,6 +6,134 @@ export type ThemeOption = {
   description: string
   vars: Record<string, string>
   navText: 'black' | 'white'
+}
+
+// Shared shape variables that define each style's personality beyond color
+type StyleSheet = {
+  '--radius-sm': string
+  '--radius-md': string
+  '--radius-lg': string
+  '--shadow-sm': string
+  '--shadow-md': string
+  '--shadow-lg': string
+  '--shadow-hero': string
+  '--font-weight-normal': string
+  '--font-weight-strong': string
+  '--font-weight-hero': string
+  '--card-border-style': string
+  '--card-gradient-angle': string
+  '--hero-gradient-angle': string
+  '--spacing-page': string
+  '--spacing-card': string
+  '--text-line-height': string
+  '--text-line-height-heading': string
+}
+
+const styleSheets: Record<string, StyleSheet> = {
+  // Styles 1-5: original themes share a classic warm style sheet
+  classic: {
+    '--radius-sm': '12rpx',
+    '--radius-md': '18rpx',
+    '--radius-lg': '24rpx',
+    '--shadow-sm': '0 2rpx 8rpx rgba(0,0,0,0.04)',
+    '--shadow-md': '0 8rpx 24rpx rgba(0,0,0,0.06)',
+    '--shadow-lg': '0 16rpx 36rpx rgba(0,0,0,0.08)',
+    '--shadow-hero': '0 22rpx 44rpx rgba(0,0,0,0.12)',
+    '--font-weight-normal': '400',
+    '--font-weight-strong': '600',
+    '--font-weight-hero': '700',
+    '--card-border-style': 'solid',
+    '--card-gradient-angle': '135deg',
+    '--hero-gradient-angle': '135deg',
+    '--spacing-page': '28rpx',
+    '--spacing-card': '32rpx',
+    '--text-line-height': '1.55',
+    '--text-line-height-heading': '1.3'
+  },
+  // Twin Bloom — soft, rounded, airy
+  soft: {
+    '--radius-sm': '16rpx',
+    '--radius-md': '24rpx',
+    '--radius-lg': '32rpx',
+    '--shadow-sm': '0 4rpx 16rpx rgba(0,0,0,0.03)',
+    '--shadow-md': '0 12rpx 32rpx rgba(0,0,0,0.04)',
+    '--shadow-lg': '0 20rpx 48rpx rgba(0,0,0,0.06)',
+    '--shadow-hero': '0 24rpx 56rpx rgba(0,0,0,0.10)',
+    '--font-weight-normal': '400',
+    '--font-weight-strong': '550',
+    '--font-weight-hero': '650',
+    '--card-border-style': 'solid',
+    '--card-gradient-angle': '160deg',
+    '--hero-gradient-angle': '160deg',
+    '--spacing-page': '32rpx',
+    '--spacing-card': '36rpx',
+    '--text-line-height': '1.65',
+    '--text-line-height-heading': '1.35'
+  },
+  // Tea Mist — minimal, structured, crisp
+  minimal: {
+    '--radius-sm': '4rpx',
+    '--radius-md': '8rpx',
+    '--radius-lg': '12rpx',
+    '--shadow-sm': '0 1rpx 2rpx rgba(0,0,0,0.04)',
+    '--shadow-md': '0 2rpx 6rpx rgba(0,0,0,0.04)',
+    '--shadow-lg': '0 4rpx 12rpx rgba(0,0,0,0.05)',
+    '--shadow-hero': '0 1rpx 4rpx rgba(0,0,0,0.08)',
+    '--font-weight-normal': '400',
+    '--font-weight-strong': '500',
+    '--font-weight-hero': '600',
+    '--card-border-style': 'solid',
+    '--card-gradient-angle': '180deg',
+    '--hero-gradient-angle': '180deg',
+    '--spacing-page': '40rpx',
+    '--spacing-card': '40rpx',
+    '--text-line-height': '1.75',
+    '--text-line-height-heading': '1.4'
+  },
+  // Deep Ink — dark, immersive, glowing
+  dark: {
+    '--radius-sm': '14rpx',
+    '--radius-md': '20rpx',
+    '--radius-lg': '28rpx',
+    '--shadow-sm': '0 2rpx 8rpx rgba(0,0,0,0.20)',
+    '--shadow-md': '0 8rpx 24rpx rgba(0,0,0,0.30)',
+    '--shadow-lg': '0 16rpx 40rpx rgba(0,0,0,0.40)',
+    '--shadow-hero': '0 20rpx 48rpx rgba(0,0,0,0.50), 0 0 40rpx rgba(100,120,220,0.08)',
+    '--font-weight-normal': '400',
+    '--font-weight-strong': '550',
+    '--font-weight-hero': '650',
+    '--card-border-style': 'solid',
+    '--card-gradient-angle': '135deg',
+    '--hero-gradient-angle': '135deg',
+    '--spacing-page': '28rpx',
+    '--spacing-card': '32rpx',
+    '--text-line-height': '1.6',
+    '--text-line-height-heading': '1.3'
+  },
+  // Mint Sugar — playful, bouncy, fresh
+  bouncy: {
+    '--radius-sm': '20rpx',
+    '--radius-md': '28rpx',
+    '--radius-lg': '36rpx',
+    '--shadow-sm': '0 4rpx 12rpx rgba(0,0,0,0.03)',
+    '--shadow-md': '0 10rpx 28rpx rgba(0,0,0,0.05)',
+    '--shadow-lg': '0 18rpx 40rpx rgba(0,0,0,0.06)',
+    '--shadow-hero': '0 22rpx 48rpx rgba(0,0,0,0.08)',
+    '--font-weight-normal': '400',
+    '--font-weight-strong': '600',
+    '--font-weight-hero': '700',
+    '--card-border-style': 'solid',
+    '--card-gradient-angle': '145deg',
+    '--hero-gradient-angle': '145deg',
+    '--spacing-page': '28rpx',
+    '--spacing-card': '32rpx',
+    '--text-line-height': '1.6',
+    '--text-line-height-heading': '1.3'
+  }
+}
+
+function mergeStyleSheet(vars: Record<string, string>, sheet: StyleSheet): Record<string, string> {
+  return { ...vars, ...sheet }
 }
 
 const THEME_STORAGE_KEY = 'uiThemeId'
@@ -19,114 +147,70 @@ const TAB_BAR_PAGES = new Set([
 
 export const themeOptions: ThemeOption[] = [
   {
-    id: 'pine-mist',
-    name: '松雾绿',
-    description: '安静、专业、可信，适合长期使用。',
+    id: 'campus-pop',
+    name: 'Campus Pop',
+    description: '硬边海报风，黑边框粗线条，年轻有活力。',
     navText: 'black',
-    vars: {
-      '--app-bg': '#f6f1e8',
-      '--hero-bg': '#123c36',
-      '--hero-bg-2': '#0f2f2b',
-      '--card-bg': '#fffcf7',
-      '--card-soft': '#fffaf3',
-      '--text-main': '#201914',
-      '--text-muted': '#76695c',
-      '--primary': '#123c36',
-      '--primary-2': '#2f6a5c',
-      '--accent': '#c9a45c',
-      '--accent-soft': '#efe6d6',
-      '--risk': '#b84a3a',
-      '--risk-soft': '#f7dfd8',
-      '--success': '#0f6b45'
-    }
-  },
-  {
-    id: 'rose-mist',
-    name: '玫瑰雾粉',
-    description: '柔和、亲近、有情绪容纳感。',
-    navText: 'black',
-    vars: {
-      '--app-bg': '#faf3f1',
-      '--hero-bg': '#7a3e4d',
-      '--hero-bg-2': '#5d2f3b',
-      '--card-bg': '#fff9f7',
-      '--card-soft': '#fff3f0',
-      '--text-main': '#2a1d1f',
-      '--text-muted': '#806a68',
-      '--primary': '#7a3e4d',
-      '--primary-2': '#9b6070',
-      '--accent': '#c9a1a8',
-      '--accent-soft': '#f0dde0',
-      '--risk': '#a6473d',
-      '--risk-soft': '#f5ded9',
-      '--success': '#5b7d60'
-    }
-  },
-  {
-    id: 'moon-almond',
-    name: '月光米杏',
-    description: '轻盈、温暖、无压力。',
-    navText: 'black',
-    vars: {
-      '--app-bg': '#f8f2e9',
-      '--hero-bg': '#5f5142',
-      '--hero-bg-2': '#473d33',
-      '--card-bg': '#fffcf6',
-      '--card-soft': '#fff7eb',
-      '--text-main': '#241b12',
-      '--text-muted': '#7a6b5c',
-      '--primary': '#5f5142',
-      '--primary-2': '#86715a',
-      '--accent': '#d6b678',
-      '--accent-soft': '#efe2c4',
-      '--risk': '#b76e57',
-      '--risk-soft': '#f4e2da',
-      '--success': '#6d805b'
-    }
-  },
-  {
-    id: 'sea-fog',
-    name: '静海蓝灰',
-    description: '清醒、干净、理性可信。',
-    navText: 'black',
-    vars: {
-      '--app-bg': '#f3f6f5',
-      '--hero-bg': '#254a52',
-      '--hero-bg-2': '#1b373e',
+    vars: mergeStyleSheet({
+      '--app-bg': '#FFFDF5',
+      '--hero-bg': '#FF6B6B',
+      '--hero-bg-2': '#e85d5d',
       '--card-bg': '#ffffff',
-      '--card-soft': '#f7fbfa',
-      '--text-main': '#172426',
-      '--text-muted': '#68797a',
-      '--primary': '#254a52',
-      '--primary-2': '#487078',
-      '--accent': '#afc6c2',
-      '--accent-soft': '#dce8e6',
-      '--risk': '#a85b4a',
-      '--risk-soft': '#f0ded9',
-      '--success': '#43735f'
-    }
+      '--card-soft': '#f9f9f9',
+      '--text-main': '#111111',
+      '--text-muted': '#666666',
+      '--primary': '#111111',
+      '--primary-2': '#4ECDC4',
+      '--accent': '#FFD93D',
+      '--accent-soft': '#FFFBEB',
+      '--risk': '#FF5252',
+      '--risk-soft': '#FFEEEC',
+      '--success': '#4ECDC4'
+    }, styleSheets.bouncy)
   },
   {
-    id: 'cocoa-night',
-    name: '暖夜可可',
-    description: '私密、沉浸，适合夜间记录。',
-    navText: 'white',
-    vars: {
-      '--app-bg': '#211b18',
-      '--hero-bg': '#2b2420',
-      '--hero-bg-2': '#161210',
-      '--card-bg': '#2b2420',
-      '--card-soft': '#342b26',
-      '--text-main': '#fff8ee',
-      '--text-muted': '#cbbba6',
-      '--primary': '#e8d7bd',
-      '--primary-2': '#c9a45c',
-      '--accent': '#c9a45c',
-      '--accent-soft': '#3b3129',
-      '--risk': '#e28b76',
-      '--risk-soft': '#4a302a',
-      '--success': '#9fc6a5'
-    }
+    id: 'sea-salt-lemon',
+    name: '海盐柠檬',
+    description: '清爽蓝白配柠檬黄，干净理性，对比清晰。',
+    navText: 'black',
+    vars: mergeStyleSheet({
+      '--app-bg': '#F4F7FA',
+      '--hero-bg': '#5DADE2',
+      '--hero-bg-2': '#3d8ec8',
+      '--card-bg': '#ffffff',
+      '--card-soft': '#f5f9fc',
+      '--text-main': '#111111',
+      '--text-muted': '#5a7d8e',
+      '--primary': '#2E86C1',
+      '--primary-2': '#3498DB',
+      '--accent': '#F4D03F',
+      '--accent-soft': '#FEF9E7',
+      '--risk': '#E74C3C',
+      '--risk-soft': '#FDEDEC',
+      '--success': '#27AE60'
+    }, styleSheets.bouncy)
+  },
+  {
+    id: 'peach-oolong',
+    name: '蜜桃乌龙',
+    description: '暖蜜桃底配乌龙茶色，温柔日常，有温度。',
+    navText: 'black',
+    vars: mergeStyleSheet({
+      '--app-bg': '#FFF8F2',
+      '--hero-bg': '#D4795E',
+      '--hero-bg-2': '#b86048',
+      '--card-bg': '#ffffff',
+      '--card-soft': '#fdf6f1',
+      '--text-main': '#111111',
+      '--text-muted': '#8b6f60',
+      '--primary': '#D4795E',
+      '--primary-2': '#27AE60',
+      '--accent': '#F0C060',
+      '--accent-soft': '#FEF8EE',
+      '--risk': '#C0392B',
+      '--risk-soft': '#FDEDEC',
+      '--success': '#27AE60'
+    }, styleSheets.bouncy)
   }
 ]
 
@@ -136,7 +220,7 @@ export function getTheme(id?: string | null): ThemeOption {
 
 export function getCurrentThemeId(): ThemeId {
   try {
-    return (uni.getStorageSync(THEME_STORAGE_KEY) as ThemeId) || 'pine-mist'
+    return (uni.getStorageSync(THEME_STORAGE_KEY) as ThemeId) || 'campus-pop'
   } catch {
     return 'pine-mist'
   }
@@ -162,15 +246,11 @@ function isCurrentTabBarPage() {
 
 export function applyThemeChrome(theme = getCurrentTheme()) {
   // #ifdef MP-WEIXIN
-  // Skip runtime chrome APIs on WeChat Mini Program.
-  return
-  // #endif
-  // #ifdef MP-WEIXIN
-  // 微信开发者工具/基础库 3.15.x 偶发在动态原生 chrome API 内部读取空 errMsg。
-  // 小程序端全部使用 pages.json 静态 navigationBar/tabBar 配置，页面色彩由 CSS 变量承接主题。
+  // WeChat base library 3.15.x crashes on dynamic navigationBar/tabBar API.
   return
   // #endif
 
+  // #ifndef MP-WEIXIN
   try {
     uni.setNavigationBarColor({
       frontColor: theme.navText === 'white' ? '#ffffff' : '#000000',
@@ -185,9 +265,10 @@ export function applyThemeChrome(theme = getCurrentTheme()) {
       color: theme.vars['--text-muted'],
       selectedColor: theme.vars['--primary'],
       backgroundColor: theme.vars['--card-bg'],
-      borderStyle: theme.id === 'cocoa-night' ? 'white' : 'black'
+      borderStyle: (theme.id === 'cocoa-night' || theme.id === 'deep-ink') ? 'white' : 'black'
     })
   } catch {}
+  // #endif
 }
 
 export function setCurrentTheme(id: ThemeId) {

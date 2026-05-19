@@ -1,5 +1,13 @@
 <template>
-  <view class="page" :style="themeVars">
+  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
+    <!-- 版本切换 -->
+    <view class="version-toggle">
+      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
+      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
+    </view>
+
+    <!-- ========== 经典版 ========== -->
+    <block v-if="!showV2">
     <view v-if="loading" class="muted center">加载中...</view>
 
     <view v-else-if="!caseFile" class="card">
@@ -352,6 +360,85 @@
       </view>
 
     </template>
+    </block>
+    <!-- /经典版 -->
+
+    <!-- Campus Pop -->
+    <block v-if="showV2">
+      <view v-if="loading" class="loading-v2">LOADING...</view>
+      <view v-else-if="!caseFile" class="empty-v2">
+        <text class="empty-title-v2">结果不可用</text>
+        <text class="empty-sub-v2">当前对象不存在或已被删除。</text>
+      </view>
+      <template v-else>
+        <view v-if="profileUpdated" class="notice-v2 ok"><text class="notice-title-v2">画像已更新</text><text class="notice-sub-v2">对象画像信息已保存。</text></view>
+        <!-- Hero -->
+        <view class="hero-block-v2">
+          <text class="hero-tag-v2">{{ caseFile.name }} / 关系主页</text>
+          <text class="hero-title-v2">{{ result?.explanation?.headline || '暂无评估结果' }}</text>
+          <text class="hero-copy-v2">结构化判断，帮你减少误判，不代表事实裁决。</text>
+          <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">{{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">{{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 研判</text></view>
+        </view>
+        <!-- Profile -->
+        <view class="card-v2">
+          <view class="card-head-v2">
+            <view class="avatar-v2 lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseFile.name) }}</text></view>
+            <view><text class="profile-name-v2">{{ caseFile.name }}</text><text v-if="objectTypeLabel" class="profile-type-v2">{{ objectTypeLabel }}</text></view>
+          </view>
+          <view v-if="objectStatusTags.length" class="tag-row-v2"><text v-for="tag in objectStatusTags" :key="tag" class="tag-v2">{{ tag }}</text></view>
+          <view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view>
+          <!-- Stats grid -->
+          <view v-if="overviewStats.length > 0" class="stats-grid-v2"><view v-for="item in overviewStats" :key="item.key" :class="['stat-box-v2', item.tone === 'risk' ? 'warn' : '']"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text><text class="stat-hint-v2">{{ item.hint }}</text></view></view>
+          <!-- Trend data + dot chart -->
+          <view v-if="trendDataPanel" class="trend-block-v2">
+            <text class="section-title-v2">趋势数据 · 14天</text>
+            <view class="trend-grid-v2">
+              <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.latestIntent }}</text><text class="trend-chg-v2" :class="deltaClass(trendDataPanel.intentDelta14)">{{ formatSignedDelta(trendDataPanel.intentDelta14) }}</text><text class="trend-unit-v2">意向</text></view>
+              <view class="trend-item-v2"><text class="trend-num-v2 risk">{{ trendDataPanel.latestRisk }}</text><text class="trend-chg-v2" :class="deltaClass(-trendDataPanel.riskDelta14)">{{ formatSignedDelta(trendDataPanel.riskDelta14) }}</text><text class="trend-unit-v2">风险</text></view>
+              <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.stability }}%</text><text class="trend-unit-v2">稳定性 · {{ trendDataPanel.sampleCount }}次</text></view>
+              <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.evidenceCount }}</text><text class="trend-unit-v2">证据量 · 14天</text></view>
+            </view>
+            <view v-if="trendDataPanel.tags.length" class="tag-row-v2" style="margin-top:12rpx;"><text v-for="tag in trendDataPanel.tags" :key="tag" class="tag-v2">{{ tag }}</text></view>
+            <!-- Dot chart -->
+            <view v-if="trendDataPanel.points.length > 1" class="dot-chart-v2">
+              <view class="dot-row-v2"><text class="dot-label-v2">意向</text><view class="dot-track-v2"><view v-for="(p, i) in trendDataPanel.points" :key="'i'+i" class="dot-v2" :class="scoreTone(p.intent)" :style="{ left: p.x + '%', bottom: p.intentY + '%' }"></view></view></view>
+              <view class="dot-row-v2"><text class="dot-label-v2">风险</text><view class="dot-track-v2"><view v-for="(p, i) in trendDataPanel.points" :key="'r'+i" class="dot-v2 risk" :class="scoreTone(p.risk)" :style="{ left: p.x + '%', bottom: p.riskY + '%' }"></view></view></view>
+            </view>
+            <!-- Turning points -->
+            <view v-if="trendDataPanel.turningPoints.length > 0" class="turning-v2"><text class="section-title-v2">关键拐点</text><view v-for="tp in trendDataPanel.turningPoints" :key="tp.key" class="turning-row-v2"><text class="turning-name-v2">{{ tp.title }}</text><view class="turning-deltas-v2"><text :class="['delta-chip-v2', deltaClass(tp.intentDelta)]">意 {{ formatSignedDelta(tp.intentDelta) }}</text><text :class="['delta-chip-v2', deltaClass(-tp.riskDelta)]">险 {{ formatSignedDelta(tp.riskDelta) }}</text></view></view></view>
+          </view>
+        </view>
+        <!-- Weekly review -->
+        <view v-if="aiWeeklyPreview" class="card-v2">
+          <text class="section-title-v2">{{ aiWeeklyPreview.weekStart }} - {{ aiWeeklyPreview.weekEnd }}</text>
+          <text class="weekly-title-v2">{{ aiWeeklyPreview.title }}</text>
+          <view class="tag-row-v2" style="margin:10rpx 0;"><text class="tag-v2 black">{{ aiWeeklyPreview.trendLabel }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.phase }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.state }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.weather }}</text><text class="tag-v2 black">AI 研判</text></view>
+          <view class="tag-row-v2" style="margin-bottom:10rpx;"><text class="tag-v2">事件 {{ aiWeeklyPreview.eventCount }}</text><text class="tag-v2">评估 {{ aiWeeklyPreview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(aiWeeklyPreview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(aiWeeklyPreview.riskDelta) }}</text></view>
+          <text class="weekly-desc-v2">{{ aiWeeklyPreview.summary }}</text>
+          <view v-if="aiWeeklyPreview.keyChanges?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.keyChanges" :key="item" class="bullet-v2">• {{ item }}</text></view>
+          <view v-if="aiWeeklyPreview.keyEvents?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.keyEvents" :key="item" class="bullet-v2">• {{ item }}</text></view>
+          <view v-if="aiWeeklyPreview.avoidMisread?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.avoidMisread" :key="item" class="bullet-v2">• {{ item }}</text></view>
+          <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2"><text class="focus-label-v2">后续验证重点 · 最该看</text><text class="focus-question-v2">{{ primaryWeeklyFocus }}</text><view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view></view>
+        </view>
+        <view v-else-if="hasFallbackWeeklyPreview" class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">本周只生成了规则兜底版本，请去周复盘页重新生成 AI 版本。</text></view>
+        <!-- Weekly side read -->
+        <view class="card-v2">
+          <text class="section-title-v2">本周侧写</text>
+          <view v-if="currentWeeklySideRead">
+            <text v-if="currentWeeklySideRead.title" class="weekly-title-v2">{{ currentWeeklySideRead.title }}</text>
+            <text v-if="currentWeeklySideRead.summary" class="weekly-desc-v2">{{ currentWeeklySideRead.summary }}</text>
+            <view v-if="currentWeeklySideRead.sections?.length" class="side-grid-v2"><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2">• {{ item.text }}</text></view></view>
+          </view>
+          <text v-else class="empty-sub-v2">本周侧写还没有生成。</text>
+        </view>
+        <!-- Bottom action: matches original -->
+        <view class="bottom-action-v2">
+          <button class="btn-v2-bottom" @click="goWeeklyReview">{{ weeklyPreview ? '看复盘历史记录' : '去生成本周 AI 复盘' }}</button>
+        </view>
+      </template>
+    </block>
+    <!-- /Campus Pop -->
+
   </view>
 </template>
 
@@ -364,6 +451,7 @@ import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compare
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
+const showV2 = ref(true)
 const loading = ref(true)
 const caseFile = ref<any>(null)
 const userId = ref('')
@@ -850,33 +938,46 @@ function goWeeklyReview() {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: #f4ede2; padding: 24rpx; box-sizing: border-box; }
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 380rpx), var(--app-bg, #f6f1e8);
+  padding: var(--spacing-page, 28rpx);
+  box-sizing: border-box;
+}
 .center { text-align: center; padding: 80rpx 0; }
-.card { background: #fbf6ee; border-radius: 20rpx; padding: 32rpx; margin-bottom: 24rpx; }
-.hero-card { background: linear-gradient(135deg, #fbf6ee 0%, #f4ede2 100%); }
-.hero-topline { display: block; font-size: 22rpx; color: #786857; }
-.h1 { display: block; font-size: 40rpx; font-weight: 700; color: #143f3a; margin: 8rpx 0; }
-.h2 { display: block; font-size: 32rpx; font-weight: 600; color: #241b12; margin-bottom: 10rpx; }
-.hero-subtext { display: block; font-size: 26rpx; color: #786857; line-height: 1.6; margin-top: 8rpx; }
-.muted { display: block; font-size: 24rpx; color: #786857; margin: 6rpx 0; }
+.card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx), linear-gradient(var(--card-gradient-angle, 135deg), var(--accent-soft, rgba(201, 164, 92, 0.1)), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%), var(--card-bg, #fffcf7);
+  border: 1rpx solid rgba(18, 60, 54, 0.08);
+  border-radius: var(--radius-md, 18rpx);
+  padding: var(--spacing-card, 32rpx);
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-lg, 0 18rpx 38rpx rgba(32, 25, 20, 0.075));
+  position: relative;
+  overflow: hidden;
+}
+.hero-card {
+  background: linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+  border-color: rgba(201, 164, 92, 0.25);
+  box-shadow: var(--shadow-hero, 0 22rpx 44rpx rgba(18, 60, 54, 0.18));
+}
+.hero-topline { display: block; font-size: 22rpx; color: rgba(255, 252, 247, 0.72); letter-spacing: 3rpx; }
+.h1 { display: block; font-size: 42rpx; font-weight: var(--font-weight-hero, 700); color: var(--text-main, #201914); margin: 8rpx 0; }
+.hero-card .h1 { color: #fffaf0; line-height: var(--text-line-height-heading, 1.25); }
+.h2 { display: block; font-size: 32rpx; font-weight: var(--font-weight-strong, 700); color: var(--text-main, #201914); margin-bottom: 10rpx; padding-left: 16rpx; border-left: 6rpx solid var(--accent, #c9a45c); line-height: var(--text-line-height-heading, 1.35); }
+.hero-card .h2 { padding-left: 0; border-left: 0; }
+.hero-subtext { display: block; font-size: 26rpx; color: rgba(255, 252, 247, 0.76); line-height: var(--text-line-height, 1.6); margin-top: 8rpx; }
+.muted { display: block; font-size: 24rpx; color: var(--text-muted, #76695c); margin: 6rpx 0; line-height: var(--text-line-height, 1.55); }
 .section-head { margin-bottom: 14rpx; }
 .pills { margin-top: 14rpx; }
-.pill { display: inline-block; padding: 8rpx 18rpx; border-radius: 999rpx; font-size: 22rpx; margin: 4rpx; }
-.pill.good { background: #dff5e8; color: #14633a; }
-.pill.mid { background: #f5e9c8; color: #7a5a14; }
-.pill.bad { background: #f9d8d2; color: #b85c38; }
-.pill.neutral { background: #efe7d8; color: #241b12; }
+.pill { display: inline-block; padding: 8rpx 18rpx; border-radius: 999rpx; font-size: 22rpx; margin: 4rpx; border: 1rpx solid rgba(201, 164, 92, 0.24); }
+.pill.good { background: #e4f3e8; color: #0f6b45; }
+.pill.mid { background: #f3e6c6; color: #7a5a14; }
+.pill.bad { background: #f7dfd8; color: #9a4d36; }
+.pill.neutral { background: var(--accent-soft, #efe7d8); color: var(--text-main, #241b12); }
 .badges { margin: 8rpx 0; }
-.badge { display: inline-block; padding: 8rpx 16rpx; background: #efe7d8; border-radius: 999rpx; font-size: 22rpx; color: #241b12; margin: 4rpx; }
-.badge-primary {
-  background: rgba(18, 60, 54, 0.12);
-  border: 1rpx solid rgba(18, 60, 54, 0.22);
-  color: #123c36;
-  font-weight: 700;
-}
-.badge-soft {
-  background: rgba(201, 164, 92, 0.12);
-}
+.badge { display: inline-block; padding: 8rpx 16rpx; border-radius: 999rpx; font-size: 22rpx; color: var(--text-main, #241b12); margin: 4rpx; border: 1rpx solid rgba(201, 164, 92, 0.24); background: var(--accent-soft, rgba(201, 164, 92, 0.14)); }
+.badge-primary { background: rgba(18, 60, 54, 0.12); border: 1rpx solid rgba(18, 60, 54, 0.22); color: var(--primary, #123c36); font-weight: 700; }
+.badge-soft { background: rgba(201, 164, 92, 0.12); }
 .ai-badge { display: inline-block; padding: 7rpx 14rpx; margin: 4rpx; background: #e7f3ef; border: 1rpx solid rgba(15, 107, 69, 0.22); border-radius: 999rpx; color: #0f6b45; font-size: 21rpx; font-weight: 650; line-height: 1.35; }
 .profile-inline-head {
   display: flex;
@@ -1154,192 +1255,6 @@ function goWeeklyReview() {
   background: rgba(18, 60, 54, 0.06);
 }
 
-/* Premium visual pass */
-.page {
-  background:
-    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 380rpx),
-    var(--app-bg, #f6f1e8);
-  padding: 28rpx;
-}
-
-.card {
-  background: var(--card-bg, rgba(255, 252, 247, 0.96));
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  border-radius: 18rpx;
-  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
-}
-
-.hero-card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
-}
-
-.hero-card::after {
-  content: "";
-  position: absolute;
-  left: 32rpx;
-  right: 32rpx;
-  top: 0;
-  height: 3rpx;
-  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
-}
-
-.hero-topline {
-  color: rgba(255, 252, 247, 0.72);
-  letter-spacing: 3rpx;
-}
-
-.hero-card .h1 {
-  color: #fffaf0;
-  font-size: 42rpx;
-  line-height: 1.25;
-}
-
-.hero-subtext {
-  color: rgba(255, 252, 247, 0.76);
-}
-
-.h1,
-.h2,
-.metric-title,
-.focus-label {
-  color: var(--text-main, #201914);
-}
-
-.muted,
-.case-kpi-label,
-.metric-title,
-.status-label {
-  color: var(--text-muted, #76695c);
-}
-
-.pill,
-.badge,
-.focus-status {
-  border: 1rpx solid rgba(201, 164, 92, 0.24);
-}
-
-.pill.good,
-.score-chip.good,
-.meter-fill.good {
-  background: #e4f3e8;
-  color: #0f6b45;
-}
-
-.pill.mid,
-.score-chip.mid,
-.meter-fill.mid {
-  background: #f3e6c6;
-  color: #7a5a14;
-}
-
-.pill.bad,
-.score-chip.bad,
-.meter-fill.bad {
-  background: #f7dfd8;
-  color: #9a4d36;
-}
-
-.metric-card,
-.info-card,
-.question,
-.trend-box,
-.focus-item {
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
-}
-
-.kpi,
-.case-kpi-value,
-.evidence-display,
-.trend-number {
-  color: var(--primary, #123c36);
-  letter-spacing: 0;
-}
-
-.meter {
-  height: 12rpx;
-  background: #e9dfcf;
-}
-
-.meter-fill {
-  background: linear-gradient(90deg, var(--primary, #123c36), var(--primary-2, #2f6a5c));
-}
-
-.meter.risk .meter-fill,
-.meter-fill.bad {
-  background: linear-gradient(90deg, var(--accent, #c9a45c), var(--risk, #b84a3a));
-}
-
-.advice-box {
-  background: linear-gradient(135deg, rgba(18, 60, 54, 0.08), var(--accent-soft, rgba(201, 164, 92, 0.12)));
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  color: var(--primary, #123c36);
-  border-radius: 16rpx;
-  padding: 22rpx;
-  font-weight: 700;
-}
-
-.link-button,
-.btn-secondary {
-  background: var(--card-bg, rgba(255, 252, 247, 0.92));
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  color: var(--primary, #123c36);
-  border-radius: 14rpx;
-  font-weight: 600;
-}
-
-.btn-danger {
-  background: var(--risk-soft, #fff6f2);
-  border: 1rpx solid rgba(184, 74, 58, 0.35);
-  color: var(--risk, #b84a3a);
-  border-radius: 14rpx;
-}
-
-.profile-avatar {
-  border: 2rpx solid rgba(201, 164, 92, 0.45);
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.1);
-}
-
-.focus-pair-card,
-.focus-board-event,
-.trend-box {
-  background: rgba(255, 252, 247, 0.88);
-}
-
-/* Second visual pass: make analysis cards feel intentionally designed */
-.card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
-    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
-    var(--card-bg, #fffcf7);
-  box-shadow:
-    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
-}
-
-.hero-card {
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-}
-
-.card .h2,
-.card .metric-title {
-  padding-left: 16rpx;
-  border-left: 6rpx solid var(--accent, #c9a45c);
-  line-height: 1.35;
-}
-
-.hero-card .h2 {
-  padding-left: 0;
-  border-left: 0;
-}
 
 .metric-card,
 .info-card,
@@ -2296,7 +2211,99 @@ function goWeeklyReview() {
   margin-bottom: 24rpx;
 }
 
-.preview-actions .link-button {
-  min-width: 240rpx;
-}
+.preview-actions .link-button { min-width: 240rpx; }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
+
+.v2-mode .loading-v2 { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .empty-v2 { padding: 40rpx; border: 3rpx solid #111; background: #fff; margin-bottom: 18rpx; }
+.v2-mode .empty-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
+.v2-mode .empty-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.5; }
+
+.v2-mode .notice-v2 { padding: 20rpx; border: 3rpx solid #111; margin-bottom: 18rpx; }
+.v2-mode .notice-v2.ok { background: #E0FFF0; }
+.v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
+.v2-mode .notice-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; }
+
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -1rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .tag-v2.black { background: #111; color: #fff; }
+
+.v2-mode .profile-block-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .profile-head-v2 { display: flex; align-items: center; gap: 16rpx; margin-bottom: 14rpx; padding-bottom: 16rpx; border-bottom: 3rpx solid #111; }
+.v2-mode .avatar-v2 { width: 68rpx; height: 68rpx; border-radius: 50%; overflow: hidden; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; }
+.v2-mode .avatar-v2.lg { width: 88rpx; height: 88rpx; }
+.v2-mode .avatar-v2 image { width: 100%; height: 100%; }
+.v2-mode .avatar-placeholder-v2 { font-size: 32rpx; font-weight: 900; color: #111; }
+.v2-mode .profile-name-v2 { display: block; font-size: 34rpx; font-weight: 900; color: #111; }
+.v2-mode .profile-type-v2 { display: block; font-size: 22rpx; font-weight: 700; color: #FF5252; margin-top: 2rpx; }
+
+.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-top: 16rpx; }
+.v2-mode .stat-box-v2 { padding: 18rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
+.v2-mode .stat-box-v2.warn { background: #FFF0EE; }
+.v2-mode .stat-num-v2 { display: block; font-size: 36rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .stat-lbl-v2 { display: block; font-size: 20rpx; font-weight: 700; color: #666; margin-top: 4rpx; }
+.v2-mode .stat-hint-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
+
+.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.v2-mode .trend-block-v2 { margin-top: 18rpx; padding-top: 16rpx; border-top: 3rpx solid #111; }
+.v2-mode .trend-grid-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8rpx; }
+.v2-mode .trend-item-v2 { padding: 14rpx 10rpx; border: 2rpx solid #111; text-align: center; background: #fff; }
+.v2-mode .trend-num-v2 { display: block; font-size: 32rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .trend-num-v2.risk { color: #FF5252; }
+.v2-mode .trend-chg-v2 { display: block; font-size: 18rpx; font-weight: 800; margin-top: 2rpx; }
+.v2-mode .trend-chg-v2.positive { color: #4ECDC4; }
+.v2-mode .trend-chg-v2.negative { color: #FF5252; }
+.v2-mode .trend-unit-v2 { display: block; font-size: 16rpx; font-weight: 600; color: #999; margin-top: 4rpx; }
+
+.v2-mode .weekly-block-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .weekly-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1.3; margin-bottom: 8rpx; }
+.v2-mode .weekly-desc-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.6; }
+.v2-mode .bullet-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 4rpx; }
+
+.v2-mode .focus-box-v2 { margin-top: 16rpx; padding: 18rpx; border: 2rpx solid #111; background: #FFFBEB; }
+.v2-mode .focus-label-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 1rpx; }
+.v2-mode .focus-question-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-top: 6rpx; line-height: 1.4; }
+
+.v2-mode .side-block-v2 { padding: 20rpx; border: 2rpx dashed #111; background: #FFFBEB; margin-bottom: 24rpx; }
+
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .card-head-v2 { display: flex; align-items: center; gap: 16rpx; padding-bottom: 16rpx; border-bottom: 3rpx solid #111; margin-bottom: 14rpx; }
+
+.v2-mode .bullet-list-v2 { margin-top: 10rpx; }
+.v2-mode .bullet-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 4rpx; }
+
+.v2-mode .dot-chart-v2 { margin-top: 16rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .dot-row-v2 { display: flex; align-items: center; gap: 12rpx; margin-top: 12rpx; }
+.v2-mode .dot-row-v2:first-child { margin-top: 0; }
+.v2-mode .dot-label-v2 { width: 50rpx; font-size: 18rpx; font-weight: 800; color: #666; }
+.v2-mode .dot-track-v2 { flex: 1; height: 60rpx; position: relative; border-bottom: 2rpx dashed rgba(0,0,0,0.12); }
+.v2-mode .dot-v2 { position: absolute; width: 12rpx; height: 12rpx; border-radius: 50%; background: #111; margin-left: -6rpx; margin-bottom: -6rpx; }
+.v2-mode .dot-v2.risk { background: #FF5252; }
+.v2-mode .dot-v2.high { opacity: 1; }
+.v2-mode .dot-v2.mid { opacity: 0.7; }
+.v2-mode .dot-v2.low { opacity: 0.4; }
+
+.v2-mode .turning-deltas-v2 { display: flex; gap: 6rpx; }
+.v2-mode .delta-chip-v2 { padding: 2rpx 8rpx; border: 1rpx solid #111; font-size: 18rpx; font-weight: 700; }
+.v2-mode .delta-chip-v2.positive { background: #E0FFF0; color: #0F6B45; }
+.v2-mode .delta-chip-v2.negative { background: #FFEEEC; color: #FF5252; }
+.v2-mode .delta-chip-v2.flat { background: #f0f0f0; color: #999; }
+
+.v2-mode .side-grid-v2 { display: flex; flex-direction: column; gap: 10rpx; margin-top: 12rpx; }
+.v2-mode .side-item-v2 { padding: 14rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .side-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 4rpx; }
+.v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
+
+.v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; }
+.v2-mode .btn-v2-bottom { display: inline-block; padding: 14rpx 40rpx; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
 </style>

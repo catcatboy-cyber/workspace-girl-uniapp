@@ -208,221 +208,62 @@ function handleSubmit() {
 </script>
 
 <style scoped>
+/* ===== AssessmentForm — Campus Pop ===== */
 .assessment-form { padding: 0; }
-.card {
-  background: #fbf6ee;
-  border-radius: 20rpx;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
+
+.assessment-form .card {
+  background: #fff; border: 3px solid #111; box-shadow: 6rpx 6rpx 0 #111;
+  padding: 32rpx; margin-bottom: 24rpx; border-radius: 0;
 }
-.h2 {
-  display: block;
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #241b12;
-  margin-bottom: 12rpx;
+.assessment-form .card .h2 { font-size: 32rpx; font-weight: 900; color: #111; text-transform: uppercase; margin-bottom: 16rpx; padding: 0; border: none; }
+
+.assessment-form .field { margin-top: 18rpx; }
+.assessment-form .field-label { display: block; font-size: 24rpx; font-weight: 800; color: #111; margin-bottom: 8rpx; }
+
+.assessment-form .toggle-row { display: flex; gap: 12rpx; margin: 16rpx 0; }
+.assessment-form .toggle-chip { padding: 14rpx 24rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; border-radius: 0; }
+.assessment-form .toggle-chip.active { background: #111; color: #FFD93D; }
+
+.assessment-form .text-input {
+  width: 100%; height: 72rpx; padding: 0 20rpx;
+  border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111;
+  box-sizing: border-box; border-radius: 0;
 }
-.muted {
-  display: block;
-  font-size: 24rpx;
-  color: #786857;
-  margin: 8rpx 0;
+.assessment-form input.text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
+
+.assessment-form .picker-view { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; border-radius: 0; }
+
+.assessment-form .grid { display: flex; flex-direction: column; gap: 14rpx; }
+.assessment-form .questions { display: flex; flex-direction: column; gap: 20rpx; margin-top: 14rpx; }
+.assessment-form .question { background: #fff; border: 3rpx solid #111; padding: 24rpx; border-radius: 0; }
+
+.assessment-form .q-title { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
+
+.assessment-form .options { display: flex; flex-wrap: wrap; gap: 10rpx; }
+.assessment-form .option { padding: 14rpx 22rpx; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 600; color: #111; border-radius: 0; }
+.assessment-form .option.selected { background: #111; color: #FFD93D; }
+
+.assessment-form .muted { display: block; font-size: 22rpx; font-weight: 600; color: #999; margin: 6rpx 0; line-height: 1.5; }
+
+.assessment-form .btn-primary {
+  width: 100%; height: 80rpx; line-height: 80rpx; text-align: center;
+  background: #4ECDC4; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111;
+  font-size: 28rpx; font-weight: 900; color: #111; margin-top: 14rpx;
 }
-.field { margin-top: 20rpx; }
-.field-label {
-  font-size: 26rpx;
-  color: #241b12;
-  margin-bottom: 10rpx;
-}
-.text-input {
-  width: 100%;
-  height: 80rpx;
-  padding: 0 24rpx;
-  background: #fff;
-  border: 2rpx solid #e5ddd0;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  color: #241b12;
-  box-sizing: border-box;
-}
-.text-area {
-  width: 100%;
-  min-height: 160rpx;
-  padding: 20rpx 24rpx;
-  background: #fff;
-  border: 2rpx solid #e5ddd0;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  color: #241b12;
-  box-sizing: border-box;
-}
-.picker-view {
-  height: 80rpx;
-  line-height: 80rpx;
-  padding: 0 24rpx;
-  background: #fff;
-  border: 2rpx solid #e5ddd0;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  color: #241b12;
-}
-.toggle-row {
-  display: flex;
-  gap: 16rpx;
-  margin: 16rpx 0;
-  flex-wrap: wrap;
-}
-.toggle-chip {
-  padding: 16rpx 28rpx;
-  border-radius: 999rpx;
-  background: #fff;
-  border: 2rpx solid #e5ddd0;
-  font-size: 26rpx;
-  color: #241b12;
-}
-.toggle-chip.active {
-  background: #143f3a;
-  color: #fff;
-  border-color: #143f3a;
-}
-.grid { display: flex; flex-direction: column; gap: 16rpx; }
-.questions { display: flex; flex-direction: column; gap: 24rpx; margin-top: 16rpx; }
-.question {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  border: 2rpx solid #efe7d8;
-}
-.q-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #241b12;
-  margin-bottom: 10rpx;
-}
-.options {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-top: 12rpx;
-}
-.option {
-  padding: 18rpx 22rpx;
-  background: #fbf6ee;
-  border: 2rpx solid #e5ddd0;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: #241b12;
-}
-.option.selected {
-  background: #143f3a;
-  color: #fff;
-  border-color: #143f3a;
-}
-.sticky-actions { text-align: center; }
-.btn-primary {
-  width: 100%;
-  height: 88rpx;
-  line-height: 88rpx;
-  background: #143f3a;
-  color: #fff;
-  border: none;
-  border-radius: 12rpx;
-  font-size: 32rpx;
-  font-weight: 600;
+.assessment-form .btn-primary[disabled] { opacity: 0.6; }
+
+.assessment-form .btn-secondary {
+  width: 100%; height: 64rpx; line-height: 64rpx; text-align: center;
+  background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; margin-top: 12rpx;
 }
 
-/* Premium visual pass */
-.card {
-  background: var(--card-bg, rgba(255, 252, 247, 0.96));
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  border-radius: 18rpx;
-  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
-}
+.assessment-form .error-message { margin-top: 14rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 22rpx; font-weight: 600; color: #FF5252; }
 
-.h2,
-.field-label,
-.q-title {
-  color: var(--text-main, #201914);
-}
+.assessment-form .section-head { margin-bottom: 12rpx; }
+.assessment-form .actions { display: flex; gap: 10rpx; margin-top: 14rpx; }
+.assessment-form .actions .btn-primary, .assessment-form .actions .btn-secondary { flex: 1; }
+.assessment-form .profile-avatar { border: 3rpx solid #111; border-radius: 50%; }
 
-.muted {
-  color: var(--text-muted, #76695c);
-}
-
-.text-input,
-.text-area,
-.picker-view,
-.option,
-.toggle-chip {
-  background: var(--card-soft, #fffaf3);
-  border: 1rpx solid rgba(18, 60, 54, 0.12);
-  color: var(--text-main, #201914);
-}
-
-.question {
-  background: var(--card-soft, #fffaf3);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
-}
-
-.toggle-chip.active,
-.option.selected {
-  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: transparent;
-  color: #fffaf0;
-  box-shadow: 0 8rpx 18rpx rgba(18, 60, 54, 0.14);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-radius: 14rpx;
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
-}
-
-/* Second visual pass */
-.card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
-    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
-    var(--card-bg, #fffcf7);
-  box-shadow:
-    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
-}
-
-.h2 {
-  padding-left: 16rpx;
-  border-left: 6rpx solid var(--accent, #c9a45c);
-  line-height: 1.35;
-}
-
-.question {
-  border-radius: 18rpx;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 110rpx),
-    var(--card-soft, #fffaf3);
-}
-
-.q-title {
-  font-size: 29rpx;
-}
-
-.option {
-  border-radius: 14rpx;
-}
-
-.option.selected {
-  box-shadow:
-    0 10rpx 22rpx rgba(18, 60, 54, 0.16),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
-}
-
-.text-area {
-  min-height: 190rpx;
-  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
-}
+.assessment-form .field input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
+.assessment-form .field picker { display: block; }
 </style>

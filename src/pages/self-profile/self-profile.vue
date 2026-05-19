@@ -1,71 +1,26 @@
 <template>
-  <view class="page" :style="themeVars">
-    <view class="card hero-card">
-      <text class="hero-topline">Self Profile</text>
-      <text class="h1">先定一下你的互动模式</text>
-      <text class="hero-subtext">这些信息只用于调整用词、入口推荐和后续分析语气，不会公开展示。</text>
-    </view>
-
-    <view class="card">
-      <text class="h2">基础画像</text>
-
-      <view class="field">
-        <text class="field-label">我是</text>
-        <view class="segmented">
-          <view
-            v-for="item in genderOptions"
-            :key="item.value"
-            :class="['segment', profile.gender === item.value ? 'active' : '']"
-            @click="profile.gender = item.value"
-          >
-            <text>{{ item.label }}</text>
-          </view>
-        </view>
+  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
+    <view class="version-toggle"><view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view><view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view></view>
+    <block v-if="!showV2">
+    <view class="card hero-card"><text class="hero-topline">Self Profile</text><text class="h1">先定一下你的互动模式</text><text class="hero-subtext">这些信息只用于调整用词、入口推荐和后续分析语气，不会公开展示。</text></view>
+    <view class="card"><text class="h2">基础画像</text><view class="field"><text class="field-label">我是</text><view class="segmented"><view v-for="item in genderOptions" :key="item.value" :class="['segment', profile.gender === item.value ? 'active' : '']" @click="profile.gender = item.value"><text>{{ item.label }}</text></view></view></view><view class="field"><text class="field-label">年龄阶段</text><picker :range="ageLabels" :value="ageIndex" @change="onAgeChange"><view class="picker-view">{{ ageLabel }}</view></picker><text v-if="profile.ageRange === 'under18'" class="minor-note">未满 18 岁时，系统会优先使用同学、朋友和边界感相关表达。</text></view><view class="field"><text class="field-label">目前身份</text><picker :range="identityLabels" :value="identityIndex" @change="onIdentityChange"><view class="picker-view">{{ identityLabel }}</view></picker></view></view>
+    <view class="card"><text class="h2">趣味标签</text><text class="muted">属相和星座只作为轻娱乐标签，不参与核心判断。</text><view class="field"><text class="field-label">属相</text><picker :range="zodiacLabels" :value="zodiacIndex" @change="onZodiacChange"><view class="picker-view">{{ zodiacLabel }}</view></picker></view><view class="field"><text class="field-label">星座</text><picker :range="constellationLabels" :value="constellationIndex" @change="onConstellationChange"><view class="picker-view">{{ constellationLabel }}</view></picker></view></view>
+    <view class="card action-card"><button class="btn-primary" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button><button v-if="isOnboarding" class="btn-secondary" :disabled="saving" @click="onSkip">先跳过</button></view>
+    </block>
+    <!-- Campus Pop -->
+    <block v-if="showV2">
+      <view class="hero-block-v2"><text class="hero-tag-v2">SELF PROFILE</text><text class="hero-title-v2">你的<text class="hl-v2">互动模式</text></text><text class="hero-copy-v2">这些信息只用于调整用词和后续分析语气，不会公开展示。</text></view>
+      <view class="card-v2"><text class="section-title-v2">基础画像</text>
+        <view class="field-v2"><text class="field-label-v2">我是</text><view class="segmented-v2"><view v-for="item in genderOptions" :key="item.value" :class="['segment-v2', profile.gender === item.value ? 'active' : '']" @click="profile.gender = item.value">{{ item.label }}</view></view></view>
+        <view class="field-v2"><text class="field-label-v2">年龄阶段</text><picker :range="ageLabels" :value="ageIndex" @change="onAgeChange"><view class="picker-v2">{{ ageLabel }}</view></picker><text v-if="profile.ageRange === 'under18'" class="minor-note-v2">未满 18 岁时，系统会优先使用同学、朋友和边界感相关表达。</text></view>
+        <view class="field-v2"><text class="field-label-v2">目前身份</text><picker :range="identityLabels" :value="identityIndex" @change="onIdentityChange"><view class="picker-v2">{{ identityLabel }}</view></picker></view>
       </view>
-
-      <view class="field">
-        <text class="field-label">年龄阶段</text>
-        <picker :range="ageLabels" :value="ageIndex" @change="onAgeChange">
-          <view class="picker-view">{{ ageLabel }}</view>
-        </picker>
-        <text v-if="profile.ageRange === 'under18'" class="minor-note">未满 18 岁时，系统会优先使用同学、朋友和边界感相关表达。</text>
+      <view class="card-v2"><text class="section-title-v2">趣味标签</text><text class="card-text-v2">属相和星座只作为轻娱乐标签，不参与核心判断。</text>
+        <view class="field-v2"><text class="field-label-v2">属相</text><picker :range="zodiacLabels" :value="zodiacIndex" @change="onZodiacChange"><view class="picker-v2">{{ zodiacLabel }}</view></picker></view>
+        <view class="field-v2"><text class="field-label-v2">星座</text><picker :range="constellationLabels" :value="constellationIndex" @change="onConstellationChange"><view class="picker-v2">{{ constellationLabel }}</view></picker></view>
       </view>
-
-      <view class="field">
-        <text class="field-label">目前身份</text>
-        <picker :range="identityLabels" :value="identityIndex" @change="onIdentityChange">
-          <view class="picker-view">{{ identityLabel }}</view>
-        </picker>
-      </view>
-    </view>
-
-    <view class="card">
-      <text class="h2">趣味标签</text>
-      <text class="muted">属相和星座只作为轻娱乐标签，不参与核心判断。</text>
-
-      <view class="field">
-        <text class="field-label">属相</text>
-        <picker :range="zodiacLabels" :value="zodiacIndex" @change="onZodiacChange">
-          <view class="picker-view">{{ zodiacLabel }}</view>
-        </picker>
-      </view>
-
-      <view class="field">
-        <text class="field-label">星座</text>
-        <picker :range="constellationLabels" :value="constellationIndex" @change="onConstellationChange">
-          <view class="picker-view">{{ constellationLabel }}</view>
-        </picker>
-      </view>
-    </view>
-
-    <view class="card action-card">
-      <button class="btn-primary" :disabled="saving" @click="onSave">
-        {{ saving ? '保存中...' : '保存并进入' }}
-      </button>
-      <button v-if="isOnboarding" class="btn-secondary" :disabled="saving" @click="onSkip">
-        先跳过
-      </button>
-    </view>
+      <view class="card-v2" style="display:flex;flex-direction:column;gap:14rpx;"><button class="btn-v2-sp primary" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button><button v-if="isOnboarding" class="btn-v2-sp" :disabled="saving" @click="onSkip">先跳过</button></view>
+    </block>
   </view>
 </template>
 
@@ -83,6 +38,7 @@ import {
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { showError, showSuccess } from '@/utils/helpers'
 
+const showV2 = ref(true)
 const themeVars = ref(getThemeStyle())
 const saving = ref(false)
 const isOnboarding = ref(false)
@@ -406,8 +362,38 @@ function onSkip() {
   background: rgba(255, 252, 247, 0.92);
 }
 
-.btn-primary::after,
-.btn-secondary::after {
-  border: 0;
-}
+.btn-primary::after, .btn-secondary::after { border: 0; }
+
+/* ===== CAMPUS POP V2 ===== */
+.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
+.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
+.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
+
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
+
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 14rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 10rpx; }
+
+.v2-mode .field-v2 { padding: 20rpx 0; border-bottom: 3rpx solid #e0e0e0; }
+.v2-mode .field-v2:last-child { border-bottom: 0; }
+.v2-mode .field-label-v2 { display: block; font-size: 24rpx; font-weight: 800; color: #111; margin-bottom: 10rpx; }
+
+.v2-mode .segmented-v2 { display: flex; gap: 10rpx; }
+.v2-mode .segment-v2 { flex: 1; height: 68rpx; line-height: 68rpx; text-align: center; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
+.v2-mode .segment-v2.active { background: #111; color: #FFD93D; }
+
+.v2-mode .picker-v2 { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
+
+.v2-mode .minor-note-v2 { display: block; margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #FFFBEB; font-size: 20rpx; font-weight: 600; color: #111; line-height: 1.5; }
+
+.v2-mode .btn-v2-sp { width: 100%; height: 80rpx; line-height: 80rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 28rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-sp.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .btn-v2-sp[disabled] { opacity: 0.6; }
 </style>
