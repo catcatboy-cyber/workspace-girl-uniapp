@@ -96,6 +96,14 @@ exports.main = async (event) => {
       seedFromLegacy: false
     })
 
+    // 首次赠送额度（幂等，不会重复赠送）
+    try {
+      const { grantFirstGift } = require('./_shared/billing')
+      await grantFirstGift(db, userId)
+    } catch (err) {
+      console.warn('grant first gift failed (non-fatal):', err.message)
+    }
+
     // 创建自定义登录票据（7天有效期）
     const ticket = getCustomLoginCredentials() ? await app.auth().createTicket(userId, {
       refresh: 7 * 24 * 60 * 60 * 1000 // 7天（毫秒）

@@ -4,6 +4,8 @@ const https = require('https')
 const { URL } = require('url')
 const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 const { buildPersonaPrompt } = require('./_shared/persona-config')
+const { checkBalance } = require('./_shared/billing')
+const { recordTokenUsage } = require('./_shared/token-usage')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -403,6 +405,12 @@ exports.main = async (event = {}) => {
     })
     if (!messages) {
       return { success: false, message: '后台未配置侧写提示词' }
+    }
+
+    const runtimeConfig = getRuntimeConfig(aiSettings)
+    const balCheck = await checkBalance(db, userId, runtimeConfig.sideReadMaxTokens)
+    if (!balCheck.ok) {
+      return { success: false, message: '余额不足，请充值', code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required }
     }
 
     const response = await postChatCompletions(aiSettings, messages)

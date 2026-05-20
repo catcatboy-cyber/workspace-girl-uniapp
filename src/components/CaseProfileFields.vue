@@ -69,7 +69,10 @@ const emit = defineEmits<{
 
 const relationTypeOptions = [
   { value: 'romantic', label: '恋爱关系' },
-  { value: 'close_friend', label: '亲密友谊' }
+  { value: 'close_friend', label: '友谊' },
+  { value: 'colleague', label: '同事' },
+  { value: 'classmate', label: '同学' },
+  { value: 'teacher', label: '老师' }
 ]
 
 const genderOptions = ['男', '女', '其他']

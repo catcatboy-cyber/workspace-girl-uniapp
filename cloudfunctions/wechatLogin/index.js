@@ -138,6 +138,13 @@ exports.main = async (event = {}) => {
         })
       } else {
         user = await createWechatUser({ openid, phone })
+        // 新用户首次赠送额度
+        try {
+          const { grantFirstGift } = require('./_shared/billing')
+          await grantFirstGift(db, user._id)
+        } catch (err) {
+          console.warn('grant first gift failed (non-fatal):', err.message)
+        }
       }
     }
 

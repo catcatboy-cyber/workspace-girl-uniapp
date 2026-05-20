@@ -104,8 +104,7 @@
               <text class="ai-panel-label">对象状态</text>
               <view class="status-tags">
                 <text class="status-chip">{{ statusSnapshots[index].phase }}</text>
-                <text class="status-chip">{{ statusSnapshots[index].state }}</text>
-                <text class="status-chip">{{ statusSnapshots[index].weather }}</text>
+                <text class="status-chip">{{ statusSnapshots[index].vibe }}</text>
               </view>
             </view>
             <text class="status-summary" user-select>{{ statusSnapshots[index].summary }}</text>
@@ -277,12 +276,11 @@ function mapSourceLabel(source?: string) {
 
 function mapAction(action?: string) {
   switch (action) {
-    case 'observe': return '继续观察'
-    case 'verify': return '先做验证'
+    case 'verify':
+    case 'insufficient_data': return '先做验证'
     case 'clarify': return '适合澄清'
     case 'pause': return '先暂停推进'
-    case 'insufficient_data': return '样本还不够'
-    default: return action || '继续观察'
+    default: return action || '先做验证'
   }
 }
 

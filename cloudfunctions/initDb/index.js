@@ -10,7 +10,10 @@ const COLLECTIONS = [
   'timeline_records',
   'system_settings',
   'weekly_reviews',
-  'token_usage_records'
+  'token_usage_records',
+  'token_accounts',
+  'token_ledger_records',
+  'recharge_orders'
 ]
 
 exports.main = async () => {

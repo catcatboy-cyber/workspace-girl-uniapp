@@ -139,7 +139,10 @@ const emit = defineEmits<{
 
 const relationTypeOptions = [
   { value: 'romantic', label: '恋爱对象' },
-  { value: 'close_friend', label: '亲密朋友' }
+  { value: 'close_friend', label: '朋友' },
+  { value: 'colleague', label: '同事' },
+  { value: 'classmate', label: '同学' },
+  { value: 'teacher', label: '老师' }
 ]
 const genderOptions = ['男', '女', '非二元', '未说明']
 const zodiacOptions = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
@@ -165,7 +168,7 @@ const submitLabel = computed(() => props.submitLabel || '生成评估结果')
 const questionsOnly = computed(() => props.questionsOnly === true)
 
 const relationTypeLabel = computed(() =>
-  relationTypeRef.value === 'close_friend' ? '亲密朋友' : '恋爱对象'
+  relationTypeRef.value === 'close_friend' ? '朋友' : relationTypeRef.value === 'colleague' ? '同事' : relationTypeRef.value === 'classmate' ? '同学' : relationTypeRef.value === 'teacher' ? '老师' : '恋爱对象'
 )
 
 const allQuestions = computed(() => getQuestionsForRelationType(relationTypeRef.value))

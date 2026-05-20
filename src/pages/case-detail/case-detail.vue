@@ -187,8 +187,7 @@
             <view class="preview-chip-row">
               <text class="badge">{{ aiWeeklyPreview.trendLabel }}</text>
               <text v-if="statusCard" class="badge">{{ statusCard.phase }}</text>
-              <text v-if="statusCard" class="badge">{{ statusCard.state }}</text>
-              <text v-if="statusCard" class="badge">{{ statusCard.weather }}</text>
+              <text v-if="statusCard" class="badge">{{ statusCard.vibe }}</text>
               <text class="ai-badge">AI 已参与研判</text>
             </view>
           </view>
@@ -412,7 +411,7 @@
         <view v-if="aiWeeklyPreview" class="card-v2">
           <text class="section-title-v2">{{ aiWeeklyPreview.weekStart }} - {{ aiWeeklyPreview.weekEnd }}</text>
           <text class="weekly-title-v2">{{ aiWeeklyPreview.title }}</text>
-          <view class="tag-row-v2" style="margin:10rpx 0;"><text class="tag-v2 black">{{ aiWeeklyPreview.trendLabel }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.phase }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.state }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.weather }}</text><text class="tag-v2 black">AI 研判</text></view>
+          <view class="tag-row-v2" style="margin:10rpx 0;"><text class="tag-v2 black">{{ aiWeeklyPreview.trendLabel }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.phase }}</text><text v-if="statusCard" class="tag-v2">{{ statusCard.vibe }}</text><text class="tag-v2 black">AI 研判</text></view>
           <view class="tag-row-v2" style="margin-bottom:10rpx;"><text class="tag-v2">事件 {{ aiWeeklyPreview.eventCount }}</text><text class="tag-v2">评估 {{ aiWeeklyPreview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(aiWeeklyPreview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(aiWeeklyPreview.riskDelta) }}</text></view>
           <text class="weekly-desc-v2">{{ aiWeeklyPreview.summary }}</text>
           <view v-if="aiWeeklyPreview.keyChanges?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.keyChanges" :key="item" class="bullet-v2">• {{ item }}</text></view>
@@ -484,7 +483,10 @@ const profileItems = computed(() => {
 
 const objectTypeLabel = computed(() => {
   const relationType = String(caseFile.value?.profile?.relationType || '').trim()
-  if (relationType === 'close_friend') return '亲密朋友'
+  if (relationType === 'close_friend') return '朋友'
+  if (relationType === 'colleague') return '同事'
+  if (relationType === 'classmate') return '同学'
+  if (relationType === 'teacher') return '老师'
   if (relationType === 'romantic') return '恋爱对象'
   return ''
 })
@@ -526,7 +528,7 @@ const statusCard = computed(() => {
 
 const objectStatusTags = computed(() => {
   if (!statusCard.value) return []
-  return [statusCard.value.phase, statusCard.value.state, statusCard.value.weather].filter(Boolean)
+  return [statusCard.value.phase, statusCard.value.vibe].filter(Boolean)
 })
 
 const trend = computed(() => {

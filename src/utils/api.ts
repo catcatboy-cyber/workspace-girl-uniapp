@@ -123,6 +123,30 @@ function getBusinessAuthPayload() {
   return userId ? { userId, authUserId: userId } : {}
 }
 
+/**
+ * 检查云函数返回结果，如果是余额不足则弹窗引导充值。
+ * 在各 AI 调用页面中使用：if (handleInsufficientBalance(result)) return
+ */
+export function handleInsufficientBalance(result: any): boolean {
+  if (result?.code === 'INSUFFICIENT_BALANCE') {
+    const balance = (result.balance || 0).toLocaleString()
+    const required = (result.required || 0).toLocaleString()
+    uni.showModal({
+      title: '额度不足',
+      content: `当前可用 ${balance} token，本次预估消耗 ${required} token。请充值后再试。`,
+      confirmText: '去充值',
+      cancelText: '取消',
+      success(res: any) {
+        if (res.confirm) {
+          uni.navigateTo({ url: '/pages/token-recharge/token-recharge' })
+        }
+      }
+    })
+    return true
+  }
+  return false
+}
+
 async function ensureAnonymousAuth() {
   try {
     const loginState = await auth.getLoginState()
@@ -594,7 +618,69 @@ export async function speechToText(data: {
 export async function getTokenUsage(limit = 50) {
   const res = await callFunction({
     name: 'getTokenUsage',
-    data: { limit }
+    data: { limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function getTokenAccount(action?: string) {
+  const res = await callFunction({
+    name: 'getTokenAccount',
+    data: { action: action || 'getAccount', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function getTokenLedger(limit = 50) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getTokenLedger', targetUserId: getCurrentUserId(), limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function getRechargePlans() {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'getRechargePlans', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function createRechargeOrder(planId: string) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'createRechargeOrder', planId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminConfirmRecharge(orderId: string) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'adminConfirmRecharge', orderId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminManualRecharge(targetUserId: string, amountTokens: number, remark?: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: {
+      action: 'adminManualRecharge',
+      targetUserId,
+      amountTokens,
+      remark: remark || '',
+      ...getBusinessAuthPayload()
+    }
+  })
+  return res.result
+}
+
+export async function adminGetTokenLedger(userId: string, limit = 50) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getTokenLedger', targetUserId: userId, limit, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -735,6 +821,26 @@ export async function adminUpdateAISettings(data: {
     name: 'adminManage',
     data: {
       action: 'updateAISettings',
+      ...getBusinessAuthPayload(),
+      ...data
+    }
+  })
+  return res.result
+}
+
+export async function adminGetBillingSettings() {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getBillingSettings', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminUpdateBillingSettings(data: Record<string, any>) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: {
+      action: 'updateBillingSettings',
       ...getBusinessAuthPayload(),
       ...data
     }

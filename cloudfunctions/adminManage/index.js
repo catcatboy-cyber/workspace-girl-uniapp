@@ -4,6 +4,8 @@ const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
+const BILLING_DOC_ID = 'settings_billing'
+const { ensureBillingSettings } = require('./_shared/billing')
 const PROMPT_MODULE_KEYS = ['eventAssessment', 'eventUnderstanding', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
@@ -1183,6 +1185,126 @@ async function previewPrompt(event) {
   }
 }
 
+async function getBillingSettings(event) {
+  const billing = await ensureBillingSettings(db)
+  return { success: true, billing }
+}
+
+async function updateBillingSettings(event, adminUserId) {
+  const existing = await ensureBillingSettings(db)
+
+  const welcomeTokens = Number(event.welcomeTokens)
+  const tokensPerYuan = Number(event.tokensPerYuan)
+  const rechargeTiers = Array.isArray(event.rechargeTiers) ? event.rechargeTiers : existing.rechargeTiers
+  const modelPricing = Array.isArray(event.modelPricing) ? event.modelPricing : existing.modelPricing
+  const insufficientBalanceMode = String(event.insufficientBalanceMode || existing.insufficientBalanceMode || 'block')
+  const noUsageFallback = String(event.noUsageFallback || existing.noUsageFallback || 'zero')
+
+  if (Number.isNaN(welcomeTokens) || welcomeTokens < 0 || welcomeTokens > 100000000) {
+    return { success: false, message: '首次赠送额度需在 0 ~ 1亿 之间' }
+  }
+  if (Number.isNaN(tokensPerYuan) || tokensPerYuan < 1 || tokensPerYuan > 10000000) {
+    return { success: false, message: '兑换比例需在 1 ~ 1000万 之间' }
+  }
+  if (!['block', 'allow'].includes(insufficientBalanceMode)) {
+    return { success: false, message: '余额不足模式无效' }
+  }
+  if (!['zero', 'fallback', 'fixed'].includes(noUsageFallback)) {
+    return { success: false, message: 'Usage缺失策略无效' }
+  }
+  for (let i = 0; i < rechargeTiers.length; i++) {
+    const t = rechargeTiers[i]
+    if (!t.id || !t.name) return { success: false, message: `充值档位${i + 1}缺少 id 或名称` }
+    const pf = Number(t.priceFen)
+    if (Number.isNaN(pf) || pf < 1 || pf > 1000000) return { success: false, message: `充值档位"${t.name}"价格需在 1分 ~ 1万元 之间` }
+    const bt = Number(t.bonusTokens)
+    if (Number.isNaN(bt) || bt < 0 || bt > 100000000) return { success: false, message: `充值档位"${t.name}"赠送额度需在 0 ~ 1亿 之间` }
+  }
+  for (let i = 0; i < modelPricing.length; i++) {
+    const m = modelPricing[i]
+    if (!m.modelId) return { success: false, message: `模型倍率${i + 1}缺少 modelId` }
+    const cm = Number(m.costMultiplier)
+    if (Number.isNaN(cm) || cm < 0.01 || cm > 1000) return { success: false, message: `模型"${m.modelId}"倍率需在 0.01 ~ 1000 之间` }
+  }
+
+  const now = new Date()
+  const update = {
+    firstGiftEnabled: event.firstGiftEnabled !== undefined ? Boolean(event.firstGiftEnabled) : existing.firstGiftEnabled,
+    welcomeTokens,
+    tokensPerYuan,
+    rechargeTiers: rechargeTiers.map((t, i) => ({
+      id: t.id,
+      name: t.name,
+      priceFen: Number(t.priceFen),
+      bonusTokens: Number(t.bonusTokens),
+      enabled: t.enabled !== false,
+      sortOrder: t.sortOrder != null ? Number(t.sortOrder) : i
+    })),
+    modelPricing: modelPricing.map(m => ({
+      modelId: m.modelId,
+      costMultiplier: Number(m.costMultiplier),
+      enabled: m.enabled !== false
+    })),
+    insufficientBalanceMode,
+    noUsageFallback,
+    updatedAt: now,
+    updatedBy: adminUserId
+  }
+
+  await db.collection('system_settings').doc(existing._id).update(update)
+
+  const { data } = await db.collection('system_settings').doc(existing._id).get()
+  const saved = (data && data.length > 0) ? data[0] : update
+  return { success: true, billing: saved }
+}
+
+async function getTokenLedger(event) {
+  const targetUserId = String(event.targetUserId || '').trim()
+  if (!targetUserId) return { success: false, message: '缺少 targetUserId' }
+  const limit = Math.min(Number(event.limit) || 50, 200)
+  const { data } = await db.collection('token_ledger_records')
+    .where({ userId: targetUserId })
+    .orderBy('createdAt', 'desc')
+    .limit(limit)
+    .get()
+  return { success: true, records: data || [] }
+}
+
+async function adminManualRecharge(event, adminUserId) {
+  const targetUserId = String(event.targetUserId || '').trim()
+  if (!targetUserId) return { success: false, message: '缺少 targetUserId' }
+  const amountTokens = Number(event.amountTokens)
+  if (Number.isNaN(amountTokens) || amountTokens === 0 || amountTokens < -100000000 || amountTokens > 100000000) {
+    return { success: false, message: '额度需在 -1亿 ~ 1亿 之间（不含 0）' }
+  }
+  const isDeduction = amountTokens < 0
+  const remark = String(event.remark || (isDeduction ? '管理员调减额度' : '管理员手动充值')).trim()
+
+  const { ensureTokenAccount } = require('./_shared/billing')
+  const account = await ensureTokenAccount(db, targetUserId)
+  const newBalance = (account.balanceTokens || 0) + amountTokens
+  if (newBalance < 0) return { success: false, message: '扣减后余额不能为负' }
+  const now = new Date()
+
+  await db.collection('token_accounts').doc(account._id).update({
+    balanceTokens: newBalance,
+    purchasedTokens: isDeduction ? (account.purchasedTokens || 0) : (account.purchasedTokens || 0) + amountTokens,
+    updatedAt: now
+  })
+
+  await db.collection('token_ledger_records').add({
+    userId: targetUserId,
+    type: 'adjust',
+    amountTokens,
+    balanceAfter: newBalance,
+    remark: `${remark}（操作人: ${adminUserId}）`,
+    createdAt: now
+  })
+
+  const updatedPurchased = isDeduction ? (account.purchasedTokens || 0) : (account.purchasedTokens || 0) + amountTokens
+  return { success: true, account: { ...account, balanceTokens: newBalance, purchasedTokens: updatedPurchased } }
+}
+
 exports.main = async (event = {}) => {
   try {
     const { userId, user } = await requireAdminUser(event)
@@ -1192,6 +1314,10 @@ exports.main = async (event = {}) => {
     if (action === 'getUserDetail') return await getUserDetail(event)
     if (action === 'updateAISettings') return await updateAISettings(event, userId)
     if (action === 'previewPrompt') return await previewPrompt(event)
+    if (action === 'getBillingSettings') return await getBillingSettings(event)
+    if (action === 'updateBillingSettings') return await updateBillingSettings(event, userId)
+    if (action === 'getTokenLedger') return await getTokenLedger(event)
+    if (action === 'adminManualRecharge') return await adminManualRecharge(event, userId)
 
     return { success: false, message: '未知后台操作' }
   } catch (error) {

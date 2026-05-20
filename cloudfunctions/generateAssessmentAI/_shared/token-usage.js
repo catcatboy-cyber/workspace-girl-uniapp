@@ -36,11 +36,37 @@ async function recordTokenUsage(db, payload = {}) {
 
   try {
     const result = await db.collection(TOKEN_USAGE_COLLECTION).add(doc)
-    return {
+    const usageId = result?.id || result?._id || ''
+    const record = {
       ...doc,
       recordCreated: true,
-      recordId: result?.id || result?._id || ''
+      recordId: usageId,
+      tokensDeducted: 0
     }
+
+    // 额度扣减
+    if (doc.totalTokens > 0) {
+      try {
+        const { chargeTokenUsage } = require('./billing')
+        const chargeResult = await chargeTokenUsage(db, {
+          userId,
+          realTokens: doc.totalTokens,
+          provider: doc.provider,
+          model: doc.model,
+          usageId,
+          feature: doc.feature
+        })
+        record.tokensDeducted = chargeResult?.deducted || 0
+        if (chargeResult?.insufficientBalance) {
+          record.insufficientBalance = true
+          record.balanceAtDeduction = chargeResult.balance
+        }
+      } catch (chargeErr) {
+        console.warn('[token charge failed (non-fatal)]', chargeErr)
+      }
+    }
+
+    return record
   } catch (error) {
     console.error('[token usage record failed]', error)
     return {

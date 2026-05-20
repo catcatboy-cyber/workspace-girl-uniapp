@@ -1199,12 +1199,11 @@ function mapTimelineTypeMessage(type?: string) {
 
 function mapAction(action?: string) {
   switch (action) {
-    case 'observe': return '继续观察'
-    case 'verify': return '先做验证'
+    case 'verify':
+    case 'insufficient_data': return '先做验证'
     case 'clarify': return '适合澄清'
     case 'pause': return '先暂停推进'
-    case 'insufficient_data': return '样本还不够'
-    default: return action || '继续观察'
+    default: return action || '先做验证'
   }
 }
 

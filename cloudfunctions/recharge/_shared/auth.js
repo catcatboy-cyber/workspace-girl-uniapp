@@ -15,7 +15,6 @@ async function requireAuthenticatedUserId(app, event = {}) {
   if (isMpRuntime()) {
     candidates.push(event?.userId)
   }
-  // 非微信小程序环境也接受业务层传来的 userId（邮箱登录等场景）
   if (typeof event?.userId === 'string' && event.userId.trim()) candidates.push(event.userId)
   if (typeof event?.authUserId === 'string' && event.authUserId.trim()) candidates.push(event.authUserId)
   for (const value of candidates) {

@@ -7,6 +7,7 @@ const {
   getAIErrorMessage
 } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
+const { checkBalance } = require('./_shared/billing')
 const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 const { buildPersonaPrompt } = require('./_shared/persona-config')
 
@@ -356,6 +357,11 @@ async function buildAIReview(params) {
   })
   if (!messages) return fallback
 
+  const balCheck = await checkBalance(db, params.userId, runtimeConfig.weeklyMaxTokens)
+  if (!balCheck.ok) {
+    throw Object.assign(new Error('余额不足，请充值'), { code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required })
+  }
+
   try {
     const response = await postChatCompletions({
       provider: settings.provider,
@@ -515,6 +521,11 @@ async function buildAIWeeklySideRead(params) {
     throw new Error('SIDE_READ_PROMPT_DISABLED')
   }
 
+  const balCheck = await checkBalance(db, params.userId, runtimeConfig.sideReadMaxTokens)
+  if (!balCheck.ok) {
+    throw Object.assign(new Error('INSUFFICIENT_BALANCE'), { code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required })
+  }
+
   const response = await postChatCompletions({
     provider: settings.provider,
     apiKey: settings.apiKey,
@@ -630,6 +641,9 @@ exports.main = async (event = {}) => {
     const authError = buildAuthErrorResponse(error)
     if (authError) return authError
 
+    if (error?.code === 'INSUFFICIENT_BALANCE') {
+      return { success: false, message: error.message, code: 'INSUFFICIENT_BALANCE', balance: error.balance, required: error.required }
+    }
     if (error?.message === 'WEEKLY_REVIEW_REQUIRED') {
       return { success: false, message: '请先生成本周复盘' }
     }

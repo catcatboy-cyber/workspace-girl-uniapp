@@ -3,6 +3,7 @@ const cloud = require('wx-server-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
 const { AI_REQUEST_TIMEOUT_MS, postChatCompletions, parseJSONContent } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
+const { checkBalance } = require('./_shared/billing')
 const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -120,6 +121,11 @@ exports.main = async (event = {}) => {
       return { success: true, analysis: { isChatRecord: false, extractedText: '', summary: 'Attachment prompt is disabled in admin.', confidence: 'low' } }
     }
     const prompt = promptMessages.map((item) => item.content).join('\n\n')
+
+    const balCheck = await checkBalance(db, userId, runtimeConfig.attachmentMaxTokens)
+    if (!balCheck.ok) {
+      return { success: false, message: '余额不足，请充值', code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required }
+    }
 
     const response = await postChatCompletions({
       provider: settings.provider,

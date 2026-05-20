@@ -25,8 +25,8 @@
     <view class="card">
       <view class="section-head">
         <view>
-          <text class="h2">我的 token 消费</text>
-          <text class="muted">统计当前账号触发大模型调用后返回的 token 用量。</text>
+          <text class="h2">Token 额度</text>
+          <text class="muted">可用 {{ tokenBalance.toLocaleString() }} · 累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text>
         </view>
         <button class="btn-secondary mini-button" :disabled="tokenUsageLoading" @click="loadTokenUsage">
           {{ tokenUsageLoading ? '读取中' : '刷新' }}
@@ -35,7 +35,7 @@
       <view class="token-summary-grid">
         <view class="token-summary-item">
           <text class="token-number">{{ tokenUsageSummary.totalTokens }}</text>
-          <text class="muted">总 token</text>
+          <text class="muted">模型 token</text>
         </view>
         <view class="token-summary-item">
           <text class="token-number">{{ tokenUsageSummary.callCount }}</text>
@@ -43,15 +43,16 @@
         </view>
         <view class="token-summary-item">
           <text class="token-number">{{ tokenUsageSummary.promptTokens }}</text>
-          <text class="muted">输入 token</text>
+          <text class="muted">输入</text>
         </view>
         <view class="token-summary-item">
           <text class="token-number">{{ tokenUsageSummary.completionTokens }}</text>
-          <text class="muted">输出 token</text>
+          <text class="muted">输出</text>
         </view>
       </view>
-      <text v-if="tokenUsageSummary.unavailableCount" class="muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用的模型没有返回 usage，用量按 0 记录。</text>
+      <text v-if="tokenUsageSummary.unavailableCount" class="muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text>
       <view class="actions token-actions">
+        <button class="btn-secondary" @click="goRecharge">充值</button>
         <button class="btn-secondary" @click="goTokenUsage">查看消费明细</button>
       </view>
     </view>
@@ -204,7 +205,7 @@
         <view class="explain-head" @click="toggleSection('status')">
           <view>
             <text class="row-title">对象状态标签</text>
-            <text class="muted">首页、关系页、时间轴里的阶段 / 状态 / 天气标签。</text>
+            <text class="muted">首页、关系页、时间轴里的阶段 / 体感标签。</text>
           </view>
           <text class="expand-mark">{{ expandedSections.status ? '收起' : '展开' }}</text>
         </view>
@@ -221,22 +222,11 @@
           </view>
 
           <view class="path-block">
-            <text class="h3">状态</text>
+            <text class="h3">体感</text>
             <view class="path-row">
-              <text v-for="item in stateItems" :key="item.label" class="path-chip">{{ item.label }}</text>
+              <text v-for="item in vibeItems" :key="item.label" class="path-chip weather">{{ item.label }}</text>
             </view>
-            <view v-for="item in stateItems" :key="`${item.label}-desc`" class="level-item compact">
-              <text class="level-title">{{ item.label }}</text>
-              <text class="muted">{{ item.description }}</text>
-            </view>
-          </view>
-
-          <view class="path-block">
-            <text class="h3">天气</text>
-            <view class="path-row">
-              <text v-for="item in weatherItems" :key="item.label" class="path-chip weather">{{ item.label }}</text>
-            </view>
-            <view v-for="item in weatherItems" :key="`${item.label}-desc`" class="level-item compact">
+            <view v-for="item in vibeItems" :key="`${item.label}-desc`" class="level-item compact">
               <text class="level-title">{{ item.label }}</text>
               <text class="muted">{{ item.description }}</text>
             </view>
@@ -346,7 +336,7 @@
       <!-- Profile (moved here) -->
       <view class="card-v2"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Token (fixed button) -->
-      <view class="card-v2"><text class="section-title-v2">Token 消费</text><text class="card-text-v2">统计当前账号触发大模型调用后返回的 token 用量。</text><view class="stats-grid-v2"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">总 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出 token</text></view></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="loadTokenUsage">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
+      <view class="card-v2"><text class="section-title-v2">Token 额度</text><view class="balance-hero-v2"><text class="balance-num-v2">{{ tokenBalance.toLocaleString() }}</text><text class="balance-unit-v2">可用额度</text></view><view class="balance-sub-row-v2"><text class="card-text-v2">累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text></view><view class="stats-grid-v2" style="margin-top:16rpx;"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">模型 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出</text></view></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" @click="goRecharge">充值</button><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="loadTokenUsage">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
       <!-- AI style -->
@@ -371,6 +361,7 @@ import {
   getCases,
   getCurrentUserId,
   getSelfProfile,
+  getTokenAccount,
   getTokenUsage,
   hasUsableSelfProfile,
   logout,
@@ -401,12 +392,16 @@ const tokenUsageSummary = ref({
   callCount: 0,
   unavailableCount: 0
 })
+const tokenBalance = ref(0)
+const tokenGiftedTotal = ref(0)
+const tokenConsumedTotal = ref(0)
+const tokenBalanceLoading = ref(false)
 const canSaveAIPersona = computed(() => hasUsableSelfProfile(currentSelfProfile.value) && !aiSaving.value)
 const explainSections = computed(() => [
   { key: 'intent' as const, label: '意向倾向', items: intentLevels },
   { key: 'risk' as const, label: '风险等级', items: riskLevels },
   { key: 'evidence' as const, label: '证据等级与判断把握', items: evidenceLevels },
-  { key: 'status' as const, label: '对象状态标签', items: [...phaseItems, ...stateItems, ...weatherItems] },
+  { key: 'status' as const, label: '对象状态标签', items: [...phaseItems, ...vibeItems] },
   { key: 'weeklyTrend' as const, label: '周复盘趋势标签', items: weeklyTrendItems },
   { key: 'action' as const, label: '下一步动作标签', items: nextActionItems },
   { key: 'problem' as const, label: '问题类型', items: problemItems },
@@ -474,48 +469,33 @@ const evidenceLevels = [
 ]
 
 const phaseItems = [
-  { label: '试探期', description: '证据还薄，很多感觉仍需要更多事实支撑。' },
-  { label: '观察期', description: '样本还不够稳，当前重点是继续看后续动作是否持续。' },
-  { label: '升温期', description: '整体信号在往前走，但仍要看能不能持续兑现。' },
-  { label: '验证期', description: '更适合核实承诺、身份、说法或安排是否真的落地。' },
-  { label: '拉扯期', description: '既有热度也有不稳，不能只抓某一次好的感觉。' },
-  { label: '降温期', description: '继续加码投入的收益偏低，先看对方会不会补动作。' }
+  { label: '试探期', description: '证据还薄，对方或你们还在互相试探阶段，很多感受都需要更多事实来支撑。不适合下重结论。' },
+  { label: '升温期', description: '整体信号在往前走，但真正有效的升温还是要看连续兑现，而不是单次高点。' },
+  { label: '验证期', description: '更适合核实承诺、身份、说法或安排是否真的落地，而不是凭感觉推进。' },
+  { label: '走弱期', description: '既有热度也有不稳，或节奏明显放缓。继续加码投入的收益偏低，先看对方会不会补动作。' }
 ]
 
-const stateItems = [
-  { label: '投入偏弱', description: '当前看到的主动和投入偏弱，不适合继续单方面加码。' },
-  { label: '继续观察', description: '还没有形成足够强的单向结论，重点看下一轮互动。' },
-  { label: '稳步推进', description: '意向和稳定性都相对不错，有继续推进的基础。' },
-  { label: '有热度但不稳', description: '不是完全没兴趣，但稳定性不足，容易只热不落地。' },
-  { label: '忽冷忽热', description: '局部热度存在，但前后反复明显，不能把局部当整体。' },
-  { label: '高消耗信号', description: '你的心理负担和不确定性已经偏高，这段关系正在消耗你。' },
-  { label: '连续受阻', description: '不是单次卡住，而是连续出现受阻、拒绝或婉拒信号。' },
-  { label: '明显转弱', description: '和之前相比整体状态已经在走弱，不适合按旧印象判断。' }
-]
-
-const weatherItems = [
-  { label: '晴', description: '当前体感最稳，风险较低，氛围整体偏顺。' },
-  { label: '转晴', description: '最近走势在变好，意向上升且风险回落。' },
-  { label: '多云', description: '状态一般，没有特别强的顺风或逆风。' },
-  { label: '起风', description: '不稳定苗头开始出现，后面要更留意细节变化。' },
-  { label: '阵风', description: '波动感较明显，容易出现前后落差。' },
-  { label: '雷阵雨', description: '风险明显偏高，当前不适合只凭感觉推进。' }
+const vibeItems = [
+  { label: '☀️ 顺畅', description: '当前体感最稳，风险较低、热度较好，意向和稳定性都相对不错，有继续推进的基础。' },
+  { label: '🌤 向好', description: '最近走势在变好，意向上升且风险回落，值得继续观察延续性。' },
+  { label: '☁️ 平淡', description: '状态一般，没有特别强的顺风或逆风，投入信号偏弱，先看后续动作。' },
+  { label: '🌬 波动', description: '热度存在但前后反复明显，不稳定苗头开始出现，容易出现前后落差。不能把局部当成整体。' },
+  { label: '⛈ 高压', description: '风险明显偏高，心理负担和不确定性已经偏高，不是单次卡住而是连续出现受阻或消耗信号。' },
+  { label: '📉 走弱', description: '和之前相比整体状态已经在走弱，不适合按旧印象判断，更适合先收回来观察。' }
 ]
 
 const weeklyTrendItems = [
-  { label: '升温', description: '本周意向整体比之前更强，而且风险没有同步抬头。' },
-  { label: '降温', description: '本周意向明显回落，关系热度在走弱。' },
-  { label: '有波动', description: '本周分数变化较明显，但暂时还不适合下单向结论。' },
+  { label: '持续向好', description: '本周意向整体比之前更强，而且风险没有同步抬头。' },
+  { label: '持续走低', description: '本周意向明显回落，关系热度在走弱。' },
+  { label: '起伏不定', description: '本周分数变化较明显，但暂时还不适合下单向结论。' },
   { label: '风险抬头', description: '本周更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
   { label: '基本持平', description: '本周整体没有出现足够强的新变化，先继续记录。' }
 ]
 
 const nextActionItems = [
-  { label: '继续观察', description: '先别急着定性，继续看对方后续有没有动作和兑现。' },
-  { label: '先做验证', description: '重点不是推进，而是看承诺、说法、身份或安排能不能对上事实。' },
+  { label: '先做验证', description: '重点不是推进，而是看承诺、说法、身份或安排能不能对上事实。当前样本太少时也不适合因为一次感觉就下重结论。' },
   { label: '适合澄清', description: '当前更适合问清楚、确认边界或把模糊点说具体。' },
-  { label: '先暂停推进', description: '风险太高，继续加码投入的收益偏低，先收回来观察。' },
-  { label: '样本还不够', description: '当前事实太少，不适合因为一次感觉就改分或下重结论。' }
+  { label: '先暂停推进', description: '风险太高，继续加码投入的收益偏低，先收回来观察。' }
 ]
 
 const problemItems = [
@@ -544,7 +524,10 @@ const subjectRoleItems = [
 
 const relationTypeItems = [
   { label: '恋爱对象', description: '按恋爱关系的互动逻辑来分析推进、风险和兑现。' },
-  { label: '亲密朋友', description: '按高亲密友谊逻辑来分析靠近、边界和稳定性。' }
+  { label: '朋友', description: '按友谊逻辑来分析靠近、边界和稳定性。' },
+  { label: '同事', description: '按职场互动逻辑来分析合作、信任和边界感。' },
+  { label: '同学', description: '按校园社交逻辑来分析相处频率、共同活动和群体关系。' },
+  { label: '老师', description: '按师生互动逻辑来分析指导关系、距离感和角色边界。' }
 ]
 
 onShow(() => {
@@ -595,6 +578,23 @@ async function loadData() {
   }
 
   loadTokenUsage()
+  loadTokenBalance()
+}
+
+async function loadTokenBalance() {
+  if (tokenBalanceLoading.value) return
+  tokenBalanceLoading.value = true
+  try {
+    const result = await getTokenAccount('claimGift')
+    if (!result?.success || !result?.account) return
+    tokenBalance.value = Number(result.account.balanceTokens || 0)
+    tokenGiftedTotal.value = Number(result.account.giftedTokens || 0)
+    tokenConsumedTotal.value = Number(result.account.consumedTokens || 0)
+  } catch {
+    // ignore
+  } finally {
+    tokenBalanceLoading.value = false
+  }
 }
 
 async function loadTokenUsage() {
@@ -704,6 +704,10 @@ function goSelfProfile() {
 
 function goTokenUsage() {
   uni.navigateTo({ url: '/pages/token-usage/token-usage' })
+}
+
+function goRecharge() {
+  uni.navigateTo({ url: '/pages/token-recharge/token-recharge' })
 }
 
 async function onLogout() {
@@ -1090,6 +1094,10 @@ async function onLogout() {
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
 .v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 6rpx; }
 .v2-mode .card-text-v2.muted { color: #999; font-size: 20rpx; }
+.v2-mode .balance-hero-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; padding: 20rpx 24rpx; margin-bottom: 12rpx; display: flex; align-items: baseline; gap: 10rpx; }
+.v2-mode .balance-num-v2 { font-size: 44rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; }
+.v2-mode .balance-unit-v2 { font-size: 22rpx; font-weight: 800; color: rgba(0,0,0,0.6); }
+.v2-mode .balance-sub-row-v2 { margin-bottom: 4rpx; }
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 14rpx; }
 .v2-mode .btn-v2-me { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }

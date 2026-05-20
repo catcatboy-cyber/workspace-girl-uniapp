@@ -2,6 +2,8 @@ const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { buildTimelineRecordTitle, classifyTimelineEvent, inferTimelineRecord } = require('./_shared/event-understanding')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
+const { checkBalance } = require('./_shared/billing')
+const { recordTokenUsage } = require('./_shared/token-usage')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -216,13 +218,14 @@ exports.main = async (event) => {
     const trimmedRecentTimeline = recentTimeline
       .slice(0, 8)
 
+    // 余额检查；如果余额不足则强制回退到规则（当前 always rules-only 以避免超时）
+    const balCheck = await checkBalance(db, userId, 260 /* eventUnderstandingMaxTokens */)
+
     const understoodEvent = await inferTimelineRecord({
       description: safeDescription,
       subjectRole: draftRecord.subjectRole,
       recentTimeline: trimmedRecentTimeline,
       caseProfile: caseDoc.profile,
-      // 保存时间线时不能串行等待两次 AI，否则很容易撞到云函数 30 秒上限。
-      // 事件语义先用规则快速结构化，后面的评估重算仍会使用 AI 做完整研判。
       settings: { aiEnabled: false, aiFallbackToRules: true }
     })
     markPerf('event_understood', { usedAI: Boolean(understoodEvent.usedAI) })

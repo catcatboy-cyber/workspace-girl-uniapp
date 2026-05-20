@@ -237,7 +237,10 @@ async function loadData() {
 
 function getRelationTypeLabel(p: any): string {
   const relationType = String(p?.relationType || '').trim()
-  if (relationType === 'close_friend') return '亲密朋友'
+  if (relationType === 'close_friend') return '朋友'
+  if (relationType === 'colleague') return '同事'
+  if (relationType === 'classmate') return '同学'
+  if (relationType === 'teacher') return '老师'
   if (relationType === 'romantic') return '恋爱对象'
   return ''
 }
@@ -263,7 +266,7 @@ function buildCaseStatusTags(caseItem: any): string[] {
         : [caseItem.latestResult],
       timeline: Array.isArray(caseItem.timeline) ? caseItem.timeline : []
     })
-    return [status?.phase, status?.state, status?.weather].filter(Boolean).slice(0, 3)
+    return [status?.phase, status?.vibe].filter(Boolean).slice(0, 3)
   } catch {
     return []
   }

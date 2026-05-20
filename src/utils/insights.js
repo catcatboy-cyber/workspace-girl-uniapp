@@ -358,7 +358,10 @@ export function buildProfileItems(profile) {
   if (!profile) return []
 
   const items = []
-  if (profile.relationType === 'close_friend') items.push('类型 亲密朋友')
+  if (profile.relationType === 'close_friend') items.push('类型 朋友')
+  else if (profile.relationType === 'colleague') items.push('类型 同事')
+  else if (profile.relationType === 'classmate') items.push('类型 同学')
+  else if (profile.relationType === 'teacher') items.push('类型 老师')
   else if (profile.relationType === 'romantic') items.push('类型 恋爱对象')
   if (profile.age) items.push(`年龄 ${profile.age}`)
   if (profile.gender) items.push(`性别 ${profile.gender}`)
@@ -385,7 +388,10 @@ function occupationNote(occupation) {
 }
 
 function getRelationTypeLabel(relationType) {
-  if (relationType === 'close_friend') return '亲密朋友'
+  if (relationType === 'close_friend') return '朋友'
+  if (relationType === 'colleague') return '同事'
+  if (relationType === 'classmate') return '同学'
+  if (relationType === 'teacher') return '老师'
   if (relationType === 'romantic') return '恋爱对象'
   return relationType || '未说明'
 }
@@ -657,26 +663,26 @@ export function buildObjectStatusCard(caseFile) {
   const recentSignals = analyzeRecentManualSignals(caseFile)
   const aiStatus = latest.currentStatus && typeof latest.currentStatus === 'object' ? latest.currentStatus : null
 
-  let phase = '观察期'
-  if (latest.evidenceLevel === 'E1' || latest.evidenceLevel === 'E2') phase = '试探期'
-  else if (latest.nextAction === 'verify') phase = '验证期'
-  else if (latest.nextAction === 'pause') phase = '降温期'
+  let phase = '试探期'
+  if (latest.nextAction === 'verify') phase = '验证期'
+  else if (latest.nextAction === 'pause') phase = '走弱期'
   else if (latest.intentScore >= 60 && latest.consistencyRiskScore < 45) phase = '升温期'
-  else if (latest.intentScore >= 45 && latest.consistencyRiskScore >= 45) phase = '拉扯期'
+  else if (latest.intentScore >= 45 && latest.consistencyRiskScore >= 45) phase = '走弱期'
 
-  let state = '继续观察'
-  if (latest.intentScore >= 65 && latest.consistencyRiskScore < 45) state = '稳步推进'
-  else if (latest.intentScore >= 55 && latest.consistencyRiskScore >= 55) state = '忽冷忽热'
-  else if (latest.intentScore < 45 && latest.consistencyRiskScore >= 60) state = '高消耗信号'
-  else if (latest.intentScore >= 50 && latest.consistencyRiskScore >= 60) state = '有热度但不稳'
-  else if (latest.intentScore < 45) state = '投入偏弱'
-
-  let weather = '多云'
-  if (latest.consistencyRiskScore >= 75) weather = '雷阵雨'
-  else if (latest.consistencyRiskScore >= 60) weather = '阵风'
-  else if (latest.intentScore >= 70 && latest.consistencyRiskScore < 35) weather = '晴'
-  else if (trend.intentDirection === 'up' && trend.riskDirection === 'down') weather = '转晴'
-  else if (trend.riskDirection === 'up') weather = '起风'
+  let vibe = '☁️ 平淡'
+  if (latest.intentScore >= 70 && latest.consistencyRiskScore < 35) {
+    vibe = '☀️ 顺畅'
+  } else if (trend.intentDirection === 'up' && trend.riskDirection === 'down') {
+    vibe = '🌤 向好'
+  } else if (latest.consistencyRiskScore >= 75) {
+    vibe = '⛈ 高压'
+  } else if (latest.consistencyRiskScore >= 60 || (latest.intentScore >= 55 && latest.consistencyRiskScore >= 55)) {
+    vibe = '🌬 波动'
+  } else if (trend.riskDirection === 'up') {
+    vibe = '🌬 波动'
+  } else if (latest.intentScore < 45 && latest.consistencyRiskScore >= 45) {
+    vibe = '📉 走弱'
+  }
 
   let summary =
     latest.nextAction === 'verify'
@@ -705,16 +711,13 @@ export function buildObjectStatusCard(caseFile) {
           : '下一次最值得记录的是：对方会不会主动、会不会落地、会不会持续。')
 
   if (recentSignals.rejectionCount >= 2) {
-    phase = '降温期'
-    state = '连续受阻'
-    weather = '雷阵雨'
+    phase = '走弱期'
+    vibe = '⛈ 高压'
     summary = '最近连续两次互动都出现了明确拒绝或婉拒，这已经不是单次波动，当前更应该按真实受阻信号理解。'
     caution = '先暂停新邀约和补偿式推进，重点看对方后面会不会主动补解释、补安排或补行动。'
   } else if (recentSignals.negativeCount >= 2) {
-    if (phase === '升温期') phase = '拉扯期'
-    if (state === '稳步推进') state = '明显转弱'
-    else if (state === '继续观察') state = '有热度但不稳'
-    if (weather === '晴' || weather === '转晴') weather = '阵风'
+    if (phase === '升温期') phase = '走弱期'
+    vibe = '🌬 波动'
     summary = '最近两三次互动已经连续偏负向或偏被动，当前状态不能再按单次正向信号理解。'
     caution = '先别继续加码投入，优先观察对方会不会主动补回应、补兑现或补安排。'
   }
@@ -728,9 +731,8 @@ export function buildObjectStatusCard(caseFile) {
 
     return {
       phase,
-      state,
-      weather,
-      tags: buildStatusTags(latest, { phase, state, weather }),
+      vibe,
+      tags: buildStatusTags(latest, { phase, vibe }),
       summary,
       spotlight,
       caution
@@ -739,9 +741,8 @@ export function buildObjectStatusCard(caseFile) {
 
   return {
     phase,
-    state,
-    weather,
-    tags: buildStatusTags(latest, { phase, state, weather }),
+    vibe,
+    tags: buildStatusTags(latest, { phase, vibe }),
     summary,
     spotlight,
     caution
@@ -751,8 +752,7 @@ export function buildObjectStatusCard(caseFile) {
 function buildStatusTags(result, status) {
   return [
     status.phase,
-    status.state,
-    status.weather,
+    status.vibe,
     result?.evidenceLevel ? `证据${result.evidenceLevel}` : ''
   ].filter(Boolean)
 }
@@ -766,32 +766,19 @@ const EVENT_TYPE_TAG_DESCRIPTIONS = {
 }
 
 const PHASE_TAG_DESCRIPTIONS = {
-  '观察期': '样本还不够稳，当前重点是继续看后续动作是否持续，而不是急着下结论。',
-  '试探期': '证据还薄，对方或你们还在试探阶段，很多感受都需要更多事实来支撑。',
-  '验证期': '当前更适合核实承诺、身份、说法或安排是否能落地，先看事实再谈判断。',
-  '降温期': '关系节奏需要放慢，说明继续加码投入的收益偏低，先看对方会不会补动作。',
+  '试探期': '证据还薄，对方或你们还在互相试探阶段，很多感受都需要更多事实来支撑，不适合下重结论。',
   '升温期': '整体信号在往前走，但真正有效的升温还是要看连续兑现，而不是单次高点。',
-  '拉扯期': '既有热度也有不稳，关系里存在反复，不能只抓住某一次好的感觉。'
+  '验证期': '当前更适合核实承诺、身份、说法或安排是否能落地，先看事实再谈判断。',
+  '走弱期': '既有热度也有不稳，或节奏明显放缓。继续加码投入的收益偏低，先看对方会不会补动作。'
 }
 
-const STATE_TAG_DESCRIPTIONS = {
-  '继续观察': '当前还没有形成足够强的单向结论，更重要的是看下一轮互动怎么接。',
-  '稳步推进': '意向和稳定性都相对不错，说明关系有推进基础，但仍要看持续性。',
-  '忽冷忽热': '热度存在，但前后反复明显，不能把局部热度直接当成整体趋势。',
-  '高消耗信号': '你的心理负担和不确定性已经偏高，这段关系正在消耗你的精力。',
-  '有热度但不稳': '对方不是完全没兴趣，但稳定性不足，推进时要防止只热不落地。',
-  '投入偏弱': '当前看到的主动和投入偏弱，不适合继续单方面加码。',
-  '连续受阻': '最近不是单次卡住，而是连续出现拒绝、婉拒或明显受阻信号。',
-  '明显转弱': '和之前相比，整体状态已经往弱走，不适合继续按旧印象判断。'
-}
-
-const WEATHER_TAG_DESCRIPTIONS = {
-  '晴': '当前体感最稳，说明风险较低、热度较好，关系氛围偏顺。',
-  '转晴': '最近走势是在变好，说明意向上升且风险回落，值得继续观察延续性。',
-  '多云': '状态一般，没有特别强的顺风或逆风，先看后续动作。',
-  '起风': '已经有不稳定苗头，说明风险在抬头，后面要更留意细节变化。',
-  '阵风': '波动感偏明显，关系里有热度也有干扰，容易出现前后落差。',
-  '雷阵雨': '风险明显偏高，当前不适合只凭感觉推进，先看对方有没有补动作和解释。'
+const VIBE_TAG_DESCRIPTIONS = {
+  '☀️ 顺畅': '当前体感最稳，风险较低、热度较好，意向和稳定性都相对不错，关系氛围偏顺。',
+  '🌤 向好': '最近走势在变好，意向上升且风险回落，值得继续观察延续性。',
+  '☁️ 平淡': '状态一般，没有特别强的顺风或逆风，投入信号偏弱，先看后续动作。',
+  '🌬 波动': '热度存在但前后反复明显，不稳定苗头开始出现，容易出现前后落差。不能把局部当成整体。',
+  '⛈ 高压': '风险明显偏高，心理负担和不确定性已经偏高，当前不适合只凭感觉推进。',
+  '📉 走弱': '和之前相比整体状态已经在走弱，不适合按旧印象判断，更适合先收回来观察。'
 }
 
 const PROBLEM_TYPE_DESCRIPTIONS = {
@@ -830,11 +817,8 @@ export function explainStatusTag(tag) {
   if (PHASE_TAG_DESCRIPTIONS[tag]) {
     return { tag, group: '阶段', description: PHASE_TAG_DESCRIPTIONS[tag] }
   }
-  if (STATE_TAG_DESCRIPTIONS[tag]) {
-    return { tag, group: '状态', description: STATE_TAG_DESCRIPTIONS[tag] }
-  }
-  if (WEATHER_TAG_DESCRIPTIONS[tag]) {
-    return { tag, group: '天气', description: WEATHER_TAG_DESCRIPTIONS[tag] }
+  if (VIBE_TAG_DESCRIPTIONS[tag]) {
+    return { tag, group: '体感', description: VIBE_TAG_DESCRIPTIONS[tag] }
   }
   const evidenceTag = explainEvidenceTag(tag)
   if (evidenceTag) return evidenceTag
@@ -1684,7 +1668,7 @@ const constellationNotes = {
 
 function inferEventScenario(event) {
   const content = `${event.title} ${event.description}`.toLowerCase()
-  const hasFriendContext = includesAny(content, ['朋友', '同事', '同学', '闺蜜', '兄弟', '社交圈'])
+  const hasFriendContext = includesAny(content, ['朋友', '同事', '同学', '老师', '闺蜜', '兄弟', '社交圈'])
   const hasOutingContext = includesAny(content, ['郊游', '露营', '出游', '野餐', '爬山', '聚会', '旅行', '一起玩'])
 
   if (hasFriendContext && hasOutingContext) return 'social_outing_with_friends'
@@ -2179,7 +2163,7 @@ export function buildTimelineFromLatestResult(latestResult) {
     type: 'note',
     date: buildSystemTimelineDate(latestResult.nextAction, '接下来'),
     dateLabel: buildSystemTimelineDate(latestResult.nextAction, '接下来'),
-    description: latestResult.nextAction || '继续观察',
+    description: latestResult.nextAction || '先做验证',
     occurrenceAt: createdAt,
     createdAt
   })

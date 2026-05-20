@@ -124,8 +124,8 @@ const caseId = ref('')
 const caseName = ref('')
 const themeVars = ref(getThemeStyle())
 
-const relationTypeOptions = ['romantic', 'close_friend']
-const relationTypeLabels = ['恋爱对象', '亲密朋友']
+const relationTypeOptions = ['romantic', 'close_friend', 'colleague', 'classmate', 'teacher']
+const relationTypeLabels = ['恋爱对象', '朋友', '同事', '同学', '老师']
 const genderOptions = ['男', '女', '非二元', '未说明']
 const zodiacOptions = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
 const constellationOptions = [

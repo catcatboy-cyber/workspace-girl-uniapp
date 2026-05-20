@@ -4,6 +4,7 @@ const { recalculateAssessmentFromEvent } = require('./_shared/event-recalculate'
 const { compareAssessments, buildTrendTimelineRecords } = require('./_shared/trend')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 const { recordTokenUsage } = require('./_shared/token-usage')
+const { checkBalance } = require('./_shared/billing')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -174,6 +175,12 @@ exports.main = async (event = {}) => {
     }
 
     let recalculated = null
+    const estCost = 1000 // conservative estimate; precise deduction via recordTokenUsage after AI call
+    const balCheck = await checkBalance(db, userId, estCost)
+    if (!balCheck.ok) {
+      return { success: false, message: '余额不足，请充值', code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required }
+    }
+
     try {
       recalculated = await recalculateAssessmentFromEvent({
         previous,
