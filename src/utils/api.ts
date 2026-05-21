@@ -704,7 +704,7 @@ export async function generateWeeklyReview(_userId: string, caseId: string, week
     data: { action: 'generate', caseId, weekStart }
   })
   if (!res.result?.success) {
-    throw new Error(res.result?.message || '生成周复盘失败')
+    throw Object.assign(new Error(res.result?.message || '生成周复盘失败'), res.result || {})
   }
   return res.result
 }
@@ -715,7 +715,7 @@ export async function generateWeeklySideRead(_userId: string, caseId: string, we
     data: { action: 'generateSideRead', caseId, weekStart }
   })
   if (!res.result?.success) {
-    throw new Error(res.result?.message || '生成本周侧写失败')
+    throw Object.assign(new Error(res.result?.message || '生成本周侧写失败'), res.result || {})
   }
   return res.result
 }

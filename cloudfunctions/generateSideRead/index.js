@@ -11,7 +11,6 @@ const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
-const TOKEN_USAGE_COLLECTION = 'token_usage_records'
 const SIDE_READ_TIMEOUT_MS = 18000
 function isMpRuntime() {
   return Boolean(process.env.WX_CONTEXT_KEYS || process.env.TENCENTCLOUD_RUNENV)
@@ -200,26 +199,6 @@ function normalizeAnthropicResponse(payload) {
     choices: [{ message: { content } }],
     raw: payload
   }
-}
-
-async function recordTokenUsage(payload = {}) {
-  const promptTokens = Number(payload.usage?.prompt_tokens || payload.usage?.input_tokens || 0)
-  const completionTokens = Number(payload.usage?.completion_tokens || payload.usage?.output_tokens || 0)
-  const totalTokens = Number(payload.usage?.total_tokens || (promptTokens + completionTokens))
-  await db.collection(TOKEN_USAGE_COLLECTION).add({
-    userId: payload.userId,
-    caseId: payload.caseId || '',
-    assessmentId: payload.assessmentId || '',
-    feature: payload.feature || 'sideRead',
-    provider: payload.provider || '',
-    model: payload.model || '',
-    promptTokens: Number.isFinite(promptTokens) ? promptTokens : 0,
-    completionTokens: Number.isFinite(completionTokens) ? completionTokens : 0,
-    totalTokens: Number.isFinite(totalTokens) ? totalTokens : 0,
-    usageAvailable: Number.isFinite(totalTokens) && totalTokens > 0,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }).catch((error) => console.error('[token usage record failed]', error))
 }
 
 async function postChatCompletions(settings, messages) {
@@ -420,7 +399,7 @@ exports.main = async (event = {}) => {
     }
     const data = await response.json()
     const raw = data?.choices?.[0]?.message?.content || ''
-    await recordTokenUsage({
+    await recordTokenUsage(db, {
       userId,
       caseId,
       assessmentId: caseDoc.latestResultId,

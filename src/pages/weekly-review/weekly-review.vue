@@ -63,6 +63,7 @@ import {
   getCaseDetail,
   getCases,
   getCurrentUserId,
+  handleInsufficientBalance,
   getWeeklyReviews
 } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
@@ -166,6 +167,7 @@ async function generateCurrentWeek() {
     currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
     showSuccess('已生成本周复盘')
   } catch (error: any) {
+    if (handleInsufficientBalance(error)) return
     showError(error?.message || '生成周复盘失败')
   } finally {
     generating.value = false
@@ -181,6 +183,7 @@ async function generateCurrentWeeklySideRead() {
     currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
     showSuccess('已生成本周侧写')
   } catch (error: any) {
+    if (handleInsufficientBalance(error)) return
     showError(error?.message || '生成本周侧写失败')
   } finally {
     sideReadLoading.value = false

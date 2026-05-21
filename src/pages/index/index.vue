@@ -234,8 +234,8 @@
             <text class="mini-sub">点击后单独生成</text>
           </view>
           <text v-if="profileSideRead" class="muted" user-select>{{ profileSideRead.summary }}</text>
-          <text v-else class="muted">属相和星座侧写不再跟随记录自动生成，避免拖慢即时反馈。</text>
-          <button v-if="!profileSideRead" class="btn-secondary side-read-generate-btn" :disabled="sideReadLoading" @click="generateLatestSideRead">
+          <text v-else class="muted">{{ sideReadEntryHint }}</text>
+          <button v-if="!profileSideRead" class="btn-secondary side-read-generate-btn" :disabled="sideReadButtonDisabled" @click="generateLatestSideRead">
             {{ sideReadLoading ? '生成中...' : '生成属相星座侧写' }}
           </button>
           <view v-if="profileSideRead" class="side-read-grid">
@@ -394,7 +394,8 @@
                 <text class="side-item-text">{{ item.text }}</text>
               </view>
             </view>
-            <button v-if="!profileSideRead" class="btn-v2 sm" :disabled="sideReadLoading" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '生成属相星座侧写' }}</button>
+            <text v-if="!profileSideRead" class="side-text">{{ sideReadEntryHint }}</text>
+            <button v-if="!profileSideRead" class="btn-v2 sm" :disabled="sideReadButtonDisabled" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '生成属相星座侧写' }}</button>
           </view>
         </view>
       </template>
@@ -430,7 +431,7 @@
 import { ref, computed, watch } from 'vue'
 import { onHide, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
-import { getCases, createCase, createTimeline, analyzeAttachment, generateAssessmentAI, generateSideRead, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile } from '@/utils/api'
+import { getCases, createCase, createTimeline, analyzeAttachment, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile } from '@/utils/api'
 import { combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
@@ -643,6 +644,26 @@ const showSideReadEntry = computed(() => {
     || selfProfile.value?.zodiac
     || selfProfile.value?.constellation
   )
+})
+
+const hasInstantFeedbackRecord = computed(() => {
+  const result = latestCase.value?.latestResult
+  if (!result) return false
+  return Boolean(
+    latestTriggerEvent.value
+    || result.triggerEventId
+    || result.triggerEventTitle
+    || result.source === 'event_recalculation'
+  )
+})
+
+const sideReadButtonDisabled = computed(() => {
+  return sideReadLoading.value || !hasInstantFeedbackRecord.value
+})
+
+const sideReadEntryHint = computed(() => {
+  if (!hasInstantFeedbackRecord.value) return '请先记录一次事件并生成即时反馈，再生成属相星座侧写。'
+  return '属相和星座侧写不再跟随记录自动生成，避免拖慢即时反馈。'
 })
 
 const quickSubjectRoleHint = computed(() => {
@@ -1167,6 +1188,7 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
   startAIFeedbackTimer()
   try {
     const aiRes = await generateAssessmentAI(payload)
+    if (handleInsufficientBalance(aiRes)) return
     if (!aiRes?.success) {
       showError(aiRes?.message || 'AI即时反馈生成失败')
       return
@@ -1183,11 +1205,13 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
 
 async function generateLatestSideRead() {
   if (sideReadLoading.value) return
+  if (!hasInstantFeedbackRecord.value) return
   const caseId = latestCase.value?.caseId
   if (!caseId) return
   sideReadLoading.value = true
   try {
     const res = await generateSideRead({ caseId })
+    if (handleInsufficientBalance(res)) return
     if (!res?.success) {
       showError(res?.message || '侧写生成失败')
       return
