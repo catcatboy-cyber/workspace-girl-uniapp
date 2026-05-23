@@ -104,6 +104,30 @@
         "navigationBarTitleText": "后台管理",
         "navigationStyle": "default"
       }
+    },
+    {
+      "path": "pages/explain/explain",
+      "style": {
+        "navigationBarTitleText": "判断说明"
+      }
+    },
+    {
+      "path": "pages/system-tracks/system-tracks",
+      "style": {
+        "navigationBarTitleText": "系统轨迹"
+      }
+    },
+    {
+      "path": "pages/feedback/feedback",
+      "style": {
+        "navigationBarTitleText": "系统反馈"
+      }
+    },
+    {
+      "path": "pages/about/about",
+      "style": {
+        "navigationBarTitleText": "关于"
+      }
     }
   ],
   "globalStyle": {

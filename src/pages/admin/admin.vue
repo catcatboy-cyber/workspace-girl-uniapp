@@ -1,6 +1,5 @@
 ﻿<template>
-  <view :class="['admin-page', showV2 ? 'v2-mode' : '']">
-    <view class="version-toggle"><view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view><view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view></view>
+  <view class="admin-page v2-mode">
     <view class="admin-shell">
       <view class="topbar">
         <view>
@@ -42,6 +41,7 @@
         <button :class="['tab-btn', activeTab === 'users' ? 'active' : '']" @click="activeTab = 'users'">用户管理</button>
         <button :class="['tab-btn', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'">AI 设置</button>
         <button :class="['tab-btn', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">Token 额度</button>
+        <button :class="['tab-btn', activeTab === 'feedback' ? 'active' : '']" @click="switchToFeedback">反馈管理</button>
       </view>
 
       <view v-if="activeTab === 'users'" class="content-grid">
@@ -224,28 +224,16 @@
                 <text>中文名称</text>
                 <input v-model="selectedPromptModule.businessPrompt.nameZh" />
               </view>
-              <view class="field">
-                <text>English name</text>
-                <input v-model="selectedPromptModule.businessPrompt.nameEn" />
-              </view>
               <view class="field wide">
-                <text>角色 Role（中文）</text>
+                <text>角色</text>
                 <textarea v-model="selectedPromptModule.businessPrompt.roleZh" class="textarea small" :maxlength="-1" />
               </view>
               <view class="field wide">
-                <text>Role (English)</text>
-                <textarea v-model="selectedPromptModule.businessPrompt.roleEn" class="textarea small" :maxlength="-1" />
-              </view>
-              <view class="field wide">
-                <text>任务 Task（中文）</text>
+                <text>任务</text>
                 <textarea v-model="selectedPromptModule.businessPrompt.taskZh" class="textarea" :maxlength="-1" />
               </view>
               <view class="field wide">
-                <text>Task (English)</text>
-                <textarea v-model="selectedPromptModule.businessPrompt.taskEn" class="textarea" :maxlength="-1" />
-              </view>
-              <view class="field wide">
-                <text>业务规则 Rules（每行一条，中文 | English）</text>
+                <text>业务规则（每行一条）</text>
                 <textarea
                   :value="rulesDraft"
                   class="textarea large"
@@ -254,17 +242,17 @@
                 />
               </view>
               <view class="field wide">
-                <text>输出要求 Output notes（可编辑，完整文本块）</text>
+                <text>输出要求（只写业务判断标准）</text>
                 <textarea
                   v-model="outputNotesDraft"
                   class="textarea large editable-textarea"
                   :maxlength="-1"
-                  placeholder="在这里输入完整输出要求，换行会原样保存。这里不是只读；下面的最终拼接预览才是只读。"
+                  placeholder="只写可调的业务判断标准。固定输入上下文、固定返回结构、固定返回要求已放到下方只读区。"
                   @blur="onOutputNotesBlur"
                 />
               </view>
               <view class="field wide">
-                <text>输出结构 Output schema（JSON）</text>
+                <text>输出结构（JSON）</text>
                 <textarea
                   :value="outputSchemaDraft"
                   class="textarea large mono"
@@ -331,8 +319,16 @@
 
             <view class="preview-grid">
               <view class="preview-box">
-                <text class="preview-title">安全护栏（只读，中英对照）</text>
+                <text class="preview-title">安全护栏（只读）</text>
                 <text v-for="item in selectedPromptMeta.guardrails" :key="item" class="preview-line">{{ item }}</text>
+              </view>
+              <view class="preview-box">
+                <text class="preview-title">固定输入上下文（只读）</text>
+                <text v-for="item in selectedPromptMeta.runtimeContext" :key="item" class="preview-line">{{ item }}</text>
+              </view>
+              <view class="preview-box">
+                <text class="preview-title">固定输出结构（只读）</text>
+                <text v-for="item in selectedPromptMeta.outputContract" :key="item" class="preview-line">{{ item }}</text>
               </view>
               <view class="preview-box">
                 <text class="preview-title">最终拼接预览（只读）</text>
@@ -356,8 +352,8 @@
               <view class="prompt-summary-grid">
                 <view>
                   <text class="preview-title small-title">后台业务提示词</text>
-                  <text class="preview-line">角色：{{ module.businessPrompt.roleZh || module.businessPrompt.roleEn || '[空]' }}</text>
-                  <text class="preview-line">任务：{{ module.businessPrompt.taskZh || module.businessPrompt.taskEn || '[空]' }}</text>
+                  <text class="preview-line">角色：{{ module.businessPrompt.roleZh || '[空]' }}</text>
+                  <text class="preview-line">任务：{{ module.businessPrompt.taskZh || '[空]' }}</text>
                   <text class="preview-line">规则：{{ module.businessPrompt.rules.length }} 条</text>
                   <text class="preview-line">输出要求：{{ module.businessPrompt.outputNotes.length }} 条</text>
                 </view>
@@ -387,16 +383,8 @@
                 <input v-model="personaConfig.styles[item.key].labelZh" />
               </view>
               <view class="field">
-                <text>English label</text>
-                <input v-model="personaConfig.styles[item.key].labelEn" />
-              </view>
-              <view class="field">
                 <text>中文文案</text>
                 <textarea v-model="personaConfig.styles[item.key].promptZh" class="textarea" :maxlength="-1" />
-              </view>
-              <view class="field">
-                <text>English prompt</text>
-                <textarea v-model="personaConfig.styles[item.key].promptEn" class="textarea" :maxlength="-1" />
               </view>
             </view>
             <view v-for="item in personaBoldnessList" :key="item.key" class="persona-card">
@@ -406,16 +394,8 @@
                 <input v-model="personaConfig.boldness[item.key].labelZh" />
               </view>
               <view class="field">
-                <text>English label</text>
-                <input v-model="personaConfig.boldness[item.key].labelEn" />
-              </view>
-              <view class="field">
                 <text>中文文案</text>
                 <textarea v-model="personaConfig.boldness[item.key].promptZh" class="textarea" :maxlength="-1" />
-              </view>
-              <view class="field">
-                <text>English prompt</text>
-                <textarea v-model="personaConfig.boldness[item.key].promptEn" class="textarea" :maxlength="-1" />
               </view>
             </view>
           </view>
@@ -576,6 +556,35 @@
           <text v-if="manualRechargeMsg" class="save-message" style="margin-top: 8px;">{{ manualRechargeMsg }}</text>
         </view>
       </view>
+
+      <view v-if="activeTab === 'feedback'" class="panel">
+        <view class="panel-head">
+          <view>
+            <text class="panel-title">用户反馈</text>
+            <text class="panel-meta">{{ feedbacks.length }} 条反馈</text>
+          </view>
+          <button class="ghost-btn wide-btn" :disabled="feedbackLoading" @click="loadFeedbacks">{{ feedbackLoading ? '加载中' : '刷新' }}</button>
+        </view>
+        <view v-if="feedbacks.length === 0 && !feedbackLoading" class="empty">暂无用户反馈。</view>
+        <view v-else class="feedback-list">
+          <view v-for="(fb, index) in feedbacks" :key="fb._id || index" class="feedback-item" :class="{ resolved: fb.resolved }">
+            <view class="feedback-head">
+              <view>
+                <text class="feedback-time">{{ formatDate(fb.createdAt) }}</text>
+                <text class="feedback-user">用户：{{ fb.userId || fb.openid || '未知' }}</text>
+              </view>
+              <text v-if="fb.contact" class="feedback-contact">{{ fb.contact }}</text>
+            </view>
+            <text class="feedback-content">{{ fb.content }}</text>
+            <view v-if="fb.resolved" class="feedback-resolved-badge">已采纳 · 奖励 {{ fb.rewardTokens || 0 }} token</view>
+            <view v-else class="feedback-actions">
+              <input v-if="!fb.userId" :value="targetUserIds[fb._id] || ''" class="reward-input" placeholder="用户ID" @input="onTargetUserInput(fb._id, $event)" />
+              <input :value="rewardInputs[fb._id] || ''" type="number" class="reward-input" placeholder="奖励 token" @input="onRewardInput(fb._id, $event)" />
+              <button class="small-btn" :disabled="resolvingId === fb._id" @click="resolveFeedback(fb._id)">{{ resolvingId === fb._id ? '处理中' : '采纳' }}</button>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -592,6 +601,8 @@ import {
   adminUpdateBillingSettings,
   adminManualRecharge,
   adminGetTokenLedger,
+  adminListFeedbacks,
+  adminResolveFeedback,
   getCurrentUserId,
   logout,
   testAIConnection
@@ -706,6 +717,7 @@ const runtimeFields = [
   { key: 'weeklySideEventLimit', label: '周侧写事件条数', fallback: 6 },
   { key: 'eventMaxTokens', label: '即时反馈 Max Tokens', fallback: 650 },
   { key: 'eventUnderstandingMaxTokens', label: '事件理解 Max Tokens', fallback: 260 },
+  { key: 'eventUnderstandingTemperature', label: '事件理解温度', fallback: 0.1 },
   { key: 'weeklyMaxTokens', label: '周复盘 Max Tokens', fallback: 650 },
   { key: 'sideReadMaxTokens', label: '侧写 Max Tokens', fallback: 550 },
   { key: 'attachmentMaxTokens', label: '附件识别 Max Tokens', fallback: 1200 },
@@ -715,9 +727,8 @@ const runtimeFields = [
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
 
-const activeTab = ref<'users' | 'ai' | 'billing'>('users')
+const activeTab = ref<'users' | 'ai' | 'billing' | 'feedback'>('users')
 const users = ref<AdminUser[]>([])
-const showV2 = ref(true)
 const selectedUserId = ref('')
 const currentUserId = ref('')
 const selectedDetail = ref<AdminDetail | null>(null)
@@ -989,7 +1000,7 @@ function applyPersonaConfig(raw: any) {
 }
 
 function toBilingualText(list: BilingualLine[]) {
-  return list.map((item) => item.en ? `${item.zh} | ${item.en}` : item.zh).join('\n')
+  return stripFixedPromptBlocks(list.map((item) => item.zh || item.en).filter(Boolean).join('\n'))
 }
 
 function parseBilingualText(value: any): BilingualLine[] {
@@ -997,17 +1008,34 @@ function parseBilingualText(value: any): BilingualLine[] {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((line) => {
-      const parts = line.split('|')
-      return {
-        zh: (parts[0] || '').trim(),
-        en: parts.slice(1).join('|').trim()
-      }
-    })
+    .map((line) => ({ zh: line, en: '' }))
+}
+
+function stripFixedPromptBlocks(value: any) {
+  const lines = String(value ?? '').replace(/\r\n/g, '\n').split('\n')
+  const result: string[] = []
+  let skipping = false
+  const fixedHeadPattern = /^(固定输入上下文|固定返回结构|固定返回要求)\s*[：:]?\s*$/
+  const editableHeadPattern = /^(业务判断标准|判断标准|输出要求|业务规则)\s*[：:]?\s*$/
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (fixedHeadPattern.test(trimmed)) {
+      skipping = true
+      continue
+    }
+    if (skipping && editableHeadPattern.test(trimmed)) {
+      skipping = false
+      result.push(line)
+      continue
+    }
+    if (skipping) continue
+    result.push(line)
+  }
+  return result.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
 function parseOutputNotesText(value: any): BilingualLine[] {
-  const text = String(value?.detail?.value ?? value ?? '').replace(/\r\n/g, '\n').trim()
+  const text = stripFixedPromptBlocks(value?.detail?.value ?? value ?? '')
   return text ? [{ zh: text, en: '' }] : []
 }
 
@@ -1019,11 +1047,31 @@ function buildPromptModulesPayload() {
       enabled: module.enabled,
       businessPrompt: {
         ...module.businessPrompt,
-        enabled: module.enabled
+        enabled: module.enabled,
+        nameEn: '',
+        roleEn: '',
+        taskEn: '',
+        rules: (module.businessPrompt.rules || []).map((item) => ({ zh: item.zh || item.en || '', en: '' })).filter((item) => item.zh),
+        outputNotes: (module.businessPrompt.outputNotes || []).map((item) => ({ zh: stripFixedPromptBlocks(item.zh || item.en || ''), en: '' })).filter((item) => item.zh)
       }
     }
     return result
   }, {} as Record<string, any>)
+}
+
+function buildPersonaConfigPayload() {
+  return {
+    styles: personaStyleKeys.reduce((result, key) => {
+      const item = personaConfig.styles[key] || createEmptyPersonaItem()
+      result[key] = { labelZh: item.labelZh, labelEn: '', promptZh: item.promptZh, promptEn: '' }
+      return result
+    }, {} as Record<string, PersonaItem>),
+    boldness: personaBoldnessKeys.reduce((result, key) => {
+      const item = personaConfig.boldness[key] || createEmptyPersonaItem()
+      result[key] = { labelZh: item.labelZh, labelEn: '', promptZh: item.promptZh, promptEn: '' }
+      return result
+    }, {} as Record<string, PersonaItem>)
+  }
 }
 
 function syncPromptDrafts() {
@@ -1187,7 +1235,7 @@ function onRulesBlur(event: any) {
 function onOutputNotesBlur(event: any) {
   const module = selectedPromptModule.value
   if (!module) return
-  outputNotesDraft.value = String(event?.detail?.value ?? '')
+  outputNotesDraft.value = stripFixedPromptBlocks(event?.detail?.value ?? '')
   module.businessPrompt.outputNotes = parseOutputNotesText(outputNotesDraft.value)
 }
 
@@ -1306,7 +1354,7 @@ async function saveAISettings() {
       defaultModelId: defaultModelId.value || models.value[0].id,
       models: collectModels(),
       promptModules: buildPromptModulesPayload(),
-      personaConfig,
+      personaConfig: buildPersonaConfigPayload(),
       runtimeConfig
     })
     if (!result?.success) {
@@ -1481,6 +1529,54 @@ async function doManualRecharge() {
   } finally {
     manualRecharging.value = false
   }
+}
+
+const feedbacks = ref<any[]>([])
+const feedbackLoading = ref(false)
+const rewardInputs = reactive<Record<string, number>>({})
+const targetUserIds = reactive<Record<string, string>>({})
+const resolvingId = ref('')
+
+async function switchToFeedback() {
+  activeTab.value = 'feedback'
+  if (feedbacks.value.length === 0) await loadFeedbacks()
+}
+
+async function loadFeedbacks() {
+  feedbackLoading.value = true
+  try {
+    const result = await adminListFeedbacks()
+    if (result?.success) feedbacks.value = result.feedbacks || []
+  } catch { /* ignore */ }
+  finally { feedbackLoading.value = false }
+}
+
+function onRewardInput(feedbackId: string, e: any) {
+  rewardInputs[feedbackId] = Number(e?.detail?.value) || 0
+}
+
+function onTargetUserInput(feedbackId: string, e: any) {
+  targetUserIds[feedbackId] = String(e?.detail?.value || '').trim()
+}
+
+async function resolveFeedback(feedbackId: string) {
+  if (!feedbackId || resolvingId.value) return
+  const tokens = Number(rewardInputs[feedbackId]) || 0
+  if (tokens <= 0) { errorMessage.value = '奖励 token 必须大于 0'; return }
+  errorMessage.value = ''
+  resolvingId.value = feedbackId
+  try {
+    const result = await adminResolveFeedback(feedbackId, tokens, targetUserIds[feedbackId] || undefined)
+    if (result?.success) {
+      const fb = feedbacks.value.find((f: any) => f._id === feedbackId)
+      if (fb) { fb.resolved = true; fb.rewardTokens = tokens }
+    } else {
+      errorMessage.value = result?.message || '处理失败'
+    }
+  } catch (e: any) {
+    errorMessage.value = e?.message || '处理失败'
+  }
+  finally { resolvingId.value = '' }
 }
 
 function formatDate(value: string) {
@@ -2184,11 +2280,19 @@ input {
 }
 
 /* ===== CAMPUS POP V2 ===== */
-.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
-.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
-.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
-
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 
 .mode-toggles { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+
+.feedback-list { display: flex; flex-direction: column; gap: 12px; }
+.feedback-item { padding: 16px; border: 1px solid rgba(23, 35, 31, 0.1); border-radius: 8px; background: #fbfdfb; }
+.feedback-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.feedback-time { color: #68766f; font-size: 13px; }
+.feedback-contact { color: #42524b; font-size: 13px; }
+.feedback-content { display: block; color: #17231f; font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
+.feedback-item.resolved { opacity: 0.7; background: #f4f8f5; }
+.feedback-user { color: #68766f; font-size: 12px; margin-left: 12px; }
+.feedback-resolved-badge { display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 4px; background: #e6f4ec; color: #0f6b45; font-size: 13px; font-weight: 700; }
+.feedback-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(23,35,31,0.08); }
+.reward-input { width: 140px; height: 34px; padding: 0 10px; border: 1px solid rgba(23,35,31,0.18); border-radius: 6px; font-size: 13px; }
 </style>

@@ -36,11 +36,33 @@ function normalizeCurrentStatus(value) {
   return result.tags.length || result.summary || result.caution ? result : null
 }
 
+function normalizeEnum(value, allowed, fallback) {
+  return allowed.includes(value) ? value : fallback
+}
+
+function normalizeEventInsight(value, event) {
+  const source = value && typeof value === 'object' ? value : {}
+  const fallbackActor = ['target', 'self', 'both', 'unknown'].includes(event?.subjectRole)
+    ? event.subjectRole
+    : 'unknown'
+  return {
+    actor: normalizeEnum(source.actor, ['target', 'self', 'both', 'unknown'], fallbackActor),
+    interaction: normalizeEnum(source.interaction, ['initiated', 'responded', 'rejected', 'delayed', 'fulfilled', 'promised', 'observed', 'unclear'], 'unclear'),
+    commitmentStatus: normalizeEnum(source.commitmentStatus, ['none', 'promised', 'fulfilled', 'broken', 'unclear'], 'none'),
+    evidenceType: normalizeEnum(source.evidenceType, ['fact', 'feeling', 'mixed', 'unclear'], 'unclear')
+  }
+}
+
+function mapRelationType(value) {
+  const map = { romantic: '恋爱对象', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
+  return map[value] || value || ''
+}
+
 function serializeCaseProfile(profile) {
   if (!profile) return '未提供'
 
   const normalized = {
-    relationType: profile.relationType,
+    relationType: mapRelationType(profile.relationType),
     age: profile.age,
     gender: profile.gender,
     occupation: profile.occupation,
@@ -191,6 +213,14 @@ function fallbackAnalysis(event) {
       ],
       confidence: 'low',
       categories: ['context'],
+      eventInsight: normalizeEventInsight({
+        actor: 'unknown',
+        interaction: 'unclear',
+        commitmentStatus: 'none',
+        evidenceType: 'unclear'
+      }, event),
+      petLine: '',
+      petMood: 'neutral',
       usedAI: false
     }
   }
@@ -209,6 +239,14 @@ function fallbackAnalysis(event) {
       ],
       confidence: 'medium',
       categories: ['context'],
+      eventInsight: normalizeEventInsight({
+        actor: 'self',
+        interaction: 'observed',
+        commitmentStatus: 'none',
+        evidenceType: 'feeling'
+      }, event),
+      petLine: '',
+      petMood: 'neutral',
       usedAI: false
     }
   }
@@ -283,6 +321,12 @@ function fallbackAnalysis(event) {
     rationale: rationale.length > 0 ? rationale : ['当前事件没有命中明确规则，暂不做显著修正。'],
     confidence: rationale.length > 0 ? 'medium' : 'low',
     categories,
+    eventInsight: normalizeEventInsight({
+      actor: event.subjectRole,
+      interaction: categories.includes('avoidance') ? 'delayed' : categories.includes('initiative') ? 'initiated' : 'observed',
+      commitmentStatus: content.includes('兑现') || content.includes('做到') ? 'fulfilled' : content.includes('答应') || content.includes('承诺') ? 'promised' : 'none',
+      evidenceType: rationale.length > 0 ? 'fact' : 'unclear'
+    }, event),
     usedAI: false
   }
 }
@@ -295,6 +339,7 @@ function normalizeSettings(settings) {
     const provider = typeof defaultModel.provider === 'string' && defaultModel.provider.trim()
       ? defaultModel.provider.trim()
       : 'openai-compatible'
+    const rc = settings?.runtimeConfig || {}
     return {
       enabled: Boolean(settings.aiEnabled),
       provider,
@@ -309,7 +354,10 @@ function normalizeSettings(settings) {
         : provider.toLowerCase() === 'anthropic'
           ? 'claude-3-5-sonnet-20241022'
           : 'gpt-4o-mini',
-      fallbackToRules: settings.aiFallbackToRules !== false
+      fallbackToRules: settings.aiFallbackToRules !== false,
+      eventMaxTokens: Number.isFinite(Number(rc.eventMaxTokens)) ? Number(rc.eventMaxTokens) : 650,
+      eventTemperature: Number.isFinite(Number(rc.eventTemperature)) ? Number(rc.eventTemperature) : 0.2,
+      eventContextLimit: Number.isFinite(Number(rc.eventContextLimit)) ? Number(rc.eventContextLimit) : 3
     }
   }
 
@@ -317,6 +365,7 @@ function normalizeSettings(settings) {
   const provider = typeof settings?.aiProvider === 'string' && settings.aiProvider.trim()
     ? settings.aiProvider.trim()
     : 'openai-compatible'
+  const rc = settings?.runtimeConfig || {}
   return {
     enabled: Boolean(settings?.aiEnabled),
     provider,
@@ -331,7 +380,10 @@ function normalizeSettings(settings) {
       : provider.toLowerCase() === 'anthropic'
         ? 'claude-3-5-sonnet-20241022'
         : 'gpt-4o-mini',
-    fallbackToRules: settings?.aiFallbackToRules !== false
+    fallbackToRules: settings?.aiFallbackToRules !== false,
+    eventMaxTokens: Number.isFinite(Number(rc.eventMaxTokens)) ? Number(rc.eventMaxTokens) : 650,
+    eventTemperature: Number.isFinite(Number(rc.eventTemperature)) ? Number(rc.eventTemperature) : 0.2,
+    eventContextLimit: Number.isFinite(Number(rc.eventContextLimit)) ? Number(rc.eventContextLimit) : 3
   }
 }
 
@@ -350,8 +402,10 @@ async function analyzeTimelineEvent(params) {
     systemExtra: personaPrompt.systemPrompt,
     contextLines: [
       personaPrompt.userPrompt,
-      'Output must be JSON only. Required fields: eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,rawReply. Do not return labels, confidence, actionAdvice, or eventInsight.',
-      'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings: 对方可能的心理 / 你下一步怎么做 / 重点观察什么.',
+      'Output must be JSON only. Required fields: eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply,petLine,petMood. rationale is a single short string (max 10 Chinese characters) stating the core reason. Do not return labels, confidence, or actionAdvice.',
+      'petLine is one short sentence (max 50 Chinese chars) in XiaoMi (小咪)\'s first-person voice — her key takeaway from this event. petMood is one enum only: cheerful|cautious|encouraging|neutral|warning.',
+      'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings with line breaks and use Chinese colon：after each heading:\n对方可能的心理：<content>\n你下一步怎么做：<content>\n重点观察什么：<content>',
+      'eventInsight must be enums only: actor=target|self|both|unknown, interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear, commitmentStatus=none|promised|fulfilled|broken|unclear, evidenceType=fact|feeling|mixed|unclear.',
       describeSubjectRole(params.event?.subjectRole),
       `Current assessment: ${JSON.stringify({
         intentScore: params.latestResult?.intentScore,
@@ -362,7 +416,7 @@ async function analyzeTimelineEvent(params) {
       })}`,
       `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
       `Target profile: ${serializeCaseProfile(params.caseProfile)}`,
-      `Recent timeline: ${JSON.stringify(compactRecentTimeline(params.recentTimeline, params.event?.id))}`,
+      `Recent timeline: ${JSON.stringify(compactRecentTimeline(params.recentTimeline, params.event?.id, settings.eventContextLimit))}`,
       `Current event: ${JSON.stringify(params.event)}`
     ].filter(Boolean)
   })
@@ -377,7 +431,8 @@ async function analyzeTimelineEvent(params) {
       timeoutMs: AI_REQUEST_TIMEOUT_MS,
       responseFormat: { type: 'json_object' },
       messages,
-      temperature: 0.2
+      temperature: settings.eventTemperature,
+      maxTokens: settings.eventMaxTokens
     })
 
     if (!response.ok) {
@@ -412,10 +467,15 @@ async function analyzeTimelineEvent(params) {
       evidenceDelta: clamp(Number(parsed.evidenceDelta ?? 0), 0, 2),
       labels: [],
       summary: typeof parsed.summary === 'string' ? parsed.summary : 'AI 已参与分析。',
-      rationale: Array.isArray(parsed.rationale) ? parsed.rationale.map(String) : [],
+      rationale: typeof parsed.rationale === 'string' && parsed.rationale.trim()
+        ? [parsed.rationale.trim()]
+        : Array.isArray(parsed.rationale) ? parsed.rationale.map(String).filter(Boolean) : [],
       confidence: 'medium',
       categories: Array.isArray(parsed.categories) ? parsed.categories.map(String) : [],
+      eventInsight: normalizeEventInsight(parsed.eventInsight, params.event),
       currentStatus: normalizeCurrentStatus(parsed.currentStatus),
+      petLine: typeof parsed.petLine === 'string' ? cleanText(parsed.petLine, 100) : '',
+      petMood: ['cheerful', 'cautious', 'encouraging', 'neutral', 'warning'].includes(parsed.petMood) ? parsed.petMood : 'neutral',
       rawReply: cleanText(parsed.rawReply, 900),
       aiProvider: settings.provider,
       aiModel: data?.model || settings.model,

@@ -1,303 +1,9 @@
 <template>
-  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
-    <!-- 版本切换 -->
-    <view class="version-toggle">
-      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
-      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
-    </view>
+  <view class="page v2-mode" :style="pageStyle">
 
     <view v-if="loading" class="loading">LOADING...</view>
 
     <block v-else>
-    <!-- ==================== 经典版 ==================== -->
-    <block v-if="!showV2">
-      <view class="debug-classic">经典版已激活</view>
-
-    <!-- 空状态：显示 AssessmentForm -->
-    <template v-if="cases.length === 0">
-      <view class="card hero-card">
-        <text class="hero-topline">Relationship Signal Lab</text>
-        <text class="h1">先做一次初次评估</text>
-        <text class="hero-subtext">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看时间线和重新评估，而不是每次都重答整套题。</text>
-      </view>
-
-      <AssessmentForm @submit="onCreateCase" />
-    </template>
-
-    <!-- 有案例：显示最近案例 KPI + 快速记录 -->
-    <template v-else>
-      <view class="card hero-card">
-        <view class="section-head">
-          <text class="hero-topline">Home / Active Cases</text>
-          <text class="h1">优先追录新事件</text>
-          <text class="hero-subtext">你已经有 {{ cases.length }} 个关系对象。先确认当前在追谁，再继续记录。</text>
-        </view>
-
-        <view class="case-kpis">
-          <view class="kpi-item">
-            <text class="kpi-label">对象</text>
-            <view class="case-identity">
-              <view class="profile-avatar sm">
-                <image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" />
-                <text v-else class="avatar-placeholder">{{ avatarLabel(latestCase.name) }}</text>
-              </view>
-              <text class="kpi-value">{{ latestCase.name }}</text>
-            </view>
-          </view>
-          <view class="kpi-item">
-            <text class="kpi-label">意向</text>
-            <text class="kpi-value">{{ latestCase.latestResult?.intentScore ?? '--' }}</text>
-            <text class="muted">{{ mapIntentLabel(latestCase.latestResult?.intentBucket) }}</text>
-          </view>
-          <view class="kpi-item">
-            <text class="kpi-label">风险</text>
-            <text class="kpi-value">{{ latestCase.latestResult?.consistencyRiskScore ?? '--' }}</text>
-            <text class="muted">{{ mapRiskLabel(latestCase.latestResult?.riskBucket) }}</text>
-          </view>
-          <view class="kpi-item">
-            <text class="kpi-label">记录数量</text>
-            <text class="kpi-value">{{ latestCase.timeline?.length ?? 0 }}</text>
-            <text class="muted">时间线事件</text>
-          </view>
-        </view>
-
-        <view v-if="latestProfileItems.length > 0" class="badges">
-          <text v-for="item in latestProfileItems" :key="item" class="badge">{{ item }}</text>
-        </view>
-
-        <!-- 快速记录 -->
-        <view class="quick-record-box">
-          <text class="h3">一句话快速记录</text>
-          <text class="muted">直接记到最近对象。</text>
-          <textarea
-            v-model="quickDesc"
-            class="text-area"
-            placeholder="例如：他今天主动约我吃饭，提前把时间地点都定好了。"
-          />
-          <view class="field">
-            <text class="field-label">这句话主要在说谁</text>
-            <view class="role-segments">
-              <view
-                v-for="item in subjectRoleOptions"
-                :key="item.value"
-                :class="['role-segment', quickSubjectRole === item.value ? 'active' : '']"
-                @click="setQuickSubjectRole(item.value)"
-              >
-                {{ item.label }}
-              </view>
-            </view>
-            <text class="muted">{{ quickSubjectRoleHint }}</text>
-          </view>
-          <view class="field">
-            <text class="field-label">具体发生时间</text>
-            <view class="datetime-row">
-              <picker mode="date" :value="quickDate" @change="onQuickDateChange">
-                <view class="picker-view">{{ quickDate }}</view>
-              </picker>
-              <picker mode="time" :value="quickTime" @change="onQuickTimeChange">
-                <view class="picker-view">{{ quickTime }}</view>
-              </picker>
-            </view>
-          </view>
-          <view class="field">
-            <text class="field-label">附件</text>
-            <view class="actions attachment-actions">
-              <button class="btn-secondary" :disabled="quickUploading" @click="chooseQuickImages">
-                {{ quickUploading ? '上传中...' : '上传图片' }}
-              </button>
-              <button
-                :class="['btn-secondary', recording ? 'recording' : '']"
-                :disabled="voiceUploading"
-                @click="toggleVoiceRecord"
-              >
-                {{ voiceButtonText }}
-              </button>
-            </view>
-            <text v-if="voiceStatus" class="voice-status">{{ voiceStatus }}</text>
-            <view v-if="quickAttachments.length > 0" class="attachment-list">
-              <view
-                v-for="(item, index) in quickAttachments"
-                :key="item.fileID"
-                class="attachment-item"
-                @click="previewQuickAttachment(index)"
-              >
-                <text class="attachment-name">{{ item.name }}</text>
-                <text class="attachment-link" selectable>{{ item.url || '授权链接生成中...' }}</text>
-                <button class="link-button danger" @click.stop="removeQuickAttachment(index)">删除</button>
-              </view>
-            </view>
-          </view>
-          <view class="actions">
-            <button class="btn-primary" :disabled="quickSubmitting" @click="submitQuickRecord">
-              {{ quickSubmitting ? '保存中...' : '保存到最近对象' }}
-            </button>
-          </view>
-          <view v-if="aiFeedbackLoading" class="ai-processing-bar">
-            <view class="ai-processing-dot"></view>
-            <text class="ai-processing-text">后台正在紧密分析中，已用时 {{ aiFeedbackSeconds }} 秒</text>
-          </view>
-        </view>
-
-        <view
-          v-if="showQuickFeedback && latestCase.latestResult && latestTrend"
-          :class="['card', 'status-card', latestFeedbackEventType === 'risk' ? 'warning' : 'success']"
-        >
-          <text class="status-strong">已记录：{{ latestFeedbackTitle }}</text>
-          <view class="quick-section">
-            <view class="section-mini-head">
-              <text class="mini-title">本次记录</text>
-            </view>
-            <text class="feedback-headline strong" user-select>{{ latestOriginalRecordText }}</text>
-          </view>
-          <view class="score-panel instant-score-panel">
-            <view class="section-mini-head">
-              <text class="mini-title">意向 / 风险</text>
-              <text class="mini-sub">这次即时反馈的当前分数</text>
-            </view>
-            <view class="score-row">
-              <view class="score-head">
-                <text class="score-label">意向</text>
-                <text class="score-value">{{ clampScore(latestCase.latestResult.intentScore) }}</text>
-                <text class="score-bucket">{{ mapIntentLabel(latestCase.latestResult.intentBucket) }}</text>
-              </view>
-              <view class="score-track">
-                <view class="score-fill intent-fill" :style="scoreFillStyle(latestCase.latestResult.intentScore, 'intent')"></view>
-              </view>
-            </view>
-            <view class="score-row">
-              <view class="score-head">
-                <text class="score-label">风险</text>
-                <text class="score-value">{{ clampScore(latestCase.latestResult.consistencyRiskScore) }}</text>
-                <text class="score-bucket">{{ mapRiskLabel(latestCase.latestResult.riskBucket) }}</text>
-              </view>
-              <view class="score-track">
-                <view class="score-fill risk-fill" :style="scoreFillStyle(latestCase.latestResult.consistencyRiskScore, 'risk')"></view>
-              </view>
-            </view>
-          </view>
-          <view class="instant-delta-panel">
-            <view class="instant-delta-item">
-              <text class="delta-label">意向变化</text>
-              <text class="delta-value" :class="deltaClass(latestTrend.intentDelta)">{{ formatDelta(latestTrend.intentDelta) }}</text>
-            </view>
-            <view class="instant-delta-item">
-              <text class="delta-label">风险变化</text>
-              <text class="delta-value" :class="deltaClass(latestTrend.riskDelta)">{{ formatDelta(latestTrend.riskDelta) }}</text>
-            </view>
-          </view>
-          <view v-if="quickReasonBullets.length > 0" class="quick-reason-panel">
-            <view class="section-mini-head">
-              <text class="mini-title">判断依据</text>
-              <text class="mini-sub">为什么这次会这么判断</text>
-            </view>
-            <text v-for="reason in quickReasonBullets" :key="reason" class="quick-reason" user-select>• {{ reason }}</text>
-          </view>
-          <view v-if="latestStatusCard" class="quick-status-panel">
-            <view class="section-mini-head">
-              <view class="mini-title-row">
-                <text class="mini-title">当前状态</text>
-                <text class="info-icon" @click="statusInfoVisible = true">i</text>
-              </view>
-            </view>
-            <view class="status-tag-groups">
-              <view v-if="statusStateTags.length" class="status-tag-row">
-                <view class="feedback-badges status-tags">
-                  <text v-for="tag in statusStateTags" :key="tag" class="badge">{{ tag }}</text>
-                </view>
-              </view>
-              <view v-if="problemTypeTags.length" class="status-tag-row">
-                <text class="status-tag-title">问题类型</text>
-                <view class="feedback-badges status-tags">
-                  <text v-for="tag in problemTypeTags" :key="tag" class="badge muted-badge">{{ tag }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-          <view v-if="latestActionPlanPanel.show" class="quick-guidance-panel">
-            <text class="ai-panel-label">你接下来怎么做</text>
-            <text v-if="latestActionPlanPanel.missing" class="raw-ai-reply-text muted" user-select>{{ latestActionPlanPanel.text }}</text>
-            <view v-else>
-              <view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="guidance-item">
-                <text class="guidance-label">{{ item.label }}</text>
-                <text class="guidance-text" user-select>{{ item.text }}</text>
-              </view>
-            </view>
-          </view>
-          <view class="actions">
-            <button class="btn-secondary" @click="goCaseDetail(latestCase.caseId)">查看当前主页</button>
-          </view>
-        </view>
-
-        <view v-if="showSideReadEntry" class="card profile-side-card">
-          <view class="section-mini-head">
-            <text class="mini-title">{{ profileSideRead?.title || '侧写' }}</text>
-            <text class="mini-sub">点击后单独生成</text>
-          </view>
-          <text v-if="profileSideRead" class="muted" user-select>{{ profileSideRead.summary }}</text>
-          <text v-else class="muted">{{ sideReadEntryHint }}</text>
-          <button v-if="!profileSideRead" class="btn-secondary side-read-generate-btn" :disabled="sideReadButtonDisabled" @click="generateLatestSideRead">
-            {{ sideReadLoading ? '生成中...' : '生成属相星座侧写' }}
-          </button>
-          <view v-if="profileSideRead" class="side-read-grid">
-            <view v-for="item in profileSideRead.sections" :key="item.label" class="side-read-item">
-              <text class="side-read-label">{{ item.label }}</text>
-              <text class="side-read-text" user-select>{{ item.text }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </template>
-
-    <view v-if="statusInfoVisible" class="info-modal-mask" @click="statusInfoVisible = false">
-      <view class="info-modal" @click.stop>
-        <view class="info-modal-head">
-          <view class="info-head-copy">
-            <text class="info-modal-title">当前状态怎么看</text>
-            <text class="info-modal-subtitle">这些标签走同一套规则口径，AI 只参与事件分析和变化量判断。</text>
-          </view>
-          <text class="info-modal-close" @click="statusInfoVisible = false">×</text>
-        </view>
-        <scroll-view scroll-y class="info-modal-body">
-          <view v-if="latestStatusCard?.summary || latestStatusCard?.caution" class="info-section relation">
-            <text class="info-section-title">这次状态说明</text>
-            <text v-if="latestStatusCard?.summary" class="info-section-copy strong" user-select>{{ latestStatusCard.summary }}</text>
-            <text v-if="latestStatusCard?.caution" class="info-section-copy" user-select>{{ latestStatusCard.caution }}</text>
-          </view>
-          <view class="info-section">
-            <text class="info-section-title">状态标签</text>
-            <text class="info-section-copy">从事件性质、阶段、状态、天气和证据强度几个角度看当前切面。</text>
-            <view class="info-meaning-list">
-              <view v-for="item in statusInfoStateItems" :key="`${item.group}-${item.tag}`" class="info-meaning-row">
-                <text class="info-chip">{{ item.tag }}</text>
-                <view class="info-meaning-copy-box">
-                  <text class="info-meaning-title">{{ item.group }}</text>
-                  <text class="info-meaning-copy">{{ item.description }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-          <view class="info-section">
-            <text class="info-section-title">问题类型</text>
-            <text class="info-section-copy">这组标签只在命中结构性问题时出现，用来提醒你别被单次体感带偏。</text>
-            <view class="info-meaning-list">
-              <view v-for="item in statusInfoProblemItems" :key="item.tag" class="info-meaning-row">
-                <text class="info-chip muted">{{ item.tag }}</text>
-                <view class="info-meaning-copy-box">
-                  <text class="info-meaning-title">问题类型</text>
-                  <text class="info-meaning-copy">{{ item.description }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
-    </block>
-    <!-- ==================== /经典版 ==================== -->
-
-    <!-- ==================== 新首页 Campus Pop ==================== -->
-    <block v-if="showV2">
-      <view class="debug-banner">⚠️ CAMPUS POP V2 已激活 — 如果你看到这行字，说明新首页正在渲染</view>
       <template v-if="cases.length === 0">
         <view class="hero-block">
           <text class="hero-tag">SIGNAL BOARD</text>
@@ -341,9 +47,17 @@
           </view>
           <view class="attach-row">
             <button class="btn-v2" :disabled="quickUploading" @click="chooseQuickImages">{{ quickUploading ? '上传中...' : '📎 图片' }}</button>
-            <button :class="['btn-v2', recording ? 'recording' : '']" :disabled="voiceUploading" @click="toggleVoiceRecord">{{ voiceButtonText }}</button>
+            <button v-if="!recording" :class="['btn-v2', recording ? 'recording' : '']" :disabled="voiceUploading" @click="toggleVoiceRecord">{{ voiceButtonText }}</button>
+            <view v-if="recording" class="btn-v2 voice-recording-btn" @click="toggleVoiceRecord">
+              <view class="voice-btn-content">
+                <text class="voice-btn-icon">⏹</text>
+                <view class="voice-wave-inline">
+                  <view v-for="i in 5" :key="i" class="wave-bar-item-sm"></view>
+                </view>
+                <text class="voice-countdown">{{ countdownText }}</text>
+              </view>
+            </view>
           </view>
-          <text v-if="voiceStatus" class="voice-note">{{ voiceStatus }}</text>
           <view v-if="quickAttachments.length > 0" class="attach-list">
             <view v-for="(item, index) in quickAttachments" :key="item.fileID" class="attach-item" @click="previewQuickAttachment(index)">
               <text class="attach-name">{{ item.name }}</text>
@@ -351,7 +65,9 @@
             </view>
           </view>
           <button class="btn-v2 primary" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记一笔' }}</button>
-          <view v-if="aiFeedbackLoading" class="ai-bar"><view class="ai-dot"></view><text class="ai-text">后台分析中，已用时 {{ aiFeedbackSeconds }} 秒</text></view>
+          <view v-if="aiFeedbackLoading" class="ai-bar">
+            <view class="ai-row"><view class="ai-dot"></view><text class="ai-text">后台分析中，已用时 {{ aiFeedbackSeconds }} 秒</text></view>
+          </view>
         </view>
 
         <!-- Feedback -->
@@ -378,11 +94,20 @@
             <text v-for="tag in statusStateTags" :key="tag" class="tag black">{{ tag }}</text>
             <text v-for="tag in problemTypeTags" :key="tag" class="tag">{{ tag }}</text>
           </view>
-          <view v-if="quickReasonBullets.length > 0" class="reason-box"><text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text></view>
+          <view v-if="quickReasonBullets.length > 0 || eventInsightTags.length > 0" class="reason-box">
+            <view v-if="eventInsightTags.length > 0" class="tag-row compact">
+              <text v-for="tag in eventInsightTags" :key="tag" class="tag">{{ tag }}</text>
+            </view>
+            <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
+          </view>
           <view v-if="latestActionPlanPanel.show" class="action-box">
             <text class="action-label">你接下来怎么做</text>
             <text v-if="latestActionPlanPanel.missing" class="action-text muted">{{ latestActionPlanPanel.text }}</text>
             <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ item.label }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
+            <view v-if="aiParticipationLabel" :class="['ai-badge', aiParticipationLabel.type]">
+              <text class="ai-badge-dot"></text>
+              <text class="ai-badge-text">{{ aiParticipationLabel.detail }}</text>
+            </view>
           </view>
           <button class="btn-v2 outline" @click="goCaseDetail(latestCase.caseId)">查看完整主页</button>
           <view v-if="showSideReadEntry" class="side-box">
@@ -419,10 +144,16 @@
           </scroll-view>
         </view>
       </view>
+
+      <!-- Xiaomi pet bar -->
+      <view v-if="showPetBar" class="pet-bar">
+        <image :src="petSrc" class="pet-bar-img" mode="aspectFit" @click="showSpeakSheet = true" />
+        <view v-if="petMsg" class="pet-bubble"><text class="pet-bubble-text">{{ petMsg }}</text></view>
+      </view>
+
+      <!-- Pet Speak Sheet -->
+      <PetSpeakSheet :visible="showSpeakSheet" @close="showSpeakSheet = false" />
     </block>
-    <!-- ==================== /新首页 ==================== -->
-    </block>
-    <!-- ==================== /v-else ==================== -->
 
   </view>
 </template>
@@ -431,14 +162,51 @@
 import { ref, computed, watch } from 'vue'
 import { onHide, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
+import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, analyzeAttachment, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile } from '@/utils/api'
-import { combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
+import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
-const showV2 = ref(true)
+type PetScene =
+  | 'ai_loading'
+  | 'ai_success'
+  | 'risk'
+  | 'positive'
+  | 'insufficient_balance'
+  | 'side_read_loading'
+  | 'side_read_success'
+  | 'ai_error'
+
+const petLines: Record<PetScene, { state: string; message: string }> = {
+  ai_loading:          { state: 'waiting',  message: '小咪：我正在帮你看这条记录。' },
+  ai_success:          { state: 'review',   message: '小咪：分析好啦，我先说重点。' },
+  risk:                { state: 'failed',   message: '小咪：这里要慢一点，别只看甜的部分。' },
+  positive:            { state: 'jumping',  message: '小咪：这次确实比之前更有动作。' },
+  insufficient_balance:{ state: 'failed',   message: '小咪：这次我算不动啦，先补一点额度再继续分析。' },
+  side_read_loading:   { state: 'review',   message: '小咪：我再帮你补一段观察角度。' },
+  side_read_success:   { state: 'jumping',  message: '小咪：侧写好啦，记得只当观察参考。' },
+  ai_error:            { state: 'failed',   message: '小咪：刚刚没看成功，可以稍后再试一次。' }
+}
+
+function getPetPresentation(scene: PetScene) {
+  return petLines[scene]
+}
+
+function mapResultToScene(params: { latestFeedbackEventType: string; intentDelta: number }): PetScene {
+  const { latestFeedbackEventType, intentDelta } = params
+  if (latestFeedbackEventType === 'risk') return 'risk'
+  if (intentDelta > 0) return 'positive'
+  return 'ai_success'
+}
+
 const themeVars = ref(getThemeStyle())
+const pageStyle = computed(() => {
+  const base = { ...themeVars.value }
+  if (showPetBar.value) base.paddingBottom = '140rpx'
+  return base
+})
 const loading = ref(true)
 const cases = ref<any[]>([])
 const userId = ref('')
@@ -458,6 +226,8 @@ const aiFeedbackSeconds = ref(0)
 const statusInfoVisible = ref(false)
 let aiFeedbackTimer: any = null
 const generatedSideRead = ref<any>(null)
+const petScene = ref<PetScene | null>(null)
+let petSceneTimer: ReturnType<typeof setTimeout> | null = null
 const quickSubjectRole = ref<'target' | 'self' | 'both'>('target')
 const quickSubjectRoleConfidence = ref<'auto' | 'user_selected'>('auto')
 const quickAttachments = ref<any[]>([])
@@ -544,10 +314,17 @@ function parseRawReplySections(text: string) {
   const source = String(text || '').trim()
   if (!source) return []
   const labels = ['对方可能的心理', '你下一步怎么做', '重点观察什么']
-  const normalized = source
+  // Step 1: normalize colon format
+  let normalized = source
     .replace(/\r/g, '')
     .replace(/(对方可能的心理|你下一步怎么做|重点观察什么)\s*[：:]/g, '\n$1：')
-    .trim()
+  // Step 2: fallback — if no colon headings found, try slash-separated format
+  if (!labels.some((l) => normalized.includes(`${l}：`))) {
+    normalized = source
+      .replace(/\r/g, '')
+      .replace(/(对方可能的心理|你下一步怎么做|重点观察什么)\s*\/\s*/g, '\n$1：')
+  }
+  normalized = normalized.trim()
   const sections = labels.map((label, index) => {
     const start = normalized.indexOf(`${label}：`)
     if (start < 0) return null
@@ -585,6 +362,15 @@ const latestActionPlanPanel = computed(() => {
   return { show: false, text: '', missing: false, sections: [] }
 })
 
+const aiParticipationLabel = computed(() => {
+  const result = latestCase.value?.latestResult
+  if (!result || result.aiPending) return null
+  if (result.aiFailed) return { text: '规则兜底', type: 'fallback', detail: 'AI 超时或格式异常，本次为规则计算结果' }
+  if (result.aiUsed === false) return { text: '规则兜底', type: 'fallback', detail: '未启用 AI，本次为规则计算结果' }
+  if (result.aiUsed) return { text: 'AI 参与', type: 'ai', detail: '本次由 AI 模型参与分析' }
+  return null
+})
+
 function startAIFeedbackTimer() {
   stopAIFeedbackTimer()
   aiFeedbackSeconds.value = 0
@@ -603,6 +389,18 @@ function stopAIFeedbackTimer() {
 const quickReasonBullets = computed(() => {
   const bullets = latestCase.value?.latestResult?.explanation?.bullets
   return Array.isArray(bullets) ? bullets.slice(0, 3) : []
+})
+
+const eventInsightTags = computed(() => {
+  const insight = latestCase.value?.latestResult?.eventInsight
+  if (!insight || typeof insight !== 'object') return []
+  const tags = [
+    mapEventInsightActor(insight.actor),
+    mapEventInsightInteraction(insight.interaction),
+    mapEventInsightCommitment(insight.commitmentStatus),
+    mapEventInsightEvidence(insight.evidenceType)
+  ].filter(Boolean)
+  return [...new Set(tags)].slice(0, 4)
 })
 
 const statusStateTags = computed(() => {
@@ -674,10 +472,18 @@ const quickSubjectRoleHint = computed(() => {
   return '默认按“对方”记录；如果写的是你的心理感受，请改为“自己”。'
 })
 
+const recordingSeconds = ref(60)
+let recordingTimer: ReturnType<typeof setInterval> | null = null
+
+const countdownText = computed(() => {
+  const m = Math.floor(recordingSeconds.value / 60)
+  const s = recordingSeconds.value % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+})
+
 const voiceButtonText = computed(() => {
-  if (voiceUploading.value) return '识别中...'
-  if (recording.value) return '结束录音'
-  return '语音录入'
+  if (voiceUploading.value) return '🔄 识别中...'
+  return '🎤 语音录入'
 })
 
 const showQuickFeedback = computed(() => {
@@ -717,6 +523,50 @@ function mapRiskLabel(bucket?: string) {
   }
 }
 
+function mapEventInsightActor(value?: string) {
+  switch (value) {
+    case 'target': return '对方动作'
+    case 'self': return '我的动作'
+    case 'both': return '双方互动'
+    case 'unknown': return '主体不清'
+    default: return ''
+  }
+}
+
+function mapEventInsightInteraction(value?: string) {
+  switch (value) {
+    case 'initiated': return '主动'
+    case 'responded': return '回应'
+    case 'rejected': return '拒绝'
+    case 'delayed': return '拖延'
+    case 'fulfilled': return '兑现'
+    case 'promised': return '承诺'
+    case 'observed': return '观察记录'
+    case 'unclear': return '互动不明'
+    default: return ''
+  }
+}
+
+function mapEventInsightCommitment(value?: string) {
+  switch (value) {
+    case 'promised': return '有承诺'
+    case 'fulfilled': return '已兑现'
+    case 'broken': return '未兑现'
+    case 'unclear': return '兑现不明'
+    default: return ''
+  }
+}
+
+function mapEventInsightEvidence(value?: string) {
+  switch (value) {
+    case 'fact': return '事实依据'
+    case 'feeling': return '感受为主'
+    case 'mixed': return '事实+感受'
+    case 'unclear': return '依据不清'
+    default: return ''
+  }
+}
+
 function mapTimelineTypeLabel(type?: string) {
   switch (type) {
     case 'positive': return '推进事件'
@@ -724,16 +574,6 @@ function mapTimelineTypeLabel(type?: string) {
     case 'verification': return '验证事件'
     case 'note': return '普通记录'
     default: return '关系记录'
-  }
-}
-
-function mapAction(action?: string) {
-  switch (action) {
-    case 'verify':
-    case 'insufficient_data': return '先做验证'
-    case 'clarify': return '适合澄清'
-    case 'pause': return '先暂停推进'
-    default: return '先做验证'
   }
 }
 
@@ -764,28 +604,10 @@ function setQuickSubjectRole(role: 'target' | 'self' | 'both') {
   quickSubjectRoleConfidence.value = 'user_selected'
 }
 
-function mapConfidenceLabel(level?: string) {
-  switch (level) {
-    case 'low': return '低'
-    case 'medium': return '中'
-    case 'high': return '高'
-    default: return level || '--'
-  }
-}
-
 function clampScore(score: any) {
   const numeric = Number(score)
   if (!Number.isFinite(numeric)) return 0
   return Math.max(0, Math.min(100, Math.round(numeric)))
-}
-
-function scoreFillStyle(score: any, kind: 'intent' | 'risk') {
-  const value = clampScore(score)
-  const alpha = 0.18 + (value / 100) * 0.72
-  const background = kind === 'risk'
-    ? `linear-gradient(90deg, rgba(184, 74, 58, ${alpha}), rgba(126, 43, 35, ${alpha}))`
-    : `linear-gradient(90deg, rgba(53, 111, 96, ${alpha}), rgba(18, 60, 54, ${alpha}))`
-  return { width: `${value}%`, background }
 }
 
 function formatDelta(delta: number) {
@@ -800,24 +622,101 @@ function deltaClass(delta: number) {
   return 'flat'
 }
 
-function formatFocusPrompt(value?: string) {
-  return String(value || '')
-    .replace(/^本次重点记录[:：]?\s*/, '')
-    .replace(/^下一次重点记录[:：]?\s*/, '')
-    .replace(/^下一次最值得记录的是[:：]?\s*/, '')
-    .trim()
-}
-
 function avatarLabel(name?: string) {
   const normalized = String(name || '').trim()
   return normalized ? normalized.slice(0, 1) : '像'
 }
 
+// ---- pet animation ----
+const petConfigs: Record<string, { frames: number; fps: number; loop: boolean }> = {
+  idle: { frames: 6, fps: 6, loop: true },
+  waiting: { frames: 6, fps: 6, loop: true },
+  review: { frames: 6, fps: 6, loop: true },
+  jumping: { frames: 5, fps: 8, loop: false },
+  failed: { frames: 8, fps: 6, loop: true },
+  waving: { frames: 4, fps: 6, loop: true },
+  running: { frames: 6, fps: 8, loop: true },
+  'running-left': { frames: 8, fps: 8, loop: true },
+  'running-right': { frames: 8, fps: 8, loop: true }
+}
+
+const petFrame = ref(0)
+const showSpeakSheet = ref(false)
+const petMsg = ref('')
+const petState = ref('idle')
+let petTimer: ReturnType<typeof setInterval> | null = null
+
+const petSrc = computed(() => {
+  const s = petState.value || 'idle'
+  const f = String(petFrame.value).padStart(2, '0')
+  return `/static/pets/xiaomi/frames/${s}/${f}.png`
+})
+
+function stopPetAnim() {
+  if (petTimer) { clearInterval(petTimer); petTimer = null }
+}
+
+function startPetAnim(state: string) {
+  stopPetAnim()
+  const cfg = petConfigs[state] || petConfigs['idle']
+  petState.value = state
+  petFrame.value = 0
+  if (cfg.frames <= 1) return
+  const ms = 1000 / cfg.fps
+  petTimer = setInterval(() => {
+    const next = petFrame.value + 1
+    petFrame.value = next >= cfg.frames ? (cfg.loop ? 0 : cfg.frames - 1) : next
+  }, ms)
+}
+
+function applyPetScene(scene: PetScene | null, durationMs?: number, customMessage?: string) {
+  if (petSceneTimer) { clearTimeout(petSceneTimer); petSceneTimer = null }
+  if (!scene) { petMsg.value = ''; petScene.value = null; startPetAnim('idle'); return }
+  const p = getPetPresentation(scene)
+  petMsg.value = customMessage || p.message
+  petScene.value = scene
+  startPetAnim(p.state)
+  if (durationMs && durationMs > 0) {
+    petSceneTimer = setTimeout(() => { petMsg.value = ''; petScene.value = null; startPetAnim('idle') }, durationMs)
+  }
+}
+
+const showPetBar = ref(true)
+function syncPetBarPref() {
+  try { showPetBar.value = uni.getStorageSync('showPetBar') !== false } catch { showPetBar.value = true }
+}
+syncPetBarPref()
+
+// start idle animation on load
+startPetAnim('idle')
+
+const feedbackPetScene = computed<PetScene | null>(() => {
+  if (!showQuickFeedback.value) return null
+  if (!latestCase.value?.latestResult) return null
+  if (latestCase.value.latestResult.aiPending) return null
+  return mapResultToScene({
+    latestFeedbackEventType: latestFeedbackEventType.value,
+    intentDelta: latestTrend.value?.intentDelta ?? 0
+  })
+})
+
+const dataReady = ref(false)
+const lastDataVersion = ref(0)
+
+function hasCaseInList(caseId: string) {
+  return Boolean(caseId && cases.value.some((item: any) => item.caseId === caseId || item._id === caseId))
+}
+
 onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
+  syncPetBarPref()
   activeCaseId.value = getActiveCaseId()
-  loadData()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  const activeMissing = Boolean(activeCaseId.value && dataReady.value && !hasCaseInList(activeCaseId.value))
+  if (!dataReady.value || dv > lastDataVersion.value || activeMissing) {
+    loadData()
+  }
 })
 
 onShareAppMessage(() => buildSafeShareMessage())
@@ -826,14 +725,19 @@ onShareTimeline(() => buildSafeTimelineShare())
 
 onHide(() => {
   if (recording.value && recorderManager?.stop) recorderManager.stop()
+  if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
+  stopPetAnim()
   statusInfoVisible.value = false
+  applyPetScene(null)
 })
 
 onUnload(() => {
   if (recording.value && recorderManager?.stop) recorderManager.stop()
   stopAIFeedbackTimer()
+  stopPetAnim()
   statusInfoVisible.value = false
+  applyPetScene(null)
 })
 
 async function loadData() {
@@ -843,7 +747,7 @@ async function loadData() {
     return
   }
   userId.value = uid
-  loading.value = true
+  if (!dataReady.value) loading.value = true
   try {
     const [list, profileRes] = await Promise.all([
       getCases(uid),
@@ -861,6 +765,9 @@ async function loadData() {
       activeCaseId.value = firstCaseId
       if (firstCaseId) setActiveCaseId(firstCaseId)
     }
+    bumpDataVersion()
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
+    dataReady.value = true
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
@@ -883,6 +790,7 @@ async function onCreateCase(payload: { name: string; answers: any[]; profile: an
       const caseId = res.caseId || res.case?.caseId
       if (caseId) {
         setActiveCaseId(caseId)
+        bumpDataVersion()
         activeCaseId.value = caseId
         uni.switchTab({ url: '/pages/case-detail/case-detail' })
       } else {
@@ -907,7 +815,12 @@ function onQuickTimeChange(e: any) {
 
 function getFileName(filePath: string, fallback: string) {
   const clean = String(filePath || '').split('?')[0]
-  return clean.split('/').pop() || fallback
+  const name = clean.split('/').pop()
+  if (name && !name.startsWith('tmp_') && !name.startsWith('wxfile://')) return name
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+  return `IMG_${ts}.jpg`
 }
 
 function buildQuickCloudPath(filePath: string, index: number) {
@@ -942,16 +855,30 @@ function getRecorderManager() {
     recorderManager.onStart(() => {
       recording.value = true
       recordStartedAt = Date.now()
-      voiceStatus.value = '正在录音，再点一次结束'
+      recordingSeconds.value = 60
+	      voiceStatus.value = '正在录音 1:00 · 再点一次结束'
+	      recordingTimer = setInterval(() => {
+	        const elapsed = Math.floor((Date.now() - recordStartedAt) / 1000)
+	        const remain = Math.max(0, 60 - elapsed)
+	        recordingSeconds.value = remain
+	        const m = Math.floor(remain / 60)
+	        const s = remain % 60
+	        voiceStatus.value = `正在录音 ${m}:${String(s).padStart(2, '0')} · 再点一次结束`
+	        if (remain <= 0) {
+	          manager.stop()
+	        }
+	      }, 200)
     })
     recorderManager.onStop((res: any = {}) => {
       recording.value = false
+	      if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
       handleVoiceRecordStop(res)
     })
     recorderManager.onError((error: any = {}) => {
       recording.value = false
       voiceUploading.value = false
-      voiceStatus.value = ''
+	      voiceStatus.value = ''
+	      if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
       showError(formatRecorderError(error?.errMsg || error?.message))
     })
   }
@@ -1185,17 +1112,30 @@ async function submitQuickRecord() {
 
 async function runAssessmentAI(payload: { caseId: string; assessmentId: string; recordId?: string }) {
   aiFeedbackLoading.value = true
+  applyPetScene('ai_loading')
   startAIFeedbackTimer()
   try {
     const aiRes = await generateAssessmentAI(payload)
-    if (handleInsufficientBalance(aiRes)) return
+    if (aiRes?.code === 'INSUFFICIENT_BALANCE') {
+      applyPetScene('insufficient_balance')
+      handleInsufficientBalance(aiRes)
+      return
+    }
     if (!aiRes?.success) {
+      applyPetScene('ai_error', 3000)
       showError(aiRes?.message || 'AI即时反馈生成失败')
       return
     }
     await loadData()
+    const scene = feedbackPetScene.value
+    if (scene) {
+      const expl = latestCase.value?.latestResult?.explanation
+      const msg = expl?.petLine || expl?.bullets?.[0]
+      applyPetScene(scene, 5000, msg || undefined)
+    }
     showSuccess('AI即时反馈已更新')
   } catch (error: any) {
+    applyPetScene('ai_error', 3000)
     showError(error?.message || 'AI即时反馈生成失败')
   } finally {
     aiFeedbackLoading.value = false
@@ -1209,10 +1149,16 @@ async function generateLatestSideRead() {
   const caseId = latestCase.value?.caseId
   if (!caseId) return
   sideReadLoading.value = true
+  applyPetScene('side_read_loading')
   try {
     const res = await generateSideRead({ caseId })
-    if (handleInsufficientBalance(res)) return
+    if (res?.code === 'INSUFFICIENT_BALANCE') {
+      applyPetScene('insufficient_balance')
+      handleInsufficientBalance(res)
+      return
+    }
     if (!res?.success) {
+      applyPetScene('ai_error', 3000)
       showError(res?.message || '侧写生成失败')
       return
     }
@@ -1220,6 +1166,7 @@ async function generateLatestSideRead() {
     if (latestCase.value?.latestResult) {
       latestCase.value.latestResult.sideReadAdvice = res.sideReadAdvice
     }
+    applyPetScene('side_read_success', 3000)
     showSuccess('侧写已生成')
   } catch (error: any) {
     showError(error?.message || '侧写生成失败')
@@ -1235,25 +1182,9 @@ function goCaseDetail(caseId: string) {
 </script>
 
 <style scoped>
-/* ===== Version Toggle ===== */
-.debug-classic { background: #e8f5e9; border: 2rpx solid #2e7d32; padding: 6rpx 12rpx; font-size: 20rpx; color: #2e7d32; margin-bottom: 10rpx; }
-
-.version-toggle {
-  display: flex; gap: 0; margin-bottom: 18rpx;
-  border: 3rpx solid #111; overflow: hidden; background: #fff;
-}
-.toggle-tab {
-  flex: 1; text-align: center; padding: 14rpx 0;
-  font-size: 26rpx; font-weight: 700; color: #999;
-}
-.toggle-tab.active {
-  background: #111; color: #FFD93D; font-weight: 900;
-}
-
 /* ===== CAMPUS POP V2 Styles ===== */
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; }
 .v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
-.v2-mode .debug-banner { background: #FFD93D; border: 4rpx solid #111; padding: 12rpx; text-align: center; font-size: 24rpx; font-weight: 900; color: #111; margin-bottom: 16rpx; }
 
 .v2-mode .hero-block {
   background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111;
@@ -1280,6 +1211,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .kpi-lbl { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 6rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
 .v2-mode .tag-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 18rpx; }
+.v2-mode .tag-row.compact { margin-top: 0; margin-bottom: 12rpx; }
 .v2-mode .tag { display: inline-flex; align-items: center; min-height: 40rpx; padding: 6rpx 16rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .tag.black { background: #111; color: #fff; }
 
@@ -1301,21 +1233,21 @@ function goCaseDetail(caseId: string) {
 .v2-mode .picker-v2 { padding: 12rpx 20rpx; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
 
 .v2-mode .attach-row { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .voice-note { display: block; margin-top: 12rpx; font-size: 22rpx; font-weight: 700; color: #666; }
 .v2-mode .attach-list { display: flex; flex-direction: column; gap: 10rpx; margin-top: 14rpx; }
 .v2-mode .attach-item { display: flex; justify-content: space-between; align-items: center; padding: 14rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: 22rpx; font-weight: 700; }
-.v2-mode .attach-name { color: #111; }
+.v2-mode .attach-name { color: #111; max-width: 360rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v2-mode .btn-del { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #fff; font-size: 20rpx; font-weight: 700; color: #FF5252; }
 
 .v2-mode .btn-v2 { flex: 1; height: 72rpx; line-height: 72rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-sizing: border-box; padding: 0 24rpx; }
 .v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 6rpx 6rpx 0 #111; margin-top: 16rpx; width: 100%; }
 .v2-mode .btn-v2.outline { margin-top: 20rpx; width: 100%; }
 .v2-mode .btn-v2.sm { width: 100%; margin-top: 14rpx; height: 60rpx; line-height: 60rpx; font-size: 24rpx; }
-.v2-mode .btn-v2.recording { background: #FF6B6B; color: #fff; }
 .v2-mode .btn-v2[disabled] { opacity: 0.6; }
 
-.v2-mode .ai-bar { display: flex; align-items: center; gap: 14rpx; margin-top: 16rpx; padding: 16rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .ai-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 14rpx; margin-top: 16rpx; padding: 16rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .ai-row { display: flex; align-items: center; gap: 14rpx; }
 .v2-mode .ai-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; }
+.v2-mode .ai-text { font-size: 24rpx; font-weight: 700; color: #111; }
 
 .v2-mode .feedback-block { background: #fff; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .feedback-block.ok { border-left: 12rpx solid #4ECDC4; }
@@ -1351,6 +1283,14 @@ function goCaseDetail(caseId: string) {
 .v2-mode .action-item-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; }
 .v2-mode .action-item-text { display: block; font-size: 24rpx; color: #555; margin-top: 6rpx; line-height: 1.5; }
 
+.v2-mode .ai-badge { display: flex; align-items: center; gap: 8rpx; margin-top: 14rpx; padding: 10rpx 14rpx; border: 2rpx solid #111; }
+.v2-mode .ai-badge.ai { background: #e8f5e9; }
+.v2-mode .ai-badge.fallback { background: #fff3e0; }
+.v2-mode .ai-badge-dot { width: 12rpx; height: 12rpx; border-radius: 50%; border: 2rpx solid #111; flex-shrink: 0; }
+.v2-mode .ai-badge.ai .ai-badge-dot { background: #4caf50; }
+.v2-mode .ai-badge.fallback .ai-badge-dot { background: #ff9800; }
+.v2-mode .ai-badge-text { font-size: 20rpx; font-weight: 700; color: #111; }
+
 .v2-mode .side-box { margin-top: 20rpx; padding: 18rpx; border: 2rpx dashed #111; background: #FFFBEB; }
 .v2-mode .side-title { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
 .v2-mode .side-text { display: block; font-size: 24rpx; color: #555; line-height: 1.5; }
@@ -1383,676 +1323,57 @@ function goCaseDetail(caseId: string) {
   padding: var(--spacing-page, 24rpx);
   box-sizing: border-box;
 }
-.loading {
-  text-align: center;
-  padding: 80rpx 0;
-  color: var(--text-muted, #786857);
-}
-.card {
-  background: var(--card-bg, #fbf6ee);
-  border-radius: var(--radius-md, 20rpx);
-  padding: var(--spacing-card, 32rpx);
-  margin-bottom: 24rpx;
-  box-shadow: var(--shadow-md, 0 2rpx 8rpx rgba(0,0,0,0.04));
-}
-.hero-card {
-  background: linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #fbf6ee) 0%, var(--hero-bg-2, #f4ede2) 100%);
-  box-shadow: var(--shadow-hero, none);
-}
-.hero-topline {
-  display: block;
-  font-size: 22rpx;
-  color: var(--primary-2, #786857);
-  letter-spacing: 2rpx;
-  text-transform: uppercase;
-  margin-bottom: 8rpx;
-}
-.h1 {
-  display: block;
-  font-size: 40rpx;
-  font-weight: var(--font-weight-hero, 700);
-  color: var(--primary, #143f3a);
-  margin: 8rpx 0;
-  line-height: var(--text-line-height-heading, 1.3);
-}
-.h2 {
-  display: block;
-  font-size: 32rpx;
-  font-weight: var(--font-weight-strong, 600);
-  color: var(--text-main, #241b12);
-  margin-bottom: 12rpx;
-  line-height: var(--text-line-height-heading, 1.35);
-}
-.h3 {
-  display: block;
-  font-size: 28rpx;
-  font-weight: var(--font-weight-strong, 600);
-  color: var(--text-main, #241b12);
-  line-height: var(--text-line-height-heading, 1.35);
-}
-.hero-subtext {
-  display: block;
-  font-size: 26rpx;
-  color: var(--primary-2, #786857);
-  line-height: var(--text-line-height, 1.6);
-  margin-top: 8rpx;
-}
-.muted {
-  display: block;
-  font-size: 24rpx;
-  color: var(--text-muted, #786857);
-  margin: 6rpx 0;
-  line-height: var(--text-line-height, 1.55);
-}
-.section-head { margin-bottom: 18rpx; }
-.case-kpis {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-top: 24rpx;
-}
-.kpi-item {
-  flex: 1 1 40%;
-  background: var(--card-soft, #fff);
-  border-radius: var(--radius-sm, 14rpx);
-  padding: 20rpx;
-  min-width: 200rpx;
-  box-shadow: var(--shadow-sm, none);
-}
-.kpi-label {
-  display: block;
-  font-size: 22rpx;
-  color: var(--text-muted, #786857);
-}
-.kpi-value {
-  display: block;
-  font-size: 36rpx;
-  font-weight: var(--font-weight-hero, 700);
-  color: var(--primary, #143f3a);
-  margin-top: 4rpx;
-}
-.case-identity {
-  display: flex;
-  align-items: center;
-  gap: 14rpx;
-  margin-top: 8rpx;
-}
-.badges,
-.feedback-badges {
-  margin-top: 18rpx;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-}
-.status-tags {
-  margin-top: 0;
-  margin-bottom: 12rpx;
-}
-.status-tag-groups {
-  margin-top: 14rpx;
-}
-.status-tag-row {
-  margin-top: 12rpx;
-}
-.status-tag-title {
-  display: block;
-  margin-bottom: 8rpx;
-  color: var(--text-muted, #786857);
-  font-size: 22rpx;
-  font-weight: 650;
-}
-.badge {
-  display: inline-block;
-  padding: 8rpx 16rpx;
-  background: var(--accent-soft, #efe7d8);
-  border-radius: 999rpx;
-  font-size: 22rpx;
-  color: var(--text-main, #241b12);
-  margin: 0;
-}
-.muted-badge {
-  background: var(--card-soft, #f5efe5);
-  color: var(--text-muted, #786857);
-}
-.action-badge {
-  background: #dff5e8;
-  color: var(--primary, #143f3a);
-  font-weight: 700;
-}
-.quick-record-box {
-  margin-top: 28rpx;
-  padding: 24rpx;
-  background: var(--card-soft, #fff);
-  border-radius: var(--radius-sm, 14rpx);
-}
-.text-area {
-  width: 100%;
-  min-height: 160rpx;
-  padding: 18rpx;
-  margin-top: 12rpx;
-  background: var(--card-bg, #fbf6ee);
-  border: 2rpx solid rgba(18, 60, 54, 0.1);
-  border-radius: var(--radius-sm, 12rpx);
-  font-size: 26rpx;
-  color: var(--text-main, #241b12);
-  box-sizing: border-box;
-}
-.field { margin-top: 16rpx; }
-.field-label {
-  display: block;
-  font-size: 24rpx;
-  color: var(--text-main, #241b12);
-  margin-bottom: 8rpx;
-}
-.picker-view {
-  height: 72rpx;
-  line-height: 72rpx;
-  padding: 0 22rpx;
-  background: var(--card-bg, #fbf6ee);
-  border: 2rpx solid rgba(18, 60, 54, 0.1);
-  border-radius: var(--radius-sm, 12rpx);
-  font-size: 26rpx;
-  color: var(--text-main, #241b12);
-}
-.datetime-row {
-  display: grid;
-  grid-template-columns: 1fr 220rpx;
-  gap: 12rpx;
-}
-.role-segments {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10rpx;
-}
-.role-segment {
-  height: 68rpx;
-  line-height: 68rpx;
-  text-align: center;
-  border-radius: var(--radius-sm, 12rpx);
-  background: var(--card-bg, #fbf6ee);
-  border: 2rpx solid rgba(18, 60, 54, 0.1);
-  color: var(--text-muted, #786857);
-  font-size: 24rpx;
-}
-.role-segment.active {
-  background: rgba(20, 63, 58, 0.1);
-  border-color: var(--primary, #143f3a);
-  color: var(--primary, #143f3a);
-  font-weight: var(--font-weight-hero, 700);
-}
-.attachment-actions {
-  margin-top: 0;
-}
-.btn-secondary.recording {
-  background: var(--risk, #b85c38);
-  border-color: var(--risk, #b85c38);
-  color: #fff;
-}
-.voice-status {
-  display: block;
-  margin-top: 10rpx;
-  color: var(--text-muted, #786857);
-  font-size: 22rpx;
-}
-.attachment-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-top: 14rpx;
-}
-.attachment-item {
-  padding: 16rpx;
-  border-radius: var(--radius-sm, 12rpx);
-  background: var(--card-soft, #fbf6ee);
-  border: 2rpx solid rgba(18, 60, 54, 0.1);
-}
-.attachment-name {
-  display: block;
-  color: var(--text-main, #241b12);
-  font-size: 24rpx;
-  font-weight: 700;
-}
-.attachment-link {
-  display: block;
-  margin-top: 6rpx;
-  color: var(--success, #14633a);
-  font-size: 22rpx;
-  line-height: 1.4;
-  word-break: break-all;
-}
-.link-button {
-  margin-top: 10rpx;
-  padding: 0;
-  height: 48rpx;
-  line-height: 48rpx;
-  background: transparent;
-  border: none;
-  color: var(--primary, #143f3a);
-  font-size: 24rpx;
-  text-align: left;
-}
-.link-button.danger {
-  color: var(--risk, #b85c38);
-}
-.actions {
-  display: flex;
-  gap: 16rpx;
-  margin-top: 20rpx;
-}
-.btn-primary {
-  flex: 1;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: var(--primary, #143f3a);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm, 12rpx);
-  font-size: 28rpx;
-}
-.btn-secondary {
-  flex: 1;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: var(--card-bg, #fff);
-  color: var(--primary, #143f3a);
-  border: 2rpx solid var(--primary, #143f3a);
-  border-radius: var(--radius-sm, 12rpx);
-  font-size: 28rpx;
-}
-.ai-processing-bar {
-  display: flex;
-  align-items: center;
-  gap: 14rpx;
-  margin-top: 18rpx;
-  padding: 18rpx 20rpx;
-  border-radius: var(--radius-sm, 14rpx);
-  background: rgba(20, 99, 58, 0.08);
-  border: 1rpx solid rgba(20, 99, 58, 0.16);
-}
-.ai-processing-dot {
-  width: 18rpx;
-  height: 18rpx;
-  border-radius: 50%;
-  background: var(--success, #14633a);
-  animation: pulse-dot 1s ease-in-out infinite;
-}
-.ai-processing-text {
-  color: var(--primary, #143f3a);
-  font-size: 24rpx;
-  line-height: 1.45;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 0.35; transform: scale(0.82); }
-  50% { opacity: 1; transform: scale(1.12); }
-}
-.profile-avatar {
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--accent-soft, #efe7d8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.profile-avatar.sm {
-  width: 68rpx;
-  height: 68rpx;
-}
-.profile-avatar image {
-  width: 100%;
-  height: 100%;
-}
-.avatar-placeholder {
-  font-size: 24rpx;
-  font-weight: 700;
-  color: var(--text-muted, #786857);
-}
-.status-card {
-  margin-top: 20rpx;
-  border-left: 8rpx solid var(--primary, #143f3a);
-  border-radius: var(--radius-sm, 12rpx);
-}
-.status-card.success {
-  border-left-color: var(--success, #14633a);
-  background: rgba(15, 107, 69, 0.08);
-}
-.status-card.warning {
-  border-left-color: var(--risk, #b85c38);
-  background: var(--risk-soft, #f9d8d2);
-}
-.status-strong {
-  display: block;
-  font-size: 28rpx;
-  font-weight: var(--font-weight-hero, 700);
-  color: var(--text-main, #241b12);
-}
-.feedback-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  margin-top: 12rpx;
-}
-.feedback-headline {
-  margin-top: 10rpx;
-}
-.quick-section,
-.quick-reason-panel,
-.quick-status-panel,
-.raw-ai-reply-panel,
-.quick-guidance-panel,
-.score-panel {
-  margin-top: 18rpx;
-  padding: 20rpx;
-  border-radius: var(--radius-sm, 16rpx);
-  background: rgba(255, 252, 247, 0.78);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-.section-mini-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12rpx;
-  margin-bottom: 12rpx;
-}
-.mini-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-.mini-title {
-  color: var(--text-main, #241b12);
-  font-size: 26rpx;
-  font-weight: var(--font-weight-hero, 700);
-}
-.info-icon {
-  flex-shrink: 0;
-  width: 34rpx;
-  height: 34rpx;
-  line-height: 34rpx;
-  border-radius: 50%;
-  border: 1rpx solid rgba(20, 63, 58, 0.2);
-  background: rgba(255, 252, 247, 0.84);
-  color: var(--primary, #143f3a);
-  font-size: 22rpx;
-  font-weight: 800;
-  text-align: center;
-}
-.info-modal-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 34rpx;
-  background: rgba(24, 18, 12, 0.42);
-  box-sizing: border-box;
-}
-.info-modal {
-  width: 100%;
-  max-height: 82vh;
-  overflow: hidden;
-  border-radius: var(--radius-md, 22rpx);
-  border: 1rpx solid var(--accent, rgba(201, 164, 92, 0.28));
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 180rpx),
-    var(--card-bg, #fffcf7);
-  box-shadow: 0 30rpx 70rpx rgba(18, 60, 54, 0.24);
-}
-.info-modal-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18rpx;
-  padding: 30rpx 30rpx 20rpx;
-  border-bottom: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-.info-head-copy {
-  flex: 1;
-  min-width: 0;
-}
-.info-modal-title {
-  display: block;
-  color: var(--text-main, #201914);
-  font-size: 32rpx;
-  font-weight: 800;
-  line-height: 1.35;
-}
-.info-modal-subtitle {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 23rpx;
-  line-height: 1.5;
-}
-.info-modal-close {
-  flex-shrink: 0;
-  width: 46rpx;
-  height: 46rpx;
-  line-height: 42rpx;
-  border-radius: 50%;
-  background: rgba(18, 60, 54, 0.08);
-  color: var(--primary, #123c36);
-  font-size: 36rpx;
-  text-align: center;
-}
-.info-modal-body {
-  max-height: 62vh;
-  padding: 24rpx 30rpx 30rpx;
-  box-sizing: border-box;
-}
-.info-section {
-  padding: 20rpx;
-  border-radius: var(--radius-sm, 16rpx);
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  background: var(--card-soft, #fffaf3);
-}
-.info-section + .info-section {
-  margin-top: 18rpx;
-}
-.info-section.relation {
-  background: rgba(201, 164, 92, 0.12);
-}
-.info-section-title {
-  display: block;
-  color: var(--primary, #123c36);
-  font-size: 27rpx;
-  font-weight: 800;
-  line-height: 1.35;
-}
-.info-section-copy {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 23rpx;
-  line-height: 1.55;
-}
-.info-section-copy.strong {
-  color: var(--text-main, #201914);
-  font-weight: 700;
-}
-.info-meaning-list {
-  margin-top: 16rpx;
-}
-.info-meaning-row + .info-meaning-row {
-  margin-top: 14rpx;
-}
-.info-meaning-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 14rpx;
-  padding: 14rpx 0;
-  border-top: 1rpx solid rgba(18, 60, 54, 0.06);
-}
-.info-meaning-row:first-child {
-  padding-top: 0;
-  border-top: none;
-}
-.info-chip {
-  flex-shrink: 0;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(201, 164, 92, 0.24);
-  background: rgba(201, 164, 92, 0.14);
-  color: #6f5225;
-  font-size: 22rpx;
-  line-height: 1.2;
-}
-.info-chip.muted {
-  border-color: rgba(18, 60, 54, 0.12);
-  background: rgba(18, 60, 54, 0.06);
-  color: var(--text-muted, #76695c);
-}
-.info-meaning-copy-box {
-  flex: 1;
-  min-width: 0;
-}
-.info-meaning-title {
-  display: block;
-  color: var(--primary, #123c36);
-  font-size: 23rpx;
-  font-weight: 750;
-  line-height: 1.4;
-}
-.info-meaning-copy {
-  display: block;
-  margin-top: 4rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 23rpx;
-  line-height: var(--text-line-height, 1.55);
-}
-.mini-sub,
-.score-label,
-.score-bucket,
-.delta-label,
-.status-meta {
-  color: var(--text-muted, #786857);
-  font-size: 22rpx;
-}
-.feedback-headline.strong,
-.status-summary {
-  display: block;
-  color: var(--text-main, #241b12);
-  font-size: 26rpx;
-  font-weight: 650;
-  line-height: var(--text-line-height, 1.55);
-}
-.score-row + .score-row {
-  margin-top: 18rpx;
-}
-.score-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12rpx;
-  margin-bottom: 10rpx;
-}
-.score-value {
-  color: var(--primary, #143f3a);
-  font-size: 36rpx;
-  line-height: 1;
-  font-weight: 800;
-}
-.score-track {
-  width: 100%;
-  height: 18rpx;
-  overflow: hidden;
-  border-radius: 999rpx;
-  background: rgba(18, 60, 54, 0.08);
-}
-.score-fill {
-  height: 18rpx;
-  min-width: 4rpx;
-  border-radius: 999rpx;
-}
-.instant-delta-panel {
-  display: flex;
-  gap: 12rpx;
-  margin-top: 16rpx;
-}
-.instant-delta-item {
-  flex: 1;
-  padding: 18rpx;
-  border-radius: var(--radius-sm, 16rpx);
-  background: rgba(255, 252, 247, 0.78);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-.delta-value {
-  display: block;
-  margin-top: 6rpx;
-  color: var(--text-muted, #786857);
-  font-size: 38rpx;
-  font-weight: 800;
-}
-.delta-value.up { color: var(--success, #14633a); }
-.delta-value.down { color: var(--risk, #b85c38); }
-.quick-reason {
-  display: block;
-  margin-top: 10rpx;
-  color: var(--text-main, #241b12);
-  font-size: 24rpx;
-  line-height: var(--text-line-height, 1.55);
-}
-.raw-ai-reply-text {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-main, #241b12);
-  font-size: 25rpx;
-  line-height: var(--text-line-height, 1.6);
-}
-.ai-panel-label,
-.guidance-label {
-  display: block;
-  color: var(--primary, #143f3a);
-  font-size: 22rpx;
-  font-weight: 750;
-}
-.guidance-item {
-  margin-top: 12rpx;
-  padding: 14rpx 16rpx;
-  border-radius: var(--radius-sm, 14rpx);
-  background: rgba(255, 252, 247, 0.72);
-  border: 1rpx solid rgba(18, 60, 54, 0.06);
-}
-.guidance-text {
-  display: block;
-  margin-top: 6rpx;
-  color: var(--text-main, #241b12);
-  font-size: 24rpx;
-  line-height: var(--text-line-height, 1.55);
-}
-.profile-side-card {
-  border-left: 8rpx solid var(--accent, rgba(20, 63, 58, 0.28));
-}
-.side-read-generate-btn {
-  width: 100%;
-  margin-top: 18rpx;
-}
-.side-read-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
-  margin-top: 16rpx;
-}
-.side-read-item {
-  padding: 18rpx;
-  border-radius: var(--radius-sm, 14rpx);
-  background: rgba(255, 252, 247, 0.78);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-.side-read-label {
-  display: block;
-  color: var(--primary, #143f3a);
-  font-size: 22rpx;
-  font-weight: 750;
-}
-.side-read-text {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-main, #241b12);
-  font-size: 24rpx;
-  line-height: var(--text-line-height, 1.58);
+
+/* pet floating bar */
+.v2-mode .pet-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; gap: 16rpx;
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+.v2-mode .pet-bar-img { width: 96rpx; height: 96rpx; flex-shrink: 0; pointer-events: auto; }
+.v2-mode .pet-bar .pet-bubble { pointer-events: auto; }
+.v2-mode .pet-bubble {
+  position: relative;
+  background: #fff; border: 2rpx solid #111; border-radius: 16rpx;
+  padding: 14rpx 20rpx; max-width: 420rpx;
+}
+.v2-mode .pet-bubble::before {
+  content: ''; position: absolute;
+  left: -16rpx; bottom: 28rpx;
+  border: 10rpx solid transparent;
+  border-right-color: #111; border-left: 0;
+}
+.v2-mode .pet-bubble::after {
+  content: ''; position: absolute;
+  left: -14rpx; bottom: 28rpx;
+  border: 9rpx solid transparent;
+  border-right-color: #fff; border-left: 0;
+}
+.v2-mode .pet-bubble-text { font-size: 24rpx; font-weight: 700; color: #111; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+.v2-mode .voice-recording-btn {
+  background: #FF6B6B !important; color: #fff !important;
+  display: flex; align-items: center; justify-content: center;
+  height: auto; min-height: 72rpx; padding: 12rpx 16rpx; flex: 1;
+}
+.v2-mode .voice-btn-content { display: flex; align-items: center; gap: 10rpx; }
+.v2-mode .voice-btn-icon { font-size: 28rpx; font-weight: 900; }
+.v2-mode .voice-wave-inline { display: flex; align-items: center; gap: 4rpx; height: 32rpx; }
+.v2-mode .wave-bar-item-sm {
+  width: 6rpx; height: 14rpx; background: #fff; border-radius: 3rpx;
+  animation: wave-bounce-sm 0.5s ease-in-out infinite alternate;
+}
+.v2-mode .wave-bar-item-sm:nth-child(1) { animation-delay: 0s; }
+.v2-mode .wave-bar-item-sm:nth-child(2) { animation-delay: 0.1s; }
+.v2-mode .wave-bar-item-sm:nth-child(3) { animation-delay: 0.2s; }
+.v2-mode .wave-bar-item-sm:nth-child(4) { animation-delay: 0.3s; }
+.v2-mode .wave-bar-item-sm:nth-child(5) { animation-delay: 0.4s; }
+.v2-mode .voice-countdown { font-size: 24rpx; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+@keyframes wave-bounce-sm {
+  0% { height: 8rpx; }
+  100% { height: 28rpx; }
 }
 </style>

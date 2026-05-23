@@ -1,355 +1,22 @@
 <template>
-  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
-    <view class="version-toggle">
-      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
-      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
-    </view>
-
-    <block v-if="!showV2">
-    <view class="card hero-card">
-      <text class="hero-topline">Me / Settings</text>
-      <text class="h1">我的</text>
-      <text class="hero-subtext">这里管理账号、系统能力说明和个人设置。</text>
-    </view>
-
-    <view class="card">
-      <text class="h2">账号信息</text>
-      <text class="muted">当前登录账号：{{ userEmail || '未登录' }}</text>
-      <text class="muted">关系对象数：{{ caseCount }}</text>
-      <view class="actions">
-        <button class="btn-secondary share-button" open-type="share">分享小程序</button>
-        <button class="btn-danger" @click="onLogout">退出登录</button>
-      </view>
-    </view>
-
-    <view class="card">
-      <view class="section-head">
-        <view>
-          <text class="h2">Token 额度</text>
-          <text class="muted">可用 {{ tokenBalance.toLocaleString() }} · 累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text>
-        </view>
-        <button class="btn-secondary mini-button" :disabled="tokenUsageLoading" @click="loadTokenUsage">
-          {{ tokenUsageLoading ? '读取中' : '刷新' }}
-        </button>
-      </view>
-      <view class="token-summary-grid">
-        <view class="token-summary-item">
-          <text class="token-number">{{ tokenUsageSummary.totalTokens }}</text>
-          <text class="muted">模型 token</text>
-        </view>
-        <view class="token-summary-item">
-          <text class="token-number">{{ tokenUsageSummary.callCount }}</text>
-          <text class="muted">调用次数</text>
-        </view>
-        <view class="token-summary-item">
-          <text class="token-number">{{ tokenUsageSummary.promptTokens }}</text>
-          <text class="muted">输入</text>
-        </view>
-        <view class="token-summary-item">
-          <text class="token-number">{{ tokenUsageSummary.completionTokens }}</text>
-          <text class="muted">输出</text>
-        </view>
-      </view>
-      <text v-if="tokenUsageSummary.unavailableCount" class="muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text>
-      <view class="actions token-actions">
-        <button class="btn-secondary" @click="goRecharge">充值</button>
-        <button class="btn-secondary" @click="goTokenUsage">查看消费明细</button>
-      </view>
-    </view>
-
-    <view class="card">
-      <text class="h2">功能设置</text>
-      <view class="row">
-        <view class="row-item">
-          <text class="row-title">本人画像</text>
-          <text class="muted">{{ selfProfileSummary }}</text>
-          <button class="btn-secondary profile-button" @click="goSelfProfile">编辑本人画像</button>
-        </view>
-      </view>
-
-      <view class="row theme-row">
-        <view class="row-item">
-          <text class="row-title">界面风格</text>
-          <text class="muted">选择更适合你的视觉氛围，设置会保存在本机。</text>
-          <view class="theme-grid">
-            <view
-              v-for="theme in themeOptions"
-              :key="theme.id"
-              :class="['theme-card', currentThemeId === theme.id ? 'active' : '']"
-              @click="chooseTheme(theme.id)"
-            >
-              <view class="theme-preview" :style="theme.vars">
-                <view class="preview-hero" />
-                <view class="preview-card">
-                  <view class="preview-line wide" />
-                  <view class="preview-line" />
-                </view>
-                <view class="preview-button" />
-              </view>
-              <text class="theme-name">{{ theme.name }}</text>
-              <text class="theme-desc">{{ theme.description }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="row">
-        <view class="row-item">
-          <text class="row-title">AI 陪伴风格</text>
-          <text class="muted">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text>
-          <view class="persona-grid">
-            <view
-              v-for="item in aiStyleOptions"
-              :key="item.value"
-              :class="['persona-card', aiStyle === item.value ? 'active' : '']"
-              @click="aiStyle = item.value"
-            >
-              <text class="persona-name">{{ item.label }}</text>
-              <text class="persona-desc">{{ item.description }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="row">
-        <view class="row-item">
-          <text class="row-title">建议力度</text>
-          <text class="muted">决定 AI 更偏观察验证，还是更敢给你推进动作。</text>
-          <view class="persona-inline-grid">
-            <view
-              v-for="item in aiBoldnessOptions"
-              :key="item.value"
-              :class="['persona-inline-card', aiBoldness === item.value ? 'active' : '']"
-              @click="aiBoldness = item.value"
-            >
-              <text class="persona-name">{{ item.label }}</text>
-              <text class="persona-desc">{{ item.description }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="row">
-        <view class="row-item">
-          <text class="row-title">AI 风格状态</text>
-          <text class="muted">{{ aiStatusSummary }}</text>
-          <text class="muted" v-if="!canSaveAIPersona">先完成本人画像，才能保存这组 AI 设置。</text>
-          <button class="btn-secondary profile-button" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">
-            {{ aiSaving ? '保存中...' : '保存 AI 风格' }}
-          </button>
-        </view>
-      </view>
-
-      <view class="row">
-        <view class="row-item">
-          <text class="row-title">数据与对象</text>
-          <text class="muted">查看所有关系对象、时间轴与评估。</text>
-          <button class="btn-secondary" @click="goCases">打开对象列表</button>
-        </view>
-      </view>
-    </view>
-
-    <view class="card">
-      <text class="h2">判断说明</text>
-      <text class="muted">这里汇总系统里实际会出现的判断标签，方便你统一查看，不用在各页来回对照。</text>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('intent')">
-          <view>
-            <text class="row-title">意向倾向</text>
-            <text class="muted">对方主动、投入和推进关系的程度。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.intent ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.intent" class="explain-body">
-          <view v-for="item in intentLevels" :key="item.label" class="level-item">
-            <text class="level-title">{{ item.label }} · {{ item.range }}</text>
-            <text class="muted">{{ item.description }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('risk')">
-          <view>
-            <text class="row-title">风险等级</text>
-            <text class="muted">回避、拖延、失约、改口和反复的程度。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.risk ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.risk" class="explain-body">
-          <view v-for="item in riskLevels" :key="item.label" class="level-item">
-            <text class="level-title">{{ item.label }} · {{ item.range }}</text>
-            <text class="muted">{{ item.description }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('evidence')">
-          <view>
-            <text class="row-title">证据等级与判断把握</text>
-            <text class="muted">系统对当前判断有多少连续事实支撑。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.evidence ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.evidence" class="explain-body">
-          <view v-for="item in evidenceLevels" :key="item.label" class="level-item">
-            <text class="level-title">{{ item.label }} · {{ item.confidence }}</text>
-            <text class="muted">{{ item.description }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('status')">
-          <view>
-            <text class="row-title">对象状态标签</text>
-            <text class="muted">首页、关系页、时间轴里的阶段 / 体感标签。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.status ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.status" class="explain-body">
-          <view class="path-block">
-            <text class="h3">阶段</text>
-            <view class="path-row">
-              <text v-for="item in phaseItems" :key="item.label" class="path-chip">{{ item.label }}</text>
-            </view>
-            <view v-for="item in phaseItems" :key="`${item.label}-desc`" class="level-item compact">
-              <text class="level-title">{{ item.label }}</text>
-              <text class="muted">{{ item.description }}</text>
-            </view>
-          </view>
-
-          <view class="path-block">
-            <text class="h3">体感</text>
-            <view class="path-row">
-              <text v-for="item in vibeItems" :key="item.label" class="path-chip weather">{{ item.label }}</text>
-            </view>
-            <view v-for="item in vibeItems" :key="`${item.label}-desc`" class="level-item compact">
-              <text class="level-title">{{ item.label }}</text>
-              <text class="muted">{{ item.description }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('weeklyTrend')">
-          <view>
-            <text class="row-title">周复盘趋势标签</text>
-            <text class="muted">本周复盘和复盘历史里会出现的趋势结论。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.weeklyTrend ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.weeklyTrend" class="explain-body">
-          <view v-for="item in weeklyTrendItems" :key="item.label" class="level-item">
-            <text class="level-title">{{ item.label }}</text>
-            <text class="muted">{{ item.description }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('action')">
-          <view>
-            <text class="row-title">下一步动作标签</text>
-            <text class="muted">系统建议你当前更适合怎么处理，而不是让你盲目推进。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.action ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.action" class="explain-body">
-          <view v-for="item in nextActionItems" :key="item.label" class="level-item">
-            <text class="level-title">{{ item.label }}</text>
-            <text class="muted">{{ item.description }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('problem')">
-          <view>
-            <text class="row-title">问题类型</text>
-            <text class="muted">时间轴评估历史里显示的结构性提醒。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.problem ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.problem" class="explain-body">
-          <view v-for="item in problemItems" :key="item.label" class="level-item">
-            <text class="level-title">{{ item.label }}</text>
-            <text class="muted">{{ item.description }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="explain-section">
-        <view class="explain-head" @click="toggleSection('record')">
-          <view>
-            <text class="row-title">记录与系统标签</text>
-            <text class="muted">快速记录、时间轴、系统研判里会出现的其他标签。</text>
-          </view>
-          <text class="expand-mark">{{ expandedSections.record ? '收起' : '展开' }}</text>
-        </view>
-        <view v-if="expandedSections.record" class="explain-body">
-          <view class="path-block">
-            <text class="h3">事件分类</text>
-            <view v-for="item in eventTypeItems" :key="item.label" class="level-item compact">
-              <text class="level-title">{{ item.label }}</text>
-              <text class="muted">{{ item.description }}</text>
-            </view>
-          </view>
-
-          <view class="path-block">
-            <text class="h3">一句话记录主语</text>
-            <view v-for="item in subjectRoleItems" :key="item.label" class="level-item compact">
-              <text class="level-title">{{ item.label }}</text>
-              <text class="muted">{{ item.description }}</text>
-            </view>
-          </view>
-
-          <view class="path-block">
-            <text class="h3">对象类型</text>
-            <view v-for="item in relationTypeItems" :key="item.label" class="level-item compact">
-              <text class="level-title">{{ item.label }}</text>
-              <text class="muted">{{ item.description }}</text>
-            </view>
-          </view>
-
-          <view class="path-block">
-            <text class="h3">系统参与标记</text>
-            <view class="level-item compact">
-              <text class="level-title">AI 已参与研判</text>
-              <text class="muted">说明这次即时反馈、侧写或周复盘有大模型参与生成，不是纯规则兜底。它代表生成方式，不代表一定更准确。</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
-    </block>
-    <!-- /经典版 -->
-
-    <!-- Campus Pop -->
-    <block v-if="showV2">
+  <view class="page v2-mode" :style="themeVars">
       <view class="hero-block-v2"><text class="hero-tag-v2">SETTINGS</text><text class="hero-title-v2">我<text class="hl-v2">的</text></text><text class="hero-copy-v2">管理账号、系统能力说明和个人设置。</text></view>
       <!-- Account -->
-      <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">关系对象数：{{ caseCount }}</text><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
+      <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">关系对象数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示小咪陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
       <!-- Profile (moved here) -->
       <view class="card-v2"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Token (fixed button) -->
-      <view class="card-v2"><text class="section-title-v2">Token 额度</text><view class="balance-hero-v2"><text class="balance-num-v2">{{ tokenBalance.toLocaleString() }}</text><text class="balance-unit-v2">可用额度</text></view><view class="balance-sub-row-v2"><text class="card-text-v2">累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text></view><view class="stats-grid-v2" style="margin-top:16rpx;"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">模型 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出</text></view></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" @click="goRecharge">充值</button><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="loadTokenUsage">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
+      <view class="card-v2"><text class="section-title-v2">Token 额度</text><view class="balance-hero-v2"><text class="balance-num-v2">{{ tokenBalance.toLocaleString() }}</text><text class="balance-unit-v2">可用额度</text></view><view class="balance-sub-row-v2"><text class="card-text-v2">累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text></view><view class="stats-grid-v2" style="margin-top:16rpx;"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">模型 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出</text></view></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" @click="goRecharge">充值</button><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="refreshTokenData">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
       <!-- AI style -->
       <view class="card-v2"><text class="section-title-v2">AI 陪伴风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
       <view class="card-v2"><text class="section-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
       <view class="card-v2"><text class="section-title-v2">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
-      <!-- Judgment explanations -->
-      <view class="card-v2"><text class="section-title-v2">判断说明</text><text class="card-text-v2">汇总系统里实际会出现的判断标签。</text>
-        <view v-for="section in explainSections" :key="section.key" class="explain-v2"><view class="explain-head-v2" @click="toggleSection(section.key)"><text class="explain-title-v2">{{ section.label }}</text><text class="explain-arrow-v2">{{ expandedSections[section.key] ? '收起' : '展开' }}</text></view><view v-if="expandedSections[section.key]" class="explain-body-v2"><view v-for="item in section.items" :key="item.label" class="explain-item-v2"><text class="explain-item-title-v2">{{ item.label }}<text v-if="item.range"> · {{ item.range }}</text></text><text class="explain-item-desc-v2">{{ item.description }}</text></view></view></view>
-      </view>
-    </block>
-    <!-- /Campus Pop -->
-
+      <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的评估和趋势记录 →</text></view>
+      <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
+      <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
+      <view class="card-v2" @click="goAbout"><text class="section-title-v2">关于</text><text class="card-text-v2">v1.0.0 · 查看版本信息 →</text></view>
   </view>
 </template>
 
@@ -373,7 +40,6 @@ import {
 import { applyThemeChrome, getCurrentThemeId, getThemeStyle, setCurrentTheme, themeOptions, type ThemeId } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
-const showV2 = ref(true)
 const userEmail = ref('')
 const caseCount = ref(0)
 const selfProfileSummary = ref('还没填写。系统会用它调整措辞、入口推荐和未成年人保护表达。')
@@ -530,9 +196,22 @@ const relationTypeItems = [
   { label: '老师', description: '按师生互动逻辑来分析指导关系、距离感和角色边界。' }
 ]
 
+const showPetBar = ref(true)
+function onPetBarChange(e: any) {
+  const v = Boolean(e.detail.value)
+  showPetBar.value = v
+  uni.setStorageSync('showPetBar', v)
+}
+
+const lastDataVersion = ref(0)
+
 onShow(() => {
   syncTheme()
-  loadData()
+  showPetBar.value = uni.getStorageSync('showPetBar') !== false
+  loadTokenUsage()
+  loadTokenBalance()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  if (dv > lastDataVersion.value) loadData()
 })
 
 function syncTheme() {
@@ -579,6 +258,7 @@ async function loadData() {
 
   loadTokenUsage()
   loadTokenBalance()
+  lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
 }
 
 async function loadTokenBalance() {
@@ -597,11 +277,15 @@ async function loadTokenBalance() {
   }
 }
 
+async function refreshTokenData() {
+  await Promise.all([loadTokenUsage(), loadTokenBalance()])
+}
+
 async function loadTokenUsage() {
   if (tokenUsageLoading.value) return
   tokenUsageLoading.value = true
   try {
-    const result = await getTokenUsage(50)
+    const result = await getTokenUsage(100)
     if (!result?.success) return
     tokenUsageSummary.value = {
       promptTokens: Number(result.summary?.promptTokens || 0),
@@ -710,6 +394,22 @@ function goRecharge() {
   uni.navigateTo({ url: '/pages/token-recharge/token-recharge' })
 }
 
+function goSystemTracks() {
+  uni.navigateTo({ url: '/pages/system-tracks/system-tracks' })
+}
+
+function goExplain() {
+  uni.navigateTo({ url: '/pages/explain/explain' })
+}
+
+function goFeedback() {
+  uni.navigateTo({ url: '/pages/feedback/feedback' })
+}
+
+function goAbout() {
+  uni.navigateTo({ url: '/pages/about/about' })
+}
+
 async function onLogout() {
   await logout()
   uni.reLaunch({ url: '/pages/login/login' })
@@ -723,363 +423,6 @@ async function onLogout() {
   padding: var(--spacing-page, 24rpx);
   box-sizing: border-box;
 }
-
-.card {
-  background: var(--card-bg, #fbf6ee);
-  border-radius: var(--radius-md, 20rpx);
-  padding: var(--spacing-card, 32rpx);
-  margin-bottom: 24rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  box-shadow: var(--shadow-md, 0 16rpx 36rpx rgba(32, 25, 20, 0.06));
-}
-
-.hero-card {
-  background: linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: var(--shadow-hero, 0 22rpx 44rpx rgba(18, 60, 54, 0.18));
-}
-
-.hero-topline {
-  display: block;
-  font-size: 22rpx;
-  color: rgba(255, 252, 247, 0.72);
-  letter-spacing: 3rpx;
-}
-
-.h1 {
-  display: block;
-  font-size: 40rpx;
-  font-weight: var(--font-weight-hero, 700);
-  color: var(--primary, #143f3a);
-  margin: 8rpx 0;
-  line-height: var(--text-line-height-heading, 1.25);
-}
-
-.hero-card .h1 { color: #fffaf0; }
-
-.h2 {
-  display: block;
-  font-size: 32rpx;
-  font-weight: var(--font-weight-strong, 600);
-  color: var(--text-main, #241b12);
-  margin-bottom: 10rpx;
-}
-
-.h3 {
-  display: block;
-  font-size: 28rpx;
-  font-weight: var(--font-weight-strong, 600);
-  color: var(--text-main, #241b12);
-  margin-top: 12rpx;
-}
-
-.hero-subtext {
-  display: block;
-  font-size: 26rpx;
-  line-height: var(--text-line-height, 1.6);
-}
-
-.hero-card .hero-subtext { color: rgba(255, 252, 247, 0.76); }
-
-.muted {
-  display: block;
-  font-size: 24rpx;
-  color: var(--text-muted, #786857);
-  margin: 6rpx 0;
-  line-height: var(--text-line-height, 1.6);
-}
-
-.row {
-  padding: 16rpx 0;
-  border-top: 2rpx solid var(--accent-soft, #efe7d8);
-}
-
-.row:first-of-type { border-top: 0; }
-
-.row-item { display: flex; flex-direction: column; gap: 8rpx; }
-
-.row-title {
-  font-size: 28rpx;
-  font-weight: var(--font-weight-strong, 600);
-  color: var(--text-main, #241b12);
-}
-
-.actions { display: flex; gap: 14rpx; margin-top: 18rpx; }
-
-.section-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18rpx;
-}
-
-.btn-secondary {
-  height: 76rpx;
-  line-height: 76rpx;
-  background: var(--card-bg, rgba(255, 252, 247, 0.92));
-  color: var(--primary, #143f3a);
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  border-radius: var(--radius-sm, 14rpx);
-  font-size: 28rpx;
-  padding: 0 24rpx;
-  align-self: flex-start;
-  font-weight: var(--font-weight-strong, 600);
-}
-
-.mini-button {
-  height: 60rpx;
-  line-height: 60rpx;
-  font-size: 24rpx;
-  padding: 0 18rpx;
-  flex-shrink: 0;
-}
-
-.token-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12rpx;
-  margin-top: 18rpx;
-}
-
-.token-summary-item {
-  padding: 18rpx;
-  border-radius: var(--radius-sm, 14rpx);
-  background: var(--card-soft, #fff);
-  border: 1rpx solid rgba(20, 63, 58, 0.08);
-}
-
-.token-number {
-  display: block;
-  font-size: 34rpx;
-  font-weight: 750;
-  color: var(--primary, #143f3a);
-}
-
-.token-list { display: flex; flex-direction: column; gap: 12rpx; margin-top: 18rpx; }
-
-.token-actions { display: flex; }
-
-.token-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16rpx;
-  padding: 18rpx;
-  border-radius: var(--radius-sm, 14rpx);
-  background: var(--card-soft, #fff);
-  border: 1rpx solid rgba(20, 63, 58, 0.08);
-}
-
-.token-counts { min-width: 150rpx; text-align: right; }
-
-.token-total {
-  display: block;
-  color: var(--primary, #143f3a);
-  font-size: 30rpx;
-  font-weight: 750;
-}
-
-.btn-danger {
-  flex: 1;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: var(--risk, #b85c38);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm, 12rpx);
-  font-size: 28rpx;
-}
-
-.share-button {
-  flex: 1;
-  align-self: stretch;
-  height: 80rpx;
-  line-height: 80rpx;
-}
-
-.explain-section {
-  margin-top: 16rpx;
-  border-radius: var(--radius-sm, 16rpx);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 90rpx),
-    var(--card-soft, #fffaf3);
-  overflow: hidden;
-}
-
-.explain-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18rpx;
-  padding: 20rpx;
-}
-
-.expand-mark {
-  flex-shrink: 0;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  background: rgba(18, 60, 54, 0.08);
-  color: var(--primary, #143f3a);
-  font-size: 22rpx;
-  font-weight: 650;
-}
-
-.explain-body {
-  padding: 0 20rpx 20rpx;
-  border-top: 1rpx solid rgba(18, 60, 54, 0.07);
-}
-
-.level-item { padding: 14rpx 0; }
-.level-item.compact { padding: 10rpx 0; }
-
-.level-title {
-  display: block;
-  font-size: 26rpx;
-  color: var(--text-main, #241b12);
-  font-weight: 600;
-}
-
-.path-block { margin-top: 14rpx; }
-
-.path-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin: 12rpx 0 8rpx; }
-
-.path-chip {
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  font-size: 22rpx;
-  color: var(--primary, #143f3a);
-  background: rgba(18, 60, 54, 0.08);
-}
-
-.path-chip.weather {
-  color: #6b561c;
-  background: rgba(201, 164, 92, 0.16);
-}
-
-.theme-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14rpx;
-  margin-top: 14rpx;
-}
-
-.theme-card {
-  padding: 14rpx;
-  border-radius: var(--radius-sm, 16rpx);
-  background: var(--card-soft, rgba(255, 252, 247, 0.8));
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.theme-card.active {
-  border-color: rgba(18, 60, 54, 0.28);
-  box-shadow: 0 0 0 2rpx rgba(18, 60, 54, 0.08);
-}
-
-.theme-preview {
-  height: 156rpx;
-  padding: 14rpx;
-  border-radius: 14rpx;
-  background: var(--app-bg, #f6f1e8);
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-  box-sizing: border-box;
-}
-
-.preview-hero {
-  height: 36rpx;
-  border-radius: 10rpx;
-  background: var(--hero-bg, #123c36);
-}
-
-.preview-card {
-  flex: 1;
-  border-radius: 10rpx;
-  padding: 10rpx;
-  background: var(--card-bg, #fffaf4);
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.preview-line {
-  height: 10rpx;
-  width: 60%;
-  border-radius: 999rpx;
-  background: rgba(18, 60, 54, 0.16);
-}
-
-.preview-line.wide { width: 82%; }
-
-.preview-button {
-  width: 56rpx;
-  height: 18rpx;
-  border-radius: 999rpx;
-  background: var(--accent, #c9a45c);
-}
-
-.theme-name {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 24rpx;
-  font-weight: 600;
-  color: var(--text-main, #241b12);
-}
-
-.theme-desc {
-  display: block;
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  line-height: 1.5;
-  color: var(--text-muted, #786857);
-}
-
-.persona-grid,
-.persona-inline-grid {
-  display: grid;
-  gap: 14rpx;
-  margin-top: 12rpx;
-}
-
-.persona-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.persona-inline-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-.persona-card,
-.persona-inline-card {
-  padding: 16rpx;
-  border-radius: var(--radius-sm, 16rpx);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  background: var(--card-soft, rgba(255, 252, 247, 0.82));
-}
-
-.persona-card.active,
-.persona-inline-card.active {
-  border-color: rgba(18, 60, 54, 0.3);
-  box-shadow: 0 0 0 2rpx rgba(18, 60, 54, 0.08);
-  background: rgba(233, 244, 240, 0.92);
-}
-
-.persona-name {
-  display: block;
-  font-size: 24rpx;
-  font-weight: 600;
-  color: var(--text-main, #241b12);
-}
-
-.persona-desc {
-  display: block;
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  line-height: 1.5;
-  color: var(--text-muted, #786857);
-}
-
-.profile-button { margin-top: 10rpx; }
-
-/* ===== CAMPUS POP V2 ===== */
-.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
-.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
-.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
 
@@ -1100,11 +443,12 @@ async function onLogout() {
 .v2-mode .balance-sub-row-v2 { margin-bottom: 4rpx; }
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 14rpx; }
+.v2-mode .switch-row-v2 { display: flex; align-items: center; gap: 24rpx; padding: 12rpx 0; }
 .v2-mode .btn-v2-me { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
 .v2-mode .btn-v2-me.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2-me.danger { background: #fff; color: #FF5252; border-color: #FF5252; }
 .v2-mode .btn-v2-me.outline { background: #fff; }
-.v2-mode .btn-v2-me.sm { width: auto; flex: 0; padding: 0 20rpx; height: 52rpx; line-height: 52rpx; font-size: 22rpx; }
+.v2-mode .btn-v2-me.sm { width: auto; flex: none; min-width: 100rpx; padding: 0 24rpx; height: 52rpx; line-height: 52rpx; font-size: 22rpx; }
 .v2-mode .btn-v2-me[disabled] { opacity: 0.6; }
 
 .v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; margin-top: 12rpx; }

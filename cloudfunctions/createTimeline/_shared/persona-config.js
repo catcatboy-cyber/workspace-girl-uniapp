@@ -77,24 +77,24 @@ function buildPersonaPrompt(settings, selfProfile, options = {}) {
   const promptLines = []
   const systemParts = []
 
-  if (persona.style.labelZh || persona.style.labelEn || persona.style.promptZh || persona.style.promptEn) {
-    promptLines.push(`Current companion style / Current companion style: ${persona.style.labelZh} (${persona.style.labelEn}). ${persona.style.promptZh} EN: ${persona.style.promptEn}`)
+  if (persona.style.labelZh || persona.style.promptZh) {
+    promptLines.push(`当前陪伴风格: ${persona.style.labelZh}。${persona.style.promptZh}`)
   }
-  if (persona.boldness.labelZh || persona.boldness.labelEn || persona.boldness.promptZh || persona.boldness.promptEn) {
-    promptLines.push(`Current advice intensity / Current advice intensity: ${persona.boldness.labelZh} (${persona.boldness.labelEn}). ${persona.boldness.promptZh} EN: ${persona.boldness.promptEn}`)
+  if (persona.boldness.labelZh || persona.boldness.promptZh) {
+    promptLines.push(`当前建议强度: ${persona.boldness.labelZh}。${persona.boldness.promptZh}`)
   }
-  if (persona.style.labelZh || persona.style.labelEn) {
-    systemParts.push(`Current companion style: ${persona.style.labelZh || persona.style.labelEn}.`)
+  if (persona.style.labelZh) {
+    systemParts.push(`当前陪伴风格: ${persona.style.labelZh}。`)
   }
-  if (persona.boldness.labelZh || persona.boldness.labelEn) {
-    systemParts.push(`Advice intensity: ${persona.boldness.labelZh || persona.boldness.labelEn}.`)
+  if (persona.boldness.labelZh) {
+    systemParts.push(`建议强度: ${persona.boldness.labelZh}。`)
   }
 
   if (persona.boundarySensitive) {
-    promptLines.push('Safety override: this event involves intimacy, boundaries, or escalation. Do not assume consent; prioritize respect, pacing, and safety.')
+    promptLines.push('安全覆盖规则: 当前事件涉及亲密、边界或关系升级。不要替用户同意，优先提醒尊重、节奏和安全。')
   }
   if (persona.isMinor) {
-    promptLines.push('Safety override: the user is under 18. Only allow friendship, boundaries, safety, and healthy communication advice.')
+    promptLines.push('安全覆盖规则: 用户未满 18 岁。只允许友谊、边界、安全和健康沟通建议。')
   }
 
   return {

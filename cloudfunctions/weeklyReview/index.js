@@ -81,9 +81,8 @@ function getRuntimeConfig(settings = {}) {
 }
 
 function mapRelationTypeLabel(value) {
-  if (value === 'close_friend') return '亲密朋友'
-  if (value === 'romantic') return '恋爱对象'
-  return cleanText(String(value || ''), 24)
+  const map = { romantic: '恋爱对象', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
+  return map[value] || cleanText(String(value || ''), 24)
 }
 
 function serializeSelfProfile(profile) {
@@ -491,6 +490,26 @@ async function generateReview(params) {
   }
 
   await db.collection(REVIEW_COLLECTION).doc(reviewId).set(review)
+
+  await db.collection('timeline_records').add({
+    caseId, userId, type: 'weekly_review',
+    reviewId,
+    weekStart: range.weekStart,
+    weekEnd: range.weekEnd,
+    title: `本周复盘：${aiReview.title || weekStart}`,
+    description: aiReview.summary || '',
+    trendLabel: aiReview.trendLabel || '',
+    eventCount: weekEvents.length,
+    assessmentCount: weekAssessments.length,
+    intentDelta: scoreTrend.intentDelta,
+    riskDelta: scoreTrend.riskDelta,
+    keyChanges: aiReview.keyChanges || [],
+    keyEvents: aiReview.keyEvents || [],
+    nextWeekFocus: aiReview.nextWeekFocus || [],
+    avoidMisread: aiReview.avoidMisread || [],
+    occurrenceAt: new Date(), createdAt: new Date(),
+    aiUsed: aiReview.aiUsed !== false
+  })
   return { _id: reviewId, ...review }
 }
 
@@ -608,6 +627,16 @@ async function generateWeeklySideRead(params) {
     weeklySideRead: _.set(weeklySideRead),
     weeklySideReadGeneratedAt: _.set(now),
     updatedAt: _.set(now)
+  })
+
+  await db.collection('timeline_records').add({
+    caseId, userId, type: 'note',
+    feature: 'weeklySideRead',
+    title: weeklySideRead.title || '本周属相星座侧写',
+    description: weeklySideRead.summary || '',
+    sections: weeklySideRead.sections || [],
+    occurrenceAt: new Date(), createdAt: new Date(),
+    aiUsed: true
   })
 
   const reviews = await getReviews(caseId)

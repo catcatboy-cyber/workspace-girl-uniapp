@@ -34,7 +34,7 @@
       "name": "adminManage",
       "timeout": 20,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -113,7 +113,7 @@
     },
     {
       "name": "createTimeline",
-      "timeout": 30,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -158,7 +158,7 @@
     },
     {
       "name": "testAIConnection",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -167,7 +167,7 @@
     },
     {
       "name": "weeklyReview",
-      "timeout": 30,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -176,7 +176,7 @@
     },
     {
       "name": "generateSideRead",
-      "timeout": 25,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -185,7 +185,7 @@
     },
     {
       "name": "generateAssessmentAI",
-      "timeout": 30,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -194,7 +194,7 @@
     },
     {
       "name": "analyzeAttachment",
-      "timeout": 25,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -230,6 +230,24 @@
     },
     {
       "name": "recharge",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "petLines",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "submitFeedback",
       "timeout": 15,
       "envVariables": {},
       "runtime": "Nodejs18.15",

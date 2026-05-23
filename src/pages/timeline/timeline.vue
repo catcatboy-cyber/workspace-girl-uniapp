@@ -1,503 +1,6 @@
 <template>
-  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
-    <view class="version-toggle">
-      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
-      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
-    </view>
-
-    <!-- ========== 经典版 ========== -->
-    <block v-if="!showV2">
-    <view v-if="loading" class="muted center">加载中...</view>
-
-    <view v-else-if="!caseFile" class="card">
-      <text class="h1">时间轴不可用</text>
-      <text class="muted">当前对象不存在或已被删除。</text>
-    </view>
-
-    <template v-else>
-      <view class="hero-card card">
-        <text class="hero-topline">关系记录 / {{ caseFile.name }}</text>
-        <text class="h1">把真实发生过的互动按时间看清楚</text>
-        <text class="hero-subtext">这里专门看事件流，不再放快速记录和额外引导，先把最近发生了什么看明白。</text>
-        <view v-if="profileItems.length > 0" class="badges">
-          <text v-for="item in profileItems" :key="item" class="badge">{{ item }}</text>
-        </view>
-      </view>
-
-      <view v-if="classified" class="card status-card" :class="classifiedType === 'risk' ? 'warning' : 'success'">
-        <text class="status-strong">{{ mapTimelineTypeLabel(classifiedType) }}</text>
-        <text class="muted">{{ mapTimelineTypeMessage(classifiedType) }}</text>
-      </view>
-
-      <view v-if="recorded && triggerEvent && latestResult" class="card trend-summary-card">
-        <view class="section-head">
-          <view>
-            <text class="h2">即时反馈</text>
-            <text class="muted">这条新记录已经进入评估系统，下面是它带来的即时变化。</text>
-          </view>
-          <text class="muted">{{ triggerEvent.date }}</text>
-        </view>
-        <text class="latest-trend-title">{{ triggerEvent.title }}</text>
-        <text class="latest-trend-desc">{{ latestResult.explanation?.headline }}</text>
-        <view class="feedback-badges">
-          <text v-if="triggerEvent.subjectRole" class="badge subject-badge">{{ mapSubjectRoleLabel(triggerEvent.subjectRole) }}</text>
-          <text class="badge">{{ mapTimelineTypeLabel(classifiedType) }}</text>
-          <text class="badge">{{ mapAction(latestResult.nextAction) }}</text>
-          <text class="badge">证据 {{ latestResult.evidenceLevel }}</text>
-          <text v-if="isLatestResultAIReviewed" class="ai-badge">AI 已参与研判</text>
-        </view>
-        <view v-if="triggerImageLinkItems.length > 0" class="instant-attachments">
-          <text class="ai-panel-label">图片链接</text>
-          <view
-            v-for="(item, index) in triggerImageLinkItems"
-            :key="item.fileID"
-            class="instant-attachment-link"
-            @click="previewTriggerImage(index)"
-          >
-            <text class="instant-link-title">{{ item.name }}</text>
-            <text class="instant-link-url" selectable>{{ item.url || '授权链接生成中...' }}</text>
-          </view>
-        </view>
-        <view class="grid two trend-grid">
-          <view class="trend-box">
-            <text class="case-kpi-label">意向变化</text>
-            <text class="trend-number" :class="immediateTrend.intentDirection === 'up' ? 'up' : immediateTrend.intentDirection === 'down' ? 'down' : 'flat'">
-              {{ immediateTrend.intentDelta > 0 ? '+' : '' }}{{ immediateTrend.intentDelta }}
-            </text>
-            <text class="muted">当前 {{ latestResult.intentScore }} / {{ latestResult.intentBucket }}</text>
-            <text class="muted">{{ mapDirectionCopy(immediateTrend.intentDirection, '对方主动或投入感在上升', '这次没有继续把关系往前推') }}</text>
-          </view>
-          <view class="trend-box">
-            <text class="case-kpi-label">风险变化</text>
-            <text class="trend-number" :class="immediateTrend.riskDirection === 'up' ? 'up' : immediateTrend.riskDirection === 'down' ? 'down' : 'flat'">
-              {{ immediateTrend.riskDelta > 0 ? '+' : '' }}{{ immediateTrend.riskDelta }}
-            </text>
-            <text class="muted">当前 {{ latestResult.consistencyRiskScore }} / {{ latestResult.riskBucket }}</text>
-            <text class="muted">{{ mapDirectionCopy(immediateTrend.riskDirection, '一致性风险在抬头', '这次反而让风险稍微回落') }}</text>
-          </view>
-        </view>
-        <text class="trend-summary-text">{{ immediateTrend.summaryText }}</text>
-        <text v-if="immediateTrend.warningText" class="trend-warning">{{ immediateTrend.warningText }}</text>
-        <view v-if="profileSideRead" class="instant-side-read">
-          <text class="ai-panel-label">{{ profileSideRead.title }}</text>
-          <text class="muted">{{ profileSideRead.summary }}</text>
-          <view class="side-read-list">
-            <view v-for="item in profileSideRead.sections.slice(0, 3)" :key="item.label" class="side-read-item">
-              <text class="side-read-label">{{ item.label }}</text>
-              <text class="side-read-text">{{ item.text }}</text>
-            </view>
-          </view>
-        </view>
-        <view v-if="latestActionPlanPanel.show" class="guidance-panel">
-          <text class="ai-panel-label">你接下来怎么做</text>
-          <text v-if="latestActionPlanPanel.missing" class="raw-ai-reply-text muted">{{ latestActionPlanPanel.text }}</text>
-          <view v-else>
-            <view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="guidance-item">
-              <text class="guidance-label">{{ item.label }}</text>
-              <text class="guidance-text">{{ item.text }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="card timeline-switch-card">
-        <view class="timeline-view-tabs">
-          <view
-            v-for="item in timelineViewOptions"
-            :key="item.key"
-            :class="['timeline-view-tab', activeTimelineView === item.key ? 'active' : '']"
-            @click="setTimelineView(item.key)"
-          >
-            <text>{{ item.label }}</text>
-            <text class="timeline-view-count">{{ item.count }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="activeTimelineView === 'events'" class="card timeline-stats-card">
-        <view class="section-head">
-          <view>
-            <text class="h2">事件账本</text>
-            <text class="muted">只统计时间轴里真实发生或被记录过的互动场景。</text>
-          </view>
-        </view>
-        <view class="timeline-stats-grid">
-          <view v-for="item in timelineStatItems" :key="item.key" class="timeline-stat-box">
-            <text class="case-kpi-label">{{ item.label }}</text>
-            <text class="timeline-stat-value">{{ item.value }}</text>
-          </view>
-        </view>
-        <scroll-view scroll-x class="timeline-filter-scroll">
-          <view class="timeline-filter-row">
-            <view
-              v-for="item in timelineFilterOptions"
-              :key="item.key"
-              :class="['timeline-filter-chip', activeTimelineFilter === item.key ? 'active' : '']"
-              @click="setTimelineFilter(item.key)"
-            >
-              <text>{{ item.label }}</text>
-              <text class="timeline-filter-count">{{ item.count }}</text>
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-
-      <view v-if="activeTimelineView === 'events'" class="card">
-        <view class="section-head">
-          <view>
-            <text class="h2">关键事件流</text>
-            <text class="muted">{{ activeTimelineFilterLabel }}，默认先看最近 5 次真实互动记录。</text>
-          </view>
-          <button class="link-button secondary" @click="goCaseDetail">返回关系主页</button>
-        </view>
-        <view v-if="filteredManualTimeline.length === 0" class="muted">当前筛选下还没有记录。</view>
-        <view v-else class="timeline-list large">
-          <view v-for="item in visibleManualTimeline" :key="item._id || item.id" :id="`event-${item._id || item.id}`" class="timeline-item">
-            <view class="timeline-time">
-              <text class="timeline-axis-date">{{ formatAxisDate(item) }}</text>
-              <text class="timeline-axis-time">{{ formatAxisTime(item) }}</text>
-              <view class="timeline-marker" :class="toneClass(item.type)" />
-            </view>
-            <view class="timeline-content">
-              <view class="timeline-meta">
-                <text>发生时间：{{ item.date }}</text>
-                <text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text>
-              </view>
-              <text class="timeline-title">{{ item.title }}</text>
-              <text v-if="item.subjectRole" class="badge subject-badge">{{ mapSubjectRoleLabel(item.subjectRole) }}</text>
-              <text v-if="didAIReview(item)" class="ai-badge">AI 已参与研判</text>
-              <text class="timeline-desc">{{ item.description }}</text>
-              <view v-if="getAttachmentBadges(item).length > 0" class="timeline-attachments">
-                <text
-                  v-for="badge in getAttachmentBadges(item)"
-                  :key="badge"
-                  :class="['attachment-badge', isImageAttachmentBadge(badge) ? 'clickable' : '']"
-                  @click="isImageAttachmentBadge(badge) && previewTimelineImages(item)"
-                >
-                  {{ badge }}
-                </text>
-              </view>
-            </view>
-          </view>
-        </view>
-        <view v-if="filteredManualTimeline.length > 5" class="timeline-expand-row">
-          <button class="link-button secondary" @click="toggleManualTimelineExpanded">
-            {{ manualTimelineExpanded ? '收起更多' : `展开更多（还有 ${filteredManualTimeline.length - 5} 条）` }}
-          </button>
-        </view>
-      </view>
-
-      <view v-if="activeTimelineView === 'assessments'" class="card">
-        <view class="section-head">
-          <view>
-            <text class="h2">评估历史流</text>
-            <text class="muted">按评估时间倒序查看每一次即时反馈，结构和首页保持一致。</text>
-          </view>
-          <button class="link-button secondary" @click="goCaseDetail">返回关系主页</button>
-        </view>
-        <view v-if="assessmentTimeline.length === 0" class="muted">还没有评估历史。</view>
-        <template v-else>
-          <view class="assessment-stats-grid">
-            <view v-for="item in assessmentStatItems" :key="item.key" class="timeline-stat-box">
-              <text class="case-kpi-label">{{ item.label }}</text>
-              <text class="timeline-stat-value">{{ item.value }}</text>
-            </view>
-          </view>
-          <scroll-view scroll-x class="timeline-filter-scroll">
-            <view class="timeline-filter-row">
-              <view
-                v-for="item in assessmentFilterOptions"
-                :key="item.key"
-                :class="['timeline-filter-chip', activeAssessmentFilter === item.key ? 'active' : '']"
-                @click="setAssessmentFilter(item.key)"
-              >
-                <text>{{ item.label }}</text>
-                <text class="timeline-filter-count">{{ item.count }}</text>
-              </view>
-            </view>
-          </scroll-view>
-        </template>
-        <view v-if="activeTimelineView === 'assessments' && filteredAssessmentEntries.length === 0 && assessmentTimeline.length > 0" class="muted">当前筛选下还没有评估记录。</view>
-        <view v-else-if="filteredAssessmentEntries.length > 0" class="assessment-flow">
-          <view v-for="entry in visibleAssessmentEntries" :key="getAssessmentKey(entry.item)" class="assessment-flow-row">
-            <view class="timeline-time">
-              <text class="timeline-axis-date">{{ formatAssessmentAxisDate(entry.item) }}</text>
-              <text class="timeline-axis-time">{{ formatAssessmentAxisTime(entry.item) }}</text>
-              <view class="timeline-marker assessment" />
-            </view>
-            <view class="assessment-flow-item">
-              <view class="history-instant-card">
-                <view class="assessment-flow-head">
-                  <view>
-                    <text class="status-strong">已记录：{{ getAssessmentTitle(entry.item) }}</text>
-                    <text class="assessment-flow-time">{{ formatAssessmentTime(entry.item.createdAt) }}</text>
-                  </view>
-                  <view class="assessment-flow-tags">
-                    <text v-if="hasAIReview(entry.item)" class="ai-badge">AI 已参与研判</text>
-                  </view>
-                </view>
-
-              <view class="quick-section">
-                <view class="section-mini-head">
-                  <text class="mini-title">本次记录</text>
-                </view>
-                <text class="feedback-headline strong" user-select>{{ getAssessmentOriginalRecordText(entry.item) }}</text>
-              </view>
-
-              <view class="score-panel instant-score-panel">
-                <view class="section-mini-head">
-                  <text class="mini-title">意向 / 风险</text>
-                  <text class="mini-sub">这次即时反馈的当时分数</text>
-                </view>
-                <view class="score-row">
-                  <view class="score-head">
-                    <text class="score-label">意向</text>
-                    <text class="score-value">{{ clampScore(entry.item.intentScore) }}</text>
-                    <text class="score-bucket">{{ mapIntentLabel(entry.item.intentBucket) }}</text>
-                  </view>
-                  <view class="score-track">
-                    <view class="score-fill intent-fill" :style="scoreFillStyle(entry.item.intentScore, 'intent')"></view>
-                  </view>
-                </view>
-                <view class="score-row">
-                  <view class="score-head">
-                    <text class="score-label">风险</text>
-                    <text class="score-value">{{ clampScore(entry.item.consistencyRiskScore) }}</text>
-                    <text class="score-bucket">{{ mapRiskLabel(entry.item.riskBucket) }}</text>
-                  </view>
-                  <view class="score-track">
-                    <view class="score-fill risk-fill" :style="scoreFillStyle(entry.item.consistencyRiskScore, 'risk')"></view>
-                  </view>
-                </view>
-              </view>
-
-              <view class="instant-delta-panel">
-                <view class="instant-delta-item">
-                  <text class="delta-label">意向变化</text>
-                  <text class="delta-value" :class="deltaClass(entry.trend.intentDelta)">{{ formatDelta(entry.trend.intentDelta) }}</text>
-                </view>
-                <view class="instant-delta-item">
-                  <text class="delta-label">风险变化</text>
-                  <text class="delta-value" :class="deltaClass(entry.trend.riskDelta)">{{ formatDelta(entry.trend.riskDelta) }}</text>
-                </view>
-              </view>
-              <text v-if="false && entry.trend.summaryText" class="trend-summary-text">{{ entry.trend.summaryText }}</text>
-              <text v-if="false" class="trend-summary-text">这是第一条评估记录，后续新增事件或手动重评后会开始形成趋势对比。</text>
-              <text v-if="entry.trend.warningText" class="trend-warning" user-select>{{ entry.trend.warningText }}</text>
-
-              <view v-if="getAssessmentReasonBullets(entry.item).length > 0" class="quick-reason-panel">
-                <view class="section-mini-head">
-                  <text class="mini-title">判断依据</text>
-                  <text class="mini-sub">为什么这次会这么判断</text>
-                </view>
-                <text v-for="reason in getAssessmentReasonBullets(entry.item)" :key="reason" class="quick-reason" user-select>• {{ reason }}</text>
-              </view>
-
-              <view v-if="assessmentStatusSnapshots[entry.index]" class="quick-status-panel">
-                <view class="section-mini-head">
-                  <view class="mini-title-row">
-                    <text class="mini-title">当前状态</text>
-                    <text class="info-icon" @click="openAssessmentStatusInfo(entry.item, assessmentStatusSnapshots[entry.index])">i</text>
-                  </view>
-                </view>
-                <view class="status-tag-groups">
-                  <view v-if="getAssessmentStatusStateTags(entry.item, assessmentStatusSnapshots[entry.index]).length" class="status-tag-row">
-                    <view class="feedback-badges status-tags">
-                      <text
-                        v-for="tag in getAssessmentStatusStateTags(entry.item, assessmentStatusSnapshots[entry.index])"
-                        :key="tag"
-                        class="badge"
-                      >
-                        {{ tag }}
-                      </text>
-                    </view>
-                  </view>
-                  <view v-if="getAssessmentProblemTypeTags(entry.item).length" class="status-tag-row">
-                    <text class="status-tag-title">问题类型</text>
-                    <view class="feedback-badges status-tags">
-                      <text
-                        v-for="tag in getAssessmentProblemTypeTags(entry.item)"
-                        :key="tag"
-                        class="badge muted-badge"
-                      >
-                        {{ tag }}
-                      </text>
-                    </view>
-                  </view>
-                </view>
-              </view>
-
-              <view v-if="getAssessmentActionPlanPanel(entry.item).show" class="guidance-panel history-guidance">
-                <text class="ai-panel-label">你接下来怎么做</text>
-                <text v-if="getAssessmentActionPlanPanel(entry.item).missing" class="raw-ai-reply-text muted" user-select>{{ getAssessmentActionPlanPanel(entry.item).text }}</text>
-                <view v-else>
-                  <view v-for="item in getAssessmentActionPlanPanel(entry.item).sections" :key="item.label" class="guidance-item">
-                    <text class="guidance-label">{{ item.label }}</text>
-                    <text class="guidance-text" user-select>{{ item.text }}</text>
-                  </view>
-                </view>
-              </view>
-
-              <view v-if="false" class="score-panel instant-score-panel">
-                <view class="section-mini-head legacy-hidden">
-                  <text class="mini-title">最近 4 次趋势</text>
-                  <text class="mini-sub">用折线图看意向和风险的变化</text>
-                </view>
-                <view class="section-mini-head">
-                  <text class="mini-title">意向 / 风险</text>
-                  <text class="mini-sub">这次即时反馈的当时分数</text>
-                </view>
-                <view class="score-row">
-                  <view class="score-head">
-                    <text class="score-label">鎰忓悜</text>
-                    <text class="score-value">{{ clampScore(entry.item.intentScore) }}</text>
-                    <text class="score-bucket">{{ mapIntentLabel(entry.item.intentBucket) }}</text>
-                  </view>
-                  <view class="score-track">
-                    <view class="score-fill intent-fill" :style="scoreFillStyle(entry.item.intentScore, 'intent')"></view>
-                  </view>
-                </view>
-                <view class="score-row">
-                  <view class="score-head">
-                    <text class="score-label">椋庨櫓</text>
-                    <text class="score-value">{{ clampScore(entry.item.consistencyRiskScore) }}</text>
-                    <text class="score-bucket">{{ mapRiskLabel(entry.item.riskBucket) }}</text>
-                  </view>
-                  <view class="score-track">
-                    <view class="score-fill risk-fill" :style="scoreFillStyle(entry.item.consistencyRiskScore, 'risk')"></view>
-                  </view>
-                </view>
-                <!--
-                <AssessmentTrendChart
-                  :assessments="getRecentTrendAssessments(entry.item)"
-                  subtitle="截至这次评估的最近 4 次记录，最新一条在最右侧。"
-                />
-                -->
-              </view>
-
-              <view v-if="getAssessmentImageLinkItems(entry.item).length > 0" class="instant-attachments">
-                <text class="ai-panel-label">图片链接</text>
-                <view
-                  v-for="(link, linkIndex) in getAssessmentImageLinkItems(entry.item)"
-                  :key="link.fileID"
-                  class="instant-attachment-link"
-                  @click="previewAssessmentImages(entry.item, linkIndex)"
-                >
-                  <text class="instant-link-title">{{ link.name }}</text>
-                  <text class="instant-link-url" selectable>{{ link.url || '授权链接生成中...' }}</text>
-                </view>
-              </view>
-            </view>
-
-            <view v-if="false" class="score-panel">
-              <view class="score-row">
-                <view class="score-head">
-                  <text class="score-label">意向</text>
-                  <text class="score-value">{{ clampScore(entry.item.intentScore) }}</text>
-                  <text class="score-bucket">{{ mapIntentLabel(entry.item.intentBucket) }}</text>
-                </view>
-                <view class="score-track">
-                  <view class="score-fill intent-fill" :style="scoreFillStyle(entry.item.intentScore, 'intent')"></view>
-                </view>
-              </view>
-              <view class="score-row">
-                <view class="score-head">
-                  <text class="score-label">风险</text>
-                  <text class="score-value">{{ clampScore(entry.item.consistencyRiskScore) }}</text>
-                  <text class="score-bucket">{{ mapRiskLabel(entry.item.riskBucket) }}</text>
-                </view>
-                <view class="score-track">
-                  <view class="score-fill risk-fill" :style="scoreFillStyle(entry.item.consistencyRiskScore, 'risk')"></view>
-                </view>
-              </view>
-            </view>
-
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="activeTimelineView === 'system'" class="card system-track-card">
-        <view class="fold-head">
-          <view>
-            <text class="h2">系统轨迹</text>
-            <text class="muted">系统自动生成的评估、重算、趋势日志，不混入真实事件流。</text>
-          </view>
-          <view class="fold-meta">
-            <text class="track-count">{{ supportTimeline.length }} 条</text>
-          </view>
-        </view>
-        <view v-if="supportTimeline.length === 0" class="muted">还没有系统轨迹。</view>
-        <view v-else class="timeline-list large system-track-list">
-          <view v-for="item in supportTimeline" :key="item._id || item.id" class="timeline-item system">
-            <view class="timeline-time">
-              <text class="timeline-axis-date">{{ formatAxisDate(item) }}</text>
-              <text class="timeline-axis-time">{{ formatAxisTime(item) }}</text>
-              <view class="timeline-marker" :class="toneClass(item.type)" />
-            </view>
-            <view class="timeline-content">
-              <view class="timeline-meta">
-                <text>{{ mapSystemTrackTypeLabel(item.type) }}</text>
-                <text v-if="item.date">发生时间：{{ item.date }}</text>
-                <text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text>
-              </view>
-              <text class="timeline-title">{{ item.title || mapSystemTrackTypeLabel(item.type) }}</text>
-            <text v-if="item.description" class="timeline-desc" user-select>{{ item.description }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </template>
-
-    <view v-if="selectedStatusInfo" class="info-modal-mask" @click="selectedStatusInfo = null">
-      <view class="info-modal" @click.stop>
-        <view class="info-modal-head">
-          <view class="info-head-copy">
-            <text class="info-modal-title">当前状态怎么看</text>
-            <text class="info-modal-subtitle">这些标签走同一套规则口径，AI 只参与事件分析和变化量判断。</text>
-          </view>
-          <text class="info-modal-close" @click="selectedStatusInfo = null">×</text>
-        </view>
-        <scroll-view scroll-y class="info-modal-body">
-          <view v-if="selectedStatusInfo.summary || selectedStatusInfo.caution" class="info-section relation">
-            <text class="info-section-title">这次状态说明</text>
-            <text v-if="selectedStatusInfo.summary" class="info-section-copy strong" user-select>{{ selectedStatusInfo.summary }}</text>
-            <text v-if="selectedStatusInfo.caution" class="info-section-copy" user-select>{{ selectedStatusInfo.caution }}</text>
-          </view>
-          <view class="info-section">
-            <text class="info-section-title">状态标签</text>
-            <text class="info-section-copy">从事件性质、阶段、状态、天气和证据强度几个角度看当前切面。</text>
-            <view class="info-meaning-list">
-              <view v-for="item in selectedStatusStateItems" :key="`${item.group}-${item.tag}`" class="info-meaning-row">
-                <text class="info-chip">{{ item.tag }}</text>
-                <view class="info-meaning-copy-box">
-                  <text class="info-meaning-title">{{ item.group }}</text>
-                  <text class="info-meaning-copy">{{ item.description }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-          <view class="info-section">
-            <text class="info-section-title">问题类型</text>
-            <text class="info-section-copy">这组标签只在命中结构性问题时出现，用来提醒你别被单次体感带偏。</text>
-            <view class="info-meaning-list">
-              <view v-for="item in selectedProblemItems" :key="item.tag" class="info-meaning-row">
-                <text class="info-chip muted">{{ item.tag }}</text>
-                <view class="info-meaning-copy-box">
-                  <text class="info-meaning-title">问题类型</text>
-                  <text class="info-meaning-copy">{{ item.description }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
-    </block>
-    <!-- /经典版 -->
-
-    <!-- Campus Pop -->
-    <block v-if="showV2">
+  <view class="page v2-mode" :style="themeVars">
+      <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">时间轴不可用</text><text class="empty-sub-v2">当前对象不存在或已被删除。</text></view>
       <template v-else>
@@ -507,7 +10,39 @@
         <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
         <view v-if="activeTimelineView === 'events'">
           <view class="card-v2" style="border-color:#4ECDC4;"><view class="stats-grid-v2"><view v-for="item in timelineStatItems" :key="item.key" class="stat-box-v2"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view><scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view></view>
-          <view class="card-v2"><text class="section-title-v2">关键事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="getAttachmentBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAttachmentBadges(item)" :key="badge" :class="['tag-v2 sm', isImageAttachmentBadge(badge) ? 'clickable' : '']" @click="isImageAttachmentBadge(badge) && previewTimelineImages(item)">{{ badge }}</text></view></view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
+          <view class="card-v2"><text class="section-title-v2">关键事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getAttachmentBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAttachmentBadges(item)" :key="badge" :class="['tag-v2 sm', isImageAttachmentBadge(badge) ? 'clickable' : '']" @click="isImageAttachmentBadge(badge) && previewTimelineImages(item)">{{ badge }}</text></view></view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
+        </view>
+        <view v-if="activeTimelineView === 'weeklyReviews'">
+          <view class="card-v2">
+            <text class="section-title-v2">周复盘时间轴</text>
+            <view v-if="weeklyReviewTimeline.length === 0" class="empty-sub-v2">还没有周复盘记录。先在周复盘页生成一次，本页会自动沉淀到这里。</view>
+            <view v-else class="event-list-v2">
+              <view v-for="item in weeklyReviewTimeline" :key="item._id || item.id" class="event-row-v2 system">
+                <view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', isWeeklySideReadRecord(item) ? 'note' : 'trend']"></view></view>
+                <view class="event-body-v2 assessment-card-v2">
+                  <view class="event-meta-v2"><text>{{ item.weekStart && item.weekEnd ? item.weekStart + ' — ' + item.weekEnd : '' }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view>
+                  <text class="event-title-v2">{{ item.title || '本周复盘' }}</text>
+                  <view class="tag-row-v2" style="margin:6rpx 0;">
+                    <text class="tag-v2 black sm">{{ isWeeklySideReadRecord(item) ? '侧写' : '周复盘' }}</text>
+                    <text v-if="!isWeeklySideReadRecord(item) && item.trendLabel" class="tag-v2 sm">{{ item.trendLabel }}</text>
+                    <text v-if="item.aiUsed" class="tag-v2 sm">AI</text>
+                  </view>
+                  <text class="event-desc-v2">{{ item.description }}</text>
+                  <view v-if="!isWeeklySideReadRecord(item) && (item.eventCount || item.assessmentCount || item.intentDelta || item.riskDelta)" class="tag-row-v2" style="margin-top:8rpx;">
+                    <text v-if="item.eventCount" class="tag-v2 sm">事件 {{ item.eventCount }}</text>
+                    <text v-if="item.assessmentCount" class="tag-v2 sm">评估 {{ item.assessmentCount }}</text>
+                    <text v-if="item.intentDelta !== undefined" class="tag-v2 sm">意向 {{ item.intentDelta > 0 ? '+' : '' }}{{ item.intentDelta }}</text>
+                    <text v-if="item.riskDelta !== undefined" class="tag-v2 sm">风险 {{ item.riskDelta > 0 ? '+' : '' }}{{ item.riskDelta }}</text>
+                  </view>
+                  <view v-if="item.keyChanges && item.keyChanges.length" class="review-block-v2"><text class="section-title-v2">本周关键变化</text><text v-for="change in item.keyChanges" :key="change" class="bullet-v2">• {{ change }}</text></view>
+                  <view v-if="item.keyEvents && item.keyEvents.length" class="review-block-v2"><text class="section-title-v2">关键事件</text><text v-for="evt in item.keyEvents" :key="evt" class="bullet-v2">• {{ evt }}</text></view>
+                  <view v-if="item.nextWeekFocus && item.nextWeekFocus.length" class="review-block-v2"><text class="section-title-v2">下周观察重点</text><text v-for="focus in item.nextWeekFocus" :key="focus" class="bullet-v2">• {{ focus }}</text></view>
+                  <view v-if="item.avoidMisread && item.avoidMisread.length" class="review-block-v2"><text class="section-title-v2">本周避免误判</text><text v-for="avoid in item.avoidMisread" :key="avoid" class="bullet-v2">• {{ avoid }}</text></view>
+                  <view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view>
+                </view>
+              </view>
+            </view>
+          </view>
         </view>
         <view v-if="activeTimelineView === 'assessments'">
           <view class="card-v2"><view class="stats-grid-v2"><view v-for="item in assessmentStatItems" :key="item.key" class="stat-box-v2"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view><scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in assessmentFilterOptions" :key="item.key" :class="['filter-chip-v2', activeAssessmentFilter === item.key ? 'active' : '']" @click="setAssessmentFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view></view>
@@ -536,6 +71,17 @@
                 </view>
                 <!-- Action plan -->
                 <view v-if="getAssessmentActionPlanPanel(entry.item).show" class="action-box-v2"><text class="action-label-v2">你接下来怎么做</text><text v-if="getAssessmentActionPlanPanel(entry.item).missing" class="trend-summary-v2">{{ getAssessmentActionPlanPanel(entry.item).text }}</text><view v-else><view v-for="item in getAssessmentActionPlanPanel(entry.item).sections" :key="item.label" class="action-item-v2"><text class="action-item-label-v2">{{ item.label }}</text><text class="action-item-text-v2">{{ item.text }}</text></view></view></view>
+                <!-- Side read -->
+                <view v-if="getAssessmentSideRead(entry.item)" class="side-inline-v2">
+                  <text class="focus-label-v2">{{ getAssessmentSideRead(entry.item).title }}</text>
+                  <text class="weekly-desc-v2">{{ getAssessmentSideRead(entry.item).summary }}</text>
+                  <view v-if="getAssessmentSideRead(entry.item).sections && getAssessmentSideRead(entry.item).sections.length" class="side-body-v2" style="margin-top:10rpx;">
+                    <view v-for="sec in getAssessmentSideRead(entry.item).sections" :key="sec.label" class="side-item-v2">
+                      <text class="side-label-v2">{{ sec.label }}</text>
+                      <text class="side-text-v2">{{ sec.text }}</text>
+                    </view>
+                  </view>
+                </view>
                 <!-- Image links -->
                 <view v-if="getAssessmentImageLinkItems(entry.item).length > 0" class="attach-v2"><text class="section-title-v2">图片链接</text><view v-for="(link, li) in getAssessmentImageLinkItems(entry.item)" :key="link.fileID" class="attach-link-v2" @click="previewAssessmentImages(entry.item, li)"><text class="attach-name-v2">{{ link.name }}</text></view></view>
               </view>
@@ -543,20 +89,16 @@
           </view>
           <view v-if="filteredAssessmentEntries.length > assessmentVisibleMax" class="expand-row-v2"><view class="tag-v2" @click="assessmentVisibleMax = assessmentVisibleMax + 7">加载更多（还有 {{ filteredAssessmentEntries.length - assessmentVisibleMax }} 条）</view></view>
         </view>
-        <view v-if="activeTimelineView === 'system'" class="card-v2" style="border-style:dashed;"><text class="section-title-v2">系统轨迹 · {{ supportTimeline.length }} 条</text><view v-if="supportTimeline.length === 0" class="empty-sub-v2">还没有系统轨迹。</view><view v-else class="event-list-v2"><view v-for="item in visibleSystemTracksV2" :key="item._id || item.id" class="event-row-v2 system"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>{{ mapSystemTrackTypeLabel(item.type) }}</text><text v-if="item.date">发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title || mapSystemTrackTypeLabel(item.type) }}</text><text v-if="item.description" class="event-desc-v2" user-select>{{ item.description }}</text></view></view></view><view v-if="supportTimeline.length > systemVisibleMax" class="expand-row-v2"><view class="tag-v2" @click="systemVisibleMax = systemVisibleMax + 7">加载更多（还有 {{ supportTimeline.length - systemVisibleMax }} 条）</view></view></view>
         <view v-if="selectedStatusInfo" class="info-mask-v2" @click="selectedStatusInfo = null"><view class="info-modal-v2" @click.stop><view class="info-head-v2"><text class="info-title-v2">当前状态怎么看</text><text class="info-close-v2" @click="selectedStatusInfo = null">X</text></view><scroll-view scroll-y class="info-body-v2"><view v-if="selectedStatusInfo.summary || selectedStatusInfo.caution" class="info-section-v2 ylw"><text class="info-sec-title-v2">这次状态说明</text><text v-if="selectedStatusInfo.summary" class="info-sec-copy-v2 strong">{{ selectedStatusInfo.summary }}</text><text v-if="selectedStatusInfo.caution" class="info-sec-copy-v2">{{ selectedStatusInfo.caution }}</text></view><view class="info-section-v2"><text class="info-sec-title-v2">状态标签</text><view v-for="item in selectedStatusStateItems" :key="`${item.group}-${item.tag}`" class="info-tag-row-v2"><text class="info-chip-v2">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">{{ item.group }}</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view><view class="info-section-v2"><text class="info-sec-title-v2">问题类型</text><view v-for="item in selectedProblemItems" :key="item.tag" class="info-tag-row-v2"><text class="info-chip-v2 muted">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">问题类型</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view></scroll-view></view></view>
         <view class="bottom-action-v2"><button class="btn-v2-bottom" @click="goCaseDetail">返回关系主页</button></view>
       </template>
-    </block>
-    <!-- /Campus Pop -->
-
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow, onHide, onUnload } from '@dcloudio/uni-app'
-import { getCaseDetail, getCurrentUserId, getCases, getCachedSelfProfile, getSelfProfile, getTempFileURL } from '@/utils/api'
+import { batchTagEvents, getCaseDetail, getCurrentUserId, getCases, getCachedSelfProfile, getSelfProfile, getTempFileURL } from '@/utils/api'
 import { consumePendingTimelineContext, getActiveCaseId, setActiveCaseId, showError } from '@/utils/helpers'
 import { buildProfileItems, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { buildTimelineFromLatestResult, compareAssessments, sortTimelineRecordsDesc, isSystemTimelineRecord, getTimelineRecordTimestamp } from '@/utils/insights'
@@ -564,11 +106,10 @@ import { buildTimelineStats, getTimelineRecordTags, buildObjectStatusCard } from
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
-const showV2 = ref(true)
 const loading = ref(true)
+const syncing = ref(false)
 const caseFile = ref<any>(null)
 const assessmentVisibleMax = ref(7)
-const systemVisibleMax = ref(7)
 const userId = ref('')
 const caseId = ref('')
 const selfProfile = ref<any>(getCachedSelfProfile())
@@ -582,7 +123,7 @@ onShareAppMessage(() => buildSafeShareMessage())
 
 onShareTimeline(() => buildSafeTimelineShare())
 const manualTimelineExpanded = ref(false)
-const activeTimelineView = ref<'events' | 'assessments' | 'system'>('events')
+const activeTimelineView = ref<'events' | 'weeklyReviews' | 'assessments'>('events')
 const activeTimelineFilter = ref('all')
 const activeAssessmentFilter = ref('all')
 const initialized = ref(false)
@@ -613,7 +154,12 @@ const timelineById = computed(() => {
 
 const manualTimeline = computed(() => {
   const timeline = caseFile.value?.timeline || []
-  return sortTimelineRecordsDesc(timeline.filter((item: any) => !isSystemTimelineRecord(item)))
+  return sortTimelineRecordsDesc(timeline.filter((item: any) => !isSystemTimelineRecord(item) && !isWeeklyReviewTimelineRecord(item) && !isEventSideReadRecord(item)))
+})
+
+const weeklyReviewTimeline = computed(() => {
+  const timeline = caseFile.value?.timeline || []
+  return sortTimelineRecordsDesc(timeline.filter((item: any) => isWeeklyReviewTimelineRecord(item)))
 })
 
 const timelineStats = computed(() => buildTimelineStats(manualTimeline.value))
@@ -667,8 +213,8 @@ const supportTimeline = computed(() => {
 
 const timelineViewOptions = computed(() => [
   { key: 'events', label: '关键事件', count: manualTimeline.value.length },
+  { key: 'weeklyReviews', label: '周复盘', count: weeklyReviewTimeline.value.length },
   { key: 'assessments', label: '评估历史', count: assessmentTimeline.value.length },
-  { key: 'system', label: '系统轨迹', count: supportTimeline.value.length }
 ])
 
 const latestResult = computed(() => caseFile.value?.latestResult)
@@ -830,7 +376,6 @@ const filteredAssessmentEntries = computed(() => {
 
 const visibleAssessmentEntries = computed(() => filteredAssessmentEntries.value)
 const visibleAssessmentEntriesV2 = computed(() => filteredAssessmentEntries.value.slice(0, assessmentVisibleMax.value))
-const visibleSystemTracksV2 = computed(() => supportTimeline.value.slice(0, systemVisibleMax.value))
 
 const assessmentStatusSnapshots = computed(() => {
   return assessmentTimeline.value.map((item: any) => {
@@ -852,10 +397,25 @@ function toneClass(type: string) {
     case 'positive': return 'positive'
     case 'risk': return 'risk'
     case 'verification': return 'verification'
+    case 'weekly_review': return 'weekly'
     case 'assessment': return 'assessment'
     case 'trend': return 'trend'
     default: return 'note'
   }
+}
+
+function isWeeklySideReadRecord(record: any) {
+  return String(record?.feature || '') === 'weeklySideRead'
+}
+
+function isEventSideReadRecord(record: any) {
+  return String(record?.feature || '') === 'sideRead'
+}
+
+function isWeeklyReviewTimelineRecord(record: any) {
+  if (String(record?.type || '') === 'weekly_review') return true
+  if (isWeeklySideReadRecord(record)) return true
+  return false
 }
 
 function mapTimelineTypeLabel(type?: string) {
@@ -1000,6 +560,12 @@ function getAssessmentOriginalRecordText(item: any) {
   const description = String(event?.description || '').trim()
   if (description) return description
   return getAssessmentTitle(item)
+}
+
+function getAssessmentSideRead(item: any) {
+  const sideRead = item?.sideReadAdvice
+  if (!sideRead) return null
+  return (sideRead.summary || (sideRead.sections && sideRead.sections.length)) ? sideRead : null
 }
 
 function getAssessmentImageLinkItems(item: any) {
@@ -1208,7 +774,12 @@ function mapAction(action?: string) {
 }
 
 function mapSubjectRoleLabel(role?: string) {
-  return role === 'self' ? '我的记录' : '对方记录'
+  switch (role) {
+    case 'self': return '我的记录'
+    case 'both': return '双方互动'
+    case 'target': return '对方记录'
+    default: return ''
+  }
 }
 
 function mapDirectionCopy(direction: 'up' | 'down' | 'flat', positiveWhenUp: string, positiveWhenDown: string) {
@@ -1225,7 +796,7 @@ function toggleManualTimelineExpanded() {
   manualTimelineExpanded.value = !manualTimelineExpanded.value
 }
 
-function setTimelineView(key: 'events' | 'assessments' | 'system') {
+function setTimelineView(key: 'events' | 'weeklyReviews' | 'assessments') {
   activeTimelineView.value = key
 }
 
@@ -1291,7 +862,7 @@ function goTimelineEvent(eventId: string) {
 }
 
 function applyEntryContext(options?: Record<string, any>) {
-  const pending = consumePendingTimelineContext()
+  const pending = (options as any)?._pending || consumePendingTimelineContext()
   caseId.value = String(options?.caseId || pending?.caseId || getActiveCaseId() || '').trim()
   classified.value = pending ? Boolean(pending.classified) : options?.classified === '1'
   classifiedType.value = String(pending?.eventType || options?.eventType || '').trim()
@@ -1313,6 +884,8 @@ onLoad((options) => {
   loadData()
 })
 
+const lastDataVersion = ref(0)
+
 onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
@@ -1321,8 +894,19 @@ onShow(() => {
     skipNextShowRefresh.value = false
     return
   }
-  applyEntryContext()
-  loadData()
+  const active = getActiveCaseId()
+  if (active && active !== caseId.value) {
+    caseId.value = active
+    loadData({ silent: true })
+    return
+  }
+  const hadContext = consumePendingTimelineContext()
+  applyEntryContext(hadContext ? { _pending: hadContext } : undefined)
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  if (dv > lastDataVersion.value || hadContext) {
+    lastDataVersion.value = dv
+    loadData({ silent: true })
+  }
 })
 
 onHide(() => {
@@ -1348,14 +932,16 @@ async function ensureCaseId(uid: string) {
   return true
 }
 
-async function loadData() {
+async function loadData(options?: { silent?: boolean }) {
   const uid = getCurrentUserId()
   if (!uid) {
     uni.reLaunch({ url: '/pages/login/login' })
     return
   }
   userId.value = uid
-  loading.value = true
+  const silent = options?.silent && caseFile.value
+  if (!silent) loading.value = true
+  else syncing.value = true
   try {
     const hasCase = await ensureCaseId(uid)
     if (!hasCase) {
@@ -1384,11 +970,32 @@ async function loadData() {
         scrollToEvent(targetEventId.value)
       }, 80)
     }
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
     loading.value = false
+    syncing.value = false
   }
+  syncSemanticTags()
+}
+
+async function syncSemanticTags() {
+  if (!caseFile.value) return
+  const timeline = caseFile.value.timeline || []
+  const untagged = timeline.filter((item: any) =>
+    !['assessment', 'trend'].includes(item.type) &&
+    item.semanticTagsSource !== 'user' &&
+    !item.semanticTags
+  )
+  if (untagged.length === 0) return
+  try {
+    const result = await batchTagEvents(caseId.value)
+    if (result?.success && result.tagged > 0) {
+      const detail = await getCaseDetail(userId.value, caseId.value)
+      if (detail) caseFile.value = detail
+    }
+  } catch { /* AI tagging is non-critical, silently ignore failures */ }
 }
 </script>
 
@@ -1401,1126 +1008,6 @@ async function loadData() {
     linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 390rpx),
     var(--app-bg, #f6f1e8);
 }
-
-.center { text-align: center; padding: 80rpx 0; }
-
-.card {
-  margin-bottom: 24rpx;
-  padding: var(--spacing-card, 32rpx);
-  border-radius: var(--radius-md, 18rpx);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  background: var(--card-bg, rgba(255, 252, 247, 0.96));
-  box-shadow: var(--shadow-md, 0 16rpx 36rpx rgba(32, 25, 20, 0.06));
-}
-
-.hero-card {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: var(--shadow-hero, 0 22rpx 44rpx rgba(18, 60, 54, 0.18));
-}
-
-.hero-topline { display: block; color: rgba(255, 252, 247, 0.72); font-size: 22rpx; letter-spacing: 3rpx; }
-
-.h1 {
-  display: block; margin: 8rpx 0;
-  color: var(--text-main, #201914);
-  font-size: 42rpx; font-weight: var(--font-weight-hero, 700);
-  line-height: var(--text-line-height-heading, 1.25);
-}
-
-.hero-card .h1 { color: #fffaf0; }
-
-.h2 {
-  display: block; margin-bottom: 10rpx;
-  color: var(--text-main, #201914);
-  font-size: 32rpx; font-weight: var(--font-weight-strong, 600);
-  line-height: var(--text-line-height-heading, 1.35);
-}
-
-.hero-subtext { display: block; color: rgba(255, 252, 247, 0.76); font-size: 26rpx; line-height: var(--text-line-height, 1.6); }
-
-.muted { display: block; margin: 6rpx 0; color: var(--text-muted, #76695c); font-size: 24rpx; line-height: var(--text-line-height, 1.55); }
-
-.badges,
-.feedback-badges {
-  margin-top: 14rpx;
-}
-
-.badge {
-  display: inline-block;
-  margin: 4rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(201, 164, 92, 0.24);
-  background: var(--accent-soft, rgba(201, 164, 92, 0.14));
-  color: #6f5225;
-  font-size: 22rpx;
-}
-
-.muted-badge {
-  background: rgba(18, 60, 54, 0.06);
-  color: var(--text-muted, #76695c);
-}
-
-.subject-badge {
-  color: #143f3a;
-  background: rgba(20, 63, 58, 0.1);
-  border-color: rgba(20, 63, 58, 0.2);
-}
-
-.ai-badge {
-  display: inline-block;
-  width: fit-content;
-  margin: 6rpx 0;
-  padding: 7rpx 14rpx;
-  border: 1rpx solid rgba(15, 107, 69, 0.22);
-  border-radius: 999rpx;
-  background: #e7f3ef;
-  color: #0f6b45;
-  font-size: 21rpx;
-  font-weight: 650;
-  line-height: 1.35;
-}
-
-.status-card {
-  border-left: 8rpx solid #143f3a;
-}
-
-.status-card.success {
-  border-left-color: #14633a;
-  background: #dff5e8;
-}
-
-.status-card.warning {
-  border-left-color: #b85c38;
-  background: #f9d8d2;
-}
-
-.status-strong {
-  display: block;
-  margin-bottom: 6rpx;
-  color: #241b12;
-  font-size: 28rpx;
-  font-weight: 700;
-}
-
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16rpx;
-  margin-bottom: 14rpx;
-}
-
-.link-button {
-  height: 64rpx;
-  line-height: 64rpx;
-  padding: 0 20rpx;
-  border: none;
-  border-radius: var(--radius-sm, 10rpx);
-  background: var(--primary, #143f3a);
-  color: #fff;
-  font-size: 24rpx;
-}
-
-.link-button.secondary {
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  background: var(--card-bg, rgba(255, 252, 247, 0.92));
-  color: var(--primary, #143f3a);
-}
-
-.grid {
-  display: flex;
-  gap: 16rpx;
-  flex-wrap: wrap;
-}
-
-.grid.two {
-  display: flex;
-  gap: 16rpx;
-  flex-wrap: wrap;
-}
-
-.trend-grid {
-  margin-top: 14rpx;
-}
-
-.trend-box {
-  flex: 1;
-  min-width: 280rpx;
-  padding: 20rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  border-radius: var(--radius-sm, 12rpx);
-  background: var(--card-soft, #fffaf3);
-}
-
-.case-kpi-label {
-  display: block;
-  margin-bottom: 4rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 22rpx;
-}
-
-.timeline-stats-card {
-  border-left: 6rpx solid rgba(201, 164, 92, 0.62);
-}
-
-.timeline-switch-card {
-  padding: 18rpx;
-}
-
-.timeline-view-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10rpx;
-}
-
-.timeline-view-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  min-height: 64rpx;
-  padding: 0 10rpx;
-  border-radius: var(--radius-sm, 14rpx);
-  border: 1rpx solid rgba(18, 60, 54, 0.12);
-  background: rgba(255, 252, 247, 0.78);
-  color: var(--text-muted, #76695c);
-  font-size: 24rpx;
-  font-weight: 750;
-}
-
-.timeline-view-tab.active {
-  border-color: rgba(18, 60, 54, 0.36);
-  background: var(--primary, #123c36);
-  color: #fffaf0;
-}
-
-.timeline-view-tab.active .timeline-view-count { background: rgba(255, 252, 247, 0.22); }
-
-.timeline-filter-chip.active { border-color: rgba(18, 60, 54, 0.36); background: var(--primary, #123c36); color: #fffaf0; }
-
-.timeline-filter-chip.active .timeline-filter-count { background: rgba(255, 252, 247, 0.2); }
-
-.timeline-view-count {
-  min-width: 32rpx;
-  height: 32rpx;
-  line-height: 32rpx;
-  border-radius: 999rpx;
-  background: rgba(18, 60, 54, 0.08);
-  text-align: center;
-  font-size: 20rpx;
-}
-
-.timeline-view-tab.active .timeline-view-count {
-  background: rgba(255, 252, 247, 0.22);
-}
-
-.timeline-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12rpx;
-  margin-top: 12rpx;
-}
-
-.assessment-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12rpx;
-  margin-top: 18rpx;
-}
-
-.timeline-stat-box {
-  min-width: 0;
-  padding: 16rpx;
-  border-radius: var(--radius-sm, 14rpx);
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 90rpx),
-    var(--card-soft, #fffaf3);
-}
-
-.timeline-stat-value {
-  display: block;
-  margin-top: 6rpx;
-  color: var(--primary, #123c36);
-  font-size: 34rpx;
-  font-weight: 800;
-  line-height: 1.12;
-}
-
-.timeline-filter-scroll {
-  width: 100%;
-  margin-top: 18rpx;
-  white-space: nowrap;
-}
-
-.timeline-filter-row {
-  display: inline-flex;
-  gap: 10rpx;
-  padding-bottom: 4rpx;
-}
-
-.timeline-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8rpx;
-  min-height: 56rpx;
-  padding: 0 18rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.14);
-  background: rgba(255, 252, 247, 0.78);
-  color: var(--text-main, #201914);
-  font-size: 23rpx;
-  font-weight: 650;
-}
-
-.trend-number {
-  display: block;
-  margin: 8rpx 0;
-  font-size: 48rpx;
-  font-weight: 700;
-}
-
-.trend-number.up {
-  color: #14633a;
-}
-
-.trend-number.down {
-  color: #b85c38;
-}
-
-.trend-number.flat {
-  color: #786857;
-}
-
-.trend-summary-text {
-  display: block;
-  margin: 14rpx 0;
-  color: var(--text-main, #201914);
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-.trend-warning {
-  display: block;
-  margin: 12rpx 0;
-  color: #b85c38;
-  font-size: 26rpx;
-  font-weight: 600;
-}
-
-.feedback-headline {
-  margin-top: 10rpx;
-}
-
-.feedback-headline.strong {
-  display: block;
-  color: var(--text-main, #201914);
-  font-size: 27rpx;
-  line-height: 1.55;
-  font-weight: 700;
-}
-
-.instant-delta-panel {
-  display: flex;
-  gap: 12rpx;
-  margin-top: 16rpx;
-}
-
-.instant-delta-item {
-  flex: 1;
-  padding: 18rpx;
-  border-radius: 16rpx;
-  background: rgba(255, 252, 247, 0.78);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.delta-label {
-  display: block;
-  font-size: 22rpx;
-  color: var(--text-muted, #76695c);
-}
-
-.delta-value {
-  display: block;
-  margin-top: 6rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 38rpx;
-  font-weight: 800;
-}
-
-.delta-value.up { color: var(--success, #0f6b45); }
-.delta-value.down { color: var(--risk, #b84a3a); }
-.delta-value.flat { color: var(--text-muted, #76695c); }
-
-.quick-section,
-.quick-status-panel,
-.quick-reason-panel,
-.raw-ai-reply-panel,
-.quick-guidance-panel,
-.quick-trend-panel {
-  margin-top: 18rpx;
-  padding: 20rpx;
-  border-radius: 16rpx;
-  background: rgba(255, 252, 247, 0.78);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.section-mini-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12rpx;
-  margin-bottom: 12rpx;
-}
-
-.mini-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.legacy-hidden {
-  display: none;
-}
-
-.mini-title {
-  color: var(--text-main, #201914);
-  font-size: 26rpx;
-  font-weight: 700;
-}
-
-.info-icon {
-  flex-shrink: 0;
-  width: 34rpx;
-  height: 34rpx;
-  line-height: 34rpx;
-  border-radius: 50%;
-  border: 1rpx solid rgba(18, 60, 54, 0.24);
-  background: rgba(255, 252, 247, 0.84);
-  color: var(--primary, #123c36);
-  font-size: 22rpx;
-  font-weight: 800;
-  text-align: center;
-}
-
-.info-modal-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 34rpx;
-  background: rgba(24, 18, 12, 0.42);
-  box-sizing: border-box;
-}
-
-.info-modal {
-  width: 100%;
-  max-height: 82vh;
-  overflow: hidden;
-  border-radius: 22rpx;
-  border: 1rpx solid rgba(201, 164, 92, 0.28);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 180rpx),
-    var(--card-bg, #fffcf7);
-  box-shadow: 0 30rpx 70rpx rgba(18, 60, 54, 0.24);
-}
-
-.info-modal-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18rpx;
-  padding: 30rpx 30rpx 20rpx;
-  border-bottom: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.info-head-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.info-modal-title {
-  display: block;
-  color: var(--text-main, #201914);
-  font-size: 32rpx;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.info-modal-subtitle {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 23rpx;
-  line-height: 1.5;
-}
-
-.info-modal-close {
-  flex-shrink: 0;
-  width: 46rpx;
-  height: 46rpx;
-  line-height: 42rpx;
-  border-radius: 50%;
-  background: rgba(18, 60, 54, 0.08);
-  color: var(--primary, #123c36);
-  font-size: 36rpx;
-  text-align: center;
-}
-
-.info-modal-body {
-  max-height: 62vh;
-  padding: 24rpx 30rpx 30rpx;
-  box-sizing: border-box;
-}
-
-.info-section {
-  padding: 20rpx;
-  border-radius: 16rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  background: var(--card-soft, #fffaf3);
-}
-
-.info-section + .info-section {
-  margin-top: 18rpx;
-}
-
-.info-section.relation {
-  background: rgba(201, 164, 92, 0.12);
-}
-
-.info-section-title {
-  display: block;
-  color: var(--primary, #123c36);
-  font-size: 27rpx;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.info-section-copy {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 23rpx;
-  line-height: 1.55;
-}
-
-.info-section-copy.strong {
-  color: var(--text-main, #201914);
-  font-weight: 700;
-}
-
-.info-meaning-list {
-  margin-top: 16rpx;
-}
-
-.info-meaning-row + .info-meaning-row {
-  margin-top: 14rpx;
-}
-
-.info-meaning-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 14rpx;
-  padding: 14rpx 0;
-  border-top: 1rpx solid rgba(18, 60, 54, 0.06);
-}
-
-.info-meaning-row:first-child {
-  padding-top: 0;
-  border-top: none;
-}
-
-.info-chip {
-  flex-shrink: 0;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(201, 164, 92, 0.24);
-  background: rgba(201, 164, 92, 0.14);
-  color: #6f5225;
-  font-size: 22rpx;
-  line-height: 1.2;
-}
-
-.info-chip.muted {
-  border-color: rgba(18, 60, 54, 0.12);
-  background: rgba(18, 60, 54, 0.06);
-  color: var(--text-muted, #76695c);
-}
-
-.info-meaning-copy-box {
-  flex: 1;
-  min-width: 0;
-}
-
-.info-meaning-title {
-  display: block;
-  color: var(--primary, #123c36);
-  font-size: 23rpx;
-  font-weight: 750;
-  line-height: 1.4;
-}
-
-.info-meaning-copy {
-  display: block;
-  margin-top: 4rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 23rpx;
-  line-height: 1.55;
-}
-
-.mini-sub {
-  color: var(--text-muted, #76695c);
-  font-size: 21rpx;
-}
-
-.keyword-line {
-  margin-top: 8rpx;
-}
-
-.status-tag-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-}
-
-.status-tag-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.status-tag-title {
-  color: var(--text-muted, #76695c);
-  font-size: 22rpx;
-  font-weight: 650;
-}
-
-.quick-reason {
-  display: block;
-  margin-top: 10rpx;
-  color: var(--text-main, #201914);
-  font-size: 24rpx;
-  line-height: 1.55;
-}
-
-.raw-ai-reply-text {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-main, #201914);
-  font-size: 25rpx;
-  line-height: 1.6;
-}
-
-.history-raw-reply {
-  background: rgba(255, 250, 243, 0.74);
-}
-
-.status-meta {
-  display: block;
-  color: var(--text-muted, #76695c);
-  font-size: 23rpx;
-  line-height: 1.5;
-}
-
-.status-summary {
-  display: block;
-  margin: 12rpx 0 8rpx;
-  color: var(--text-main, #201914);
-  font-size: 26rpx;
-  font-weight: 650;
-  line-height: 1.55;
-}
-
-.quick-trend-panel :deep(.trend-title) {
-  display: none;
-}
-
-.instant-attachments {
-  margin-top: 18rpx;
-  padding: 18rpx;
-  border-radius: 16rpx;
-  background: rgba(255, 250, 243, 0.92);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.instant-attachment-link {
-  margin-top: 12rpx;
-  padding: 14rpx 16rpx;
-  border-radius: 14rpx;
-  background: rgba(201, 164, 92, 0.12);
-  border: 1rpx solid rgba(201, 164, 92, 0.2);
-}
-
-.instant-link-title,
-.instant-link-url {
-  display: block;
-}
-
-.instant-link-title {
-  color: var(--primary, #123c36);
-  font-size: 24rpx;
-  font-weight: 750;
-}
-
-.instant-link-url {
-  margin-top: 6rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 21rpx;
-  line-height: 1.35;
-  word-break: break-all;
-}
-
-.instant-side-read {
-  margin-top: 18rpx;
-  padding: 20rpx;
-  border-radius: 16rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  background: rgba(255, 252, 247, 0.78);
-}
-
-.guidance-panel {
-  margin-top: 18rpx;
-  padding: 20rpx;
-  border-radius: 16rpx;
-  border: 1rpx solid rgba(201, 164, 92, 0.18);
-  background: rgba(201, 164, 92, 0.1);
-}
-
-.history-guidance {
-  background: rgba(255, 250, 243, 0.74);
-}
-
-.guidance-item {
-  margin-top: 12rpx;
-  padding: 14rpx 16rpx;
-  border-radius: 14rpx;
-  background: rgba(255, 252, 247, 0.72);
-  border: 1rpx solid rgba(18, 60, 54, 0.06);
-}
-
-.guidance-label,
-.guidance-text {
-  display: block;
-}
-
-.guidance-label {
-  color: var(--primary, #123c36);
-  font-size: 22rpx;
-  font-weight: 750;
-}
-
-.guidance-text {
-  margin-top: 6rpx;
-  color: var(--text-main, #201914);
-  font-size: 24rpx;
-  line-height: 1.55;
-}
-
-.ai-panel-label {
-  display: block;
-  margin-bottom: 8rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 22rpx;
-  font-weight: 750;
-}
-
-.side-read-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-top: 14rpx;
-}
-
-.side-read-item {
-  padding: 16rpx;
-  border-radius: 14rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  background: var(--card-soft, #fffaf3);
-}
-
-.side-read-label {
-  display: block;
-  color: var(--primary, #123c36);
-  font-size: 23rpx;
-  font-weight: 750;
-}
-
-.side-read-text {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-main, #201914);
-  font-size: 24rpx;
-  line-height: 1.58;
-}
-
-.timeline-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-  margin-top: 16rpx;
-}
-
-.timeline-list.large {
-  gap: 20rpx;
-}
-
-.timeline-item {
-  display: flex;
-  gap: 18rpx;
-  padding: 18rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  border-radius: var(--radius-sm, 14rpx);
-  background: var(--card-soft, #fffaf3);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
-}
-
-.timeline-item.system {
-  background: rgba(255, 250, 243, 0.72);
-}
-
-.timeline-time {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 100rpx;
-}
-
-.timeline-axis-date,
-.timeline-axis-time {
-  color: var(--text-muted, #76695c);
-}
-
-.timeline-axis-date {
-  font-size: 22rpx;
-}
-
-.timeline-axis-time {
-  margin-top: 2rpx;
-  font-size: 20rpx;
-}
-
-.timeline-marker {
-  width: 16rpx;
-  height: 16rpx;
-  margin-top: 8rpx;
-  border-radius: 50%;
-  box-shadow: 0 0 0 6rpx rgba(18, 60, 54, 0.08);
-}
-
-.timeline-marker.positive { background: var(--success, #0f6b45); }
-.timeline-marker.risk { background: var(--risk, #b84a3a); }
-.timeline-marker.verification { background: var(--accent, #c9a45c); }
-.timeline-marker.assessment { background: var(--primary-2, #2f6a5c); }
-.timeline-marker.trend { background: var(--primary, #123c36); }
-.timeline-marker.note { background: var(--text-muted, #76695c); }
-
-.timeline-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.timeline-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-  margin-bottom: 8rpx;
-}
-
-.timeline-meta text {
-  color: var(--text-muted, #76695c);
-  font-size: 22rpx;
-}
-
-.timeline-title {
-  display: block;
-  margin: 4rpx 0;
-  color: var(--text-main, #201914);
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-.timeline-desc {
-  display: block;
-  color: var(--text-main, #201914);
-  font-size: 26rpx;
-  line-height: 1.5;
-}
-
-.timeline-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  margin-top: 12rpx;
-}
-
-.attachment-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 42rpx;
-  padding: 0 14rpx;
-  border-radius: 999rpx;
-  background: rgba(18, 60, 54, 0.08);
-  color: var(--primary, #123c36);
-  font-size: 22rpx;
-  font-weight: 650;
-}
-
-.attachment-badge.clickable {
-  background: rgba(201, 164, 92, 0.16);
-  font-weight: 750;
-}
-
-.timeline-expand-row {
-  margin-top: 20rpx;
-}
-
-.assessment-flow {
-  display: flex;
-  flex-direction: column;
-  gap: 18rpx;
-  margin-top: 18rpx;
-}
-
-.assessment-flow-row {
-  display: flex;
-  gap: 18rpx;
-  align-items: flex-start;
-  padding: 22rpx;
-  border-radius: 16rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 110rpx),
-    var(--card-soft, #fffaf3);
-}
-
-.assessment-flow-item {
-  flex: 1;
-  min-width: 0;
-}
-
-.history-instant-card {
-  padding: 20rpx;
-  border-radius: 16rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  border-left: 6rpx solid rgba(201, 164, 92, 0.72);
-  background: rgba(255, 252, 247, 0.82);
-}
-
-.assessment-flow-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14rpx;
-}
-
-.assessment-flow-title,
-.assessment-flow-time {
-  display: block;
-}
-
-.assessment-flow-title {
-  color: var(--text-main, #201914);
-  font-size: 28rpx;
-  line-height: 1.4;
-  font-weight: 750;
-}
-
-.assessment-flow-time {
-  margin-top: 4rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 22rpx;
-}
-
-.assessment-flow-tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8rpx;
-  max-width: 320rpx;
-}
-
-.assessment-trace-box {
-  margin-top: 16rpx;
-  padding: 18rpx;
-  border-radius: 14rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  background: rgba(255, 252, 247, 0.72);
-}
-
-.assessment-trace-box.side-snapshot {
-  margin-top: 22rpx;
-  border-left: 5rpx solid rgba(18, 60, 54, 0.2);
-  background: rgba(18, 60, 54, 0.04);
-}
-
-.assessment-trace-box.status-snapshot {
-  border-left: 5rpx solid rgba(201, 164, 92, 0.62);
-}
-
-.assessment-trace-box.first-assessment {
-  background: rgba(255, 252, 247, 0.62);
-}
-
-.score-panel {
-  margin-top: 18rpx;
-  padding: 20rpx;
-  border-radius: 16rpx;
-  background: rgba(255, 252, 247, 0.72);
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-}
-
-.score-row + .score-row {
-  margin-top: 18rpx;
-}
-
-.score-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12rpx;
-  margin-bottom: 10rpx;
-}
-
-.score-label {
-  font-size: 23rpx;
-  color: var(--text-muted, #76695c);
-}
-
-.score-value {
-  font-size: 36rpx;
-  line-height: 1;
-  font-weight: 800;
-  color: var(--primary, #123c36);
-}
-
-.score-bucket {
-  font-size: 23rpx;
-  color: var(--text-main, #201914);
-}
-
-.score-track {
-  width: 100%;
-  height: 18rpx;
-  overflow: hidden;
-  border-radius: 999rpx;
-  background: rgba(18, 60, 54, 0.08);
-}
-
-.score-fill {
-  height: 18rpx;
-  min-width: 4rpx;
-  border-radius: 999rpx;
-}
-
-.status-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14rpx;
-  margin-bottom: 12rpx;
-}
-
-.status-tags {
-  justify-content: flex-end;
-  max-width: 430rpx;
-  margin-top: 0;
-}
-
-.bullets {
-  margin-top: 12rpx;
-}
-
-.caution-list {
-  margin-top: 16rpx;
-  padding-top: 14rpx;
-  border-top: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.bullet {
-  display: block;
-  margin-top: 8rpx;
-  color: var(--text-muted, #76695c);
-  font-size: 24rpx;
-  line-height: 1.55;
-}
-
-.compact-link {
-  display: inline-flex;
-  width: auto;
-  min-width: 0;
-  height: 52rpx;
-  line-height: 52rpx;
-  margin-top: 12rpx;
-  padding: 0 18rpx;
-  font-size: 22rpx;
-}
-
-.timeline-desc.strong {
-  color: var(--text-main, #201914);
-  font-weight: 700;
-}
-
-.system-track-card {
-  border-style: dashed;
-  border-color: rgba(18, 60, 54, 0.16);
-}
-
-.fold-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18rpx;
-}
-
-.fold-meta {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  flex-shrink: 0;
-}
-
-.track-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 70rpx;
-  height: 44rpx;
-  padding: 0 14rpx;
-  border-radius: 999rpx;
-  background: var(--accent-soft, rgba(201, 164, 92, 0.14));
-  color: #6f5225;
-  font-size: 22rpx;
-  font-weight: 650;
-}
-
-.fold-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 72rpx;
-  height: 48rpx;
-  padding: 0 16rpx;
-  border-radius: 999rpx;
-  background: #143f3a;
-  color: #fff;
-  font-size: 22rpx;
-  font-weight: 650;
-}
-
-.system-track-list { margin-top: 22rpx; }
-
-/* ===== CAMPUS POP V2 ===== */
-.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
-.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
-.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
 
@@ -2595,7 +1082,18 @@ async function loadData() {
 .v2-mode .event-dot-v2.verification { background: #FFD93D; }
 .v2-mode .event-dot-v2.assessment { background: #111; }
 .v2-mode .event-dot-v2.trend { background: #666; }
+.v2-mode .event-dot-v2.weekly { background: #B8F35A; }
 .v2-mode .event-dot-v2.note { background: #ccc; }
+.v2-mode .event-dot-v2.weekly { background: #4ECDC4; }
+
+.v2-mode .review-block-v2 { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #e0e0e0; }
+.v2-mode .bullet-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 4rpx; }
+
+.v2-mode .side-body-v2 { margin-top: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .side-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #e0e0e0; }
+.v2-mode .side-item-v2:last-child { border-bottom: none; }
+.v2-mode .side-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; }
+.v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; margin-top: 4rpx; }
 .v2-mode .event-body-v2 { flex: 1; min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
 .v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }
@@ -2635,7 +1133,7 @@ async function loadData() {
 
 .v2-mode .attach-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #FFFBEB; }
 .v2-mode .attach-link-v2 { padding: 8rpx 0; }
-.v2-mode .attach-name-v2 { font-size: 22rpx; font-weight: 700; color: #111; }
+.v2-mode .attach-name-v2 { font-size: 22rpx; font-weight: 700; color: #111; max-width: 360rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .v2-mode .info-mask-v2 { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }
 .v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: #fff; border: 3rpx solid #111; box-shadow: 10rpx 10rpx 0 #111; }
@@ -2657,4 +1155,9 @@ async function loadData() {
 
 .v2-mode .bottom-action-v2 { text-align: center; margin: 10rpx 0 24rpx; }
 .v2-mode .btn-v2-bottom { display: inline-block; padding: 14rpx 40rpx; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
+.sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: linear-gradient(90deg, transparent, #FF6B6B, transparent); animation: sync-slide 0.8s ease-in-out infinite; }
+@keyframes sync-slide {
+  0% { width: 30%; left: -30%; }
+  100% { width: 30%; left: 130%; }
+}
 </style>

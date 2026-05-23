@@ -555,6 +555,30 @@ export async function generateAssessmentAI(data: {
   return res.result
 }
 
+export async function batchTagEvents(caseId: string) {
+  const res = await callFunction({
+    name: 'generateAssessmentAI',
+    data: { action: 'batchTagEvents', caseId }
+  })
+  return res.result
+}
+
+export async function generatePetReplyPair(scene: string, content: string) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'replyPair', scene, content, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function pickQALines(content: string) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'pickQA', content, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 export async function generateSideRead(data: {
   caseId: string
 }) {
@@ -851,6 +875,17 @@ export async function adminUpdateBillingSettings(data: Record<string, any>) {
 /**
  * 娴嬭瘯 AI 杩炴帴锛堟敮鎸侀€氳繃 modelId 娴嬭瘯鎸囧畾妯″瀷锛?
  */
+export async function adminListFeedbacks() {
+  return callFunction({ name: 'adminManage', data: { action: 'listFeedbacks' } }).then((res: any) => res.result)
+}
+
+export async function adminResolveFeedback(feedbackId: string, rewardTokens: number, targetUserId?: string) {
+  return callFunction({
+    name: 'adminManage',
+    data: { action: 'resolveFeedback', feedbackId, rewardTokens, targetUserId }
+  }).then((res: any) => res.result)
+}
+
 export async function adminPreviewPrompt(data: {
   moduleKey?: string
   caseId?: string

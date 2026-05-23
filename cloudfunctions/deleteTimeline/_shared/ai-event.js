@@ -36,11 +36,16 @@ function normalizeCurrentStatus(value) {
   return result.tags.length || result.summary || result.caution ? result : null
 }
 
+function mapRelationType(value) {
+  const map = { romantic: '恋爱对象', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
+  return map[value] || value || ''
+}
+
 function serializeCaseProfile(profile) {
   if (!profile) return '未提供'
 
   const normalized = {
-    relationType: profile.relationType,
+    relationType: mapRelationType(profile.relationType),
     age: profile.age,
     gender: profile.gender,
     occupation: profile.occupation,

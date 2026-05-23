@@ -1,0 +1,9 @@
+{
+  "name": "petLines",
+  "version": "1.0.0",
+  "description": "宠物话术库 — 播种 + 随机获取",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.0.0"
+  }
+}

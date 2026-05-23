@@ -2,9 +2,6 @@ const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { buildTimelineRecordTitle, classifyTimelineEvent, inferTimelineRecord } = require('./_shared/event-understanding')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
-const { checkBalance } = require('./_shared/billing')
-const { recordTokenUsage } = require('./_shared/token-usage')
-
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
@@ -217,9 +214,6 @@ exports.main = async (event) => {
     })
     const trimmedRecentTimeline = recentTimeline
       .slice(0, 8)
-
-    // 余额检查；如果余额不足则强制回退到规则（当前 always rules-only 以避免超时）
-    const balCheck = await checkBalance(db, userId, 260 /* eventUnderstandingMaxTokens */)
 
     const understoodEvent = await inferTimelineRecord({
       description: safeDescription,

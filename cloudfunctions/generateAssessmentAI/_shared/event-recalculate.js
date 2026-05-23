@@ -65,15 +65,6 @@ function applyCategoryEffects(summary, analysis) {
   return nextSummary
 }
 
-function buildHeadline(intentScore, riskScore, analysis) {
-  if (analysis.usedAI) {
-    return analysis.summary || '这次事件已经纳入当前关系判断。'
-  }
-  if (riskScore >= 70) return '新增事件后，风险明显抬升，建议优先做事实验证。'
-  if (intentScore >= 60 && riskScore < 45) return '新增事件后，关系信号整体偏稳，但仍应继续看一致性。'
-  if (intentScore < 45) return '新增事件后，主动与投入信号仍偏弱，不宜过度投入。'
-  return '新增事件后，判断出现轻度变化，建议继续观察关键互动。'
-}
 
 const focusLabelMap = {
   '单向投入': {
@@ -269,13 +260,14 @@ async function recalculateAssessmentFromEvent(params) {
     sideReadAdvice: analysis.sideReadAdvice || null,
     currentStatus: analysis.currentStatus || null,
     explanation: {
-      headline: buildHeadline(nextIntentScore, nextRiskScore, analysis),
       bullets: analysis.rationale,
       cautions: [
         analysis.usedAI ? '本次主要看对方动作、回应节奏和后续兑现。' : '本次先按可见事实做保守判断。',
         '如果后续新增事件与本次方向相反，结论仍可能继续变化。',
         analysis.summary ? `本次主要触发：${analysis.summary}。` : '本次变化来自新增时间线事件。'
-      ]
+      ],
+      petLine: analysis.petLine || '',
+      petMood: analysis.petMood || 'neutral'
     },
     signalSummary: nextSignalSummary,
     aiUsed: Boolean(analysis.usedAI),

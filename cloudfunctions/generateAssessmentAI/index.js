@@ -3,8 +3,9 @@ const crypto = require('crypto')
 const { recalculateAssessmentFromEvent } = require('./_shared/event-recalculate')
 const { compareAssessments, buildTrendTimelineRecords } = require('./_shared/trend')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
-const { recordTokenUsage } = require('./_shared/token-usage')
-const { checkBalance } = require('./_shared/billing')
+const { SYSTEM_PROMPT, buildEventsContext, parseTagResults } = require('./_shared/event-tagger')
+const { postChatCompletions } = require('./_shared/ai-http')
+const { checkBalance, recordTokenUsage } = require('./_shared/billing')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -102,6 +103,86 @@ function buildAssessmentUpdate(recalculated) {
   return update
 }
 
+async function batchTagEvents(event) {
+  const userId = await requireAuthenticatedUserId(app, event)
+  const caseId = typeof event.caseId === 'string' ? event.caseId.trim() : ''
+  if (!caseId) return { success: false, message: '缺少 caseId' }
+
+  const ownedCase = await getOwnedCase(db, caseId, userId)
+  if (ownedCase.error) return ownedCase.error
+
+  const { data: allTimeline } = await db.collection('timeline_records')
+    .where({ caseId })
+    .orderBy('occurrenceAt', 'desc')
+    .limit(50)
+    .get()
+
+  const events = (allTimeline || [])
+    .filter((item) => !['assessment', 'trend'].includes(item.type))
+    .filter((item) => item.semanticTagsSource !== 'user' && !item.semanticTags)
+    .slice(0, 30)
+    .reverse()
+
+  if (events.length === 0) return { success: true, tagged: 0, message: '所有事件已有标签' }
+
+  const rawSettings = await getAISettings(userId)
+  if (!rawSettings?.aiEnabled) return { success: false, message: 'AI 未启用' }
+  const models = Array.isArray(rawSettings.aiModels) ? rawSettings.aiModels : []
+  const defaultId = rawSettings.aiDefaultModelId || ''
+  const model = models.find((m) => m.id === defaultId) || models[0]
+  if (!model) return { success: false, message: '没有可用 AI 模型' }
+
+  const balCheck = await checkBalance(db, userId, 600)
+  if (!balCheck.ok) return { success: false, message: '余额不足', code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required }
+
+  const userPrompt = `输入事件列表：\n${buildEventsContext(events)}`
+
+  const response = await postChatCompletions({
+    provider: model.provider,
+    apiKey: model.apiKey || '',
+    baseUrl: model.baseUrl,
+    model: model.model,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.1,
+    maxTokens: 600
+  })
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '')
+    return { success: false, message: `AI 返回 ${response.status}${errText ? ' / ' + errText.slice(0, 100) : ''}` }
+  }
+
+  const data = await response.json()
+  const raw = data?.choices?.[0]?.message?.content || ''
+  const tagResults = parseTagResults(raw, events.length)
+
+  await recordTokenUsage(db, {
+    userId, caseId,
+    feature: 'batchTag',
+    provider: model.provider,
+    model: model.model,
+    usage: data?.usage
+  })
+
+  let tagged = 0
+  for (const item of tagResults) {
+    const event = events[item.index]
+    if (!event?._id) continue
+    const tagObj = { scene: item.scene, behavior: item.behavior, outcome: item.outcome, risk: item.risk }
+    const allTags = [...item.scene, ...item.behavior, ...item.outcome, ...item.risk]
+    await db.collection('timeline_records').doc(event._id).update({
+      semanticTags: { ...tagObj, all: allTags },
+      semanticTagsSource: 'ai'
+    })
+    tagged++
+  }
+
+  return { success: true, tagged, total: events.length }
+}
+
 function mapError(error) {
   if (error?.message === 'ASSESSMENT_NOT_FOUND') return '评估记录不存在'
   if (error?.message === 'EVENT_NOT_FOUND') return '触发事件不存在'
@@ -122,6 +203,8 @@ exports.main = async (event = {}) => {
   }
 
   try {
+    if (event.action === 'batchTagEvents') return await batchTagEvents(event)
+
     markPerf('start')
     const userId = await requireAuthenticatedUserId(app, event)
     const caseId = typeof event.caseId === 'string' ? event.caseId.trim() : ''

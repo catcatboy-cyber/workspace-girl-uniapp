@@ -152,9 +152,7 @@ function normalizeBusinessPrompt(settings, moduleKey) {
 
   const hasBusinessContent = Boolean(
     normalized.roleZh ||
-    normalized.roleEn ||
     normalized.taskZh ||
-    normalized.taskEn ||
     normalized.rules.length > 0 ||
     normalized.outputNotes.length > 0 ||
     Object.keys(normalized.outputSchema).length > 0
@@ -168,9 +166,7 @@ function buildBilingualLines(items) {
   return (items || [])
     .map((item, index) => {
       const zh = cleanText(item.zh, BUSINESS_PROMPT_LIMITS.outputNotes.zh)
-      const en = cleanText(item.en, BUSINESS_PROMPT_LIMITS.outputNotes.en)
-      if (zh && en) return `${index + 1}. ${zh}\n   EN: ${en}`
-      return `${index + 1}. ${zh || en}`
+      return zh ? `${index + 1}. ${zh}` : ''
     })
     .filter(Boolean)
 }
@@ -181,21 +177,21 @@ function buildPromptMessages({ moduleKey, settings, contextLines = [], systemExt
   if (!business || !business.enabled) return null
 
   const systemLines = [
-    'Safety guardrails / 安全护栏:',
+    '安全护栏:',
     ...buildBilingualLines(safety),
     systemExtra
   ].filter(Boolean)
 
   const userLines = [
-    `Module / 模块: ${business.nameZh} (${business.nameEn})`,
-    business.roleZh || business.roleEn ? `Role / 角色: ${business.roleZh}\nEN: ${business.roleEn}` : '',
-    business.taskZh || business.taskEn ? `Task / 任务: ${business.taskZh}\nEN: ${business.taskEn}` : '',
-    business.rules.length ? 'Business rules / 业务规则:' : '',
+    `模块: ${business.nameZh}`,
+    business.roleZh ? `角色: ${business.roleZh}` : '',
+    business.taskZh ? `任务: ${business.taskZh}` : '',
+    business.rules.length ? '业务规则:' : '',
     ...buildBilingualLines(business.rules),
-    Object.keys(business.outputSchema).length > 0 ? `Output schema / 输出结构:\n${JSON.stringify(business.outputSchema)}` : '',
-    business.outputNotes.length ? 'Output notes / 输出要求:' : '',
+    Object.keys(business.outputSchema).length > 0 ? `输出结构:\n${JSON.stringify(business.outputSchema)}` : '',
+    business.outputNotes.length ? '输出要求:' : '',
     ...buildBilingualLines(business.outputNotes),
-    contextLines.length ? 'Runtime context / 运行时上下文:' : '',
+    contextLines.length ? '运行时上下文:' : '',
     ...contextLines
   ].filter(Boolean)
 

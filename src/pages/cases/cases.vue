@@ -1,100 +1,5 @@
 <template>
-  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
-    <!-- 版本切换 -->
-    <view class="version-toggle">
-      <view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view>
-      <view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view>
-    </view>
-
-    <!-- ==================== 经典版 ==================== -->
-    <block v-if="!showV2">
-    <view class="hero-card card">
-      <text class="hero-topline">Case 列表</text>
-      <text class="h1">先切换，再进入当前对象</text>
-      <text class="hero-subtext">所有核心页面都跟随当前对象。想看另一个对象时，先在这里切换，再回首页继续记录或查看。</text>
-      <button class="btn-primary" @click="goNew">创建新的关系对象</button>
-    </view>
-
-    <view v-if="deleted" class="card status-card success">
-      <text class="status-strong">对象已删除。</text>
-      <text class="muted">相关主页、时间线和评估历史已经一起移除。</text>
-    </view>
-
-    <view v-if="loading" class="muted center">加载中...</view>
-
-    <view v-else>
-      <view class="card">
-        <view class="section-head">
-          <text class="h2">关系对象列表</text>
-          <text class="muted">按最近更新时间排序。共 {{ cases.length }} 个 case</text>
-        </view>
-      </view>
-
-      <view v-if="cases.length === 0" class="card">
-        <text class="h3">还没有关系对象</text>
-        <text class="muted">先回到首页做一次初评，系统会自动创建第一个入口。</text>
-      </view>
-
-      <view v-else class="grid">
-        <view v-for="item in cases" :key="item.caseId" class="case-card card">
-          <view class="case-header">
-            <view class="case-title">
-              <view class="profile-avatar sm">
-                <image v-if="item.profile?.avatar" :src="item.profile.avatarUrl || item.profile.avatar" mode="aspectFill" />
-                <text v-else class="avatar-placeholder">{{ avatarLabel(item.name) }}</text>
-              </view>
-              <view>
-                <text class="case-name">{{ item.name }}</text>
-                <text class="muted">caseId: {{ item.caseId }}</text>
-              </view>
-            </view>
-            <text class="muted">更新于 {{ formatDateTime(item.updatedAt) }}</text>
-          </view>
-
-          <view v-if="item.cardTypeLabel || item.cardStatusTags.length" class="badges object-card-tags">
-            <text v-if="item.cardTypeLabel" class="badge badge-primary">{{ item.cardTypeLabel }}</text>
-            <text v-for="tag in item.cardStatusTags" :key="tag" class="badge badge-soft">{{ tag }}</text>
-          </view>
-
-          <view v-if="item.cardProfileItems.length > 0" class="badges profile-meta-badges">
-            <text v-for="p in item.cardProfileItems" :key="p" class="badge">{{ p }}</text>
-          </view>
-
-          <view class="case-kpis">
-            <view class="kpi-item">
-              <text class="kpi-label">意向</text>
-              <text class="kpi-value">{{ item.latestResult?.intentScore ?? '--' }}</text>
-              <text class="muted">{{ mapIntentLabel(item.latestResult?.intentBucket) }}</text>
-            </view>
-            <view class="kpi-item">
-              <text class="kpi-label">风险</text>
-              <text class="kpi-value">{{ item.latestResult?.consistencyRiskScore ?? '--' }}</text>
-              <text class="muted">{{ mapRiskLabel(item.latestResult?.riskBucket) }}</text>
-            </view>
-            <view class="kpi-item">
-              <text class="kpi-label">证据等级</text>
-              <text class="kpi-value">{{ item.latestResult?.evidenceLevel ?? '--' }}</text>
-              <text class="muted">手动 {{ item.timeline?.length ?? 0 }} 条</text>
-            </view>
-          </view>
-
-          <view class="actions">
-            <button
-              :class="[isActiveCase(item.caseId) ? 'btn-secondary' : 'btn-primary', 'small']"
-              :disabled="isActiveCase(item.caseId)"
-              @click="switchActiveCase(item.caseId)"
-            >
-              {{ isActiveCase(item.caseId) ? '当前对象' : '切换到首页' }}
-            </button>
-          </view>
-        </view>
-      </view>
-    </view>
-    </block>
-    <!-- ==================== /经典版 ==================== -->
-
-    <!-- ==================== Campus Pop ==================== -->
-    <block v-if="showV2">
+  <view class="page v2-mode" :style="themeVars">
       <!-- Hero -->
       <view class="hero-block-v2">
         <text class="hero-tag-v2">CASE BOARD</text>
@@ -170,8 +75,6 @@
           </view>
         </view>
       </view>
-    </block>
-    <!-- ==================== /Campus Pop ==================== -->
   </view>
 </template>
 
@@ -184,7 +87,6 @@ import { buildObjectStatusCard } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
-const showV2 = ref(true)
 const loading = ref(true)
 const cases = ref<any[]>([])
 const userId = ref('')
@@ -200,6 +102,8 @@ onLoad((options) => {
   deleted.value = options?.deleted === '1'
 })
 
+const lastDataVersion = ref(0)
+
 onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
@@ -208,7 +112,13 @@ onShow(() => {
   if (deleted.value) {
     uni.removeStorageSync('casesDeletedFlag')
   }
-  loadData()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  const activeMissing = Boolean(
+    activeCaseId.value
+    && cases.value.length > 0
+    && !cases.value.some((item: any) => item.caseId === activeCaseId.value || item._id === activeCaseId.value)
+  )
+  if (!cases.value.length || dv > lastDataVersion.value || activeMissing) loadData()
 })
 
 async function loadData() {
@@ -218,7 +128,7 @@ async function loadData() {
     return
   }
   userId.value = uid
-  loading.value = true
+  if (!cases.value.length) loading.value = true
   try {
     const list = await getCases(uid)
     cases.value = (list || []).map((c: any) => ({
@@ -228,6 +138,7 @@ async function loadData() {
       cardProfileItems: profileItems(c.profile),
       cardStatusTags: buildCaseStatusTags(c)
     }))
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
@@ -326,117 +237,6 @@ function switchActiveCase(caseId: string) {
   padding: var(--spacing-page, 28rpx);
   box-sizing: border-box;
 }
-.card {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
-    linear-gradient(var(--card-gradient-angle, 135deg), var(--accent-soft, rgba(201, 164, 92, 0.1)), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
-    var(--card-bg, #fffcf7);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  border-radius: var(--radius-md, 18rpx);
-  padding: var(--spacing-card, 32rpx);
-  margin-bottom: 24rpx;
-  box-shadow:
-    var(--shadow-lg, 0 18rpx 38rpx rgba(32, 25, 20, 0.075)),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
-  position: relative;
-  overflow: hidden;
-}
-.hero-card {
-  background: linear-gradient(var(--hero-gradient-angle, 135deg), var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: var(--shadow-hero, 0 22rpx 44rpx rgba(18, 60, 54, 0.18));
-}
-.hero-card::after {
-  content: "";
-  position: absolute;
-  left: 32rpx;
-  right: 32rpx;
-  top: 0;
-  height: 3rpx;
-  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
-}
-.hero-topline { display: block; font-size: 22rpx; letter-spacing: 3rpx; color: rgba(255, 252, 247, 0.72); }
-.h1, .h2, .h3, .case-name, .status-strong { color: var(--text-main, #201914); }
-.h1 { display: block; font-size: 40rpx; font-weight: var(--font-weight-hero, 700); margin: 8rpx 0; line-height: var(--text-line-height-heading, 1.25); }
-.h2 { display: block; font-size: 32rpx; font-weight: var(--font-weight-strong, 600); margin-bottom: 8rpx; padding-left: 16rpx; border-left: 6rpx solid var(--accent, #c9a45c); line-height: var(--text-line-height-heading, 1.35); }
-.h3 { display: block; font-size: 28rpx; font-weight: var(--font-weight-strong, 600); }
-.hero-card .h1 { color: #fffaf0; }
-.hero-card .h2 { padding-left: 0; border-left: 0; }
-.hero-subtext { display: block; font-size: 26rpx; color: rgba(255, 252, 247, 0.76); line-height: var(--text-line-height, 1.6); margin: 8rpx 0 16rpx; }
-.muted, .kpi-label { display: block; font-size: 24rpx; color: var(--text-muted, #76695c); margin: 4rpx 0; line-height: var(--text-line-height, 1.55); }
-.center { text-align: center; padding: 60rpx 0; }
-.section-head { display: flex; justify-content: space-between; align-items: flex-start; }
-.grid { display: flex; flex-direction: column; gap: 18rpx; }
-.case-card { padding: 28rpx; border-left: 6rpx solid var(--accent, rgba(201, 164, 92, 0.72)); }
-.case-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12rpx; padding-bottom: 18rpx; border-bottom: 1rpx solid rgba(18, 60, 54, 0.08); }
-.case-title { display: flex; align-items: center; gap: 14rpx; }
-.case-name { display: block; font-size: 32rpx; font-weight: 700; color: var(--primary, #123c36); }
-.profile-avatar {
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--accent-soft, #efe7d8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 2rpx solid rgba(201, 164, 92, 0.45);
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.1);
-}
-.profile-avatar.sm { width: 68rpx; height: 68rpx; }
-.profile-avatar image { width: 100%; height: 100%; }
-.avatar-placeholder { font-size: 24rpx; font-weight: 700; color: var(--text-muted, #786857); }
-.badges { margin: 12rpx 0; }
-.badge { display: inline-block; padding: 8rpx 16rpx; background: var(--accent-soft, rgba(201, 164, 92, 0.14)); border: 1rpx solid rgba(201, 164, 92, 0.24); border-radius: 999rpx; font-size: 22rpx; color: #6f5225; margin: 4rpx; }
-.object-card-tags { margin-top: 14rpx; margin-bottom: 4rpx; }
-.profile-meta-badges { margin-top: 8rpx; }
-.badge-primary { background: rgba(18, 60, 54, 0.12); border: 1rpx solid rgba(18, 60, 54, 0.22); color: var(--primary, #123c36); font-weight: 700; }
-.badge-soft { background: rgba(201, 164, 92, 0.12); }
-.case-kpis { display: flex; gap: 12rpx; margin: 16rpx 0; flex-wrap: wrap; }
-.kpi-item {
-  flex: 1 1 28%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0) 100rpx), var(--card-soft, #fffaf3);
-  border: 1rpx solid rgba(18, 60, 54, 0.07);
-  border-radius: var(--radius-sm, 16rpx);
-  padding: 16rpx;
-  min-width: 180rpx;
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
-}
-.kpi-value { display: block; font-size: 38rpx; font-weight: 700; color: var(--primary, #123c36); }
-.actions { display: flex; gap: 12rpx; margin-top: 16rpx; flex-wrap: wrap; }
-.btn-primary {
-  height: 76rpx; line-height: 76rpx;
-  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
-  color: #fff; border: none;
-  border-radius: var(--radius-sm, 14rpx);
-  font-size: 28rpx; padding: 0 28rpx;
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
-  font-weight: 650;
-}
-.btn-secondary {
-  height: 76rpx; line-height: 76rpx;
-  background: rgba(255, 252, 247, 0.92);
-  color: var(--primary, #123c36);
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  border-radius: var(--radius-sm, 14rpx);
-  font-size: 28rpx; padding: 0 28rpx;
-  font-weight: var(--font-weight-strong, 600);
-}
-.btn-primary.small, .btn-secondary.small { flex: 1; min-width: 160rpx; }
-.btn-primary[disabled], .btn-secondary[disabled] { opacity: 0.72; background: rgba(18, 60, 54, 0.08); color: var(--primary, #123c36); box-shadow: none; }
-.status-card { border-left: 6rpx solid var(--success, #0f6b45); box-shadow: 0 14rpx 28rpx rgba(32, 25, 20, 0.05); }
-.status-card.success { background: #eef7ef; }
-.status-strong { display: block; font-size: 28rpx; font-weight: 700; color: var(--text-main, #241b12); margin-bottom: 6rpx; }
-
-/* ===== CAMPUS POP V2 ===== */
-.version-toggle {
-  display: flex; gap: 0; margin-bottom: 18rpx;
-  border: 3rpx solid #111; overflow: hidden; background: #fff;
-}
-.toggle-tab {
-  flex: 1; text-align: center; padding: 14rpx 0;
-  font-size: 26rpx; font-weight: 700; color: #999;
-}
-.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; }
 

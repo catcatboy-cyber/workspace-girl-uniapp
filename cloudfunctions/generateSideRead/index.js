@@ -11,7 +11,7 @@ const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
-const SIDE_READ_TIMEOUT_MS = 18000
+const SIDE_READ_TIMEOUT_MS = 45000
 function isMpRuntime() {
   return Boolean(process.env.WX_CONTEXT_KEYS || process.env.TENCENTCLOUD_RUNENV)
 }
@@ -419,6 +419,19 @@ exports.main = async (event = {}) => {
     await db.collection('assessments').doc(caseDoc.latestResultId).update({
       sideReadAdvice: _.set(sideReadAdvice),
       sideReadGeneratedAt: _.set(new Date())
+    })
+
+    await db.collection('timeline_records').add({
+      caseId,
+      userId,
+      type: 'note',
+      feature: 'sideRead',
+      title: sideReadAdvice.title || '属相星座侧写',
+      description: sideReadAdvice.summary || '',
+      sections: sideReadAdvice.sections || [],
+      occurrenceAt: new Date(),
+      createdAt: new Date(),
+      aiUsed: true
     })
 
     console.log('[generateSideRead perf]', JSON.stringify({

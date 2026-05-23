@@ -209,7 +209,7 @@ exports.main = async (event) => {
             assessmentId: nextAssessmentId,
             recentTimeline,
             caseProfile: caseDoc.profile,
-            aiSettings
+            aiSettings: { aiEnabled: false, aiFallbackToRules: true }
           })
 
           const assessmentDoc = {

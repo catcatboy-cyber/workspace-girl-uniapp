@@ -1,14 +1,5 @@
 <template>
-  <view :class="['page', showV2 ? 'v2-mode' : '']" :style="themeVars">
-    <view class="version-toggle"><view :class="['toggle-tab', !showV2 ? 'active' : '']" @click="showV2 = false">经典版</view><view :class="['toggle-tab', showV2 ? 'active' : '']" @click="showV2 = true">新首页</view></view>
-    <block v-if="!showV2">
-    <view class="card hero-card"><text class="hero-topline">Self Profile</text><text class="h1">先定一下你的互动模式</text><text class="hero-subtext">这些信息只用于调整用词、入口推荐和后续分析语气，不会公开展示。</text></view>
-    <view class="card"><text class="h2">基础画像</text><view class="field"><text class="field-label">我是</text><view class="segmented"><view v-for="item in genderOptions" :key="item.value" :class="['segment', profile.gender === item.value ? 'active' : '']" @click="profile.gender = item.value"><text>{{ item.label }}</text></view></view></view><view class="field"><text class="field-label">年龄阶段</text><picker :range="ageLabels" :value="ageIndex" @change="onAgeChange"><view class="picker-view">{{ ageLabel }}</view></picker><text v-if="profile.ageRange === 'under18'" class="minor-note">未满 18 岁时，系统会优先使用同学、朋友和边界感相关表达。</text></view><view class="field"><text class="field-label">目前身份</text><picker :range="identityLabels" :value="identityIndex" @change="onIdentityChange"><view class="picker-view">{{ identityLabel }}</view></picker></view></view>
-    <view class="card"><text class="h2">趣味标签</text><text class="muted">属相和星座只作为轻娱乐标签，不参与核心判断。</text><view class="field"><text class="field-label">属相</text><picker :range="zodiacLabels" :value="zodiacIndex" @change="onZodiacChange"><view class="picker-view">{{ zodiacLabel }}</view></picker></view><view class="field"><text class="field-label">星座</text><picker :range="constellationLabels" :value="constellationIndex" @change="onConstellationChange"><view class="picker-view">{{ constellationLabel }}</view></picker></view></view>
-    <view class="card action-card"><button class="btn-primary" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button><button v-if="isOnboarding" class="btn-secondary" :disabled="saving" @click="onSkip">先跳过</button></view>
-    </block>
-    <!-- Campus Pop -->
-    <block v-if="showV2">
+  <view class="page v2-mode" :style="themeVars">
       <view class="hero-block-v2"><text class="hero-tag-v2">SELF PROFILE</text><text class="hero-title-v2">你的<text class="hl-v2">互动模式</text></text><text class="hero-copy-v2">这些信息只用于调整用词和后续分析语气，不会公开展示。</text></view>
       <view class="card-v2"><text class="section-title-v2">基础画像</text>
         <view class="field-v2"><text class="field-label-v2">我是</text><view class="segmented-v2"><view v-for="item in genderOptions" :key="item.value" :class="['segment-v2', profile.gender === item.value ? 'active' : '']" @click="profile.gender = item.value">{{ item.label }}</view></view></view>
@@ -19,9 +10,7 @@
         <view class="field-v2"><text class="field-label-v2">属相</text><picker :range="zodiacLabels" :value="zodiacIndex" @change="onZodiacChange"><view class="picker-v2">{{ zodiacLabel }}</view></picker></view>
         <view class="field-v2"><text class="field-label-v2">星座</text><picker :range="constellationLabels" :value="constellationIndex" @change="onConstellationChange"><view class="picker-v2">{{ constellationLabel }}</view></picker></view>
       </view>
-      <view class="card-v2" style="display:flex;flex-direction:column;gap:14rpx;"><button class="btn-v2-sp primary" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button><button v-if="isOnboarding" class="btn-v2-sp" :disabled="saving" @click="onSkip">先跳过</button></view>
-    </block>
-  </view>
+      <view class="card-v2" style="display:flex;flex-direction:column;gap:14rpx;"><button class="btn-v2-sp primary" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button><button v-if="isOnboarding" class="btn-v2-sp" :disabled="saving" @click="onSkip">先跳过</button></view>  </view>
 </template>
 
 <script setup lang="ts">
@@ -38,7 +27,6 @@ import {
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { showError, showSuccess } from '@/utils/helpers'
 
-const showV2 = ref(true)
 const themeVars = ref(getThemeStyle())
 const saving = ref(false)
 const isOnboarding = ref(false)
@@ -189,185 +177,6 @@ function onSkip() {
     linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 360rpx),
     var(--app-bg, #f6f1e8);
 }
-
-.card {
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 24rpx;
-  padding: 32rpx;
-  border-radius: 18rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
-    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
-    var(--card-bg, #fffcf7);
-  box-shadow:
-    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
-}
-
-.hero-card {
-  background: linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
-}
-
-.hero-card::after {
-  content: "";
-  position: absolute;
-  left: 32rpx;
-  right: 32rpx;
-  top: 0;
-  height: 3rpx;
-  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
-}
-
-.hero-topline {
-  display: block;
-  color: rgba(255, 252, 247, 0.72);
-  font-size: 21rpx;
-  letter-spacing: 3rpx;
-  text-transform: uppercase;
-}
-
-.h1 {
-  display: block;
-  margin-top: 10rpx;
-  color: #fffaf0;
-  font-size: 44rpx;
-  line-height: 1.22;
-  font-weight: 800;
-}
-
-.hero-subtext {
-  display: block;
-  margin-top: 12rpx;
-  color: rgba(255, 252, 247, 0.76);
-  font-size: 25rpx;
-  line-height: 1.6;
-}
-
-.h2 {
-  display: block;
-  padding-left: 16rpx;
-  border-left: 6rpx solid var(--accent, #c9a45c);
-  color: var(--text-main, #201914);
-  font-size: 32rpx;
-  line-height: 1.35;
-  font-weight: 750;
-}
-
-.muted,
-.field-label {
-  color: var(--text-muted, #76695c);
-}
-
-.muted {
-  display: block;
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  line-height: 1.55;
-}
-
-.field {
-  padding: 22rpx 0;
-  border-bottom: 1rpx solid rgba(18, 60, 54, 0.07);
-}
-
-.field:last-child {
-  border-bottom: 0;
-}
-
-.field-label {
-  display: block;
-  margin-bottom: 12rpx;
-  font-size: 24rpx;
-  font-weight: 650;
-}
-
-.segmented {
-  display: flex;
-  gap: 12rpx;
-}
-
-.segment {
-  flex: 1;
-  height: 72rpx;
-  line-height: 72rpx;
-  text-align: center;
-  border-radius: 14rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.12);
-  background: var(--card-soft, #fffaf3);
-  color: var(--text-main, #201914);
-  font-size: 26rpx;
-  font-weight: 650;
-}
-
-.segment.active {
-  border-color: rgba(18, 60, 54, 0.65);
-  background: rgba(231, 243, 239, 0.92);
-  color: var(--primary, #123c36);
-}
-
-.picker-view {
-  height: 78rpx;
-  line-height: 78rpx;
-  padding: 0 24rpx;
-  border-radius: 14rpx;
-  border: 1rpx solid rgba(18, 60, 54, 0.12);
-  background: var(--card-soft, #fffaf3);
-  color: var(--text-main, #201914);
-  font-size: 27rpx;
-  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
-}
-
-.minor-note {
-  display: block;
-  margin-top: 12rpx;
-  padding: 14rpx 16rpx;
-  border-radius: 14rpx;
-  background: rgba(201, 164, 92, 0.12);
-  color: #6f5225;
-  font-size: 23rpx;
-  line-height: 1.5;
-}
-
-.action-card {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.btn-primary,
-.btn-secondary {
-  width: 100%;
-  height: 84rpx;
-  line-height: 84rpx;
-  margin: 0;
-  border-radius: 14rpx;
-  font-size: 29rpx;
-  font-weight: 700;
-}
-
-.btn-primary {
-  border: 0;
-  color: #fff;
-  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
-}
-
-.btn-secondary {
-  color: var(--primary, #123c36);
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  background: rgba(255, 252, 247, 0.92);
-}
-
-.btn-primary::after, .btn-secondary::after { border: 0; }
-
-/* ===== CAMPUS POP V2 ===== */
-.version-toggle { display: flex; gap: 0; margin-bottom: 18rpx; border: 3rpx solid #111; overflow: hidden; background: #fff; }
-.toggle-tab { flex: 1; text-align: center; padding: 14rpx 0; font-size: 26rpx; font-weight: 700; color: #999; }
-.toggle-tab.active { background: #111; color: #FFD93D; font-weight: 900; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 

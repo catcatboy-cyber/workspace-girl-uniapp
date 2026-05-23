@@ -247,6 +247,13 @@ export function setActiveCaseId(caseId?: string) {
   } catch {}
 }
 
+export function bumpDataVersion() {
+  try {
+    const current = Number(uni.getStorageSync('dataVersion')) || 0
+    uni.setStorageSync('dataVersion', current + 1)
+  } catch {}
+}
+
 export function markActiveCaseProfileUpdated(caseId?: string) {
   const normalized = String(caseId || '').trim()
   if (!normalized) return

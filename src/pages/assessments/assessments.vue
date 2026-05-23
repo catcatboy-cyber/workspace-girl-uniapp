@@ -141,9 +141,9 @@
             </view>
           </view>
 
-          <view v-if="item.explanation?.headline || item.explanation?.bullets?.length" class="ai-panel">
+          <view v-if="item.explanation?.petLine || item.explanation?.bullets?.length" class="ai-panel">
             <text class="ai-panel-label">{{ hasAIReview(item) ? 'AI研判内容' : '研判内容' }}</text>
-            <text v-if="item.explanation?.headline" class="headline" user-select>{{ item.explanation.headline }}</text>
+            <text v-if="item.explanation?.petLine" class="headline" user-select>{{ item.explanation.petLine }}</text>
             <view v-if="item.explanation?.bullets?.length" class="bullets">
               <text v-for="bullet in item.explanation.bullets?.slice(0, 3)" :key="bullet" class="bullet" user-select>• {{ bullet }}</text>
             </view>

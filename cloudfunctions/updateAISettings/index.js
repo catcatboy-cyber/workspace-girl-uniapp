@@ -61,34 +61,34 @@ function createEmptyPersonaConfig() {
 }
 const PROMPT_MODULE_META = {
   eventAssessment: {
-    title: '即时反馈 / Event assessment',
+    title: '即时反馈',
     description: '首页即时反馈、评估历史快照、事件触发后的关系评分重算。'
   },
   eventUnderstanding: {
-    title: '事件理解 / Event understanding',
+    title: '事件理解',
     description: '保存时间线前的事件类型、标题、语义标签自动识别。'
   },
   weeklyReview: {
-    title: '本周复盘 / Weekly review',
+    title: '本周复盘',
     description: '关系页本周复盘与复盘历史生成。'
   },
   sideRead: {
-    title: '侧写 / Side read',
+    title: '侧写',
     description: '属相、星座等轻量侧写，包括即时侧写和周侧写。'
   },
   attachmentAnalysis: {
-    title: '附件识别 / Attachment analysis',
+    title: '附件识别',
     description: '聊天截图和图片附件的文字提取、摘要与置信度识别。'
   }
 }
 const PROMPT_FIXED_GUARDRAILS = {
   eventAssessment: {
     lockedRules: [
-      'ZH: 只根据用户提供的事实、事件上下文和画像字段判断；不要编造行为、承诺、情绪或关系状态。 / EN: Judge only from provided facts, event context, and profile fields; do not invent actions, promises, emotions, or relationship status.',
-      'ZH: subjectRole 为 self/both/unknown 时，代码会自动降权或修正评分。 / EN: When subjectRole is self, both, or unknown, code reduces weight or corrects score changes.',
-      'ZH: 涉及亲密、边界、酒精或私密空间时，不替用户同意升级关系，优先尊重、节奏和安全。 / EN: For intimacy, boundary, alcohol, or private-space contexts, never consent on the user behalf; prioritize respect, pacing, and safety.',
-      'ZH: 未成年人只允许友谊、边界、安全感和健康沟通建议。 / EN: For minors, only allow friendship, boundaries, safety, and healthy communication advice.',
-      'ZH: AI 返回后仍会校验枚举、数值范围、字段长度，并在失败时按规则兜底。 / EN: AI output is validated for enums, numeric ranges, and field lengths, with rule fallback on failure.'
+      '只根据用户提供的事实、事件上下文和画像字段判断；不要编造行为、承诺、情绪或关系状态。',
+      'subjectRole 为 self/both/unknown 时，代码会自动降权或修正评分。',
+      '涉及亲密、边界、酒精或私密空间时，不替用户同意升级关系，优先尊重、节奏和安全。',
+      '未成年人只允许友谊、边界、安全感和健康沟通建议。',
+      'AI 返回后仍会校验枚举、数值范围、字段长度，并在失败时按规则兜底。'
     ],
     runtimeContext: [
       'currentAssessment={intentScore,riskScore,evidenceLevel,labels,nextAction}',
@@ -98,20 +98,21 @@ const PROMPT_FIXED_GUARDRAILS = {
       'currentEvent={title,description,subjectRole,semanticTags}'
     ],
     outputContract: [
-      'eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,rawReply',
+      'eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply',
       'eventType: positive | risk | verification | note',
-      'currentStatus only needs tags, summary, caution.',
-      'rawReply uses exactly three headings: 对方可能的心理 / 你下一步怎么做 / 重点观察什么.',
-      'Do not return labels, confidence, actionAdvice or eventInsight for speed.',
+      'currentStatus 只返回 tags, summary, caution。',
+      'rawReply 只允许三段标题：对方可能的心理 / 你下一步怎么做 / 重点观察什么。',
+      'Do not return labels, confidence or actionAdvice for speed.',
+      'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.',
       'JSON only; code validates and normalizes the result.'
     ]
   },
   eventUnderstanding: {
     lockedRules: [
-      'ZH: 只根据当前事件描述和辅助上下文分类；不要推断未出现的回应或承诺。 / EN: Classify only from current event description and supporting context; do not infer absent responses or promises.',
-      'ZH: 必须区分用户动作、对象动作和双方互动；主体不清时降低置信度。 / EN: Distinguish user actions, target actions, and mutual interactions; lower confidence when actor is unclear.',
-      'ZH: 拒绝、回避、失约、冷淡、拖延等负向边界优先识别为风险。 / EN: Rejection, avoidance, no-show, coldness, or delay should be prioritized as risk.',
-      'ZH: 输出必须是可解析 JSON，代码会校验 eventType、semanticTags 和 commitment 枚举。 / EN: Output must be parseable JSON; code validates eventType, semanticTags, and commitment enums.'
+      '只根据当前事件描述和辅助上下文分类；不要推断未出现的回应或承诺。',
+      '必须区分用户动作、对象动作和双方互动；主体不清时降低置信度。',
+      '拒绝、回避、失约、冷淡、拖延等负向边界优先识别为风险。',
+      '输出必须是可解析 JSON，代码会校验 eventType、semanticTags 和 commitment 枚举。'
     ],
     runtimeContext: [
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
@@ -125,9 +126,9 @@ const PROMPT_FIXED_GUARDRAILS = {
   },
   weeklyReview: {
     lockedRules: [
-      'ZH: 只总结本周提供的事件和评估变化，不编造长期趋势。 / EN: Summarize only provided weekly events and assessment changes; do not invent long-term trends.',
-      'ZH: 未成年人场景不生成成人化、越界或操控建议。 / EN: For minors, do not generate adult, boundary-crossing, or manipulative advice.',
-      'ZH: AI 返回后会校验 trendLabel、数组长度和空值兜底。 / EN: AI output is validated for trendLabel, array lengths, and empty fallbacks.'
+      '只总结本周提供的事件和评估变化，不编造长期趋势。',
+      '未成年人场景不生成成人化、越界或操控建议。',
+      'AI 返回后会校验 trendLabel、数组长度和空值兜底。'
     ],
     runtimeContext: [
       'selfProfile and targetProfile',
@@ -142,9 +143,9 @@ const PROMPT_FIXED_GUARDRAILS = {
   },
   sideRead: {
     lockedRules: [
-      'ZH: 侧写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。 / EN: Profile reading is lightweight reference only, never fact or medical/psychological diagnosis.',
-      'ZH: 不用属相星座鼓励操控、试探底线或越界行为。 / EN: Do not use zodiac or astrology to encourage manipulation, boundary testing, or boundary crossing.',
-      'ZH: 未成年人场景使用保守、边界优先表达。 / EN: For minors, use conservative and boundary-first wording.'
+      '侧写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。',
+      '不用属相星座鼓励操控、试探底线或越界行为。',
+      '未成年人场景使用保守、边界优先表达。'
     ],
     runtimeContext: [
       'instant side read: selfProfile + targetProfile + currentEvent + currentAssessment',
@@ -157,9 +158,9 @@ const PROMPT_FIXED_GUARDRAILS = {
   },
   attachmentAnalysis: {
     lockedRules: [
-      'ZH: 看不清的内容必须留空或标注不确定，不要编造截图文字。 / EN: Unreadable content must be empty or marked uncertain; do not fabricate screenshot text.',
-      'ZH: 不识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。 / EN: Do not identify or spread sensitive personal information unless necessary for the task context.',
-      'ZH: 输出必须是可解析 JSON，代码会校验字段和置信度枚举。 / EN: Output must be parseable JSON; code validates fields and confidence enums.'
+      '看不清的内容必须留空或标注不确定，不要编造截图文字。',
+      '不识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。',
+      '输出必须是可解析 JSON，代码会校验字段和置信度枚举。'
     ],
     runtimeContext: [
       'one image attachment URL is sent as image_url content'
@@ -212,6 +213,29 @@ function cleanText(value, maxLength = 1200) {
   return typeof value === 'string'
     ? value.replace(/\r\n/g, '\n').trim().slice(0, maxLength)
     : ''
+}
+
+function stripFixedPromptBlocks(value) {
+  const lines = String(value || '').replace(/\r\n/g, '\n').split('\n')
+  const result = []
+  let skipping = false
+  const fixedHeadPattern = /^(固定输入上下文|固定返回结构|固定返回要求)\s*[：:]?\s*$/
+  const editableHeadPattern = /^(业务判断标准|判断标准|输出要求|业务规则)\s*[：:]?\s*$/
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (fixedHeadPattern.test(trimmed)) {
+      skipping = true
+      continue
+    }
+    if (skipping && editableHeadPattern.test(trimmed)) {
+      skipping = false
+      result.push(line)
+      continue
+    }
+    if (skipping) continue
+    result.push(line)
+  }
+  return result.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
 function createEmptyPromptConfig() {
@@ -362,7 +386,7 @@ function readBusinessPromptConfig(settings, moduleKey, legacyConfig) {
       taskZh: cleanText(legacyConfig && legacyConfig.goal, BUSINESS_PROMPT_LIMITS.taskZh),
       taskEn: '',
       rules: Array.isArray(legacyConfig && legacyConfig.rules) ? legacyConfig.rules.slice(0, BUSINESS_PROMPT_LIMITS.ruleItems).map((item) => ({ zh: cleanText(item, BUSINESS_PROMPT_LIMITS.ruleZh), en: '' })).filter((item) => item.zh) : [],
-      outputNotes: legacyConfig && legacyConfig.extraPrompt ? [{ zh: cleanText(legacyConfig.extraPrompt, BUSINESS_PROMPT_LIMITS.outputNoteZh), en: '' }] : []
+      outputNotes: legacyConfig && legacyConfig.extraPrompt ? [{ zh: cleanText(stripFixedPromptBlocks(legacyConfig.extraPrompt), BUSINESS_PROMPT_LIMITS.outputNoteZh), en: '' }].filter((item) => item.zh) : []
     }
   }
   return {
@@ -374,12 +398,12 @@ function readBusinessPromptConfig(settings, moduleKey, legacyConfig) {
     taskZh: cleanText(business.taskZh, BUSINESS_PROMPT_LIMITS.taskZh),
     taskEn: cleanText(business.taskEn, BUSINESS_PROMPT_LIMITS.taskEn),
     rules: Array.isArray(business.rules) ? business.rules.slice(0, BUSINESS_PROMPT_LIMITS.ruleItems).map((item) => ({ zh: cleanText((item && item.zh) || item, BUSINESS_PROMPT_LIMITS.ruleZh), en: cleanText(item && item.en, BUSINESS_PROMPT_LIMITS.ruleEn) })).filter((item) => item.zh || item.en) : [],
-    outputNotes: Array.isArray(business.outputNotes) ? business.outputNotes.slice(0, BUSINESS_PROMPT_LIMITS.outputNoteItems).map((item) => ({ zh: cleanText((item && item.zh) || item, BUSINESS_PROMPT_LIMITS.outputNoteZh), en: cleanText(item && item.en, BUSINESS_PROMPT_LIMITS.outputNoteEn) })).filter((item) => item.zh || item.en) : []
+    outputNotes: Array.isArray(business.outputNotes) ? business.outputNotes.slice(0, BUSINESS_PROMPT_LIMITS.outputNoteItems).map((item) => ({ zh: cleanText(stripFixedPromptBlocks((item && item.zh) || item), BUSINESS_PROMPT_LIMITS.outputNoteZh), en: '' })).filter((item) => item.zh) : []
   }
 }
 
 function formatBilingualList(items) {
-  return (items || []).map((item) => item.en ? ((item.zh || '') + ' / EN: ' + item.en) : (item.zh || item.en)).filter(Boolean)
+  return (items || []).map((item) => item.zh || item.en).filter(Boolean)
 }
 
 function getCallNames(moduleKey) {
@@ -393,31 +417,31 @@ function getCallNames(moduleKey) {
 
 function getSafetyPreview(moduleKey) {
   const common = [
-    'Always: use only provided facts and runtime context; do not fabricate missing actions, promises, emotions, or relationship status.',
-    'Always: return parseable JSON matching the fixed output schema; code validates enums, ranges, lengths, and fallback behavior.'
+    '只使用用户提供的事实和运行时上下文；不要编造未出现的行为、承诺、情绪或关系状态。',
+    '必须返回匹配固定输出结构的可解析 JSON；代码会校验枚举、范围、长度和兜底行为。'
   ]
   const moduleSpecific = {
     eventAssessment: [
-      'Always: score changes require real target actions, responses, follow-through, avoidance, or rejection.',
-      'Conditional boundary-sensitive event: do not assume consent to intimacy escalation; prioritize respect, pacing, and safety.',
-      'Conditional under18: only friendship, boundaries, safety, and healthy communication advice.'
+      '评分变化必须基于真实的对象动作、回应、兑现、回避或拒绝。',
+      '涉及边界敏感事件时，不要默认同意亲密升级，优先尊重、节奏和安全。',
+      '未成年人场景只允许友谊、边界、安全和健康沟通建议。'
     ],
     eventUnderstanding: [
-      'Always: distinguish self, target, both, and unknown subject roles; lower confidence when actor is unclear.',
-      'Conditional under18 or sexual/private-space wording: classify directly and do not normalize risky intimacy wording.'
+      '必须区分用户、对象、双方和主体不清；主体不清时降低判断强度。',
+      '涉及未成年人、性暗示或私密空间表述时，直接分类并避免正常化风险亲密表达。'
     ],
     weeklyReview: [
-      'Always: summarize only provided weekly events and assessment changes; do not invent long-term trends.',
-      'Conditional under18: avoid adult, boundary-crossing, or manipulative advice.'
+      '只总结提供的本周事件和评估变化，不编造长期趋势。',
+      '未成年人场景避免成人化、越界或操控建议。'
     ],
     sideRead: [
-      'Always: zodiac/astrology is lightweight reference only, never diagnosis or fact.',
-      'Always: do not use zodiac/astrology to encourage manipulation, boundary testing, or boundary crossing.',
-      'Conditional under18: conservative, boundary-first wording.'
+      '属相星座只作为轻量参考，不能当成诊断或事实。',
+      '不要用属相星座鼓励操控、试探底线或越界。',
+      '未成年人场景使用保守、边界优先表达。'
     ],
     attachmentAnalysis: [
-      'Always: unreadable screenshot content must be empty or marked uncertain; never fabricate text.',
-      'Always: do not identify or spread sensitive personal information unless required by user-provided context.'
+      '看不清的截图内容必须留空或标注不确定，不要编造文字。',
+      '不要识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。'
     ]
   }
   return common.concat(moduleSpecific[moduleKey] || [])
@@ -462,11 +486,11 @@ function buildPersonaPreview(settings, moduleKey) {
   if (moduleKey === 'eventUnderstanding' || moduleKey === 'attachmentAnalysis') return []
   const persona = normalizePersonaConfig(settings && settings.personaConfig)
   return [
-    'User selects only keys in mini program: selfProfile.aiStyle + selfProfile.aiBoldness.',
-    'Backend provides template text for each key. Final key may be overridden by safety rules.'
+    '小程序只保存用户选择的风格和强度 key。',
+    '后台提供每个 key 对应的中文模板，安全规则可覆盖最终风格。'
   ].concat(
-    PERSONA_STYLE_KEYS.map((key) => key + ': ' + persona.styles[key].labelZh + ' (' + persona.styles[key].labelEn + ') - ' + persona.styles[key].promptZh + ' / EN: ' + persona.styles[key].promptEn),
-    PERSONA_BOLDNESS_KEYS.map((key) => key + ': ' + persona.boldness[key].labelZh + ' (' + persona.boldness[key].labelEn + ') - ' + persona.boldness[key].promptZh + ' / EN: ' + persona.boldness[key].promptEn)
+    PERSONA_STYLE_KEYS.map((key) => key + ': ' + persona.styles[key].labelZh + ' - ' + persona.styles[key].promptZh),
+    PERSONA_BOLDNESS_KEYS.map((key) => key + ': ' + persona.boldness[key].labelZh + ' - ' + persona.boldness[key].promptZh)
   )
 }
 
@@ -475,31 +499,31 @@ function buildPromptPreview(moduleKey, moduleConfig, settings) {
   const guardrails = PROMPT_FIXED_GUARDRAILS[moduleKey] || { outputContract: [] }
   const business = readBusinessPromptConfig(settings, moduleKey, moduleConfig)
   const lines = [
-    '调用 / Call: ' + getCallNames(moduleKey).join(' | '),
-    '模块 / Module: ' + meta.title,
-    meta.description ? 'Description: ' + meta.description : '',
+    '调用: ' + getCallNames(moduleKey).join(' | '),
+    '模块: ' + meta.title,
+    meta.description ? '说明: ' + meta.description : '',
     '',
-    'Final composition order:',
-    '1. System safety guardrails, with conditional under18/boundary/image rules.',
-    '2. Persona text, when this call uses persona: user-selected key + backend personaConfig template + safety override.',
-    '3. Backend business prompt: role/task/rules/output notes from promptModules; legacy promptConfig is kept only for old-record compatibility.',
-    '4. Runtime context placeholders shown below; actual user/event data is injected at call time.'
+    '最终拼接顺序:',
+    '1. 系统安全护栏，包括未成年人、边界、图片等条件规则。',
+    '2. 陪伴风格文案：用户选择 key + 后台中文模板 + 安全覆盖规则。',
+    '3. 后台业务提示词：角色、任务、规则、输出要求。',
+    '4. 运行时上下文：实际用户、事件、画像和评分数据在调用时注入。'
   ].filter(Boolean)
 
-  appendPreviewSection(lines, 'System safety guardrails actually considered', getSafetyPreview(moduleKey))
-  appendPreviewSection(lines, 'Persona block', buildPersonaPreview(settings, moduleKey))
-  appendPreviewSection(lines, 'Backend business prompt', business.enabled === false
-    ? ['This module is disabled in backend business prompt. Code keeps safety guardrails and runtime context only.']
+  appendPreviewSection(lines, '实际参与的安全护栏', getSafetyPreview(moduleKey))
+  appendPreviewSection(lines, '陪伴风格块', buildPersonaPreview(settings, moduleKey))
+  appendPreviewSection(lines, '后台业务提示词', business.enabled === false
+    ? ['该模块已在后台业务提示词中停用。代码仍保留安全护栏和运行时上下文。']
     : [
-        'Name: ' + business.nameZh + ' (' + business.nameEn + ')',
-        'Role: ' + (business.roleZh || '[empty]') + (business.roleEn ? ' / EN: ' + business.roleEn : ''),
-        'Task: ' + (business.taskZh || '[empty]') + (business.taskEn ? ' / EN: ' + business.taskEn : '')
+        '名称: ' + business.nameZh,
+        '角色: ' + (business.roleZh || '[空]'),
+        '任务: ' + (business.taskZh || '[空]')
       ].concat(
-        formatBilingualList(business.rules).map((item) => 'Rule: ' + item),
-        formatBilingualList(business.outputNotes).map((item) => 'Output note: ' + item)
+        formatBilingualList(business.rules).map((item) => '规则: ' + item),
+        formatBilingualList(business.outputNotes).map((item) => '输出要求: ' + item)
       ))
-  appendPreviewSection(lines, 'Fixed output contract', guardrails.outputContract || [])
-  appendPreviewSection(lines, 'Runtime context injected at call time', getRuntimePreview(moduleKey))
+  appendPreviewSection(lines, '固定输出结构', guardrails.outputContract || [])
+  appendPreviewSection(lines, '调用时注入的运行时上下文', getRuntimePreview(moduleKey))
   return lines.join('\n')
 }
 function buildPromptAdminView(settings) {
@@ -524,10 +548,10 @@ function buildPromptAdminView(settings) {
   return {
     version: 1,
     policyLines: [
-      '业务提示词（角色、任务、规则、输出要求）只从后台 promptModules 读取。 / Business prompts are loaded only from backend promptModules.',
-      '后台缺字段时不再回退到代码里的业务提示词；该模块会规则兜底或跳过 AI。 / Missing backend business prompt fields do not fallback to code prompts; the module uses rule fallback or skips AI.',
-      '安全护栏、输出结构校验、未成年人和边界敏感保护保留在代码中，并在后台只读可见。 / Safety guardrails, output validation, minor protection, and boundary protection remain in code and are visible read-only in admin.',
-      '最终拼接顺序：安全护栏 + 用户选择的人格模板 + 后台业务提示词 + 运行时上下文。 / Final order: safety guardrails + user-selected persona template + backend business prompt + runtime context.'
+      '业务提示词（角色、任务、规则、输出要求）只从后台 promptModules 读取。',
+      '后台缺字段时不再回退到代码里的业务提示词；该模块会规则兜底或跳过 AI。',
+      '安全护栏、输出结构校验、未成年人和边界敏感保护保留在代码中，并在后台只读可见。',
+      '最终拼接顺序：安全护栏 + 用户选择的人格模板 + 后台业务提示词 + 运行时上下文。'
     ],
     modules
   }
@@ -744,6 +768,9 @@ exports.main = async (event) => {
     return { success: false, message: '更新 AI 设置失败' }
   }
 }
+
+
+
 
 
 
