@@ -1,7 +1,7 @@
 {
-    "name" : "关系评估助手",
+    "name" : "Dom-Crush",
     "appid" : "__UNI__BA7165B",
-    "description" : "智能关系评估与时间线管理工具",
+    "description" : "read the signals, not your mind.",
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,

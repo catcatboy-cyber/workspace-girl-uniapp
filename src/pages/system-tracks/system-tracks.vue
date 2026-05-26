@@ -3,7 +3,7 @@
     <view class="hero-block-v2">
       <text class="hero-tag-v2">SYSTEM</text>
       <text class="hero-title-v2">系统<text class="hl-v2">轨迹</text></text>
-      <text class="hero-copy-v2">系统自动生成的评估、趋势和研判记录。</text>
+      <text class="hero-copy-v2">系统自动生成的判定、趋势和复盘记录。</text>
     </view>
 
     <view v-if="loading" class="loading-v2">LOADING...</view>
@@ -23,7 +23,7 @@
 
         <view v-if="!tracks.length" class="empty-v2">
           <text class="empty-title-v2">暂无系统轨迹</text>
-          <text class="empty-sub-v2">完成评估后系统会自动生成轨迹记录。</text>
+          <text class="empty-sub-v2">完成判定后系统会自动生成轨迹记录。</text>
         </view>
 
         <view v-else class="event-list-v2">
@@ -128,7 +128,7 @@ function toneClass(type: string) {
 
 function mapSystemTrackTypeLabel(type?: string) {
   switch (type) {
-    case 'assessment': return '系统评估'
+    case 'assessment': return '系统判定'
     case 'trend': return '趋势重算'
     case 'positive': return '推进研判'
     case 'risk': return '风险研判'

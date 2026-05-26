@@ -6,9 +6,9 @@
     <block v-else>
       <template v-if="cases.length === 0">
         <view class="hero-block">
-          <text class="hero-tag">SIGNAL BOARD</text>
-          <text class="hero-title">先做一次<text class="hl">初次</text>评估</text>
-          <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看时间线和重新评估。</text>
+          <text class="hero-tag">DOM-CRUSH BOARD</text>
+          <text class="hero-title">先做一次<text class="hl">初次</text>判定</text>
+          <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看时间线和重新判定。</text>
         </view>
         <AssessmentForm @submit="onCreateCase" />
       </template>
@@ -16,7 +16,7 @@
       <template v-else>
         <!-- Hero -->
         <view class="hero-block">
-          <text class="hero-tag">SIGNAL BOARD</text>
+          <text class="hero-tag">DOM-CRUSH BOARD</text>
           <text class="hero-title">今天他<text class="hl">有戏</text>吗？</text>
           <view class="hero-identity"><view class="profile-avatar-v2 sm"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(latestCase.name) }}</text></view><text class="hero-identity-name">{{ latestCase.name || '--' }}</text></view>
           <text class="hero-copy">别靠脑补，先把真实互动记下来。共 {{ cases.length }} 个对象。</text>
@@ -74,41 +74,47 @@
         <view v-if="showQuickFeedback && latestCase.latestResult && latestTrend" :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']">
           <view class="block-head"><text class="block-title">本次判定</text><text class="block-badge black">{{ mapTimelineTypeLabel(latestFeedbackEventType) }}</text></view>
           <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
-          <view class="score-grid">
-            <view class="score-item">
-              <text class="score-label-v2">意向</text><text class="score-num-v2">{{ clampScore(latestCase.latestResult.intentScore) }}</text>
-              <text class="score-bucket-v2">{{ mapIntentLabel(latestCase.latestResult?.intentBucket) }}</text>
-              <view class="bar-track-v2"><view class="bar-fill-v2" :style="{ width: clampScore(latestCase.latestResult.intentScore) + '%' }"></view></view>
+          <view v-if="latestCase.latestResult.aiPending" class="action-box">
+            <text class="action-label">正在分析</text>
+            <text class="action-text muted">AI 正在生成这条记录的即时反馈，完成后会自动更新本次判定。</text>
+          </view>
+          <template v-else>
+            <view class="score-grid">
+              <view class="score-item">
+                <text class="score-label-v2">意向</text><text class="score-num-v2">{{ clampScore(latestCase.latestResult.intentScore) }}</text>
+                <text class="score-bucket-v2">{{ mapIntentLabel(latestCase.latestResult?.intentBucket) }}</text>
+                <view class="bar-track-v2"><view class="bar-fill-v2" :style="{ width: clampScore(latestCase.latestResult.intentScore) + '%' }"></view></view>
+              </view>
+              <view class="score-item">
+                <text class="score-label-v2">风险</text><text class="score-num-v2 risk">{{ clampScore(latestCase.latestResult.consistencyRiskScore) }}</text>
+                <text class="score-bucket-v2">{{ mapRiskLabel(latestCase.latestResult?.riskBucket) }}</text>
+                <view class="bar-track-v2"><view class="bar-fill-v2 risk" :style="{ width: clampScore(latestCase.latestResult.consistencyRiskScore) + '%' }"></view></view>
+              </view>
             </view>
-            <view class="score-item">
-              <text class="score-label-v2">风险</text><text class="score-num-v2 risk">{{ clampScore(latestCase.latestResult.consistencyRiskScore) }}</text>
-              <text class="score-bucket-v2">{{ mapRiskLabel(latestCase.latestResult?.riskBucket) }}</text>
-              <view class="bar-track-v2"><view class="bar-fill-v2 risk" :style="{ width: clampScore(latestCase.latestResult.consistencyRiskScore) + '%' }"></view></view>
+            <view class="delta-row">
+              <view class="delta-item"><text class="delta-label-v2">意向变化</text><text :class="['delta-val', deltaClass(latestTrend.intentDelta)]">{{ formatDelta(latestTrend.intentDelta) }}</text></view>
+              <view class="delta-item"><text class="delta-label-v2">风险变化</text><text :class="['delta-val', deltaClass(latestTrend.riskDelta)]">{{ formatDelta(latestTrend.riskDelta) }}</text></view>
             </view>
-          </view>
-          <view class="delta-row">
-            <view class="delta-item"><text class="delta-label-v2">意向变化</text><text :class="['delta-val', deltaClass(latestTrend.intentDelta)]">{{ formatDelta(latestTrend.intentDelta) }}</text></view>
-            <view class="delta-item"><text class="delta-label-v2">风险变化</text><text :class="['delta-val', deltaClass(latestTrend.riskDelta)]">{{ formatDelta(latestTrend.riskDelta) }}</text></view>
-          </view>
-          <view v-if="statusStateTags.length || problemTypeTags.length" class="tag-row" style="margin-top:12px;">
-            <text v-for="tag in statusStateTags" :key="tag" class="tag black">{{ tag }}</text>
-            <text v-for="tag in problemTypeTags" :key="tag" class="tag">{{ tag }}</text>
-          </view>
-          <view v-if="quickReasonBullets.length > 0 || eventInsightTags.length > 0" class="reason-box">
-            <view v-if="eventInsightTags.length > 0" class="tag-row compact">
-              <text v-for="tag in eventInsightTags" :key="tag" class="tag">{{ tag }}</text>
+            <view v-if="statusStateTags.length || problemTypeTags.length" class="tag-row" style="margin-top:12px;">
+              <text v-for="tag in statusStateTags" :key="tag" class="tag black">{{ tag }}</text>
+              <text v-for="tag in problemTypeTags" :key="tag" class="tag">{{ tag }}</text>
             </view>
-            <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
-          </view>
-          <view v-if="latestActionPlanPanel.show" class="action-box">
-            <text class="action-label">你接下来怎么做</text>
-            <text v-if="latestActionPlanPanel.missing" class="action-text muted">{{ latestActionPlanPanel.text }}</text>
-            <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ item.label }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
-            <view v-if="aiParticipationLabel" :class="['ai-badge', aiParticipationLabel.type]">
-              <text class="ai-badge-dot"></text>
-              <text class="ai-badge-text">{{ aiParticipationLabel.detail }}</text>
+            <view v-if="quickReasonBullets.length > 0 || eventInsightTags.length > 0" class="reason-box">
+              <view v-if="eventInsightTags.length > 0" class="tag-row compact">
+                <text v-for="tag in eventInsightTags" :key="tag" class="tag">{{ tag }}</text>
+              </view>
+              <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
             </view>
-          </view>
+            <view v-if="latestActionPlanPanel.show" class="action-box">
+              <text class="action-label">你接下来怎么做</text>
+              <text v-if="latestActionPlanPanel.missing" class="action-text muted">{{ latestActionPlanPanel.text }}</text>
+              <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ item.label }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
+              <view v-if="aiParticipationLabel" :class="['ai-badge', aiParticipationLabel.type]">
+                <text class="ai-badge-dot"></text>
+                <text class="ai-badge-text">{{ aiParticipationLabel.detail }}</text>
+              </view>
+            </view>
+          </template>
           <button class="btn-v2 outline" @click="goCaseDetail(latestCase.caseId)">查看完整主页</button>
           <view v-if="showSideReadEntry" class="side-box">
             <text class="side-title">{{ profileSideRead?.title || '侧写' }}</text>
@@ -145,14 +151,14 @@
         </view>
       </view>
 
-      <!-- Xiaomi pet bar -->
+      <!-- Pet bar -->
       <view v-if="showPetBar" class="pet-bar">
         <image :src="petSrc" class="pet-bar-img" mode="aspectFit" @click="showSpeakSheet = true" />
         <view v-if="petMsg" class="pet-bubble"><text class="pet-bubble-text">{{ petMsg }}</text></view>
       </view>
 
       <!-- Pet Speak Sheet -->
-      <PetSpeakSheet :visible="showSpeakSheet" @close="showSpeakSheet = false" />
+      <PetSpeakSheet :visible="showSpeakSheet" :pet-name="selectedPet.displayName" @close="showSpeakSheet = false" />
     </block>
 
   </view>
@@ -164,10 +170,11 @@ import { onHide, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@d
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, analyzeAttachment, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile } from '@/utils/api'
-import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
+import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { getPetById, getSelectedPetId } from '@/utils/pets.js'
 
 type PetScene =
   | 'ai_loading'
@@ -180,18 +187,19 @@ type PetScene =
   | 'ai_error'
 
 const petLines: Record<PetScene, { state: string; message: string }> = {
-  ai_loading:          { state: 'waiting',  message: '小咪：我正在帮你看这条记录。' },
-  ai_success:          { state: 'review',   message: '小咪：分析好啦，我先说重点。' },
-  risk:                { state: 'failed',   message: '小咪：这里要慢一点，别只看甜的部分。' },
-  positive:            { state: 'jumping',  message: '小咪：这次确实比之前更有动作。' },
-  insufficient_balance:{ state: 'failed',   message: '小咪：这次我算不动啦，先补一点额度再继续分析。' },
-  side_read_loading:   { state: 'review',   message: '小咪：我再帮你补一段观察角度。' },
-  side_read_success:   { state: 'jumping',  message: '小咪：侧写好啦，记得只当观察参考。' },
-  ai_error:            { state: 'failed',   message: '小咪：刚刚没看成功，可以稍后再试一次。' }
+  ai_loading:          { state: 'waiting',  message: '我正在帮你看这条记录。' },
+  ai_success:          { state: 'review',   message: '分析好啦，我先说重点。' },
+  risk:                { state: 'failed',   message: '这里要慢一点，别只看甜的部分。' },
+  positive:            { state: 'jumping',  message: '这次确实比之前更有动作。' },
+  insufficient_balance:{ state: 'failed',   message: '这次我算不动啦，先补一点额度再继续分析。' },
+  side_read_loading:   { state: 'review',   message: '我再帮你补一段观察角度。' },
+  side_read_success:   { state: 'jumping',  message: '侧写好啦，记得只当观察参考。' },
+  ai_error:            { state: 'failed',   message: '刚刚没看成功，可以稍后再试一次。' }
 }
 
 function getPetPresentation(scene: PetScene) {
-  return petLines[scene]
+  const item = petLines[scene]
+  return { ...item, message: formatPetMessage(item.message) }
 }
 
 function mapResultToScene(params: { latestFeedbackEventType: string; intentDelta: number }): PetScene {
@@ -231,7 +239,13 @@ let petSceneTimer: ReturnType<typeof setTimeout> | null = null
 const quickSubjectRole = ref<'target' | 'self' | 'both'>('target')
 const quickSubjectRoleConfidence = ref<'auto' | 'user_selected'>('auto')
 const quickAttachments = ref<any[]>([])
-const quickFeedback = ref<{ caseId: string; eventType: string } | null>(null)
+const quickFeedback = ref<{
+  caseId: string
+  eventType: string
+  recordId?: string
+  assessmentId?: string
+  description?: string
+} | null>(null)
 let recorderManager: any = null
 let recordStartedAt = 0
 
@@ -509,7 +523,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 function mapRiskLabel(bucket?: string) {
@@ -519,7 +533,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 
@@ -628,29 +642,26 @@ function avatarLabel(name?: string) {
 }
 
 // ---- pet animation ----
-const petConfigs: Record<string, { frames: number; fps: number; loop: boolean }> = {
-  idle: { frames: 6, fps: 6, loop: true },
-  waiting: { frames: 6, fps: 6, loop: true },
-  review: { frames: 6, fps: 6, loop: true },
-  jumping: { frames: 5, fps: 8, loop: false },
-  failed: { frames: 8, fps: 6, loop: true },
-  waving: { frames: 4, fps: 6, loop: true },
-  running: { frames: 6, fps: 8, loop: true },
-  'running-left': { frames: 8, fps: 8, loop: true },
-  'running-right': { frames: 8, fps: 8, loop: true }
-}
-
 const petFrame = ref(0)
 const showSpeakSheet = ref(false)
 const petMsg = ref('')
 const petState = ref('idle')
+const selectedPet = ref(getPetById(getSelectedPetId()))
 let petTimer: ReturnType<typeof setInterval> | null = null
 
 const petSrc = computed(() => {
   const s = petState.value || 'idle'
   const f = String(petFrame.value).padStart(2, '0')
-  return `/static/pets/xiaomi/frames/${s}/${f}.png`
+  return `${selectedPet.value.basePath}/${s}/${f}.png`
 })
+
+function formatPetMessage(message: string) {
+  const name = selectedPet.value.displayName
+  const text = String(message || '').trim().replace(/^小咪[：:]\s*/, '')
+  if (!text) return ''
+  if (text.startsWith(`${name}：`) || text.startsWith(`${name}:`)) return text
+  return `${name}：${text}`
+}
 
 function stopPetAnim() {
   if (petTimer) { clearInterval(petTimer); petTimer = null }
@@ -658,7 +669,7 @@ function stopPetAnim() {
 
 function startPetAnim(state: string) {
   stopPetAnim()
-  const cfg = petConfigs[state] || petConfigs['idle']
+  const cfg = selectedPet.value.states[state] || selectedPet.value.states['idle']
   petState.value = state
   petFrame.value = 0
   if (cfg.frames <= 1) return
@@ -673,7 +684,7 @@ function applyPetScene(scene: PetScene | null, durationMs?: number, customMessag
   if (petSceneTimer) { clearTimeout(petSceneTimer); petSceneTimer = null }
   if (!scene) { petMsg.value = ''; petScene.value = null; startPetAnim('idle'); return }
   const p = getPetPresentation(scene)
-  petMsg.value = customMessage || p.message
+  petMsg.value = customMessage ? formatPetMessage(customMessage) : p.message
   petScene.value = scene
   startPetAnim(p.state)
   if (durationMs && durationMs > 0) {
@@ -685,7 +696,11 @@ const showPetBar = ref(true)
 function syncPetBarPref() {
   try { showPetBar.value = uni.getStorageSync('showPetBar') !== false } catch { showPetBar.value = true }
 }
+function syncSelectedPet() {
+  selectedPet.value = getPetById(getSelectedPetId())
+}
 syncPetBarPref()
+syncSelectedPet()
 
 // start idle animation on load
 startPetAnim('idle')
@@ -702,19 +717,73 @@ const feedbackPetScene = computed<PetScene | null>(() => {
 
 const dataReady = ref(false)
 const lastDataVersion = ref(0)
+const HOME_CASES_CACHE_KEY = 'homeCasesCache:v1'
 
 function hasCaseInList(caseId: string) {
   return Boolean(caseId && cases.value.some((item: any) => item.caseId === caseId || item._id === caseId))
+}
+
+function readHomeCasesCache(uid: string) {
+  try {
+    const cached = uni.getStorageSync(HOME_CASES_CACHE_KEY)
+    if (!cached || cached.userId !== uid || !Array.isArray(cached.cases)) return []
+    return cached.cases
+  } catch {
+    return []
+  }
+}
+
+function writeHomeCasesCache(uid: string, list: any[]) {
+  try {
+    uni.setStorageSync(HOME_CASES_CACHE_KEY, {
+      userId: uid,
+      cachedAt: Date.now(),
+      cases: list
+    })
+  } catch {}
+}
+
+function applyCasesList(list: any[], options?: { fromCache?: boolean }) {
+  const normalizedCases = (list || []).map((c: any) => ({ ...c, caseId: c.caseId || c._id }))
+  cases.value = normalizedCases
+  const storedActiveCaseId = getActiveCaseId()
+  const activeExists = Boolean(storedActiveCaseId && normalizedCases.some((item: any) => item.caseId === storedActiveCaseId || item._id === storedActiveCaseId))
+  if (activeExists) {
+    activeCaseId.value = storedActiveCaseId
+  } else {
+    const firstCaseId = normalizedCases[0]?.caseId || ''
+    activeCaseId.value = firstCaseId
+    if (firstCaseId) setActiveCaseId(firstCaseId)
+  }
+  if (!options?.fromCache) {
+    bumpDataVersion()
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
+  }
+  dataReady.value = true
+}
+
+async function refreshSelfProfileInBackground() {
+  try {
+    const profileRes = await getSelfProfile()
+    if (profileRes?.success) selfProfile.value = profileRes.selfProfile
+  } catch {}
 }
 
 onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   syncPetBarPref()
-  activeCaseId.value = getActiveCaseId()
+  syncSelectedPet()
+  startPetAnim(petState.value || 'idle')
+  const previousActiveCaseId = activeCaseId.value
+  const nextActiveCaseId = getActiveCaseId()
+  activeCaseId.value = nextActiveCaseId
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
-  const activeMissing = Boolean(activeCaseId.value && dataReady.value && !hasCaseInList(activeCaseId.value))
-  if (!dataReady.value || dv > lastDataVersion.value || activeMissing) {
+  const activeCase = cases.value.find((item: any) => item.caseId === nextActiveCaseId || item._id === nextActiveCaseId)
+  const activeMissing = Boolean(nextActiveCaseId && dataReady.value && !activeCase)
+  const activeChanged = Boolean(nextActiveCaseId && previousActiveCaseId && nextActiveCaseId !== previousActiveCaseId)
+  const activeNeedsDetail = Boolean(nextActiveCaseId && dataReady.value && activeCase && !activeCase.latestResult)
+  if (!dataReady.value || dv > lastDataVersion.value || activeMissing || activeChanged || activeNeedsDetail) {
     loadData()
   }
 })
@@ -747,27 +816,22 @@ async function loadData() {
     return
   }
   userId.value = uid
+  if (!dataReady.value) {
+    const cachedCases = readHomeCasesCache(uid)
+    if (cachedCases.length > 0) {
+      applyCasesList(cachedCases, { fromCache: true })
+      loading.value = false
+    }
+  }
   if (!dataReady.value) loading.value = true
   try {
-    const [list, profileRes] = await Promise.all([
-      getCases(uid),
-      getSelfProfile().catch(() => null)
-    ])
-    if (profileRes?.success) selfProfile.value = profileRes.selfProfile
-    const normalizedCases = (list || []).map((c: any) => ({ ...c, caseId: c.caseId || c._id }))
-    cases.value = normalizedCases
-    const storedActiveCaseId = getActiveCaseId()
-    const activeExists = Boolean(storedActiveCaseId && normalizedCases.some((item: any) => item.caseId === storedActiveCaseId || item._id === storedActiveCaseId))
-    if (activeExists) {
-      activeCaseId.value = storedActiveCaseId
-    } else {
-      const firstCaseId = normalizedCases[0]?.caseId || ''
-      activeCaseId.value = firstCaseId
-      if (firstCaseId) setActiveCaseId(firstCaseId)
-    }
-    bumpDataVersion()
-    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
-    dataReady.value = true
+    const list = await getCases(uid, {
+      mode: 'home',
+      detailCaseId: getActiveCaseId() || activeCaseId.value
+    })
+    applyCasesList(list)
+    writeHomeCasesCache(uid, cases.value)
+    refreshSelfProfileInBackground()
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
@@ -1058,6 +1122,98 @@ async function previewQuickAttachment(index = 0) {
   })
 }
 
+function formatTimelineDateForDisplay(value: string) {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  const hour = String(parsed.getHours()).padStart(2, '0')
+  const minute = String(parsed.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}`
+}
+
+function applyPendingQuickFeedback(params: {
+  caseId: string
+  recordId: string
+  assessmentId: string
+  eventType: string
+  eventTitle: string
+  description: string
+  subjectRole: 'target' | 'self' | 'both'
+  subjectRoleConfidence: string
+  attachments: any[]
+  occurrenceAt: string
+}) {
+  const caseIndex = cases.value.findIndex((item: any) => item.caseId === params.caseId || item._id === params.caseId)
+  if (caseIndex < 0) return
+
+  const current = cases.value[caseIndex]
+  const previousResult = current.latestResult || {}
+  const nowIso = new Date().toISOString()
+  const pendingResult = {
+    ...previousResult,
+    _id: params.assessmentId,
+    assessmentId: params.assessmentId,
+    createdAt: nowIso,
+    source: 'ai_pending',
+    triggerEventId: params.recordId,
+    triggerEventTitle: params.eventTitle,
+    triggerEventType: params.eventType,
+    rawReply: '',
+    actionAdvice: null,
+    eventInsight: null,
+    sideReadAdvice: null,
+    currentStatus: null,
+    aiUsed: false,
+    aiPending: true,
+    aiFailed: false,
+    previousAssessmentId: previousResult._id || previousResult.assessmentId || current.latestResultId,
+    explanation: {
+      headline: 'AI 正在分析这次记录。',
+      bullets: [],
+      cautions: ['后台正在生成即时反馈，完成后会自动更新。']
+    }
+  }
+  const pendingRecord = {
+    _id: params.recordId,
+    id: params.recordId,
+    title: params.eventTitle,
+    type: params.eventType,
+    subjectRole: params.subjectRole,
+    subjectRoleConfidence: params.subjectRoleConfidence,
+    description: params.description,
+    attachments: params.attachments,
+    occurrenceAt: params.occurrenceAt,
+    createdAt: nowIso,
+    date: formatTimelineDateForDisplay(params.occurrenceAt),
+    dateLabel: formatTimelineDateForDisplay(params.occurrenceAt),
+    aiUsed: false
+  }
+  const assessments = [
+    ...(Array.isArray(current.assessments) ? current.assessments.filter((item: any) => (item._id || item.assessmentId) !== params.assessmentId) : []),
+    pendingResult
+  ]
+  const timeline = [
+    pendingRecord,
+    ...(Array.isArray(current.timeline) ? current.timeline.filter((item: any) => (item._id || item.id) !== params.recordId) : [])
+  ]
+
+  const nextCases = [...cases.value]
+  nextCases[caseIndex] = {
+    ...current,
+    latestResultId: params.assessmentId,
+    latestResult: pendingResult,
+    assessments,
+    timeline,
+    updatedAt: nowIso
+  }
+  cases.value = nextCases
+  activeCaseId.value = params.caseId
+  setActiveCaseId(params.caseId)
+  bumpDataVersion()
+}
+
 async function submitQuickRecord() {
   if (quickSubmitting.value) return
   if (!quickDesc.value.trim()) {
@@ -1069,14 +1225,18 @@ async function submitQuickRecord() {
   try {
     const desc = quickDesc.value.trim()
     const currentCaseId = latestCase.value.caseId
+    const currentSubjectRole = quickSubjectRole.value
+    const currentSubjectRoleConfidence = quickSubjectRoleConfidence.value === 'user_selected' ? 'user_selected' : 'confirmed'
+    const currentAttachments = quickAttachments.value.map(({ url: _url, ...item }: any) => item)
+    const currentOccurrenceAt = combineDateAndTimeToISOString(quickDate.value, quickTime.value)
     const res = await createTimeline({
       userId: userId.value,
       caseId: currentCaseId,
       description: desc,
-      subjectRole: quickSubjectRole.value,
-      subjectRoleConfidence: quickSubjectRoleConfidence.value === 'user_selected' ? 'user_selected' : 'confirmed',
-      attachments: quickAttachments.value.map(({ url: _url, ...item }: any) => item),
-      occurrenceAt: combineDateAndTimeToISOString(quickDate.value, quickTime.value)
+      subjectRole: currentSubjectRole,
+      subjectRoleConfidence: currentSubjectRoleConfidence,
+      attachments: currentAttachments,
+      occurrenceAt: currentOccurrenceAt
     })
     if (res.success) {
       showSuccess('已记录，AI分析中')
@@ -1089,9 +1249,33 @@ async function submitQuickRecord() {
       quickTime.value = getTimeInputValue()
       quickFeedback.value = {
         caseId: currentCaseId,
-        eventType: res.eventType || latestCase.value?.latestResult?.triggerEventType || 'note'
+        eventType: res.eventType || latestCase.value?.latestResult?.triggerEventType || 'note',
+        recordId: res.recordId,
+        assessmentId: res.assessmentId,
+        description: desc
+      }
+      if (res.recordId) {
+        setPendingTimelineContext({
+          caseId: currentCaseId,
+          classified: true,
+          eventType: res.eventType || 'note',
+          recorded: true,
+          targetEventId: res.recordId
+        })
       }
       if (res.aiPending && res.assessmentId) {
+        applyPendingQuickFeedback({
+          caseId: currentCaseId,
+          recordId: res.recordId,
+          assessmentId: res.assessmentId,
+          eventType: res.eventType || 'note',
+          eventTitle: res.eventTitle || '最新记录',
+          description: desc,
+          subjectRole: currentSubjectRole,
+          subjectRoleConfidence: currentSubjectRoleConfidence,
+          attachments: currentAttachments,
+          occurrenceAt: currentOccurrenceAt
+        })
         runAssessmentAI({
           caseId: currentCaseId,
           assessmentId: res.assessmentId,
@@ -1119,11 +1303,13 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
     if (aiRes?.code === 'INSUFFICIENT_BALANCE') {
       applyPetScene('insufficient_balance')
       handleInsufficientBalance(aiRes)
+      await loadData()
       return
     }
     if (!aiRes?.success) {
       applyPetScene('ai_error', 3000)
       showError(aiRes?.message || 'AI即时反馈生成失败')
+      await loadData()
       return
     }
     await loadData()
@@ -1137,6 +1323,7 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
   } catch (error: any) {
     applyPetScene('ai_error', 3000)
     showError(error?.message || 'AI即时反馈生成失败')
+    await loadData()
   } finally {
     aiFeedbackLoading.value = false
     stopAIFeedbackTimer()

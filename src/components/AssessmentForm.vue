@@ -164,7 +164,7 @@ const profile = reactive({
 })
 const answers = reactive<Record<string, any>>({})
 
-const submitLabel = computed(() => props.submitLabel || '生成评估结果')
+const submitLabel = computed(() => props.submitLabel || '生成判定结果')
 const questionsOnly = computed(() => props.questionsOnly === true)
 
 const relationTypeLabel = computed(() =>

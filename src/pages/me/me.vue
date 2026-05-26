@@ -2,7 +2,9 @@
   <view class="page v2-mode" :style="themeVars">
       <view class="hero-block-v2"><text class="hero-tag-v2">SETTINGS</text><text class="hero-title-v2">我<text class="hl-v2">的</text></text><text class="hero-copy-v2">管理账号、系统能力说明和个人设置。</text></view>
       <!-- Account -->
-      <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">关系对象数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示小咪陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
+      <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">关系对象数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
+      <!-- Pet picker -->
+      <view class="card-v2"><text class="section-title-v2">陪伴形象</text><text class="card-text-v2">当前：{{ currentPet.displayName }}</text><view class="pet-grid-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-card-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="`${pet.basePath}/idle/00.png`" class="pet-preview-v2" mode="aspectFit" /><text class="pet-name-v2">{{ pet.displayName }}</text><text class="pet-desc-v2">{{ pet.description }}</text></view></view></view>
       <!-- Profile (moved here) -->
       <view class="card-v2"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Token (fixed button) -->
@@ -13,7 +15,7 @@
       <view class="card-v2"><text class="section-title-v2">AI 陪伴风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
       <view class="card-v2"><text class="section-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
       <view class="card-v2"><text class="section-title-v2">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
-      <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的评估和趋势记录 →</text></view>
+      <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的判定和趋势记录 →</text></view>
       <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
       <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
       <view class="card-v2" @click="goAbout"><text class="section-title-v2">关于</text><text class="card-text-v2">v1.0.0 · 查看版本信息 →</text></view>
@@ -39,6 +41,9 @@ import {
 } from '@/utils/api'
 import { applyThemeChrome, getCurrentThemeId, getThemeStyle, setCurrentTheme, themeOptions, type ThemeId } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { getPetById, getSelectedPetId, petOptions, setSelectedPetId } from '@/utils/pets.js'
+
+type PetId = 'xiaomi' | 'doggo'
 
 const userEmail = ref('')
 const caseCount = ref(0)
@@ -63,26 +68,6 @@ const tokenGiftedTotal = ref(0)
 const tokenConsumedTotal = ref(0)
 const tokenBalanceLoading = ref(false)
 const canSaveAIPersona = computed(() => hasUsableSelfProfile(currentSelfProfile.value) && !aiSaving.value)
-const explainSections = computed(() => [
-  { key: 'intent' as const, label: '意向倾向', items: intentLevels },
-  { key: 'risk' as const, label: '风险等级', items: riskLevels },
-  { key: 'evidence' as const, label: '证据等级与判断把握', items: evidenceLevels },
-  { key: 'status' as const, label: '对象状态标签', items: [...phaseItems, ...vibeItems] },
-  { key: 'weeklyTrend' as const, label: '周复盘趋势标签', items: weeklyTrendItems },
-  { key: 'action' as const, label: '下一步动作标签', items: nextActionItems },
-  { key: 'problem' as const, label: '问题类型', items: problemItems },
-  { key: 'record' as const, label: '记录与系统标签', items: [...eventTypeItems, ...subjectRoleItems, ...relationTypeItems] }
-])
-const expandedSections = ref({
-  intent: false,
-  risk: false,
-  evidence: false,
-  status: false,
-  weeklyTrend: false,
-  action: false,
-  problem: false,
-  record: false
-})
 
 onShareAppMessage(() => buildSafeShareMessage())
 
@@ -110,97 +95,20 @@ const aiBoldnessOptions: Array<{
   { value: 'bold', label: '大胆', description: '更敢给动作建议，但高风险场景仍会自动收口。' }
 ]
 
-const intentLevels = [
-  { label: '低意向', range: '0-24', description: '主动和投入信号整体偏弱，不适合按高期待去推进。' },
-  { label: '偏低意向', range: '25-44', description: '偶尔靠近，但持续性不够，更多还在边缘试探。' },
-  { label: '中等意向', range: '45-59', description: '已经出现一定兴趣，但还需要继续看兑现和连续性。' },
-  { label: '中高意向', range: '60-74', description: '推进信号较明显，后续重点看能不能稳定落地。' },
-  { label: '高意向', range: '75-100', description: '主动性和投入度整体偏高，但仍要看长期一致性。' }
-]
-
-const riskLevels = [
-  { label: '低风险', range: '0-24', description: '一致性整体较稳，明显回避和反复较少。' },
-  { label: '偏低风险', range: '25-44', description: '有些小波动，但暂时还没有形成强风险结构。' },
-  { label: '中等风险', range: '45-59', description: '已经出现回避、拖延、改口或兑现不足的迹象。' },
-  { label: '中高风险', range: '60-74', description: '风险信号较集中，后续更要看事实，不适合继续脑补。' },
-  { label: '高风险', range: '75-100', description: '风险已明显偏高，建议先暂停投入，优先核实关键事实。' }
-]
-
-const evidenceLevels = [
-  { label: 'E1', confidence: '判断把握：低', description: '证据最薄，几乎还停留在感受和单点样本层，不适合下重结论。' },
-  { label: 'E2', confidence: '判断把握：低', description: '已经有少量事实，但仍然偏薄，很多判断还不够稳。' },
-  { label: 'E3', confidence: '判断把握：中', description: '开始能看出一些模式，但仍需要继续验证和补样本。' },
-  { label: 'E4', confidence: '判断把握：高', description: '已有较连续的事实支撑，不再只是凭体感判断。' },
-  { label: 'E5', confidence: '判断把握：高', description: '证据最强，代表当前判断背后有较多连续样本和落地事实。' }
-]
-
-const phaseItems = [
-  { label: '试探期', description: '证据还薄，对方或你们还在互相试探阶段，很多感受都需要更多事实来支撑。不适合下重结论。' },
-  { label: '升温期', description: '整体信号在往前走，但真正有效的升温还是要看连续兑现，而不是单次高点。' },
-  { label: '验证期', description: '更适合核实承诺、身份、说法或安排是否真的落地，而不是凭感觉推进。' },
-  { label: '走弱期', description: '既有热度也有不稳，或节奏明显放缓。继续加码投入的收益偏低，先看对方会不会补动作。' }
-]
-
-const vibeItems = [
-  { label: '☀️ 顺畅', description: '当前体感最稳，风险较低、热度较好，意向和稳定性都相对不错，有继续推进的基础。' },
-  { label: '🌤 向好', description: '最近走势在变好，意向上升且风险回落，值得继续观察延续性。' },
-  { label: '☁️ 平淡', description: '状态一般，没有特别强的顺风或逆风，投入信号偏弱，先看后续动作。' },
-  { label: '🌬 波动', description: '热度存在但前后反复明显，不稳定苗头开始出现，容易出现前后落差。不能把局部当成整体。' },
-  { label: '⛈ 高压', description: '风险明显偏高，心理负担和不确定性已经偏高，不是单次卡住而是连续出现受阻或消耗信号。' },
-  { label: '📉 走弱', description: '和之前相比整体状态已经在走弱，不适合按旧印象判断，更适合先收回来观察。' }
-]
-
-const weeklyTrendItems = [
-  { label: '持续向好', description: '本周意向整体比之前更强，而且风险没有同步抬头。' },
-  { label: '持续走低', description: '本周意向明显回落，关系热度在走弱。' },
-  { label: '起伏不定', description: '本周分数变化较明显，但暂时还不适合下单向结论。' },
-  { label: '风险抬头', description: '本周更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
-  { label: '基本持平', description: '本周整体没有出现足够强的新变化，先继续记录。' }
-]
-
-const nextActionItems = [
-  { label: '先做验证', description: '重点不是推进，而是看承诺、说法、身份或安排能不能对上事实。当前样本太少时也不适合因为一次感觉就下重结论。' },
-  { label: '适合澄清', description: '当前更适合问清楚、确认边界或把模糊点说具体。' },
-  { label: '先暂停推进', description: '风险太高，继续加码投入的收益偏低，先收回来观察。' }
-]
-
-const problemItems = [
-  { label: '单向投入', description: '大部分推进成本还在你这边，对方没有给出相称的主动和投入。' },
-  { label: '口头热情，行动不足', description: '嘴上不差，但落到见面、安排、兑现这些动作上还不够。' },
-  { label: '关键问题难验证', description: '有些关键说法、承诺、身份或时间线当前还对不上，或很难核实。' },
-  { label: '节奏明显不稳定', description: '热度、态度或推进节奏前后反复，单次高点不代表整体趋势。' },
-  { label: '证据不足', description: '现阶段样本太少，很多判断仍停留在感觉层。' },
-  { label: '暂无突出问题', description: '当前没有特别突出的结构性问题标签，不代表关系就一定稳定。' }
-]
-
-const eventTypeItems = [
-  { label: '推进事件', description: '这次记录整体更偏正向推进，重点看对方是否会继续主动、兑现和延续相处。' },
-  { label: '风险事件', description: '这次记录整体更偏风险信号，重点看有没有回避、拖延、失约或边界压力。' },
-  { label: '验证事件', description: '这次更像核实机会，重点不是体感，而是说法能不能对上事实。' },
-  { label: '普通记录', description: '这次先作为普通上下文保留，暂时还不是强推进或强风险证据。' },
-  { label: '关系记录', description: '这是关系中的一条普通切片，用来补上下文，不直接代表结论。' }
-]
-
-const subjectRoleItems = [
-  { label: '对方', description: '这条一句话主要描述关系对象，对方动作会直接参与本次判断。' },
-  { label: '自己', description: '这条主要是你的状态记录，不会因为“我准备了什么”就直接提高对方意向。' },
-  { label: '互动', description: '这条描述双方互动，系统会拆分“你做了什么”和“对方回应了什么”。' },
-  { label: '未知', description: '主体不清时权重会更低，除非文字里明确写出对方动作。' }
-]
-
-const relationTypeItems = [
-  { label: '恋爱对象', description: '按恋爱关系的互动逻辑来分析推进、风险和兑现。' },
-  { label: '朋友', description: '按友谊逻辑来分析靠近、边界和稳定性。' },
-  { label: '同事', description: '按职场互动逻辑来分析合作、信任和边界感。' },
-  { label: '同学', description: '按校园社交逻辑来分析相处频率、共同活动和群体关系。' },
-  { label: '老师', description: '按师生互动逻辑来分析指导关系、距离感和角色边界。' }
-]
-
 const showPetBar = ref(true)
+const currentPetId = ref<PetId>(getSelectedPetId())
+const currentPet = computed(() => getPetById(currentPetId.value))
+
 function onPetBarChange(e: any) {
   const v = Boolean(e.detail.value)
   showPetBar.value = v
   uni.setStorageSync('showPetBar', v)
+}
+
+function choosePet(id: PetId) {
+  currentPetId.value = id
+  setSelectedPetId(id)
+  uni.showToast({ title: `已切换为 ${getPetById(id).displayName}`, icon: 'none' })
 }
 
 const lastDataVersion = ref(0)
@@ -208,10 +116,11 @@ const lastDataVersion = ref(0)
 onShow(() => {
   syncTheme()
   showPetBar.value = uni.getStorageSync('showPetBar') !== false
+  currentPetId.value = getSelectedPetId()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  if (!userEmail.value || dv > lastDataVersion.value) loadData()
   loadTokenUsage()
   loadTokenBalance()
-  const dv = Number(uni.getStorageSync('dataVersion') || 0)
-  if (dv > lastDataVersion.value) loadData()
 })
 
 function syncTheme() {
@@ -226,12 +135,6 @@ function chooseTheme(themeId: ThemeId) {
   themeVars.value = getThemeStyle(theme)
 }
 
-function toggleSection(
-  key: 'intent' | 'risk' | 'evidence' | 'status' | 'weeklyTrend' | 'action' | 'problem' | 'record'
-) {
-  expandedSections.value[key] = !expandedSections.value[key]
-}
-
 async function loadData() {
   const uid = getCurrentUserId()
   if (!uid) {
@@ -243,21 +146,16 @@ async function loadData() {
   syncProfileState(getCachedSelfProfile())
 
   try {
-    const list = await getCases(uid)
+    const [list, result] = await Promise.all([
+      getCases(uid, { mode: 'count' }).catch(() => []),
+      getSelfProfile().catch(() => null)
+    ])
     caseCount.value = (list || []).length
-  } catch {
-    // ignore
-  }
-
-  try {
-    const result = await getSelfProfile()
     if (result?.success) syncProfileState(result.selfProfile)
   } catch {
     // ignore
   }
 
-  loadTokenUsage()
-  loadTokenBalance()
   lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
 }
 
@@ -465,6 +363,15 @@ async function onLogout() {
 .v2-mode .theme-card-v2.active .theme-name-v2 { color: #FFD93D; }
 .v2-mode .theme-desc-v2 { display: block; font-size: 16rpx; font-weight: 600; color: #999; margin-top: 4rpx; line-height: 1.3; }
 .v2-mode .theme-card-v2.active .theme-desc-v2 { color: rgba(255,255,255,0.5); }
+
+.v2-mode .pet-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12rpx; margin-top: 14rpx; }
+.v2-mode .pet-card-v2 { padding: 16rpx; border: 2rpx solid #111; background: #fff; text-align: center; }
+.v2-mode .pet-card-v2.active { background: #111; }
+.v2-mode .pet-preview-v2 { width: 112rpx; height: 112rpx; display: block; margin: 0 auto 10rpx; }
+.v2-mode .pet-name-v2 { display: block; font-size: 24rpx; font-weight: 900; color: #111; }
+.v2-mode .pet-card-v2.active .pet-name-v2 { color: #FFD93D; }
+.v2-mode .pet-desc-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #888; line-height: 1.4; margin-top: 6rpx; }
+.v2-mode .pet-card-v2.active .pet-desc-v2 { color: rgba(255,255,255,0.62); }
 
 .v2-mode .chip-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .chip-grid-v2.cols3 { grid-template-columns: repeat(3, 1fr); }

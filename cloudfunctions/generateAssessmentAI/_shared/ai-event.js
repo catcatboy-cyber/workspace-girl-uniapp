@@ -30,8 +30,8 @@ function normalizeCurrentStatus(value) {
   const source = value && typeof value === 'object' ? value : {}
   const result = {
     tags: normalizeStringList(source.tags, 5, 24),
-    summary: cleanText(source.summary, 100),
-    caution: cleanText(source.caution, 100)
+    summary: cleanText(source.summary, 200),
+    caution: cleanText(source.caution, 200)
   }
   return result.tags.length || result.summary || result.caution ? result : null
 }
@@ -75,10 +75,10 @@ function serializeCaseProfile(profile) {
 
 function describeSubjectRole(role) {
   if (role === 'self') {
-    return 'subjectRole=self：这条记录主要描述用户自己。文本里的“我”是用户本人，不是关系对象。不要把用户的穿着、化妆、准备、情绪、表达当成对方释放的信号；请分析它可能怎样影响互动、用户接下来怎么做，以及需要观察对方什么反应。'
+    return 'subjectRole=self：这条记录主要描述用户自己。文本里的“我”是用户本人，不是关系对象。不要把用户的穿着、化妆、准备、情绪、表达当成对方释放的信号；“我主动问对方/我问他/我问她/我问对方”表示用户主动向关系对象提问，不能写成对方主动问用户；请分析它可能怎样影响互动、用户接下来怎么做，以及需要观察对方什么反应。'
   }
   if (role === 'both') {
-    return 'subjectRole=both：这条记录描述双方互动。请拆分“用户做了什么”和“关系对象回应/做了什么”；用户自己的主动不能算作对方主动，只有对方动作才能改变对方意向或风险判断。'
+    return 'subjectRole=both：这条记录描述双方互动。请拆分“用户做了什么”和“关系对象回应/做了什么”；用户自己的主动不能算作对方主动，尤其“我主动问对方/我问他/我问她/我问对方”是用户发起询问，不是对方问用户；只有对方动作才能改变对方意向或风险判断。'
   }
   if (role === 'unknown') {
     return 'subjectRole=unknown：行为主体不确定。请弱化权重；除非文本明确写出对方回应、承诺、兑现、回避或失约，否则不要提高或降低对方意向/风险。'
@@ -406,6 +406,7 @@ async function analyzeTimelineEvent(params) {
       'petLine is one short sentence (max 50 Chinese chars) in XiaoMi (小咪)\'s first-person voice — her key takeaway from this event. petMood is one enum only: cheerful|cautious|encouraging|neutral|warning.',
       'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings with line breaks and use Chinese colon：after each heading:\n对方可能的心理：<content>\n你下一步怎么做：<content>\n重点观察什么：<content>',
       'eventInsight must be enums only: actor=target|self|both|unknown, interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear, commitmentStatus=none|promised|fulfilled|broken|unclear, evidenceType=fact|feeling|mixed|unclear.',
+      '主体宾语校验：“我主动问对方 / 我问他 / 我问她 / 我问对方”表示用户主动向关系对象提问；不要改写成“对方问我”或“对方主动问用户”。只有“对方问我 / 他问我 / 她问我 / 问我”才表示关系对象主动问用户。',
       describeSubjectRole(params.event?.subjectRole),
       `Current assessment: ${JSON.stringify({
         intentScore: params.latestResult?.intentScore,
@@ -474,7 +475,7 @@ async function analyzeTimelineEvent(params) {
       categories: Array.isArray(parsed.categories) ? parsed.categories.map(String) : [],
       eventInsight: normalizeEventInsight(parsed.eventInsight, params.event),
       currentStatus: normalizeCurrentStatus(parsed.currentStatus),
-      petLine: typeof parsed.petLine === 'string' ? cleanText(parsed.petLine, 100) : '',
+      petLine: typeof parsed.petLine === 'string' ? cleanText(parsed.petLine, 200) : '',
       petMood: ['cheerful', 'cautious', 'encouraging', 'neutral', 'warning'].includes(parsed.petMood) ? parsed.petMood : 'neutral',
       rawReply: cleanText(parsed.rawReply, 900),
       aiProvider: settings.provider,

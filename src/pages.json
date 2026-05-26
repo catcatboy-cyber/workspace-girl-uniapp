@@ -47,7 +47,7 @@
     {
       "path": "pages/assessments/assessments",
       "style": {
-        "navigationBarTitleText": "评估历史"
+        "navigationBarTitleText": "判定记录"
       }
     },
     {
@@ -59,7 +59,7 @@
     {
       "path": "pages/reassess/reassess",
       "style": {
-        "navigationBarTitleText": "重新评估"
+        "navigationBarTitleText": "重新判定"
       }
     },
     {
@@ -132,7 +132,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "关系评估",
+    "navigationBarTitleText": "Dom-Crush",
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },

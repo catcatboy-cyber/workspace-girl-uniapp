@@ -9,7 +9,7 @@
     </view>
 
     <view v-if="points.length === 0" class="empty-state">
-      <text class="muted">还没有足够的评估记录来生成趋势。</text>
+      <text class="muted">还没有足够的判定记录来生成趋势。</text>
     </view>
 
     <template v-else>

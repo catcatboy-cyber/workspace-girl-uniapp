@@ -94,7 +94,7 @@
                   <text class="case-meta">{{ formatDate(item.updatedAt || item.createdAt) }}</text>
                 </view>
                 <view class="case-counts">
-                  <text>{{ item.assessmentCount }} 次评估</text>
+                  <text>{{ item.assessmentCount }} 次判定</text>
                   <text>{{ item.timelineCount }} 条记录</text>
                 </view>
               </view>
@@ -108,7 +108,7 @@
         <view class="panel-head">
           <view>
             <text class="panel-title">全局 AI 设置</text>
-            <text class="panel-meta">支持多模型配置，默认模型会被时间线 AI 研判优先使用。</text>
+            <text class="panel-meta">支持多模型配置，默认模型会被时间线 AI 判定优先使用。</text>
           </view>
           <button class="ghost-btn wide-btn" @click="addModel">添加模型</button>
         </view>
@@ -170,12 +170,58 @@
               <text>API Key</text>
               <input v-model="model.apiKey" password placeholder="留空则沿用已保存密钥" />
             </view>
+            <view class="field">
+              <text>总额度（tokens，0=不限）</text>
+              <input v-model.number="model.quota" type="number" placeholder="例如 5000000" />
+            </view>
+            <view v-if="model.tokensUsed > 0" class="field">
+              <text>已消耗</text>
+              <text class="quota-used-text">{{ (model.tokensUsed / 1000000).toFixed(2) }}M tokens</text>
+            </view>
           </view>
 
           <view class="model-foot">
             <text v-if="model.hasApiKey && !model.apiKey" class="hint">已保存密钥；留空保存时会继续沿用旧密钥。</text>
             <text v-if="model.testMessage" :class="['test-result', model.testOk ? 'pass' : 'fail']">{{ model.testMessage }}</text>
           </view>
+        </view>
+
+        <!-- 小咪帮你说提示词配置 -->
+        <view class="settings-section prompt-section">
+          <view class="section-head">
+            <text class="section-title">小咪帮你说 · 提示词</text>
+            <text class="section-desc">配置撩一下和帮你说发给 AI 的 system prompt。留空则使用默认值。</text>
+          </view>
+
+          <view class="pet-speak-tabs">
+            <view v-for="psk in petSpeakModuleKeys" :key="psk.key"
+              :class="['pet-speak-tab', petSpeakActiveKey === psk.key ? 'active' : '']"
+              @click="switchPetSpeakKey(psk.key)">
+              {{ psk.label }}
+            </view>
+          </view>
+
+          <view class="form-grid">
+            <view class="field wide">
+              <text>System Prompt</text>
+              <textarea v-model="petSpeakForm.systemPrompt" class="textarea large mono" :maxlength="-1"
+                :placeholder="petSpeakDefaults[petSpeakActiveKey]?.systemPrompt || ''" />
+            </view>
+            <view class="field-row">
+              <view class="field">
+                <text>Temperature</text>
+                <input v-model.number="petSpeakForm.temperature" type="number" step="0.05" min="0" max="2"
+                  :placeholder="String(petSpeakDefaults[petSpeakActiveKey]?.temperature ?? 0.8)" />
+              </view>
+              <view class="field">
+                <text>Max Tokens</text>
+                <input v-model.number="petSpeakForm.maxTokens" type="number" step="50" min="50" max="4000"
+                  :placeholder="String(petSpeakDefaults[petSpeakActiveKey]?.maxTokens ?? 400)" />
+              </view>
+            </view>
+          </view>
+
+          <button class="ghost-btn" @click="restorePetSpeakDefault">恢复模块默认值</button>
         </view>
 
         <view class="settings-section prompt-section">
@@ -643,6 +689,8 @@ type AdminAIModel = {
   model: string
   apiKey: string
   hasApiKey: boolean
+  quota: number
+  tokensUsed: number
   testMessage?: string
   testOk?: boolean
 }
@@ -686,6 +734,88 @@ type PersonaConfig = {
 
 let modelIdCounter = 1
 const promptModuleKeys = ['eventAssessment', 'eventUnderstanding', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
+
+const petSpeakModuleKeys = [
+  { key: 'qaStrategy', label: '撩一下策略' },
+  { key: 'replyActive', label: '主动问对方' },
+  { key: 'reply', label: '对方说了什么' },
+  { key: 'replyStrategy', label: '多轮策略' }
+]
+const petSpeakActiveKey = ref('qaStrategy')
+const petSpeakForm = reactive({ systemPrompt: '', temperature: null as number | null, maxTokens: null as number | null })
+// 全量草稿，切换 tab 时保持未保存的修改
+const petSpeakDraft: Record<string, { systemPrompt: string; temperature: number | null; maxTokens: number | null }> = {}
+
+const petSpeakDefaults: Record<string, { systemPrompt: string; temperature: number; maxTokens: number }> = {
+  qaStrategy: {
+    systemPrompt: '你是撩人话术教练。用户想表达一个意图，你要从以下策略库中选最合适的2种，各生成一条一问一答式撩人话术。\n\n格式：每条用 | 分隔问和答，例如：在干嘛？|在想你。问和答各自独立完整。\n\n策略库（选2个最匹配用户意图的）：\n- 反转撩（contrast）：先推后拉。\n- 引导拉近（progressive）：埋钩子→试探亲密→引导见面。\n- 直球夸赞（direct）：干脆利落的表白/夸赞。\n- 幽默破冰（humor）：搞笑无厘头，松弛破冰。\n- 文艺情话（literary）：诗意比喻，浪漫氛围。\n\n主语视角：主语始终是"我"（用户本人）。用"我"和"你"的人称。\n关键：| 前的第一句话必须是主动发起的问句或开场白。\n\n返回 JSON：\n{"lines":[{"type":"contrast","label":"反转撩","text":"问|答"},{"type":"humor","label":"幽默破冰","text":"问|答"}]}',
+    temperature: 0.85,
+    maxTokens: 400
+  },
+  reply: {
+    systemPrompt: '你是恋爱对话教练。对方说了一句话，用户不知道怎么回。请生成回复。只用 JSON 返回。每句15-40字，自然、尊重、有边界。',
+    temperature: 0.8,
+    maxTokens: 200
+  },
+  replyActive: {
+    systemPrompt: '你是恋爱对话教练。用户想主动对心仪对象说一句话，请生成回复。只用 JSON 返回。每句15-40字，自然、尊重、有边界。',
+    temperature: 0.8,
+    maxTokens: 200
+  },
+  replyStrategy: {
+    systemPrompt: '你是恋爱对话策略教练。对方说了一句话或用户想表达一个意图，你需要生成2种多轮对话策略（反转撩和引导拉近）。',
+    temperature: 0.8,
+    maxTokens: 1200
+  }
+}
+
+function switchPetSpeakKey(key: string) {
+  // 保存当前 tab 的编辑状态
+  petSpeakDraft[petSpeakActiveKey.value] = { ...petSpeakForm }
+  petSpeakActiveKey.value = key
+  // 恢复目标 tab 的编辑状态
+  const saved = petSpeakDraft[key]
+  if (saved) {
+    petSpeakForm.systemPrompt = saved.systemPrompt
+    petSpeakForm.temperature = saved.temperature
+    petSpeakForm.maxTokens = saved.maxTokens
+  }
+}
+
+function loadPetSpeakConfig(config: any) {
+  petSpeakModuleKeys.forEach(({ key }) => {
+    const sub = config?.[key] || {}
+    petSpeakDraft[key] = {
+      systemPrompt: sub.systemPrompt || '',
+      temperature: sub.temperature != null ? sub.temperature : null,
+      maxTokens: sub.maxTokens != null ? sub.maxTokens : null
+    }
+  })
+  switchPetSpeakKey(petSpeakActiveKey.value)
+}
+
+function collectPetSpeakConfig(config: any) {
+  if (!config) config = {}
+  // 先把当前编辑状态写入 draft
+  petSpeakDraft[petSpeakActiveKey.value] = { ...petSpeakForm }
+  petSpeakModuleKeys.forEach(({ key }) => {
+    const d = petSpeakDraft[key] || {}
+    config[key] = {
+      systemPrompt: d.systemPrompt || '',
+      temperature: d.temperature ?? petSpeakDefaults[key].temperature,
+      maxTokens: d.maxTokens ?? petSpeakDefaults[key].maxTokens
+    }
+  })
+  return config
+}
+
+function restorePetSpeakDefault() {
+  const def = petSpeakDefaults[petSpeakActiveKey.value]
+  petSpeakForm.systemPrompt = def.systemPrompt
+  petSpeakForm.temperature = def.temperature
+  petSpeakForm.maxTokens = def.maxTokens
+}
+
 const personaStyleKeys = ['gentle_bestie', 'calm_strategist', 'playful_flirty', 'direct_sharp', 'careful_guardian']
 const personaBoldnessKeys = ['conservative', 'balanced', 'bold']
 
@@ -846,7 +976,9 @@ function createEmptyModel(id = generateModelId()): AdminAIModel {
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
     apiKey: '',
-    hasApiKey: false
+    hasApiKey: false,
+    quota: 0,
+    tokensUsed: 0
   }
 }
 
@@ -1123,7 +1255,9 @@ function normalizeModel(raw: any, index: number): AdminAIModel {
     baseUrl: raw?.baseUrl || 'https://api.openai.com/v1',
     model: raw?.model || 'gpt-4o-mini',
     apiKey: '',
-    hasApiKey: Boolean(raw?.hasApiKey || raw?.apiKey)
+    hasApiKey: Boolean(raw?.hasApiKey || raw?.apiKey),
+    quota: Number(raw?.quota || 0),
+    tokensUsed: Number(raw?.tokensUsed || 0)
   }
 }
 
@@ -1154,6 +1288,7 @@ function applyOverview(result: any) {
   syncPromptDrafts()
   applyRuntimeConfig(settings.runtimeConfig)
   applyPersonaConfig(settings.personaConfig)
+  loadPetSpeakConfig(settings.petSpeakConfig)
   if (!promptPreviewCaseId.value) {
     promptPreviewCaseId.value = ''
   }
@@ -1334,7 +1469,8 @@ function collectModels() {
     provider: model.provider || 'openai-compatible',
     baseUrl: model.baseUrl || 'https://api.openai.com/v1',
     model: model.model || 'gpt-4o-mini',
-    apiKey: model.apiKey || ''
+    apiKey: model.apiKey || '',
+    quota: Number(model.quota || 0)
   }))
 }
 
@@ -1354,6 +1490,7 @@ async function saveAISettings() {
       defaultModelId: defaultModelId.value || models.value[0].id,
       models: collectModels(),
       promptModules: buildPromptModulesPayload(),
+      petSpeakConfig: collectPetSpeakConfig({}),
       personaConfig: buildPersonaConfigPayload(),
       runtimeConfig
     })
@@ -1965,6 +2102,31 @@ input {
   padding-top: 18px;
   margin-top: 18px;
   border-top: 1px solid rgba(23, 35, 31, 0.08);
+}
+
+.pet-speak-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.pet-speak-tab {
+  padding: 6px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #666;
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pet-speak-tab.active {
+  background: #4ECDC4;
+  color: #fff;
+  border-color: #4ECDC4;
 }
 
 .section-head {

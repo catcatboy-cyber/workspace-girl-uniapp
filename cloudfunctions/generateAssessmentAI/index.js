@@ -5,7 +5,8 @@ const { compareAssessments, buildTrendTimelineRecords } = require('./_shared/tre
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 const { SYSTEM_PROMPT, buildEventsContext, parseTagResults } = require('./_shared/event-tagger')
 const { postChatCompletions } = require('./_shared/ai-http')
-const { checkBalance, recordTokenUsage } = require('./_shared/billing')
+const { checkBalance } = require('./_shared/billing')
+const { recordTokenUsage } = require('./_shared/token-usage')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -39,6 +40,15 @@ function toISOStringOrUndefined(value) {
   if (!value) return undefined
   const parsed = new Date(value)
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString()
+}
+
+function isSemanticTaggableTimelineRecord(record) {
+  if (!record) return false
+  const type = String(record.type || '')
+  const feature = String(record.feature || '')
+  if (type === 'assessment' || type === 'trend' || type === 'weekly_review') return false
+  if (feature === 'sideRead' || feature === 'weeklySideRead') return false
+  return true
 }
 
 async function getAISettings(userId) {
@@ -118,7 +128,7 @@ async function batchTagEvents(event) {
     .get()
 
   const events = (allTimeline || [])
-    .filter((item) => !['assessment', 'trend'].includes(item.type))
+    .filter((item) => isSemanticTaggableTimelineRecord(item))
     .filter((item) => item.semanticTagsSource !== 'user' && !item.semanticTags)
     .slice(0, 30)
     .reverse()

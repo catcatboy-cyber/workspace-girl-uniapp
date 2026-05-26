@@ -5,8 +5,6 @@
       <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">时间轴不可用</text><text class="empty-sub-v2">当前对象不存在或已被删除。</text></view>
       <template v-else>
         <view class="hero-block-v2"><text class="hero-tag-v2">关系记录 / {{ caseFile.name }}</text><text class="hero-title-v2">互动<text class="hl-v2">时间轴</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
-        <view v-if="classified" :class="['notice-v2', classifiedType === 'risk' ? 'warn' : 'ok']"><text class="notice-title-v2">{{ mapTimelineTypeLabel(classifiedType) }}</text><text class="notice-sub-v2">{{ mapTimelineTypeMessage(classifiedType) }}</text></view>
-        <view v-if="recorded && triggerEvent && latestResult" class="card-v2"><text class="section-title-v2">即时反馈</text><text class="feedback-title-v2">{{ triggerEvent.title }}</text><text class="feedback-desc-v2">{{ latestResult.explanation?.headline }}</text><view class="tag-row-v2"><text v-if="triggerEvent.subjectRole" class="tag-v2">{{ mapSubjectRoleLabel(triggerEvent.subjectRole) }}</text><text class="tag-v2 black">{{ mapTimelineTypeLabel(classifiedType) }}</text><text class="tag-v2">{{ mapAction(latestResult.nextAction) }}</text><text class="tag-v2">证据 {{ latestResult.evidenceLevel }}</text><text v-if="isLatestResultAIReviewed" class="tag-v2 black">AI 研判</text></view><view v-if="triggerImageLinkItems.length > 0" class="attach-v2"><text class="section-title-v2">图片链接</text><view v-for="(item, idx) in triggerImageLinkItems" :key="item.fileID" class="attach-link-v2" @click="previewTriggerImage(idx)"><text class="attach-name-v2">{{ item.name }}</text></view></view><view class="trend-grid-v2" style="margin-top:12rpx;"><view class="trend-item-v2"><text class="trend-num-v2">{{ immediateTrend.intentDelta > 0 ? '+' : '' }}{{ immediateTrend.intentDelta }}</text><text class="trend-unit-v2">意向变化 · 当前 {{ latestResult.intentScore }}</text></view><view class="trend-item-v2"><text class="trend-num-v2 risk">{{ immediateTrend.riskDelta > 0 ? '+' : '' }}{{ immediateTrend.riskDelta }}</text><text class="trend-unit-v2">风险变化 · 当前 {{ latestResult.consistencyRiskScore }}</text></view></view><text class="trend-summary-v2">{{ immediateTrend.summaryText }}</text><text v-if="immediateTrend.warningText" class="trend-warn-v2">{{ immediateTrend.warningText }}</text><view v-if="profileSideRead" class="side-inline-v2"><text class="focus-label-v2">{{ profileSideRead.title }}</text><text class="weekly-desc-v2">{{ profileSideRead.summary }}</text></view><view v-if="latestActionPlanPanel.show" class="action-box-v2"><text class="action-label-v2">你接下来怎么做</text><text v-if="latestActionPlanPanel.missing" class="trend-summary-v2">{{ latestActionPlanPanel.text }}</text><view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item-v2"><text class="action-item-label-v2">{{ item.label }}</text><text class="action-item-text-v2">{{ item.text }}</text></view></view></view></view>
         <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
         <view v-if="activeTimelineView === 'events'">
           <view class="card-v2" style="border-color:#4ECDC4;"><view class="stats-grid-v2"><view v-for="item in timelineStatItems" :key="item.key" class="stat-box-v2"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view><scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view></view>
@@ -24,13 +22,13 @@
                   <text class="event-title-v2">{{ item.title || '本周复盘' }}</text>
                   <view class="tag-row-v2" style="margin:6rpx 0;">
                     <text class="tag-v2 black sm">{{ isWeeklySideReadRecord(item) ? '侧写' : '周复盘' }}</text>
-                    <text v-if="!isWeeklySideReadRecord(item) && item.trendLabel" class="tag-v2 sm">{{ item.trendLabel }}</text>
-                    <text v-if="item.aiUsed" class="tag-v2 sm">AI</text>
+                    <text v-if="!isWeeklySideReadRecord(item) && item.trendLabel" class="tag-v2 sm">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text>
+                    <text v-if="item.aiUsed" class="tag-v2 sm">{{ isWeeklySideReadRecord(item) ? 'AI 侧写' : 'AI 复盘' }}</text>
                   </view>
                   <text class="event-desc-v2">{{ item.description }}</text>
                   <view v-if="!isWeeklySideReadRecord(item) && (item.eventCount || item.assessmentCount || item.intentDelta || item.riskDelta)" class="tag-row-v2" style="margin-top:8rpx;">
                     <text v-if="item.eventCount" class="tag-v2 sm">事件 {{ item.eventCount }}</text>
-                    <text v-if="item.assessmentCount" class="tag-v2 sm">评估 {{ item.assessmentCount }}</text>
+                    <text v-if="item.assessmentCount" class="tag-v2 sm">判定 {{ item.assessmentCount }}</text>
                     <text v-if="item.intentDelta !== undefined" class="tag-v2 sm">意向 {{ item.intentDelta > 0 ? '+' : '' }}{{ item.intentDelta }}</text>
                     <text v-if="item.riskDelta !== undefined" class="tag-v2 sm">风险 {{ item.riskDelta > 0 ? '+' : '' }}{{ item.riskDelta }}</text>
                   </view>
@@ -51,7 +49,7 @@
               <view class="event-time-v2"><text class="event-date-v2">{{ formatAssessmentAxisDate(entry.item) }}</text><text class="event-clock-v2">{{ formatAssessmentAxisTime(entry.item) }}</text><view class="event-dot-v2 assessment"></view></view>
               <view class="event-body-v2 assessment-card-v2">
                 <text class="event-title-v2">已记录：{{ getAssessmentTitle(entry.item) }}</text>
-                <view class="tag-row-v2" style="margin:6rpx 0;"><text v-if="hasAIReview(entry.item)" class="tag-v2 black sm">AI 研判</text></view>
+                <view class="tag-row-v2" style="margin:6rpx 0;"><text v-if="hasAIReview(entry.item)" class="tag-v2 black sm">AI 判定</text></view>
                 <text class="event-desc-v2">{{ getAssessmentOriginalRecordText(entry.item) }}</text>
                 <!-- Scores -->
                 <view class="score-block-v2">
@@ -130,6 +128,7 @@ const initialized = ref(false)
 const skipNextShowRefresh = ref(false)
 const imageUrlMap = ref<Record<string, string>>({})
 const selectedStatusInfo = ref<any>(null)
+const TIMELINE_CACHE_PREFIX = 'timelineCaseCache:v1:'
 
 const profileItems = computed(() => buildProfileItems(caseFile.value?.profile))
 
@@ -166,10 +165,10 @@ const timelineStats = computed(() => buildTimelineStats(manualTimeline.value))
 
 const timelineStatItems = computed(() => [
   { key: 'offline', label: '线下见面', value: `${timelineStats.value.offlineMeetCount} 次` },
-  { key: 'movie', label: '看电影', value: `${timelineStats.value.movieCount} 次` },
-  { key: 'meal', label: '吃饭', value: `${timelineStats.value.mealCount} 次` },
-  { key: 'coffee', label: '咖啡奶茶', value: `${timelineStats.value.coffeeTeaCount} 次` },
+  { key: 'targetInitiated', label: '对方主动', value: `${timelineStats.value.targetInitiatedCount} 次` },
+  { key: 'targetCommitted', label: '对方承诺', value: `${timelineStats.value.targetCommittedCount} 次` },
   { key: 'fulfilled', label: '已兑现', value: `${timelineStats.value.fulfilledCount} 次` },
+  { key: 'selfInitiated', label: '我方主动', value: `${timelineStats.value.selfInitiatedCount} 次` },
   { key: 'rejected', label: '被拒绝', value: `${timelineStats.value.rejectedCount} 次` }
 ])
 
@@ -180,10 +179,12 @@ const timelineFilterOptions = computed(() => [
   { key: 'meal', label: '吃饭', count: timelineStats.value.mealCount },
   { key: 'coffee_tea', label: '咖啡奶茶', count: timelineStats.value.coffeeTeaCount },
   { key: 'target_initiated', label: '对方主动', count: timelineStats.value.targetInitiatedCount },
+  { key: 'target_committed', label: '对方承诺', count: timelineStats.value.targetCommittedCount },
   { key: 'fulfilled', label: '已兑现', count: timelineStats.value.fulfilledCount },
+  { key: 'self_initiated', label: '我方主动', count: timelineStats.value.selfInitiatedCount },
   { key: 'cancelled_delayed', label: '取消拖延', count: timelineStats.value.cancelledDelayedCount },
   { key: 'rejected', label: '被拒', count: timelineStats.value.rejectedCount },
-  { key: 'ai_reviewed', label: 'AI研判', count: timelineStats.value.aiReviewedCount }
+  { key: 'ai_reviewed', label: 'AI判定', count: timelineStats.value.aiReviewedCount }
 ])
 
 const activeTimelineFilterLabel = computed(() => {
@@ -213,8 +214,8 @@ const supportTimeline = computed(() => {
 
 const timelineViewOptions = computed(() => [
   { key: 'events', label: '关键事件', count: manualTimeline.value.length },
+  { key: 'assessments', label: '判定记录', count: assessmentTimeline.value.length },
   { key: 'weeklyReviews', label: '周复盘', count: weeklyReviewTimeline.value.length },
-  { key: 'assessments', label: '评估历史', count: assessmentTimeline.value.length },
 ])
 
 const latestResult = computed(() => caseFile.value?.latestResult)
@@ -337,7 +338,7 @@ const assessmentStats = computed(() => {
 })
 
 const assessmentStatItems = computed(() => [
-  { key: 'total', label: '评估次数', value: `${assessmentStats.value.total} 次` },
+  { key: 'total', label: '判定次数', value: `${assessmentStats.value.total} 次` },
   { key: 'intentUp', label: '意向上升', value: `${assessmentStats.value.intentUp} 次` },
   { key: 'intentFlat', label: '意向持平', value: `${assessmentStats.value.intentFlat} 次` },
   { key: 'riskUp', label: '风险上升', value: `${assessmentStats.value.riskUp} 次` },
@@ -353,7 +354,7 @@ const assessmentFilterOptions = computed(() => [
   { key: 'risk_up', label: '风险上升', count: assessmentStats.value.riskUp },
   { key: 'risk_down', label: '风险下降', count: assessmentStats.value.riskDown },
   { key: 'risk_flat', label: '风险持平', count: assessmentStats.value.riskFlat },
-  { key: 'ai_reviewed', label: 'AI研判', count: assessmentStats.value.aiReviewed },
+  { key: 'ai_reviewed', label: 'AI判定', count: assessmentStats.value.aiReviewed },
   { key: 'event_recalculation', label: '事件重算', count: assessmentStats.value.eventRecalculation }
 ])
 
@@ -418,6 +419,14 @@ function isWeeklyReviewTimelineRecord(record: any) {
   return false
 }
 
+function isSemanticTaggableTimelineRecord(record: any) {
+  if (!record) return false
+  if (isSystemTimelineRecord(record)) return false
+  if (isWeeklyReviewTimelineRecord(record)) return false
+  if (isEventSideReadRecord(record)) return false
+  return true
+}
+
 function mapTimelineTypeLabel(type?: string) {
   switch (type) {
     case 'positive': return '推进事件'
@@ -433,8 +442,25 @@ function mapSourceLabel(source?: string) {
     case 'initial_questionnaire': return '初评'
     case 'manual_reassessment': return '手动重评'
     case 'event_recalculation': return '事件重算'
-    default: return source || '评估'
+    default: return source || '判定'
   }
+}
+
+function mapWeeklyTrendLabel(label: any) {
+  const normalized = String(label || '').trim()
+  const map: Record<string, string> = {
+    持续向好: '本周回暖',
+    持续走低: '本周转弱',
+    风险抬头: '本周承压',
+    起伏不定: '本周波动',
+    基本持平: '本周平稳',
+    稳定观察: '本周观察',
+    升温期: '本周回暖',
+    升温中: '本周回暖',
+    走弱期: '本周转弱',
+    暂时平稳: '本周平稳'
+  }
+  return map[normalized] || (normalized ? `本周${normalized.replace(/^本周/, '')}` : '本周复盘')
 }
 
 function mapIntentLabel(bucket?: string) {
@@ -444,7 +470,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 
@@ -455,7 +481,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 
@@ -743,7 +769,7 @@ async function previewAssessmentImages(item: any, index = 0) {
 
 function mapSystemTrackTypeLabel(type?: string) {
   switch (type) {
-    case 'assessment': return '系统评估'
+    case 'assessment': return '系统判定'
     case 'trend': return '趋势重算'
     case 'positive': return '推进研判'
     case 'risk': return '风险研判'
@@ -807,6 +833,7 @@ function setTimelineFilter(key: string) {
 
 function setAssessmentFilter(key: string) {
   activeAssessmentFilter.value = key
+  assessmentVisibleMax.value = 7
 }
 
 function formatAxisDate(record: any) {
@@ -872,6 +899,10 @@ function applyEntryContext(options?: Record<string, any>) {
       || (options?.targetEventId ? decodeURIComponent(options.targetEventId) : '')
       || ''
   ).trim()
+  if (targetEventId.value) {
+    activeTimelineView.value = 'events'
+    activeTimelineFilter.value = 'all'
+  }
   if (caseId.value) setActiveCaseId(caseId.value)
 }
 
@@ -894,14 +925,15 @@ onShow(() => {
     skipNextShowRefresh.value = false
     return
   }
+  const hadContext = consumePendingTimelineContext()
+  if (hadContext) applyEntryContext({ _pending: hadContext })
   const active = getActiveCaseId()
-  if (active && active !== caseId.value) {
+  if (!hadContext && active && active !== caseId.value) {
     caseId.value = active
     loadData({ silent: true })
     return
   }
-  const hadContext = consumePendingTimelineContext()
-  applyEntryContext(hadContext ? { _pending: hadContext } : undefined)
+  if (!hadContext) applyEntryContext(undefined)
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
   if (dv > lastDataVersion.value || hadContext) {
     lastDataVersion.value = dv
@@ -939,8 +971,14 @@ async function loadData(options?: { silent?: boolean }) {
     return
   }
   userId.value = uid
-  const silent = options?.silent && caseFile.value
-  if (!silent) loading.value = true
+  if (!caseFile.value && caseId.value) {
+    const cached = readTimelineCache(uid, caseId.value)
+    if (cached) {
+      caseFile.value = cached
+      loading.value = false
+    }
+  }
+  if (!caseFile.value) loading.value = true
   else syncing.value = true
   try {
     const hasCase = await ensureCaseId(uid)
@@ -949,20 +987,17 @@ async function loadData(options?: { silent?: boolean }) {
       return
     }
     manualTimelineExpanded.value = Boolean(targetEventId.value)
-    const [detail, selfProfileRes] = await Promise.all([
-      getCaseDetail(uid, caseId.value),
-      getSelfProfile().catch((error: any) => {
-        console.warn('[page:timeline] load self profile failed:', error)
-        return null
-      })
-    ])
+    const detail = await getCaseDetail(uid, caseId.value)
     caseFile.value = detail
-    if (selfProfileRes?.success) selfProfile.value = selfProfileRes.selfProfile
-    await loadTriggerImageLinks()
-    await loadAssessmentImageLinks()
+    writeTimelineCache(uid, caseId.value, detail)
+    loadTimelineExtras(uid)
     if (activeTimelineFilter.value !== 'all') {
       const stillAvailable = timelineFilterOptions.value.some((item) => item.key === activeTimelineFilter.value && item.count > 0)
       if (!stillAvailable) activeTimelineFilter.value = 'all'
+    }
+    if (activeAssessmentFilter.value !== 'all') {
+      const stillAvailable = assessmentFilterOptions.value.some((item) => item.key === activeAssessmentFilter.value && item.count > 0)
+      if (!stillAvailable) activeAssessmentFilter.value = 'all'
     }
     if (targetEventId.value) {
       await nextTick()
@@ -977,6 +1012,34 @@ async function loadData(options?: { silent?: boolean }) {
     loading.value = false
     syncing.value = false
   }
+}
+
+function readTimelineCache(uid: string, id: string) {
+  try {
+    const cached = uni.getStorageSync(`${TIMELINE_CACHE_PREFIX}${uid}:${id}`)
+    return cached && cached.caseFile ? cached.caseFile : null
+  } catch {
+    return null
+  }
+}
+
+function writeTimelineCache(uid: string, id: string, detail: any) {
+  try {
+    uni.setStorageSync(`${TIMELINE_CACHE_PREFIX}${uid}:${id}`, {
+      cachedAt: Date.now(),
+      caseFile: detail
+    })
+  } catch {}
+}
+
+async function loadTimelineExtras(uid: string) {
+  getSelfProfile()
+    .then((res: any) => { if (res?.success) selfProfile.value = res.selfProfile })
+    .catch((error: any) => console.warn('[page:timeline] load self profile failed:', error))
+  await Promise.all([
+    loadTriggerImageLinks(),
+    loadAssessmentImageLinks()
+  ]).catch(() => {})
   syncSemanticTags()
 }
 
@@ -984,7 +1047,7 @@ async function syncSemanticTags() {
   if (!caseFile.value) return
   const timeline = caseFile.value.timeline || []
   const untagged = timeline.filter((item: any) =>
-    !['assessment', 'trend'].includes(item.type) &&
+    isSemanticTaggableTimelineRecord(item) &&
     item.semanticTagsSource !== 'user' &&
     !item.semanticTags
   )

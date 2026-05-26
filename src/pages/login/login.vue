@@ -3,9 +3,9 @@
 
 
 <view class="container">
-              <view class="header-v2"><text class="title-v2">关系<text class="hl-v2">评估</text></text><text class="subtitle-v2">登录您的账号</text></view>
+              <view class="header-v2"><text class="title-v2 en-title">Dom-Crush</text><text class="subtitle-v2">read the signals, not your mind.</text></view>
         <view v-if="isWechatMiniProgram" class="card-v2">
-          <button class="btn-v2-l primary" open-type="getPhoneNumber" :disabled="wechatLoading" @getphonenumber="handleWechatPhoneLogin">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
+          <button class="btn-v2-l primary" open-type="getPhoneNumber" :disabled="wechatLoading" @getphonenumber="handleWechatPhoneLogin" @error="handleWechatPhoneError">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
           <text class="privacy-v2">{{ privacyCopy }}</text>
           <text v-if="wechatErrorMessage" class="error-v2">{{ wechatErrorMessage }}</text>
           <button class="btn-v2-l" @click="showEmailLogin = !showEmailLogin">{{ showEmailLogin ? hideEmailCopy : useEmailCopy }}</button>
@@ -147,6 +147,7 @@ const handleLogin = async () => {
 }
 
 const handleWechatPhoneLogin = async (event: any) => {
+  try {
   console.log('[page:login] handleWechatPhoneLogin', event?.detail)
   const detail = event?.detail || {}
   const code = detail.code
@@ -178,6 +179,17 @@ const handleWechatPhoneLogin = async (event: any) => {
   } finally {
     wechatLoading.value = false
   }
+  } catch (runtimeError: any) {
+    console.error('[page:login] runtime error in getPhoneNumber handler:', runtimeError)
+    wechatLoading.value = false
+    wechatErrorMessage.value = '\u83b7\u53d6\u624b\u673a\u53f7\u5931\u8d25\uff0c\u8bf7\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'
+  }
+}
+
+const handleWechatPhoneError = (event: any) => {
+  console.error('[page:login] getPhoneNumber native error:', event?.detail)
+  wechatLoading.value = false
+  wechatErrorMessage.value = '微信手机号授权失败，可切换为邮箱登录。'
 }
 
 const goRegister = () => {
@@ -198,6 +210,7 @@ const goRegister = () => {
 
 .v2-mode .header-v2 { text-align: left; padding: 40rpx 0 32rpx; }
 .v2-mode .title-v2 { display: block; font-size: 54rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
+.v2-mode .title-v2.en-title { font-size: 72rpx; font-weight: 900; font-style: italic; letter-spacing: 2rpx; background: #FFD93D; display: inline-block; padding: 6rpx 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .subtitle-v2 { display: block; font-size: 28rpx; font-weight: 600; color: #666; margin-top: 10rpx; }
 

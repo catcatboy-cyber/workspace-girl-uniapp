@@ -3,7 +3,7 @@
 
 
 <view class="container">
-              <view class="header-v2"><text class="title-v2">创建<text class="hl-v2">账号</text></text><text class="subtitle-v2">开始记录和评估您的关系</text></view>
+              <view class="header-v2"><text class="title-v2">创建<text class="hl-v2">账号</text></text><text class="subtitle-v2">开始记录和判断你的关系</text></view>
         <view class="card-v2">
           <input v-model="email" type="text" placeholder="请输入邮箱" class="input-v2" @input="clearError" />
           <input v-model="password" type="password" placeholder="请输入密码（至少8位）" class="input-v2" style="margin-top:20rpx;" @input="clearError" />

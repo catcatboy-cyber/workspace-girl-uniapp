@@ -2,11 +2,112 @@ const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
-const _ = db.command
+
+function normalizeDoc(res) {
+  if (Array.isArray(res?.data)) return res.data[0] || null
+  return res?.data || null
+}
+
+function toTime(value) {
+  if (!value) return 0
+  const parsed = new Date(value).getTime()
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+async function getCaseDashboardData(caseId, latestResultId) {
+  const latestResultPromise = latestResultId
+    ? db.collection('assessments').doc(latestResultId).get().catch(() => null)
+    : Promise.resolve(null)
+
+  const [latestResultRes, recentAssessmentsRes, timelineRes] = await Promise.all([
+    latestResultPromise,
+    db.collection('assessments')
+      .where({ caseId })
+      .orderBy('createdAt', 'desc')
+      .limit(20)
+      .get(),
+    db.collection('timeline_records')
+      .where({ caseId })
+      .orderBy('occurrenceAt', 'desc')
+      .limit(50)
+      .get()
+  ])
+
+  const assessmentById = new Map()
+  const latestResultDoc = normalizeDoc(latestResultRes)
+  if (latestResultDoc?.caseId === caseId) {
+    assessmentById.set(latestResultDoc._id || latestResultDoc.assessmentId, latestResultDoc)
+  }
+
+  ;(recentAssessmentsRes.data || []).forEach((item) => {
+    assessmentById.set(item._id || item.assessmentId, item)
+  })
+
+  const assessments = Array.from(assessmentById.values())
+    .sort((a, b) => toTime(a.createdAt) - toTime(b.createdAt))
+
+  const latestResult = latestResultId
+    ? assessmentById.get(latestResultId) || assessments[assessments.length - 1] || null
+    : assessments[assessments.length - 1] || null
+
+  return {
+    assessments,
+    timeline: timelineRes.data || [],
+    latestResult
+  }
+}
+
+async function getCaseListData(caseId, latestResultId) {
+  const latestResultPromise = latestResultId
+    ? db.collection('assessments').doc(latestResultId).get().catch(() => null)
+    : Promise.resolve(null)
+
+  const [latestResultRes, recentAssessmentsRes, recentTimelineRes, timelineCountRes] = await Promise.all([
+    latestResultPromise,
+    db.collection('assessments')
+      .where({ caseId })
+      .orderBy('createdAt', 'desc')
+      .limit(2)
+      .get(),
+    db.collection('timeline_records')
+      .where({ caseId })
+      .orderBy('occurrenceAt', 'desc')
+      .limit(8)
+      .get(),
+    db.collection('timeline_records')
+      .where({ caseId })
+      .count()
+      .catch(() => ({ total: 0 }))
+  ])
+
+  const assessmentById = new Map()
+  const latestResultDoc = normalizeDoc(latestResultRes)
+  if (latestResultDoc?.caseId === caseId) {
+    assessmentById.set(latestResultDoc._id || latestResultDoc.assessmentId, latestResultDoc)
+  }
+
+  ;(recentAssessmentsRes.data || []).forEach((item) => {
+    assessmentById.set(item._id || item.assessmentId, item)
+  })
+
+  const assessments = Array.from(assessmentById.values())
+    .sort((a, b) => toTime(a.createdAt) - toTime(b.createdAt))
+
+  return {
+    assessments,
+    timeline: recentTimelineRes.data || [],
+    timelineCount: Number(timelineCountRes.total || 0),
+    latestResult: latestResultId
+      ? assessmentById.get(latestResultId) || assessments[assessments.length - 1] || null
+      : assessments[assessments.length - 1] || null
+  }
+}
 
 exports.main = async (event) => {
   try {
     const userId = await requireAuthenticatedUserId(app, event)
+    const mode = String(event?.mode || 'full')
+    const detailCaseId = String(event?.detailCaseId || '').trim()
 
     const { data: cases } = await db.collection('cases')
       .where({ userId })
@@ -14,49 +115,43 @@ exports.main = async (event) => {
       .get()
 
     const caseIds = cases.map((item) => item._id).filter(Boolean)
+    const detailCaseIds = mode === 'home'
+      ? (caseIds.includes(detailCaseId) ? [detailCaseId] : caseIds.slice(0, 1))
+      : mode === 'full'
+        ? caseIds
+        : []
 
-    if (caseIds.length > 0) {
-      // 按创建时间正序返回，前端可直接用 assessments[length-1] 获取最新评估
-      const { data: assessments } = await db.collection('assessments')
-        .where({ caseId: _.in(caseIds) })
-        .orderBy('createdAt', 'asc')
-        .get()
-
-      const { data: timelineRecords } = await db.collection('timeline_records')
-        .where({ caseId: _.in(caseIds) })
-        .orderBy('occurrenceAt', 'desc')
-        .get()
-
-      const assessmentsByCaseId = new Map()
-      const assessmentById = new Map()
-      const timelineByCaseId = new Map()
-
-      assessments.forEach((item) => {
-        assessmentById.set(item._id, item)
-        const list = assessmentsByCaseId.get(item.caseId) || []
-        list.push(item)
-        assessmentsByCaseId.set(item.caseId, list)
-      })
-
-      timelineRecords.forEach((item) => {
-        const list = timelineByCaseId.get(item.caseId) || []
-        list.push(item)
-        timelineByCaseId.set(item.caseId, list)
-      })
-
+    if (detailCaseIds.length > 0) {
+      const caseDataEntries = await Promise.all(
+        cases
+          .filter((item) => detailCaseIds.includes(item._id))
+          .map(async (item) => [item._id, await getCaseDashboardData(item._id, item.latestResultId)])
+      )
+      const caseDataById = new Map(caseDataEntries)
       cases.forEach((item) => {
-        const caseAssessments = assessmentsByCaseId.get(item._id) || []
-        item.assessments = caseAssessments
-        item.timeline = timelineByCaseId.get(item._id) || []
-        item.latestResult = item.latestResultId
-          ? assessmentById.get(item.latestResultId) || caseAssessments[caseAssessments.length - 1] || null
-          : caseAssessments[caseAssessments.length - 1] || null
+        const data = caseDataById.get(item._id) || {}
+        item.assessments = data.assessments || []
+        item.timeline = data.timeline || []
+        item.latestResult = data.latestResult || null
+      })
+    } else if (mode === 'list') {
+      const caseDataEntries = await Promise.all(
+        cases.map(async (item) => [item._id, await getCaseListData(item._id, item.latestResultId)])
+      )
+      const caseDataById = new Map(caseDataEntries)
+      cases.forEach((item) => {
+        const data = caseDataById.get(item._id) || {}
+        item.assessments = data.assessments || []
+        item.timeline = data.timeline || []
+        item.timelineCount = data.timelineCount || 0
+        item.latestResult = data.latestResult || null
       })
     } else {
       cases.forEach((item) => {
         item.latestResult = null
         item.assessments = []
         item.timeline = []
+        item.timelineCount = 0
       })
     }
 

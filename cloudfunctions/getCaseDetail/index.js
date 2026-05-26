@@ -2,7 +2,32 @@ const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
-const _ = db.command
+
+function normalizeDoc(res) {
+  if (Array.isArray(res?.data)) return res.data[0] || null
+  return res?.data || null
+}
+
+function toTime(value) {
+  if (!value) return 0
+  const parsed = new Date(value).getTime()
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+async function fetchAllPages(createQuery, pageSize = 100) {
+  const all = []
+  let offset = 0
+  while (true) {
+    const { data = [] } = await createQuery()
+      .skip(offset)
+      .limit(pageSize)
+      .get()
+    all.push(...data)
+    if (data.length < pageSize) break
+    offset += data.length
+  }
+  return all
+}
 
 exports.main = async (event) => {
   const { caseId } = event
@@ -13,19 +38,34 @@ exports.main = async (event) => {
     const { caseDoc, error: caseError } = await getOwnedCase(db, caseId, userId)
     if (caseError) return caseError
 
-    // 按创建时间正序返回，前端可直接用 assessments[length-1] 获取最新评估
-    const { data: assessments } = await db.collection('assessments')
-      .where({ caseId })
-      .orderBy('createdAt', 'asc')
-      .get()
+    const latestResultPromise = caseDoc.latestResultId
+      ? db.collection('assessments').doc(caseDoc.latestResultId).get().catch(() => null)
+      : Promise.resolve(null)
 
-    const { data: timeline } = await db.collection('timeline_records')
-      .where({ caseId })
-      .orderBy('occurrenceAt', 'desc')
-      .get()
+    const [latestResultRes, allAssessments, timeline] = await Promise.all([
+      latestResultPromise,
+      fetchAllPages(() => db.collection('assessments')
+        .where({ caseId })
+        .orderBy('createdAt', 'desc')),
+      fetchAllPages(() => db.collection('timeline_records')
+        .where({ caseId })
+        .orderBy('occurrenceAt', 'desc'))
+    ])
+
+    const assessmentById = new Map()
+    const latestResultDoc = normalizeDoc(latestResultRes)
+    if (latestResultDoc?.caseId === caseId) {
+      assessmentById.set(latestResultDoc._id || latestResultDoc.assessmentId, latestResultDoc)
+    }
+    ;(allAssessments || []).forEach((item) => {
+      assessmentById.set(item._id || item.assessmentId, item)
+    })
+
+    const assessments = Array.from(assessmentById.values())
+      .sort((a, b) => toTime(a.createdAt) - toTime(b.createdAt))
 
     const latestResult = caseDoc.latestResultId
-      ? assessments.find((item) => item._id === caseDoc.latestResultId) || assessments[assessments.length - 1] || null
+      ? assessmentById.get(caseDoc.latestResultId) || assessments[assessments.length - 1] || null
       : assessments[assessments.length - 1] || null
 
     return {

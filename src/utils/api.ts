@@ -439,10 +439,13 @@ export async function updateSelfProfile(profile: SelfProfile) {
 /**
  * 鑾峰彇妗堜緥鍒楄〃
  */
-export async function getCases(_userId?: string) {
+export async function getCases(_userId?: string, options?: {
+  mode?: 'full' | 'home' | 'list' | 'count'
+  detailCaseId?: string
+}) {
   const res = await callFunction({
     name: 'getCases',
-    data: {}
+    data: options || {}
   })
   return Promise.all((res.result.cases || []).map(normalizeCase))
 }
@@ -563,10 +566,18 @@ export async function batchTagEvents(caseId: string) {
   return res.result
 }
 
-export async function generatePetReplyPair(scene: string, content: string) {
+export async function generateReplyStrategy(content: string, scene?: string) {
   const res = await callFunction({
     name: 'petLines',
-    data: { action: 'replyPair', scene, content, ...getBusinessAuthPayload() }
+    data: { action: 'replyStrategy', content, scene, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function generatePetReplyPair(scene: string, content: string, tone?: string) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'replyPair', scene, content, tone, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -575,6 +586,22 @@ export async function pickQALines(content: string) {
   const res = await callFunction({
     name: 'petLines',
     data: { action: 'pickQA', content, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function pickQALinesV2(content: string) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'pickQA_v2', content, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function pickQALinesV3(content: string) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'pickQA_v3', content, ...getBusinessAuthPayload() }
   })
   return res.result
 }

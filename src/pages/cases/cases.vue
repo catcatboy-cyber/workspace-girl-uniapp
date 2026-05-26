@@ -11,7 +11,7 @@
       <!-- Deleted notice -->
       <view v-if="deleted" class="notice-v2 ok">
         <text class="notice-title-v2">对象已删除</text>
-        <text class="notice-sub-v2">相关主页、时间线和评估历史已经一起移除。</text>
+        <text class="notice-sub-v2">相关主页、时间线和判定记录已经一起移除。</text>
       </view>
 
       <view v-if="loading" class="loading-v2">LOADING...</view>
@@ -40,9 +40,8 @@
             </view>
 
             <!-- Tags -->
-            <view v-if="item.cardTypeLabel || item.cardStatusTags.length" class="tag-row-v2">
+            <view v-if="item.cardTypeLabel" class="tag-row-v2">
               <text v-if="item.cardTypeLabel" class="tag-v2 black">{{ item.cardTypeLabel }}</text>
-              <text v-for="tag in item.cardStatusTags" :key="tag" class="tag-v2">{{ tag }}</text>
             </view>
             <view v-if="item.cardProfileItems.length > 0" class="tag-row-v2">
               <text v-for="p in item.cardProfileItems" :key="p" class="tag-v2">{{ p }}</text>
@@ -60,7 +59,7 @@
               </view>
               <view class="kpi-cell-v2">
                 <text class="kpi-num-v2">{{ item.latestResult?.evidenceLevel ?? '--' }}</text>
-                <text class="kpi-lbl-v2">证据 · {{ item.timeline?.length ?? 0 }} 条</text>
+                <text class="kpi-lbl-v2">记录 · {{ item.timelineCount ?? item.timeline?.length ?? 0 }} 条</text>
               </view>
             </view>
 
@@ -82,8 +81,7 @@
 import { ref } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCases, getCurrentUserId } from '@/utils/api'
-import { formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
-import { buildObjectStatusCard } from '@/utils/insights'
+import { bumpDataVersion, formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
@@ -97,6 +95,7 @@ onShareAppMessage(() => buildSafeShareMessage())
 
 onShareTimeline(() => buildSafeTimelineShare())
 const activeCaseId = ref('')
+const CASES_CACHE_KEY = 'casesListCache:v1'
 
 onLoad((options) => {
   deleted.value = options?.deleted === '1'
@@ -128,22 +127,53 @@ async function loadData() {
     return
   }
   userId.value = uid
+  if (!cases.value.length) {
+    const cached = readCasesCache(uid)
+    if (cached.length > 0) {
+      applyCasesList(cached)
+      loading.value = false
+    }
+  }
   if (!cases.value.length) loading.value = true
   try {
-    const list = await getCases(uid)
-    cases.value = (list || []).map((c: any) => ({
-      ...c,
-      caseId: c.caseId || c._id,
-      cardTypeLabel: getRelationTypeLabel(c.profile),
-      cardProfileItems: profileItems(c.profile),
-      cardStatusTags: buildCaseStatusTags(c)
-    }))
+    const list = await getCases(uid, { mode: 'list' })
+    applyCasesList(list || [])
+    writeCasesCache(uid, cases.value)
     lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
     loading.value = false
   }
+}
+
+function readCasesCache(uid: string) {
+  try {
+    const cached = uni.getStorageSync(CASES_CACHE_KEY)
+    if (!cached || cached.userId !== uid || !Array.isArray(cached.cases)) return []
+    return cached.cases
+  } catch {
+    return []
+  }
+}
+
+function writeCasesCache(uid: string, list: any[]) {
+  try {
+    uni.setStorageSync(CASES_CACHE_KEY, {
+      userId: uid,
+      cachedAt: Date.now(),
+      cases: list
+    })
+  } catch {}
+}
+
+function applyCasesList(list: any[]) {
+  cases.value = (list || []).map((c: any) => ({
+      ...c,
+      caseId: c.caseId || c._id,
+      cardTypeLabel: getRelationTypeLabel(c.profile),
+      cardProfileItems: profileItems(c.profile),
+    }))
 }
 
 function getRelationTypeLabel(p: any): string {
@@ -167,22 +197,6 @@ function profileItems(p: any): string[] {
   return items
 }
 
-function buildCaseStatusTags(caseItem: any): string[] {
-  try {
-    if (!caseItem?.latestResult) return []
-    const status = buildObjectStatusCard({
-      ...caseItem,
-      assessments: Array.isArray(caseItem.assessments) && caseItem.assessments.length
-        ? caseItem.assessments
-        : [caseItem.latestResult],
-      timeline: Array.isArray(caseItem.timeline) ? caseItem.timeline : []
-    })
-    return [status?.phase, status?.vibe].filter(Boolean).slice(0, 3)
-  } catch {
-    return []
-  }
-}
-
 function avatarLabel(name?: string) {
   const normalized = String(name || '').trim()
   return normalized ? normalized.slice(0, 1) : '像'
@@ -195,7 +209,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 function mapRiskLabel(bucket?: string) {
@@ -205,7 +219,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 
@@ -221,6 +235,7 @@ function switchActiveCase(caseId: string) {
   if (!caseId) return
   setActiveCaseId(caseId)
   activeCaseId.value = caseId
+  bumpDataVersion()
   showSuccess('已切换当前对象')
   setTimeout(() => {
     uni.switchTab({ url: '/pages/index/index' })

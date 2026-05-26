@@ -14,25 +14,50 @@ function findTimestampInId(id) {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function parseTimestamp(value) {
+  if (!value) return null
+  const parsed = new Date(value).getTime()
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+function toMinuteTimestamp(value) {
+  const parsed = parseTimestamp(value)
+  return parsed === null ? null : Math.floor(parsed / 60000) * 60000
+}
+
+function getTimelineSortOccurrenceMinute(record) {
+  return toMinuteTimestamp(record?.occurrenceAt)
+    ?? toMinuteTimestamp(record?.createdAt)
+    ?? findTimestampInId(record?.id || record?._id)
+    ?? 0
+}
+
+function getTimelineSortCreatedMinute(record) {
+  return toMinuteTimestamp(record?.createdAt)
+    ?? toMinuteTimestamp(record?.occurrenceAt)
+    ?? findTimestampInId(record?.id || record?._id)
+    ?? 0
+}
+
 export function getTimelineRecordTimestamp(record) {
-  if (record.occurrenceAt) {
-    const parsed = new Date(record.occurrenceAt).getTime()
-    if (!Number.isNaN(parsed)) return parsed
-  }
-  if (record.createdAt) {
-    const parsed = new Date(record.createdAt).getTime()
-    if (!Number.isNaN(parsed)) return parsed
-  }
-  return findTimestampInId(record.id || record._id)
+  const occurrenceAt = parseTimestamp(record?.occurrenceAt)
+  if (occurrenceAt !== null) return occurrenceAt
+  const createdAt = parseTimestamp(record?.createdAt)
+  if (createdAt !== null) return createdAt
+  return findTimestampInId(record?.id || record?._id)
 }
 
 export function sortTimelineRecordsDesc(records) {
   return records
     .slice()
     .sort((a, b) => {
-      const left = getTimelineRecordTimestamp(a) ?? 0
-      const right = getTimelineRecordTimestamp(b) ?? 0
-      return right - left
+      const occurrenceDelta = getTimelineSortOccurrenceMinute(b) - getTimelineSortOccurrenceMinute(a)
+      if (occurrenceDelta !== 0) return occurrenceDelta
+
+      const createdDelta = getTimelineSortCreatedMinute(b) - getTimelineSortCreatedMinute(a)
+      if (createdDelta !== 0) return createdDelta
+
+      return String(b?.id || b?._id || '').localeCompare(String(a?.id || a?._id || ''))
     })
 }
 
@@ -54,21 +79,57 @@ function pushUnique(list, value) {
   if (!list.includes(value)) list.push(value)
 }
 
+function hasTargetInitiatedText(text) {
+  return includesAny(text, ['主动约我', '主动找我', '主动联系我', '主动问我', '他问我', '她问我', '对方问我', '他主动', '她主动', '对方主动', '邀请我', '来找我', '主动确认'])
+}
+
+function hasSelfInitiatedText(text) {
+  return includesAny(text, ['我主动', '我先', '我约', '我问', '我问他', '我问她', '我问对方', '我主动问他', '我主动问她', '我主动问对方', '我发', '我联系', '我邀请', '我提出'])
+}
+
+function hasTargetCommitmentSignal(record, text, outcome, behavior) {
+  const targetCommitmentKeywords = [
+    '他答应', '她答应', '对方答应', '他说好', '她说好', '对方说好',
+    '他承诺', '她承诺', '对方承诺', '他保证', '她保证', '对方保证',
+    '他约我', '她约我', '对方约我', '邀请我', '约我', '主动约我',
+    '他说下次', '她说下次', '对方说下次', '下次一起', '改天一起',
+    '会来', '会去', '会请', '要带我', '定好了', '安排好了'
+  ]
+  const selfCommitmentKeywords = ['我答应', '我说好', '我承诺', '我保证', '我约', '我计划', '我提出', '我邀请']
+  if (includesAny(text, targetCommitmentKeywords)) return true
+  if (includesAny(text, selfCommitmentKeywords)) return false
+  const planned = outcome.includes('planned')
+  const targetSide = record?.subjectRole === 'target' || behavior.includes('target_initiated') || behavior.includes('target_side')
+  return planned && targetSide
+}
+
 function normalizeStoredSemanticTags(record) {
   const semantic = record?.semanticTags
   if (!semantic || typeof semantic !== 'object') return null
 
+  const text = getTimelineTagText(record)
   const scene = Array.isArray(semantic.scene) ? semantic.scene.filter(Boolean) : []
   const behavior = Array.isArray(semantic.behavior) ? semantic.behavior.filter(Boolean) : []
   const outcome = Array.isArray(semantic.outcome) ? semantic.outcome.filter(Boolean) : []
   const risk = Array.isArray(semantic.risk) ? semantic.risk.filter(Boolean) : []
+  const targetInitiatedText = hasTargetInitiatedText(text)
+  const selfInitiatedText = hasSelfInitiatedText(text)
+  if (selfInitiatedText && !targetInitiatedText) {
+    const index = behavior.indexOf('target_initiated')
+    if (index >= 0) behavior.splice(index, 1)
+  }
+  if (targetInitiatedText && !selfInitiatedText) {
+    const index = behavior.indexOf('self_initiated')
+    if (index >= 0) behavior.splice(index, 1)
+  }
 
-  if (semantic.initiator === 'target') pushUnique(behavior, 'target_initiated')
-  if (semantic.initiator === 'self') pushUnique(behavior, 'self_initiated')
+  if (semantic.initiator === 'target' && !selfInitiatedText) pushUnique(behavior, 'target_initiated')
+  if (semantic.initiator === 'self' && selfInitiatedText) pushUnique(behavior, 'self_initiated')
   if (semantic.response === 'rejected') pushUnique(risk, 'rejected')
   if (semantic.response === 'pending') pushUnique(outcome, 'pending')
   if (semantic.commitment?.fulfilled) pushUnique(outcome, 'fulfilled')
   if (semantic.commitment?.exists && !semantic.commitment?.fulfilled) pushUnique(outcome, 'planned')
+  if (hasTargetCommitmentSignal(record, text, outcome, behavior)) pushUnique(outcome, 'target_committed')
 
   const hasAny = scene.length || behavior.length || outcome.length || risk.length
   if (!hasAny) return null
@@ -101,13 +162,14 @@ export function getTimelineRecordTags(record) {
   if (includesAny(text, ['旅行', '旅游', '出游', '郊游', '露营'])) pushUnique(scene, 'trip')
   if (includesAny(text, ['聊天', '微信', '消息', '回复', '发消息', '语音', '电话', '视频'])) pushUnique(scene, 'chat')
 
-  if (record?.subjectRole === 'self') pushUnique(behavior, 'self_initiated')
+  if (record?.subjectRole === 'self') pushUnique(behavior, 'self_side')
   if (record?.subjectRole === 'target') pushUnique(behavior, 'target_side')
   if (record?.subjectRole === 'both') pushUnique(behavior, 'both_interaction')
-  if (includesAny(text, ['主动约我', '主动找我', '主动联系我', '他主动', '她主动', '对方主动', '邀请我', '来找我', '主动确认'])) pushUnique(behavior, 'target_initiated')
-  if (includesAny(text, ['我主动', '我先', '我约', '我问', '我发', '我联系'])) pushUnique(behavior, 'self_initiated')
+  if (hasTargetInitiatedText(text)) pushUnique(behavior, 'target_initiated')
+  if (hasSelfInitiatedText(text)) pushUnique(behavior, 'self_initiated')
 
   if (includesAny(text, ['答应', '说好', '确定', '确认', '约好', '安排', '计划', '下次', '改天', '周末'])) pushUnique(outcome, 'planned')
+  if (hasTargetCommitmentSignal(record, text, outcome, behavior)) pushUnique(outcome, 'target_committed')
   if (includesAny(text, [
     '兑现', '落实', '说到做到', '真的来了', '来了', '到了', '赴约', '见到了',
     '一起去了', '一起看了', '一起吃了', '一起吃饭了', '一起吃饭', '吃完饭',
@@ -142,7 +204,9 @@ export function buildTimelineStats(records) {
     movieCount: count('movie'),
     mealCount: count('meal'),
     coffeeTeaCount: count('coffee_tea'),
+    targetCommittedCount: count('target_committed'),
     targetInitiatedCount: count('target_initiated'),
+    selfInitiatedCount: count('self_initiated'),
     fulfilledCount: count('fulfilled'),
     rejectedCount: count('rejected'),
     cancelledDelayedCount: count('cancelled_delayed'),

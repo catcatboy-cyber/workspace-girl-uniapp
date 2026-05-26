@@ -277,12 +277,12 @@ function getRuntimeConfig(settings = {}) {
 
 function normalizeSideRead(value) {
   const input = value && typeof value === 'object' ? value : {}
-  const title = clean(input.title, 24) || '侧写'
-  const summary = clean(input.summary, 120)
+  const title = clean(input.title, 36) || '侧写'
+  const summary = clean(input.summary, 300)
   const sections = Array.isArray(input.sections)
-    ? input.sections.slice(0, 2).map((item) => ({
+    ? input.sections.slice(0, 3).map((item) => ({
         label: clean(item?.label, 24),
-        text: clean(item?.text, 150)
+        text: clean(item?.text, 400)
       })).filter((item) => item.label && item.text)
     : []
   if (!summary && sections.length === 0) throw new Error('SIDE_READ_EMPTY')
@@ -370,7 +370,7 @@ exports.main = async (event = {}) => {
       systemExtra: personaPrompt.systemPrompt,
       contextLines: [
         personaPrompt.userPrompt,
-        'Output JSON only. Keep it concise: title <= 18 Chinese chars, summary <= 50 Chinese chars, each section.text <= 80 Chinese chars. Do not use markdown fences.',
+        'Output JSON only. title <= 20 Chinese chars, summary <= 200 chars, each section.text <= 280 chars. Do not use markdown fences.',
         `Self profile: ${serializeProfile(user?.selfProfile)}`,
         `Target profile: ${serializeProfile(caseDoc.profile)}`,
         `Current event: ${eventTitle}`,

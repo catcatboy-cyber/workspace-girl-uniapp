@@ -3,15 +3,15 @@
     <view v-if="loading" class="muted center">加载中...</view>
 
     <view v-else-if="!caseFile" class="card">
-      <text class="h1">评估历史不可用</text>
+      <text class="h1">判定记录不可用</text>
       <text class="muted">当前对象不存在或已被删除。</text>
     </view>
 
     <template v-else>
       <view class="hero-card card">
-        <text class="hero-topline">Assessment History / {{ caseFile.name }}</text>
-        <text class="h1">一个 case 已经支持多次评估历史</text>
-        <text class="hero-subtext">初评、手动重评和事件驱动重算都会累计到这里，方便你回看判断是怎么变化的。</text>
+        <text class="hero-topline">Decision Records / {{ caseFile.name }}</text>
+        <text class="h1">一个对象已经支持多次判定记录</text>
+        <text class="hero-subtext">初评、手动重判和事件驱动重算都会累计到这里，方便你回看判断是怎么变化的。</text>
         <view class="actions">
           <button class="btn-secondary" @click="goCaseDetail">返回关系主页</button>
           <button class="btn-secondary" @click="goTimeline">打开时间线</button>
@@ -19,12 +19,12 @@
       </view>
 
       <view class="card">
-        <text class="h2">评估记录</text>
-        <text class="muted">最新评估排在最上面。共 {{ assessments.length }} 次评估。每条记录包含趋势变化、AI研判、证据等级和触发事件。</text>
+        <text class="h2">判定记录</text>
+        <text class="muted">最新判定排在最上面。共 {{ assessments.length }} 次判定。每条记录包含趋势变化、AI 判定、证据等级和触发事件。</text>
       </view>
 
       <view v-if="assessments.length === 0" class="card">
-        <text class="muted">还没有评估历史，先做一次初评或补一条会触发重算的事件。</text>
+        <text class="muted">还没有判定记录，先做一次初评或补一条会触发重算的事件。</text>
       </view>
 
       <view v-else class="grid">
@@ -35,7 +35,7 @@
         >
           <view class="a-header">
             <view class="a-title-group">
-              <text class="a-title">第 {{ assessments.length - index }} 次评估</text>
+              <text class="a-title">第 {{ assessments.length - index }} 次判定</text>
               <text class="a-time">{{ formatAssessmentTime(item.createdAt) }}</text>
             </view>
             <view class="a-meta-pills">
@@ -47,7 +47,7 @@
           <view class="event-strip">
             <view>
               <text class="event-label">触发事件</text>
-              <text class="event-title">{{ item.triggerEventTitle || '本次评估未绑定具体事件' }}</text>
+              <text class="event-title">{{ item.triggerEventTitle || '本次判定未绑定具体事件' }}</text>
               <view v-if="item.primaryLabels?.length" class="label-row">
                 <text v-for="label in item.primaryLabels" :key="label" class="label-chip">{{ label }}</text>
               </view>
@@ -96,7 +96,7 @@
           </view>
 
           <view v-else class="trend-summary-box first-summary">
-            <text class="trend-summary">这是第一条评估记录，后续新增事件或手动重评后会开始形成趋势对比。</text>
+            <text class="trend-summary">这是第一条判定记录，后续新增事件或手动重判后会开始形成趋势对比。</text>
           </view>
 
           <view v-if="statusSnapshots[index]" class="status-snapshot-box">
@@ -142,7 +142,7 @@
           </view>
 
           <view v-if="item.explanation?.petLine || item.explanation?.bullets?.length" class="ai-panel">
-            <text class="ai-panel-label">{{ hasAIReview(item) ? 'AI研判内容' : '研判内容' }}</text>
+            <text class="ai-panel-label">{{ hasAIReview(item) ? 'AI 判定内容' : '判定内容' }}</text>
             <text v-if="item.explanation?.petLine" class="headline" user-select>{{ item.explanation.petLine }}</text>
             <view v-if="item.explanation?.bullets?.length" class="bullets">
               <text v-for="bullet in item.explanation.bullets?.slice(0, 3)" :key="bullet" class="bullet" user-select>• {{ bullet }}</text>
@@ -242,7 +242,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 function mapRiskLabel(bucket?: string) {
@@ -252,7 +252,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未评估'
+    default: return '未判定'
   }
 }
 
@@ -270,7 +270,7 @@ function mapSourceLabel(source?: string) {
     case 'initial_questionnaire': return '初评'
     case 'manual_reassessment': return '手动重评'
     case 'event_recalculation': return '事件重算'
-    default: return source || '评估'
+    default: return source || '判定'
   }
 }
 

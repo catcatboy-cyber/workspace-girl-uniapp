@@ -8,9 +8,9 @@
         <view class="card-v2"><text class="section-title-v2">本周 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、本周真实事件和分数净变化。</text><button class="btn-v2-wr primary" style="margin-top:14rpx;width:100%;" :disabled="generating" @click="generateCurrentWeek">{{ generating ? '生成中...' : currentReview ? '重新生成本周复盘' : '生成本周复盘' }}</button></view>
         <!-- Current review -->
         <view v-if="currentReview" class="card-v2 review-v2">
-          <view class="review-head-v2"><view><text class="review-week-v2">{{ currentReview.weekStart }} - {{ currentReview.weekEnd }}</text><text class="review-title-v2">{{ currentReview.title }}</text></view><view class="tag-row-v2"><text class="tag-v2 black">{{ currentReview.trendLabel }}</text><text v-if="currentReview.aiUsed" class="tag-v2 black">AI 研判</text></view></view>
+          <view class="review-head-v2"><view><text class="review-week-v2">{{ currentReview.weekStart }} - {{ currentReview.weekEnd }}</text><text class="review-title-v2">{{ currentReview.title }}</text></view><view class="tag-row-v2"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(currentReview.trendLabel) }}</text><text v-if="currentReview.aiUsed" class="tag-v2 black">AI 复盘</text></view></view>
           <text class="review-summary-v2" user-select>{{ currentReview.summary }}</text>
-          <view class="tag-row-v2" style="margin-top:10rpx;"><text class="tag-v2">事件 {{ currentReview.eventCount }}</text><text class="tag-v2">评估 {{ currentReview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(currentReview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(currentReview.riskDelta) }}</text></view>
+          <view class="tag-row-v2" style="margin-top:10rpx;"><text class="tag-v2">事件 {{ currentReview.eventCount }}</text><text class="tag-v2">判定 {{ currentReview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(currentReview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(currentReview.riskDelta) }}</text></view>
           <view v-if="currentReview.keyChanges?.length" class="review-block-v2"><text class="section-title-v2">本周关键变化</text><text v-for="item in currentReview.keyChanges" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
           <view v-if="currentReview.keyEvents?.length" class="review-block-v2"><text class="section-title-v2">关键事件</text><text v-for="item in currentReview.keyEvents" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
           <view v-if="currentReview.nextWeekFocus?.length" class="review-block-v2"><text class="section-title-v2">下周观察重点</text><text v-for="item in currentReview.nextWeekFocus" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
@@ -26,7 +26,7 @@
         <!-- History -->
         <view class="card-v2"><text class="section-title-v2">历史周复盘</text><text class="card-text-v2">按周保存，帮助你看连续趋势。</text></view>
         <view v-if="historyReviews.length === 0" class="empty-v2"><text class="empty-sub-v2">暂无历史周复盘。</text></view>
-        <view v-else class="history-list-v2"><view v-for="item in historyReviews" :key="item._id" class="card-v2 history-card-v2"><view class="review-head-v2"><view><text class="review-week-v2">{{ item.weekStart }} - {{ item.weekEnd }}</text><text class="review-title-v2">{{ item.title }}</text></view><text class="tag-v2">{{ item.trendLabel }}</text></view><text class="review-summary-v2" user-select>{{ item.summary }}</text><view class="tag-row-v2" style="margin-top:8rpx;"><text class="tag-v2">意向 {{ formatDelta(item.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(item.riskDelta) }}</text><text class="tag-v2">事件 {{ item.eventCount }}</text></view></view></view>
+        <view v-else class="history-list-v2"><view v-for="item in historyReviews" :key="item._id" class="card-v2 history-card-v2"><view class="review-head-v2"><view><text class="review-week-v2">{{ item.weekStart }} - {{ item.weekEnd }}</text><text class="review-title-v2">{{ item.title }}</text></view><text class="tag-v2">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text></view><text class="review-summary-v2" user-select>{{ item.summary }}</text><view class="tag-row-v2" style="margin-top:8rpx;"><text class="tag-v2">意向 {{ formatDelta(item.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(item.riskDelta) }}</text><text class="tag-v2">事件 {{ item.eventCount }}</text></view></view></view>
       </view>
   </view>
 </template>
@@ -190,6 +190,23 @@ function formatDelta(value: any) {
   if (numeric > 0) return `+${numeric}`
   if (numeric < 0) return String(numeric)
   return '持平'
+}
+
+function mapWeeklyTrendLabel(label: any) {
+  const normalized = String(label || '').trim()
+  const map: Record<string, string> = {
+    持续向好: '本周回暖',
+    持续走低: '本周转弱',
+    风险抬头: '本周承压',
+    起伏不定: '本周波动',
+    基本持平: '本周平稳',
+    稳定观察: '本周观察',
+    升温期: '本周回暖',
+    升温中: '本周回暖',
+    走弱期: '本周转弱',
+    暂时平稳: '本周平稳'
+  }
+  return map[normalized] || (normalized ? `本周${normalized.replace(/^本周/, '')}` : '本周复盘')
 }
 
 function goCaseDetail() {

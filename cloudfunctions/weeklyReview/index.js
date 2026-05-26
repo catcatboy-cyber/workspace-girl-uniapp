@@ -121,14 +121,14 @@ function hasWeeklySideReadProfile(selfProfile, caseProfile) {
 
 function normalizeWeeklySideRead(value) {
   const input = value && typeof value === 'object' ? value : {}
-  const title = cleanText(input.title, 24) || '本周侧写'
-  const summary = cleanText(input.summary, 120)
+  const title = cleanText(input.title, 36) || '本周侧写'
+  const summary = cleanText(input.summary, 300)
   const sections = Array.isArray(input.sections)
     ? input.sections
-      .slice(0, 2)
+      .slice(0, 3)
       .map((item) => ({
         label: cleanText(item?.label, 24),
-        text: cleanText(item?.text, 120)
+        text: cleanText(item?.text, 400)
       }))
       .filter((item) => item.label && item.text)
     : []
@@ -391,9 +391,9 @@ async function buildAIReview(params) {
     })
     const parsed = parseJSONContent(raw)
     return {
-      title: cleanText(parsed.title, 40) || fallback.title,
+      title: cleanText(parsed.title, 60) || fallback.title,
       trendLabel: cleanText(parsed.trendLabel, 12) || fallback.trendLabel,
-      summary: cleanText(parsed.summary, 220) || fallback.summary,
+      summary: cleanText(parsed.summary, 400) || fallback.summary,
       keyChanges: normalizeStringArray(parsed.keyChanges, fallback.keyChanges),
       keyEvents: normalizeStringArray(parsed.keyEvents, fallback.keyEvents),
       nextWeekFocus: normalizeStringArray(parsed.nextWeekFocus, fallback.nextWeekFocus),

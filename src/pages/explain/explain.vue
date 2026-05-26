@@ -3,7 +3,7 @@
     <view class="hero-block-v2">
       <text class="hero-tag-v2">EXPLAIN</text>
       <text class="hero-title-v2">判断<text class="hl-v2">说明</text></text>
-      <text class="hero-copy-v2">汇总系统里实际会出现的判断标签。</text>
+      <text class="hero-copy-v2">按展示位置解释系统里会出现的标签，避免把不同口径混在一起看。</text>
     </view>
     <view v-for="section in explainSections" :key="section.key" class="explain-v2">
       <view class="explain-head-v2" @click="toggleSection(section.key)">
@@ -33,24 +33,48 @@ onLoad(() => {
 })
 
 const explainSections = computed(() => [
-  { key: 'intent' as const, label: '意向倾向', items: intentLevels },
-  { key: 'risk' as const, label: '风险等级', items: riskLevels },
-  { key: 'evidence' as const, label: '证据等级与判断把握', items: evidenceLevels },
-  { key: 'status' as const, label: '对象状态标签', items: [...phaseItems, ...vibeItems] },
-  { key: 'weeklyTrend' as const, label: '周复盘趋势标签', items: weeklyTrendItems },
-  { key: 'action' as const, label: '下一步动作标签', items: nextActionItems },
-  { key: 'problem' as const, label: '问题类型', items: problemItems },
-  { key: 'record' as const, label: '记录与系统标签', items: [...eventTypeItems, ...subjectRoleItems, ...relationTypeItems] }
+  { key: 'snapshot' as const, label: '最新判定标签', items: snapshotItems },
+  { key: 'profile' as const, label: '对象画像标签', items: profileTagItems },
+  { key: 'trend14' as const, label: '14天趋势标签', items: trend14Items },
+  { key: 'weeklyTrend' as const, label: '本周复盘标签', items: weeklyTrendItems },
+  { key: 'record' as const, label: '事件记录标签', items: [...eventTypeItems, ...subjectRoleItems, ...relationTypeItems] },
+  { key: 'evidence' as const, label: '分数与证据说明', items: [...intentLevels, ...riskLevels, ...evidenceLevels] },
+  { key: 'status' as const, label: '状态与问题标签', items: [...phaseItems, ...vibeItems, ...problemItems] },
+  { key: 'action' as const, label: '下一步动作标签', items: nextActionItems }
 ])
 
 const expandedSections = ref({
-  intent: false, risk: false, evidence: false, status: false,
-  weeklyTrend: false, action: false, problem: false, record: false
+  snapshot: true, profile: false, trend14: false, weeklyTrend: false,
+  record: false, evidence: false, status: false, action: false
 })
 
-function toggleSection(key: 'intent' | 'risk' | 'evidence' | 'status' | 'weeklyTrend' | 'action' | 'problem' | 'record') {
+function toggleSection(key: 'snapshot' | 'profile' | 'trend14' | 'weeklyTrend' | 'record' | 'evidence' | 'status' | 'action') {
   expandedSections.value[key] = !expandedSections.value[key]
 }
+
+const snapshotItems = [
+  { label: '最新 · 中高意向', description: '表示最新一次判定里的意向等级。它是当前快照，不代表 14 天趋势或本周总结。' },
+  { label: '风险 · 低风险', description: '表示最新一次判定里的一致性风险等级。风险越高，越要优先看回避、拖延、失约和前后不一致。' },
+  { label: '证据 E1-E5', description: '表示这次判定背后的样本和事实强度。E 越高，判断越不依赖单次感觉。' },
+  { label: 'AI 判定', description: '表示最新判定由 AI 参与生成或分析，属于单次判定口径。' }
+]
+
+const profileTagItems = [
+  { label: '恋爱对象 / 朋友 / 同事 / 同学 / 老师', description: '对象关系类型，只说明分析语境，不直接代表好坏。' },
+  { label: '年龄 / 性别 / 职业', description: '对象画像信息，用来帮助理解生活阶段和互动场景。' },
+  { label: '属相 / 星座', description: '轻娱乐侧写入口，不参与核心意向分、风险分和证据等级。' }
+]
+
+const trend14Items = [
+  { label: '14天意向上行', description: '近 14 天内，最新意向分相比区间起点明显上升。它是数据变化，不等于关系阶段。' },
+  { label: '14天意向回落', description: '近 14 天内，最新意向分相比区间起点明显下降。' },
+  { label: '14天意向平稳', description: '近 14 天内，意向分没有出现明显净变化。' },
+  { label: '14天风险回落', description: '近 14 天内，风险分相比区间起点下降。' },
+  { label: '14天风险抬头', description: '近 14 天内，风险分相比区间起点上升，需要优先回看风险事件。' },
+  { label: '14天风险平稳', description: '近 14 天内，风险分没有明显净变化。' },
+  { label: '波动偏低 / 波动中等 / 波动偏高', description: '描述最近几次判定分数的起伏程度，不直接判断关系好坏。' },
+  { label: '样本充足 / 样本偏少', description: '描述近期判定数量是否足够支撑趋势观察。样本偏少时不适合下重结论。' }
+]
 
 const intentLevels = [
   { label: '低意向', range: '0-24', description: '主动和投入信号整体偏弱，不适合按高期待去推进。' },
@@ -93,11 +117,12 @@ const vibeItems = [
 ]
 
 const weeklyTrendItems = [
-  { label: '持续向好', description: '本周意向整体比之前更强，而且风险没有同步抬头。' },
-  { label: '持续走低', description: '本周意向明显回落，关系热度在走弱。' },
-  { label: '起伏不定', description: '本周分数变化较明显，但暂时还不适合下单向结论。' },
-  { label: '风险抬头', description: '本周更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
-  { label: '基本持平', description: '本周整体没有出现足够强的新变化，先继续记录。' }
+  { label: '本周回暖', description: '本周整体更偏正向，意向净变化较好，且风险没有同步明显抬头。' },
+  { label: '本周转弱', description: '本周意向明显回落，关系热度或推进感在下降。' },
+  { label: '本周承压', description: '本周更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
+  { label: '本周波动', description: '本周分数变化较明显，但暂时还不适合下单向结论。' },
+  { label: '本周平稳', description: '本周整体没有出现足够强的新变化，先继续记录。' },
+  { label: 'AI 复盘', description: '表示这块内容是按周汇总生成，不等同于单次 AI 判定。' }
 ]
 
 const nextActionItems = [

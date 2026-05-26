@@ -4,7 +4,7 @@
 const TAG_VOCAB = {
   scene: ['offline_meet', 'movie', 'meal', 'coffee_tea', 'walk_shop', 'chat', 'group_social', 'trip'],
   behavior: ['target_initiated', 'self_initiated', 'both_interaction'],
-  outcome: ['planned', 'fulfilled', 'cancelled_delayed', 'pending', 'rejected'],
+  outcome: ['planned', 'target_committed', 'fulfilled', 'cancelled_delayed', 'pending', 'rejected'],
   risk: ['cold', 'vague_delay', 'risk_event']
 }
 
@@ -19,9 +19,12 @@ const SYSTEM_PROMPT = `你是关系事件标签分类器。只输出 JSON，不�
 关键规则：
 1. 如果前一条事件有 planned（计划/承诺），后一条描述了对应行为，标记为 fulfilled
 2. 如果前一条有计划但后续无对应事件，不强行标记
-3. 只根据事件描述判断，不猜测
-4. 每条事件可以同时有 scene、behavior、outcome、risk 标签
-5. 同一维度可以有多个标签
+3. 对方明确说好、答应、约我、邀请我、承诺安排后续，标记 target_committed；只有我方提出计划不标记 target_committed
+4. self_initiated 只表示用户主动向关系对象发起、询问、邀约或联系，例如“我主动问对方 / 我问他 / 我问她 / 我问对方 / 我约对方”；不要把它理解成对方主动
+5. target_initiated 只表示关系对象主动问我、找我、约我或联系我，例如“对方问我 / 他问我 / 她问我 / 对方约我”；不要把“我问对方”标成 target_initiated
+6. 只根据事件描述判断，不猜测；主体不清楚时宁可少标，不要把主语宾语反过来
+7. 每条事件可以同时有 scene、behavior、outcome、risk 标签
+8. 同一维度可以有多个标签
 
 输出 JSON 格式：{"results": [{"index": 0, "scene": [], "behavior": [], "outcome": [], "risk": []}]}`
 
@@ -33,7 +36,8 @@ function buildEventsContext(events) {
     const date = item.occurrenceAt
       ? new Date(item.occurrenceAt).toISOString().slice(0, 10)
       : '未知日期'
-    return `${i}. [${date}] ${item.title || ''} | ${item.description || ''}`
+    const subjectRole = ['target', 'self', 'both', 'unknown'].includes(item.subjectRole) ? item.subjectRole : 'unknown'
+    return `${i}. [${date}] [subjectRole=${subjectRole}] ${item.title || ''} | ${item.description || ''}`
   }).join('\n')
 }
 

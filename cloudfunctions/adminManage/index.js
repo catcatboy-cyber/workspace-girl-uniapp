@@ -887,7 +887,9 @@ function normalizeModels(models, existingModels) {
       model: model.model || existing.model || 'gpt-4o-mini',
       apiKey: typeof model.apiKey === 'string' && model.apiKey && !model.apiKey.startsWith('***')
         ? model.apiKey
-        : (existing.apiKey || '')
+        : (existing.apiKey || ''),
+      quota: Number(model.quota || existing.quota || 0),
+      tokensUsed: Number(existing.tokensUsed || 0)
     }
   })
 }
@@ -1121,6 +1123,9 @@ async function updateAISettings(event, adminUserId) {
     promptModules: event.promptModules && typeof event.promptModules === 'object'
       ? event.promptModules
       : (base.promptModules || {}),
+    petSpeakConfig: event.petSpeakConfig && typeof event.petSpeakConfig === 'object'
+      ? event.petSpeakConfig
+      : (base.petSpeakConfig || {}),
     personaConfig: normalizePersonaConfig(event.personaConfig || base.personaConfig),
     runtimeConfigVersion: 1,
     runtimeConfig: normalizeRuntimeConfig(event.runtimeConfig, base.runtimeConfig),
