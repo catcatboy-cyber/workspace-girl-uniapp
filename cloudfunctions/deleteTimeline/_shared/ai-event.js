@@ -356,7 +356,7 @@ async function analyzeTimelineEvent(params) {
     contextLines: [
       personaPrompt.userPrompt,
       'Output must be JSON only. Required fields: eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,rawReply. Do not return labels, confidence, actionAdvice, or eventInsight.',
-      'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings: 对方可能的心理 / 你下一步怎么做 / 重点观察什么.',
+      'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings: 小咪觉得对方可能在想 / 小咪觉得可以这样 / 小咪说留个心眼.',
       describeSubjectRole(params.event?.subjectRole),
       `Current assessment: ${JSON.stringify({
         intentScore: params.latestResult?.intentScore,

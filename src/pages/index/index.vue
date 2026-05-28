@@ -7,8 +7,8 @@
       <template v-if="cases.length === 0">
         <view class="hero-block">
           <text class="hero-tag">DOM-CRUSH BOARD</text>
-          <text class="hero-title">先做一次<text class="hl">初次</text>判定</text>
-          <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看时间线和重新判定。</text>
+          <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
+          <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看时间线和重新分析。</text>
         </view>
         <AssessmentForm @submit="onCreateCase" />
       </template>
@@ -72,11 +72,11 @@
 
         <!-- Feedback -->
         <view v-if="showQuickFeedback && latestCase.latestResult && latestTrend" :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']">
-          <view class="block-head"><text class="block-title">本次判定</text><text class="block-badge black">{{ mapTimelineTypeLabel(latestFeedbackEventType) }}</text></view>
+          <view class="block-head"><text class="block-title">本次分析</text><text class="block-badge black">{{ mapTimelineTypeLabel(latestFeedbackEventType) }}</text></view>
           <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
           <view v-if="latestCase.latestResult.aiPending" class="action-box">
             <text class="action-label">正在分析</text>
-            <text class="action-text muted">AI 正在生成这条记录的即时反馈，完成后会自动更新本次判定。</text>
+            <text class="action-text muted">AI 正在生成这条记录的即时反馈，完成后会自动更新本次分析。</text>
           </view>
           <template v-else>
             <view class="score-grid">
@@ -106,9 +106,9 @@
               <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
             </view>
             <view v-if="latestActionPlanPanel.show" class="action-box">
-              <text class="action-label">你接下来怎么做</text>
+              <text class="action-label">{{ selectedPet.displayName }} 帮你看看</text>
               <text v-if="latestActionPlanPanel.missing" class="action-text muted">{{ latestActionPlanPanel.text }}</text>
-              <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ item.label }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
+              <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ petLabel(item.label) }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
               <view v-if="aiParticipationLabel" :class="['ai-badge', aiParticipationLabel.type]">
                 <text class="ai-badge-dot"></text>
                 <text class="ai-badge-text">{{ aiParticipationLabel.detail }}</text>
@@ -153,10 +153,9 @@
 
       <!-- Pet bar -->
       <view v-if="showPetBar" class="pet-bar">
-        <view v-if="usePetSpritesheet" class="pet-sprite-viewport" @click="showSpeakSheet = true">
-          <image :src="selectedPet.spritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
+        <view class="pet-sprite-viewport" @click="showSpeakSheet = true">
+          <image :src="resolvedSpritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
         </view>
-        <image v-else :src="petSrc" class="pet-bar-img" mode="aspectFit" @click="showSpeakSheet = true" />
         <view v-if="petMsg" class="pet-bubble"><text class="pet-bubble-text">{{ petMsg }}</text></view>
       </view>
 
@@ -164,6 +163,7 @@
       <PetSpeakSheet :visible="showSpeakSheet" :pet-name="selectedPet.displayName" @close="showSpeakSheet = false" />
     </block>
 
+    <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
 </template>
 
@@ -177,7 +177,7 @@ import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDat
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
-import { getPetById, getSelectedPetId } from '@/utils/pets.js'
+import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, downloadPetAssets } from '@/utils/pets.js'
 
 type PetScene =
   | 'ai_loading'
@@ -330,16 +330,16 @@ const latestRawReply = computed(() => {
 function parseRawReplySections(text: string) {
   const source = String(text || '').trim()
   if (!source) return []
-  const labels = ['对方可能的心理', '你下一步怎么做', '重点观察什么']
+  const labels = ['小咪觉得对方可能在想', '小咪觉得可以这样', '小咪说留个心眼']
   // Step 1: normalize colon format
   let normalized = source
     .replace(/\r/g, '')
-    .replace(/(对方可能的心理|你下一步怎么做|重点观察什么)\s*[：:]/g, '\n$1：')
+    .replace(/(小咪觉得对方可能在想|小咪觉得可以这样|小咪说留个心眼)\s*[：:]/g, '\n$1：')
   // Step 2: fallback — if no colon headings found, try slash-separated format
   if (!labels.some((l) => normalized.includes(`${l}：`))) {
     normalized = source
       .replace(/\r/g, '')
-      .replace(/(对方可能的心理|你下一步怎么做|重点观察什么)\s*\/\s*/g, '\n$1：')
+      .replace(/(小咪觉得对方可能在想|小咪觉得可以这样|小咪说留个心眼)\s*\/\s*/g, '\n$1：')
   }
   normalized = normalized.trim()
   const sections = labels.map((label, index) => {
@@ -355,6 +355,10 @@ function parseRawReplySections(text: string) {
     return text ? { label, text } : null
   }).filter(Boolean) as Array<{ label: string; text: string }>
   return sections.length ? sections : [{ label: '回复建议', text: source }]
+}
+
+function petLabel(label: string) {
+  return label.replace(/小咪/g, selectedPet.value.displayName)
 }
 
 const latestActionPlanPanel = computed(() => {
@@ -384,7 +388,7 @@ const aiParticipationLabel = computed(() => {
   if (!result || result.aiPending) return null
   if (result.aiFailed) return { text: '规则兜底', type: 'fallback', detail: 'AI 超时或格式异常，本次为规则计算结果' }
   if (result.aiUsed === false) return { text: '规则兜底', type: 'fallback', detail: '未启用 AI，本次为规则计算结果' }
-  if (result.aiUsed) return { text: 'AI 参与', type: 'ai', detail: '本次由 AI 模型参与分析' }
+  if (result.aiUsed) return { text: 'AI 参与', type: 'ai', detail: 'AI 辅助分析' }
   return null
 })
 
@@ -526,7 +530,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 function mapRiskLabel(bucket?: string) {
@@ -536,7 +540,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 
@@ -653,14 +657,9 @@ const selectedPet = ref(getPetById(getSelectedPetId()))
 const PET_SPRITE_SCALE = 0.5
 let petTimer: ReturnType<typeof setInterval> | null = null
 
-const petSrc = computed(() => {
-  const s = petState.value || 'idle'
-  const f = String(petFrame.value).padStart(2, '0')
-  return `${selectedPet.value.basePath}/${s}/${f}.png`
-})
-
-const usePetSpritesheet = computed(() => {
-  return selectedPet.value.renderer === 'spritesheet' && !!selectedPet.value.spritesheetPath
+const resolvedSpritesheetPath = computed(() => {
+  void petAssetsVersion.value
+  return getResolvedSpritesheetPath(selectedPet.value.id)
 })
 
 const petSpritesheetStyle = computed(() => {
@@ -717,11 +716,17 @@ function applyPetScene(scene: PetScene | null, durationMs?: number, customMessag
 }
 
 const showPetBar = ref(true)
+const petAssetsVersion = ref(0)
+
 function syncPetBarPref() {
   try { showPetBar.value = uni.getStorageSync('showPetBar') !== false } catch { showPetBar.value = true }
 }
-function syncSelectedPet() {
+async function syncSelectedPet() {
   selectedPet.value = getPetById(getSelectedPetId())
+  if (isCloudPet(selectedPet.value.id) && !isPetCachedLocally(selectedPet.value.id)) {
+    await downloadPetAssets(selectedPet.value.id)
+    petAssetsVersion.value++
+  }
 }
 syncPetBarPref()
 syncSelectedPet()
@@ -1418,7 +1423,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .kpi-strip { display: flex; margin-top: 24rpx; border: 3rpx solid #111; background: #fff; }
 .v2-mode .kpi-cell { flex: 1; text-align: center; padding: 20rpx 8rpx; border-right: 3rpx solid #111; }
 .v2-mode .kpi-cell:last-child { border-right: none; }
-.v2-mode .kpi-num { display: block; font-size: 44rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .kpi-num { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .kpi-lbl { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 6rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
 .v2-mode .tag-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 18rpx; }
@@ -1426,7 +1431,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .tag { display: inline-flex; align-items: center; min-height: 40rpx; padding: 6rpx 16rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .tag.black { background: #111; color: #fff; }
 
-.v2-mode .record-block { background: #E6E6FA; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
+.v2-mode .record-block { background: #f9f9f9; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
 .v2-mode .block-title { font-size: 32rpx; font-weight: 900; color: #111; text-transform: uppercase; }
 .v2-mode .block-badge { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 900; color: #111; letter-spacing: 2rpx; }
@@ -1471,7 +1476,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .score-num-v2 { display: block; font-size: 56rpx; font-weight: 900; color: #111; line-height: 1; margin-top: 6rpx; }
 .v2-mode .score-num-v2.risk { color: #FF5252; }
 .v2-mode .score-bucket-v2 { display: block; font-size: 20rpx; font-weight: 700; color: #999; margin-top: 4rpx; }
-.v2-mode .bar-track-v2 { height: 12rpx; background: #e8e8e8; margin-top: 12rpx; border: 2rpx solid #ccc; }
+.v2-mode .bar-track-v2 { height: 12rpx; background: #e0e0e0; margin-top: 12rpx; border: 2rpx solid #e0e0e0; }
 .v2-mode .bar-fill-v2 { height: 12rpx; background: #111; }
 .v2-mode .bar-fill-v2.risk { background: #FF5252; }
 
@@ -1521,9 +1526,9 @@ function goCaseDetail(caseId: string) {
 .v2-mode .info-sec-title { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
 .v2-mode .info-sec-copy { display: block; font-size: 22rpx; color: #555; line-height: 1.6; margin-top: 6rpx; }
 .v2-mode .info-sec-copy.strong { font-weight: 700; color: #111; }
-.v2-mode .info-tag-row { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #e8e8e8; }
+.v2-mode .info-tag-row { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #e0e0e0; }
 .v2-mode .info-chip { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .info-chip.muted { background: #e8e8e8; }
+.v2-mode .info-chip.muted { background: #e0e0e0; }
 .v2-mode .info-chip-copy { flex: 1; }
 .v2-mode .info-chip-title { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
 .v2-mode .info-chip-desc { display: block; font-size: 20rpx; color: #666; line-height: 1.5; margin-top: 4rpx; }

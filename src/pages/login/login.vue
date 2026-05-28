@@ -209,12 +209,12 @@ const goRegister = () => {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 
 .v2-mode .header-v2 { text-align: left; padding: 40rpx 0 32rpx; }
-.v2-mode .title-v2 { display: block; font-size: 54rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
-.v2-mode .title-v2.en-title { font-size: 72rpx; font-weight: 900; font-style: italic; letter-spacing: 2rpx; background: #FFD93D; display: inline-block; padding: 6rpx 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
+.v2-mode .title-v2.en-title { font-size: 48rpx; font-weight: 900; font-style: italic; letter-spacing: 2rpx; background: #FFD93D; display: inline-block; padding: 6rpx 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .subtitle-v2 { display: block; font-size: 28rpx; font-weight: 600; color: #666; margin-top: 10rpx; }
 
-.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 
 .v2-mode .btn-v2-l { width: 100%; height: 80rpx; line-height: 80rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 28rpx; font-weight: 800; color: #111; margin-top: 14rpx; }
 .v2-mode .btn-v2-l:first-child { margin-top: 0; }
@@ -224,8 +224,8 @@ const goRegister = () => {
 .v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: 22rpx; font-weight: 600; color: #999; text-align: center; line-height: 1.5; }
 .v2-mode .error-v2 { display: block; margin: 0 0 18rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 22rpx; font-weight: 600; color: #FF5252; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 28rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }
-.v2-mode .input-v2::placeholder { color: #ccc; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }
+.v2-mode .input-v2::placeholder { color: #999; }
 
 .v2-mode .remember-v2 { display: flex; align-items: center; gap: 10rpx; margin: 20rpx 0; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .check-v2 { width: 34rpx; height: 34rpx; line-height: 32rpx; border: 2rpx solid #111; text-align: center; font-size: 22rpx; font-weight: 900; color: #fff; }

@@ -104,7 +104,7 @@ const PROMPT_FIXED_GUARDRAILS = {
       'eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply',
       'eventType: positive | risk | verification | note',
       'currentStatus 只返回 tags, summary, caution。',
-      'rawReply 只允许三段标题：对方可能的心理 / 你下一步怎么做 / 重点观察什么。',
+      'rawReply 只允许三段标题：小咪觉得对方可能在想 / 小咪觉得可以这样 / 小咪说留个心眼。',
       'Do not return labels, confidence or actionAdvice for speed.',
       'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.',
       'JSON only; code validates and normalizes the result.'
@@ -742,7 +742,7 @@ function buildActualPromptMessages({ settings, recordContent, selfProfile, caseP
     '运行时上下文:',
     personaPrompt.userPrompt,
     '只返回 JSON。必需字段：eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply。不要返回 labels、confidence 或 actionAdvice。',
-    'currentStatus 只需要 tags,summary,caution。rawReply 只允许三段标题：对方可能的心理 / 你下一步怎么做 / 重点观察什么。',
+    'currentStatus 只需要 tags,summary,caution。rawReply 只允许三段标题：小咪觉得对方可能在想 / 小咪觉得可以这样 / 小咪说留个心眼。',
     'eventInsight 只能使用枚举：actor=target|self|both|unknown；interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear；commitmentStatus=none|promised|fulfilled|broken|unclear；evidenceType=fact|feeling|mixed|unclear。',
     describeSubjectRoleForPrompt(previewEvent.subjectRole),
     `当前评估快照: ${JSON.stringify(currentAssessment)}`,
@@ -1404,6 +1404,77 @@ async function resolveFeedback(event) {
   }
 }
 
+async function listCustomPetRequests() {
+  try {
+    const { data } = await db.collection('custom_pet_requests')
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get()
+    const requests = data || []
+
+    // Resolve cloud:// file IDs to temp URLs for image display
+    const allFileIds = []
+    for (const req of requests) {
+      if (req.referenceImages && req.referenceImages.length) {
+        for (const img of req.referenceImages) {
+          if (typeof img === 'string' && img.startsWith('cloud://')) allFileIds.push(img)
+        }
+      }
+    }
+    if (allFileIds.length) {
+      try {
+        const urlRes = await app.getTempFileURL({ fileList: allFileIds })
+        const fileMap = {}
+        const files = urlRes?.fileList || []
+        for (const f of files) {
+          if (f.fileID && f.tempFileURL) fileMap[f.fileID] = f.tempFileURL
+        }
+        for (const req of requests) {
+          if (req.referenceImages && req.referenceImages.length) {
+            req.referenceImages = req.referenceImages.map((img) => fileMap[img] || img)
+          }
+        }
+      } catch (e) {
+        console.error('listCustomPetRequests getTempFileURL error:', e)
+      }
+    }
+
+    return { success: true, requests }
+  } catch (error) {
+    console.error('listCustomPetRequests error:', error)
+    return { success: false, message: error?.message || '读取宠物需求失败' }
+  }
+}
+
+async function updateCustomPetRequest(event) {
+  const requestId = String(event.requestId || '').trim()
+  const status = String(event.status || '').trim()
+  const adminNote = String(event.adminNote || '').trim()
+  const deliveredPetId = String(event.deliveredPetId || '').trim()
+
+  if (!requestId) return { success: false, message: '缺少 requestId' }
+  if (!['in_progress', 'delivered', 'rejected'].includes(status)) {
+    return { success: false, message: '无效状态，可选：in_progress, delivered, rejected' }
+  }
+  if (status === 'delivered' && !deliveredPetId) {
+    return { success: false, message: '交付时需要填写 deliveredPetId' }
+  }
+
+  try {
+    const update = { status, updatedAt: new Date() }
+    if (adminNote) update.adminNote = adminNote
+    if (deliveredPetId) update.deliveredPetId = deliveredPetId
+    if (status === 'delivered') update.deliveredAt = new Date()
+    if (status === 'rejected') update.rejectedAt = new Date()
+
+    await db.collection('custom_pet_requests').doc(requestId).update(update)
+    return { success: true }
+  } catch (error) {
+    console.error('updateCustomPetRequest error:', error)
+    return { success: false, message: error?.message || '更新宠物需求失败' }
+  }
+}
+
 exports.main = async (event = {}) => {
   try {
     const { userId, user } = await requireAdminUser(event)
@@ -1419,6 +1490,8 @@ exports.main = async (event = {}) => {
     if (action === 'adminManualRecharge') return await adminManualRecharge(event, userId)
     if (action === 'listFeedbacks') return await listFeedbacks()
     if (action === 'resolveFeedback') return await resolveFeedback(event)
+    if (action === 'listCustomPetRequests') return await listCustomPetRequests()
+    if (action === 'updateCustomPetRequest') return await updateCustomPetRequest(event)
 
     return { success: false, message: '未知后台操作' }
   } catch (error) {

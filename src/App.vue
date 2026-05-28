@@ -96,4 +96,16 @@ button::after {
 .page .muted {
   line-height: var(--text-line-height, 1.55);
 }
+
+/* AI disclaimer footer */
+.ai-disclaimer {
+  margin-top: 24rpx;
+  padding: 16rpx 20rpx;
+  text-align: center;
+}
+.ai-disclaimer-text {
+  font-size: 20rpx;
+  color: #999;
+  line-height: 1.5;
+}
 </style>

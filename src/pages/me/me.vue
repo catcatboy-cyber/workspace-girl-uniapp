@@ -4,7 +4,9 @@
       <!-- Account -->
       <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">关系对象数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
       <!-- Pet picker -->
-      <view class="card-v2"><text class="section-title-v2">陪伴形象</text><text class="card-text-v2">当前：{{ currentPet.displayName }}</text><view class="pet-grid-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-card-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="`${pet.basePath}/idle/00.png`" class="pet-preview-v2" mode="aspectFit" /><text class="pet-name-v2">{{ pet.displayName }}</text><text class="pet-desc-v2">{{ pet.description }}</text></view></view></view>
+      <view class="card-v2"><text class="section-title-v2">陪伴形象</text><view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn-v2-me sm" style="margin-top:10rpx" @click="showPetSheet = true">更换形象</button></view></view></view>
+      <!-- Pet select sheet -->
+      <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
       <!-- Profile (moved here) -->
       <view class="card-v2"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Token (fixed button) -->
@@ -15,7 +17,7 @@
       <view class="card-v2"><text class="section-title-v2">AI 陪伴风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
       <view class="card-v2"><text class="section-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
       <view class="card-v2"><text class="section-title-v2">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
-      <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的判定和趋势记录 →</text></view>
+      <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的分析和趋势记录 →</text></view>
       <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
       <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
       <view class="card-v2" @click="goAbout"><text class="section-title-v2">关于</text><text class="card-text-v2">v1.0.0 · 查看版本信息 →</text></view>
@@ -41,7 +43,7 @@ import {
 } from '@/utils/api'
 import { applyThemeChrome, getCurrentThemeId, getThemeStyle, setCurrentTheme, themeOptions, type ThemeId } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
-import { getPetById, getSelectedPetId, petOptions, setSelectedPetId } from '@/utils/pets.js'
+import { downloadPetAssets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, setSelectedPetId } from '@/utils/pets.js'
 
 type PetId = 'xiaomi' | 'doggo'
 
@@ -96,6 +98,7 @@ const aiBoldnessOptions: Array<{
 ]
 
 const showPetBar = ref(true)
+const showPetSheet = ref(false)
 const currentPetId = ref<PetId>(getSelectedPetId())
 const currentPet = computed(() => getPetById(currentPetId.value))
 
@@ -105,10 +108,23 @@ function onPetBarChange(e: any) {
   uni.setStorageSync('showPetBar', v)
 }
 
-function choosePet(id: PetId) {
+async function choosePet(id: PetId) {
   currentPetId.value = id
   setSelectedPetId(id)
-  uni.showToast({ title: `已切换为 ${getPetById(id).displayName}`, icon: 'none' })
+  showPetSheet.value = false
+  if (isCloudPet(id) && !isPetCachedLocally(id)) {
+    uni.showLoading({ title: '下载宠物资源...' })
+    try {
+      await downloadPetAssets(id)
+      uni.hideLoading()
+      uni.showToast({ title: `已切换为 ${getPetById(id).displayName}`, icon: 'none' })
+    } catch {
+      uni.hideLoading()
+      uni.showToast({ title: '下载失败，请重试', icon: 'none' })
+    }
+  } else {
+    uni.showToast({ title: `已切换为 ${getPetById(id).displayName}`, icon: 'none' })
+  }
 }
 
 const lastDataVersion = ref(0)
@@ -304,6 +320,11 @@ function goFeedback() {
   uni.navigateTo({ url: '/pages/feedback/feedback' })
 }
 
+function goCustomPet() {
+  showPetSheet.value = false
+  uni.navigateTo({ url: '/pages/custom-pet/custom-pet' })
+}
+
 function goAbout() {
   uni.navigateTo({ url: '/pages/about/about' })
 }
@@ -362,16 +383,49 @@ async function onLogout() {
 .v2-mode .theme-name-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .theme-card-v2.active .theme-name-v2 { color: #FFD93D; }
 .v2-mode .theme-desc-v2 { display: block; font-size: 16rpx; font-weight: 600; color: #999; margin-top: 4rpx; line-height: 1.3; }
-.v2-mode .theme-card-v2.active .theme-desc-v2 { color: rgba(255,255,255,0.5); }
+.v2-mode .theme-card-v2.active .theme-desc-v2 { color: rgba(255,255,255,0.6); }
 
-.v2-mode .pet-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12rpx; margin-top: 14rpx; }
-.v2-mode .pet-card-v2 { padding: 16rpx; border: 2rpx solid #111; background: #fff; text-align: center; }
-.v2-mode .pet-card-v2.active { background: #111; }
-.v2-mode .pet-preview-v2 { width: 112rpx; height: 112rpx; display: block; margin: 0 auto 10rpx; }
-.v2-mode .pet-name-v2 { display: block; font-size: 24rpx; font-weight: 900; color: #111; }
-.v2-mode .pet-card-v2.active .pet-name-v2 { color: #FFD93D; }
-.v2-mode .pet-desc-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #888; line-height: 1.4; margin-top: 6rpx; }
-.v2-mode .pet-card-v2.active .pet-desc-v2 { color: rgba(255,255,255,0.62); }
+/* pet row layout: avatar + info + button */
+.v2-mode .pet-row-v2 { display: flex; align-items: center; gap: 24rpx; margin-top: 14rpx; }
+.v2-mode .pet-avatar-img-v2 { width: 140rpx; height: 140rpx; flex-shrink: 0; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .pet-row-info-v2 { flex: 1; min-width: 0; }
+.v2-mode .pet-row-name-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; }
+.v2-mode .pet-row-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #999; line-height: 1.4; margin-top: 6rpx; }
+
+/* bottom sheet */
+.v2-mode .sheet-mask { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; }
+.v2-mode .sheet-panel { width: 100%; max-width: 500px; max-height: 75vh; background: #FFFDF5; border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 24rpx; display: flex; flex-direction: column; overflow: hidden; }
+.v2-mode .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; flex-shrink: 0; }
+.v2-mode .sheet-title { font-size: 30rpx; font-weight: 900; color: #111; }
+.v2-mode .sheet-close { font-size: 36rpx; font-weight: 900; color: #111; padding: 0 8rpx; line-height: 1; }
+
+/* pet sheet grid */
+.v2-mode .pet-sheet-scroll-v2 { flex: 1; overflow-y: auto; }
+.v2-mode .pet-sheet-grid-inner-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14rpx; padding-right: 4rpx; }
+.v2-mode .pet-option-v2 { display: flex; align-items: center; gap: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #fff; position: relative; }
+.v2-mode .pet-option-v2.active { background: #111; }
+.v2-mode .pet-option-img-v2 { width: 80rpx; height: 80rpx; flex-shrink: 0; }
+.v2-mode .pet-option-text-v2 { flex: 1; min-width: 0; }
+.v2-mode .pet-option-name-v2 { display: block; font-size: 24rpx; font-weight: 900; color: #111; }
+.v2-mode .pet-option-v2.active .pet-option-name-v2 { color: #FFD93D; }
+.v2-mode .pet-option-desc-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; line-height: 1.3; margin-top: 4rpx; }
+.v2-mode .pet-option-v2.active .pet-option-desc-v2 { color: rgba(255,255,255,0.6); }
+.v2-mode .pet-option-check-v2 { position: absolute; top: 8rpx; right: 10rpx; font-size: 22rpx; font-weight: 900; color: #FFD93D; }
+.v2-mode .pet-option-name-row-v2 { display: flex; align-items: center; gap: 8rpx; }
+.v2-mode .pet-option-badge-v2 { display: inline-block; padding: 2rpx 10rpx; font-size: 16rpx; font-weight: 800; color: #4ECDC4; border: 1rpx solid #4ECDC4; }
+.v2-mode .pet-option-badge-v2.download { color: #FF6B6B; border-color: #FF6B6B; }
+.v2-mode .pet-option-v2.active .pet-option-badge-v2 { color: #FFD93D; border-color: #FFD93D; }
+
+/* pet sheet footer */
+.v2-mode .pet-sheet-footer-v2 { flex-shrink: 0; margin-top: 20rpx; padding-top: 10rpx; }
+.v2-mode .pet-sheet-divider-v2 { display: flex; align-items: center; gap: 16rpx; margin-bottom: 14rpx; }
+.v2-mode .pet-sheet-divider-v2::before,
+.v2-mode .pet-sheet-divider-v2::after { content: ''; flex: 1; height: 2rpx; background: #111; }
+.v2-mode .pet-sheet-divider-text-v2 { font-size: 20rpx; font-weight: 800; color: #111; text-transform: uppercase; letter-spacing: 2rpx; white-space: nowrap; }
+.v2-mode .pet-custom-entry-v2 { display: flex; align-items: center; gap: 12rpx; padding: 20rpx; border: 2rpx dashed #111; background: #fcfcfc; }
+.v2-mode .pet-custom-icon-v2 { font-size: 32rpx; }
+.v2-mode .pet-custom-text-v2 { flex: 1; font-size: 24rpx; font-weight: 700; color: #666; }
+.v2-mode .pet-custom-arrow-v2 { font-size: 28rpx; font-weight: 900; color: #111; }
 
 .v2-mode .chip-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .chip-grid-v2.cols3 { grid-template-columns: repeat(3, 1fr); }

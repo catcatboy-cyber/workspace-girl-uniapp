@@ -3,7 +3,7 @@
     <view class="hero-block-v2">
       <text class="hero-tag-v2">SYSTEM</text>
       <text class="hero-title-v2">系统<text class="hl-v2">轨迹</text></text>
-      <text class="hero-copy-v2">系统自动生成的判定、趋势和复盘记录。</text>
+      <text class="hero-copy-v2">系统自动生成的分析、趋势和复盘记录。</text>
     </view>
 
     <view v-if="loading" class="loading-v2">LOADING...</view>
@@ -23,7 +23,7 @@
 
         <view v-if="!tracks.length" class="empty-v2">
           <text class="empty-title-v2">暂无系统轨迹</text>
-          <text class="empty-sub-v2">完成判定后系统会自动生成轨迹记录。</text>
+          <text class="empty-sub-v2">完成分析后系统会自动生成轨迹记录。</text>
         </view>
 
         <view v-else class="event-list-v2">
@@ -48,6 +48,7 @@
           </view>
         </view>
       </template>
+    <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
     </view>
   </view>
 </template>
@@ -128,11 +129,11 @@ function toneClass(type: string) {
 
 function mapSystemTrackTypeLabel(type?: string) {
   switch (type) {
-    case 'assessment': return '系统判定'
+    case 'assessment': return '系统分析'
     case 'trend': return '趋势重算'
-    case 'positive': return '推进研判'
-    case 'risk': return '风险研判'
-    case 'verification': return '验证研判'
+    case 'positive': return '推进分析'
+    case 'risk': return '风险分析'
+    case 'verification': return '验证分析'
     case 'note': return '普通记录'
     default: return '系统日志'
   }
@@ -188,7 +189,7 @@ function formatRecordedAt(record: any) {
 .v2-mode .event-dot-v2.verification { background: #FFD93D; }
 .v2-mode .event-dot-v2.assessment { background: #111; }
 .v2-mode .event-dot-v2.trend { background: #666; }
-.v2-mode .event-dot-v2.note { background: #ccc; }
+.v2-mode .event-dot-v2.note { background: #e0e0e0; }
 .v2-mode .event-body-v2 { flex: 1; min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
 .v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }

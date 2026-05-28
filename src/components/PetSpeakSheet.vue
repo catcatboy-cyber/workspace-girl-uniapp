@@ -13,6 +13,14 @@
         <view :class="['tab', scene === 'reply' ? 'active' : '']" @click="switchScene('reply')">对方说了什么</view>
       </view>
 
+      <!-- Safety notices -->
+      <view v-if="isMinor" class="safety-notice">
+        <text>系统已自动调整为适合你的表达方式，更侧重友谊和轻松交流。</text>
+      </view>
+      <view v-if="boundaryWarning" class="boundary-notice">
+        <text>{{ boundaryWarning }}</text>
+      </view>
+
       <!-- Input -->
       <view class="input-area">
         <text class="input-label">{{ scene === 'active' ? '我想表达：' : '对方说：' }}</text>
@@ -96,7 +104,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { generatePetReplyPair, generateReplyStrategy, handleInsufficientBalance } from '@/utils/api'
+import { generatePetReplyPair, generateReplyStrategy, handleInsufficientBalance, getCachedSelfProfile } from '@/utils/api'
 
 const props = defineProps<{ visible: boolean; petName?: string }>()
 const emit = defineEmits(['close'])
@@ -104,30 +112,48 @@ const emit = defineEmits(['close'])
 type ToneKey = 'humor' | 'flirty' | 'sincere' | 'literary'
 type ReplyVariants = Partial<Record<ToneKey, string>>
 
-const toneOptions: Array<{ key: ToneKey; label: string }> = [
+const selfProfile = getCachedSelfProfile()
+const isMinor = computed(() => selfProfile?.ageRange === 'under18')
+
+const allToneOptions: Array<{ key: ToneKey; label: string }> = [
   { key: 'humor', label: '幽默轻松' },
   { key: 'flirty', label: '暧昧轻撩' },
   { key: 'sincere', label: '真诚直接' },
   { key: 'literary', label: '委婉文艺' }
 ]
 
+const toneOptions = computed(() => {
+  if (isMinor.value) return allToneOptions.filter(t => t.key !== 'flirty')
+  return allToneOptions
+})
+
+const boundarySensitiveKeywords = ['酒店', '开房', '过夜', '私密', '身体', '上床', '发生关系']
+const boundaryWarning = computed(() => {
+  if (isMinor.value) return ''
+  if (boundarySensitiveKeywords.some(k => content.value.includes(k))) {
+    return '系统检测到敏感话题，将以更克制、注重边界的方式生成回复。'
+  }
+  return ''
+})
+
+function getDefaultTone(nextScene: string): ToneKey {
+  if (isMinor.value) return 'sincere'
+  return nextScene === 'active' ? 'flirty' : 'sincere'
+}
+
 const scene = ref<'active' | 'reply'>('reply')
 const content = ref('')
 const generating = ref(false)
 const retryingTone = ref(false)
 const errorMsg = ref('')
-const activeTone = ref<ToneKey>('sincere')
+const activeTone = ref<ToneKey>(getDefaultTone('reply'))
 const results = ref<{ variants: ReplyVariants; reply?: string; alternative?: string } | null>(null)
 const strategies = ref<any[]>([])
 const activeStrategyIndex = ref(0)
 
 const sheetTitle = computed(() => `${props.petName || '小咪'}帮你说`)
-const activeToneLabel = computed(() => toneOptions.find(t => t.key === activeTone.value)?.label || '真诚直接')
+const activeToneLabel = computed(() => toneOptions.value.find(t => t.key === activeTone.value)?.label || '真诚直接')
 const activeReplyText = computed(() => results.value?.variants?.[activeTone.value] || '')
-
-function getDefaultTone(nextScene: 'active' | 'reply'): ToneKey {
-  return nextScene === 'active' ? 'flirty' : 'sincere'
-}
 
 function normalizeReplyVariants(res: any): ReplyVariants {
   const variants = res?.variants && typeof res.variants === 'object' ? { ...res.variants } : {}
@@ -138,7 +164,7 @@ function normalizeReplyVariants(res: any): ReplyVariants {
 
 function ensureActiveToneHasText(variants: ReplyVariants) {
   if (variants[activeTone.value]) return
-  const availableTone = toneOptions.find(t => variants[t.key])?.key
+  const availableTone = toneOptions.value.find(t => variants[t.key])?.key
   activeTone.value = availableTone || getDefaultTone(scene.value)
 }
 
@@ -361,5 +387,15 @@ function close() {
   margin-top: 16rpx; padding: 14rpx;
   background: #fff0f0; border: 2rpx solid #ff4444;
   font-size: 22rpx; color: #cc0000; font-weight: 700;
+}
+.safety-notice {
+  margin-bottom: 16rpx; padding: 12rpx 16rpx;
+  background: #f0f4ff; border: 2rpx solid #5588ff;
+  font-size: 22rpx; color: #2255cc; font-weight: 500;
+}
+.boundary-notice {
+  margin-bottom: 16rpx; padding: 12rpx 16rpx;
+  background: #fff8f0; border: 2rpx solid #ff8844;
+  font-size: 22rpx; color: #cc5500; font-weight: 500;
 }
 </style>

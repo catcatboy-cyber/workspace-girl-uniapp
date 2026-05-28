@@ -17,7 +17,7 @@
           </view>
           <view class="hero-copy">
             <text class="h1">修改对象名称和画像信息</text>
-            <text class="hero-subtext">更新的是对象资料层信息，不会改动历史判定。</text>
+            <text class="hero-subtext">更新的是对象资料层信息，不会改动历史分析。</text>
           </view>
         </view>
         <view class="hero-actions">

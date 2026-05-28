@@ -3,14 +3,14 @@
     <view v-if="loading" class="muted center">加载中...</view>
 
     <view v-else-if="!caseFile" class="card">
-      <text class="h1">无法重新判定</text>
+      <text class="h1">无法重新分析</text>
       <text class="muted">当前对象不存在或已被删除。</text>
     </view>
 
     <template v-else>
       <view class="hero-card card">
-        <text class="hero-topline">重新判定 / {{ caseFile.name }}</text>
-        <text class="h1">给同一个对象再做一次判定</text>
+        <text class="hero-topline">重新分析 / {{ caseFile.name }}</text>
+        <text class="h1">给同一个对象再做一次分析</text>
         <text class="hero-subtext">提交后不会覆盖历史，会追加成新的 assessment 记录。</text>
         <text class="muted">对象名称、关系类型和画像不在这里修改，避免你改了但本次提交并不会保存。</text>
         <view class="actions">
@@ -24,7 +24,7 @@
         :initial-name="caseFile.name"
         :initial-profile="caseFile.profile"
         :questions-only="true"
-        submit-label="提交新的判定版本"
+        submit-label="提交新的分析版本"
         @submit="onSubmit"
       />
     </template>
@@ -74,7 +74,7 @@ async function loadData() {
 }
 
 async function onSubmit(payload: { name: string; answers: any[]; profile: any }) {
-  uni.showLoading({ title: '判定中...' })
+  uni.showLoading({ title: '分析中...' })
   try {
     const res = await reassess({
       userId: userId.value,
@@ -83,17 +83,17 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
     })
     uni.hideLoading()
     if (res.success) {
-      showSuccess('判定完成')
+      showSuccess('分析完成')
       setTimeout(() => {
         setActiveCaseId(caseId.value)
         uni.switchTab({ url: '/pages/case-detail/case-detail' })
       }, 600)
     } else {
-      showError(res.message || '判定失败')
+      showError(res.message || '分析失败')
     }
   } catch (e: any) {
     uni.hideLoading()
-    showError(e?.message || '判定失败')
+    showError(e?.message || '分析失败')
   }
 }
 

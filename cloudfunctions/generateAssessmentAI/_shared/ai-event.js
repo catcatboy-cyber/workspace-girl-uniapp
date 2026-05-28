@@ -404,7 +404,7 @@ async function analyzeTimelineEvent(params) {
       personaPrompt.userPrompt,
       'Output must be JSON only. Required fields: eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply,petLine,petMood. rationale is a single short string (max 10 Chinese characters) stating the core reason. Do not return labels, confidence, or actionAdvice.',
       'petLine is one short sentence (max 50 Chinese chars) in XiaoMi (小咪)\'s first-person voice — her key takeaway from this event. petMood is one enum only: cheerful|cautious|encouraging|neutral|warning.',
-      'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings with line breaks and use Chinese colon：after each heading:\n对方可能的心理：<content>\n你下一步怎么做：<content>\n重点观察什么：<content>',
+      'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings with line breaks and use Chinese colon：after each heading:\n小咪觉得对方可能在想：<content>\n小咪觉得可以这样：<content>\n小咪说留个心眼：<content>',
       'eventInsight must be enums only: actor=target|self|both|unknown, interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear, commitmentStatus=none|promised|fulfilled|broken|unclear, evidenceType=fact|feeling|mixed|unclear.',
       '主体宾语校验：“我主动问对方 / 我问他 / 我问她 / 我问对方”表示用户主动向关系对象提问；不要改写成“对方问我”或“对方主动问用户”。只有“对方问我 / 他问我 / 她问我 / 问我”才表示关系对象主动问用户。',
       describeSubjectRole(params.event?.subjectRole),

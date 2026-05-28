@@ -11,9 +11,9 @@
         <!-- Hero -->
         <view class="hero-block-v2">
           <text class="hero-tag-v2">{{ caseFile.name }} / 关系主页</text>
-          <text class="hero-title-v2">{{ result?.explanation?.petLine || result?.explanation?.bullets?.[0] || '暂无判定结果' }}</text>
-          <text class="hero-copy-v2">结构化判断，帮你减少误判，不代表事实裁决。</text>
-          <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">最新 · {{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">风险 · {{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 判定</text></view>
+          <text class="hero-title-v2">{{ result?.explanation?.petLine || result?.explanation?.bullets?.[0] || '暂无分析结果' }}</text>
+          <text class="hero-copy-v2">AI 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
+          <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">最新 · {{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">风险 · {{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 分析</text></view>
         </view>
         <!-- Profile -->
         <view class="card-v2">
@@ -62,7 +62,7 @@
           <text class="section-title-v2">{{ aiWeeklyPreview.weekStart }} - {{ aiWeeklyPreview.weekEnd }}</text>
           <text class="weekly-title-v2">{{ aiWeeklyPreview.title }}</text>
           <view class="tag-row-v2" style="margin:10rpx 0;"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(aiWeeklyPreview.trendLabel) }}</text><text class="tag-v2 black">AI 复盘</text></view>
-          <view class="tag-row-v2" style="margin-bottom:10rpx;"><text class="tag-v2">事件 {{ aiWeeklyPreview.eventCount }}</text><text class="tag-v2">判定 {{ aiWeeklyPreview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(aiWeeklyPreview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(aiWeeklyPreview.riskDelta) }}</text></view>
+          <view class="tag-row-v2" style="margin-bottom:10rpx;"><text class="tag-v2">事件 {{ aiWeeklyPreview.eventCount }}</text><text class="tag-v2">分析 {{ aiWeeklyPreview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(aiWeeklyPreview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(aiWeeklyPreview.riskDelta) }}</text></view>
           <text class="weekly-desc-v2">{{ aiWeeklyPreview.summary }}</text>
           <view v-if="aiWeeklyPreview.keyChanges?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.keyChanges" :key="item" class="bullet-v2">• {{ item }}</text></view>
           <view v-if="aiWeeklyPreview.keyEvents?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.keyEvents" :key="item" class="bullet-v2">• {{ item }}</text></view>
@@ -85,6 +85,7 @@
           <button class="btn-v2-bottom" :disabled="weeklyPreview && !hasNewEventsSinceReview" @click="goWeeklyReview">{{ weeklyButtonLabel }}</button>
         </view>
       </template>
+    <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
 </template>
 
@@ -182,7 +183,7 @@ const statusCard = computed(() => {
 const trend = computed(() => {
   const assessments = caseFile.value?.assessments || []
   if (assessments.length < 2) return null
-  // 约定：后端按 createdAt asc 返回，数组末尾是最新判定
+  // 约定：后端按 createdAt asc 返回，数组末尾是最新分析
   const previous = assessments[assessments.length - 2]
   const current = assessments[assessments.length - 1]
   return compareAssessments(previous, current)
@@ -331,6 +332,7 @@ const triggerEvent = computed(() => {
 const isCurrentResultAIReviewed = computed(() => {
   return Boolean(
     triggerEvent.value?.aiUsed ||
+    String(result.value?.explanation?.headline || '').startsWith('AI 分析后：') ||
     String(result.value?.explanation?.headline || '').startsWith('AI 研判后：')
   )
 })
@@ -355,7 +357,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 function mapRiskLabel(bucket?: string) {
@@ -365,7 +367,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 
@@ -374,7 +376,7 @@ function mapSourceLabel(source?: string) {
     case 'initial_questionnaire': return '初评'
     case 'manual_reassessment': return '手动重评'
     case 'event_recalculation': return '事件重算'
-    default: return source || '判定'
+    default: return source || '分析'
   }
 }
 
@@ -707,7 +709,7 @@ function goWeeklyReview() {
 
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -1rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -1rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; }
 .v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
@@ -725,7 +727,7 @@ function goWeeklyReview() {
 .v2-mode .stats-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-top: 16rpx; }
 .v2-mode .stat-box-v2 { padding: 18rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
 .v2-mode .stat-box-v2.warn { background: #FFF0EE; }
-.v2-mode .stat-num-v2 { display: block; font-size: 36rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .stat-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .stat-lbl-v2 { display: block; font-size: 20rpx; font-weight: 700; color: #666; margin-top: 4rpx; }
 .v2-mode .stat-hint-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
 
@@ -738,7 +740,7 @@ function goWeeklyReview() {
 .v2-mode .trend-chg-v2 { display: block; font-size: 18rpx; font-weight: 800; margin-top: 2rpx; }
 .v2-mode .trend-chg-v2.positive { color: #4ECDC4; }
 .v2-mode .trend-chg-v2.negative { color: #FF5252; }
-.v2-mode .trend-unit-v2 { display: block; font-size: 16rpx; font-weight: 600; color: #999; margin-top: 4rpx; }
+.v2-mode .trend-unit-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 4rpx; }
 
 .v2-mode .weekly-block-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 .v2-mode .weekly-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1.3; margin-bottom: 8rpx; }
@@ -762,10 +764,10 @@ function goWeeklyReview() {
 .v2-mode .line-legend-item-v2 { display: flex; align-items: center; gap: 8rpx; font-size: 21rpx; font-weight: 800; color: #111; }
 .v2-mode .line-legend-mark-v2 { width: 34rpx; height: 5rpx; border-radius: 999rpx; background: #111; }
 .v2-mode .line-legend-mark-v2.risk { background: #FF5252; }
-.v2-mode .line-legend-tip-v2 { font-size: 20rpx; font-weight: 700; color: #888; }
+.v2-mode .line-legend-tip-v2 { font-size: 20rpx; font-weight: 700; color: #999; }
 .v2-mode .line-scroll-v2 { width: 100%; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .line-canvas-v2 { position: relative; height: 410rpx; box-sizing: border-box; }
-.v2-mode .line-grid-v2 { position: absolute; left: 34rpx; right: 28rpx; height: 1rpx; background: rgba(0,0,0,0.11); }
+.v2-mode .line-grid-v2 { position: absolute; left: 34rpx; right: 28rpx; height: 1rpx; background: rgba(0,0,0,0.06); }
 .v2-mode .line-grid-v2 text { position: absolute; left: -4rpx; top: -18rpx; transform: translateX(-100%); color: #888; font-size: 18rpx; font-weight: 700; }
 .v2-mode .line-grid-v2.top { top: 44rpx; }
 .v2-mode .line-grid-v2.middle { top: 174rpx; }
@@ -777,7 +779,7 @@ function goWeeklyReview() {
 .v2-mode .line-point-v2 text { position: absolute; top: -34rpx; color: #111; font-size: 18rpx; font-weight: 900; }
 .v2-mode .line-point-v2.risk text { top: 28rpx; color: #FF5252; }
 .v2-mode .line-x-label-v2 { position: absolute; top: 330rpx; width: 116rpx; margin-left: -58rpx; text-align: center; }
-.v2-mode .line-x-label-v2 text { display: block; color: #777; font-size: 19rpx; line-height: 1.3; font-weight: 650; }
+.v2-mode .line-x-label-v2 text { display: block; color: #999; font-size: 18rpx; line-height: 1.3; font-weight: 650; }
 .v2-mode .line-x-index-v2 { color: #111 !important; font-weight: 900 !important; }
 
 .v2-mode .turning-row-v2 { display: flex; align-items: center; justify-content: space-between; padding: 6rpx 0; }
@@ -786,7 +788,7 @@ function goWeeklyReview() {
 .v2-mode .delta-chip-v2 { padding: 2rpx 8rpx; border: 1rpx solid #111; font-size: 18rpx; font-weight: 700; }
 .v2-mode .delta-chip-v2.positive { background: #E0FFF0; color: #0F6B45; }
 .v2-mode .delta-chip-v2.negative { background: #FFEEEC; color: #FF5252; }
-.v2-mode .delta-chip-v2.flat { background: #f0f0f0; color: #999; }
+.v2-mode .delta-chip-v2.flat { background: #f9f9f9; color: #999; }
 
 .v2-mode .side-grid-v2 { display: flex; flex-direction: column; gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .side-item-v2 { padding: 14rpx; border: 2rpx solid #111; background: #fff; }

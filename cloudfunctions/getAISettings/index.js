@@ -103,7 +103,7 @@ const PROMPT_FIXED_GUARDRAILS = {
       'eventType: positive | risk | verification | note',
       'rationale is a single short string (max 10 Chinese characters), not an array.',
       'currentStatus 只返回 tags, summary, caution。',
-      'rawReply 只允许三段标题：对方可能的心理 / 你下一步怎么做 / 重点观察什么。',
+      'rawReply 只允许三段标题：小咪觉得对方可能在想 / 小咪觉得可以这样 / 小咪说留个心眼。',
       'petLine is a short sentence (max 50 chars) in XiaoMi first-person voice. petMood is one of: cheerful|cautious|encouraging|neutral|warning.',
       'Do not return labels, confidence or actionAdvice for speed.',
       'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.',

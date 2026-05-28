@@ -1,6 +1,6 @@
 <template>
   <view class="page v2-mode" :style="themeVars">
-    <view class="hero-block-v2"><text class="hero-tag-v2">NEW CASE</text><text class="hero-title-v2">新建<text class="hl-v2">对象</text></text><text class="hero-copy-v2">只有当你要开始判断一个新的对象时，才需要重新填写这份初次判定。已有对象更适合继续追加事件和滚动观察。</text><view class="btn-row-v2"><button class="btn-v2-n" @click="goHome">返回首页</button><button class="btn-v2-n" @click="goCases">查看已有对象</button></view></view>
+    <view class="hero-block-v2"><text class="hero-tag-v2">NEW CASE</text><text class="hero-title-v2">新建<text class="hl-v2">对象</text></text><text class="hero-copy-v2">只有当你要开始判断一个新的对象时，才需要重新填写这份初次分析。已有对象更适合继续追加事件和滚动观察。</text><view class="btn-row-v2"><button class="btn-v2-n" @click="goHome">返回首页</button><button class="btn-v2-n" @click="goCases">查看已有对象</button></view></view>
     <AssessmentForm @submit="onSubmit" />
   </view>
 </template>

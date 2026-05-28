@@ -191,7 +191,7 @@ function buildExplanation(
   if (labels.includes('节奏明显不稳定')) {
     cautions.push('忽冷忽热不等于无意向，但会显著降低判断可靠性。')
   }
-  cautions.push('本结果是辅助判断，不代表事实裁决。')
+  cautions.push('本次分析由AI基于已记录的事件线索生成，仅供辅助参考，不构成专业意见或事实认定。')
 
   return { headline, bullets, cautions }
 }

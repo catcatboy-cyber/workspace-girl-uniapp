@@ -913,6 +913,17 @@ export async function adminResolveFeedback(feedbackId: string, rewardTokens: num
   }).then((res: any) => res.result)
 }
 
+export async function adminListCustomPetRequests() {
+  return callFunction({ name: 'adminManage', data: { action: 'listCustomPetRequests' } }).then((res: any) => res.result)
+}
+
+export async function adminUpdateCustomPetRequest(requestId: string, data: { status: string; adminNote?: string; deliveredPetId?: string }) {
+  return callFunction({
+    name: 'adminManage',
+    data: { action: 'updateCustomPetRequest', requestId, ...data }
+  }).then((res: any) => res.result)
+}
+
 export async function adminPreviewPrompt(data: {
   moduleKey?: string
   caseId?: string

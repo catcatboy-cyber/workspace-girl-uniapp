@@ -5,7 +5,7 @@
     <template v-else>
       <view class="hero-card card">
         <text class="hero-topline">Settings / AI</text>
-        <text class="h1">AI 事件研判设置</text>
+        <text class="h1">AI 事件分析设置</text>
         <text class="hero-subtext">支持配置多个模型，可随时切换默认使用的模型。新增时间线事件时会优先用 AI 做结构化事件理解。</text>
       </view>
 
@@ -26,7 +26,7 @@
       <view class="card">
         <text class="h2">启用状态</text>
         <view class="switch-row">
-          <text class="switch-label">启用 AI 事件研判</text>
+          <text class="switch-label">启用 AI 事件分析</text>
           <switch :checked="enabled" color="#143f3a" @change="onEnabledChange" />
         </view>
         <view class="switch-row">

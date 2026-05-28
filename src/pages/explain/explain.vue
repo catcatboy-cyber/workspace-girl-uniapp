@@ -33,7 +33,7 @@ onLoad(() => {
 })
 
 const explainSections = computed(() => [
-  { key: 'snapshot' as const, label: '最新判定标签', items: snapshotItems },
+  { key: 'snapshot' as const, label: '最新分析标签', items: snapshotItems },
   { key: 'profile' as const, label: '对象画像标签', items: profileTagItems },
   { key: 'trend14' as const, label: '14天趋势标签', items: trend14Items },
   { key: 'weeklyTrend' as const, label: '本周复盘标签', items: weeklyTrendItems },
@@ -53,10 +53,10 @@ function toggleSection(key: 'snapshot' | 'profile' | 'trend14' | 'weeklyTrend' |
 }
 
 const snapshotItems = [
-  { label: '最新 · 中高意向', description: '表示最新一次判定里的意向等级。它是当前快照，不代表 14 天趋势或本周总结。' },
-  { label: '风险 · 低风险', description: '表示最新一次判定里的一致性风险等级。风险越高，越要优先看回避、拖延、失约和前后不一致。' },
-  { label: '证据 E1-E5', description: '表示这次判定背后的样本和事实强度。E 越高，判断越不依赖单次感觉。' },
-  { label: 'AI 判定', description: '表示最新判定由 AI 参与生成或分析，属于单次判定口径。' }
+  { label: '最新 · 中高意向', description: '表示最新一次分析里的意向等级。它是当前快照，不代表 14 天趋势或本周总结。' },
+  { label: '风险 · 低风险', description: '表示最新一次分析里的一致性风险等级。风险越高，越要优先看回避、拖延、失约和前后不一致。' },
+  { label: '证据 E1-E5', description: '表示这次分析背后的样本和事实强度。E 越高，判断越不依赖单次感觉。' },
+  { label: 'AI 分析', description: '表示最新分析由 AI 参与生成或分析，属于单次分析口径。' }
 ]
 
 const profileTagItems = [
@@ -72,8 +72,8 @@ const trend14Items = [
   { label: '14天风险回落', description: '近 14 天内，风险分相比区间起点下降。' },
   { label: '14天风险抬头', description: '近 14 天内，风险分相比区间起点上升，需要优先回看风险事件。' },
   { label: '14天风险平稳', description: '近 14 天内，风险分没有明显净变化。' },
-  { label: '波动偏低 / 波动中等 / 波动偏高', description: '描述最近几次判定分数的起伏程度，不直接判断关系好坏。' },
-  { label: '样本充足 / 样本偏少', description: '描述近期判定数量是否足够支撑趋势观察。样本偏少时不适合下重结论。' }
+  { label: '波动偏低 / 波动中等 / 波动偏高', description: '描述最近几次分析分数的起伏程度，不直接判断关系好坏。' },
+  { label: '样本充足 / 样本偏少', description: '描述近期分析数量是否足够支撑趋势观察。样本偏少时不适合下重结论。' }
 ]
 
 const intentLevels = [
@@ -122,7 +122,7 @@ const weeklyTrendItems = [
   { label: '本周承压', description: '本周更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
   { label: '本周波动', description: '本周分数变化较明显，但暂时还不适合下单向结论。' },
   { label: '本周平稳', description: '本周整体没有出现足够强的新变化，先继续记录。' },
-  { label: 'AI 复盘', description: '表示这块内容是按周汇总生成，不等同于单次 AI 判定。' }
+  { label: 'AI 复盘', description: '表示这块内容是按周汇总生成，不等同于单次 AI 分析。' }
 ]
 
 const nextActionItems = [

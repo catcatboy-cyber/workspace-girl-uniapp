@@ -183,7 +183,6 @@ export function getTimelineRecordTags(record) {
   if (includesAny(text, ['拒绝', '被拒', '婉拒', '不去', '不想', '没答应', '算了', '推掉', '来不了'])) pushUnique(risk, 'rejected')
   if (includesAny(text, ['已读不回', '没回', '不回', '冷淡', '敷衍', '消失', '回避'])) pushUnique(risk, 'cold')
   if (includesAny(text, ['再看', '看情况', '以后再说', '不确定', '拖延', '改口'])) pushUnique(risk, 'vague_delay')
-  if (record?.aiUsed) pushUnique(outcome, 'ai_reviewed')
 
   return {
     scene,
@@ -209,8 +208,7 @@ export function buildTimelineStats(records) {
     selfInitiatedCount: count('self_initiated'),
     fulfilledCount: count('fulfilled'),
     rejectedCount: count('rejected'),
-    cancelledDelayedCount: count('cancelled_delayed'),
-    aiReviewedCount: count('ai_reviewed')
+    cancelledDelayedCount: count('cancelled_delayed')
   }
 }
 
@@ -1560,7 +1558,7 @@ function buildSemanticActionAdvice(event, current, eventTitle) {
     return {
       nature: `“${eventTitle}”是吃饭已经兑现，属于正向样本；重点从“有没有见面”转为“见面后有没有延续”。`,
       psychology: '如果对方体验不错，通常会愿意延续话题、回应饭后的轻松复盘，甚至顺手提下次；如果他只礼貌收尾，也可能只是把这次当普通饭局。',
-      overread: '不要因为一顿饭开心就急着确认关系，也不要因为饭后没立刻热聊就判定没戏。',
+      overread: '不要因为一顿饭开心就急着确认关系，也不要因为饭后没立刻热聊就分析没戏。',
       nextMove: '你可以当天晚点或者第二天提一个饭里的小细节，再顺手带一句下次。不要突然上价值，也不要急着确认关系。',
       masterAdvice: '你可以说：“今天那家店比我想的舒服，下次你说的那家咖啡/电影也可以试试。” 他如果接“下次”或者给选项，就继续往前走。',
       do: `“${eventTitle}”已经是线下吃饭并且真实发生了，下一步适合轻轻承接这次愉快体验，不要立刻把话题推成表白或关系确认。可以隔几个小时或当天晚些时候自然跟进一次，再顺手埋一个低压力的下次机会。`,

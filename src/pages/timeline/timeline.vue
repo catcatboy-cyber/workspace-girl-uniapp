@@ -7,7 +7,26 @@
         <view class="hero-block-v2"><text class="hero-tag-v2">关系记录 / {{ caseFile.name }}</text><text class="hero-title-v2">互动<text class="hl-v2">时间轴</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
         <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
         <view v-if="activeTimelineView === 'events'">
-          <view class="card-v2" style="border-color:#4ECDC4;"><view class="stats-grid-v2"><view v-for="item in timelineStatItems" :key="item.key" class="stat-box-v2"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view><scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view></view>
+          <view class="card-v2" style="border-color:#4ECDC4;">
+  <view class="stat-pair-grid-v2">
+    <view :class="['stat-pair-box-v2', activeTimelineFilter === 'target_initiated' ? 'active' : '', activeTimelineFilter === 'self_initiated' ? 'active' : '']" @click="toggleStatFilter('target_initiated', 'self_initiated')">
+      <text class="section-title-v2" style="margin-bottom:8rpx;">谁更主动</text>
+      <view class="stat-pair-row-v2">
+        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'target_initiated' ? 'hl' : '']"><text class="stat-pair-num-v2">{{ timelineStats.targetInitiatedCount }}</text><text class="stat-pair-lbl-v2">对方主动</text></view>
+        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'self_initiated' ? 'hl' : '']"><text class="stat-pair-num-v2">{{ timelineStats.selfInitiatedCount }}</text><text class="stat-pair-lbl-v2">我方主动</text></view>
+      </view>
+    </view>
+    <view :class="['stat-pair-box-v2', ['target_committed','fulfilled','cancelled_delayed'].includes(activeTimelineFilter) ? 'active' : '']">
+      <text class="section-title-v2" style="margin-bottom:8rpx;">承诺与兑现</text>
+      <view class="stat-pair-row-v2">
+        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'target_committed' ? 'hl' : '']" @click="setTimelineFilter('target_committed')"><text class="stat-pair-num-v2">{{ timelineStats.targetCommittedCount }}</text><text class="stat-pair-lbl-v2">对方承诺</text></view>
+        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'fulfilled' ? 'hl' : '']" @click="setTimelineFilter('fulfilled')"><text class="stat-pair-num-v2">{{ timelineStats.fulfilledCount }}</text><text class="stat-pair-lbl-v2">已兑现</text></view>
+        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'cancelled_delayed' ? 'hl' : '']" @click="setTimelineFilter('cancelled_delayed')"><text class="stat-pair-num-v2">{{ timelineStats.cancelledDelayedCount + timelineStats.rejectedCount }}</text><text class="stat-pair-lbl-v2">取消/拒绝</text></view>
+      </view>
+    </view>
+  </view>
+  <scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view>
+</view>
           <view class="card-v2"><text class="section-title-v2">关键事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getAttachmentBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAttachmentBadges(item)" :key="badge" :class="['tag-v2 sm', isImageAttachmentBadge(badge) ? 'clickable' : '']" @click="isImageAttachmentBadge(badge) && previewTimelineImages(item)">{{ badge }}</text></view></view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
         </view>
         <view v-if="activeTimelineView === 'weeklyReviews'">
@@ -28,7 +47,7 @@
                   <text class="event-desc-v2">{{ item.description }}</text>
                   <view v-if="!isWeeklySideReadRecord(item) && (item.eventCount || item.assessmentCount || item.intentDelta || item.riskDelta)" class="tag-row-v2" style="margin-top:8rpx;">
                     <text v-if="item.eventCount" class="tag-v2 sm">事件 {{ item.eventCount }}</text>
-                    <text v-if="item.assessmentCount" class="tag-v2 sm">判定 {{ item.assessmentCount }}</text>
+                    <text v-if="item.assessmentCount" class="tag-v2 sm">分析 {{ item.assessmentCount }}</text>
                     <text v-if="item.intentDelta !== undefined" class="tag-v2 sm">意向 {{ item.intentDelta > 0 ? '+' : '' }}{{ item.intentDelta }}</text>
                     <text v-if="item.riskDelta !== undefined" class="tag-v2 sm">风险 {{ item.riskDelta > 0 ? '+' : '' }}{{ item.riskDelta }}</text>
                   </view>
@@ -43,13 +62,13 @@
           </view>
         </view>
         <view v-if="activeTimelineView === 'assessments'">
-          <view class="card-v2"><view class="stats-grid-v2"><view v-for="item in assessmentStatItems" :key="item.key" class="stat-box-v2"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view><scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in assessmentFilterOptions" :key="item.key" :class="['filter-chip-v2', activeAssessmentFilter === item.key ? 'active' : '']" @click="setAssessmentFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view></view>
+          <view class="card-v2"><view class="stats-grid-v2 stats-grid-4col-v2"><view v-for="item in assessmentStatItems" :key="item.key" :class="['stat-box-v2', activeAssessmentFilter === item.key ? 'active' : '']" @click="toggleAssessmentStatFilter(item.key)"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view></view>
           <view v-if="filteredAssessmentEntries.length > 0" class="event-list-v2">
             <view v-for="entry in visibleAssessmentEntriesV2" :key="getAssessmentKey(entry.item)" class="event-row-v2">
               <view class="event-time-v2"><text class="event-date-v2">{{ formatAssessmentAxisDate(entry.item) }}</text><text class="event-clock-v2">{{ formatAssessmentAxisTime(entry.item) }}</text><view class="event-dot-v2 assessment"></view></view>
               <view class="event-body-v2 assessment-card-v2">
                 <text class="event-title-v2">已记录：{{ getAssessmentTitle(entry.item) }}</text>
-                <view class="tag-row-v2" style="margin:6rpx 0;"><text v-if="hasAIReview(entry.item)" class="tag-v2 black sm">AI 判定</text></view>
+                <view class="tag-row-v2" style="margin:6rpx 0;"><text v-if="hasAIReview(entry.item)" class="tag-v2 black sm">AI 分析</text></view>
                 <text class="event-desc-v2">{{ getAssessmentOriginalRecordText(entry.item) }}</text>
                 <!-- Scores -->
                 <view class="score-block-v2">
@@ -68,7 +87,7 @@
                   <view v-if="getAssessmentProblemTypeTags(entry.item).length" class="tag-row-v2"><text class="tag-v2 muted sm" v-for="tag in getAssessmentProblemTypeTags(entry.item)" :key="tag">{{ tag }}</text></view>
                 </view>
                 <!-- Action plan -->
-                <view v-if="getAssessmentActionPlanPanel(entry.item).show" class="action-box-v2"><text class="action-label-v2">你接下来怎么做</text><text v-if="getAssessmentActionPlanPanel(entry.item).missing" class="trend-summary-v2">{{ getAssessmentActionPlanPanel(entry.item).text }}</text><view v-else><view v-for="item in getAssessmentActionPlanPanel(entry.item).sections" :key="item.label" class="action-item-v2"><text class="action-item-label-v2">{{ item.label }}</text><text class="action-item-text-v2">{{ item.text }}</text></view></view></view>
+                <view v-if="getAssessmentActionPlanPanel(entry.item).show" class="action-box-v2"><text class="action-label-v2">{{ getPetById(getSelectedPetId()).displayName }} 帮你看看</text><text v-if="getAssessmentActionPlanPanel(entry.item).missing" class="trend-summary-v2">{{ getAssessmentActionPlanPanel(entry.item).text }}</text><view v-else><view v-for="item in getAssessmentActionPlanPanel(entry.item).sections" :key="item.label" class="action-item-v2"><text class="action-item-label-v2">{{ petLabel(item.label) }}</text><text class="action-item-text-v2">{{ item.text }}</text></view></view></view>
                 <!-- Side read -->
                 <view v-if="getAssessmentSideRead(entry.item)" class="side-inline-v2">
                   <text class="focus-label-v2">{{ getAssessmentSideRead(entry.item).title }}</text>
@@ -89,6 +108,7 @@
         </view>
         <view v-if="selectedStatusInfo" class="info-mask-v2" @click="selectedStatusInfo = null"><view class="info-modal-v2" @click.stop><view class="info-head-v2"><text class="info-title-v2">当前状态怎么看</text><text class="info-close-v2" @click="selectedStatusInfo = null">X</text></view><scroll-view scroll-y class="info-body-v2"><view v-if="selectedStatusInfo.summary || selectedStatusInfo.caution" class="info-section-v2 ylw"><text class="info-sec-title-v2">这次状态说明</text><text v-if="selectedStatusInfo.summary" class="info-sec-copy-v2 strong">{{ selectedStatusInfo.summary }}</text><text v-if="selectedStatusInfo.caution" class="info-sec-copy-v2">{{ selectedStatusInfo.caution }}</text></view><view class="info-section-v2"><text class="info-sec-title-v2">状态标签</text><view v-for="item in selectedStatusStateItems" :key="`${item.group}-${item.tag}`" class="info-tag-row-v2"><text class="info-chip-v2">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">{{ item.group }}</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view><view class="info-section-v2"><text class="info-sec-title-v2">问题类型</text><view v-for="item in selectedProblemItems" :key="item.tag" class="info-tag-row-v2"><text class="info-chip-v2 muted">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">问题类型</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view></scroll-view></view></view>
       </template>
+    <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
 </template>
 
@@ -97,6 +117,7 @@ import { ref, computed, nextTick } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import { batchTagEvents, getCaseDetail, getCurrentUserId, getCases, getCachedSelfProfile, getSelfProfile, getTempFileURL } from '@/utils/api'
 import { consumePendingTimelineContext, getActiveCaseId, setActiveCaseId, showError } from '@/utils/helpers'
+import { getSelectedPetId, getPetById } from '@/utils/pets.js'
 import { buildProfileItems, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { buildTimelineFromLatestResult, compareAssessments, sortTimelineRecordsDesc, isSystemTimelineRecord, getTimelineRecordTimestamp } from '@/utils/insights'
 import { buildTimelineStats, getTimelineRecordTags, buildObjectStatusCard } from '@/utils/insights'
@@ -162,29 +183,25 @@ const weeklyReviewTimeline = computed(() => {
 
 const timelineStats = computed(() => buildTimelineStats(manualTimeline.value))
 
-const timelineStatItems = computed(() => [
-  { key: 'offline', label: '线下见面', value: `${timelineStats.value.offlineMeetCount} 次` },
-  { key: 'targetInitiated', label: '对方主动', value: `${timelineStats.value.targetInitiatedCount} 次` },
-  { key: 'targetCommitted', label: '对方承诺', value: `${timelineStats.value.targetCommittedCount} 次` },
-  { key: 'fulfilled', label: '已兑现', value: `${timelineStats.value.fulfilledCount} 次` },
-  { key: 'selfInitiated', label: '我方主动', value: `${timelineStats.value.selfInitiatedCount} 次` },
-  { key: 'rejected', label: '被拒绝', value: `${timelineStats.value.rejectedCount} 次` }
-])
+const timelineStatItems = computed(() => [])
 
-const timelineFilterOptions = computed(() => [
-  { key: 'all', label: '全部', count: timelineStats.value.totalCount },
-  { key: 'offline_meet', label: '见面', count: timelineStats.value.offlineMeetCount },
-  { key: 'movie', label: '电影', count: timelineStats.value.movieCount },
-  { key: 'meal', label: '吃饭', count: timelineStats.value.mealCount },
-  { key: 'coffee_tea', label: '咖啡奶茶', count: timelineStats.value.coffeeTeaCount },
-  { key: 'target_initiated', label: '对方主动', count: timelineStats.value.targetInitiatedCount },
-  { key: 'target_committed', label: '对方承诺', count: timelineStats.value.targetCommittedCount },
-  { key: 'fulfilled', label: '已兑现', count: timelineStats.value.fulfilledCount },
-  { key: 'self_initiated', label: '我方主动', count: timelineStats.value.selfInitiatedCount },
-  { key: 'cancelled_delayed', label: '取消拖延', count: timelineStats.value.cancelledDelayedCount },
-  { key: 'rejected', label: '被拒', count: timelineStats.value.rejectedCount },
-  { key: 'ai_reviewed', label: 'AI判定', count: timelineStats.value.aiReviewedCount }
-])
+const timelineFilterOptions = computed(() => {
+  const sceneKeys = new Set<string>()
+  for (const item of manualTimeline.value) {
+    const scene = getTimelineRecordTags(item).scene || []
+    for (const s of scene) sceneKeys.add(s)
+  }
+  const sceneItems = Array.from(sceneKeys).map((key) => {
+    const count = manualTimeline.value.filter((item: any) => getTimelineRecordTags(item).all.includes(key)).length
+    const labelMap = { offline_meet: '见面', movie: '电影', meal: '吃饭', coffee_tea: '咖啡奶茶', walk: '散步', chat: '聊天', gift: '礼物', phone_call: '电话', online_chat: '线上聊天', shopping: '逛街', activity: '活动', study: '学习', work: '工作', travel: '出行', game: '游戏', sport: '运动', music: '音乐', pet: '宠物', food: '美食' }
+    const label = labelMap[key] || key
+    return { key, label, count }
+  }).filter((item) => item.count > 0).sort((a, b) => b.count - a.count)
+  return [
+    { key: 'all', label: '全部', count: timelineStats.value.totalCount },
+    ...sceneItems
+  ]
+})
 
 const activeTimelineFilterLabel = computed(() => {
   const item = timelineFilterOptions.value.find((option) => option.key === activeTimelineFilter.value)
@@ -213,7 +230,7 @@ const supportTimeline = computed(() => {
 
 const timelineViewOptions = computed(() => [
   { key: 'events', label: '关键事件', count: manualTimeline.value.length },
-  { key: 'assessments', label: '判定记录', count: assessmentTimeline.value.length },
+  { key: 'assessments', label: '分析记录', count: assessmentTimeline.value.length },
   { key: 'weeklyReviews', label: '周复盘', count: weeklyReviewTimeline.value.length },
 ])
 
@@ -248,10 +265,10 @@ const latestRawReply = computed(() => {
 function parseRawReplySections(text: string) {
   const source = String(text || '').trim()
   if (!source) return []
-  const labels = ['对方可能的心理', '你下一步怎么做', '重点观察什么']
+  const labels = ['小咪觉得对方可能在想', '小咪觉得可以这样', '小咪说留个心眼']
   const normalized = source
     .replace(/\r/g, '')
-    .replace(/(对方可能的心理|你下一步怎么做|重点观察什么)\s*[：:]/g, '\n$1：')
+    .replace(/(小咪觉得对方可能在想|小咪觉得可以这样|小咪说留个心眼)\s*[：:]/g, '\n$1：')
     .trim()
   const sections = labels.map((label, index) => {
     const start = normalized.indexOf(`${label}：`)
@@ -266,6 +283,10 @@ function parseRawReplySections(text: string) {
     return text ? { label, text } : null
   }).filter(Boolean) as Array<{ label: string; text: string }>
   return sections.length ? sections : [{ label: '回复建议', text: source }]
+}
+
+function petLabel(label: string) {
+  return label.replace(/小咪/g, getPetById(getSelectedPetId()).displayName)
 }
 
 const latestActionPlanPanel = computed(() => {
@@ -288,6 +309,7 @@ const latestActionPlanPanel = computed(() => {
 const isLatestResultAIReviewed = computed(() => {
   return Boolean(
     triggerEvent.value?.aiUsed ||
+    String(latestResult.value?.explanation?.headline || '').startsWith('AI 分析后：') ||
     String(latestResult.value?.explanation?.headline || '').startsWith('AI 研判后：')
   )
 })
@@ -325,36 +347,25 @@ const assessmentStats = computed(() => {
   const countComparableBy = (predicate: (entry: any) => boolean) => comparableEntries.filter(predicate).length
   return {
     total: entries.length,
+    highRisk: countBy((entry) => entry.item?.riskBucket === 'high' || entry.item?.riskBucket === 'medium_high'),
     intentUp: countComparableBy((entry) => entry.trend.intentDirection === 'up'),
     intentDown: countComparableBy((entry) => entry.trend.intentDirection === 'down'),
     intentFlat: countComparableBy((entry) => entry.trend.intentDirection === 'flat'),
     riskUp: countComparableBy((entry) => entry.trend.riskDirection === 'up'),
     riskDown: countComparableBy((entry) => entry.trend.riskDirection === 'down'),
-    riskFlat: countComparableBy((entry) => entry.trend.riskDirection === 'flat'),
-    aiReviewed: countBy((entry) => hasAIReview(entry.item)),
-    eventRecalculation: countBy((entry) => entry.item?.source === 'event_recalculation')
+    riskFlat: countComparableBy((entry) => entry.trend.riskDirection === 'flat')
   }
 })
 
 const assessmentStatItems = computed(() => [
-  { key: 'total', label: '判定次数', value: `${assessmentStats.value.total} 次` },
-  { key: 'intentUp', label: '意向上升', value: `${assessmentStats.value.intentUp} 次` },
-  { key: 'intentFlat', label: '意向持平', value: `${assessmentStats.value.intentFlat} 次` },
-  { key: 'riskUp', label: '风险上升', value: `${assessmentStats.value.riskUp} 次` },
-  { key: 'riskFlat', label: '风险持平', value: `${assessmentStats.value.riskFlat} 次` },
-  { key: 'aiReviewed', label: 'AI参与', value: `${assessmentStats.value.aiReviewed} 次` }
-])
-
-const assessmentFilterOptions = computed(() => [
-  { key: 'all', label: '全部', count: assessmentStats.value.total },
-  { key: 'intent_up', label: '意向上升', count: assessmentStats.value.intentUp },
-  { key: 'intent_down', label: '意向下降', count: assessmentStats.value.intentDown },
-  { key: 'intent_flat', label: '意向持平', count: assessmentStats.value.intentFlat },
-  { key: 'risk_up', label: '风险上升', count: assessmentStats.value.riskUp },
-  { key: 'risk_down', label: '风险下降', count: assessmentStats.value.riskDown },
-  { key: 'risk_flat', label: '风险持平', count: assessmentStats.value.riskFlat },
-  { key: 'ai_reviewed', label: 'AI判定', count: assessmentStats.value.aiReviewed },
-  { key: 'event_recalculation', label: '事件重算', count: assessmentStats.value.eventRecalculation }
+  { key: 'all', label: '全部', value: `${assessmentStats.value.total} 次` },
+  { key: 'intent_up', label: '意向上升', value: `${assessmentStats.value.intentUp} 次` },
+  { key: 'intent_flat', label: '意向持平', value: `${assessmentStats.value.intentFlat} 次` },
+  { key: 'intent_down', label: '意向下降', value: `${assessmentStats.value.intentDown} 次` },
+  { key: 'high_risk', label: '高风险', value: `${assessmentStats.value.highRisk} 次` },
+  { key: 'risk_up', label: '风险上升', value: `${assessmentStats.value.riskUp} 次` },
+  { key: 'risk_flat', label: '风险持平', value: `${assessmentStats.value.riskFlat} 次` },
+  { key: 'risk_down', label: '风险下降', value: `${assessmentStats.value.riskDown} 次` }
 ])
 
 const filteredAssessmentEntries = computed(() => {
@@ -367,8 +378,7 @@ const filteredAssessmentEntries = computed(() => {
       case 'risk_up': return entry.trend.hasPrevious && entry.trend.riskDirection === 'up'
       case 'risk_down': return entry.trend.hasPrevious && entry.trend.riskDirection === 'down'
       case 'risk_flat': return entry.trend.hasPrevious && entry.trend.riskDirection === 'flat'
-      case 'ai_reviewed': return hasAIReview(entry.item)
-      case 'event_recalculation': return entry.item?.source === 'event_recalculation'
+      case 'high_risk': return entry.item?.riskBucket === 'high' || entry.item?.riskBucket === 'medium_high'
       default: return true
     }
   })
@@ -441,7 +451,7 @@ function mapSourceLabel(source?: string) {
     case 'initial_questionnaire': return '初评'
     case 'manual_reassessment': return '手动重评'
     case 'event_recalculation': return '事件重算'
-    default: return source || '判定'
+    default: return source || '分析'
   }
 }
 
@@ -469,7 +479,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 
@@ -480,7 +490,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 
@@ -567,6 +577,7 @@ function formatAssessmentAxisTime(item: any) {
 function hasAIReview(item: any) {
   return Boolean(
     item?.aiUsed ||
+    String(item?.explanation?.headline || '').startsWith('AI 分析后：') ||
     String(item?.explanation?.headline || '').startsWith('AI 研判后：')
   )
 }
@@ -768,11 +779,11 @@ async function previewAssessmentImages(item: any, index = 0) {
 
 function mapSystemTrackTypeLabel(type?: string) {
   switch (type) {
-    case 'assessment': return '系统判定'
+    case 'assessment': return '系统分析'
     case 'trend': return '趋势重算'
-    case 'positive': return '推进研判'
-    case 'risk': return '风险研判'
-    case 'verification': return '验证研判'
+    case 'positive': return '推进分析'
+    case 'risk': return '风险分析'
+    case 'verification': return '验证分析'
     case 'note': return '普通记录'
     default: return '系统日志'
   }
@@ -780,10 +791,10 @@ function mapSystemTrackTypeLabel(type?: string) {
 
 function mapTimelineTypeMessage(type?: string) {
   switch (type) {
-    case 'positive': return '系统判定：这更像一次推进事件，会更关注主动、投入和关系推进信号。'
-    case 'risk': return '系统判定：这更像一次风险事件，会更关注回避、拖延、失约和一致性问题。'
-    case 'verification': return '系统判定：这更像一次验证事件，会更关注事实核实和承诺兑现。'
-    case 'note': return '系统判定：这更像一条普通记录，先保留，等待后续更多线索。'
+    case 'positive': return '系统分析：这更像一次推进事件，会更关注主动、投入和关系推进信号。'
+    case 'risk': return '系统分析：这更像一次风险事件，会更关注回避、拖延、失约和一致性问题。'
+    case 'verification': return '系统分析：这更像一次验证事件，会更关注事实核实和承诺兑现。'
+    case 'note': return '系统分析：这更像一条普通记录，先保留，等待后续更多线索。'
     default: return '系统已经完成本次事件分类。'
   }
 }
@@ -830,8 +841,28 @@ function setTimelineFilter(key: string) {
   manualTimelineExpanded.value = false
 }
 
+function toggleStatFilter(key1: string, key2: string) {
+  if (activeTimelineFilter.value === key1) {
+    activeTimelineFilter.value = key2
+  } else if (activeTimelineFilter.value === key2) {
+    activeTimelineFilter.value = 'all'
+  } else {
+    activeTimelineFilter.value = key1
+  }
+  manualTimelineExpanded.value = false
+}
+
 function setAssessmentFilter(key: string) {
   activeAssessmentFilter.value = key
+  assessmentVisibleMax.value = 7
+}
+
+function toggleAssessmentStatFilter(key: string) {
+  if (activeAssessmentFilter.value === key) {
+    activeAssessmentFilter.value = 'all'
+  } else {
+    activeAssessmentFilter.value = key
+  }
   assessmentVisibleMax.value = 7
 }
 
@@ -1124,7 +1155,7 @@ async function syncSemanticTags() {
 
 .v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-bottom: 14rpx; }
 .v2-mode .stat-box-v2 { padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
-.v2-mode .stat-num-v2 { display: block; font-size: 30rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .stat-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 2rpx; }
 
 .v2-mode .filter-scroll-v2 { width: 100%; margin-top: 8rpx; white-space: nowrap; }
@@ -1158,7 +1189,7 @@ async function syncSemanticTags() {
 .v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; margin-top: 4rpx; }
 .v2-mode .event-body-v2 { flex: 1; min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
-.v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }
+.v2-mode .event-meta-v2 text { font-size: 16rpx; font-weight: 600; color: #999; }
 .v2-mode .event-title-v2 { display: block; font-size: 26rpx; font-weight: 800; color: #111; line-height: 1.4; }
 .v2-mode .event-desc-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 4rpx; }
 
@@ -1169,7 +1200,7 @@ async function syncSemanticTags() {
 .v2-mode .score-lbl-v2 { width: 40rpx; font-size: 18rpx; font-weight: 700; color: #666; }
 .v2-mode .score-val-v2 { width: 44rpx; font-size: 28rpx; font-weight: 900; color: #111; }
 .v2-mode .score-val-v2.risk { color: #FF5252; }
-.v2-mode .score-tag-v2 { font-size: 18rpx; font-weight: 600; color: #999; margin-right: 6rpx; }
+.v2-mode .score-tag-v2 { font-size: 16rpx; font-weight: 600; color: #999; margin-right: 6rpx; }
 .v2-mode .score-bar-v2 { flex: 1; height: 10rpx; border: 2rpx solid #ccc; background: #fff; }
 .v2-mode .score-fill-v2 { height: 10rpx; background: #111; }
 .v2-mode .score-fill-v2.risk { background: #FF5252; }
@@ -1185,7 +1216,7 @@ async function syncSemanticTags() {
 .v2-mode .status-box-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .status-head-v2 { display: flex; align-items: center; gap: 8rpx; margin-bottom: 8rpx; }
 .v2-mode .info-icon-v2 { width: 30rpx; height: 30rpx; line-height: 28rpx; text-align: center; border: 2rpx solid #111; font-size: 18rpx; font-weight: 900; color: #111; }
-.v2-mode .tag-v2.muted { background: #e8e8e8; color: #666; }
+.v2-mode .tag-v2.muted { background: #e0e0e0; color: #666; }
 
 .v2-mode .delta-row-v2 { display: flex; gap: 8rpx; }
 .v2-mode .delta-item-v2 { flex: 1; padding: 10rpx; border: 2rpx solid #111; text-align: center; background: #fff; }
@@ -1208,9 +1239,9 @@ async function syncSemanticTags() {
 .v2-mode .info-sec-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
 .v2-mode .info-sec-copy-v2 { display: block; font-size: 22rpx; color: #555; line-height: 1.6; margin-top: 6rpx; }
 .v2-mode .info-sec-copy-v2.strong { font-weight: 700; color: #111; }
-.v2-mode .info-tag-row-v2 { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #e8e8e8; }
+.v2-mode .info-tag-row-v2 { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #e0e0e0; }
 .v2-mode .info-chip-v2 { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .info-chip-v2.muted { background: #e8e8e8; }
+.v2-mode .info-chip-v2.muted { background: #e0e0e0; }
 .v2-mode .info-chip-copy-v2 { flex: 1; }
 .v2-mode .info-chip-title-v2 { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
 .v2-mode .info-chip-desc-v2 { display: block; font-size: 20rpx; color: #666; line-height: 1.5; margin-top: 4rpx; }
@@ -1222,4 +1253,21 @@ async function syncSemanticTags() {
   0% { width: 30%; left: -30%; }
   100% { width: 30%; left: 130%; }
 }
+
+/* stat pair layout */
+.v2-mode .stat-pair-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-bottom: 14rpx; }
+.v2-mode .stat-pair-box-v2 { padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; cursor: pointer; }
+.v2-mode .stat-pair-box-v2.active { background: #111; }
+.v2-mode .stat-pair-box-v2.active .section-title-v2 { color: #FFD93D; }
+.v2-mode .stat-pair-row-v2 { display: flex; gap: 8rpx; }
+.v2-mode .stat-pair-item-v2 { flex: 1; text-align: center; padding: 10rpx 4rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .stat-pair-item-v2.hl { background: #FFD93D; }
+.v2-mode .stat-pair-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .stat-pair-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 2rpx; }
+
+/* stats grid clickable */
+.v2-mode .stats-grid-4col-v2 { grid-template-columns: repeat(4, 1fr); }
+.v2-mode .stat-box-v2.active { background: #111; }
+.v2-mode .stat-box-v2.active .stat-num-v2 { color: #FFD93D; }
+.v2-mode .stat-box-v2.active .stat-lbl-v2 { color: rgba(255,255,255,0.7); }
 </style>

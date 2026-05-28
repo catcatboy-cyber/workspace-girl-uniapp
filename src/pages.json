@@ -47,7 +47,7 @@
     {
       "path": "pages/assessments/assessments",
       "style": {
-        "navigationBarTitleText": "判定记录"
+        "navigationBarTitleText": "分析记录"
       }
     },
     {
@@ -59,7 +59,7 @@
     {
       "path": "pages/reassess/reassess",
       "style": {
-        "navigationBarTitleText": "重新判定"
+        "navigationBarTitleText": "重新分析"
       }
     },
     {
@@ -127,6 +127,12 @@
       "path": "pages/about/about",
       "style": {
         "navigationBarTitleText": "关于"
+      }
+    },
+    {
+      "path": "pages/custom-pet/custom-pet",
+      "style": {
+        "navigationBarTitleText": "定制宠物"
       }
     }
   ],

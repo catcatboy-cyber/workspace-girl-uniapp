@@ -121,23 +121,20 @@ async function createOrder(planId: string) {
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  background: #eef3ef;
-  padding: 24px;
-  box-sizing: border-box;
-}
+.page { min-height: 100vh; padding: 18rpx; box-sizing: border-box; }
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; }
 
-.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; }
-.hero-block-v2 { padding: 32rpx 24rpx; }
-.hero-tag-v2 { font-size: 22rpx; text-transform: uppercase; letter-spacing: 3rpx; color: var(--tag-color, #999); display: block; }
-.hero-title-v2 { font-size: 56rpx; font-weight: 900; display: block; margin: 8rpx 0; }
-.hl-v2 { color: var(--accent-color, #FFD93D); }
-.hero-copy-v2 { font-size: 26rpx; color: var(--muted-color, #999); display: block; margin-top: 12rpx; }
-.card-v2 { background: var(--card-bg, #fff); border: var(--card-border, 1px solid #eee); border-radius: 20rpx; padding: 28rpx; margin-bottom: 18rpx; box-shadow: var(--card-shadow, 0 6rpx 18rpx rgba(0,0,0,0.04)); }
-.card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
-.section-title-v2 { font-size: 30rpx; font-weight: 700; }
-.card-text-v2 { font-size: 26rpx; color: var(--muted-color, #999); display: block; margin-top: 6rpx; }
-.btn-v2-t { background: var(--btn-bg, #111); color: var(--btn-color, #FFD93D); border: none; padding: 10rpx 24rpx; border-radius: 12rpx; font-size: 24rpx; font-weight: 700; }
-.btn-v2-t.sm { padding: 6rpx 16rpx; font-size: 22rpx; }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; text-transform: uppercase; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; }
+.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: #666; line-height: 1.5; }
+
+.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
+.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 6rpx; }
+.v2-mode .btn-v2-t { height: 52rpx; line-height: 52rpx; padding: 0 24rpx; background: #fff; border: 3rpx solid #111; font-size: 22rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-t.sm { height: 44rpx; line-height: 44rpx; padding: 0 16rpx; font-size: 20rpx; }
+.v2-mode .btn-v2-t[disabled] { opacity: 0.6; }
 </style>

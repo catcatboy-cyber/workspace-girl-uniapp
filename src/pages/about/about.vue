@@ -19,7 +19,7 @@
     <view class="card-v2">
       <text class="section-title-v2">技术说明</text>
       <text class="card-text-v2">基于 uni-app (Vue 3) + 微信云开发构建。AI 能力由 Claude 模型驱动，通过 CloudBase 云函数代理调用。</text>
-      <text class="card-text-v2" style="margin-top:14rpx">Token 额度用于 AI 调用计费，每次生成判定、侧写、周复盘、语音识别等均会消耗对应 token。</text>
+      <text class="card-text-v2" style="margin-top:14rpx">Token 额度用于 AI 调用计费，每次生成分析、侧写、周复盘、语音识别等均会消耗对应 token。</text>
     </view>
   </view>
 </template>

@@ -42,6 +42,7 @@
         <button :class="['tab-btn', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'">AI 设置</button>
         <button :class="['tab-btn', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">Token 额度</button>
         <button :class="['tab-btn', activeTab === 'feedback' ? 'active' : '']" @click="switchToFeedback">反馈管理</button>
+        <button :class="['tab-btn', activeTab === 'customPet' ? 'active' : '']" @click="switchToCustomPet">宠物需求</button>
       </view>
 
       <view v-if="activeTab === 'users'" class="content-grid">
@@ -94,7 +95,7 @@
                   <text class="case-meta">{{ formatDate(item.updatedAt || item.createdAt) }}</text>
                 </view>
                 <view class="case-counts">
-                  <text>{{ item.assessmentCount }} 次判定</text>
+                  <text>{{ item.assessmentCount }} 次分析</text>
                   <text>{{ item.timelineCount }} 条记录</text>
                 </view>
               </view>
@@ -108,14 +109,14 @@
         <view class="panel-head">
           <view>
             <text class="panel-title">全局 AI 设置</text>
-            <text class="panel-meta">支持多模型配置，默认模型会被时间线 AI 判定优先使用。</text>
+            <text class="panel-meta">支持多模型配置，默认模型会被时间线 AI 分析优先使用。</text>
           </view>
           <button class="ghost-btn wide-btn" @click="addModel">添加模型</button>
         </view>
 
         <view class="switch-row">
           <view>
-            <text class="field-title">启用 AI 事件研判</text>
+            <text class="field-title">启用 AI 事件分析</text>
             <text class="field-desc">关闭后前台会回退到规则分析。</text>
           </view>
           <switch :checked="aiForm.aiEnabled" @change="onAIEnabledChange" />
@@ -631,6 +632,49 @@
           </view>
         </view>
       </view>
+
+      <view v-if="activeTab === 'customPet'" class="panel">
+        <view class="panel-head">
+          <view>
+            <text class="panel-title">宠物定制需求</text>
+            <text class="panel-meta">{{ petRequests.length }} 条需求</text>
+          </view>
+          <button class="ghost-btn wide-btn" :disabled="petRequestsLoading" @click="loadPetRequests">{{ petRequestsLoading ? '加载中' : '刷新' }}</button>
+        </view>
+        <view v-if="petRequests.length === 0 && !petRequestsLoading" class="empty">暂无宠物定制需求。</view>
+        <view v-else class="pet-request-list">
+          <view v-for="(req, index) in petRequests" :key="req._id || index" class="pet-request-item" :class="req.status">
+            <view class="pet-request-head">
+              <view>
+                <text class="pet-request-nickname">{{ req.nickname }}</text>
+                <text class="pet-request-user">用户：{{ req.userId || '未知' }}</text>
+                <text class="pet-request-time">{{ formatDate(req.createdAt) }}</text>
+              </view>
+              <view class="pet-request-status-row">
+                <text :class="['pet-request-status', req.status]">{{ statusLabel(req.status) }}</text>
+              </view>
+            </view>
+            <text class="pet-request-desc">{{ req.description }}</text>
+            <view v-if="req.referenceImages && req.referenceImages.length" class="pet-request-images">
+              <image v-for="(img, i) in req.referenceImages" :key="i" :src="img" class="pet-request-img" mode="aspectFill" />
+            </view>
+            <view v-if="req.adminNote" class="pet-request-note">
+              <text>后台备注：{{ req.adminNote }}</text>
+            </view>
+            <view v-if="req.deliveredPetId" class="pet-request-note">
+              <text>已交付 Pet ID：{{ req.deliveredPetId }}</text>
+            </view>
+            <view v-if="req.status === 'pending'" class="pet-request-actions">
+              <button class="small-btn" @click="updatePetRequest(req._id, 'in_progress')">标记制作中</button>
+              <button class="small-btn danger" @click="updatePetRequest(req._id, 'rejected')">拒绝</button>
+            </view>
+            <view v-if="req.status === 'in_progress'" class="pet-request-actions">
+              <input v-if="!deliveredPetIds[req._id]" :value="tempDeliveredPetIds[req._id] || ''" class="pet-request-petid-input" placeholder="输入交付的 Pet ID" @input="onDeliveredPetIdInput(req._id, $event)" />
+              <button class="small-btn" @click="deliverPetRequest(req._id)">标记已交付</button>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -649,6 +693,8 @@ import {
   adminGetTokenLedger,
   adminListFeedbacks,
   adminResolveFeedback,
+  adminListCustomPetRequests,
+  adminUpdateCustomPetRequest,
   getCurrentUserId,
   logout,
   testAIConnection
@@ -1716,6 +1762,98 @@ async function resolveFeedback(feedbackId: string) {
   finally { resolvingId.value = '' }
 }
 
+/* ---- Custom Pet Requests ---- */
+
+const petRequests = ref<any[]>([])
+const petRequestsLoading = ref(false)
+const tempDeliveredPetIds = reactive<Record<string, string>>({})
+
+function switchToCustomPet() {
+  activeTab.value = 'customPet'
+  if (petRequests.value.length === 0) loadPetRequests()
+}
+
+async function loadPetRequests() {
+  petRequestsLoading.value = true
+  try {
+    const result = await adminListCustomPetRequests()
+    if (result?.success) {
+      const requests = result.requests || []
+      // Resolve cloud:// file IDs to temp URLs for H5 display
+      const allFileIds: string[] = []
+      for (const req of requests) {
+        if (req.referenceImages && req.referenceImages.length) {
+          for (const img of req.referenceImages) {
+            if (img && img.startsWith('cloud://')) allFileIds.push(img)
+          }
+        }
+      }
+      if (allFileIds.length) {
+        try {
+          const urlRes: any = await uni.cloud.getTempFileURL({ fileList: allFileIds })
+          const fileMap: Record<string, string> = {}
+          const files = urlRes?.fileList || []
+          for (const f of files) {
+            if (f.fileID && f.tempFileURL) fileMap[f.fileID] = f.tempFileURL
+          }
+          for (const req of requests) {
+            if (req.referenceImages && req.referenceImages.length) {
+              req.referenceImages = req.referenceImages.map((img: string) => fileMap[img] || img)
+            }
+          }
+        } catch { /* ignore resolution errors */ }
+      }
+      petRequests.value = requests
+    }
+  } catch { /* ignore */ }
+  finally { petRequestsLoading.value = false }
+}
+
+function statusLabel(status: string) {
+  const map: Record<string, string> = { pending: '待处理', in_progress: '制作中', delivered: '已交付', rejected: '已拒绝' }
+  return map[status] || status
+}
+
+function onDeliveredPetIdInput(requestId: string, e: any) {
+  tempDeliveredPetIds[requestId] = String(e?.detail?.value || '').trim()
+}
+
+async function updatePetRequest(requestId: string, status: string) {
+  if (!requestId) return
+  errorMessage.value = ''
+  try {
+    const result = await adminUpdateCustomPetRequest(requestId, { status })
+    if (result?.success) {
+      const req = petRequests.value.find((r: any) => r._id === requestId)
+      if (req) req.status = status
+    } else {
+      errorMessage.value = result?.message || '更新失败'
+    }
+  } catch (e: any) {
+    errorMessage.value = e?.message || '更新失败'
+  }
+}
+
+async function deliverPetRequest(requestId: string) {
+  if (!requestId) return
+  const deliveredPetId = tempDeliveredPetIds[requestId] || ''
+  if (!deliveredPetId) { errorMessage.value = '请填写交付的 Pet ID'; return }
+
+  errorMessage.value = ''
+  try {
+    const result = await adminUpdateCustomPetRequest(requestId, { status: 'delivered', deliveredPetId })
+    if (result?.success) {
+      const req = petRequests.value.find((r: any) => r._id === requestId)
+      if (req) { req.status = 'delivered'; req.deliveredPetId = deliveredPetId }
+      delete tempDeliveredPetIds[requestId]
+    } else {
+      errorMessage.value = result?.message || '交付失败'
+    }
+  } catch (e: any) {
+    errorMessage.value = e?.message || '交付失败'
+  }
+}
+
 function formatDate(value: string) {
   if (!value) return '-'
   const date = new Date(value)
@@ -1805,7 +1943,7 @@ function formatDate(value: string) {
 .title {
   display: block;
   margin-top: 4px;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1.15;
 }
@@ -2457,4 +2595,25 @@ input {
 .feedback-resolved-badge { display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 4px; background: #e6f4ec; color: #0f6b45; font-size: 13px; font-weight: 700; }
 .feedback-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(23,35,31,0.08); }
 .reward-input { width: 140px; height: 34px; padding: 0 10px; border: 1px solid rgba(23,35,31,0.18); border-radius: 6px; font-size: 13px; }
+
+/* custom pet requests */
+.pet-request-list { display: flex; flex-direction: column; gap: 12px; }
+.pet-request-item { padding: 16px; border: 1px solid rgba(23,35,31,0.12); border-radius: 8px; background: #fff; }
+.pet-request-item.delivered { opacity: 0.7; background: #f6f9f6; }
+.pet-request-item.rejected { opacity: 0.5; background: #fef5f5; }
+.pet-request-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.pet-request-nickname { display: block; font-size: 17px; font-weight: 700; color: #17231f; }
+.pet-request-user { font-size: 12px; color: #68766f; margin-left: 10px; }
+.pet-request-time { display: block; font-size: 12px; color: #9ea7a3; margin-top: 2px; }
+.pet-request-status { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+.pet-request-status.pending { background: #fff8e1; color: #b45309; }
+.pet-request-status.in_progress { background: #e3f2fd; color: #1e40af; }
+.pet-request-status.delivered { background: #e6f4ec; color: #0f6b45; }
+.pet-request-status.rejected { background: #fde8e8; color: #c62828; }
+.pet-request-desc { display: block; font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 8px; }
+.pet-request-images { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.pet-request-img { width: 100px; height: 100px; border-radius: 6px; border: 1px solid rgba(23,35,31,0.12); }
+.pet-request-note { margin-top: 6px; font-size: 13px; color: #68766f; }
+.pet-request-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(23,35,31,0.08); }
+.pet-request-petid-input { width: 200px; height: 34px; padding: 0 10px; border: 1px solid rgba(23,35,31,0.18); border-radius: 6px; font-size: 13px; }
 </style>

@@ -11,7 +11,7 @@
       <!-- Deleted notice -->
       <view v-if="deleted" class="notice-v2 ok">
         <text class="notice-title-v2">对象已删除</text>
-        <text class="notice-sub-v2">相关主页、时间线和判定记录已经一起移除。</text>
+        <text class="notice-sub-v2">相关主页、时间线和分析记录已经一起移除。</text>
       </view>
 
       <view v-if="loading" class="loading-v2">LOADING...</view>
@@ -209,7 +209,7 @@ function mapIntentLabel(bucket?: string) {
     case 'medium': return '中等意向'
     case 'medium_high': return '中高意向'
     case 'high': return '高意向'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 function mapRiskLabel(bucket?: string) {
@@ -219,7 +219,7 @@ function mapRiskLabel(bucket?: string) {
     case 'medium': return '中等风险'
     case 'medium_high': return '中高风险'
     case 'high': return '高风险'
-    default: return '未判定'
+    default: return '未分析'
   }
 }
 

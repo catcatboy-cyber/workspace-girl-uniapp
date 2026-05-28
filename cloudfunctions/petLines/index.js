@@ -57,14 +57,71 @@ const DEFAULT_PET_SPEAK_CONFIG = {
   }
 }
 
-function getPetSpeakConfig(settings, moduleKey) {
+// ========== 安全护栏 ==========
+
+function isBoundarySensitivePromptEvent(text) {
+  const content = String(text || '')
+  return ['酒店', '开房', '过夜', '小树林', '私密', '暧昧', '亲', '抱', '摸', '身体', '上床', '发生关系', '边界', '性', '喝酒后']
+    .some((item) => content.includes(item))
+}
+
+const FORCED_MINOR_SAFETY_RULES = [
+  '用户未满 18 岁。只允许友谊、边界、安全感和健康沟通建议。',
+  '不要生成暧昧、撩拨、性暗示或引导亲密关系升级的话术。',
+  '不要鼓励用户进行任何形式的亲密试探或越界行为。',
+  '所有建议均应符合校园社交和健康友谊的尺度。'
+]
+
+const FORCED_BOUNDARY_SENSITIVE_RULES = [
+  '当前对话涉及亲密、边界或私密关系话题。不要替用户同意任何行为，优先提醒尊重、节奏和安全。',
+  '不要鼓励或暗示越过边界的行为，始终保持克制和尊重。'
+]
+
+async function fetchUserSelfProfile(userId) {
+  if (!userId) return null
+  try {
+    const res = await db.collection('users').doc(userId).get().catch(() => null)
+    return res?.data?.selfProfile || null
+  } catch {
+    return null
+  }
+}
+
+function resolveSafetyContext(selfProfile, content) {
+  const isMinor = selfProfile?.ageRange === 'under18'
+  const boundarySensitive = !isMinor && isBoundarySensitivePromptEvent(content)
+  return { isMinor, boundarySensitive }
+}
+
+function getPetSpeakConfig(settings, moduleKey, safetyContext) {
   const config = settings?.petSpeakConfig?.[moduleKey]
   const defaults = DEFAULT_PET_SPEAK_CONFIG[moduleKey] || {}
+  let systemPrompt = (config?.systemPrompt || defaults.systemPrompt || '').trim()
+  let temperature = config?.temperature ?? defaults.temperature ?? 0.8
+
+  // 未成年安全规则：硬性 prepend，不可被 admin 配置覆盖
+  if (safetyContext?.isMinor) {
+    const rules = FORCED_MINOR_SAFETY_RULES.map(r => `【硬性安全规则】${r}`).join('\n')
+    systemPrompt = `${rules}\n\n${systemPrompt}`
+    temperature = Math.min(temperature, 0.5)
+  } else if (safetyContext?.boundarySensitive) {
+    const rules = FORCED_BOUNDARY_SENSITIVE_RULES.map(r => `【边界提醒】${r}`).join('\n')
+    systemPrompt = `${rules}\n\n${systemPrompt}`
+  }
+
   return {
-    systemPrompt: (config?.systemPrompt || defaults.systemPrompt || '').trim(),
-    temperature: config?.temperature ?? defaults.temperature ?? 0.8,
+    systemPrompt,
+    temperature,
     maxTokens: config?.maxTokens ?? defaults.maxTokens ?? 200
   }
+}
+
+function filterSeedForMinor(pool) {
+  const romanticKeywords = ['撩', '暧昧', '心动', '甜蜜', '喜欢', '约会', '在一起', '表白', '亲', '吻', '抱', '摸']
+  return pool.filter(item => {
+    const text = (item.text || '').toLowerCase()
+    return !romanticKeywords.some(kw => text.includes(kw))
+  })
 }
 
 // ========== 种子数据 ==========
@@ -83,8 +140,9 @@ function extractKeywords(text) {
 }
 
 // ========== 随机取卡（支持关键词筛选） ==========
-function pickRandomLines(count, category, filterKeywords) {
+function pickRandomLines(count, category, filterKeywords, isMinor) {
   let pool = category ? SEED_DATA.filter(d => d.category === category) : SEED_DATA
+  if (isMinor) pool = filterSeedForMinor(pool)
 
   // 有关键词时，优先匹配 tag，匹配不到再从全量随机
   if (filterKeywords && filterKeywords.length > 0) {
@@ -275,7 +333,7 @@ function aiHttpRequest(urlStr, body, timeoutMs, apiKey) {
 
 // ========== reply (单句，兼容旧版) ==========
 
-async function generateReply(eventDesc, eventType, userId) {
+async function generateReply(eventDesc, eventType, userId, isMinor) {
   const settingsDoc = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => ({ data: [] }))
   const settings = settingsDoc.data?.[0]
   if (!settings) return { success: false, message: 'AI 未配置' }
@@ -287,7 +345,7 @@ async function generateReply(eventDesc, eventType, userId) {
     if (!bal.ok) return { success: false, message: '余额不足', code: 'INSUFFICIENT_BALANCE' }
   }
 
-  const inspirations = pickRandomLines(4)
+  const inspirations = pickRandomLines(4, null, null, isMinor)
   const inspText = inspirations.map((l, i) => `${i + 1}. [${l.category === 'humor' ? '幽默' : '文艺'}] ${l.text}`).join('\n')
   const toneGuide = {
     positive: '对方释放了积极信号，回复可以热情、俏皮、适当撩一下。',
@@ -392,7 +450,15 @@ function cleanReplyText(value) {
   return String(value || '').trim().replace(/^["'「『"']+|["'」』"']+$/g, '')
 }
 
-async function generateReplyPair(scene, content, userId, tone) {
+function buildReplySystemPrompt(baseSystemPrompt, jsonShape) {
+  const base = String(baseSystemPrompt || '').trim()
+  const instruction = `返回严格 JSON，不要任何解释文字。JSON 格式：${jsonShape}`
+  if (!base) return `你是恋爱对话教练。${instruction} 每句15-40字，自然、尊重、有边界。`
+  if (base.includes('{jsonShape}')) return base.replace('{jsonShape}', jsonShape)
+  return `${base}\n\n${instruction}`
+}
+
+async function generateReplyPair(scene, content, userId, tone, safetyContext) {
   if (userId) {
     const balCheck = await checkReplyBalance(userId)
     if (!balCheck.ok) return { success: false, code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required, message: '余额不足，请充值' }
@@ -401,7 +467,7 @@ async function generateReplyPair(scene, content, userId, tone) {
   const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
   const settings = settingsRes?.data?.[0] || {}
   const replyModuleKey = scene === 'active' ? 'replyActive' : 'reply'
-  const cfg = getPetSpeakConfig(settings, replyModuleKey)
+  const cfg = getPetSpeakConfig(settings, replyModuleKey, safetyContext)
 
   const keywords = extractKeywords(content)
   const humorPicks = pickRandomLines(3, 'humor', keywords)
@@ -417,7 +483,7 @@ async function generateReplyPair(scene, content, userId, tone) {
     ? `{"variants":{"${targetTone}":"一句可直接发送的话"}}`
     : '{"variants":{"humor":"幽默轻松","flirty":"暧昧轻撩","sincere":"真诚直接","literary":"委婉文艺"}}'
   const baseSystemPrompt = cfg.systemPrompt || DEFAULT_PET_SPEAK_CONFIG.reply.systemPrompt
-  const systemPrompt = baseSystemPrompt.replace('{jsonShape}', jsonShape) || `你是恋爱对话教练。只用 JSON 返回，格式：${jsonShape}。每句15-40字，不要引号包裹、不要解释。所有话术必须自然、尊重对方、有边界。`
+  const systemPrompt = buildReplySystemPrompt(baseSystemPrompt, jsonShape)
   let userPrompt = ''
   if (scene === 'active') {
     userPrompt = `用户想主动对心仪对象说一句话。\n想表达的意思：${content.slice(0, 200)}\n\n参考话术：\n${inspText}\n\n请按以下语气生成：\n${toneLines}`
@@ -441,20 +507,45 @@ async function generateReplyPair(scene, content, userId, tone) {
     }
 
     const data = await response.json()
-    const raw = data?.choices?.[0]?.message?.content || ''
-    const parsed = (() => { try { return JSON.parse(raw) } catch { return { variants: targetTone ? { [targetTone]: raw.slice(0, 40) } : {}, reply: raw.slice(0, 40), alternative: '' } } })()
-    const parsedVariants = parsed.variants && typeof parsed.variants === 'object' ? parsed.variants : {}
-    const variants = {}
-    REPLY_TONE_KEYS.forEach(key => {
-      const value = cleanReplyText(parsedVariants[key])
+    var raw = data?.choices?.[0]?.message?.content || ''
+    // strip markdown code fences
+    raw = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
+    var parsed = (function () { try { return JSON.parse(raw) } catch (e) { return null } })()
+    var parsedVariants = (parsed && parsed.variants && typeof parsed.variants === 'object') ? parsed.variants : {}
+    var variants = {}
+    REPLY_TONE_KEYS.forEach(function (key) {
+      var value = cleanReplyText(parsedVariants[key] || (parsed && parsed[key]))
       if (value) variants[key] = value
     })
-    if (!variants.humor && parsed.reply) variants.humor = cleanReplyText(parsed.reply)
-    if (!variants.literary && parsed.alternative) variants.literary = cleanReplyText(parsed.alternative)
-    const fallbackText = Object.values(variants).find(Boolean) || '（AI 暂未生成有效回复）'
-    const reply = variants.humor || variants[targetTone] || fallbackText
-    const alternative = variants.literary || fallbackText
-    const realTokens = data?.usage?.total_tokens || REPLY_PAIR_EST_COST
+    // Also accept Chinese tone labels, whether they appear alone or mixed with English keys.
+    REPLY_TONE_KEYS.forEach(function (key) {
+      if (variants[key]) return
+      var labelKey = REPLY_TONES[key].label
+      var value = cleanReplyText(parsedVariants[labelKey] || (parsed && parsed[labelKey]))
+      if (value) variants[key] = value
+    })
+    var directText = parsed && cleanReplyText(parsed.reply || parsed.text || parsed.content || parsed.message || parsed.answer)
+    if (directText) {
+      variants[targetTone || 'sincere'] = directText
+    }
+    // fallback: if still empty, try raw text or any variant value
+    if (Object.keys(variants).length === 0 && !parsed) {
+      variants[targetTone || 'sincere'] = cleanReplyText(raw.slice(0, 80)) || raw.slice(0, 40)
+    }
+    if (!variants[targetTone || 'sincere'] && parsed && parsed.reply) variants[targetTone || 'sincere'] = cleanReplyText(parsed.reply)
+    if (!variants.literary && parsed && parsed.alternative) variants.literary = cleanReplyText(parsed.alternative)
+    if (Object.keys(variants).length === 0) {
+      var anyValue = Object.values(parsedVariants).find(function (v) { return typeof v === 'string' && cleanReplyText(v) })
+      if (anyValue) variants[targetTone || 'sincere'] = cleanReplyText(anyValue)
+    }
+    if (Object.keys(variants).length === 0 && parsed && typeof parsed === 'object') {
+      var topLevelValue = Object.keys(parsed).map(function (key) { return parsed[key] }).find(function (v) { return typeof v === 'string' && cleanReplyText(v) })
+      if (topLevelValue) variants[targetTone || 'sincere'] = cleanReplyText(topLevelValue)
+    }
+    var fallbackText = Object.values(variants).find(Boolean) || '（AI 暂未生成有效回复）'
+    var reply = (targetTone && variants[targetTone]) || variants.sincere || variants.humor || fallbackText
+    var alternative = variants.literary || fallbackText
+    var realTokens = data?.usage?.total_tokens || REPLY_PAIR_EST_COST
 
     if (userId) await recordReplyTokenUsage(userId, realTokens, model.model, data?.usage)
     await recordModelTokenUsage(model.id, realTokens, data?.usage)
@@ -840,9 +931,10 @@ async function generateQAByAIV3(content, userId) {
 }
 
 /** 从 seed 里取高分匹配的 QA，按策略去重，保证多样性 */
-function pickTopSeedMatches(content, topN = 2) {
+function pickTopSeedMatches(content, topN = 2, isMinor) {
   const keywords = extractKeywords(content)
-  const allQA = SEED_DATA.filter(d => d.category === 'qa')
+  let allQA = SEED_DATA.filter(d => d.category === 'qa')
+  if (isMinor) allQA = filterSeedForMinor(allQA)
 
   const scored = allQA.map(d => {
     let score = 0
@@ -962,7 +1054,7 @@ async function tagQAStrategies() {
 
 // ========== 多轮对话策略引擎 ==========
 
-async function generateReplyStrategy(content, userId, scene = 'reply') {
+async function generateReplyStrategy(content, userId, scene = 'reply', safetyContext) {
   const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
   const settings = settingsRes?.data?.[0]
   const ai = normalizeAISettingsForReply(settings || {})
@@ -974,7 +1066,8 @@ async function generateReplyStrategy(content, userId, scene = 'reply') {
   }
 
   const isActiveScene = scene === 'active'
-  const systemPrompt = `你是恋爱对话策略教练。${isActiveScene ? '用户想主动问对方或主动表达一个意思，你需要生成2种多轮撩一下策略。' : '对方说了一句话，你需要生成2种多轮对话策略。'}
+  const isMinor = safetyContext?.isMinor || false
+  let systemPrompt = `你是恋爱对话策略教练。${isActiveScene ? '用户想主动问对方或主动表达一个意思，你需要生成2种多轮撩一下策略。' : '对方说了一句话，你需要生成2种多轮对话策略。'}
 
 策略1——反转（type: "contrast"）：
 ${isActiveScene ? '第一句先用轻松反转开场，不要直接暴露全部意图；第二句翻转成夸赞或明确邀约，制造一点轻松心动。' : '第一句先轻微否定/调侃对方，让对方产生小情绪甚至有点生气。第二句翻转成夸赞/深情，制造情绪反转，让对方又气又笑。这种推拉制造情绪价值。'}
@@ -1011,6 +1104,12 @@ JSON 格式：
     }
   ]
 }`
+
+  if (isMinor) {
+    systemPrompt = `你是同学关系对话教练。用户未满 18 岁。\n只允许友谊、校园社交、边界感和健康沟通建议。\n不要生成暧昧、撩拨、性暗示或引导亲密关系升级的对话。\n所有话术应符合同学/朋友的交流尺度。\n\n` + systemPrompt
+  } else if (safetyContext?.boundarySensitive) {
+    systemPrompt = `【边界提醒】当前对话涉及敏感话题。不要替用户同意任何行为，优先提醒尊重、节奏和安全。\n\n` + systemPrompt
+  }
 
   const userPrompt = isActiveScene
     ? `用户想主动表达：${content.slice(0, 300)}\n\n请生成反转和引导拉近两种多轮策略。`
@@ -1076,7 +1175,9 @@ exports.main = async (event = {}) => {
         const eventType = ['positive', 'risk', 'verification', 'note'].includes(event.eventType) ? event.eventType : 'note'
         let userId = event.userId || event.authUserId || ''
         if (!userId) { try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {} }
-        return await generateReply(eventDesc, eventType, userId)
+        let isMinor = false
+        if (userId) { const profile = await fetchUserSelfProfile(userId); isMinor = profile?.ageRange === 'under18' }
+        return await generateReply(eventDesc, eventType, userId, isMinor)
       }
       case 'replyStrategy': {
         const strategyContent = String(event.content || '').trim()
@@ -1084,7 +1185,13 @@ exports.main = async (event = {}) => {
         if (!strategyContent || strategyContent.length < 1) return { success: false, message: strategyScene === 'active' ? '请输入想表达的内容' : '请输入对方说的话' }
         let sUserId = event.userId || event.authUserId || ''
         if (!sUserId) { try { const info = await app.auth().getUserInfo(); sUserId = info?.customUserId || info?.uid || '' } catch {} }
-        return await generateReplyStrategy(strategyContent, sUserId, strategyScene)
+        let safetyContext = { isMinor: false, boundarySensitive: false }
+        if (sUserId) {
+          const profile = await fetchUserSelfProfile(sUserId)
+          const isMinor = profile?.ageRange === 'under18'
+          safetyContext = { isMinor, boundarySensitive: !isMinor && isBoundarySensitivePromptEvent(strategyContent) }
+        }
+        return await generateReplyStrategy(strategyContent, sUserId, strategyScene, safetyContext)
       }
       case 'replyPair': {
         const scene = event.scene === 'active' ? 'active' : 'reply'
@@ -1095,13 +1202,23 @@ exports.main = async (event = {}) => {
         if (!userId) {
           try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {}
         }
-        return await generateReplyPair(scene, content, userId, tone)
+        let safetyContext = { isMinor: false, boundarySensitive: false }
+        if (userId) {
+          const profile = await fetchUserSelfProfile(userId)
+          const isMinor = profile?.ageRange === 'under18'
+          safetyContext = { isMinor, boundarySensitive: !isMinor && isBoundarySensitivePromptEvent(content) }
+        }
+        return await generateReplyPair(scene, content, userId, tone, safetyContext)
       }
       case 'pickQA': {
         const content = String(event.content || '').trim()
         if (!content) return { success: false, message: '请输入内容' }
         const keywords = extractKeywords(content)
-        const lines = pickRandomLines(2, 'qa', keywords)
+        let userId = event.userId || event.authUserId || ''
+        if (!userId) { try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {} }
+        let isMinor = false
+        if (userId) { const profile = await fetchUserSelfProfile(userId); isMinor = profile?.ageRange === 'under18' }
+        const lines = pickRandomLines(2, 'qa', keywords, isMinor)
         return { success: true, lines: lines.map(l => ({ text: l.text })) }
       }
       case 'pickQA_v3': {
@@ -1109,11 +1226,13 @@ exports.main = async (event = {}) => {
         if (!v3Content) return { success: false, message: '请输入内容' }
         let v3UserId = event.userId || event.authUserId || ''
         if (!v3UserId) { try { const info = await app.auth().getUserInfo(); v3UserId = info?.customUserId || info?.uid || '' } catch {} }
+        let isMinor = false
+        if (v3UserId) { const profile = await fetchUserSelfProfile(v3UserId); isMinor = profile?.ageRange === 'under18' }
 
         const lines = []
 
-        // 1. 先从 seed 取高分匹配（关键词命中 >= 2）
-        const seedMatches = pickTopSeedMatches(v3Content, 2)
+        // 1. 先从 seed 取高分匹配（关键词命中 >= 2），未成年过滤暧昧内容
+        const seedMatches = pickTopSeedMatches(v3Content, 2, isMinor)
         seedMatches.forEach(m => lines.push(m))
 
         // 2. AI 生成策略

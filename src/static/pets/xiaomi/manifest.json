@@ -1,7 +1,12 @@
 {
   "name": "xiaomi",
   "displayName": "小咪",
-  "basePath": "/static/pets/xiaomi/frames",
+  "renderer": "spritesheet",
+  "spritesheetPath": "/static/pets/xiaomi/spritesheet.webp",
+  "cellWidth": 192,
+  "cellHeight": 208,
+  "columns": 8,
+  "rows": 9,
   "states": {
     "idle": { "frames": 6, "fps": 6, "loop": true },
     "waiting": { "frames": 6, "fps": 6, "loop": true },

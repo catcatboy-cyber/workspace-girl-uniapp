@@ -67,7 +67,7 @@ function applyCategoryEffects(summary, analysis) {
 
 function buildHeadline(intentScore, riskScore, analysis) {
   if (analysis.usedAI) {
-    return `AI 研判后：${analysis.summary}`
+    return `AI 分析后：${analysis.summary}`
   }
   if (riskScore >= 70) return '新增事件后，风险明显抬升，建议优先做事实验证。'
   if (intentScore >= 60 && riskScore < 45) return '新增事件后，关系信号整体偏稳，但仍应继续看一致性。'
@@ -126,7 +126,7 @@ async function recalculateAssessmentFromEvent(params) {
       headline: buildHeadline(nextIntentScore, nextRiskScore, analysis),
       bullets: analysis.rationale,
       cautions: [
-        analysis.usedAI ? '本次结论包含 AI 对事件语义的结构化研判。' : '当前未启用 AI，仍使用规则兜底重算。',
+        analysis.usedAI ? '本次结论包含 AI 对事件语义的结构化分析。' : '当前未启用 AI，仍使用规则兜底重算。',
         '如果后续新增事件与本次方向相反，结论仍可能继续变化。',
         analysis.summary ? `本次主要触发：${analysis.summary}。` : '本次变化来自新增时间线事件。'
       ]
