@@ -793,8 +793,9 @@ function goWeeklyReview() {
 .v2-mode .side-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 4rpx; }
 .v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
 
-.v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; }
-.v2-mode .btn-v2-bottom { display: inline-block; padding: 14rpx 40rpx; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; padding: 0 28rpx; }
+.v2-mode .btn-v2-bottom { display: block; width: 100%; height: 72rpx; line-height: 72rpx; background: #4ECDC4; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .btn-v2-bottom[disabled] { opacity: 0.5; background: #e0e0e0; box-shadow: none; }
 .sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: linear-gradient(90deg, transparent, #FF6B6B, transparent); animation: sync-slide 0.8s ease-in-out infinite; }
 @keyframes sync-slide {
   0% { width: 30%; left: -30%; }

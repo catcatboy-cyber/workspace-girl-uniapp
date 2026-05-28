@@ -1,0 +1,962 @@
+{
+  "ok": true,
+  "frames_root": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames",
+  "errors": [],
+  "warnings": [],
+  "rows": [
+    {
+      "state": "idle",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\idle\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22943,
+          "bbox": [
+            17,
+            5,
+            175,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 303
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\idle\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22022,
+          "bbox": [
+            21,
+            5,
+            171,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 269
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\idle\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22330,
+          "bbox": [
+            20,
+            5,
+            172,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 295
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\idle\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22484,
+          "bbox": [
+            19,
+            5,
+            172,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 315
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\idle\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21972,
+          "bbox": [
+            21,
+            5,
+            171,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 264
+        },
+        {
+          "index": 5,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\idle\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22476,
+          "bbox": [
+            20,
+            5,
+            172,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 265
+        }
+      ]
+    },
+    {
+      "state": "running-right",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11746,
+          "bbox": [
+            36,
+            34,
+            156,
+            173
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 148
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11644,
+          "bbox": [
+            29,
+            42,
+            163,
+            166
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 132
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11035,
+          "bbox": [
+            38,
+            33,
+            153,
+            175
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 109
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11422,
+          "bbox": [
+            39,
+            32,
+            152,
+            176
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 121
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11652,
+          "bbox": [
+            26,
+            42,
+            165,
+            166
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 137
+        },
+        {
+          "index": 5,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 9877,
+          "bbox": [
+            42,
+            37,
+            149,
+            171
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 106
+        },
+        {
+          "index": 6,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 10460,
+          "bbox": [
+            41,
+            35,
+            151,
+            173
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 110
+        },
+        {
+          "index": 7,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-right\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11949,
+          "bbox": [
+            30,
+            36,
+            161,
+            171
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 132
+        }
+      ]
+    },
+    {
+      "state": "running-left",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11949,
+          "bbox": [
+            30,
+            36,
+            161,
+            171
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 132
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 10460,
+          "bbox": [
+            41,
+            35,
+            151,
+            173
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 110
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 9877,
+          "bbox": [
+            42,
+            37,
+            149,
+            171
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 106
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11652,
+          "bbox": [
+            26,
+            42,
+            165,
+            166
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 137
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11422,
+          "bbox": [
+            39,
+            32,
+            152,
+            176
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 121
+        },
+        {
+          "index": 5,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11035,
+          "bbox": [
+            38,
+            33,
+            153,
+            175
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 109
+        },
+        {
+          "index": 6,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11644,
+          "bbox": [
+            29,
+            42,
+            163,
+            166
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 132
+        },
+        {
+          "index": 7,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running-left\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11746,
+          "bbox": [
+            36,
+            34,
+            156,
+            173
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 148
+        }
+      ]
+    },
+    {
+      "state": "waving",
+      "expected_frames": 4,
+      "actual_frames": 4,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waving\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 25483,
+          "bbox": [
+            5,
+            8,
+            187,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 258
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waving\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 25865,
+          "bbox": [
+            7,
+            5,
+            184,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 264
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waving\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 26565,
+          "bbox": [
+            5,
+            5,
+            187,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 214
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waving\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 26248,
+          "bbox": [
+            5,
+            5,
+            186,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 191
+        }
+      ]
+    },
+    {
+      "state": "jumping",
+      "expected_frames": 5,
+      "actual_frames": 5,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\jumping\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 23732,
+          "bbox": [
+            5,
+            15,
+            187,
+            192
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 343
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\jumping\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22275,
+          "bbox": [
+            15,
+            5,
+            176,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 271
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\jumping\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 23253,
+          "bbox": [
+            5,
+            5,
+            187,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 328
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\jumping\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 24932,
+          "bbox": [
+            10,
+            5,
+            181,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 333
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\jumping\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 23114,
+          "bbox": [
+            8,
+            12,
+            183,
+            195
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 164
+        }
+      ]
+    },
+    {
+      "state": "failed",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 15774,
+          "bbox": [
+            31,
+            18,
+            160,
+            189
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 152
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 13913,
+          "bbox": [
+            35,
+            26,
+            157,
+            181
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 149
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 13083,
+          "bbox": [
+            35,
+            31,
+            156,
+            176
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 100
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11954,
+          "bbox": [
+            32,
+            41,
+            160,
+            167
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 113
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 14412,
+          "bbox": [
+            35,
+            22,
+            156,
+            185
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 127
+        },
+        {
+          "index": 5,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 12997,
+          "bbox": [
+            37,
+            30,
+            154,
+            178
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 103
+        },
+        {
+          "index": 6,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 10191,
+          "bbox": [
+            31,
+            50,
+            160,
+            157
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 69
+        },
+        {
+          "index": 7,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\failed\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 13403,
+          "bbox": [
+            34,
+            30,
+            157,
+            178
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 111
+        }
+      ]
+    },
+    {
+      "state": "waiting",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waiting\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20881,
+          "bbox": [
+            13,
+            13,
+            178,
+            194
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 174
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waiting\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19574,
+          "bbox": [
+            14,
+            23,
+            178,
+            185
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 163
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waiting\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19923,
+          "bbox": [
+            19,
+            13,
+            173,
+            194
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 139
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waiting\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20521,
+          "bbox": [
+            14,
+            14,
+            177,
+            194
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 153
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waiting\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20004,
+          "bbox": [
+            19,
+            14,
+            172,
+            194
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 181
+        },
+        {
+          "index": 5,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\waiting\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20729,
+          "bbox": [
+            14,
+            14,
+            178,
+            194
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 180
+        }
+      ]
+    },
+    {
+      "state": "running",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18689,
+          "bbox": [
+            16,
+            18,
+            176,
+            189
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 182
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 17021,
+          "bbox": [
+            22,
+            21,
+            170,
+            186
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 161
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 17150,
+          "bbox": [
+            23,
+            21,
+            168,
+            187
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 162
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 15545,
+          "bbox": [
+            28,
+            23,
+            164,
+            184
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 115
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 17916,
+          "bbox": [
+            8,
+            23,
+            184,
+            184
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 141
+        },
+        {
+          "index": 5,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\running\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 17198,
+          "bbox": [
+            17,
+            25,
+            175,
+            182
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 230
+        }
+      ]
+    },
+    {
+      "state": "review",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": "components",
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\review\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20029,
+          "bbox": [
+            15,
+            14,
+            176,
+            193
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 136
+        },
+        {
+          "index": 1,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\review\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19415,
+          "bbox": [
+            19,
+            13,
+            173,
+            195
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 169
+        },
+        {
+          "index": 2,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\review\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18510,
+          "bbox": [
+            16,
+            24,
+            176,
+            184
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 127
+        },
+        {
+          "index": 3,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\review\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18653,
+          "bbox": [
+            19,
+            18,
+            173,
+            189
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 188
+        },
+        {
+          "index": 4,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\review\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 17872,
+          "bbox": [
+            24,
+            16,
+            167,
+            191
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 107
+        },
+        {
+          "index": 5,
+          "file": "D:\\KIMI\u9879\u76ee\\KimiClaw\\hatch-pet-runs\\pup-dog\\frames\\review\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19984,
+          "bbox": [
+            16,
+            14,
+            175,
+            193
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 200
+        }
+      ]
+    }
+  ]
+}

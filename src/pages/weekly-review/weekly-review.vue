@@ -5,7 +5,7 @@
       <view v-else>
         <view class="hero-block-v2"><text class="hero-tag-v2">Weekly Review / {{ caseName }}</text><text class="hero-title-v2">本周<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按周回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">返回主页</button><button class="btn-v2-wr" @click="goTimeline">时间轴</button></view></view>
         <!-- Generate -->
-        <view class="card-v2"><text class="section-title-v2">本周 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、本周真实事件和分数净变化。</text><button class="btn-v2-wr primary" style="margin-top:14rpx;width:100%;" :disabled="generating" @click="generateCurrentWeek">{{ generating ? '生成中...' : currentReview ? '重新生成本周复盘' : '生成本周复盘' }}</button></view>
+        <view class="card-v2"><text class="section-title-v2">本周 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、本周真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating" @click="generateCurrentWeek">{{ generating ? '生成中...' : currentReview ? '重新生成本周复盘' : '生成本周复盘' }}</button></view>
         <!-- Current review -->
         <view v-if="currentReview" class="card-v2 review-v2">
           <view class="review-head-v2"><view><text class="review-week-v2">{{ currentReview.weekStart }} - {{ currentReview.weekEnd }}</text><text class="review-title-v2">{{ currentReview.title }}</text></view><view class="tag-row-v2"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(currentReview.trendLabel) }}</text><text v-if="currentReview.aiUsed" class="tag-v2 black">AI 复盘</text></view></view>
@@ -18,7 +18,7 @@
         </view>
         <view v-else class="empty-v2"><text class="empty-title-v2">本周还没有复盘</text><text class="empty-sub-v2">先生成一次本周复盘，后续会沉淀为历史。</text></view>
         <!-- Side read -->
-        <view class="card-v2"><text class="section-title-v2">本周侧写</text><text class="card-text-v2">结合属相、星座和本周事件，给出本周侧写。</text><button class="btn-v2-wr primary" style="margin-top:14rpx;width:100%;" :disabled="!currentReview || sideReadLoading" @click="generateCurrentWeeklySideRead">{{ sideReadLoading ? '生成中...' : currentWeeklySideRead ? '重新生成本周侧写' : '生成本周属相星座侧写' }}</button>
+        <view class="card-v2"><text class="section-title-v2">本周侧写</text><text class="card-text-v2">结合属相、星座和本周事件，给出本周侧写。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="!currentReview || sideReadLoading" @click="generateCurrentWeeklySideRead">{{ sideReadLoading ? '生成中...' : currentWeeklySideRead ? '重新生成本周侧写' : '生成本周属相星座侧写' }}</button>
           <view v-if="currentWeeklySideRead" class="side-body-v2"><text class="review-title-v2">{{ currentWeeklySideRead.title }}</text><text class="review-summary-v2" user-select>{{ currentWeeklySideRead.summary }}</text><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2" user-select>{{ item.text }}</text></view></view>
           <text v-else-if="currentReview" class="card-text-v2 muted" style="margin-top:10rpx;">这周还没有侧写，可以单独生成。</text>
           <text v-else class="card-text-v2 muted" style="margin-top:10rpx;">请先生成本周复盘，再生成本周侧写。</text>
@@ -246,6 +246,7 @@ function goTimeline() {
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
 .v2-mode .btn-v2-wr { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-wr.full { flex: none; width: 100%; height: 72rpx; line-height: 72rpx; font-size: 26rpx; }
 .v2-mode .btn-v2-wr.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2-wr[disabled] { opacity: 0.6; }
 

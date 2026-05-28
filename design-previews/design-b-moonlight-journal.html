@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>方案 B：月光日记 — Dark Mode OLED × 私密沉浸</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #0a0a12;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+:root {
+  --app-bg: #0A0E27;
+  --hero-bg: #131A3A;
+  --hero-bg-2: #0A0E27;
+  --card-bg: #131A3A;
+  --card-soft: #181F40;
+  --text-main: #E8ECF2;
+  --text-muted: #7B89A8;
+  --primary: #A0B4F0;
+  --primary-2: #7B93D8;
+  --accent: #E0A870;
+  --accent-soft: #2A221E;
+  --risk: #E0706A;
+  --risk-soft: #3A2424;
+  --success: #8CC9A0;
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.30);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.40);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.50);
+  --shadow-hero: 0 20px 48px rgba(0,0,0,0.55), 0 0 40px rgba(160,180,240,0.06);
+  --fw-strong: 550;
+  --fw-hero: 650;
+  --spacing-page: 24px;
+  --spacing-card: 28px;
+  --glow-accent: 0 0 12px rgba(224,168,112,0.15);
+}
+
+.phone {
+  width: 390px;
+  min-height: 100vh;
+  background: var(--app-bg);
+  padding: var(--spacing-page);
+  position: relative;
+}
+.header-bar {
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 0 24px; color: rgba(255,255,255,0.3);
+  font-size: 12px; letter-spacing: 3px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-card);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-lg);
+  position: relative; overflow: hidden;
+}
+.hero-card {
+  background: linear-gradient(135deg, var(--hero-bg), var(--hero-bg-2));
+  border-color: rgba(224,168,112,0.18);
+  box-shadow: var(--shadow-hero);
+}
+.hero-card::after {
+  content: ""; position: absolute; left: 28px; right: 28px; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(224,168,112,0.6), transparent);
+}
+.hero-topline { display: block; font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 3px; margin-bottom: 6px; }
+.hero-card .h1 { color: #F0ECE4; font-size: 30px; font-weight: var(--fw-hero); line-height: 1.3; margin: 6px 0; }
+.hero-subtext { display: block; font-size: 15px; color: rgba(255,255,255,0.55); line-height: 1.6; margin-top: 6px; }
+.h1 { display: block; font-size: 30px; font-weight: var(--fw-hero); color: var(--text-main); line-height: 1.3; }
+.h2 { display: block; font-size: 20px; font-weight: var(--fw-strong); color: var(--text-main); margin-bottom: 8px;
+  padding-left: 14px; border-left: 4px solid var(--accent); line-height: 1.35; }
+.h3 { display: block; font-size: 17px; font-weight: var(--fw-strong); color: var(--text-main); margin-bottom: 6px; }
+.muted { display: block; font-size: 14px; color: var(--text-muted); margin: 4px 0; line-height: 1.6; }
+
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.kpi-item {
+  background: var(--card-soft);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm); padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-label { display: block; font-size: 12px; color: var(--text-muted); }
+.kpi-value { display: block; font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 4px;
+  text-shadow: 0 0 8px rgba(160,180,240,0.12); }
+
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.badge {
+  padding: 5px 12px; border-radius: 999px; font-size: 12px;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1px solid rgba(224,168,112,0.15);
+}
+.badge.good { background: rgba(140,201,160,0.12); color: var(--success); border-color: rgba(140,201,160,0.2); }
+.badge.mid { background: rgba(224,168,112,0.1); color: var(--accent); }
+.badge.warn { background: var(--risk-soft); color: var(--risk); border-color: rgba(224,112,106,0.2); }
+
+.quick-record { margin-top: 20px; padding: 20px; background: var(--card-soft); border-radius: var(--radius-sm); }
+.textarea-mock {
+  width: 100%; min-height: 90px; padding: 14px; margin-top: 10px;
+  background: var(--hero-bg); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-sm); font-size: 14px; color: var(--text-main);
+  resize: none; font-family: inherit;
+}
+.textarea-mock::placeholder { color: rgba(255,255,255,0.2); }
+
+.actions { display: flex; gap: 10px; margin-top: 16px; }
+.btn-primary {
+  flex: 1; height: 46px; line-height: 46px; text-align: center;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: #0A0E27; border: none; border-radius: var(--radius-sm);
+  font-size: 16px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 0 20px rgba(160,180,240,0.15);
+}
+.btn-secondary {
+  flex: 1; height: 46px; line-height: 46px; text-align: center;
+  background: transparent; color: var(--primary);
+  border: 1px solid rgba(160,180,240,0.2);
+  border-radius: var(--radius-sm); font-size: 16px; font-weight: 550; cursor: pointer;
+}
+
+.status-card { margin-top: 16px; border-left: 5px solid var(--success); background: rgba(140,201,160,0.06); }
+.status-strong { display: block; font-size: 17px; font-weight: 650; color: var(--text-main); }
+
+.info-panel { margin-top: 14px; padding: 16px; border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); }
+.mini-title { font-size: 15px; font-weight: 650; color: var(--text-main); margin-bottom: 8px; }
+
+.score-row { margin-top: 12px; }
+.score-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.score-label { font-size: 13px; color: var(--text-muted); }
+.score-value { font-size: 24px; font-weight: 800; color: var(--primary); }
+.score-bucket { font-size: 12px; color: var(--text-main); }
+.score-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.04); overflow: hidden; }
+.score-fill { height: 10px; border-radius: 999px; width: 68%;
+  background: linear-gradient(90deg, var(--primary-2), var(--primary));
+  box-shadow: 0 0 8px rgba(160,180,240,0.2); }
+.score-fill.risk { width: 32%;
+  background: linear-gradient(90deg, var(--accent), var(--risk));
+  box-shadow: 0 0 8px rgba(224,112,106,0.15); }
+
+.spec-panel { margin-top: 20px; padding: 20px; background: var(--card-bg);
+  border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.06); }
+.spec-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+.color-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.color-swatch { width: 48px; height: 48px; border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.color-label { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+.color-item { display: flex; flex-direction: column; align-items: center; }
+
+.spec-row { display: flex; justify-content: space-between; padding: 6px 0;
+  font-size: 13px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.04); }
+.spec-row span:last-child { font-weight: 600; color: var(--primary); }
+
+.nav-bar { display: flex; justify-content: space-around; align-items: center;
+  padding: 10px 0 0; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
+.nav-item { text-align: center; font-size: 11px; color: var(--text-muted); }
+.nav-item.active { color: var(--accent); font-weight: 600; }
+.nav-dot { width: 20px; height: 20px; border-radius: 6px; margin: 0 auto 4px;
+  background: rgba(255,255,255,0.06); }
+.nav-dot.active { background: var(--accent); box-shadow: 0 0 10px rgba(224,168,112,0.3); }
+
+.header-label { text-align: center; margin: 20px 0 10px;
+  font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="header-bar">☽ 月光日记 · Moonlight Journal ☽</div>
+
+  <div class="card hero-card">
+    <span class="hero-topline">Home / Active Cases</span>
+    <div class="h1">优先追录新事件</div>
+    <span class="hero-subtext">你已经有 3 个关系对象。先确认当前在追谁，再继续记录。</span>
+    <div class="kpi-grid">
+      <div class="kpi-item"><span class="kpi-label">对象</span><span class="kpi-value">小陈</span></div>
+      <div class="kpi-item"><span class="kpi-label">意向</span><span class="kpi-value">68</span><span class="muted">中高意向</span></div>
+      <div class="kpi-item"><span class="kpi-label">风险</span><span class="kpi-value">32</span><span class="muted">偏低风险</span></div>
+      <div class="kpi-item"><span class="kpi-label">记录数量</span><span class="kpi-value">12</span><span class="muted">时间线事件</span></div>
+    </div>
+    <div class="badges">
+      <span class="badge">26 岁</span><span class="badge">男</span><span class="badge">设计师</span><span class="badge">属虎</span><span class="badge">天蝎座</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h3">一句话快速记录</div>
+    <span class="muted">直接记到最近对象。</span>
+    <textarea class="textarea-mock" placeholder="例如：他今天主动约我吃饭..."></textarea>
+    <div class="actions">
+      <div class="btn-secondary">上传图片</div>
+      <div class="btn-secondary">语音录入</div>
+    </div>
+    <div class="actions">
+      <div class="btn-primary">保存到最近对象</div>
+    </div>
+  </div>
+
+  <div class="card status-card">
+    <span class="status-strong">已记录：他主动约周末见面</span>
+    <div class="badges">
+      <span class="badge good">推进事件</span><span class="badge">观察期</span><span class="badge mid">稳步推进</span><span class="badge">晴</span>
+    </div>
+    <div class="info-panel">
+      <div class="mini-title">意向 / 风险</div>
+      <div class="score-row">
+        <div class="score-head"><span class="score-label">意向</span><span class="score-value">68</span><span class="score-bucket">中高意向</span></div>
+        <div class="score-track"><div class="score-fill"></div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-head"><span class="score-label">风险</span><span class="score-value">32</span><span class="score-bucket">偏低风险</span></div>
+        <div class="score-track"><div class="score-fill risk"></div></div>
+      </div>
+    </div>
+    <div class="actions"><div class="btn-secondary">查看当前主页</div></div>
+  </div>
+
+  <div class="spec-panel">
+    <div class="spec-title">🌙 设计规范</div>
+    <div class="color-grid">
+      <div class="color-item"><div class="color-swatch" style="background:#A0B4F0"></div><span class="color-label">Primary</span></div>
+      <div class="color-item"><div class="color-swatch" style="background:#7B93D8"></div><span class="color-label">Second</span></div>
+      <div class="color-item"><div class="color-swatch" style="background:#8CC9A0"></div><span class="color-label">Success</span></div>
+      <div class="color-item"><div class="color-swatch" style="background:#E0706A"></div><span class="color-label">Risk</span></div>
+      <div class="color-item"><div class="color-swatch" style="background:#E0A870"></div><span class="color-label">Accent</span></div>
+      <div class="color-item"><div class="color-swatch" style="background:#0A0E27"></div><span class="color-label">BG</span></div>
+    </div>
+    <div class="spec-row"><span>风格源</span><span>Dark Mode OLED × Premium Journal</span></div>
+    <div class="spec-row"><span>圆角</span><span>14 / 20 / 28px</span></div>
+    <div class="spec-row"><span>阴影</span><span>深层叠加 + 微光辉光</span></div>
+    <div class="spec-row"><span>字重</span><span>550 heading / 650 hero</span></div>
+    <div class="spec-row"><span>气质</span><span>私密沉浸、夜间专注</span></div>
+    <div class="spec-row"><span>参考</span><span>Day One / Bear 日记App</span></div>
+  </div>
+
+  <div class="nav-bar">
+    <div class="nav-item active"><div class="nav-dot active"></div>首页</div>
+    <div class="nav-item"><div class="nav-dot"></div>关系</div>
+    <div class="nav-item"><div class="nav-dot"></div>时间轴</div>
+    <div class="nav-item"><div class="nav-dot"></div>案例</div>
+    <div class="nav-item"><div class="nav-dot"></div>我的</div>
+  </div>
+
+  <div style="text-align:center; padding:20px 0 40px; color:var(--text-muted); font-size:12px;">
+    UI UX Pro Max · Design B · Moonlight Journal
+  </div>
+</div>
+</body>
+</html>

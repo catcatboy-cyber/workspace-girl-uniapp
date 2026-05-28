@@ -153,7 +153,10 @@
 
       <!-- Pet bar -->
       <view v-if="showPetBar" class="pet-bar">
-        <image :src="petSrc" class="pet-bar-img" mode="aspectFit" @click="showSpeakSheet = true" />
+        <view v-if="usePetSpritesheet" class="pet-sprite-viewport" @click="showSpeakSheet = true">
+          <image :src="selectedPet.spritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
+        </view>
+        <image v-else :src="petSrc" class="pet-bar-img" mode="aspectFit" @click="showSpeakSheet = true" />
         <view v-if="petMsg" class="pet-bubble"><text class="pet-bubble-text">{{ petMsg }}</text></view>
       </view>
 
@@ -647,12 +650,33 @@ const showSpeakSheet = ref(false)
 const petMsg = ref('')
 const petState = ref('idle')
 const selectedPet = ref(getPetById(getSelectedPetId()))
+const PET_SPRITE_SCALE = 0.5
 let petTimer: ReturnType<typeof setInterval> | null = null
 
 const petSrc = computed(() => {
   const s = petState.value || 'idle'
   const f = String(petFrame.value).padStart(2, '0')
   return `${selectedPet.value.basePath}/${s}/${f}.png`
+})
+
+const usePetSpritesheet = computed(() => {
+  return selectedPet.value.renderer === 'spritesheet' && !!selectedPet.value.spritesheetPath
+})
+
+const petSpritesheetStyle = computed(() => {
+  const pet = selectedPet.value
+  const cellWidth = pet.cellWidth || 192
+  const cellHeight = pet.cellHeight || 208
+  const columns = pet.columns || 8
+  const rows = pet.rows || 9
+  const row = pet.rowMap?.[petState.value] ?? 0
+  const col = petFrame.value
+  const scale = PET_SPRITE_SCALE
+  return {
+    width: `${cellWidth * columns * scale}rpx`,
+    height: `${cellHeight * rows * scale}rpx`,
+    transform: `translate(${-col * cellWidth * scale}rpx, ${-row * cellHeight * scale}rpx)`
+  }
 })
 
 function formatPetMessage(message: string) {
@@ -1520,6 +1544,20 @@ function goCaseDetail(caseId: string) {
   pointer-events: none;
 }
 .v2-mode .pet-bar-img { width: 96rpx; height: 96rpx; flex-shrink: 0; pointer-events: auto; }
+.v2-mode .pet-sprite-viewport {
+  width: 96rpx;
+  height: 104rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+.v2-mode .pet-sprite-sheet {
+  display: block;
+  max-width: none;
+  transform-origin: left top;
+  pointer-events: none;
+  will-change: transform;
+}
 .v2-mode .pet-bar .pet-bubble { pointer-events: auto; }
 .v2-mode .pet-bubble {
   position: relative;

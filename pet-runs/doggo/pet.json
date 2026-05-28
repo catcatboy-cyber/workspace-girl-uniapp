@@ -1,0 +1,6 @@
+{
+  "id": "pup",
+  "displayName": "Pup",
+  "description": "A friendly compact chibi dog companion for Codex.",
+  "spritesheetPath": "spritesheet.webp"
+}
