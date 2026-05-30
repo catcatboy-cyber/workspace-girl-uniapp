@@ -46,7 +46,7 @@
             <picker mode="time" :value="quickTime" @change="onQuickTimeChange"><view class="picker-v2">{{ quickTime }}</view></picker>
           </view>
           <view class="attach-row">
-            <button class="btn-v2" :disabled="quickUploading" @click="chooseQuickImages">{{ quickUploading ? '上传中...' : '📎 图片' }}</button>
+            <button class="btn-v2" :disabled="quickUploading" @click="chooseQuickImages">{{ quickUploading ? '上传中...' : '甩张图' }}</button>
             <button v-if="!recording" :class="['btn-v2', recording ? 'recording' : '']" :disabled="voiceUploading" @click="toggleVoiceRecord">{{ voiceButtonText }}</button>
             <view v-if="recording" class="btn-v2 voice-recording-btn" @click="toggleVoiceRecord">
               <view class="voice-btn-content">
@@ -64,19 +64,20 @@
               <button class="btn-del" @click.stop="removeQuickAttachment(index)">删除</button>
             </view>
           </view>
-          <button class="btn-v2 primary" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记一笔' }}</button>
-          <view v-if="aiFeedbackLoading" class="ai-bar">
-            <view class="ai-row"><view class="ai-dot"></view><text class="ai-text">后台分析中，已用时 {{ aiFeedbackSeconds }} 秒</text></view>
-          </view>
+          <button class="btn-v2 primary" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记上！' }}</button>
         </view>
 
         <!-- Feedback -->
         <view v-if="showQuickFeedback && latestCase.latestResult && latestTrend" :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']">
           <view class="block-head"><text class="block-title">本次分析</text><text class="block-badge black">{{ mapTimelineTypeLabel(latestFeedbackEventType) }}</text></view>
           <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
-          <view v-if="latestCase.latestResult.aiPending" class="action-box">
-            <text class="action-label">正在分析</text>
-            <text class="action-text muted">AI 正在生成这条记录的即时反馈，完成后会自动更新本次分析。</text>
+          <view v-if="aiFeedbackLoading" class="action-box">
+            <text class="action-label">AI 分析中...</text>
+            <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，已用时 {{ aiFeedbackSeconds }} 秒</text></view>
+          </view>
+          <view v-else-if="latestCase.latestResult.aiPending" class="action-box">
+            <text class="action-label">等待中</text>
+            <text class="action-text muted">AI 分析尚未开始，请稍候。</text>
           </view>
           <template v-else>
             <view class="score-grid">
@@ -115,9 +116,8 @@
               </view>
             </view>
           </template>
-          <button class="btn-v2 outline" @click="goCaseDetail(latestCase.caseId)">查看完整主页</button>
           <view v-if="showSideReadEntry" class="side-box">
-            <text class="side-title">{{ profileSideRead?.title || '侧写' }}</text>
+            <text class="side-title">{{ profileSideRead?.title || '星象速写' }}</text>
             <text v-if="profileSideRead" class="side-text">{{ profileSideRead.summary }}</text>
             <view v-if="profileSideRead?.sections?.length" class="side-grid">
               <view v-for="item in profileSideRead.sections" :key="item.label" class="side-item">
@@ -126,7 +126,7 @@
               </view>
             </view>
             <text v-if="!profileSideRead" class="side-text">{{ sideReadEntryHint }}</text>
-            <button v-if="!profileSideRead" class="btn-v2 sm" :disabled="sideReadButtonDisabled" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '生成属相星座侧写' }}</button>
+            <button v-if="!profileSideRead" class="btn-v2 sm" :disabled="sideReadButtonDisabled" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
           </view>
         </view>
       </template>
@@ -154,7 +154,8 @@
       <!-- Pet bar -->
       <view v-if="showPetBar" class="pet-bar">
         <view class="pet-sprite-viewport" @click="showSpeakSheet = true">
-          <image :src="resolvedSpritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
+          <image v-if="resolvedSpritesheetPath" :key="petSpritesheetKey" :src="resolvedSpritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
+          <image v-else :src="selectedPet.avatarPath" class="pet-bar-img" mode="aspectFit" />
         </view>
         <view v-if="petMsg" class="pet-bubble"><text class="pet-bubble-text">{{ petMsg }}</text></view>
       </view>
@@ -177,7 +178,7 @@ import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDat
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
-import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, downloadPetAssets } from '@/utils/pets.js'
+import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
 type PetScene =
   | 'ai_loading'
@@ -215,7 +216,7 @@ function mapResultToScene(params: { latestFeedbackEventType: string; intentDelta
 const themeVars = ref(getThemeStyle())
 const pageStyle = computed(() => {
   const base = { ...themeVars.value }
-  if (showPetBar.value) base.paddingBottom = '140rpx'
+  if (showPetBar.value) base.paddingBottom = 'calc(300rpx + env(safe-area-inset-bottom))'
   return base
 })
 const loading = ref(true)
@@ -481,8 +482,8 @@ const sideReadButtonDisabled = computed(() => {
 })
 
 const sideReadEntryHint = computed(() => {
-  if (!hasInstantFeedbackRecord.value) return '请先记录一次事件并生成即时反馈，再生成属相星座侧写。'
-  return '属相和星座侧写不再跟随记录自动生成，避免拖慢即时反馈。'
+  if (!hasInstantFeedbackRecord.value) return '请先记录一次事件并生成即时反馈，再来一眼看穿。'
+  return '星象速写不再跟随记录自动生成，避免拖慢即时反馈。'
 })
 
 const quickSubjectRoleHint = computed(() => {
@@ -504,7 +505,7 @@ const countdownText = computed(() => {
 
 const voiceButtonText = computed(() => {
   if (voiceUploading.value) return '🔄 识别中...'
-  return '🎤 语音录入'
+  return '说两句'
 })
 
 const showQuickFeedback = computed(() => {
@@ -662,6 +663,8 @@ const resolvedSpritesheetPath = computed(() => {
   return getResolvedSpritesheetPath(selectedPet.value.id)
 })
 
+const petSpritesheetKey = computed(() => `${selectedPet.value.id}:${petAssetsVersion.value}:${resolvedSpritesheetPath.value}`)
+
 const petSpritesheetStyle = computed(() => {
   const pet = selectedPet.value
   const cellWidth = pet.cellWidth || 192
@@ -722,11 +725,16 @@ function syncPetBarPref() {
   try { showPetBar.value = uni.getStorageSync('showPetBar') !== false } catch { showPetBar.value = true }
 }
 async function syncSelectedPet() {
-  selectedPet.value = getPetById(getSelectedPetId())
+  const nextPetId = getSelectedPetId()
+  selectedPet.value = getPetById(nextPetId)
   if (isCloudPet(selectedPet.value.id) && !isPetCachedLocally(selectedPet.value.id)) {
-    await downloadPetAssets(selectedPet.value.id)
-    petAssetsVersion.value++
+    try {
+      await downloadPetAssets(selectedPet.value.id)
+    } catch (err: any) {
+      console.warn('[pets] download failed', selectedPet.value.id, err)
+    }
   }
+  petAssetsVersion.value++
 }
 syncPetBarPref()
 syncSelectedPet()
@@ -799,6 +807,8 @@ async function refreshSelfProfileInBackground() {
 }
 
 onShow(() => {
+  const tabBar = getCurrentPages().pop()?.getTabBar?.()
+  if (tabBar) tabBar.updateSelected()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   syncPetBarPref()
@@ -1462,8 +1472,12 @@ function goCaseDetail(caseId: string) {
 
 .v2-mode .ai-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 14rpx; margin-top: 16rpx; padding: 16rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .ai-row { display: flex; align-items: center; gap: 14rpx; }
-.v2-mode .ai-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; }
+.v2-mode .ai-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; display: inline-block; animation: blink-dot 1s ease-in-out infinite; }
 .v2-mode .ai-text { font-size: 24rpx; font-weight: 700; color: #111; }
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.75); }
+}
 
 .v2-mode .feedback-block { background: #fff; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .feedback-block.ok { border-left: 12rpx solid #4ECDC4; }
@@ -1542,10 +1556,13 @@ function goCaseDetail(caseId: string) {
 
 /* pet floating bar */
 .v2-mode .pet-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  position: fixed;
+  bottom: calc(124rpx + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  z-index: 100;
   display: flex; align-items: center; gap: 16rpx;
   padding: 16rpx 24rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   pointer-events: none;
 }
 .v2-mode .pet-bar-img { width: 96rpx; height: 96rpx; flex-shrink: 0; pointer-events: auto; }

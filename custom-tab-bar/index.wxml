@@ -1,0 +1,15 @@
+<view wx:if="{{!hidden}}" class="tab-bar">
+  <view class="tab-inner">
+    <view wx:for="{{sideItems}}" wx:key="pagePath"
+      class="tab-item {{selected === (index < 2 ? index : index + 1) ? 'active' : ''}}"
+      data-idx="{{index < 2 ? index : index + 1}}"
+      bindtap="switchTab">
+      <text class="tab-text">{{item.text}}</text>
+    </view>
+  </view>
+  <view class="crush-btn-wrap">
+    <view class="crush-btn {{selected === 2 ? 'active' : ''}}" bindtap="onCrushTap">
+      <text class="crush-text">Crushes</text>
+    </view>
+  </view>
+</view>

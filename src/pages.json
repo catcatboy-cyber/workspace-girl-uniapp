@@ -89,7 +89,7 @@
     {
       "path": "pages/token-recharge/token-recharge",
       "style": {
-        "navigationBarTitleText": "充值"
+        "navigationBarTitleText": "充点Token能量"
       }
     },
     {
@@ -143,41 +143,16 @@
     "backgroundColor": "#F8F8F8"
   },
   "tabBar": {
+    "custom": true,
     "color": "#999999",
     "selectedColor": "#111111",
-    "borderStyle": "black",
     "backgroundColor": "#FFFDF5",
     "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "首页",
-        "iconPath": "static/tabbar/home.png",
-        "selectedIconPath": "static/tabbar/home-active.png"
-      },
-      {
-        "pagePath": "pages/case-detail/case-detail",
-        "text": "关系",
-        "iconPath": "static/tabbar/relation.png",
-        "selectedIconPath": "static/tabbar/relation-active.png"
-      },
-      {
-        "pagePath": "pages/timeline/timeline",
-        "text": "时间轴",
-        "iconPath": "static/tabbar/new.png",
-        "selectedIconPath": "static/tabbar/new-active.png"
-      },
-      {
-        "pagePath": "pages/cases/cases",
-        "text": "案例",
-        "iconPath": "static/tabbar/cases-list.png",
-        "selectedIconPath": "static/tabbar/cases-list-active.png"
-      },
-      {
-        "pagePath": "pages/me/me",
-        "text": "我的",
-        "iconPath": "static/tabbar/me.png",
-        "selectedIconPath": "static/tabbar/me-active.png"
-      }
+      { "pagePath": "pages/index/index", "text": "今日" },
+      { "pagePath": "pages/case-detail/case-detail", "text": "我们" },
+      { "pagePath": "pages/cases/cases", "text": "Crushes" },
+      { "pagePath": "pages/timeline/timeline", "text": "往事" },
+      { "pagePath": "pages/me/me", "text": "我" }
     ]
   }
 }

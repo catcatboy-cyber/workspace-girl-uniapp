@@ -5,7 +5,7 @@
         <text class="hero-tag-v2">CASE BOARD</text>
         <text class="hero-title-v2">对<text class="hl-v2">象</text>列表</text>
         <text class="hero-copy-v2">先切换，再进入当前对象。共 <text class="strong">{{ cases.length }}</text> 个 case。</text>
-        <button class="btn-v2-hero" @click="goNew">+ 创建新的关系对象</button>
+        <button class="btn-v2-hero" @click="goNew">+ 开个新的</button>
       </view>
 
       <!-- Deleted notice -->
@@ -104,6 +104,8 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  const tabBar = getCurrentPages().pop()?.getTabBar?.()
+  if (tabBar) tabBar.updateSelected()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   activeCaseId.value = getActiveCaseId()
@@ -253,7 +255,7 @@ function switchActiveCase(caseId: string) {
   box-sizing: border-box;
 }
 
-.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; }
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; }
 
 .v2-mode .hero-block-v2 {
   background: var(--hero-bg, #FF6B6B); border: 3px solid #111;

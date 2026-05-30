@@ -152,18 +152,19 @@ watch(() => props.modelValue, (newVal) => {
 
 .field-label {
   font-size: 26rpx;
-  font-weight: 500;
-  color: #241b12;
+  font-weight: 800;
+  color: #111;
 }
 
 .text-input {
   height: 80rpx;
   padding: 0 24rpx;
   background: #fff;
-  border: 2rpx solid #e8dcc8;
-  border-radius: 12rpx;
+  border: 3rpx solid #111;
   font-size: 28rpx;
-  color: #241b12;
+  font-weight: 600;
+  color: #111;
+  box-sizing: border-box;
 }
 
 .picker-view {
@@ -171,9 +172,9 @@ watch(() => props.modelValue, (newVal) => {
   line-height: 80rpx;
   padding: 0 24rpx;
   background: #fff;
-  border: 2rpx solid #e8dcc8;
-  border-radius: 12rpx;
+  border: 3rpx solid #111;
   font-size: 28rpx;
-  color: #241b12;
+  font-weight: 600;
+  color: #111;
 }
 </style>

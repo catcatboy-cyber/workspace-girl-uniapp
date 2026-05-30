@@ -3,7 +3,7 @@
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else>
-        <view class="hero-block-v2"><text class="hero-tag-v2">Weekly Review / {{ caseName }}</text><text class="hero-title-v2">本周<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按周回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">返回主页</button><button class="btn-v2-wr" @click="goTimeline">时间轴</button></view></view>
+        <view class="hero-block-v2"><text class="hero-tag-v2">Weekly Review / {{ caseName }}</text><text class="hero-title-v2">本周<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按周回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">回去</button><button class="btn-v2-wr" @click="goTimeline">往事</button></view></view>
         <!-- Generate -->
         <view class="card-v2"><text class="section-title-v2">本周 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、本周真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating" @click="generateCurrentWeek">{{ generating ? '生成中...' : currentReview ? '重新生成本周复盘' : '生成本周复盘' }}</button></view>
         <!-- Current review -->
@@ -111,6 +111,26 @@ async function ensureCaseId(uid: string) {
   return true
 }
 
+const WEEKLY_CACHE_PREFIX = 'weeklyCache:v1:'
+
+function readWeeklyCache(uid, id) {
+  try {
+    const cached = uni.getStorageSync(`${WEEKLY_CACHE_PREFIX}${uid}:${id}`)
+    return cached || null
+  } catch { return null }
+}
+
+function writeWeeklyCache(uid, id, data) {
+  try {
+    uni.setStorageSync(`${WEEKLY_CACHE_PREFIX}${uid}:${id}`, {
+      cachedAt: Date.now(),
+      caseName: data.caseName,
+      reviews: data.reviews,
+      currentWeekStart: data.currentWeekStart
+    })
+  } catch {}
+}
+
 async function loadData(options?: { silent?: boolean }) {
   const uid = getCurrentUserId()
   if (!uid) {
@@ -118,8 +138,20 @@ async function loadData(options?: { silent?: boolean }) {
     return
   }
   userId.value = uid
-  const silent = options?.silent && reviews.value.length
-  if (!silent) loading.value = true
+
+  // Show cached data immediately on first load
+  if (!reviews.value.length) {
+    const cacheKey = caseId.value || getActiveCaseId()
+    const cached = cacheKey ? readWeeklyCache(uid, cacheKey) : null
+    if (cached) {
+      caseName.value = cached.caseName || '当前对象'
+      reviews.value = cached.reviews || []
+      currentWeekStart.value = cached.currentWeekStart || ''
+      loading.value = false
+    }
+  }
+
+  if (!reviews.value.length) loading.value = true
   else syncing.value = true
   try {
     const hasCase = await ensureCaseId(uid)
@@ -137,6 +169,11 @@ async function loadData(options?: { silent?: boolean }) {
     reviews.value = reviewRes.reviews || []
     currentWeekStart.value = reviewRes.currentWeekStart || ''
     lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
+    writeWeeklyCache(uid, caseId.value, {
+      caseName: caseName.value,
+      reviews: reviews.value,
+      currentWeekStart: currentWeekStart.value
+    })
   } catch (error: any) {
     showError(error?.message || '加载周复盘失败')
   } finally {
@@ -153,6 +190,7 @@ async function generateCurrentWeek() {
     reviews.value = res.reviews || []
     currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
     bumpDataVersion()
+    writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentWeekStart: currentWeekStart.value })
     showSuccess('已生成本周复盘')
   } catch (error: any) {
     if (handleInsufficientBalance(error)) return
@@ -170,6 +208,7 @@ async function generateCurrentWeeklySideRead() {
     reviews.value = res.reviews || reviews.value
     currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
     bumpDataVersion()
+    writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentWeekStart: currentWeekStart.value })
     showSuccess('已生成本周侧写')
   } catch (error: any) {
     if (handleInsufficientBalance(error)) return

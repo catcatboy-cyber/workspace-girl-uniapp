@@ -1,113 +1,113 @@
 <template>
-  <view class="page" :style="themeVars">
-    <view v-if="loading" class="muted center">加载中...</view>
+  <view class="page v2-mode" :style="themeVars">
+    <view v-if="loading" class="loading-v2">加载中...</view>
 
     <template v-else>
-      <view class="hero-card card">
-        <text class="hero-topline">Settings / AI</text>
-        <text class="h1">AI 事件分析设置</text>
-        <text class="hero-subtext">支持配置多个模型，可随时切换默认使用的模型。新增时间线事件时会优先用 AI 做结构化事件理解。</text>
+      <view class="hero-block-v2">
+        <text class="hero-tag-v2">Settings / AI</text>
+        <text class="hero-title-v2">AI 事件分析设置</text>
+        <text class="hero-copy-v2">支持配置多个模型，可随时切换默认使用的模型。新增时间线事件时会优先用 AI 做结构化事件理解。</text>
       </view>
 
       <!-- 保存/测试结果反馈 -->
-      <view v-if="saved" class="card status-card success">
-        <text class="status-title">设置已保存</text>
-        <text class="muted">模型配置和默认模型已更新。</text>
+      <view v-if="saved" class="notice-v2 ok">
+        <text class="section-title-v2">设置已保存</text>
+        <text class="card-text-v2">模型配置和默认模型已更新。</text>
       </view>
 
-      <view v-if="tested" :class="['card', 'status-card', testOk ? 'success' : 'warning']">
-        <text class="status-title">{{ testOk ? '✅ 连接测试成功' : '⚠️ 连接测试失败' }}</text>
-        <text class="muted">{{ testMessage || (testOk ? '模型接口可用。' : '当前没有拿到有效测试结果。') }}</text>
-        <text v-if="testModelName" class="muted">模型：{{ testModelName }}</text>
-        <text v-if="testSummary" class="muted">返回摘要：{{ testSummary }}</text>
+      <view v-if="tested" :class="['notice-v2', testOk ? 'ok' : 'warn']">
+        <text class="section-title-v2">{{ testOk ? '连接测试成功' : '连接测试失败' }}</text>
+        <text class="card-text-v2">{{ testMessage || (testOk ? '模型接口可用。' : '当前没有拿到有效测试结果。') }}</text>
+        <text v-if="testModelName" class="card-text-v2">模型：{{ testModelName }}</text>
+        <text v-if="testSummary" class="card-text-v2">返回摘要：{{ testSummary }}</text>
       </view>
 
       <!-- 启用状态 -->
-      <view class="card">
-        <text class="h2">启用状态</text>
-        <view class="switch-row">
-          <text class="switch-label">启用 AI 事件分析</text>
-          <switch :checked="enabled" color="#143f3a" @change="onEnabledChange" />
+      <view class="card-v2">
+        <text class="section-title-v2">启用状态</text>
+        <view class="switch-row-v2">
+          <text class="switch-label-v2">启用 AI 事件分析</text>
+          <switch :checked="enabled" color="#4ECDC4" @change="onEnabledChange" />
         </view>
-        <view class="switch-row">
-          <text class="switch-label">AI 调用失败时自动回退规则模式</text>
-          <switch :checked="fallbackToRules" color="#143f3a" @change="onFallbackChange" />
+        <view class="switch-row-v2">
+          <text class="switch-label-v2">AI 调用失败时自动回退规则模式</text>
+          <switch :checked="fallbackToRules" color="#4ECDC4" @change="onFallbackChange" />
         </view>
       </view>
 
       <!-- 模型列表 -->
-      <view class="card">
-        <view class="section-head">
-          <text class="h2">模型配置</text>
-          <text class="muted">默认模型会在 AI 事件分析中使用。可添加多个模型以便切换。</text>
-          <text class="muted">切换模型时，点击对应卡片左侧“设为默认”，再点底部“保存所有设置”。</text>
+      <view class="card-v2">
+        <view class="section-head-v2">
+          <text class="section-title-v2">模型配置</text>
+          <text class="card-text-v2">默认模型会在 AI 事件分析中使用。可添加多个模型以便切换。</text>
+          <text class="card-text-v2">切换模型时，点击对应卡片左侧"设为默认"，再点底部"保存所有设置"。</text>
         </view>
 
-        <view v-for="(model, index) in models" :key="model.id" class="model-card">
-          <view class="model-header">
-            <view class="model-name-row">
+        <view v-for="(model, index) in models" :key="model.id" class="model-card-v2">
+          <view class="model-header-v2">
+            <view class="model-name-row-v2">
               <view
-                class="default-badge"
+                class="default-badge-v2"
                 :class="{ active: defaultModelId === model.id }"
                 @click="setDefault(model.id)"
               >
-                {{ defaultModelId === model.id ? '⭐ 默认' : '○ 设为默认' }}
+                {{ defaultModelId === model.id ? '默认' : '设为默认' }}
               </view>
-              <text class="model-label">{{ model.name || '未命名模型' }}</text>
+              <text class="model-label-v2">{{ model.name || '未命名模型' }}</text>
             </view>
-            <view v-if="models.length > 1" class="model-actions">
-              <text class="delete-btn" @click="removeModel(index)">删除</text>
+            <view v-if="models.length > 1" class="model-actions-v2">
+              <text class="delete-btn-v2" @click="removeModel(index)">删除</text>
             </view>
           </view>
 
-          <view class="field">
-            <text class="field-label">名称</text>
-            <input v-model="model.name" class="text-input" placeholder="例如：GPT-4o、Claude" />
+          <view class="field-v2">
+            <text class="field-label-v2">名称</text>
+            <input v-model="model.name" class="input-v2" placeholder="例如：GPT-4o、Claude" />
           </view>
-          <view class="grid two">
-            <view class="field">
-              <text class="field-label">Provider</text>
-              <input v-model="model.provider" class="text-input" placeholder="openai-compatible" />
+          <view class="grid-two-v2">
+            <view class="field-v2">
+              <text class="field-label-v2">Provider</text>
+              <input v-model="model.provider" class="input-v2" placeholder="openai-compatible" />
             </view>
-            <view class="field">
-              <text class="field-label">Model</text>
-              <input v-model="model.model" class="text-input" placeholder="gpt-4o-mini" />
+            <view class="field-v2">
+              <text class="field-label-v2">Model</text>
+              <input v-model="model.model" class="input-v2" placeholder="gpt-4o-mini" />
             </view>
           </view>
-          <view class="field">
-            <text class="field-label">Base URL</text>
-            <input v-model="model.baseUrl" class="text-input" placeholder="https://api.openai.com/v1" />
+          <view class="field-v2">
+            <text class="field-label-v2">Base URL</text>
+            <input v-model="model.baseUrl" class="input-v2" placeholder="https://api.openai.com/v1" />
           </view>
-          <view class="field">
-            <text class="field-label">API Key</text>
-            <input v-model="model.apiKey" type="text" password class="text-input" placeholder="sk-..." />
-            <text v-if="model._hasStoredKey && !model.apiKey" class="muted">当前已保存 Key（{{ model._maskedKey }}），留空保持不变。</text>
-            <text v-else-if="model.apiKey" class="muted">将使用此 Key 覆盖保存。</text>
-            <text v-else class="muted">未配置 API Key。</text>
+          <view class="field-v2">
+            <text class="field-label-v2">API Key</text>
+            <input v-model="model.apiKey" type="text" password class="input-v2" placeholder="sk-..." />
+            <text v-if="model._hasStoredKey && !model.apiKey" class="card-text-v2">当前已保存 Key（{{ model._maskedKey }}），留空保持不变。</text>
+            <text v-else-if="model.apiKey" class="card-text-v2">将使用此 Key 覆盖保存。</text>
+            <text v-else class="card-text-v2">未配置 API Key。</text>
           </view>
 
-          <view class="actions">
-            <button class="btn-secondary compact" :disabled="testingId === model.id" @click="runModelTest(model)">
+          <view class="actions-v2">
+            <button class="btn-v2 sm" :disabled="testingId === model.id" @click="runModelTest(model)">
               {{ testingId === model.id ? '测试中...' : '测试连接' }}
             </button>
-            <text v-if="model._lastTestResult !== undefined" class="test-result" :class="model._lastTestResult ? 'pass' : 'fail'">
-              {{ model._lastTestResult ? '✅ 测试通过' : '❌ 测试失败' }}
+            <text v-if="model._lastTestResult !== undefined" class="test-result-v2" :class="model._lastTestResult ? 'pass' : 'fail'">
+              {{ model._lastTestResult ? '测试通过' : '测试失败' }}
             </text>
           </view>
         </view>
 
-        <view class="actions" style="margin-top: 20rpx;">
-          <button class="btn-secondary" @click="addModel">+ 添加模型</button>
+        <view class="actions-v2" style="margin-top: 20rpx;">
+          <button class="btn-v2 sm" @click="addModel">+ 添加模型</button>
         </view>
       </view>
 
       <!-- 操作按钮 -->
-      <view class="card">
-        <view class="actions vertical">
-          <button class="btn-primary" :disabled="submitting" @click="onSave">
+      <view class="card-v2">
+        <view class="actions-v2 vertical">
+          <button class="btn-v2-l" :disabled="submitting" @click="onSave">
             {{ submitting ? '保存中...' : '保存所有设置' }}
           </button>
-          <button class="btn-secondary" @click="goBack">返回</button>
+          <button class="btn-v2-outline" @click="goBack">返回</button>
         </view>
       </view>
     </template>
@@ -380,270 +380,225 @@ function goBack() {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: #f4ede2; padding: 24rpx; box-sizing: border-box; }
-.center { text-align: center; padding: 60rpx 0; }
-.card { background: #fbf6ee; border-radius: 20rpx; padding: 32rpx; margin-bottom: 24rpx; }
-.hero-card { background: linear-gradient(135deg, #fbf6ee 0%, #f4ede2 100%); }
-.hero-topline { display: block; font-size: 22rpx; color: #786857; letter-spacing: 2rpx; }
-.h1 { display: block; font-size: 40rpx; font-weight: 700; color: #143f3a; margin: 8rpx 0; }
-.h2 { display: block; font-size: 32rpx; font-weight: 600; color: #241b12; margin-bottom: 12rpx; }
-.hero-subtext { display: block; font-size: 26rpx; color: #786857; line-height: 1.6; margin-top: 8rpx; }
-.muted { display: block; font-size: 24rpx; color: #786857; margin: 6rpx 0; }
+.page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
 
-.section-head { margin-bottom: 20rpx; }
+/* V2 Mode */
+.v2-mode { background: var(--app-bg, #FFFDF5); }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 26rpx; font-weight: 600; color: #666; }
 
-.status-card { border-left: 8rpx solid #143f3a; }
-.status-card.success { border-left-color: #14633a; background: #dff5e8; }
-.status-card.warning { border-left-color: #b85c38; background: #f9d8d2; }
-.status-title { display: block; font-size: 28rpx; font-weight: 600; color: #241b12; margin-bottom: 8rpx; }
-
-.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 24rpx; margin: 16rpx 0; }
-.switch-label { flex: 1; font-size: 26rpx; color: #241b12; line-height: 1.5; }
-
-.model-card {
-  background: #fff;
-  border: 2rpx solid #e5ddd0;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
+.v2-mode .hero-block-v2 {
+  background: var(--hero-bg, #FF6B6B);
+  border: 3rpx solid #111;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 8rpx 8rpx 0 #111;
+  transform: rotate(-0.5deg);
+}
+.v2-mode .hero-tag-v2 {
+  display: block;
+  font-size: 22rpx;
+  font-weight: 800;
+  color: rgba(0,0,0,0.5);
+  letter-spacing: 3rpx;
+  text-transform: uppercase;
+}
+.v2-mode .hero-title-v2 {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 900;
+  color: #111;
+  margin: 8rpx 0;
+  line-height: 1.2;
+}
+.v2-mode .hero-copy-v2 {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: rgba(0,0,0,0.7);
+  line-height: 1.6;
+  margin-top: 8rpx;
 }
 
-.model-header {
+.v2-mode .card-v2 {
+  background: #fff;
+  border: 3rpx solid #111;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 6rpx 6rpx 0 #111;
+}
+.v2-mode .section-title-v2 {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #111;
+  margin-bottom: 14rpx;
+  line-height: 1.3;
+}
+.v2-mode .card-text-v2 {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #666;
+  line-height: 1.6;
+  margin: 6rpx 0;
+}
+.v2-mode .section-head-v2 { margin-bottom: 20rpx; }
+
+/* Notice blocks */
+.v2-mode .notice-v2 {
+  border: 3rpx solid #111;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 6rpx 6rpx 0 #111;
+}
+.v2-mode .notice-v2.ok {
+  background: #E0FFF0;
+  border-left: 12rpx solid #4ECDC4;
+}
+.v2-mode .notice-v2.warn {
+  background: #FFEEEC;
+  border-left: 12rpx solid #FF6B6B;
+}
+
+/* Switch rows */
+.v2-mode .switch-row-v2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid #e0e0e0;
+}
+.v2-mode .switch-row-v2:last-child { border-bottom: 0; }
+.v2-mode .switch-label-v2 {
+  flex: 1;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.5;
+}
+
+/* Model cards */
+.v2-mode .model-card-v2 {
+  background: #f9f9f9;
+  border: 2rpx solid #111;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 4rpx 4rpx 0 #111;
+}
+.v2-mode .model-header-v2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 2rpx solid #e0e0e0;
 }
-
-.model-name-row {
+.v2-mode .model-name-row-v2 {
   display: flex;
   align-items: center;
   gap: 12rpx;
 }
-
-.default-badge {
+.v2-mode .default-badge-v2 {
   padding: 4rpx 14rpx;
-  border-radius: 999rpx;
   font-size: 22rpx;
-  border: 2rpx solid #e5ddd0;
-  color: #786857;
+  font-weight: 800;
+  border: 2rpx solid #111;
+  color: #666;
+  cursor: pointer;
 }
-
-.default-badge.active {
-  background: #143f3a;
-  color: #fff;
-  border-color: #143f3a;
+.v2-mode .default-badge-v2.active {
+  background: #111;
+  color: #FFD93D;
 }
-
-.model-label {
+.v2-mode .model-label-v2 {
   font-size: 28rpx;
-  font-weight: 600;
-  color: #241b12;
+  font-weight: 800;
+  color: #111;
 }
-
-.model-actions {
+.v2-mode .model-actions-v2 {
   display: flex;
   gap: 8rpx;
 }
-
-.delete-btn {
-  color: #b85c38;
+.v2-mode .delete-btn-v2 {
+  color: #FF5252;
   font-size: 24rpx;
+  font-weight: 700;
   padding: 4rpx 12rpx;
 }
 
-.field { margin: 16rpx 0; }
-.field-label { display: block; font-size: 24rpx; color: #241b12; margin-bottom: 8rpx; }
-.text-input { width: 100%; height: 72rpx; padding: 0 22rpx; background: #fbf6ee; border: 2rpx solid #e5ddd0; border-radius: 12rpx; font-size: 26rpx; color: #241b12; box-sizing: border-box; }
-
-.grid.two { display: flex; gap: 16rpx; }
-.grid.two .field { flex: 1; }
-
-.actions { display: flex; gap: 12rpx; align-items: center; flex-wrap: wrap; }
-.actions.vertical { flex-direction: column; }
-
-.btn-primary { height: 80rpx; line-height: 80rpx; background: #143f3a; color: #fff; border: none; border-radius: 12rpx; font-size: 28rpx; }
-.btn-secondary { height: 80rpx; line-height: 80rpx; background: #fff; color: #143f3a; border: 2rpx solid #143f3a; border-radius: 12rpx; font-size: 28rpx; }
-.btn-secondary.compact { height: 56rpx; line-height: 56rpx; font-size: 24rpx; padding: 0 20rpx; }
-
-.test-result { font-size: 24rpx; font-weight: 500; }
-.test-result.pass { color: #14633a; }
-.test-result.fail { color: #b85c38; }
-
-/* Premium visual pass */
-.page {
-  background:
-    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 360rpx),
-    var(--app-bg, #f6f1e8);
-  padding: 28rpx;
+/* Form fields */
+.v2-mode .field-v2 { margin: 16rpx 0; }
+.v2-mode .field-label-v2 {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 8rpx;
 }
-
-.card {
-  background: var(--card-bg, rgba(255, 252, 247, 0.96));
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  border-radius: 18rpx;
-  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
-}
-
-.hero-card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
-}
-
-.hero-card::after {
-  content: "";
-  position: absolute;
-  left: 32rpx;
-  right: 32rpx;
-  top: 0;
-  height: 3rpx;
-  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
-}
-
-.hero-topline {
-  color: rgba(255, 252, 247, 0.72);
-  letter-spacing: 3rpx;
-}
-
-.hero-card .h1 {
-  color: #fffaf0;
-  font-size: 42rpx;
-  line-height: 1.25;
-}
-
-.hero-subtext {
-  color: rgba(255, 252, 247, 0.76);
-}
-
-.h1,
-.h2,
-.status-title,
-.switch-label,
-.model-label,
-.field-label {
-  color: var(--text-main, #201914);
-}
-
-.muted {
-  color: var(--text-muted, #76695c);
-}
-
-.model-card {
-  background: var(--card-soft, #fffaf3);
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
-}
-
-.default-badge {
-  border: 1rpx solid rgba(18, 60, 54, 0.18);
-  color: var(--text-muted, #76695c);
-  background: rgba(255, 252, 247, 0.72);
-}
-
-.default-badge.active {
-  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: transparent;
-  color: #fffaf0;
-}
-
-.text-input {
-  background: var(--card-bg, #fffcf7);
-  border: 1rpx solid rgba(18, 60, 54, 0.12);
-  color: var(--text-main, #201914);
-}
-
-.btn-primary {
+.v2-mode .input-v2 {
   width: 100%;
-  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-radius: 14rpx;
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
-  font-weight: 650;
-}
-
-.btn-secondary {
-  background: rgba(255, 252, 247, 0.92);
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  color: var(--primary, #123c36);
-  border-radius: 14rpx;
+  height: 72rpx;
+  padding: 0 22rpx;
+  background: #fff;
+  border: 2rpx solid #111;
+  font-size: 26rpx;
   font-weight: 600;
-  padding: 0 28rpx;
+  color: #111;
+  box-sizing: border-box;
+}
+.v2-mode .grid-two-v2 { display: flex; gap: 16rpx; }
+.v2-mode .grid-two-v2 .field-v2 { flex: 1; }
+
+/* Actions */
+.v2-mode .actions-v2 { display: flex; gap: 12rpx; align-items: center; flex-wrap: wrap; }
+.v2-mode .actions-v2.vertical { flex-direction: column; }
+
+/* Buttons */
+.v2-mode .btn-v2-l {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: #4ECDC4;
+  color: #111;
+  border: 3rpx solid #111;
+  font-size: 28rpx;
+  font-weight: 800;
+  box-shadow: 4rpx 4rpx 0 #111;
+}
+.v2-mode .btn-v2-l[disabled] { opacity: 0.5; }
+.v2-mode .btn-v2 {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 24rpx;
+  background: #4ECDC4;
+  color: #111;
+  border: 3rpx solid #111;
+  font-size: 24rpx;
+  font-weight: 800;
+  box-shadow: 4rpx 4rpx 0 #111;
+}
+.v2-mode .btn-v2.sm {
+  height: 56rpx;
+  line-height: 56rpx;
+  font-size: 24rpx;
+  padding: 0 20rpx;
+}
+.v2-mode .btn-v2[disabled] { opacity: 0.5; }
+.v2-mode .btn-v2-outline {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: #fff;
+  color: #111;
+  border: 3rpx solid #111;
+  font-size: 28rpx;
+  font-weight: 800;
+  box-shadow: 4rpx 4rpx 0 #111;
 }
 
-.status-card {
-  border-left-width: 6rpx;
-  box-shadow: 0 14rpx 28rpx rgba(32, 25, 20, 0.05);
-}
-
-.status-card.success {
-  background: #eef7ef;
-  border-left-color: var(--success, #0f6b45);
-}
-
-.status-card.warning {
-  background: var(--risk-soft, #f7dfd8);
-  border-left-color: var(--risk, #b84a3a);
-}
-
-.delete-btn,
-.test-result.fail {
-  color: var(--risk, #b84a3a);
-}
-
-.test-result.pass {
-  color: var(--success, #0f6b45);
-}
-
-/* Second visual pass */
-.card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
-    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
-    var(--card-bg, #fffcf7);
-  box-shadow:
-    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
-}
-
-.hero-card {
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-}
-
-.card .h2 {
-  padding-left: 16rpx;
-  border-left: 6rpx solid var(--accent, #c9a45c);
-  line-height: 1.35;
-}
-
-.model-card {
-  border-left: 6rpx solid rgba(201, 164, 92, 0.72);
-  border-radius: 18rpx;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 110rpx),
-    var(--card-soft, #fffaf3);
-}
-
-.model-header {
-  padding-bottom: 16rpx;
-  border-bottom: 1rpx solid rgba(18, 60, 54, 0.08);
-}
-
-.switch-row {
-  padding: 18rpx 0;
-  border-bottom: 1rpx solid rgba(18, 60, 54, 0.07);
-}
-
-.switch-row:last-child {
-  border-bottom: 0;
-}
-
-.text-input {
-  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
-}
+/* Test result */
+.v2-mode .test-result-v2 { font-size: 24rpx; font-weight: 700; }
+.v2-mode .test-result-v2.pass { color: #4ECDC4; }
+.v2-mode .test-result-v2.fail { color: #FF5252; }
 </style>

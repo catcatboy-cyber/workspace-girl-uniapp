@@ -1,0 +1,68 @@
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #FFFDF5;
+  border-top: 3rpx solid #111;
+  box-shadow: 0 -4rpx 0 #111;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+}
+.tab-inner {
+  flex: 1;
+  display: flex;
+  height: 100%;
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tab-item:nth-child(2) { margin-right: 50rpx; }
+.tab-item:nth-child(3) { margin-left: 50rpx; }
+.tab-text {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #999;
+}
+.tab-item.active .tab-text {
+  color: #111;
+  font-weight: 900;
+}
+
+.crush-btn-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 18rpx;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.crush-btn {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  background: #111;
+  border: 3rpx solid #111;
+  box-shadow: 0 6rpx 0 #FFD93D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.crush-btn.active {
+  background: #FFD93D;
+  box-shadow: 0 6rpx 0 #111;
+  transform: translateY(-4rpx);
+}
+.crush-text {
+  font-size: 22rpx;
+  font-weight: 900;
+  color: #FFD93D;
+}
+.crush-btn.active .crush-text {
+  color: #111;
+}

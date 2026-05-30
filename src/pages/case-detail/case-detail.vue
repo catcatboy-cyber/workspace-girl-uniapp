@@ -301,8 +301,8 @@ const hasNewEventsSinceReview = computed(() => {
 
 const weeklyButtonLabel = computed(() => {
   const review = weeklyPreview.value
-  if (!review) return '去生成本周 AI 复盘'
-  if (!hasNewEventsSinceReview.value) return '暂无新事件'
+  if (!review) return '本周复盘'
+  if (!hasNewEventsSinceReview.value) return '还没新事件'
   return '重新生成本周复盘'
 })
 
@@ -401,6 +401,8 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  const tabBar = getCurrentPages().pop()?.getTabBar?.()
+  if (tabBar) tabBar.updateSelected()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   if (!initialized.value) return

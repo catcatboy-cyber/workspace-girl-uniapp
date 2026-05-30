@@ -18,7 +18,7 @@
     "build:mp-alipay": "uni build -p mp-alipay",
     "build:mp-baidu": "uni build -p mp-baidu",
     "build:mp-toutiao": "uni build -p mp-toutiao",
-    "build:mp-weixin": "uni build -p mp-weixin"
+    "build:mp-weixin": "uni build -p mp-weixin && node -e \"var fs=require('fs');var p=require('path');var root=p.join('dist','build','mp-weixin');var stale=p.join(root,'static','pets','xiaomi','spritesheet.webp');if(fs.existsSync(stale))fs.unlinkSync(stale);var s='custom-tab-bar';var d=p.join(root,s);if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});['index.json','index.wxml','index.js','index.wxss'].forEach(function(f){fs.copyFileSync(p.join(s,f),p.join(d,f))})\""
   },
   "dependencies": {
     "@cloudbase/adapter-wx_mp": "^1.3.1",

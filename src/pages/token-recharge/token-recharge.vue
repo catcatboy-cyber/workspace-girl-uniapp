@@ -1,8 +1,8 @@
 <template>
   <view class="page v2-mode">
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">TOKEN RECHARGE</text>
-        <text class="hero-title-v2">Token<text class="hl-v2">充值</text></text>
+        <text class="hero-tag-v2">ENERGY</text>
+        <text class="hero-title-v2">充点<text class="hl-v2">Token能量</text></text>
         <text class="hero-copy-v2">当前可用额度：{{ balance.toLocaleString() }} token</text>
       </view>
 

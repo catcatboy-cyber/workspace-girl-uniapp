@@ -27,11 +27,13 @@ const initial = computed(() => {
   position: relative;
   border-radius: 50%;
   overflow: hidden;
-  background: linear-gradient(135deg, #e8dcc8 0%, #d4c4a8 100%);
+  background: #FFD93D;
+  border: 3rpx solid #111;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .profile-avatar.xs {
@@ -62,8 +64,8 @@ const initial = computed(() => {
 
 .avatar-placeholder {
   font-size: 28rpx;
-  font-weight: 600;
-  color: #786857;
+  font-weight: 900;
+  color: #111;
   text-transform: uppercase;
 }
 

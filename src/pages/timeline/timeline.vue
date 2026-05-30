@@ -948,6 +948,8 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  const tabBar = getCurrentPages().pop()?.getTabBar?.()
+  if (tabBar) tabBar.updateSelected()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   if (!initialized.value) return

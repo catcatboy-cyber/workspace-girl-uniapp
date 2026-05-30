@@ -2,7 +2,7 @@
   "name": "xiaomi",
   "displayName": "小咪",
   "renderer": "spritesheet",
-  "spritesheetPath": "/static/pets/xiaomi/spritesheet.webp",
+  "spritesheetPath": "",
   "cellWidth": 192,
   "cellHeight": 208,
   "columns": 8,

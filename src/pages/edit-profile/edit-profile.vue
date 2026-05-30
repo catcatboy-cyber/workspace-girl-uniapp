@@ -1,105 +1,105 @@
 <template>
-  <view class="page" :style="themeVars">
-    <view v-if="loading" class="muted center">加载中...</view>
+  <view class="page v2-mode" :style="themeVars">
+    <view v-if="loading" class="loading-v2">加载中...</view>
 
-    <view v-else-if="!caseFile" class="card">
-      <text class="h1">无法编辑画像</text>
-      <text class="muted">当前对象不存在或已被删除。</text>
+    <view v-else-if="!caseFile" class="card-v2">
+      <text class="section-title-v2">无法编辑画像</text>
+      <text class="card-text-v2">当前对象不存在或已被删除。</text>
     </view>
 
     <template v-else>
-      <view class="hero-card card">
-        <text class="hero-topline">编辑画像 / {{ caseFile.name }}</text>
-        <view class="hero-head">
-          <view class="profile-avatar lg">
+      <view class="hero-block-v2">
+        <text class="hero-tag-v2">编辑画像 / {{ caseFile.name }}</text>
+        <view class="hero-head-v2">
+          <view class="profile-avatar-v2 lg">
             <image v-if="profile.avatar" :src="profile.avatarPreviewUrl || profile.avatar" mode="aspectFill" />
-            <text v-else class="avatar-placeholder">{{ avatarLabel(caseName || caseFile.name) }}</text>
+            <text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseName || caseFile.name) }}</text>
           </view>
-          <view class="hero-copy">
-            <text class="h1">修改对象名称和画像信息</text>
-            <text class="hero-subtext">更新的是对象资料层信息，不会改动历史分析。</text>
+          <view class="hero-copy-v2">
+            <text class="hero-title-v2">修改对象名称和画像信息</text>
+            <text class="hero-copy-v2-sub">更新的是对象资料层信息，不会改动历史分析。</text>
           </view>
         </view>
-        <view class="hero-actions">
-          <button class="btn-secondary" @click="goCaseDetail">返回关系主页</button>
-          <button class="btn-secondary" @click="goTimeline">查看时间线</button>
+        <view class="hero-actions-v2">
+          <button class="btn-v2 sm" @click="goCaseDetail">返回关系主页</button>
+          <button class="btn-v2 sm" @click="goTimeline">查看时间线</button>
         </view>
       </view>
 
-      <view v-if="profileItems.length > 0" class="card">
-        <text class="h2">当前画像预览</text>
-        <view class="badges">
-          <text v-for="item in profileItems" :key="item" class="badge">{{ item }}</text>
+      <view v-if="profileItems.length > 0" class="card-v2">
+        <text class="section-title-v2">当前画像预览</text>
+        <view class="tag-row-v2">
+          <text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text>
         </view>
       </view>
 
-      <view v-if="profileInsight" class="card">
-        <text class="h2">{{ profileInsight.title }}</text>
-        <text class="muted insight-summary">{{ profileInsight.summary }}</text>
-        <view class="insight-list">
-          <text v-for="item in profileInsight.bullets" :key="item" class="insight-item">• {{ item }}</text>
+      <view v-if="profileInsight" class="card-v2">
+        <text class="section-title-v2">{{ profileInsight.title }}</text>
+        <text class="card-text-v2 insight-summary">{{ profileInsight.summary }}</text>
+        <view class="insight-list-v2">
+          <text v-for="item in profileInsight.bullets" :key="item" class="insight-item-v2">{{ item }}</text>
         </view>
-        <text class="muted">{{ profileInsight.disclaimer }}</text>
+        <text class="card-text-v2">{{ profileInsight.disclaimer }}</text>
       </view>
 
-      <view class="card">
-        <text class="h2">对象基础信息</text>
-        <view class="field">
-          <text class="field-label">对象名称 / 关系名称</text>
-          <input v-model="caseName" class="text-input" />
+      <view class="card-v2">
+        <text class="section-title-v2">对象基础信息</text>
+        <view class="field-v2">
+          <text class="field-label-v2">对象名称 / 关系名称</text>
+          <input v-model="caseName" class="input-v2" />
         </view>
       </view>
 
-      <view class="card">
-        <text class="h2">对象画像</text>
-        <text class="muted">这些信息只用于辅助理解，不参与核心评分。</text>
+      <view class="card-v2">
+        <text class="section-title-v2">对象画像</text>
+        <text class="card-text-v2">这些信息只用于辅助理解，不参与核心评分。</text>
 
-        <view class="field">
-          <text class="field-label">关系类型</text>
+        <view class="field-v2">
+          <text class="field-label-v2">关系类型</text>
           <picker :range="relationTypeLabels" :value="relationTypeIndex" @change="onRelationTypeChange">
-            <view class="picker-view">{{ relationTypeLabel }}</view>
+            <view class="picker-v2">{{ relationTypeLabel }}</view>
           </picker>
         </view>
 
-        <view class="field">
-          <text class="field-label">年龄</text>
-          <input v-model="profile.age" type="number" class="text-input" placeholder="例如：26" />
+        <view class="field-v2">
+          <text class="field-label-v2">年龄</text>
+          <input v-model="profile.age" type="number" class="input-v2" placeholder="例如：26" />
         </view>
 
-        <view class="field">
-          <text class="field-label">性别</text>
+        <view class="field-v2">
+          <text class="field-label-v2">性别</text>
           <picker :range="genderOptions" :value="genderIndex" @change="onGenderChange">
-            <view class="picker-view">{{ profile.gender || '请选择' }}</view>
+            <view class="picker-v2">{{ profile.gender || '请选择' }}</view>
           </picker>
         </view>
 
-        <view class="field">
-          <text class="field-label">工作</text>
-          <input v-model="profile.occupation" class="text-input" />
+        <view class="field-v2">
+          <text class="field-label-v2">工作</text>
+          <input v-model="profile.occupation" class="input-v2" />
         </view>
 
-        <view class="field">
-          <text class="field-label">属相</text>
+        <view class="field-v2">
+          <text class="field-label-v2">属相</text>
           <picker :range="zodiacOptions" :value="zodiacIndex" @change="onZodiacChange">
-            <view class="picker-view">{{ profile.zodiac || '请选择' }}</view>
+            <view class="picker-v2">{{ profile.zodiac || '请选择' }}</view>
           </picker>
         </view>
 
-        <view class="field">
-          <text class="field-label">星座</text>
+        <view class="field-v2">
+          <text class="field-label-v2">星座</text>
           <picker :range="constellationOptions" :value="constellationIndex" @change="onConstellationChange">
-            <view class="picker-view">{{ profile.constellation || '请选择' }}</view>
+            <view class="picker-v2">{{ profile.constellation || '请选择' }}</view>
           </picker>
         </view>
 
-        <view class="field">
-          <text class="field-label">头像</text>
+        <view class="field-v2">
+          <text class="field-label-v2">头像</text>
           <ProfileAvatarPicker v-model="profile.avatar" @preview-change="onAvatarPreviewChange" />
         </view>
       </view>
 
-      <view class="card">
-        <button class="btn-primary" :disabled="saving" @click="onSave">
+      <view class="card-v2">
+        <button class="btn-v2-l" :disabled="saving" @click="onSave">
           {{ saving ? '保存中...' : '保存画像信息' }}
         </button>
       </view>
@@ -256,174 +256,162 @@ function goTimeline() {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: #f4ede2; padding: 24rpx; box-sizing: border-box; }
-.center { text-align: center; padding: 80rpx 0; }
-.card { background: #fbf6ee; border-radius: 20rpx; padding: 32rpx; margin-bottom: 24rpx; }
-.hero-card { background: linear-gradient(135deg, #fbf6ee 0%, #f4ede2 100%); }
-.hero-head { display: flex; gap: 20rpx; align-items: center; }
-.hero-copy { flex: 1; }
-.hero-actions { display: flex; gap: 12rpx; margin-top: 20rpx; flex-wrap: wrap; }
-.hero-topline { display: block; font-size: 22rpx; color: #786857; }
-.h1 { display: block; font-size: 36rpx; font-weight: 700; color: #143f3a; margin: 8rpx 0; }
-.h2 { display: block; font-size: 32rpx; font-weight: 600; color: #241b12; margin-bottom: 10rpx; }
-.hero-subtext { display: block; font-size: 26rpx; color: #786857; line-height: 1.6; }
-.muted { display: block; font-size: 24rpx; color: #786857; margin: 6rpx 0; }
-.profile-avatar {
+.page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
+
+/* V2 Mode */
+.v2-mode { background: var(--app-bg, #FFFDF5); }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 26rpx; font-weight: 600; color: #666; }
+
+.v2-mode .hero-block-v2 {
+  background: var(--hero-bg, #FF6B6B);
+  border: 3rpx solid #111;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 8rpx 8rpx 0 #111;
+  transform: rotate(-0.5deg);
+}
+.v2-mode .hero-tag-v2 {
+  display: block;
+  font-size: 22rpx;
+  font-weight: 800;
+  color: rgba(0,0,0,0.5);
+  letter-spacing: 3rpx;
+  text-transform: uppercase;
+}
+.v2-mode .hero-title-v2 {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #111;
+  line-height: 1.25;
+}
+.v2-mode .hero-head-v2 { display: flex; gap: 20rpx; align-items: center; margin-top: 14rpx; }
+.v2-mode .hero-copy-v2 { flex: 1; }
+.v2-mode .hero-copy-v2-sub {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: rgba(0,0,0,0.7);
+  line-height: 1.6;
+  margin-top: 6rpx;
+}
+.v2-mode .hero-actions-v2 { display: flex; gap: 12rpx; margin-top: 20rpx; flex-wrap: wrap; }
+
+.v2-mode .profile-avatar-v2 {
   border-radius: 50%;
   overflow: hidden;
-  background: #efe7d8;
+  background: #f9f9f9;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 3rpx solid #111;
 }
-.profile-avatar.lg { width: 120rpx; height: 120rpx; }
-.profile-avatar image { width: 100%; height: 100%; }
-.avatar-placeholder { font-size: 36rpx; font-weight: 700; color: #786857; }
-.badges { margin-top: 8rpx; }
-.badge { display: inline-block; padding: 8rpx 16rpx; background: #efe7d8; border-radius: 999rpx; font-size: 22rpx; color: #241b12; margin: 4rpx; }
-.insight-summary { margin-bottom: 12rpx; }
-.insight-list { display: flex; flex-direction: column; gap: 8rpx; margin: 12rpx 0; }
-.insight-item { font-size: 26rpx; color: #241b12; line-height: 1.6; }
-.field { margin-top: 16rpx; }
-.field-label { display: block; font-size: 24rpx; color: #241b12; margin-bottom: 8rpx; }
-.text-input { width: 100%; height: 80rpx; padding: 0 24rpx; background: #fff; border: 2rpx solid #e5ddd0; border-radius: 12rpx; font-size: 28rpx; box-sizing: border-box; }
-.picker-view { height: 80rpx; line-height: 80rpx; padding: 0 24rpx; background: #fff; border: 2rpx solid #e5ddd0; border-radius: 12rpx; font-size: 28rpx; }
-.btn-primary { width: 100%; height: 88rpx; line-height: 88rpx; background: #143f3a; color: #fff; border: none; border-radius: 12rpx; font-size: 32rpx; font-weight: 600; }
-.btn-secondary { height: 76rpx; line-height: 76rpx; background: #fff; color: #143f3a; border: 2rpx solid #143f3a; border-radius: 12rpx; font-size: 28rpx; padding: 0 24rpx; }
+.v2-mode .profile-avatar-v2.lg { width: 120rpx; height: 120rpx; }
+.v2-mode .profile-avatar-v2 image { width: 100%; height: 100%; }
+.v2-mode .avatar-placeholder-v2 { font-size: 36rpx; font-weight: 900; color: #111; }
 
-/* Premium visual pass */
-.page {
-  background:
-    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 360rpx),
-    var(--app-bg, #f6f1e8);
+.v2-mode .card-v2 {
+  background: #fff;
+  border: 3rpx solid #111;
   padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 6rpx 6rpx 0 #111;
 }
-
-.card {
-  background: var(--card-bg, rgba(255, 252, 247, 0.96));
-  border: 1rpx solid rgba(18, 60, 54, 0.08);
-  border-radius: 18rpx;
-  box-shadow: 0 16rpx 36rpx rgba(32, 25, 20, 0.06);
+.v2-mode .section-title-v2 {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #111;
+  margin-bottom: 14rpx;
+  line-height: 1.3;
 }
-
-.hero-card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-color: rgba(201, 164, 92, 0.25);
-  box-shadow: 0 22rpx 44rpx rgba(18, 60, 54, 0.18);
-}
-
-.hero-card::after {
-  content: "";
-  position: absolute;
-  left: 32rpx;
-  right: 32rpx;
-  top: 0;
-  height: 3rpx;
-  background: linear-gradient(90deg, rgba(201, 164, 92, 0), var(--accent, #c9a45c), rgba(201, 164, 92, 0));
-}
-
-.hero-topline {
-  color: rgba(255, 252, 247, 0.72);
-  letter-spacing: 3rpx;
-}
-
-.hero-card .h1 {
-  color: #fffaf0;
-  font-size: 42rpx;
-  line-height: 1.25;
-}
-
-.hero-subtext {
-  color: rgba(255, 252, 247, 0.76);
-}
-
-.h1,
-.h2,
-.field-label,
-.insight-item {
-  color: var(--text-main, #201914);
-}
-
-.muted {
-  color: var(--text-muted, #76695c);
-}
-
-.badge {
-  background: var(--accent-soft, rgba(201, 164, 92, 0.14));
-  border: 1rpx solid rgba(201, 164, 92, 0.24);
-  color: #6f5225;
-}
-
-.profile-avatar {
-  border: 2rpx solid rgba(201, 164, 92, 0.45);
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.1);
-}
-
-.text-input,
-.picker-view {
-  background: var(--card-soft, #fffaf3);
-  border: 1rpx solid rgba(18, 60, 54, 0.12);
-  color: var(--text-main, #201914);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary, #123c36), var(--hero-bg-2, #0f2f2b));
-  border-radius: 14rpx;
-  box-shadow: 0 10rpx 22rpx rgba(18, 60, 54, 0.18);
-}
-
-.btn-secondary {
-  background: rgba(255, 252, 247, 0.92);
-  border: 1rpx solid rgba(18, 60, 54, 0.25);
-  color: var(--primary, #123c36);
-  border-radius: 14rpx;
+.v2-mode .card-text-v2 {
+  display: block;
+  font-size: 24rpx;
   font-weight: 600;
+  color: #666;
+  line-height: 1.6;
+  margin: 6rpx 0;
 }
 
-/* Second visual pass */
-.card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 150rpx),
-    linear-gradient(135deg, rgba(201, 164, 92, 0.1), rgba(18, 60, 54, 0.03) 58%, rgba(255, 255, 255, 0) 100%),
-    var(--card-bg, #fffcf7);
-  box-shadow:
-    0 18rpx 38rpx rgba(32, 25, 20, 0.075),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+/* Tags */
+.v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
+.v2-mode .tag-v2 {
+  display: inline-block;
+  padding: 8rpx 16rpx;
+  background: #FFD93D;
+  border: 2rpx solid #111;
+  font-size: 22rpx;
+  font-weight: 800;
+  color: #111;
 }
 
-.hero-card {
-  background:
-    linear-gradient(135deg, var(--hero-bg, #123c36), var(--hero-bg-2, #0f2f2b));
+/* Insight */
+.v2-mode .insight-summary { margin-bottom: 12rpx; }
+.v2-mode .insight-list-v2 { display: flex; flex-direction: column; gap: 8rpx; margin: 12rpx 0; }
+.v2-mode .insight-item-v2 { font-size: 26rpx; font-weight: 700; color: #111; line-height: 1.6; }
+
+/* Fields */
+.v2-mode .field-v2 { margin-top: 16rpx; padding: 18rpx 0; border-bottom: 2rpx solid #e0e0e0; }
+.v2-mode .field-v2:last-child { border-bottom: 0; }
+.v2-mode .field-label-v2 {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 8rpx;
+}
+.v2-mode .input-v2 {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: #fff;
+  border: 2rpx solid #111;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #111;
+  box-sizing: border-box;
+}
+.v2-mode .picker-v2 {
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 24rpx;
+  background: #fff;
+  border: 2rpx solid #111;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #111;
 }
 
-.card .h2 {
-  padding-left: 16rpx;
-  border-left: 6rpx solid var(--accent, #c9a45c);
-  line-height: 1.35;
+/* Buttons */
+.v2-mode .btn-v2-l {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #4ECDC4;
+  color: #111;
+  border: 3rpx solid #111;
+  font-size: 32rpx;
+  font-weight: 800;
+  box-shadow: 4rpx 4rpx 0 #111;
 }
-
-.hero-card .h2 {
-  padding-left: 0;
-  border-left: 0;
+.v2-mode .btn-v2-l[disabled] { opacity: 0.5; }
+.v2-mode .btn-v2 {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 24rpx;
+  background: #4ECDC4;
+  color: #111;
+  border: 3rpx solid #111;
+  font-size: 24rpx;
+  font-weight: 800;
+  box-shadow: 4rpx 4rpx 0 #111;
 }
-
-.field {
-  padding: 18rpx 0;
-  border-bottom: 1rpx solid rgba(18, 60, 54, 0.07);
-}
-
-.field:last-child {
-  border-bottom: 0;
-}
-
-.text-input,
-.picker-view {
-  box-shadow: inset 0 2rpx 8rpx rgba(32, 25, 20, 0.03);
+.v2-mode .btn-v2.sm {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 24rpx;
+  font-size: 24rpx;
 }
 </style>

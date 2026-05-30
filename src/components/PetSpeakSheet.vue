@@ -52,14 +52,13 @@
         </view>
 
         <view class="card result-card">
-          <view class="result-head">
-            <text class="card-label">{{ activeToneLabel }}</text>
-            <button class="btn-sm" @click="copyText(activeReplyText)">复制</button>
-          </view>
           <text class="card-text">{{ activeReplyText }}</text>
-          <button class="btn-retry" :disabled="retryingTone || generating" @click="refreshCurrentTone">
-            {{ retryingTone ? '生成中...' : '换一句' }}
-          </button>
+          <view class="result-actions">
+            <button class="btn-sm" @click="copyText(activeReplyText)">复制</button>
+            <button class="btn-sm" :disabled="retryingTone || generating" @click="refreshCurrentTone">
+              {{ retryingTone ? '生成中...' : '换一句' }}
+            </button>
+          </view>
         </view>
 
         <view v-if="strategies.length > 0" class="strategy-area">
@@ -103,11 +102,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { generatePetReplyPair, generateReplyStrategy, handleInsufficientBalance, getCachedSelfProfile } from '@/utils/api'
 
 const props = defineProps<{ visible: boolean; petName?: string }>()
 const emit = defineEmits(['close'])
+
+function setCustomTabBarHidden(hidden: boolean) {
+  try {
+    const pages = getCurrentPages()
+    const current = pages[pages.length - 1]
+    const tabBar = current?.getTabBar?.()
+    tabBar?.setHidden?.(hidden)
+  } catch {}
+}
+
+watch(() => props.visible, (visible) => {
+  setCustomTabBarHidden(visible)
+}, { immediate: true })
+
+onUnmounted(() => {
+  setCustomTabBarHidden(false)
+})
 
 type ToneKey = 'humor' | 'flirty' | 'sincere' | 'literary'
 type ReplyVariants = Partial<Record<ToneKey, string>>
@@ -152,7 +168,6 @@ const strategies = ref<any[]>([])
 const activeStrategyIndex = ref(0)
 
 const sheetTitle = computed(() => `${props.petName || '小咪'}帮你说`)
-const activeToneLabel = computed(() => toneOptions.value.find(t => t.key === activeTone.value)?.label || '真诚直接')
 const activeReplyText = computed(() => results.value?.variants?.[activeTone.value] || '')
 
 function normalizeReplyVariants(res: any): ReplyVariants {
@@ -197,7 +212,7 @@ async function generate() {
   try {
     const res = await generatePetReplyPair(scene.value, text)
     if (handleInsufficientBalance(res)) {
-      errorMsg.value = '额度不足，请充值后再试'
+      errorMsg.value = '能量不足，充点Token能量再来'
     } else if (!res?.success) {
       errorMsg.value = res?.message || '生成失败，请重试'
     } else {
@@ -231,7 +246,7 @@ async function refreshCurrentTone() {
   try {
     const res = await generatePetReplyPair(scene.value, text, activeTone.value)
     if (handleInsufficientBalance(res)) {
-      errorMsg.value = '额度不足，请充值后再试'
+      errorMsg.value = '能量不足，充点Token能量再来'
       return
     }
     if (!res?.success) {
@@ -287,115 +302,70 @@ function close() {
   position: fixed; inset: 0; z-index: 1000;
   background: rgba(0,0,0,0.5);
   display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
 }
 .sheet-panel {
   width: 100%; max-width: 500px; max-height: 85vh;
   background: #FFFDF5; border: 3px solid #111;
   box-shadow: 8rpx 8rpx 0 #111;
-  padding: 24rpx; overflow-y: auto;
+  padding: 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
-.sheet-head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 16rpx;
-}
+.sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
 .sheet-title { font-size: 32rpx; font-weight: 900; color: #111; letter-spacing: 2rpx; }
 .sheet-close { font-size: 28rpx; font-weight: 900; color: #999; padding: 8rpx; }
 
 .tab-row { display: flex; gap: 12rpx; margin-bottom: 20rpx; }
-.tab {
-  flex: 1; text-align: center; padding: 14rpx;
-  font-size: 24rpx; font-weight: 700; color: #999;
-  border: 2rpx solid #ddd; background: #fff;
-}
+.tab { flex: 1; text-align: center; padding: 14rpx; font-size: 24rpx; font-weight: 700; color: #999; border: 2rpx solid #ddd; background: #fff; }
 .tab.active { color: #111; border-color: #111; background: #FFD93D; }
 
 .input-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
-.text-area {
-  width: 100%; height: 120rpx; padding: 16rpx; font-size: 24rpx;
-  border: 2rpx solid #111; background: #fff;
-  box-sizing: border-box;
-}
+.text-area { width: 100%; height: 120rpx; padding: 16rpx; font-size: 24rpx; border: 3rpx solid #111; background: #fff; box-sizing: border-box; }
 
 .btn-generate {
   width: 100%; margin-top: 16rpx; padding: 16rpx;
   font-size: 26rpx; font-weight: 900; color: #111;
-  background: #FFD93D; border: 2rpx solid #111;
+  background: #FFD93D; border: 3rpx solid #111;
   box-shadow: 4rpx 4rpx 0 #111;
 }
 .btn-generate[disabled] { opacity: 0.4; }
 
 .results-area { margin-top: 24rpx; }
 .tone-section { margin-bottom: 16rpx; }
-.section-label { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
+.section-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
 .tone-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; }
-.tone-tab {
-  min-width: 0; text-align: center; padding: 10rpx 6rpx;
-  font-size: 20rpx; font-weight: 800; color: #666;
-  background: #fff; border: 2rpx solid #ddd; box-sizing: border-box;
-}
+.tone-tab { min-width: 0; text-align: center; padding: 10rpx 6rpx; font-size: 20rpx; font-weight: 800; color: #666; background: #fff; border: 2rpx solid #ddd; box-sizing: border-box; }
 .tone-tab.active { color: #111; border-color: #111; background: #FFD93D; }
-.card {
-  padding: 18rpx; border: 2rpx solid #111; background: #f0fff0;
-  margin-bottom: 14rpx;
-}
-.result-card { background: #f0fff0; }
-.result-head { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-bottom: 8rpx; }
-.result-head .card-label { margin-bottom: 0; }
-.card.alt { background: #fff8e1; }
-.card-label { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
-.card-text { display: block; font-size: 26rpx; color: #111; line-height: 1.5; margin-bottom: 12rpx; }
-.card-actions { display: flex; justify-content: flex-end; }
-.btn-sm {
-  padding: 8rpx 20rpx; font-size: 20rpx; font-weight: 700; color: #111;
-  background: #fff; border: 2rpx solid #111;
-}
 
-.btn-retry {
-  width: 100%; margin-top: 8rpx; padding: 14rpx;
-  font-size: 22rpx; font-weight: 700; color: #666;
-  background: #fff; border: 2rpx dashed #999;
-}
-.btn-retry[disabled] { opacity: 0.4; }
+.card { padding: 18rpx; border: 3rpx solid #111; background: #fff; margin-bottom: 14rpx; box-shadow: 4rpx 4rpx 0 #111; }
+.result-card { background: #fff; }
+.card-label { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
+.card-text { display: block; font-size: 26rpx; font-weight: 700; color: #111; line-height: 1.5; margin-bottom: 12rpx; }
+.result-actions { display: flex; gap: 10rpx; justify-content: flex-end; }
+.btn-sm { padding: 8rpx 20rpx; font-size: 20rpx; font-weight: 800; color: #111; background: #fff; border: 2rpx solid #111; box-shadow: 3rpx 3rpx 0 #111; }
+.btn-sm[disabled] { opacity: 0.4; }
 
 .strategy-area { margin-top: 8rpx; }
-.strategy-card { background: #fdf8f3; border: 2rpx solid #f0a060; padding: 20rpx; }
+.strategy-card { background: #fff; border: 3rpx solid #111; padding: 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
 .strategy-tabs { display: flex; gap: 10rpx; margin: 12rpx 0; }
-.strategy-tab {
-  padding: 8rpx 24rpx; font-size: 22rpx; font-weight: 700; color: #f0a060;
-  background: #fff; border: 2rpx solid #f0a060; border-radius: 20rpx;
-}
-.strategy-tab.active { background: #f0a060; color: #fff; }
+.strategy-tab { padding: 8rpx 24rpx; font-size: 22rpx; font-weight: 800; color: #111; background: #fff; border: 2rpx solid #111; }
+.strategy-tab.active { background: #111; color: #FFD93D; }
 .strategy-turns { margin-top: 16rpx; }
-.turn-block { margin-bottom: 20rpx; padding: 16rpx; background: #fff; border-left: 4rpx solid #f0a060; }
+.turn-block { margin-bottom: 20rpx; padding: 16rpx; background: #fff; border: 2rpx solid #111; border-left: 8rpx solid #FFD93D; }
 .turn-header { display: flex; align-items: center; gap: 10rpx; margin-bottom: 10rpx; }
-.turn-step { font-size: 20rpx; font-weight: 900; color: #f0a060; }
-.turn-note { font-size: 18rpx; color: #999; }
-.turn-bubble {
-  display: flex; justify-content: space-between; align-items: center; gap: 10rpx;
-  padding: 14rpx; background: #fff7ed; border-radius: 8rpx; margin-bottom: 8rpx;
-}
-.turn-text { font-size: 26rpx; color: #111; line-height: 1.5; flex: 1; }
+.turn-step { font-size: 20rpx; font-weight: 900; color: #111; }
+.turn-note { font-size: 18rpx; font-weight: 600; color: #999; }
+.turn-bubble { display: flex; justify-content: space-between; align-items: center; gap: 10rpx; padding: 14rpx; background: #f9f9f9; border: 2rpx solid #e0e0e0; margin-bottom: 8rpx; }
+.turn-text { font-size: 26rpx; font-weight: 600; color: #111; line-height: 1.5; flex: 1; }
 .turn-reactions { display: flex; flex-wrap: wrap; align-items: center; gap: 8rpx; }
-.reactions-label { font-size: 18rpx; color: #aaa; }
-.reaction-tag {
-  padding: 4rpx 12rpx; font-size: 18rpx; color: #999;
-  background: #f0f0f0; border-radius: 10rpx;
-}
+.reactions-label { font-size: 18rpx; font-weight: 700; color: #666; }
+.reaction-tag { padding: 4rpx 12rpx; font-size: 18rpx; font-weight: 700; color: #666; background: #f9f9f9; border: 2rpx solid #e0e0e0; }
 
-.error-msg {
-  margin-top: 16rpx; padding: 14rpx;
-  background: #fff0f0; border: 2rpx solid #ff4444;
-  font-size: 22rpx; color: #cc0000; font-weight: 700;
-}
-.safety-notice {
-  margin-bottom: 16rpx; padding: 12rpx 16rpx;
-  background: #f0f4ff; border: 2rpx solid #5588ff;
-  font-size: 22rpx; color: #2255cc; font-weight: 500;
-}
-.boundary-notice {
-  margin-bottom: 16rpx; padding: 12rpx 16rpx;
-  background: #fff8f0; border: 2rpx solid #ff8844;
-  font-size: 22rpx; color: #cc5500; font-weight: 500;
-}
+.error-msg { margin-top: 16rpx; padding: 14rpx; background: #FFEEEC; border: 3rpx solid #FF5252; font-size: 22rpx; color: #FF5252; font-weight: 700; }
+.safety-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: #E0FFF0; border: 2rpx solid #4ECDC4; font-size: 22rpx; color: #111; font-weight: 600; }
+.boundary-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: #FFFBEB; border: 2rpx solid #FFD93D; font-size: 22rpx; color: #111; font-weight: 600; }
 </style>
