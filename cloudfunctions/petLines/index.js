@@ -54,6 +54,16 @@ const DEFAULT_PET_SPEAK_CONFIG = {
     systemPrompt: '', // 动态构建，不存固定值
     temperature: 0.8,
     maxTokens: 1200
+  },
+  lineTagging: {
+    systemPrompt: '',
+    temperature: 0.2,
+    maxTokens: 2000
+  },
+  qaMaintenance: {
+    systemPrompt: '',
+    temperature: 0.3,
+    maxTokens: 4000
   }
 }
 
@@ -338,6 +348,7 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
   const settings = settingsDoc.data?.[0]
   if (!settings) return { success: false, message: 'AI 未配置' }
   const ai = normalizeAISettingsForReply(settings)
+  const cfg = getPetSpeakConfig(settings, 'reply', { isMinor: Boolean(isMinor) })
   if (!ai.enabled || !ai.apiKey) return { success: false, message: 'AI 未启用' }
 
   if (userId) {
@@ -361,7 +372,7 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
   const baseUrl = ai.baseUrl.replace(/\/+$/, '')
   const urls = [`${baseUrl}/v1/chat/completions`, `${baseUrl}/chat/completions`]
   let response = null
-  for (const url of urls) { response = await aiHttpRequest(url, { model: ai.model, messages, temperature: 0.8, max_tokens: 120 }, REPLY_TIMEOUT_MS, ai.apiKey); if (response.status !== 404) break }
+  for (const url of urls) { response = await aiHttpRequest(url, { model: ai.model, messages, temperature: cfg.temperature, max_tokens: cfg.maxTokens }, REPLY_TIMEOUT_MS, ai.apiKey); if (response.status !== 404) break }
   if (!response?.ok) {
     const errText = await response?.text().catch(() => '')
     return { success: false, message: `AI 返回 ${response?.status || 0}${errText ? ' / ' + errText.slice(0, 100) : ''}` }
@@ -563,7 +574,7 @@ async function generateReplyPair(scene, content, userId, tone, safetyContext) {
 
 // ========== tagLines ==========
 
-async function tagOneBatch(ai, items, startIndex) {
+async function tagOneBatch(ai, items, startIndex, cfg) {
   const linesText = items.map((item, i) => `${i}. ${item.text}`).join('\n')
   const systemPrompt = `你是内容分类助手。给每条话术打2-4个场景标签，只从以下词表选择：${TAG_VOCAB.join(',')}。返回JSON：{"results":[{"index":0,"tags":["标签1","标签2"]},...]}`
   const userPrompt = `话术列表：\n${linesText}\n\n请给每条打标签，返回JSON对象。`
@@ -571,7 +582,7 @@ async function tagOneBatch(ai, items, startIndex) {
   const urls = [`${baseUrl}/v1/chat/completions`, `${baseUrl}/chat/completions`]
   let response = null
   for (const url of urls) {
-    response = await aiHttpRequest(url, { model: ai.model, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0.2, max_tokens: 1000, response_format: { type: 'json_object' } }, REPLY_TIMEOUT_MS, ai.apiKey)
+    response = await aiHttpRequest(url, { model: ai.model, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: cfg.temperature, max_tokens: cfg.maxTokens, response_format: { type: 'json_object' } }, REPLY_TIMEOUT_MS, ai.apiKey)
     if (response.status !== 404) break
   }
   if (!response?.ok) {
@@ -608,6 +619,7 @@ async function tagLinesLoop(startIndex, count, userId) {
   if (!settings) return { success: false, message: 'AI 未配置' }
   const ai = normalizeAISettingsForReply(settings)
   if (!ai.enabled || !ai.apiKey) return { success: false, message: 'AI 未启用' }
+  const cfg = getPetSpeakConfig(settings, 'lineTagging')
   const endTarget = Math.min(startIndex + count, SEED_DATA.length)
   const BATCH_SIZE = 20
   const allTagged = []
@@ -618,7 +630,7 @@ async function tagLinesLoop(startIndex, count, userId) {
       if (!bal.ok) return { success: false, message: '余额不足，请先充值', code: 'INSUFFICIENT_BALANCE' }
     }
     const batch = SEED_DATA.slice(current, Math.min(current + BATCH_SIZE, endTarget))
-    const tagged = await tagOneBatch(ai, batch, current)
+    const tagged = await tagOneBatch(ai, batch, current, cfg)
     allTagged.push(...tagged)
     if (userId) await recordReplyTokenUsage(userId, ai.model, null, false)
     current += batch.length
@@ -668,6 +680,7 @@ async function generateQAByAI(content, userId) {
     const settings = settingsRes?.data?.[0]
     const ai = normalizeAISettingsForReply(settings || {})
     if (!ai.enabled || !ai.apiKey) return null
+    const cfg = getPetSpeakConfig(settings || {}, 'qaStrategy')
 
     if (userId) {
       const bal = await checkReplyBalance(userId)
@@ -687,8 +700,8 @@ async function generateQAByAI(content, userId) {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `场景：${content.slice(0, 200)}` }
           ],
-          temperature: 0.9,
-          max_tokens: 120
+          temperature: cfg.temperature,
+          max_tokens: cfg.maxTokens
         }, REPLY_TIMEOUT_MS, ai.apiKey)
 
         if (resp.status === 404) continue
@@ -802,6 +815,7 @@ async function normalizeQASelfReply() {
 4. 两个部分各自独立完整，能直接拿来用
 5. 只输出 JSON 数组，每项 {"index": 序号, "text": "问|答"}`
 
+  const cfg = getPetSpeakConfig(settings || {}, 'qaMaintenance')
   const BATCH_SIZE = 30
   const results = []
 
@@ -823,8 +837,8 @@ async function normalizeQASelfReply() {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.3,
-          max_tokens: 4000
+          temperature: cfg.temperature,
+          max_tokens: cfg.maxTokens
         }, REPLY_TIMEOUT_MS * 2, ai.apiKey)
 
         if (resp.status === 404) continue
@@ -991,6 +1005,7 @@ async function tagQAStrategies() {
 
 返回 JSON：{"results":[{"index":0,"strategy":"contrast"},...]}`
 
+  const cfg = getPetSpeakConfig(settings || {}, 'lineTagging')
   const BATCH_SIZE = 50
   let done = 0
   const allTagged = []
@@ -1012,8 +1027,8 @@ async function tagQAStrategies() {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `给以下话术打策略标签，只返回 JSON：\n${items}` }
           ],
-          temperature: 0.2,
-          max_tokens: 2000
+          temperature: cfg.temperature,
+          max_tokens: cfg.maxTokens
         }, REPLY_TIMEOUT_MS * 2, ai.apiKey)
 
         if (resp.status === 404) continue
@@ -1058,6 +1073,7 @@ async function generateReplyStrategy(content, userId, scene = 'reply', safetyCon
   const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
   const settings = settingsRes?.data?.[0]
   const ai = normalizeAISettingsForReply(settings || {})
+  const cfg = getPetSpeakConfig(settings || {}, 'replyStrategy', safetyContext)
   if (!ai.enabled || !ai.apiKey) return { success: false, message: 'AI 配置未启用或缺少 API Key' }
 
   if (userId) {
@@ -1069,11 +1085,11 @@ async function generateReplyStrategy(content, userId, scene = 'reply', safetyCon
   const isMinor = safetyContext?.isMinor || false
   let systemPrompt = `你是恋爱对话策略教练。${isActiveScene ? '用户想主动问对方或主动表达一个意思，你需要生成2种多轮撩一下策略。' : '对方说了一句话，你需要生成2种多轮对话策略。'}
 
-策略1——反转（type: "contrast"）：
+策略1——先冷后甜（type: "contrast"）：
 ${isActiveScene ? '第一句先用轻松反转开场，不要直接暴露全部意图；第二句翻转成夸赞或明确邀约，制造一点轻松心动。' : '第一句先轻微否定/调侃对方，让对方产生小情绪甚至有点生气。第二句翻转成夸赞/深情，制造情绪反转，让对方又气又笑。这种推拉制造情绪价值。'}
 
-策略2——引导见面（type: "progressive"）：
-${isActiveScene ? '第一句低压力抛出话题，第二句根据对方可能回应继续拉近，第三句（可选）顺水推舟引导见面或下一次互动。' : '第一句埋钩子让对方好奇追问，第二句试探亲密动作的接受度，第三句（可选）顺水推舟引导见面或更近一步。'}
+策略2——${isActiveScene ? '投石问路' : '顺水推舟'}（type: "progressive"）：
+${isActiveScene ? '第一句低压力抛出话题（投石问路），第二句根据对方可能回应继续拉近，第三句（可选）顺水推舟引导见面或下一次互动。' : '第一句埋钩子让对方好奇追问，第二句顺水推舟接住对方反应，第三句（可选）继续推进引导见面或更近一步。'}
 
 规则：
 - 每句话15-35字，口语化、接地气、不油腻、像真人聊天
@@ -1087,7 +1103,7 @@ JSON 格式：
   "strategies": [
     {
       "type": "contrast",
-      "label": "反转",
+      "label": "先冷后甜",
       "turns": [
         {"step":1, "say":"话术", "note":"意图说明", "expectReactions":["可能的回复1","可能的回复2"]},
         {"step":2, "say":"话术", "note":"意图说明"}
@@ -1095,7 +1111,7 @@ JSON 格式：
     },
     {
       "type": "progressive",
-      "label": "引导拉近",
+      "label": "${isActiveScene ? '投石问路' : '顺水推舟'}",
       "turns": [
         {"step":1, "say":"话术", "note":"意图说明", "expectReactions":["可能回复"]},
         {"step":2, "say":"话术", "note":"意图说明"},
@@ -1112,8 +1128,8 @@ JSON 格式：
   }
 
   const userPrompt = isActiveScene
-    ? `用户想主动表达：${content.slice(0, 300)}\n\n请生成反转和引导拉近两种多轮策略。`
-    : `对方说的话：${content.slice(0, 300)}\n\n请生成反转和引导拉近两种多轮策略。`
+    ? `用户想主动表达：${content.slice(0, 300)}\n\n请生成"先冷后甜"和"投石问路"两种多轮策略。`
+    : `对方说的话：${content.slice(0, 300)}\n\n请生成"先冷后甜"和"顺水推舟"两种多轮策略。`
 
   const baseUrl = ai.baseUrl.replace(/\/+$/, '')
   const urls = [`${baseUrl}/v1/chat/completions`, `${baseUrl}/chat/completions`]
@@ -1126,8 +1142,8 @@ JSON 格式：
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.8,
-        max_tokens: 1200,
+        temperature: cfg.temperature,
+        max_tokens: cfg.maxTokens,
         response_format: { type: 'json_object' }
       }, REPLY_TIMEOUT_MS, ai.apiKey)
 
@@ -1209,6 +1225,39 @@ exports.main = async (event = {}) => {
           safetyContext = { isMinor, boundarySensitive: !isMinor && isBoundarySensitivePromptEvent(content) }
         }
         return await generateReplyPair(scene, content, userId, tone, safetyContext)
+      }
+      case 'replyBundle': {
+        const scene = event.scene === 'active' ? 'active' : 'reply'
+        const content = String(event.content || '').trim()
+        if (!content || content.length < 1) return { success: false, message: '请输入内容' }
+        let userId = event.userId || event.authUserId || ''
+        if (!userId) {
+          try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {}
+        }
+        let safetyContext = { isMinor: false, boundarySensitive: false }
+        if (userId) {
+          const profile = await fetchUserSelfProfile(userId)
+          const isMinor = profile?.ageRange === 'under18'
+          safetyContext = { isMinor, boundarySensitive: !isMinor && isBoundarySensitivePromptEvent(content) }
+        }
+        const [pairRes, stratRes] = await Promise.all([
+          generateReplyPair(scene, content, userId, '', safetyContext).catch((e) => ({ success: false, message: e?.message || 'reply 失败' })),
+          generateReplyStrategy(content, userId, scene, safetyContext).catch((e) => ({ success: false, message: e?.message || 'strategy 失败' }))
+        ])
+        if (pairRes && pairRes.code === 'INSUFFICIENT_BALANCE') return pairRes
+        if (stratRes && stratRes.code === 'INSUFFICIENT_BALANCE') return stratRes
+        if (!pairRes?.success) {
+          return { success: false, message: pairRes?.message || '生成失败，请重试' }
+        }
+        return {
+          success: true,
+          variants: pairRes.variants || {},
+          reply: pairRes.reply,
+          alternative: pairRes.alternative,
+          inspirations: pairRes.inspirations,
+          tokensUsed: pairRes.tokensUsed,
+          strategies: stratRes?.success ? (stratRes.strategies || []) : []
+        }
       }
       case 'pickQA': {
         const content = String(event.content || '').trim()

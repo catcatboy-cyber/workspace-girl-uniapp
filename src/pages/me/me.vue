@@ -1,22 +1,20 @@
 <template>
   <view class="page v2-mode" :style="themeVars">
       <view class="hero-block-v2"><text class="hero-tag-v2">SETTINGS</text><text class="hero-title-v2">我<text class="hl-v2">的</text></text><text class="hero-copy-v2">管理账号、系统能力说明和个人设置。</text></view>
+      <!-- Profile -->
+      <view class="card-v2"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Account -->
-      <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">关系对象数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
+      <view class="card-v2"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">Crushes 数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn-v2-me" open-type="share">分享小程序</button><button class="btn-v2-me danger" @click="onLogout">退出登录</button></view></view>
       <!-- Pet picker -->
       <view class="card-v2"><text class="section-title-v2">陪伴形象</text><view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn-v2-me sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view></view>
       <!-- Pet select sheet -->
       <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
-      <!-- Profile (moved here) -->
-      <view class="card-v2"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Token (fixed button) -->
-      <view class="card-v2"><text class="section-title-v2">能量</text><view class="balance-hero-v2"><text class="balance-num-v2">{{ tokenBalance.toLocaleString() }}</text><text class="balance-unit-v2">可用额度</text></view><view class="balance-sub-row-v2"><text class="card-text-v2">累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text></view><view class="stats-grid-v2" style="margin-top:16rpx;"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">模型 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出</text></view></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" @click="goRecharge">充点Token能量</button><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="refreshTokenData">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
+      <view class="card-v2"><text class="section-title-v2">能量</text><view class="balance-hero-v2"><text class="balance-num-v2">{{ tokenBalance.toLocaleString() }}</text><text class="balance-unit-v2">可用额度</text></view><view class="balance-sub-row-v2"><text class="card-text-v2">累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text></view><view class="stats-grid-v2" style="margin-top:16rpx;"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">模型 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出</text></view></view><view class="voice-row-v2"><text class="voice-row-lbl-v2">语音识别</text><text class="voice-row-val-v2">{{ voiceUsageSummary.totalCount }} 次 · 累计 {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" @click="goRecharge">充点Token能量</button><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="refreshTokenData">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
-      <!-- AI style -->
-      <view class="card-v2"><text class="section-title-v2">AI 陪伴风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
-      <view class="card-v2"><text class="section-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view></view>
-      <view class="card-v2"><text class="section-title-v2">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
+      <!-- AI analysis style -->
+      <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">AI 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><text class="sub-title-v2">陪伴风格</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
       <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的分析和趋势记录 →</text></view>
       <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
       <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
@@ -34,6 +32,7 @@ import {
   getSelfProfile,
   getTokenAccount,
   getTokenUsage,
+  getVoiceUsage,
   hasUsableSelfProfile,
   logout,
   updateSelfProfile,
@@ -69,6 +68,8 @@ const tokenBalance = ref(0)
 const tokenGiftedTotal = ref(0)
 const tokenConsumedTotal = ref(0)
 const tokenBalanceLoading = ref(false)
+const voiceUsageSummary = ref({ totalCount: 0, totalDurationMs: 0 })
+const voiceUsageLoading = ref(false)
 const canSaveAIPersona = computed(() => hasUsableSelfProfile(currentSelfProfile.value) && !aiSaving.value)
 
 onShareAppMessage(() => buildSafeShareMessage())
@@ -83,7 +84,7 @@ const aiStyleOptions: Array<{
   { value: 'gentle_bestie', label: '温柔陪伴', description: '更像体贴闺蜜，先接住情绪，再给清楚动作。' },
   { value: 'calm_strategist', label: '冷静军师', description: '更看节奏、证据和推进效率，语气克制。' },
   { value: 'playful_flirty', label: '轻痞幽默', description: '更会撩一点，语气活，但不会乱越界。' },
-  { value: 'direct_sharp', label: '闺蜜直给', description: '不绕弯，结论更硬，适合想听真话。' },
+  { value: 'direct_sharp', label: '不绕弯子', description: '直接给结论，适合想听真话。' },
   { value: 'careful_guardian', label: '谨慎守护', description: '更重边界和风险，先稳住，再决定推不推进。' }
 ]
 
@@ -156,6 +157,7 @@ onShow(() => {
   if (!userEmail.value || dv > lastDataVersion.value) loadData()
   loadTokenUsage()
   loadTokenBalance()
+  loadVoiceUsage()
 })
 
 function syncTheme() {
@@ -211,7 +213,32 @@ async function loadTokenBalance() {
 }
 
 async function refreshTokenData() {
-  await Promise.all([loadTokenUsage(), loadTokenBalance()])
+  await Promise.all([loadTokenUsage(), loadTokenBalance(), loadVoiceUsage()])
+}
+
+async function loadVoiceUsage() {
+  if (voiceUsageLoading.value) return
+  voiceUsageLoading.value = true
+  try {
+    const result = await getVoiceUsage(200)
+    if (!result?.success) return
+    voiceUsageSummary.value = {
+      totalCount: Number(result.totalCount || 0),
+      totalDurationMs: Number(result.totalDurationMs || 0)
+    }
+  } catch {
+    // ignore
+  } finally {
+    voiceUsageLoading.value = false
+  }
+}
+
+function formatSeconds(ms: number) {
+  const seconds = Math.round(Number(ms || 0) / 1000)
+  if (seconds < 60) return `${seconds} 秒`
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return s > 0 ? `${m} 分 ${s} 秒` : `${m} 分钟`
 }
 
 async function loadTokenUsage() {
@@ -362,7 +389,7 @@ async function onLogout() {
   box-sizing: border-box;
 }
 
-.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; min-height: 100vh; }
 
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
@@ -382,7 +409,7 @@ async function onLogout() {
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 14rpx; }
 .v2-mode .switch-row-v2 { display: flex; align-items: center; gap: 24rpx; padding: 12rpx 0; }
-.v2-mode .btn-v2-me { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-me { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; white-space: nowrap; }
 .v2-mode .btn-v2-me.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2-me.danger { background: #fff; color: #FF5252; border-color: #FF5252; }
 .v2-mode .btn-v2-me.outline { background: #fff; }
@@ -393,6 +420,10 @@ async function onLogout() {
 .v2-mode .stat-box-v2 { padding: 16rpx 8rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
 .v2-mode .stat-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 4rpx; }
+
+.v2-mode .voice-row-v2 { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; padding: 12rpx 16rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .voice-row-lbl-v2 { font-size: 22rpx; font-weight: 800; color: #111; }
+.v2-mode .voice-row-val-v2 { font-size: 22rpx; font-weight: 700; color: #111; }
 
 .v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .theme-card-v2 { padding: 14rpx 10rpx; border: 2rpx solid #111; background: #fff; text-align: center; }
@@ -454,13 +485,18 @@ async function onLogout() {
 .v2-mode .chip-v2.active .chip-label-v2 { color: #FFD93D; }
 .v2-mode .chip-desc-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 4rpx; line-height: 1.4; }
 .v2-mode .chip-v2.active .chip-desc-v2 { color: rgba(255,255,255,0.6); }
+.v2-mode .ai-style-panel-v2 { display: flex; flex-direction: column; gap: 12rpx; }
+.v2-mode .sub-title-v2 { display: block; padding: 8rpx 12rpx; border: 2rpx solid #111; background: #f9f9f9; color: #666; font-size: 20rpx; font-weight: 800; }
+.v2-mode .sub-title-v2.compact { margin-bottom: 8rpx; }
+.v2-mode .ai-status-v2 { padding-top: 4rpx; }
+.v2-mode .ai-style-panel-v2 .btn-v2-me { flex: none; width: 100%; }
 
 .v2-mode .explain-v2 { margin-top: 14rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .explain-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 18rpx; }
 .v2-mode .explain-title-v2 { font-size: 24rpx; font-weight: 800; color: #111; }
-.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 18rpx; font-weight: 800; color: #111; }
+.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: 2rpx solid #111; background: #fff; font-size: 18rpx; font-weight: 800; color: #111; }
 .v2-mode .explain-body-v2 { padding: 0 18rpx 18rpx; border-top: 2rpx solid #111; }
-.v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #e0e0e0; }
+.v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #111; }
 .v2-mode .explain-item-v2:last-child { border-bottom: none; }
 .v2-mode .explain-item-title-v2 { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
 .v2-mode .explain-item-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #999; margin-top: 2rpx; line-height: 1.4; }

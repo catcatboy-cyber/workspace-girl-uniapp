@@ -29,11 +29,13 @@ const DEFAULT_RUNTIME_CONFIG = {
   weeklySideEventLimit: 8,
   eventMaxTokens: 650,
   eventUnderstandingMaxTokens: 260,
+  batchTagMaxTokens: 600,
   weeklyMaxTokens: 650,
   sideReadMaxTokens: 550,
   attachmentMaxTokens: 1200,
   eventTemperature: 0.2,
   eventUnderstandingTemperature: 0.1,
+  batchTagTemperature: 0.1,
   weeklyTemperature: 0.25,
   sideReadTemperature: 0.35,
   attachmentTemperature: 0.1
@@ -72,12 +74,12 @@ const PROMPT_MODULE_META = {
     description: '保存时间线前的事件类型、标题、语义标签自动识别。'
   },
   weeklyReview: {
-    title: '本周复盘',
-    description: '关系页本周复盘与复盘历史生成。'
+    title: '近14天复盘',
+    description: '关系页近14天复盘与复盘历史生成。'
   },
   sideRead: {
-    title: '侧写',
-    description: '属相、星座等轻量侧写，包括即时侧写和周侧写。'
+    title: '星象速写',
+    description: '属相、星座等轻量星象速写，包括即时星象速写和14天星象速写。'
   },
   attachmentAnalysis: {
     title: '附件识别',
@@ -129,15 +131,15 @@ const PROMPT_FIXED_GUARDRAILS = {
   },
   weeklyReview: {
     lockedRules: [
-      '只总结本周提供的事件和评估变化，不编造长期趋势。',
+      '只总结近14天提供的事件和评估变化，不编造长期趋势。',
       '未成年人场景不生成成人化、越界或操控建议。',
       'AI 返回后会校验 trendLabel、数组长度和空值兜底。'
     ],
     runtimeContext: [
       'selfProfile and targetProfile',
       'weekStart/weekEnd',
-      'weeklyStats={eventCount,assessmentCount,scoreTrend}',
-      'weekly key events limited by runtimeConfig.weeklyEventLimit'
+      'periodStats={eventCount,assessmentCount,scoreTrend}',
+      '14-day key events limited by runtimeConfig.weeklyEventLimit'
     ],
     outputContract: [
       'title,trendLabel,summary,keyChanges,keyEvents,nextWeekFocus,avoidMisread',
@@ -146,13 +148,13 @@ const PROMPT_FIXED_GUARDRAILS = {
   },
   sideRead: {
     lockedRules: [
-      '侧写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。',
+      '星象速写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。',
       '不用属相星座鼓励操控、试探底线或越界行为。',
       '未成年人场景使用保守、边界优先表达。'
     ],
     runtimeContext: [
       'instant side read: selfProfile + targetProfile + currentEvent + currentAssessment',
-      'weekly side read: week range + review summary + scoreTrend + weekly key events'
+      '14-day side read: 14-day range + review summary + scoreTrend + 14-day key events'
     ],
     outputContract: [
       'title,summary,sections[{label,text}]',
@@ -353,11 +355,13 @@ function normalizeRuntimeConfig(value, baseValue) {
     weeklySideEventLimit: clampNumber(source.weeklySideEventLimit, fallback.weeklySideEventLimit, 3, 12, true),
     eventMaxTokens: clampNumber(source.eventMaxTokens, fallback.eventMaxTokens, 300, 1400, true),
     eventUnderstandingMaxTokens: clampNumber(source.eventUnderstandingMaxTokens, fallback.eventUnderstandingMaxTokens, 120, 600, true),
+    batchTagMaxTokens: clampNumber(source.batchTagMaxTokens, fallback.batchTagMaxTokens, 200, 1200, true),
     weeklyMaxTokens: clampNumber(source.weeklyMaxTokens, fallback.weeklyMaxTokens, 300, 1600, true),
     sideReadMaxTokens: clampNumber(source.sideReadMaxTokens, fallback.sideReadMaxTokens, 200, 1200, true),
     attachmentMaxTokens: clampNumber(source.attachmentMaxTokens, fallback.attachmentMaxTokens, 400, 2400, true),
     eventTemperature: clampNumber(source.eventTemperature, fallback.eventTemperature, 0, 1),
     eventUnderstandingTemperature: clampNumber(source.eventUnderstandingTemperature, fallback.eventUnderstandingTemperature, 0, 1),
+    batchTagTemperature: clampNumber(source.batchTagTemperature, fallback.batchTagTemperature, 0, 1),
     weeklyTemperature: clampNumber(source.weeklyTemperature, fallback.weeklyTemperature, 0, 1),
     sideReadTemperature: clampNumber(source.sideReadTemperature, fallback.sideReadTemperature, 0, 1),
     attachmentTemperature: clampNumber(source.attachmentTemperature, fallback.attachmentTemperature, 0, 1)
@@ -424,7 +428,7 @@ function getCallNames(moduleKey) {
   if (moduleKey === 'eventAssessment') return ['createTimeline: eventAssessment', 'generateAssessmentAI: eventAssessment']
   if (moduleKey === 'eventUnderstanding') return ['createTimeline: eventUnderstanding', 'generateAssessmentAI: eventUnderstanding']
   if (moduleKey === 'weeklyReview') return ['weeklyReview: generateReview']
-  if (moduleKey === 'sideRead') return ['generateSideRead: instant side read', 'weeklyReview: weekly side read']
+  if (moduleKey === 'sideRead') return ['generateSideRead: instant side read', 'weeklyReview: 14-day side read']
   if (moduleKey === 'attachmentAnalysis') return ['analyzeAttachment: image/chat screenshot']
   return [moduleKey]
 }
@@ -445,7 +449,7 @@ function getSafetyPreview(moduleKey) {
       '涉及未成年人、性暗示或私密空间表述时，直接分类并避免正常化风险亲密表达。'
     ],
     weeklyReview: [
-      '只总结提供的本周事件和评估变化，不编造长期趋势。',
+      '只总结提供的近14天事件和评估变化，不编造长期趋势。',
       '未成年人场景避免成人化、越界或操控建议。'
     ],
     sideRead: [
@@ -479,14 +483,14 @@ function getRuntimePreview(moduleKey) {
     weeklyReview: [
       'persona: selfProfile.aiStyle + selfProfile.aiBoldness -> backend personaConfig; under18 may override final style/intensity.',
       'selfProfile, target name, targetProfile',
-      'review week: weekStart to weekEnd',
-      'weeklyStats={eventCount,assessmentCount,scoreTrend}',
-      'weekly key events limited by runtimeConfig.weeklyEventLimit'
+      '14-day review range: weekStart to weekEnd',
+      'periodStats={eventCount,assessmentCount,scoreTrend}',
+      '14-day key events limited by runtimeConfig.weeklyEventLimit'
     ],
     sideRead: [
       'persona: selfProfile.aiStyle + selfProfile.aiBoldness -> backend personaConfig; under18 may override final style/intensity.',
       'instant side read: selfProfile + targetProfile + currentEvent + currentAssessment',
-      'weekly side read: week range + review summary + scoreTrend + weekly key events'
+      '14-day side read: 14-day range + review summary + scoreTrend + 14-day key events'
     ],
     attachmentAnalysis: [
       'one image attachment URL is sent as image_url content',
@@ -589,7 +593,7 @@ function serializeSelfProfile(profile) {
 }
 
 function mapRelationType(value) {
-  const map = { romantic: '恋爱对象', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
+  const map = { romantic: 'Crush', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
   return map[value] || value || ''
 }
 
@@ -747,7 +751,7 @@ function buildActualPromptMessages({ settings, recordContent, selfProfile, caseP
     describeSubjectRoleForPrompt(previewEvent.subjectRole),
     `当前评估快照: ${JSON.stringify(currentAssessment)}`,
     `本人画像: ${serializeSelfProfile(selfProfile)}`,
-    `对象画像: ${serializeCaseProfile(caseProfile)}`,
+    `Crush 画像: ${serializeCaseProfile(caseProfile)}`,
     `最近事件: ${JSON.stringify(compactRecentTimeline(recentTimeline, previewEvent.id))}`,
     `本次事件: ${JSON.stringify(previewEvent)}`
   ].filter(Boolean)
@@ -1091,7 +1095,7 @@ async function getUserDetail(event) {
     },
     cases: cases.map((item, index) => ({
       id: item._id,
-      name: item.name || item.profile?.name || '未命名对象',
+      name: item.name || item.profile?.name || '未命名 Crush',
       createdAt: toISO(item.createdAt),
       updatedAt: toISO(item.updatedAt),
       latestResultId: item.latestResultId || '',
@@ -1161,14 +1165,14 @@ async function previewPrompt(event) {
   const recordContent = cleanText(event.recordContent, 1600)
   if (!recordContent) return { success: false, message: '请先输入一条记录内容' }
   const caseId = String(event.caseId || '').trim()
-  if (!caseId) return { success: false, message: '请先选择一个关系对象' }
+  if (!caseId) return { success: false, message: '请先选择一个 Crush' }
 
   const existing = await getGlobalAISettingsRaw()
   const base = applySettingsDefaults(existing || getDefaultSettings())
   const settings = mergePreviewSettings(base, event)
   const defaultModel = getDefaultModel(settings.aiModels, settings.aiDefaultModelId)
   const caseDoc = normalizeDoc(await db.collection('cases').doc(caseId).get().catch(() => null))
-  if (!caseDoc) return { success: false, message: '所选关系对象不存在' }
+  if (!caseDoc) return { success: false, message: '所选 Crush 不存在' }
 
   const ownerUserId = String(caseDoc.userId || '').trim()
   const [selfProfileRes, latestAssessmentRes, timelineRes] = await Promise.all([

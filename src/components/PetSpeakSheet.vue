@@ -35,61 +35,63 @@
         </button>
       </view>
 
-      <!-- Results -->
-      <view v-if="results" class="results-area">
-        <view class="tone-section">
-          <text class="section-label">选一种语气</text>
-          <view class="tone-tabs">
+      <!-- Loading：读秒 + 闪烁，对齐首页 aiFeedbackLoading 风格 -->
+      <view v-if="generating" class="ps-loading">
+        <text class="ps-loading-label">小咪在想…</text>
+        <view class="ps-loading-row">
+          <view class="ps-loading-dot"></view>
+          <text class="ps-loading-text">后台生成中，已用时 {{ generatingSeconds }} 秒</text>
+        </view>
+      </view>
+
+      <!-- Results：5 项合一 -->
+      <view v-if="!generating && options.length > 0" class="results-area">
+        <view class="options-section">
+          <text class="section-label">选一种方式</text>
+          <view class="option-tabs">
             <view
-              v-for="tone in toneOptions"
-              :key="tone.key"
-              :class="['tone-tab', activeTone === tone.key ? 'active' : '']"
-              @click="activeTone = tone.key"
+              v-for="opt in options"
+              :key="opt.key"
+              :class="['option-tab', selectedKey === opt.key ? 'active' : '']"
+              @click="selectedKey = opt.key"
             >
-              {{ tone.label }}
+              {{ opt.label }}
             </view>
           </view>
         </view>
 
-        <view class="card result-card">
-          <text class="card-text">{{ activeReplyText }}</text>
-          <view class="result-actions">
-            <button class="btn-sm" @click="copyText(activeReplyText)">复制</button>
-            <button class="btn-sm" :disabled="retryingTone || generating" @click="refreshCurrentTone">
-              {{ retryingTone ? '生成中...' : '换一句' }}
-            </button>
-          </view>
-        </view>
-
-        <view v-if="strategies.length > 0" class="strategy-area">
-          <view class="strategy-card">
-            <text class="card-label">{{ scene === 'active' ? '🎯 撩一下策略' : '🎯 对话策略' }}</text>
-            <!-- Strategy tabs -->
-            <view class="strategy-tabs">
-              <view v-for="(s, si) in strategies" :key="s.type"
-                :class="['strategy-tab', activeStrategyIndex === si ? 'active' : '']"
-                @click="activeStrategyIndex = si">
-                {{ formatStrategyLabel(s) }}
+        <view v-if="currentOption" class="answer-card">
+          <!-- 单轮回复（语气） -->
+          <template v-if="currentOption.kind === 'tone'">
+            <view class="turn-block">
+              <view class="turn-bubble">
+                <text class="turn-text">{{ currentOption.text }}</text>
+                <button class="btn-sm" @click="copyText(currentOption.text)">复制</button>
+              </view>
+              <view class="turn-actions">
+                <button class="btn-sm" :disabled="retryingTone || generating" @click="refreshCurrentTone">
+                  {{ retryingTone ? '生成中...' : '换一句' }}
+                </button>
               </view>
             </view>
-            <!-- Active strategy turns -->
-            <view class="strategy-turns">
-              <view v-for="turn in strategies[activeStrategyIndex]?.turns" :key="turn.step" class="turn-block">
-                <view class="turn-header">
-                  <text class="turn-step">Step {{ turn.step }}</text>
-                  <text class="turn-note">{{ turn.note }}</text>
-                </view>
-                <view class="turn-bubble">
-                  <text class="turn-text">{{ turn.say }}</text>
-                  <button class="btn-sm" @click="copyText(turn.say)">复制</button>
-                </view>
-                <view v-if="turn.expectReactions?.length" class="turn-reactions">
-                  <text class="reactions-label">对方可能会说：</text>
-                  <text v-for="(r, ri) in turn.expectReactions" :key="ri" class="reaction-tag">{{ r }}</text>
-                </view>
+          </template>
+          <!-- 多轮策略 -->
+          <template v-else>
+            <view v-for="turn in currentOption.turns" :key="turn.step" class="turn-block">
+              <view class="turn-header">
+                <text class="turn-step">Step {{ turn.step }}</text>
+                <text class="turn-note">{{ turn.note }}</text>
+              </view>
+              <view class="turn-bubble">
+                <text class="turn-text">{{ turn.say }}</text>
+                <button class="btn-sm" @click="copyText(turn.say)">复制</button>
+              </view>
+              <view v-if="turn.expectReactions?.length" class="turn-reactions">
+                <text class="reactions-label">对方可能会说：</text>
+                <text v-for="(r, ri) in turn.expectReactions" :key="ri" class="reaction-tag">{{ r }}</text>
               </view>
             </view>
-          </view>
+          </template>
         </view>
       </view>
 
@@ -103,7 +105,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from 'vue'
-import { generatePetReplyPair, generateReplyStrategy, handleInsufficientBalance, getCachedSelfProfile } from '@/utils/api'
+import { generatePetReplyBundle, generatePetReplyPair, handleInsufficientBalance, getCachedSelfProfile } from '@/utils/api'
 
 const props = defineProps<{ visible: boolean; petName?: string }>()
 const emit = defineEmits(['close'])
@@ -123,25 +125,20 @@ watch(() => props.visible, (visible) => {
 
 onUnmounted(() => {
   setCustomTabBarHidden(false)
+  stopGeneratingTimer()
 })
 
-type ToneKey = 'humor' | 'flirty' | 'sincere' | 'literary'
+type ToneKey = 'humor' | 'sincere' | 'literary'
 type ReplyVariants = Partial<Record<ToneKey, string>>
 
 const selfProfile = getCachedSelfProfile()
 const isMinor = computed(() => selfProfile?.ageRange === 'under18')
 
-const allToneOptions: Array<{ key: ToneKey; label: string }> = [
+const toneOptions: Array<{ key: ToneKey; label: string }> = [
   { key: 'humor', label: '幽默轻松' },
-  { key: 'flirty', label: '暧昧轻撩' },
   { key: 'sincere', label: '真诚直接' },
   { key: 'literary', label: '委婉文艺' }
 ]
-
-const toneOptions = computed(() => {
-  if (isMinor.value) return allToneOptions.filter(t => t.key !== 'flirty')
-  return allToneOptions
-})
 
 const boundarySensitiveKeywords = ['酒店', '开房', '过夜', '私密', '身体', '上床', '发生关系']
 const boundaryWarning = computed(() => {
@@ -152,50 +149,87 @@ const boundaryWarning = computed(() => {
   return ''
 })
 
-function getDefaultTone(nextScene: string): ToneKey {
-  if (isMinor.value) return 'sincere'
-  return nextScene === 'active' ? 'flirty' : 'sincere'
+function getDefaultTone(): ToneKey {
+  return 'sincere'
 }
 
 const scene = ref<'active' | 'reply'>('reply')
 const content = ref('')
 const generating = ref(false)
+const generatingSeconds = ref(0)
+let generatingTimer: any = null
 const retryingTone = ref(false)
 const errorMsg = ref('')
-const activeTone = ref<ToneKey>(getDefaultTone('reply'))
-const results = ref<{ variants: ReplyVariants; reply?: string; alternative?: string } | null>(null)
+const variants = ref<ReplyVariants>({})
 const strategies = ref<any[]>([])
-const activeStrategyIndex = ref(0)
+const selectedKey = ref<string>('humor')
 
 const sheetTitle = computed(() => `${props.petName || '小咪'}帮你说`)
-const activeReplyText = computed(() => results.value?.variants?.[activeTone.value] || '')
 
-function normalizeReplyVariants(res: any): ReplyVariants {
-  const variants = res?.variants && typeof res.variants === 'object' ? { ...res.variants } : {}
-  if (!variants.humor && res?.reply) variants.humor = res.reply
-  if (!variants.literary && res?.alternative) variants.literary = res.alternative
-  return variants
+const options = computed(() => {
+  const list: Array<
+    | { kind: 'tone'; key: string; label: string; text: string }
+    | { kind: 'strategy'; key: string; label: string; turns: any[] }
+  > = []
+  toneOptions.forEach(t => {
+    const text = variants.value[t.key]
+    if (text) list.push({ kind: 'tone', key: `tone:${t.key}`, label: t.label, text })
+  })
+  strategies.value.forEach((s, idx) => {
+    if (s && Array.isArray(s.turns) && s.turns.length > 0) {
+      list.push({ kind: 'strategy', key: `strategy:${s.type || idx}`, label: s.label || formatStrategyLabel(s, scene.value), turns: s.turns })
+    }
+  })
+  return list
+})
+
+const currentOption = computed(() => options.value.find(o => o.key === selectedKey.value) || options.value[0] || null)
+
+function formatStrategyLabel(strategy: any, currentScene: string) {
+  if (strategy?.type === 'contrast') return '先冷后甜'
+  if (strategy?.type === 'progressive') return currentScene === 'active' ? '投石问路' : '顺水推舟'
+  return strategy?.label || ''
 }
 
-function ensureActiveToneHasText(variants: ReplyVariants) {
-  if (variants[activeTone.value]) return
-  const availableTone = toneOptions.value.find(t => variants[t.key])?.key
-  activeTone.value = availableTone || getDefaultTone(scene.value)
+function startGeneratingTimer() {
+  stopGeneratingTimer()
+  generatingSeconds.value = 0
+  generatingTimer = setInterval(() => {
+    generatingSeconds.value += 1
+  }, 1000)
+}
+
+function stopGeneratingTimer() {
+  if (generatingTimer) {
+    clearInterval(generatingTimer)
+    generatingTimer = null
+  }
+}
+
+function normalizeVariantsFromRes(res: any): ReplyVariants {
+  const raw = res?.variants && typeof res.variants === 'object' ? res.variants : {}
+  const next: ReplyVariants = {}
+  toneOptions.forEach(t => {
+    const v = String(raw[t.key] || '').trim()
+    if (v) next[t.key] = v
+  })
+  if (!next.humor && res?.reply) next.humor = String(res.reply).trim()
+  if (!next.literary && res?.alternative) next.literary = String(res.alternative).trim()
+  return next
+}
+
+function pickInitialSelectedKey() {
+  const first = options.value[0]
+  selectedKey.value = first ? first.key : 'humor'
 }
 
 function switchScene(nextScene: 'active' | 'reply') {
   if (scene.value === nextScene) return
   scene.value = nextScene
-  activeTone.value = getDefaultTone(nextScene)
-  results.value = null
+  variants.value = {}
   strategies.value = []
-  activeStrategyIndex.value = 0
+  selectedKey.value = 'humor'
   errorMsg.value = ''
-}
-
-function formatStrategyLabel(strategy: any) {
-  if (strategy?.type === 'contrast') return '反转'
-  return strategy?.label || ''
 }
 
 async function generate() {
@@ -203,48 +237,42 @@ async function generate() {
   if (!text || generating.value) return
 
   generating.value = true
+  startGeneratingTimer()
   errorMsg.value = ''
-  results.value = null
+  variants.value = {}
   strategies.value = []
-  activeStrategyIndex.value = 0
-  let generated = false
+  selectedKey.value = 'humor'
 
   try {
-    const res = await generatePetReplyPair(scene.value, text)
+    const res = await generatePetReplyBundle(scene.value, text)
     if (handleInsufficientBalance(res)) {
       errorMsg.value = '能量不足，充点Token能量再来'
     } else if (!res?.success) {
       errorMsg.value = res?.message || '生成失败，请重试'
     } else {
-      const variants = normalizeReplyVariants(res)
-      ensureActiveToneHasText(variants)
-      results.value = { variants, reply: res.reply, alternative: res.alternative }
-      generated = true
+      variants.value = normalizeVariantsFromRes(res)
+      strategies.value = Array.isArray(res.strategies) ? res.strategies : []
+      pickInitialSelectedKey()
     }
   } catch (e: any) {
     errorMsg.value = e?.message || '网络异常，请重试'
+  } finally {
+    generating.value = false
+    stopGeneratingTimer()
   }
-
-  if (generated) {
-    try {
-      const stratRes = await generateReplyStrategy(text, scene.value)
-      if (stratRes?.success && stratRes.strategies?.length > 0) {
-        strategies.value = stratRes.strategies
-      }
-    } catch {}
-  }
-
-  generating.value = false
 }
 
 async function refreshCurrentTone() {
   const text = content.value.trim()
   if (!text || retryingTone.value || generating.value) return
+  const cur = currentOption.value
+  if (!cur || cur.kind !== 'tone') return
+  const toneKey = cur.key.replace(/^tone:/, '') as ToneKey
 
   retryingTone.value = true
   errorMsg.value = ''
   try {
-    const res = await generatePetReplyPair(scene.value, text, activeTone.value)
+    const res = await generatePetReplyPair(scene.value, text, toneKey)
     if (handleInsufficientBalance(res)) {
       errorMsg.value = '能量不足，充点Token能量再来'
       return
@@ -253,17 +281,10 @@ async function refreshCurrentTone() {
       errorMsg.value = res?.message || '生成失败，请重试'
       return
     }
-
-    const variants = normalizeReplyVariants(res)
-    const nextText = variants[activeTone.value]
+    const next = normalizeVariantsFromRes(res)
+    const nextText = next[toneKey]
     if (nextText) {
-      results.value = {
-        ...(results.value || { variants: {} }),
-        variants: {
-          ...(results.value?.variants || {}),
-          [activeTone.value]: nextText
-        }
-      }
+      variants.value = { ...variants.value, [toneKey]: nextText }
     }
   } catch (e: any) {
     errorMsg.value = e?.message || '网络异常，请重试'
@@ -288,11 +309,11 @@ function onMaskClick() {
 
 function close() {
   content.value = ''
-  results.value = null
-  activeTone.value = getDefaultTone(scene.value)
+  variants.value = {}
   strategies.value = []
-  activeStrategyIndex.value = 0
+  selectedKey.value = 'humor'
   errorMsg.value = ''
+  stopGeneratingTimer()
   emit('close')
 }
 </script>
@@ -317,11 +338,11 @@ function close() {
 
 .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
 .sheet-title { font-size: 32rpx; font-weight: 900; color: #111; letter-spacing: 2rpx; }
-.sheet-close { font-size: 28rpx; font-weight: 900; color: #999; padding: 8rpx; }
+.sheet-close { font-size: 28rpx; font-weight: 900; color: #111; padding: 8rpx; }
 
 .tab-row { display: flex; gap: 12rpx; margin-bottom: 20rpx; }
-.tab { flex: 1; text-align: center; padding: 14rpx; font-size: 24rpx; font-weight: 700; color: #999; border: 2rpx solid #ddd; background: #fff; }
-.tab.active { color: #111; border-color: #111; background: #FFD93D; }
+.tab { flex: 1; text-align: center; padding: 14rpx; font-size: 24rpx; font-weight: 700; color: #111; border: 2rpx solid #111; background: #fff; }
+.tab.active { color: #FFD93D; border-color: #111; background: #111; }
 
 .input-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
 .text-area { width: 100%; height: 120rpx; padding: 16rpx; font-size: 24rpx; border: 3rpx solid #111; background: #fff; box-sizing: border-box; }
@@ -329,43 +350,63 @@ function close() {
 .btn-generate {
   width: 100%; margin-top: 16rpx; padding: 16rpx;
   font-size: 26rpx; font-weight: 900; color: #111;
-  background: #FFD93D; border: 3rpx solid #111;
+  background: #4ECDC4; border: 3rpx solid #111;
   box-shadow: 4rpx 4rpx 0 #111;
 }
-.btn-generate[disabled] { opacity: 0.4; }
+.btn-generate:disabled { opacity: 0.4; }
+
+/* Loading：对齐首页 aiFeedbackLoading 风格 */
+.ps-loading { margin-top: 16rpx; padding: 18rpx; border: 2rpx solid #111; background: #f5f5ff; }
+.ps-loading-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; letter-spacing: 2rpx; margin-bottom: 12rpx; }
+.ps-loading-row { display: flex; align-items: center; gap: 14rpx; }
+.ps-loading-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; display: inline-block; animation: ps-blink-dot 1s ease-in-out infinite; }
+.ps-loading-text { font-size: 22rpx; color: #999; }
+@keyframes ps-blink-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.75); }
+}
 
 .results-area { margin-top: 24rpx; }
-.tone-section { margin-bottom: 16rpx; }
+.options-section { margin-bottom: 16rpx; }
 .section-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
-.tone-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; }
-.tone-tab { min-width: 0; text-align: center; padding: 10rpx 6rpx; font-size: 20rpx; font-weight: 800; color: #666; background: #fff; border: 2rpx solid #ddd; box-sizing: border-box; }
-.tone-tab.active { color: #111; border-color: #111; background: #FFD93D; }
+.option-tabs { display: flex; gap: 6rpx; }
+.option-tab {
+  flex: 1; min-width: 0; text-align: center;
+  padding: 12rpx 4rpx;
+  font-size: 20rpx; font-weight: 800;
+  color: #111; background: #fff;
+  border: 2rpx solid #111;
+  box-sizing: border-box;
+}
+.option-tab.active { color: #FFD93D; background: #111; border-color: #111; }
 
-.card { padding: 18rpx; border: 3rpx solid #111; background: #fff; margin-bottom: 14rpx; box-shadow: 4rpx 4rpx 0 #111; }
-.result-card { background: #fff; }
-.card-label { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
-.card-text { display: block; font-size: 26rpx; font-weight: 700; color: #111; line-height: 1.5; margin-bottom: 12rpx; }
-.result-actions { display: flex; gap: 10rpx; justify-content: flex-end; }
+.answer-card { margin-top: 8rpx; }
 .btn-sm { padding: 8rpx 20rpx; font-size: 20rpx; font-weight: 800; color: #111; background: #fff; border: 2rpx solid #111; box-shadow: 3rpx 3rpx 0 #111; }
-.btn-sm[disabled] { opacity: 0.4; }
+.btn-sm:disabled { opacity: 0.4; }
 
-.strategy-area { margin-top: 8rpx; }
-.strategy-card { background: #fff; border: 3rpx solid #111; padding: 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
-.strategy-tabs { display: flex; gap: 10rpx; margin: 12rpx 0; }
-.strategy-tab { padding: 8rpx 24rpx; font-size: 22rpx; font-weight: 800; color: #111; background: #fff; border: 2rpx solid #111; }
-.strategy-tab.active { background: #111; color: #FFD93D; }
-.strategy-turns { margin-top: 16rpx; }
-.turn-block { margin-bottom: 20rpx; padding: 16rpx; background: #fff; border: 2rpx solid #111; border-left: 8rpx solid #FFD93D; }
+.turn-block {
+  margin-bottom: 20rpx; padding: 16rpx;
+  background: #fff;
+  border: 2rpx solid #111;
+  border-left: 8rpx solid #FFD93D;
+}
 .turn-header { display: flex; align-items: center; gap: 10rpx; margin-bottom: 10rpx; }
 .turn-step { font-size: 20rpx; font-weight: 900; color: #111; }
-.turn-note { font-size: 18rpx; font-weight: 600; color: #999; }
-.turn-bubble { display: flex; justify-content: space-between; align-items: center; gap: 10rpx; padding: 14rpx; background: #f9f9f9; border: 2rpx solid #e0e0e0; margin-bottom: 8rpx; }
+.turn-note { font-size: 18rpx; font-weight: 600; color: #111; }
+.turn-bubble {
+  display: flex; justify-content: space-between; align-items: center; gap: 10rpx;
+  padding: 14rpx;
+  background: #FFFEF5;
+  border: 2rpx solid #111;
+  margin-bottom: 8rpx;
+}
 .turn-text { font-size: 26rpx; font-weight: 600; color: #111; line-height: 1.5; flex: 1; }
+.turn-actions { display: flex; gap: 10rpx; justify-content: flex-end; }
 .turn-reactions { display: flex; flex-wrap: wrap; align-items: center; gap: 8rpx; }
-.reactions-label { font-size: 18rpx; font-weight: 700; color: #666; }
-.reaction-tag { padding: 4rpx 12rpx; font-size: 18rpx; font-weight: 700; color: #666; background: #f9f9f9; border: 2rpx solid #e0e0e0; }
+.reactions-label { font-size: 18rpx; font-weight: 700; color: #111; }
+.reaction-tag { padding: 4rpx 12rpx; font-size: 18rpx; font-weight: 700; color: #111; background: #fff; border: 2rpx solid #111; }
 
 .error-msg { margin-top: 16rpx; padding: 14rpx; background: #FFEEEC; border: 3rpx solid #FF5252; font-size: 22rpx; color: #FF5252; font-weight: 700; }
-.safety-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: #E0FFF0; border: 2rpx solid #4ECDC4; font-size: 22rpx; color: #111; font-weight: 600; }
-.boundary-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: #FFFBEB; border: 2rpx solid #FFD93D; font-size: 22rpx; color: #111; font-weight: 600; }
+.safety-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: #E0FFF0; border: 2rpx solid #111; font-size: 22rpx; color: #111; font-weight: 600; }
+.boundary-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: #FFFBEB; border: 2rpx solid #111; font-size: 22rpx; color: #111; font-weight: 600; }
 </style>

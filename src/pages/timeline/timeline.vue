@@ -2,9 +2,9 @@
   <view class="page v2-mode" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
-      <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">时间轴不可用</text><text class="empty-sub-v2">当前对象不存在或已被删除。</text></view>
+      <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">往事不可用</text><text class="empty-sub-v2">当前 Crush 不存在或已被删除。</text></view>
       <template v-else>
-        <view class="hero-block-v2"><text class="hero-tag-v2">关系记录 / {{ caseFile.name }}</text><text class="hero-title-v2">互动<text class="hl-v2">时间轴</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
+        <view class="hero-block-v2"><text class="hero-tag-v2">MEMORIES / {{ caseFile.name }}</text><text class="hero-title-v2">往<text class="hl-v2">事</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
         <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
         <view v-if="activeTimelineView === 'events'">
           <view class="card-v2" style="border-color:#4ECDC4;">
@@ -31,18 +31,18 @@
         </view>
         <view v-if="activeTimelineView === 'weeklyReviews'">
           <view class="card-v2">
-            <text class="section-title-v2">周复盘时间轴</text>
-            <view v-if="weeklyReviewTimeline.length === 0" class="empty-sub-v2">还没有周复盘记录。先在周复盘页生成一次，本页会自动沉淀到这里。</view>
+            <text class="section-title-v2">14天复盘时间轴</text>
+            <view v-if="weeklyReviewTimeline.length === 0" class="empty-sub-v2">还没有14天复盘记录。先在14天复盘页生成一次，本页会自动沉淀到这里。</view>
             <view v-else class="event-list-v2">
               <view v-for="item in weeklyReviewTimeline" :key="item._id || item.id" class="event-row-v2 system">
                 <view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', isWeeklySideReadRecord(item) ? 'note' : 'trend']"></view></view>
                 <view class="event-body-v2 assessment-card-v2">
                   <view class="event-meta-v2"><text>{{ item.weekStart && item.weekEnd ? item.weekStart + ' — ' + item.weekEnd : '' }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view>
-                  <text class="event-title-v2">{{ item.title || '本周复盘' }}</text>
+                  <text class="event-title-v2">{{ item.title || '近14天复盘' }}</text>
                   <view class="tag-row-v2" style="margin:6rpx 0;">
-                    <text class="tag-v2 black sm">{{ isWeeklySideReadRecord(item) ? '侧写' : '周复盘' }}</text>
+                    <text class="tag-v2 black sm">{{ isWeeklySideReadRecord(item) ? '星象速写' : '14天复盘' }}</text>
                     <text v-if="!isWeeklySideReadRecord(item) && item.trendLabel" class="tag-v2 sm">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text>
-                    <text v-if="item.aiUsed" class="tag-v2 sm">{{ isWeeklySideReadRecord(item) ? 'AI 侧写' : 'AI 复盘' }}</text>
+                    <text v-if="item.aiUsed" class="tag-v2 sm">{{ isWeeklySideReadRecord(item) ? 'AI 星象速写' : 'AI 复盘' }}</text>
                   </view>
                   <text class="event-desc-v2">{{ item.description }}</text>
                   <view v-if="!isWeeklySideReadRecord(item) && (item.eventCount || item.assessmentCount || item.intentDelta || item.riskDelta)" class="tag-row-v2" style="margin-top:8rpx;">
@@ -51,10 +51,10 @@
                     <text v-if="item.intentDelta !== undefined" class="tag-v2 sm">意向 {{ item.intentDelta > 0 ? '+' : '' }}{{ item.intentDelta }}</text>
                     <text v-if="item.riskDelta !== undefined" class="tag-v2 sm">风险 {{ item.riskDelta > 0 ? '+' : '' }}{{ item.riskDelta }}</text>
                   </view>
-                  <view v-if="item.keyChanges && item.keyChanges.length" class="review-block-v2"><text class="section-title-v2">本周关键变化</text><text v-for="change in item.keyChanges" :key="change" class="bullet-v2">• {{ change }}</text></view>
+                  <view v-if="item.keyChanges && item.keyChanges.length" class="review-block-v2"><text class="section-title-v2">近14天关键变化</text><text v-for="change in item.keyChanges" :key="change" class="bullet-v2">• {{ change }}</text></view>
                   <view v-if="item.keyEvents && item.keyEvents.length" class="review-block-v2"><text class="section-title-v2">关键事件</text><text v-for="evt in item.keyEvents" :key="evt" class="bullet-v2">• {{ evt }}</text></view>
-                  <view v-if="item.nextWeekFocus && item.nextWeekFocus.length" class="review-block-v2"><text class="section-title-v2">下周观察重点</text><text v-for="focus in item.nextWeekFocus" :key="focus" class="bullet-v2">• {{ focus }}</text></view>
-                  <view v-if="item.avoidMisread && item.avoidMisread.length" class="review-block-v2"><text class="section-title-v2">本周避免误判</text><text v-for="avoid in item.avoidMisread" :key="avoid" class="bullet-v2">• {{ avoid }}</text></view>
+                  <view v-if="item.nextWeekFocus && item.nextWeekFocus.length" class="review-block-v2"><text class="section-title-v2">下个14天观察重点</text><text v-for="focus in item.nextWeekFocus" :key="focus" class="bullet-v2">• {{ focus }}</text></view>
+                  <view v-if="item.avoidMisread && item.avoidMisread.length" class="review-block-v2"><text class="section-title-v2">近14天避免误判</text><text v-for="avoid in item.avoidMisread" :key="avoid" class="bullet-v2">• {{ avoid }}</text></view>
                   <view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view>
                 </view>
               </view>
@@ -231,7 +231,7 @@ const supportTimeline = computed(() => {
 const timelineViewOptions = computed(() => [
   { key: 'events', label: '关键事件', count: manualTimeline.value.length },
   { key: 'assessments', label: '分析记录', count: assessmentTimeline.value.length },
-  { key: 'weeklyReviews', label: '周复盘', count: weeklyReviewTimeline.value.length },
+  { key: 'weeklyReviews', label: '14天复盘', count: weeklyReviewTimeline.value.length },
 ])
 
 const latestResult = computed(() => caseFile.value?.latestResult)
@@ -458,18 +458,18 @@ function mapSourceLabel(source?: string) {
 function mapWeeklyTrendLabel(label: any) {
   const normalized = String(label || '').trim()
   const map: Record<string, string> = {
-    持续向好: '本周回暖',
-    持续走低: '本周转弱',
-    风险抬头: '本周承压',
-    起伏不定: '本周波动',
-    基本持平: '本周平稳',
-    稳定观察: '本周观察',
-    升温期: '本周回暖',
-    升温中: '本周回暖',
-    走弱期: '本周转弱',
-    暂时平稳: '本周平稳'
+    持续向好: '近14天回暖',
+    持续走低: '近14天转弱',
+    风险抬头: '近14天承压',
+    起伏不定: '近14天波动',
+    基本持平: '近14天平稳',
+    稳定观察: '近14天观察',
+    升温期: '近14天回暖',
+    升温中: '近14天回暖',
+    走弱期: '近14天转弱',
+    暂时平稳: '近14天平稳'
   }
-  return map[normalized] || (normalized ? `本周${normalized.replace(/^本周/, '')}` : '本周复盘')
+  return map[normalized] || (normalized ? `近14天${normalized.replace(/^近14天/, '')}` : '近14天复盘')
 }
 
 function mapIntentLabel(bucket?: string) {
@@ -1104,7 +1104,7 @@ async function syncSemanticTags() {
     var(--app-bg, #f6f1e8);
 }
 
-.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; min-height: 100vh; }
 
 .v2-mode .loading-v2 { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
 .v2-mode .empty-v2 { padding: 40rpx; border: 3rpx solid #111; background: #fff; margin-bottom: 18rpx; }
@@ -1117,7 +1117,7 @@ async function syncSemanticTags() {
 .v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .notice-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; }
 
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
@@ -1170,7 +1170,7 @@ async function syncSemanticTags() {
 .v2-mode .event-row-v2.system { background: #fff; border-style: dashed; }
 .v2-mode .event-time-v2 { display: flex; flex-direction: column; align-items: center; width: 80rpx; flex-shrink: 0; }
 .v2-mode .event-date-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .event-clock-v2 { font-size: 16rpx; font-weight: 600; color: #999; }
+.v2-mode .event-clock-v2 { font-size: 18rpx; font-weight: 600; color: #999; }
 .v2-mode .event-dot-v2 { width: 14rpx; height: 14rpx; border-radius: 50%; margin-top: 6rpx; border: 2rpx solid #111; }
 .v2-mode .event-dot-v2.positive { background: #4ECDC4; }
 .v2-mode .event-dot-v2.risk { background: #FF5252; }
@@ -1178,20 +1178,20 @@ async function syncSemanticTags() {
 .v2-mode .event-dot-v2.assessment { background: #111; }
 .v2-mode .event-dot-v2.trend { background: #666; }
 .v2-mode .event-dot-v2.weekly { background: #B8F35A; }
-.v2-mode .event-dot-v2.note { background: #ccc; }
+.v2-mode .event-dot-v2.note { background: #111; }
 .v2-mode .event-dot-v2.weekly { background: #4ECDC4; }
 
-.v2-mode .review-block-v2 { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #e0e0e0; }
+.v2-mode .review-block-v2 { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #111; }
 .v2-mode .bullet-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 4rpx; }
 
 .v2-mode .side-body-v2 { margin-top: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
-.v2-mode .side-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #e0e0e0; }
+.v2-mode .side-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #111; }
 .v2-mode .side-item-v2:last-child { border-bottom: none; }
 .v2-mode .side-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; }
 .v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; margin-top: 4rpx; }
 .v2-mode .event-body-v2 { flex: 1; min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
-.v2-mode .event-meta-v2 text { font-size: 16rpx; font-weight: 600; color: #999; }
+.v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }
 .v2-mode .event-title-v2 { display: block; font-size: 26rpx; font-weight: 800; color: #111; line-height: 1.4; }
 .v2-mode .event-desc-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 4rpx; }
 
@@ -1202,8 +1202,8 @@ async function syncSemanticTags() {
 .v2-mode .score-lbl-v2 { width: 40rpx; font-size: 18rpx; font-weight: 700; color: #666; }
 .v2-mode .score-val-v2 { width: 44rpx; font-size: 28rpx; font-weight: 900; color: #111; }
 .v2-mode .score-val-v2.risk { color: #FF5252; }
-.v2-mode .score-tag-v2 { font-size: 16rpx; font-weight: 600; color: #999; margin-right: 6rpx; }
-.v2-mode .score-bar-v2 { flex: 1; height: 10rpx; border: 2rpx solid #ccc; background: #fff; }
+.v2-mode .score-tag-v2 { font-size: 18rpx; font-weight: 600; color: #999; margin-right: 6rpx; }
+.v2-mode .score-bar-v2 { flex: 1; height: 10rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .score-fill-v2 { height: 10rpx; background: #111; }
 .v2-mode .score-fill-v2.risk { background: #FF5252; }
 
@@ -1217,8 +1217,8 @@ async function syncSemanticTags() {
 
 .v2-mode .status-box-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .status-head-v2 { display: flex; align-items: center; gap: 8rpx; margin-bottom: 8rpx; }
-.v2-mode .info-icon-v2 { width: 30rpx; height: 30rpx; line-height: 28rpx; text-align: center; border: 2rpx solid #111; font-size: 18rpx; font-weight: 900; color: #111; }
-.v2-mode .tag-v2.muted { background: #e0e0e0; color: #666; }
+.v2-mode .info-icon-v2 { width: 44rpx; height: 44rpx; line-height: 42rpx; text-align: center; border: 2rpx solid #111; font-size: 18rpx; font-weight: 900; color: #111; }
+.v2-mode .tag-v2.muted { background: #111; color: #666; }
 
 .v2-mode .delta-row-v2 { display: flex; gap: 8rpx; }
 .v2-mode .delta-item-v2 { flex: 1; padding: 10rpx; border: 2rpx solid #111; text-align: center; background: #fff; }
@@ -1227,8 +1227,8 @@ async function syncSemanticTags() {
 .v2-mode .expand-row-v2 { margin-top: 12rpx; text-align: center; }
 
 .v2-mode .attach-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #FFFBEB; }
-.v2-mode .attach-link-v2 { padding: 8rpx 0; }
-.v2-mode .attach-name-v2 { font-size: 22rpx; font-weight: 700; color: #111; max-width: 360rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2-mode .attach-link-v2 { min-width: 0; overflow: hidden; padding: 8rpx 0; }
+.v2-mode .attach-name-v2 { display: block; max-width: 100%; font-size: 22rpx; font-weight: 700; color: #111; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .v2-mode .info-mask-v2 { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }
 .v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: #fff; border: 3rpx solid #111; box-shadow: 10rpx 10rpx 0 #111; }
@@ -1241,9 +1241,9 @@ async function syncSemanticTags() {
 .v2-mode .info-sec-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
 .v2-mode .info-sec-copy-v2 { display: block; font-size: 22rpx; color: #555; line-height: 1.6; margin-top: 6rpx; }
 .v2-mode .info-sec-copy-v2.strong { font-weight: 700; color: #111; }
-.v2-mode .info-tag-row-v2 { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #e0e0e0; }
+.v2-mode .info-tag-row-v2 { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #111; }
 .v2-mode .info-chip-v2 { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .info-chip-v2.muted { background: #e0e0e0; }
+.v2-mode .info-chip-v2.muted { background: #111; }
 .v2-mode .info-chip-copy-v2 { flex: 1; }
 .v2-mode .info-chip-title-v2 { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
 .v2-mode .info-chip-desc-v2 { display: block; font-size: 20rpx; color: #666; line-height: 1.5; margin-top: 4rpx; }

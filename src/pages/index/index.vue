@@ -8,7 +8,7 @@
         <view class="hero-block">
           <text class="hero-tag">DOM-CRUSH BOARD</text>
           <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
-          <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看时间线和重新分析。</text>
+          <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
         <AssessmentForm @submit="onCreateCase" />
       </template>
@@ -19,7 +19,7 @@
           <text class="hero-tag">DOM-CRUSH BOARD</text>
           <text class="hero-title">今天他<text class="hl">有戏</text>吗？</text>
           <view class="hero-identity"><view class="profile-avatar-v2 sm"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(latestCase.name) }}</text></view><text class="hero-identity-name">{{ latestCase.name || '--' }}</text></view>
-          <text class="hero-copy">别靠脑补，先把真实互动记下来。共 {{ cases.length }} 个对象。</text>
+          <text class="hero-copy">别靠脑补，先把真实互动记下来。共 {{ cases.length }} 个 Crushes。</text>
           <view class="kpi-strip">
             <view class="kpi-cell"><text class="kpi-num">{{ latestCase.latestResult?.intentScore ?? '--' }}</text><text class="kpi-lbl">意向分</text></view>
             <view class="kpi-cell"><text class="kpi-num">{{ latestCase.latestResult?.consistencyRiskScore ?? '--' }}</text><text class="kpi-lbl">风险分</text></view>
@@ -125,7 +125,11 @@
                 <text class="side-item-text">{{ item.text }}</text>
               </view>
             </view>
-            <text v-if="!profileSideRead" class="side-text">{{ sideReadEntryHint }}</text>
+            <view v-if="sideReadLoading" class="action-box">
+              <text class="action-label">星象速写中...</text>
+              <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台生成中，已用时 {{ sideReadSeconds }} 秒</text></view>
+            </view>
+            <text v-else-if="!profileSideRead" class="side-text">{{ sideReadEntryHint }}</text>
             <button v-if="!profileSideRead" class="btn-v2 sm" :disabled="sideReadButtonDisabled" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
           </view>
         </view>
@@ -197,7 +201,7 @@ const petLines: Record<PetScene, { state: string; message: string }> = {
   positive:            { state: 'jumping',  message: '这次确实比之前更有动作。' },
   insufficient_balance:{ state: 'failed',   message: '这次我算不动啦，先补一点额度再继续分析。' },
   side_read_loading:   { state: 'review',   message: '我再帮你补一段观察角度。' },
-  side_read_success:   { state: 'jumping',  message: '侧写好啦，记得只当观察参考。' },
+  side_read_success:   { state: 'jumping',  message: '星象速写好啦，记得只当观察参考。' },
   ai_error:            { state: 'failed',   message: '刚刚没看成功，可以稍后再试一次。' }
 }
 
@@ -215,7 +219,7 @@ function mapResultToScene(params: { latestFeedbackEventType: string; intentDelta
 
 const themeVars = ref(getThemeStyle())
 const pageStyle = computed(() => {
-  const base = { ...themeVars.value }
+  const base = { ...themeVars.value, paddingBottom: 'calc(140rpx + env(safe-area-inset-bottom))' }
   if (showPetBar.value) base.paddingBottom = 'calc(300rpx + env(safe-area-inset-bottom))'
   return base
 })
@@ -235,8 +239,10 @@ const voiceStatus = ref('')
 const sideReadLoading = ref(false)
 const aiFeedbackLoading = ref(false)
 const aiFeedbackSeconds = ref(0)
+const sideReadSeconds = ref(0)
 const statusInfoVisible = ref(false)
 let aiFeedbackTimer: any = null
+let sideReadTimer: any = null
 const generatedSideRead = ref<any>(null)
 const petScene = ref<PetScene | null>(null)
 let petSceneTimer: ReturnType<typeof setTimeout> | null = null
@@ -405,6 +411,21 @@ function stopAIFeedbackTimer() {
   if (aiFeedbackTimer) {
     clearInterval(aiFeedbackTimer)
     aiFeedbackTimer = null
+  }
+}
+
+function startSideReadTimer() {
+  stopSideReadTimer()
+  sideReadSeconds.value = 0
+  sideReadTimer = setInterval(() => {
+    sideReadSeconds.value += 1
+  }, 1000)
+}
+
+function stopSideReadTimer() {
+  if (sideReadTimer) {
+    clearInterval(sideReadTimer)
+    sideReadTimer = null
   }
 }
 
@@ -835,6 +856,7 @@ onHide(() => {
   if (recording.value && recorderManager?.stop) recorderManager.stop()
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
+  stopSideReadTimer()
   stopPetAnim()
   statusInfoVisible.value = false
   applyPetScene(null)
@@ -842,7 +864,9 @@ onHide(() => {
 
 onUnload(() => {
   if (recording.value && recorderManager?.stop) recorderManager.stop()
+  if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
+  stopSideReadTimer()
   stopPetAnim()
   statusInfoVisible.value = false
   applyPetScene(null)
@@ -1334,6 +1358,7 @@ async function submitQuickRecord() {
 }
 
 async function runAssessmentAI(payload: { caseId: string; assessmentId: string; recordId?: string }) {
+  if (aiFeedbackLoading.value) return
   aiFeedbackLoading.value = true
   applyPetScene('ai_loading')
   startAIFeedbackTimer()
@@ -1376,6 +1401,7 @@ async function generateLatestSideRead() {
   if (!caseId) return
   sideReadLoading.value = true
   applyPetScene('side_read_loading')
+  startSideReadTimer()
   try {
     const res = await generateSideRead({ caseId })
     if (res?.code === 'INSUFFICIENT_BALANCE') {
@@ -1385,7 +1411,7 @@ async function generateLatestSideRead() {
     }
     if (!res?.success) {
       applyPetScene('ai_error', 3000)
-      showError(res?.message || '侧写生成失败')
+      showError(res?.message || '星象速写生成失败')
       return
     }
     generatedSideRead.value = res.sideReadAdvice
@@ -1393,11 +1419,12 @@ async function generateLatestSideRead() {
       latestCase.value.latestResult.sideReadAdvice = res.sideReadAdvice
     }
     applyPetScene('side_read_success', 3000)
-    showSuccess('侧写已生成')
+    showSuccess('星象速写已生成')
   } catch (error: any) {
-    showError(error?.message || '侧写生成失败')
+    showError(error?.message || '星象速写生成失败')
   } finally {
     sideReadLoading.value = false
+    stopSideReadTimer()
   }
 }
 
@@ -1413,7 +1440,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
 
 .v2-mode .hero-block {
-  background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111;
+  background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111;
   padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg);
 }
 .v2-mode .hero-tag { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
@@ -1490,7 +1517,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .score-num-v2 { display: block; font-size: 56rpx; font-weight: 900; color: #111; line-height: 1; margin-top: 6rpx; }
 .v2-mode .score-num-v2.risk { color: #FF5252; }
 .v2-mode .score-bucket-v2 { display: block; font-size: 20rpx; font-weight: 700; color: #999; margin-top: 4rpx; }
-.v2-mode .bar-track-v2 { height: 12rpx; background: #e0e0e0; margin-top: 12rpx; border: 2rpx solid #e0e0e0; }
+.v2-mode .bar-track-v2 { height: 12rpx; background: #111; margin-top: 12rpx; border: 2rpx solid #111; }
 .v2-mode .bar-fill-v2 { height: 12rpx; background: #111; }
 .v2-mode .bar-fill-v2.risk { background: #FF5252; }
 
@@ -1540,9 +1567,9 @@ function goCaseDetail(caseId: string) {
 .v2-mode .info-sec-title { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
 .v2-mode .info-sec-copy { display: block; font-size: 22rpx; color: #555; line-height: 1.6; margin-top: 6rpx; }
 .v2-mode .info-sec-copy.strong { font-weight: 700; color: #111; }
-.v2-mode .info-tag-row { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #e0e0e0; }
+.v2-mode .info-tag-row { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #111; }
 .v2-mode .info-chip { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .info-chip.muted { background: #e0e0e0; }
+.v2-mode .info-chip.muted { background: #111; }
 .v2-mode .info-chip-copy { flex: 1; }
 .v2-mode .info-chip-title { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
 .v2-mode .info-chip-desc { display: block; font-size: 20rpx; color: #666; line-height: 1.5; margin-top: 4rpx; }
@@ -1583,7 +1610,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .pet-bar .pet-bubble { pointer-events: auto; }
 .v2-mode .pet-bubble {
   position: relative;
-  background: #fff; border: 2rpx solid #111; border-radius: 16rpx;
+  background: #fff; border: 2rpx solid #111;
   padding: 14rpx 20rpx; max-width: 420rpx;
 }
 .v2-mode .pet-bubble::before {
@@ -1609,7 +1636,7 @@ function goCaseDetail(caseId: string) {
 .v2-mode .voice-btn-icon { font-size: 28rpx; font-weight: 900; }
 .v2-mode .voice-wave-inline { display: flex; align-items: center; gap: 4rpx; height: 32rpx; }
 .v2-mode .wave-bar-item-sm {
-  width: 6rpx; height: 14rpx; background: #fff; border-radius: 3rpx;
+  width: 6rpx; height: 14rpx; background: #fff;
   animation: wave-bounce-sm 0.5s ease-in-out infinite alternate;
 }
 .v2-mode .wave-bar-item-sm:nth-child(1) { animation-delay: 0s; }

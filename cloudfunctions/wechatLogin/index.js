@@ -19,6 +19,37 @@ function maskPhone(phone) {
   return `${value.slice(0, 3)}****${value.slice(-4)}`
 }
 
+function cleanString(value, maxLength) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  return text.slice(0, maxLength)
+}
+
+function normalizeWechatProfile(event) {
+  const userInfo = event?.userInfo && typeof event.userInfo === 'object' ? event.userInfo : {}
+  const nickName = cleanString(event.nickName || event.nickname || userInfo.nickName || userInfo.nickname, 50)
+  const avatarUrl = cleanString(event.avatarUrl || userInfo.avatarUrl, 500)
+  return { nickName, avatarUrl }
+}
+
+function buildWechatProfilePatch(profile, user = {}, force = false) {
+  const patch = {}
+  if (profile.nickName && (force || !String(user.nickName || '').trim())) {
+    patch.nickName = profile.nickName
+  }
+  if (profile.nickName && (force || !String(user.nickname || '').trim())) {
+    patch.nickname = profile.nickName
+  }
+  if (profile.avatarUrl && (force || !String(user.avatarUrl || '').trim())) {
+    patch.avatarUrl = profile.avatarUrl
+  }
+  return patch
+}
+
+function resolveDisplayName(user, phoneMasked) {
+  return user.nickName || user.nickname || user.email || (phoneMasked ? `微信用户 ${phoneMasked}` : '微信用户')
+}
+
 function extractOpenId(event) {
   try {
     const ctx = cloud.getWXContext()
@@ -80,14 +111,16 @@ async function updateUser(userId, patch) {
   })
 }
 
-async function createWechatUser({ openid, phone }) {
+async function createWechatUser({ openid, phone = '', profile }) {
   const userId = `user_${Date.now()}_${randomHex(4)}`
   const now = new Date()
+  const profilePatch = buildWechatProfilePatch(profile, {}, true)
   await db.collection('users').add({
     _id: userId,
     openid,
     phone,
     email: '',
+    ...profilePatch,
     selfProfile: null,
     loginType: 'wechat_phone',
     createdAt: now,
@@ -99,6 +132,7 @@ async function createWechatUser({ openid, phone }) {
     openid,
     phone,
     email: '',
+    ...profilePatch,
     selfProfile: null,
     loginType: 'wechat_phone'
   }
@@ -106,10 +140,7 @@ async function createWechatUser({ openid, phone }) {
 
 exports.main = async (event = {}) => {
   const code = String(event.code || '').trim()
-
-  if (!code) {
-    return { success: false, message: '缺少手机号授权 code' }
-  }
+  const profile = normalizeWechatProfile(event)
 
   try {
     const openid = extractOpenId(event)
@@ -117,27 +148,40 @@ exports.main = async (event = {}) => {
       return { success: false, message: '无法获取微信用户身份，请在微信小程序中重试' }
     }
 
-    const { phone } = await getPhoneNumber(code)
+    let phone = ''
+    if (code) {
+      const phoneResult = await getPhoneNumber(code)
+      phone = phoneResult.phone
+    }
     const now = new Date()
+    const phonePatch = phone ? { phone } : {}
 
     let user = await findUserByOpenId(openid)
     if (user) {
-      await updateUser(user._id, {
-        phone,
+      const profilePatch = buildWechatProfilePatch(profile, user)
+      const patch = {
+        ...phonePatch,
         loginType: user.loginType || 'wechat_phone',
-        lastLoginAt: now
-      })
+        lastLoginAt: now,
+        ...profilePatch
+      }
+      await updateUser(user._id, patch)
+      user = { ...user, ...patch }
     } else {
       user = await findUserByPhone(phone)
       if (user) {
-        await updateUser(user._id, {
+        const profilePatch = buildWechatProfilePatch(profile, user)
+        const patch = {
           openid,
-          phone,
+          ...phonePatch,
           loginType: user.loginType || 'wechat_phone',
-          lastLoginAt: now
-        })
+          lastLoginAt: now,
+          ...profilePatch
+        }
+        await updateUser(user._id, patch)
+        user = { ...user, ...patch }
       } else {
-        user = await createWechatUser({ openid, phone })
+        user = await createWechatUser({ openid, phone, profile })
         // 新用户首次赠送额度
         try {
           const { grantFirstGift } = require('./_shared/billing')
@@ -148,14 +192,17 @@ exports.main = async (event = {}) => {
       }
     }
 
-    const phoneMasked = maskPhone(phone)
+    const effectivePhone = phone || user.phone || ''
+    const phoneMasked = effectivePhone ? maskPhone(effectivePhone) : ''
     return {
       success: true,
       userId: user._id,
       email: user.email || '',
-      phone,
+      phone: effectivePhone,
       phoneMasked,
-      displayName: user.email || `微信用户 ${phoneMasked}`,
+      nickName: user.nickName || user.nickname || '',
+      avatarUrl: user.avatarUrl || '',
+      displayName: resolveDisplayName(user, phoneMasked),
       loginType: user.loginType || 'wechat_phone',
       selfProfile: user.selfProfile || null
     }

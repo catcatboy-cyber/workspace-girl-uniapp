@@ -28,7 +28,7 @@
           <text class="stat-value">{{ stats.userCount }}</text>
         </view>
         <view class="stat-card">
-          <text class="stat-label">关系对象</text>
+          <text class="stat-label">Crushes</text>
           <text class="stat-value">{{ stats.caseCount }}</text>
         </view>
         <view class="stat-card">
@@ -55,7 +55,7 @@
             <view class="table-row table-header">
               <text>账号</text>
               <text>方式</text>
-              <text>对象</text>
+              <text>Crush</text>
               <text>权限</text>
             </view>
             <view
@@ -78,7 +78,7 @@
             <text class="panel-meta">{{ selectedUser?.email || selectedUser?.phone || '未选择' }}</text>
           </view>
           <view v-if="detailLoading" class="empty">正在读取用户数据...</view>
-          <view v-else-if="!selectedDetail" class="empty">选择左侧用户查看关系对象和记录概况。</view>
+          <view v-else-if="!selectedDetail" class="empty">选择左侧用户查看 Crushes 和记录概况。</view>
           <view v-else>
             <view class="detail-line">
               <text class="detail-label">用户 ID</text>
@@ -99,7 +99,7 @@
                   <text>{{ item.timelineCount }} 条记录</text>
                 </view>
               </view>
-              <view v-if="selectedDetail.cases.length === 0" class="empty">暂无关系对象。</view>
+              <view v-if="selectedDetail.cases.length === 0" class="empty">暂无 Crush。</view>
             </view>
           </view>
         </view>
@@ -326,7 +326,7 @@
                 placeholder="例如：他今天主动约我下班后一起吃饭，还说只有我们两个人。"
               />
               <view class="field preview-case-field">
-                <text>关系对象 Case（决定最近 3 次事件上下文）</text>
+                <text>Crush（决定最近 3 次事件上下文）</text>
                 <picker
                   v-if="promptPreviewCaseOptions.length > 0"
                   :range="promptPreviewCaseOptions"
@@ -335,11 +335,11 @@
                   @change="onPromptPreviewCaseChange"
                 >
                   <view class="picker-like">
-                    {{ promptPreviewCaseOptions.find((item: any) => item.id === promptPreviewCaseId)?.name || '请选择关系对象' }}
+                    {{ promptPreviewCaseOptions.find((item: any) => item.id === promptPreviewCaseId)?.name || '请选择 Crush' }}
                   </view>
                 </picker>
                 <view v-else class="picker-like muted-box">
-                  当前账号下暂无可选关系对象
+                  当前账号下暂无可选 Crush
                 </view>
               </view>
               <text v-if="promptPreviewMessage" class="test-result fail">{{ promptPreviewMessage }}</text>
@@ -785,7 +785,9 @@ const petSpeakModuleKeys = [
   { key: 'qaStrategy', label: '撩一下策略' },
   { key: 'replyActive', label: '主动问对方' },
   { key: 'reply', label: '对方说了什么' },
-  { key: 'replyStrategy', label: '多轮策略' }
+  { key: 'replyStrategy', label: '多轮策略' },
+  { key: 'lineTagging', label: '话术标签维护' },
+  { key: 'qaMaintenance', label: 'QA维护批处理' }
 ]
 const petSpeakActiveKey = ref('qaStrategy')
 const petSpeakForm = reactive({ systemPrompt: '', temperature: null as number | null, maxTokens: null as number | null })
@@ -804,7 +806,7 @@ const petSpeakDefaults: Record<string, { systemPrompt: string; temperature: numb
     maxTokens: 200
   },
   replyActive: {
-    systemPrompt: '你是恋爱对话教练。用户想主动对心仪对象说一句话，请生成回复。只用 JSON 返回。每句15-40字，自然、尊重、有边界。',
+    systemPrompt: '你是恋爱对话教练。用户想主动对心仪 Crush 说一句话，请生成回复。只用 JSON 返回。每句15-40字，自然、尊重、有边界。',
     temperature: 0.8,
     maxTokens: 200
   },
@@ -812,6 +814,16 @@ const petSpeakDefaults: Record<string, { systemPrompt: string; temperature: numb
     systemPrompt: '你是恋爱对话策略教练。对方说了一句话或用户想表达一个意图，你需要生成2种多轮对话策略（反转撩和引导拉近）。',
     temperature: 0.8,
     maxTokens: 1200
+  },
+  lineTagging: {
+    systemPrompt: '',
+    temperature: 0.2,
+    maxTokens: 2000
+  },
+  qaMaintenance: {
+    systemPrompt: '',
+    temperature: 0.3,
+    maxTokens: 4000
   }
 }
 
@@ -868,8 +880,8 @@ const personaBoldnessKeys = ['conservative', 'balanced', 'bold']
 const promptModuleTitles: Record<string, string> = {
   eventAssessment: '即时反馈',
   eventUnderstanding: '事件理解',
-  weeklyReview: '本周复盘',
-  sideRead: '侧写',
+  weeklyReview: '近14天复盘',
+  sideRead: '星象速写',
   attachmentAnalysis: '附件识别'
 }
 
@@ -877,7 +889,7 @@ const personaStyleTitles: Record<string, string> = {
   gentle_bestie: '温柔闺蜜',
   calm_strategist: '冷静军师',
   playful_flirty: '轻松暧昧',
-  direct_sharp: '直接犀利',
+  direct_sharp: '不绕弯子',
   careful_guardian: '谨慎守护'
 }
 
@@ -889,17 +901,19 @@ const personaBoldnessTitles: Record<string, string> = {
 
 const runtimeFields = [
   { key: 'eventContextLimit', label: '事件上下文条数', fallback: 3 },
-  { key: 'weeklyEventLimit', label: '周复盘事件条数', fallback: 10 },
-  { key: 'weeklySideEventLimit', label: '周侧写事件条数', fallback: 6 },
+  { key: 'weeklyEventLimit', label: '14天复盘事件条数', fallback: 10 },
+  { key: 'weeklySideEventLimit', label: '14天星象速写事件条数', fallback: 6 },
   { key: 'eventMaxTokens', label: '即时反馈 Max Tokens', fallback: 650 },
   { key: 'eventUnderstandingMaxTokens', label: '事件理解 Max Tokens', fallback: 260 },
+  { key: 'batchTagMaxTokens', label: '批量语义打标 Max Tokens', fallback: 600 },
   { key: 'eventUnderstandingTemperature', label: '事件理解温度', fallback: 0.1 },
-  { key: 'weeklyMaxTokens', label: '周复盘 Max Tokens', fallback: 650 },
-  { key: 'sideReadMaxTokens', label: '侧写 Max Tokens', fallback: 550 },
+  { key: 'weeklyMaxTokens', label: '14天复盘 Max Tokens', fallback: 650 },
+  { key: 'sideReadMaxTokens', label: '星象速写 Max Tokens', fallback: 550 },
   { key: 'attachmentMaxTokens', label: '附件识别 Max Tokens', fallback: 1200 },
   { key: 'eventTemperature', label: '即时反馈温度', fallback: 0.2 },
-  { key: 'weeklyTemperature', label: '周复盘温度', fallback: 0.25 },
-  { key: 'sideReadTemperature', label: '侧写温度', fallback: 0.35 },
+  { key: 'batchTagTemperature', label: '批量语义打标温度', fallback: 0.1 },
+  { key: 'weeklyTemperature', label: '14天复盘温度', fallback: 0.25 },
+  { key: 'sideReadTemperature', label: '星象速写温度', fallback: 0.35 },
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
 
@@ -1450,7 +1464,7 @@ async function previewPrompt() {
     return
   }
   if (!promptPreviewCaseId.value) {
-    promptPreviewMessage.value = '请先选择一个关系对象'
+    promptPreviewMessage.value = '请先选择一个 Crush'
     promptPreviewResult.value = ''
     return
   }

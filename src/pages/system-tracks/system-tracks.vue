@@ -1,7 +1,7 @@
 <template>
   <view class="page v2-mode" :style="themeVars">
     <view class="hero-block-v2">
-      <text class="hero-tag-v2">SYSTEM</text>
+      <text class="hero-tag-v2">SYSTEM TRACKS</text>
       <text class="hero-title-v2">系统<text class="hl-v2">轨迹</text></text>
       <text class="hero-copy-v2">系统自动生成的分析、趋势和复盘记录。</text>
     </view>
@@ -10,7 +10,7 @@
 
     <view v-else>
       <view v-if="cases.length === 0" class="empty-v2">
-        <text class="empty-title-v2">还没有关系对象</text>
+        <text class="empty-title-v2">还没有 Crush</text>
         <text class="empty-sub-v2">先完成初评，系统会自动生成轨迹。</text>
       </view>
 
@@ -165,7 +165,7 @@ function formatRecordedAt(record: any) {
 <style scoped>
 .page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: var(--spacing-page, 24rpx); box-sizing: border-box; }
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
@@ -182,7 +182,7 @@ function formatRecordedAt(record: any) {
 .v2-mode .event-row-v2.system { background: #fff; border-style: dashed; }
 .v2-mode .event-time-v2 { display: flex; flex-direction: column; align-items: center; width: 80rpx; flex-shrink: 0; }
 .v2-mode .event-date-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .event-clock-v2 { font-size: 16rpx; font-weight: 600; color: #999; }
+.v2-mode .event-clock-v2 { font-size: 18rpx; font-weight: 600; color: #999; }
 .v2-mode .event-dot-v2 { width: 14rpx; height: 14rpx; border-radius: 50%; margin-top: 6rpx; border: 2rpx solid #111; }
 .v2-mode .event-dot-v2.positive { background: #4ECDC4; }
 .v2-mode .event-dot-v2.risk { background: #FF5252; }

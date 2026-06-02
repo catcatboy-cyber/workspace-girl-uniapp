@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dom-Crush 商业模式 & 定价策略 v2.0</title>
+<style>
+  :root {
+    --bg: #FFFDF5; --fg: #111; --accent: #FFD93D; --green: #4ECDC4;
+    --red: #FF5252; --border: 3px solid #111; --shadow: 8px 8px 0 #111;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; line-height:1.6; max-width:900px; margin:0 auto; padding:40px 20px; }
+  h1 { font-size:42px; font-weight:900; letter-spacing:-2px; margin-bottom:8px; }
+  h2 { font-size:26px; font-weight:900; margin:48px 0 16px; padding-bottom:8px; border-bottom:3px solid #111; }
+  h3 { font-size:20px; font-weight:900; margin:24px 0 12px; }
+  p { margin:12px 0; }
+  .subtitle { color:#666; font-size:16px; margin-bottom:32px; }
+  table { width:100%; border-collapse:collapse; margin:16px 0 24px; border: var(--border); }
+  th, td { padding:10px 14px; text-align:left; border-bottom:2px solid #111; font-size:13px; }
+  th { background:#111; color:var(--accent); font-weight:900; font-size:12px; text-transform:uppercase; letter-spacing:1px; }
+  td { background:#fff; }
+  tr:last-child td { border-bottom:none; }
+  .card { border:var(--border); background:#fff; padding:28px; box-shadow:var(--shadow); margin:24px 0; }
+  .card.hero { background:var(--accent); }
+  .card.warn { background:#FFF8E1; border-color:var(--red); }
+  .card.green { background:#E8F8F5; border-color:var(--green); }
+  .tag { display:inline-block; padding:4px 12px; border:2px solid #111; font-size:12px; font-weight:800; margin-right:6px; }
+  .tag.free { background:#fff; }
+  .tag.pro { background:var(--green); }
+  .tag.ultra { background:#111; color:var(--accent); }
+  .price { font-size:48px; font-weight:900; line-height:1; }
+  .price small { font-size:18px; color:#666; font-weight:600; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .kpi { text-align:center; padding:20px; border:var(--border); background:#fff; }
+  .kpi .num { font-size:32px; font-weight:900; }
+  .kpi .lbl { font-size:13px; color:#666; font-weight:700; margin-top:4px; }
+  .highlight { background:var(--accent); padding:2px 6px; }
+  .green-hl { background:var(--green); padding:2px 6px; color:#fff; }
+  ul { margin:8px 0 8px 20px; }
+  li { margin:4px 0; }
+  .divider { border:none; border-top:3px solid #111; margin:40px 0; }
+  .note { font-size:12px; color:#999; }
+  .cost-zero { color:#27ae60; font-weight:900; }
+  .badge { display:inline-block; padding:2px 8px; font-size:11px; font-weight:800; border-radius:2px; }
+  .badge.new { background:var(--accent); color:#111; }
+  .badge.fix { background:var(--red); color:#fff; }
+  .badge.real { background:#111; color:#FFD93D; }
+  .section-desc { color:#666; font-size:14px; margin-bottom:16px; line-height:1.7; }
+  .src-tag { display:inline-block; padding:2px 6px; font-size:10px; font-weight:800; border:1px solid #111; margin-left:4px; }
+  .src-tag.config { background:#E8F8F5; }
+  .src-tag.code { background:#FFF8E1; }
+  .est-vs-real { font-size:11px; }
+  .est-vs-real .over { color:var(--red); }
+  .est-vs-real .under { color:#27ae60; }
+  .est-vs-real .ok { color:#666; }
+  @media(max-width:600px){ .grid2,.grid3,.grid4{ grid-template-columns:1fr; } body{padding:20px 12px;} h1{font-size:32px;} }
+</style>
+</head>
+<body>
+
+<h1>Dom-Crush</h1>
+<p class="subtitle">商业模式 &amp; 定价策略 v2.0 · 2026-06 <span class="badge real">REAL DATA</span></p>
+
+<div class="card hero">
+  <p style="font-size:20px;font-weight:700;margin:0;">read the signals, not your mind.</p>
+  <p style="margin-top:8px;color:rgba(0,0,0,0.6);">AI 驱动的关系信号分析工具。记录真实互动，看清意图、风险、趋势。</p>
+</div>
+
+<!-- v1.0 问题说明 -->
+<div class="card warn">
+  <p style="font-weight:900;margin:0 0 8px;">v1.0 的两个问题</p>
+  <p style="margin:0;font-size:14px;">
+    1. <strong>功能矩阵 vs 新用户引导矛盾</strong>：免费版所有 AI 功能标 ✗，但新用户注册赠送 10,000 Token —— 没有 AI 功能可用，Token 花不出去。<br>
+    2. <strong>API 成本估算偏高</strong>：v1.0 基于 Claude 定价估算每次 ¥0.015-0.022，实际使用 DeepSeek V4 Flash 成本约其 <strong>1/50 ~ 1/100</strong>。
+  </p>
+</div>
+
+<!-- ===== 一、真实消耗数据 ===== -->
+<h2>一、各模块真实 Token 消耗 <span class="badge real">CloudBase 数据库查询</span></h2>
+<p class="section-desc">
+  数据来源：<code>tcb db nosql execute</code> 对 <code>token_usage_records</code> 集合按 feature 聚合，取 avg/max/min。<br>
+  共 <strong>365</strong> 条真实 AI 调用记录。
+</p>
+
+<table>
+  <tr><th>功能模块</th><th>feature tag</th><th>调用次数</th><th>平均输入</th><th>平均输出</th><th>平均总Token</th><th>最大</th><th>最小</th></tr>
+  <tr>
+    <td>小咪帮你说</td><td>petReply</td><td>152</td><td>342</td><td>171</td><td><strong>513</strong></td><td>944</td><td>236</td>
+  </tr>
+  <tr>
+    <td>即时反馈</td><td>eventAssessment</td><td>84</td><td>1,377</td><td>305</td><td><strong>1,681</strong></td><td>2,243</td><td>0*</td>
+  </tr>
+  <tr>
+    <td>星象速写（单次）</td><td>sideRead</td><td>65</td><td>646</td><td>194</td><td><strong>840</strong></td><td>1,267</td><td>698</td>
+  </tr>
+  <tr>
+    <td>周复盘</td><td>weeklyReview</td><td>35</td><td>1,200</td><td>470</td><td><strong>1,670</strong></td><td>2,930</td><td>863</td>
+  </tr>
+  <tr>
+    <td>本周星象速写</td><td>weeklySideRead</td><td>16</td><td>1,186</td><td>265</td><td><strong>1,451</strong></td><td>1,758</td><td>824</td>
+  </tr>
+  <tr>
+    <td>附件识别</td><td>attachmentAnalysis</td><td>9</td><td>475</td><td>66</td><td><strong>540</strong></td><td>613</td><td>391</td>
+  </tr>
+  <tr>
+    <td>语义标签（批量）</td><td>batchTag</td><td>4</td><td>426</td><td>144</td><td><strong>570</strong></td><td>1,182</td><td>294</td>
+  </tr>
+</table>
+<p class="note">* eventAssessment 的 min=0 是因为 AI 返回失败走规则兜底时 usage 为空，记了 0。</p>
+
+<!-- ===== 输出上限溯源 ===== -->
+<h2>二、输出上限（max_tokens）溯源</h2>
+<p class="section-desc">
+  每个模块发给 AI API 的 <code>max_tokens</code> 参数来源。<br>
+  <strong>代码 fallback</strong> = 云函数内置默认值（数据库无配置时使用）；<strong>后台实际配置</strong> = CloudBase <code>system_settings.runtimeConfig</code> 中存储的管理员配置值（优先级更高）。<br>
+  云函数运行时先读数据库，有值就用数据库的，没有才用代码 fallback。
+</p>
+
+<table>
+  <tr><th>功能</th><th>参数路径</th><th>代码 fallback</th><th>后台实际配置</th><th>实际平均输出</th><th>利用率</th></tr>
+  <tr>
+    <td>即时反馈</td>
+    <td class="note">runtimeConfig.eventMaxTokens</td>
+    <td style="color:#999">650</td>
+    <td><strong>1,400</strong></td>
+    <td>305</td>
+    <td>22%</td>
+  </tr>
+  <tr>
+    <td>事件理解</td>
+    <td class="note">runtimeConfig.eventUnderstandingMaxTokens</td>
+    <td style="color:#999">260</td>
+    <td><strong>300</strong></td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td>语义标签(批量)</td>
+    <td class="note">硬编码在 generateAssessmentAI/index.js:160</td>
+    <td style="color:#999">600</td>
+    <td><strong>600</strong> <span class="src-tag code">程序写死</span></td>
+    <td>144</td>
+    <td>24%</td>
+  </tr>
+  <tr>
+    <td>周复盘</td>
+    <td class="note">runtimeConfig.weeklyMaxTokens</td>
+    <td style="color:#999">650</td>
+    <td><strong>1,500</strong></td>
+    <td>470</td>
+    <td>31%</td>
+  </tr>
+  <tr>
+    <td>本周星象速写</td>
+    <td class="note">runtimeConfig.sideReadMaxTokens (weeklyReview 上下文)</td>
+    <td style="color:#999">380</td>
+    <td><strong>1,200</strong></td>
+    <td>265</td>
+    <td>22%</td>
+  </tr>
+  <tr>
+    <td>星象速写(单次)</td>
+    <td class="note">runtimeConfig.sideReadMaxTokens (generateSideRead 上下文)</td>
+    <td style="color:#999">900</td>
+    <td><strong>1,200</strong></td>
+    <td>194</td>
+    <td>16%</td>
+  </tr>
+  <tr>
+    <td>小咪帮你说(单轮)</td>
+    <td class="note">petSpeakConfig.reply.maxTokens</td>
+    <td style="color:#999">200</td>
+    <td><strong>200</strong></td>
+    <td>171</td>
+    <td>86%</td>
+  </tr>
+  <tr>
+    <td>小咪帮你说(开场白)</td>
+    <td class="note">petSpeakConfig.qaStrategy.maxTokens</td>
+    <td style="color:#999">400</td>
+    <td><strong>400</strong></td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td>小咪帮你说(多轮策略)</td>
+    <td class="note">petSpeakConfig.replyStrategy.maxTokens</td>
+    <td style="color:#999">1,200</td>
+    <td><strong>1,200</strong></td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td>附件识别</td>
+    <td class="note">runtimeConfig.attachmentMaxTokens</td>
+    <td style="color:#999">1,200</td>
+    <td><strong>1,000</strong></td>
+    <td>66</td>
+    <td>7%</td>
+  </tr>
+</table>
+
+<div class="card green">
+  <p style="font-weight:900;margin:0 0 6px;">关键发现</p>
+  <p style="margin:0;font-size:14px;">
+    你的后台配置已经把即时反馈、周复盘、星象速写的上限拉高到 1200-1500，远超代码默认值。但<strong>实际 AI 输出远低于上限</strong>——即时反馈利用率仅 22%（输出 305/上限 1400），周复盘 31%（470/1500），星象速写 16%（194/1200）。<br>
+    这说 <code>max_tokens</code> 只是安全上限，AI 不需要写满就会停。真正决定成本的是 AI 实际输出的 token 数，不是上限。
+  </p>
+</div>
+
+<!-- ===== 三、v1.0 估算 vs 真实数据 ===== -->
+<h2>三、v1.0 估算 vs 真实数据对比</h2>
+<table>
+  <tr><th>功能</th><th>v1.0 估算</th><th>真实平均</th><th>偏差</th></tr>
+  <tr><td>即时反馈</td><td>~1,000</td><td>1,681</td><td class="est-vs-real"><span class="over">+68%（低估了）</span></td></tr>
+  <tr><td>周复盘</td><td>~1,200</td><td>1,670</td><td class="est-vs-real"><span class="over">+39%（低估了）</span></td></tr>
+  <tr><td>星象速写</td><td>~1,500</td><td>840</td><td class="est-vs-real"><span class="under">-44%（高估了）</span></td></tr>
+  <tr><td>小咪帮你说(单轮)</td><td>~800</td><td>513</td><td class="est-vs-real"><span class="under">-36%（高估了）</span></td></tr>
+  <tr><td>小咪帮你说(多轮)</td><td>~1,200</td><td>—</td><td class="note">合并在 petReply 统计中</td></tr>
+  <tr><td>附件识别</td><td>~500</td><td>540</td><td class="est-vs-real"><span class="ok">+8%（接近）</span></td></tr>
+</table>
+
+<!-- ===== 四、月度用量推演 ===== -->
+<h2>四、月度用量推演（基于真实数据）</h2>
+
+<h3>场景 A：轻度用户（一周记录 1-2 次，各模块低频使用）</h3>
+<table>
+  <tr><th>模块</th><th>周频次</th><th>单次消耗</th><th>周消耗</th><th>月消耗(×4.3)</th></tr>
+  <tr><td>即时反馈</td><td>2 次</td><td>1,681</td><td>3,362</td><td>14,457</td></tr>
+  <tr><td>周复盘</td><td>1 次</td><td>1,670</td><td>1,670</td><td>7,181</td></tr>
+  <tr><td>本周星象速写</td><td>1 次</td><td>1,451</td><td>1,451</td><td>6,239</td></tr>
+  <tr><td>星象速写（单次）</td><td>0.5 次</td><td>840</td><td>420</td><td>1,806</td></tr>
+  <tr><td>小咪帮你说</td><td>1 次</td><td>513</td><td>513</td><td>2,206</td></tr>
+  <tr><td>附件识别</td><td>0.5 次</td><td>540</td><td>270</td><td>1,161</td></tr>
+  <tr><td>语义标签</td><td>—</td><td>570</td><td>—</td><td>—（一次性）</td></tr>
+  <tr style="font-weight:900;background:#FFD93D;"><td>合计</td><td></td><td></td><td><strong>7,686</strong></td><td><strong>33,050</strong></td></tr>
+</table>
+
+<h3>场景 B：重度用户（一周记录 3-4 次，所有模块活跃使用）</h3>
+<table>
+  <tr><th>模块</th><th>周频次</th><th>单次消耗</th><th>周消耗</th><th>月消耗(×4.3)</th></tr>
+  <tr><td>即时反馈</td><td>4 次</td><td>1,681</td><td>6,724</td><td>28,913</td></tr>
+  <tr><td>周复盘</td><td>1 次</td><td>1,670</td><td>1,670</td><td>7,181</td></tr>
+  <tr><td>本周星象速写</td><td>1 次</td><td>1,451</td><td>1,451</td><td>6,239</td></tr>
+  <tr><td>星象速写（单次）</td><td>1 次</td><td>840</td><td>840</td><td>3,612</td></tr>
+  <tr><td>小咪帮你说（3单轮+1策略）</td><td>4 次</td><td>~700</td><td>2,800</td><td>12,040</td></tr>
+  <tr><td>附件识别</td><td>1 次</td><td>540</td><td>540</td><td>2,322</td></tr>
+  <tr style="font-weight:900;background:#FFD93D;"><td>合计</td><td></td><td></td><td><strong>14,025</strong></td><td><strong>60,307</strong></td></tr>
+</table>
+
+<h3>场景 C：多 Crush 重度（3 个 Crush，假设各 Crush 独立调用）</h3>
+<table>
+  <tr><th>场景</th><th>月 Token</th><th>月 API 成本 (DeepSeek V4 Flash)</th></tr>
+  <tr><td>1 Crush 轻度</td><td>33,050</td><td class="cost-zero">¥0.04</td></tr>
+  <tr><td>1 Crush 重度</td><td>60,307</td><td class="cost-zero">¥0.08</td></tr>
+  <tr><td>3 Crush 重度</td><td>~181,000</td><td class="cost-zero">¥0.24</td></tr>
+  <tr><td>5 Crush 重度</td><td>~301,500</td><td class="cost-zero">¥0.39</td></tr>
+</table>
+
+<p class="note">* API 成本按 70/30 输入/输出比 × DeepSeek V4 Flash 定价（输入 ¥1/M，输出 ¥2/M，全部缓存未命中）计算。</p>
+
+<!-- ===== 五、实际模型分布 & API 定价 ===== -->
+<h2>五、实际模型分布 & API 定价</h2>
+<p class="section-desc">从 <code>token_usage_records</code> 按 model 聚合，确认实际使用的模型分布。</p>
+
+<table>
+  <tr><th>模型</th><th>调用次数</th><th>占比</th><th>平均 Token/次</th></tr>
+  <tr style="background:#E8F8F5;"><td><strong>hy3-preview（腾讯混元）</strong></td><td>332</td><td><strong>91%</strong></td><td>994</td></tr>
+  <tr><td>deepseek-v4-flash</td><td>29</td><td>8%</td><td>1,117</td></tr>
+  <tr><td>（空/未记录）</td><td>4</td><td>1%</td><td>0</td></tr>
+</table>
+
+<h3>混元 Hy3 preview 定价（主力模型，91% 调用）</h3>
+<table>
+  <tr><th>计费项</th><th>价格 (¥/百万 Token)</th></tr>
+  <tr><td>输入（0~16K 段，缓存命中）</td><td class="cost-zero">¥0.40</td></tr>
+  <tr><td>输入（0~16K 段，缓存未命中）</td><td>¥1.20</td></tr>
+  <tr><td>输出</td><td>¥4.00</td></tr>
+</table>
+
+<h3>DeepSeek V4 Flash 定价（备用模型，8% 调用）</h3>
+<table>
+  <tr><th>计费项</th><th>价格 (¥/百万 Token)</th></tr>
+  <tr><td>输入（缓存命中）</td><td class="cost-zero">¥0.02</td></tr>
+  <tr><td>输入（缓存未命中）</td><td>¥1.00</td></tr>
+  <tr><td>输出</td><td>¥2.00</td></tr>
+</table>
+
+<h3>月度 API 成本（按混元定价，70/30 输入输出比，全部缓存未命中）</h3>
+<table>
+  <tr><th>用户类型</th><th>月 Token</th><th>输入 ¥</th><th>输出 ¥</th><th>月 API 成本</th></tr>
+  <tr><td>轻度（1 Crush）</td><td>33,050</td><td>¥0.028</td><td>¥0.040</td><td><strong>¥0.07</strong></td></tr>
+  <tr><td>重度（1 Crush）</td><td>60,307</td><td>¥0.051</td><td>¥0.072</td><td><strong>¥0.12</strong></td></tr>
+  <tr><td>重度（3 Crush）</td><td>~181,000</td><td>¥0.152</td><td>¥0.217</td><td><strong>¥0.37</strong></td></tr>
+  <tr><td>Power User</td><td>500,000</td><td>¥0.420</td><td>¥0.600</td><td><strong>¥1.02</strong></td></tr>
+</table>
+
+<div class="card green">
+  <p style="font-weight:900;margin:0 0 6px;">核心结论</p>
+  <p style="margin:0;font-size:14px;">
+    即使按混元 HY 定价（比 DeepSeek 贵 ~2x），重度单用户月 API 成本仍只需 <strong>¥0.12</strong>，Power User 也才 <strong>¥1.02</strong>。API 成本完全不是定价约束 —— Pro 月费 ¥19，毛利率 99%+。<br>
+    订阅定价应基于<strong>功能分级和用户价值感知</strong>，而非 API 成本加成。
+  </p>
+</div>
+
+<!-- ===== 六、修订订阅方案 ===== -->
+<h2>六、修订订阅方案</h2>
+<p class="section-desc">免费版开放基础 AI 功能，消除"赠送 Token 花不出去"的矛盾。</p>
+
+<div class="grid3">
+  <div class="card" style="text-align:center">
+    <span class="tag free">免费版</span>
+    <div class="price" style="margin:16px 0">¥0</div>
+    <p style="font-size:14px;font-weight:700;">1 个 Crush</p>
+    <p style="font-size:13px;color:#666;">30,000 Token/月</p>
+    <p style="font-size:12px;color:#999;">约 18 次 AI 调用</p>
+    <div style="text-align:left;margin-top:12px;font-size:13px;">
+      <p style="margin:2px 0;">✓ 快速记录 & 时间轴</p>
+      <p style="margin:2px 0;">✓ 规则分析（本地计算）</p>
+      <p style="margin:2px 0;">✓ <span class="highlight">AI 即时反馈</span></p>
+      <p style="margin:2px 0;">✓ <span class="highlight">AI 事件理解</span></p>
+      <p style="margin:2px 0;color:#999;">✗ AI 周复盘</p>
+      <p style="margin:2px 0;color:#999;">✗ 星象速写</p>
+      <p style="margin:2px 0;color:#999;">✗ 小咪帮你说</p>
+    </div>
+  </div>
+  <div class="card" style="text-align:center;border-color:var(--green);">
+    <span class="tag pro">Pro</span>
+    <div class="price" style="margin:16px 0">¥19<small>/月</small></div>
+    <p style="font-size:13px;color:#666;">年付 ¥168（7折）</p>
+    <p style="font-size:14px;font-weight:700;">3 个 Crush</p>
+    <p style="font-size:13px;color:#666;">200,000 Token/月</p>
+    <p style="font-size:12px;color:#999;">约 120 次 AI 调用</p>
+    <div style="text-align:left;margin-top:12px;font-size:13px;">
+      <p style="margin:2px 0;">✓ 免费版全部功能</p>
+      <p style="margin:2px 0;">✓ <span class="highlight">AI 周复盘</span></p>
+      <p style="margin:2px 0;">✓ <span class="highlight">星象速写</span></p>
+      <p style="margin:2px 0;">✓ <span class="highlight">小咪帮你说（单轮）</span></p>
+      <p style="margin:2px 0;">✓ <span class="highlight">附件识别</span></p>
+      <p style="margin:2px 0;color:#999;">✗ 多轮策略</p>
+    </div>
+  </div>
+  <div class="card" style="text-align:center">
+    <span class="tag ultra">无限版</span>
+    <div class="price" style="margin:16px 0">¥49<small>/月</small></div>
+    <p style="font-size:13px;color:#666;">年付 ¥398（7折）</p>
+    <p style="font-size:14px;font-weight:700;">不限 Crush</p>
+    <p style="font-size:13px;color:#666;">800,000 Token/月</p>
+    <p style="font-size:12px;color:#999;">约 480 次 AI 调用</p>
+    <div style="text-align:left;margin-top:12px;font-size:13px;">
+      <p style="margin:2px 0;">✓ Pro 全部功能</p>
+      <p style="margin:2px 0;">✓ <span class="highlight">小咪帮你说（多轮策略）</span></p>
+      <p style="margin:2px 0;">✓ <span class="highlight">自定义宠物形象</span></p>
+      <p style="margin:2px 0;">✓ <span class="highlight">自定义 AI 分析风格</span></p>
+      <p style="margin:2px 0;">✓ 不限 Crush 数量</p>
+    </div>
+  </div>
+</div>
+
+<div class="grid4" style="margin-top:16px;">
+  <div class="kpi"><div class="num">¥0.07</div><div class="lbl">免费用户月 API 成本</div></div>
+  <div class="kpi"><div class="num">¥0.12</div><div class="lbl">Pro 重度用户月 API 成本</div></div>
+  <div class="kpi"><div class="num">¥1.02</div><div class="lbl">无限版满配额月 API 成本</div></div>
+  <div class="kpi"><div class="num">99%+</div><div class="lbl">Pro 毛利率</div></div>
+</div>
+
+<!-- ===== 七、功能开放矩阵 ===== -->
+<h2>七、功能开放矩阵 <span class="badge fix">FIXED</span></h2>
+<table>
+  <tr><th>功能</th><th>免费版</th><th>Pro</th><th>无限版</th></tr>
+  <tr><td>快速记录</td><td>✓</td><td>✓</td><td>✓</td></tr>
+  <tr><td>时间轴查看</td><td>✓</td><td>✓</td><td>✓</td></tr>
+  <tr><td>规则分析（本地计算）</td><td>✓</td><td>✓</td><td>✓</td></tr>
+  <tr><td>AI 事件理解</td><td>✓</td><td>✓</td><td>✓</td></tr>
+  <tr><td>AI 即时反馈</td><td>✓</td><td>✓</td><td>✓</td></tr>
+  <tr><td>AI 周复盘</td><td>✗</td><td>✓</td><td>✓</td></tr>
+  <tr><td>星象速写（含本周）</td><td>✗</td><td>✓</td><td>✓</td></tr>
+  <tr><td>小咪帮你说（单轮）</td><td>✗</td><td>✓</td><td>✓</td></tr>
+  <tr><td>附件识别</td><td>✗</td><td>✓</td><td>✓</td></tr>
+  <tr><td>小咪帮你说（多轮策略）</td><td>✗</td><td>✗</td><td>✓</td></tr>
+  <tr><td>自定义宠物形象</td><td>✗</td><td>✗</td><td>✓</td></tr>
+  <tr><td>自定义 AI 分析风格</td><td>✗</td><td>✗</td><td>✓</td></tr>
+  <tr><td>Crush 数量</td><td>1</td><td>3</td><td>不限</td></tr>
+  <tr><td>月 Token 额度</td><td>30,000</td><td>200,000</td><td>800,000</td></tr>
+  <tr><td>月 API 成本（混元）</td><td class="cost-zero">~¥0.07</td><td class="cost-zero">~¥0.12</td><td class="cost-zero">~¥1.02</td></tr>
+</table>
+
+<!-- ===== 八、增值 Token 包 ===== -->
+<h2>八、增值 Token 包</h2>
+<table>
+  <tr><th>包名</th><th>价格</th><th>Token</th><th>额外调用次数</th><th>定位</th></tr>
+  <tr><td>小补包</td><td>¥6</td><td>50,000</td><td>~30 次</td><td>"还差一点，救个急"</td></tr>
+  <tr><td>标准包</td><td>¥12</td><td>120,000</td><td>~70 次</td><td>主力增量（最推荐）</td></tr>
+  <tr><td>大补包</td><td>¥25</td><td>300,000</td><td>~180 次</td><td>重度用户续命</td></tr>
+</table>
+<p class="note">增值包毛利率极高（300K Token API 成本仅 ¥0.39）。价值在于"解除焦虑"，不在 API 成本。</p>
+
+<!-- ===== 九、新用户引导 ===== -->
+<h2>九、新用户引导 <span class="badge fix">FIXED</span></h2>
+<div class="grid2">
+  <div class="kpi"><div class="num">10,000</div><div class="lbl">注册赠送 Token（一次性）</div></div>
+  <div class="kpi"><div class="num">2,000</div><div class="lbl">分享裂变双方奖励</div></div>
+</div>
+<ul>
+  <li>注册即送 <span class="highlight">10,000 Token</span>，可支持约 6 次 AI 即时反馈 —— 足够完整体验核心功能</li>
+  <li><strong>引导路径</strong>：创建 Crush → 记录事件 → 触发 AI 即时反馈 → 查看分析结果 → 赠送 Token 快用完时提示升级</li>
+  <li>赠送 Token 耗尽后，规则分析仍可用（本地计算），AI 功能引导升级 Pro</li>
+  <li>分享分析结果卡片 → 好友点击注册 → 双方各得 2,000 Token</li>
+</ul>
+
+<div class="card green">
+  <p style="font-weight:900;margin:0 0 6px;">v1.0 矛盾已解决</p>
+  <p style="margin:0;font-size:14px;">免费版现在包含 AI 即时反馈 + AI 事件理解。10,000 赠送 Token 有明确的消费出口（6 次即时反馈），用户先体验核心价值再被高级功能吸引升级。</p>
+</div>
+
+<!-- ===== 十、收入预测 ===== -->
+<h2>十、收入预测</h2>
+<h3>保守场景（月活 5,000）</h3>
+<table>
+  <tr><th>层级</th><th>用户数</th><th>占比</th><th>月收入</th></tr>
+  <tr><td>免费</td><td>3,250</td><td>65%</td><td>¥0</td></tr>
+  <tr><td>Pro</td><td>1,350</td><td>27%</td><td>¥25,650</td></tr>
+  <tr><td>无限版</td><td>400</td><td>8%</td><td>¥19,600</td></tr>
+  <tr><td>增值包</td><td>200</td><td>—</td><td>¥2,400</td></tr>
+  <tr style="font-weight:900;background:#FFD93D;"><td>合计</td><td>5,000</td><td>—</td><td>¥47,650/月</td></tr>
+</table>
+<div class="grid3" style="margin-top:24px;">
+  <div class="kpi"><div class="num">~¥57万</div><div class="lbl">保守年收入</div></div>
+  <div class="kpi"><div class="num">~480</div><div class="lbl">月活盈亏平衡点</div></div>
+  <div class="kpi"><div class="num">~¥228万</div><div class="lbl">乐观年收入（月活2万）</div></div>
+</div>
+
+<!-- ===== 十一、增长飞轮 ===== -->
+<h2>十一、增长飞轮</h2>
+<div class="card" style="text-align:center;font-size:17px;font-weight:700;">
+  记录互动 → AI 即时反馈（免费就能用）→ 结果准确有用 → 告诉闺蜜 →<br>
+  闺蜜下载试用 → 她也看到即时反馈 → 想解锁周复盘 → 升级 Pro → 记录更多
+</div>
+
+<!-- ===== 十二、竞争壁垒 ===== -->
+<h2>十二、竞争壁垒</h2>
+<table>
+  <tr><th>壁垒</th><th>说明</th></tr>
+  <tr><td>数据飞轮</td><td>记录越多 → 分析越准 → 用户越依赖。事件累积是时间函数，竞品无法用资本压缩。</td></tr>
+  <tr><td>切换成本</td><td>积累的事件记录、评估历史、趋势数据、星象速写存档无法迁移。</td></tr>
+  <tr><td>品牌调性</td><td>"Dom-Crush" + Campus Pop 视觉 + 小咪宠物 IP 形成独特记忆点。</td></tr>
+  <tr><td>AI 提示词壁垒</td><td>24 道问答题库 + 事件理解引擎 + 多轮策略引擎 + 星象速写引擎，数月调优。</td></tr>
+  <tr><td>成本优势</td><td>DeepSeek V4 Flash 使免费版也能承担 AI 成本。竞品若用 GPT/Claude 难以跟进同等免费策略。</td></tr>
+</table>
+
+<!-- ===== 十三、模型对比 ===== -->
+<h2>十三、模型成本对比</h2>
+<table>
+  <tr><th>模型</th><th>输入 ¥/M</th><th>输出 ¥/M</th><th>月 30万Token 成本</th><th>实际使用占比</th></tr>
+  <tr style="background:#E8F8F5;"><td><strong>混元 Hy3 preview</strong></td><td>¥1.20</td><td>¥4.00</td><td><strong>¥0.61</strong></td><td><strong>91%</strong></td></tr>
+  <tr><td>DeepSeek V4 Flash</td><td>¥1.00</td><td>¥2.00</td><td>¥0.39</td><td>8%</td></tr>
+  <tr><td>DeepSeek V4 Pro</td><td>¥3.00</td><td>¥6.00</td><td>¥1.17</td><td>—</td></tr>
+  <tr><td>GPT-4o-mini</td><td>~¥1.05</td><td>~¥4.20</td><td>~¥0.60</td><td>—</td></tr>
+  <tr><td>Claude 3.5 Sonnet</td><td>~¥21.00</td><td>~¥105.00</td><td>~¥11.92</td><td>—</td></tr>
+</table>
+<p class="note">HY 比 DeepSeek 输出贵 2x，但在绝对金额上差异极小。按 91% HY + 8% DS 混合计算，月均成本约 ¥0.59/30 万 Token。</p>
+
+<hr class="divider">
+<p style="text-align:center;color:#999;font-size:13px;">Dom-Crush Business Model v2.0 · 2026-06 · 数据来源：CloudBase token_usage_records 聚合查询（365条真实记录）+ CloudBase system_settings 后台实际配置 + 混元 HY / DeepSeek 官方定价 · 主力模型：hy3-preview (91%)</p>
+
+</body>
+</html>

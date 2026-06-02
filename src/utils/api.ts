@@ -103,15 +103,29 @@ function cacheSelfProfile(profile: any) {
   safeSetStorageAny('selfProfile', profile)
 }
 
+function resolveLoginDisplayName(result: any) {
+  return String(result?.displayName || result?.nickName || result?.nickname || result?.email || '').trim()
+}
+
 function cacheLoginUser(result: any) {
   if (!result || typeof result !== 'object') return
+  const displayName = resolveLoginDisplayName(result)
+  const nickName = String(result.nickName || result.nickname || '').trim()
+  const avatarUrl = String(result.avatarUrl || '').trim()
   safeSetStorage('userId', result.userId || '')
   safeSetStorage('userEmail', result.email || '')
+  safeSetStorage('userDisplayName', displayName)
+  safeSetStorage('userNickName', nickName)
+  safeSetStorage('userAvatarUrl', avatarUrl)
   safeSetStorage('userRole', result.role || (result.isAdmin ? 'admin' : 'user'))
   safeSetStorageAny('userIsAdmin', Boolean(result.isAdmin || result.role === 'admin'))
   safeSetStorageAny('currentUser', {
     id: result.userId || '',
     email: result.email || '',
+    phone: result.phoneMasked || result.phone || '',
+    displayName,
+    nickName,
+    avatarUrl,
     role: result.role || (result.isAdmin ? 'admin' : 'user'),
     isAdmin: Boolean(result.isAdmin || result.role === 'admin')
   })
@@ -222,16 +236,13 @@ async function verifyTicketLogin(expectedUserId: string, maxRetries = 10): Promi
  * 鐢ㄦ埛鐧诲綍
  */
 export async function login(email: string, password: string) {
-  console.log('[api] login start')
   await clearLocalAuthState()
   await ensureAnonymousAuth()
 
-  console.log('[api] login call cloud function')
   const res = await app.callFunction({
     name: 'login',
     data: { email, password }
   })
-  console.log('[api] login cloud function returned', res?.result)
 
   // #ifdef MP-WEIXIN
   if (res.result.success) {
@@ -263,15 +274,22 @@ export async function login(email: string, password: string) {
 /**
  * 鐢ㄦ埛娉ㄥ唽
  */
-export async function wechatLogin(code: string) {
-  console.log('[api] wechatLogin start')
+export async function wechatLogin(code = '', profile: { nickName?: string; nickname?: string; avatarUrl?: string; loginCode?: string } = {}) {
   await clearLocalAuthState()
+  const phoneCode = String(code || '').trim()
+  const nickName = String(profile.nickName || profile.nickname || '').trim()
+  const avatarUrl = String(profile.avatarUrl || '').trim()
+  const loginCode = String(profile.loginCode || '').trim()
 
   const res = await app.callFunction({
     name: 'wechatLogin',
-    data: { code }
+    data: {
+      ...(phoneCode ? { code: phoneCode } : {}),
+      ...(loginCode ? { loginCode } : {}),
+      ...(nickName ? { nickName } : {}),
+      ...(avatarUrl ? { avatarUrl } : {})
+    }
   })
-  console.log('[api] wechatLogin cloud function returned', res?.result)
 
   if (res.result?.success) {
     cacheLoginUser(res.result)
@@ -287,16 +305,13 @@ export async function wechatLogin(code: string) {
 }
 
 export async function register(email: string, password: string) {
-  console.log('[api] register start')
   await clearLocalAuthState()
   await ensureAnonymousAuth()
 
-  console.log('[api] register call cloud function')
   const res = await app.callFunction({
     name: 'register',
     data: { email, password }
   })
-  console.log('[api] register cloud function returned', res?.result)
 
   // #ifdef MP-WEIXIN
   if (res.result.success) {
@@ -335,6 +350,9 @@ export async function logout() {
   uni.removeStorageSync('userId')
   uni.removeStorageSync('userEmail')
   uni.removeStorageSync('userPhone')
+  uni.removeStorageSync('userDisplayName')
+  uni.removeStorageSync('userNickName')
+  uni.removeStorageSync('userAvatarUrl')
   uni.removeStorageSync('userRole')
   uni.removeStorageSync('userIsAdmin')
   uni.removeStorageSync('currentUser')
@@ -582,6 +600,14 @@ export async function generatePetReplyPair(scene: string, content: string, tone?
   return res.result
 }
 
+export async function generatePetReplyBundle(scene: string, content: string) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'replyBundle', scene, content, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 export async function pickQALines(content: string) {
   const res = await callFunction({
     name: 'petLines',
@@ -674,6 +700,14 @@ export async function getTokenUsage(limit = 50) {
   return res.result
 }
 
+export async function getVoiceUsage(limit = 50) {
+  const res = await callFunction({
+    name: 'getVoiceUsage',
+    data: { limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 export async function getTokenAccount(action?: string) {
   const res = await callFunction({
     name: 'getTokenAccount',
@@ -736,7 +770,7 @@ export async function adminGetTokenLedger(userId: string, limit = 50) {
   return res.result
 }
 
-// ==================== 周复盘 ====================
+// ==================== 14天复盘 ====================
 
 export async function getWeeklyReviews(_userId: string, caseId: string) {
   const res = await callFunction({
@@ -744,7 +778,7 @@ export async function getWeeklyReviews(_userId: string, caseId: string) {
     data: { action: 'list', caseId }
   })
   if (!res.result?.success) {
-    throw new Error(res.result?.message || '获取周复盘失败')
+    throw new Error(res.result?.message || '获取14天复盘失败')
   }
   return res.result
 }
@@ -755,7 +789,7 @@ export async function generateWeeklyReview(_userId: string, caseId: string, week
     data: { action: 'generate', caseId, weekStart }
   })
   if (!res.result?.success) {
-    throw Object.assign(new Error(res.result?.message || '生成周复盘失败'), res.result || {})
+    throw Object.assign(new Error(res.result?.message || '生成14天复盘失败'), res.result || {})
   }
   return res.result
 }
@@ -766,7 +800,7 @@ export async function generateWeeklySideRead(_userId: string, caseId: string, we
     data: { action: 'generateSideRead', caseId, weekStart }
   })
   if (!res.result?.success) {
-    throw Object.assign(new Error(res.result?.message || '生成本周侧写失败'), res.result || {})
+    throw Object.assign(new Error(res.result?.message || '生成近14天星象速写失败'), res.result || {})
   }
   return res.result
 }

@@ -1,7 +1,7 @@
 <template>
   <view class="page v2-mode" :style="themeVars">
     <view class="hero-block-v2">
-      <text class="hero-tag-v2">EXPLAIN</text>
+      <text class="hero-tag-v2">LABEL GUIDE</text>
       <text class="hero-title-v2">判断<text class="hl-v2">说明</text></text>
       <text class="hero-copy-v2">按展示位置解释系统里会出现的标签，避免把不同口径混在一起看。</text>
     </view>
@@ -11,9 +11,14 @@
         <text class="explain-arrow-v2">{{ expandedSections[section.key] ? '收起' : '展开' }}</text>
       </view>
       <view v-if="expandedSections[section.key]" class="explain-body-v2">
-        <view v-for="item in section.items" :key="item.label" class="explain-item-v2">
-          <text class="explain-item-title-v2">{{ item.label }}<text v-if="item.range"> · {{ item.range }}</text></text>
-          <text class="explain-item-desc-v2">{{ item.description }}</text>
+        <view v-for="group in section.groups" :key="group.label" class="explain-subgroup-v2">
+          <text class="explain-subtitle-v2">{{ group.label }}</text>
+          <view v-for="item in group.items" :key="item.label" class="explain-item-v2">
+            <text class="explain-item-title-v2">
+              {{ item.label }}<text v-if="item.range"> · {{ item.range }}</text><text v-if="item.confidence"> · {{ item.confidence }}</text>
+            </text>
+            <text class="explain-item-desc-v2">{{ item.description }}</text>
+          </view>
         </view>
       </view>
     </view>
@@ -33,46 +38,103 @@ onLoad(() => {
 })
 
 const explainSections = computed(() => [
-  { key: 'snapshot' as const, label: '最新分析标签', items: snapshotItems },
-  { key: 'profile' as const, label: '对象画像标签', items: profileTagItems },
-  { key: 'trend14' as const, label: '14天趋势标签', items: trend14Items },
-  { key: 'weeklyTrend' as const, label: '本周复盘标签', items: weeklyTrendItems },
-  { key: 'record' as const, label: '事件记录标签', items: [...eventTypeItems, ...subjectRoleItems, ...relationTypeItems] },
-  { key: 'evidence' as const, label: '分数与证据说明', items: [...intentLevels, ...riskLevels, ...evidenceLevels] },
-  { key: 'status' as const, label: '状态与问题标签', items: [...phaseItems, ...vibeItems, ...problemItems] },
-  { key: 'action' as const, label: '下一步动作标签', items: nextActionItems }
+  {
+    key: 'analysisScore' as const,
+    label: '分析分数',
+    groups: [
+      { label: '意向', items: intentLevels },
+      { label: '风险', items: riskLevels },
+      { label: '证据', items: evidenceLevels },
+      { label: '其他标记', items: snapshotOtherItems }
+    ]
+  },
+  {
+    key: 'profile' as const,
+    label: '人物标签',
+    groups: [
+      { label: '关系类型', items: profileRelationItems },
+      { label: '基础信息', items: profileBasicItems },
+      { label: '趣味标签', items: profileFunItems }
+    ]
+  },
+  {
+    key: 'trend' as const,
+    label: '趋势变化',
+    groups: [
+      { label: '14天意向', items: trend14IntentItems },
+      { label: '14天风险', items: trend14RiskItems },
+      { label: '波动', items: trend14VolatilityItems },
+      { label: '样本', items: trend14SampleItems },
+      { label: '近14天复盘', items: weeklyTrendItems }
+    ]
+  },
+  {
+    key: 'judgment' as const,
+    label: '综合判断',
+    groups: [
+      { label: '阶段', items: phaseItems },
+      { label: '氛围', items: vibeItems },
+      { label: '风险信号', items: problemItems },
+      { label: '行动建议', items: nextActionItems }
+    ]
+  },
+  {
+    key: 'event' as const,
+    label: '事件标签',
+    groups: [
+      { label: '事件性质', items: eventTypeItems },
+      { label: '事件主体', items: subjectRoleItems }
+    ]
+  }
 ])
 
-const expandedSections = ref({
-  snapshot: true, profile: false, trend14: false, weeklyTrend: false,
-  record: false, evidence: false, status: false, action: false
+type ExplainSectionKey = 'analysisScore' | 'profile' | 'trend' | 'judgment' | 'event'
+
+const expandedSections = ref<Record<ExplainSectionKey, boolean>>({
+  analysisScore: true,
+  profile: false,
+  trend: false,
+  judgment: false,
+  event: false
 })
 
-function toggleSection(key: 'snapshot' | 'profile' | 'trend14' | 'weeklyTrend' | 'record' | 'evidence' | 'status' | 'action') {
+function toggleSection(key: ExplainSectionKey) {
   expandedSections.value[key] = !expandedSections.value[key]
 }
 
-const snapshotItems = [
-  { label: '最新 · 中高意向', description: '表示最新一次分析里的意向等级。它是当前快照，不代表 14 天趋势或本周总结。' },
-  { label: '风险 · 低风险', description: '表示最新一次分析里的一致性风险等级。风险越高，越要优先看回避、拖延、失约和前后不一致。' },
-  { label: '证据 E1-E5', description: '表示这次分析背后的样本和事实强度。E 越高，判断越不依赖单次感觉。' },
+const snapshotOtherItems = [
   { label: 'AI 分析', description: '表示最新分析由 AI 参与生成或分析，属于单次分析口径。' }
 ]
 
-const profileTagItems = [
-  { label: '恋爱对象 / 朋友 / 同事 / 同学 / 老师', description: '对象关系类型，只说明分析语境，不直接代表好坏。' },
-  { label: '年龄 / 性别 / 职业', description: '对象画像信息，用来帮助理解生活阶段和互动场景。' },
-  { label: '属相 / 星座', description: '轻娱乐侧写入口，不参与核心意向分、风险分和证据等级。' }
+const profileRelationItems = [
+  { label: 'Crush / 朋友 / 同事 / 同学 / 老师', description: 'Crush 关系类型，只说明分析语境，不直接代表好坏。' },
 ]
 
-const trend14Items = [
+const profileBasicItems = [
+  { label: '年龄 / 性别 / 职业', description: 'Crush 画像信息，用来帮助理解生活阶段和互动场景。' },
+]
+
+const profileFunItems = [
+  { label: '属相 / 星座', description: '轻娱乐星象速写入口，不参与核心意向分、风险分和证据等级。' }
+]
+
+const trend14IntentItems = [
   { label: '14天意向上行', description: '近 14 天内，最新意向分相比区间起点明显上升。它是数据变化，不等于关系阶段。' },
   { label: '14天意向回落', description: '近 14 天内，最新意向分相比区间起点明显下降。' },
   { label: '14天意向平稳', description: '近 14 天内，意向分没有出现明显净变化。' },
+]
+
+const trend14RiskItems = [
   { label: '14天风险回落', description: '近 14 天内，风险分相比区间起点下降。' },
   { label: '14天风险抬头', description: '近 14 天内，风险分相比区间起点上升，需要优先回看风险事件。' },
   { label: '14天风险平稳', description: '近 14 天内，风险分没有明显净变化。' },
+]
+
+const trend14VolatilityItems = [
   { label: '波动偏低 / 波动中等 / 波动偏高', description: '描述最近几次分析分数的起伏程度，不直接判断关系好坏。' },
+]
+
+const trend14SampleItems = [
   { label: '样本充足 / 样本偏少', description: '描述近期分析数量是否足够支撑趋势观察。样本偏少时不适合下重结论。' }
 ]
 
@@ -117,12 +179,12 @@ const vibeItems = [
 ]
 
 const weeklyTrendItems = [
-  { label: '本周回暖', description: '本周整体更偏正向，意向净变化较好，且风险没有同步明显抬头。' },
-  { label: '本周转弱', description: '本周意向明显回落，关系热度或推进感在下降。' },
-  { label: '本周承压', description: '本周更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
-  { label: '本周波动', description: '本周分数变化较明显，但暂时还不适合下单向结论。' },
-  { label: '本周平稳', description: '本周整体没有出现足够强的新变化，先继续记录。' },
-  { label: 'AI 复盘', description: '表示这块内容是按周汇总生成，不等同于单次 AI 分析。' }
+  { label: '近14天回暖', description: '近14天整体更偏正向，意向净变化较好，且风险没有同步明显抬头。' },
+  { label: '近14天转弱', description: '近14天意向明显回落，关系热度或推进感在下降。' },
+  { label: '近14天承压', description: '近14天更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
+  { label: '近14天波动', description: '近14天分数变化较明显，但暂时还不适合下单向结论。' },
+  { label: '近14天平稳', description: '近14天整体没有出现足够强的新变化，先继续记录。' },
+  { label: 'AI 复盘', description: '表示这块内容是按近14天窗口汇总生成，不等同于单次 AI 分析。' }
 ]
 
 const nextActionItems = [
@@ -134,7 +196,7 @@ const nextActionItems = [
 const problemItems = [
   { label: '单向投入', description: '大部分推进成本还在你这边，对方没有给出相称的主动和投入。' },
   { label: '口头热情，行动不足', description: '嘴上不差，但落到见面、安排、兑现这些动作上还不够。' },
-  { label: '关键问题难验证', description: '有些关键说法、承诺、身份或时间线当前还对不上，或很难核实。' },
+  { label: '关键问题难验证', description: '有些关键说法、承诺、身份或往事当前还对不上，或很难核实。' },
   { label: '节奏明显不稳定', description: '热度、态度或推进节奏前后反复，单次高点不代表整体趋势。' },
   { label: '证据不足', description: '现阶段样本太少，很多判断仍停留在感觉层。' },
   { label: '暂无突出问题', description: '当前没有特别突出的结构性问题标签，不代表关系就一定稳定。' }
@@ -149,25 +211,18 @@ const eventTypeItems = [
 ]
 
 const subjectRoleItems = [
-  { label: '对方', description: '这条一句话主要描述关系对象，对方动作会直接参与本次判断。' },
+  { label: '对方', description: '这条一句话主要描述 Crush，对方动作会直接参与本次判断。' },
   { label: '自己', description: '这条主要是你的状态记录，不会因为"我准备了什么"就直接提高对方意向。' },
   { label: '互动', description: '这条描述双方互动，系统会拆分"你做了什么"和"对方回应了什么"。' },
   { label: '未知', description: '主体不清时权重会更低，除非文字里明确写出对方动作。' }
 ]
 
-const relationTypeItems = [
-  { label: '恋爱对象', description: '按恋爱关系的互动逻辑来分析推进、风险和兑现。' },
-  { label: '朋友', description: '按友谊逻辑来分析靠近、边界和稳定性。' },
-  { label: '同事', description: '按职场互动逻辑来分析合作、信任和边界感。' },
-  { label: '同学', description: '按校园社交逻辑来分析相处频率、共同活动和群体关系。' },
-  { label: '老师', description: '按师生互动逻辑来分析指导关系、距离感和角色边界。' }
-]
 </script>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: var(--spacing-page, 24rpx); box-sizing: border-box; }
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
@@ -175,9 +230,12 @@ const relationTypeItems = [
 .v2-mode .explain-v2 { margin-top: 14rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .explain-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 18rpx; }
 .v2-mode .explain-title-v2 { font-size: 24rpx; font-weight: 800; color: #111; }
-.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 18rpx; font-weight: 800; color: #111; }
+.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: 2rpx solid #111; background: #fff; font-size: 18rpx; font-weight: 800; color: #111; }
 .v2-mode .explain-body-v2 { padding: 0 18rpx 18rpx; border-top: 2rpx solid #111; }
-.v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #e0e0e0; }
+.v2-mode .explain-subgroup-v2 { padding-top: 14rpx; }
+.v2-mode .explain-subgroup-v2 + .explain-subgroup-v2 { margin-top: 8rpx; }
+.v2-mode .explain-subtitle-v2 { display: block; padding: 8rpx 12rpx; border: 2rpx solid #111; background: #f9f9f9; color: #666; font-size: 20rpx; font-weight: 800; }
+.v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #111; }
 .v2-mode .explain-item-v2:last-child { border-bottom: none; }
 .v2-mode .explain-item-title-v2 { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
 .v2-mode .explain-item-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #999; margin-top: 2rpx; line-height: 1.4; }

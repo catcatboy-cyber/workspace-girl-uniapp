@@ -4,9 +4,9 @@
 
     <template v-else>
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">Settings / AI</text>
+        <text class="hero-tag-v2">AI SETTINGS</text>
         <text class="hero-title-v2">AI 事件分析设置</text>
-        <text class="hero-copy-v2">支持配置多个模型，可随时切换默认使用的模型。新增时间线事件时会优先用 AI 做结构化事件理解。</text>
+        <text class="hero-copy-v2">支持配置多个模型，可随时切换默认使用的模型。新增往事记录时会优先用 AI 做结构化事件理解。</text>
       </view>
 
       <!-- 保存/测试结果反馈 -->
@@ -395,20 +395,23 @@ function goBack() {
   transform: rotate(-0.5deg);
 }
 .v2-mode .hero-tag-v2 {
-  display: block;
-  font-size: 22rpx;
-  font-weight: 800;
-  color: rgba(0,0,0,0.5);
-  letter-spacing: 3rpx;
-  text-transform: uppercase;
+  display: inline-block;
+  background: #111;
+  color: #FFD93D;
+  padding: 6rpx 16rpx;
+  font-size: 20rpx;
+  font-weight: 900;
+  letter-spacing: 4rpx;
+  margin-bottom: 16rpx;
 }
 .v2-mode .hero-title-v2 {
   display: block;
   font-size: 48rpx;
   font-weight: 900;
   color: #111;
-  margin: 8rpx 0;
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -2rpx;
+  text-transform: uppercase;
 }
 .v2-mode .hero-copy-v2 {
   display: block;
@@ -467,7 +470,7 @@ function goBack() {
   justify-content: space-between;
   gap: 24rpx;
   padding: 18rpx 0;
-  border-bottom: 2rpx solid #e0e0e0;
+  border-bottom: 2rpx solid #111;
 }
 .v2-mode .switch-row-v2:last-child { border-bottom: 0; }
 .v2-mode .switch-label-v2 {
@@ -492,7 +495,7 @@ function goBack() {
   justify-content: space-between;
   margin-bottom: 16rpx;
   padding-bottom: 16rpx;
-  border-bottom: 2rpx solid #e0e0e0;
+  border-bottom: 2rpx solid #111;
 }
 .v2-mode .model-name-row-v2 {
   display: flex;
@@ -571,13 +574,13 @@ function goBack() {
   height: 56rpx;
   line-height: 56rpx;
   padding: 0 24rpx;
-  background: #4ECDC4;
+  background: #fff;
   color: #111;
   border: 3rpx solid #111;
   font-size: 24rpx;
   font-weight: 800;
-  box-shadow: 4rpx 4rpx 0 #111;
 }
+.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2.sm {
   height: 56rpx;
   line-height: 56rpx;

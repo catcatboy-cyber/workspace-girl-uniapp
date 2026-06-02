@@ -5,8 +5,8 @@
 <view class="container">
               <view class="header-v2"><text class="title-v2 en-title">Dom-Crush</text><text class="subtitle-v2">read the signals, not your mind.</text></view>
         <view v-if="isWechatMiniProgram" class="card-v2">
-          <button class="btn-v2-l primary" open-type="getPhoneNumber" :disabled="wechatLoading" @getphonenumber="handleWechatPhoneLogin" @error="handleWechatPhoneError">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
-          <text class="privacy-v2">{{ privacyCopy }}</text>
+          <button class="btn-v2-l primary" :disabled="wechatLoading" @click="handleWechatLogin">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
+          <text class="privacy-v2" @click="goAbout">{{ privacyCopy }}</text>
           <text v-if="wechatErrorMessage" class="error-v2">{{ wechatErrorMessage }}</text>
           <button class="btn-v2-l" @click="showEmailLogin = !showEmailLogin">{{ showEmailLogin ? hideEmailCopy : useEmailCopy }}</button>
         </view>
@@ -42,7 +42,7 @@ const rememberLogin = ref(false)
 const REMEMBER_LOGIN_KEY = 'rememberedEmailLogin'
 const wechatLoadingCopy = '\u767b\u5f55\u4e2d...'
 const wechatLoginCopy = '\u5fae\u4fe1\u4e00\u952e\u767b\u5f55'
-const privacyCopy = '\u4ec5\u7528\u4e8e\u4fdd\u5b58\u4f60\u7684\u8bb0\u5f55\u548c\u627e\u56de\u8d26\u53f7\uff0c\u4e0d\u4f1a\u516c\u5f00\u5c55\u793a\u3002'
+const privacyCopy = '\u767b\u5f55\u5373\u8868\u793a\u540c\u610f\u300a\u9690\u79c1\u653f\u7b56\u300b\u548c\u300a\u670d\u52a1\u6761\u6b3e\u300b\uff0c\u67e5\u770b\u8bf7\u524d\u5f80\u201c\u5173\u4e8e\u201d\u9875\u3002'
 const hideEmailCopy = '\u6536\u8d77\u90ae\u7bb1\u767b\u5f55'
 const useEmailCopy = '\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55'
 
@@ -54,7 +54,6 @@ onShow(() => {
   loadRememberedLogin()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
-  console.log('[page:login] show')
   resetCloudAuthState().catch(() => {})
 })
 
@@ -113,8 +112,26 @@ function goAfterLogin(result: any) {
   uni.switchTab({ url: '/pages/index/index' })
 }
 
+function getWechatLoginCode(): Promise<string> {
+  const wxApi = (globalThis as any)?.wx
+  if (!wxApi?.login) {
+    return Promise.resolve('')
+  }
+
+  return new Promise((resolve) => {
+    wxApi.login({
+      success(res: any) {
+        resolve(res?.code || '')
+      },
+      fail(error: any) {
+        console.warn('[page:login] wx.login failed:', error)
+        resolve('')
+      }
+    })
+  })
+}
+
 const handleLogin = async () => {
-  console.log('[page:login] handleLogin')
   // 验证输入
   if (!email.value.trim()) {
     errorMessage.value = '请输入邮箱'
@@ -146,28 +163,14 @@ const handleLogin = async () => {
   }
 }
 
-const handleWechatPhoneLogin = async (event: any) => {
-  try {
-  console.log('[page:login] handleWechatPhoneLogin', event?.detail)
-  const detail = event?.detail || {}
-  const code = detail.code
-
-  if (!code) {
-    const errMsg = String(detail.errMsg || '')
-    const noPermission = errMsg.includes('no permission') || errMsg.includes('has no permission') || detail.errno === 102
-    wechatErrorMessage.value = noPermission
-      ? '\u5f53\u524d\u5c0f\u7a0b\u5e8f\u8fd8\u6ca1\u6709\u5fae\u4fe1\u624b\u673a\u53f7\u6388\u6743\u80fd\u529b\uff0c\u9700\u5728\u5fae\u4fe1\u5c0f\u7a0b\u5e8f\u540e\u53f0\u5b8c\u6210\u8ba4\u8bc1\u5e76\u5f00\u901a\u3002'
-      : '\u672a\u83b7\u5f97\u624b\u673a\u53f7\u6388\u6743\uff0c\u4f60\u53ef\u4ee5\u91cd\u8bd5\u6216\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'
-    console.warn('[page:login] getPhoneNumber failed:', detail)
-    return
-  }
-
+const handleWechatLogin = async () => {
   wechatLoading.value = true
   errorMessage.value = ''
   wechatErrorMessage.value = ''
 
   try {
-    const result = await wechatLogin(code)
+    const loginCode = await getWechatLoginCode()
+    const result = await wechatLogin('', { loginCode })
     if (result?.success) {
       goAfterLogin(result)
     } else {
@@ -179,22 +182,17 @@ const handleWechatPhoneLogin = async (event: any) => {
   } finally {
     wechatLoading.value = false
   }
-  } catch (runtimeError: any) {
-    console.error('[page:login] runtime error in getPhoneNumber handler:', runtimeError)
-    wechatLoading.value = false
-    wechatErrorMessage.value = '\u83b7\u53d6\u624b\u673a\u53f7\u5931\u8d25\uff0c\u8bf7\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'
-  }
-}
-
-const handleWechatPhoneError = (event: any) => {
-  console.error('[page:login] getPhoneNumber native error:', event?.detail)
-  wechatLoading.value = false
-  wechatErrorMessage.value = '微信手机号授权失败，可切换为邮箱登录。'
 }
 
 const goRegister = () => {
   uni.navigateTo({
     url: '/pages/register/register'
+  })
+}
+
+const goAbout = () => {
+  uni.navigateTo({
+    url: '/pages/about/about'
   })
 }
 </script>
@@ -221,7 +219,7 @@ const goRegister = () => {
 .v2-mode .btn-v2-l.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2-l[disabled] { opacity: 0.6; }
 
-.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: 22rpx; font-weight: 600; color: #999; text-align: center; line-height: 1.5; }
+.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: 22rpx; font-weight: 600; color: #666; text-align: center; line-height: 1.5; text-decoration: underline; }
 .v2-mode .error-v2 { display: block; margin: 0 0 18rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 22rpx; font-weight: 600; color: #FF5252; }
 
 .v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }

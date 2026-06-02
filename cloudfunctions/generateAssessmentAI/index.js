@@ -74,6 +74,21 @@ async function getAISettings(userId) {
   return settings
 }
 
+function clampRuntimeNumber(value, fallback, min, max, integer = false) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  const clamped = Math.min(max, Math.max(min, parsed))
+  return integer ? Math.round(clamped) : Number(clamped.toFixed(2))
+}
+
+function getRuntimeConfig(settings = {}) {
+  const source = settings.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {}
+  return {
+    batchTagMaxTokens: clampRuntimeNumber(source.batchTagMaxTokens, 600, 200, 1200, true),
+    batchTagTemperature: clampRuntimeNumber(source.batchTagTemperature, 0.1, 0, 1)
+  }
+}
+
 async function getSelfProfile(userId) {
   const result = await db.collection('users').doc(userId).get().catch(() => null)
   const user = normalizeDoc(result)
@@ -140,9 +155,10 @@ async function batchTagEvents(event) {
   const models = Array.isArray(rawSettings.aiModels) ? rawSettings.aiModels : []
   const defaultId = rawSettings.aiDefaultModelId || ''
   const model = models.find((m) => m.id === defaultId) || models[0]
+  const runtimeConfig = getRuntimeConfig(rawSettings)
   if (!model) return { success: false, message: '没有可用 AI 模型' }
 
-  const balCheck = await checkBalance(db, userId, 600)
+  const balCheck = await checkBalance(db, userId, runtimeConfig.batchTagMaxTokens)
   if (!balCheck.ok) return { success: false, message: '余额不足', code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required }
 
   const userPrompt = `输入事件列表：\n${buildEventsContext(events)}`
@@ -156,8 +172,8 @@ async function batchTagEvents(event) {
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt }
     ],
-    temperature: 0.1,
-    maxTokens: 600
+    temperature: runtimeConfig.batchTagTemperature,
+    maxTokens: runtimeConfig.batchTagMaxTokens
   })
 
   if (!response.ok) {

@@ -2,7 +2,7 @@
   <view class="assessment-form">
     <!-- 基础信息 -->
     <view v-if="!questionsOnly" class="card">
-      <text class="h2">创建关系对象</text>
+      <text class="h2">创建 Crush</text>
       <view class="field-label">关系类型</view>
       <view class="toggle-row">
         <view
@@ -18,7 +18,7 @@
       <text class="muted">当前题库：{{ relationTypeLabel }}。切换类型后问答会同步调整。</text>
 
       <view class="field">
-        <view class="field-label">对象名称 / 关系名称</view>
+        <view class="field-label">Crush 名称 / 关系名称</view>
         <input
           v-model="caseName"
           class="text-input"
@@ -27,9 +27,9 @@
       </view>
     </view>
 
-    <!-- 对象画像 -->
+    <!-- Crush 画像 -->
     <view v-if="!questionsOnly" class="card">
-      <text class="h2">对象画像</text>
+      <text class="h2">Crush 画像</text>
       <text class="muted">画像信息仅辅助理解，不参与核心评分。</text>
 
       <view class="field">
@@ -44,7 +44,7 @@
 
         <view class="field">
           <view class="field-label">性别</view>
-          <picker :range="genderOptions" :value="genderIndex" @change="onGenderChange">
+          <picker class="field-picker" :range="genderOptions" :value="genderIndex" @change="onGenderChange">
             <view class="picker-view">{{ profile.gender || '请选择' }}</view>
           </picker>
         </view>
@@ -138,7 +138,7 @@ const emit = defineEmits<{
 }>()
 
 const relationTypeOptions = [
-  { value: 'romantic', label: '恋爱对象' },
+  { value: 'romantic', label: 'Crush' },
   { value: 'close_friend', label: '朋友' },
   { value: 'colleague', label: '同事' },
   { value: 'classmate', label: '同学' },
@@ -168,7 +168,7 @@ const submitLabel = computed(() => props.submitLabel || '生成分析结果')
 const questionsOnly = computed(() => props.questionsOnly === true)
 
 const relationTypeLabel = computed(() =>
-  relationTypeRef.value === 'close_friend' ? '朋友' : relationTypeRef.value === 'colleague' ? '同事' : relationTypeRef.value === 'classmate' ? '同学' : relationTypeRef.value === 'teacher' ? '老师' : '恋爱对象'
+  relationTypeRef.value === 'close_friend' ? '朋友' : relationTypeRef.value === 'colleague' ? '同事' : relationTypeRef.value === 'classmate' ? '同学' : relationTypeRef.value === 'teacher' ? '老师' : 'Crush'
 )
 
 const allQuestions = computed(() => getQuestionsForRelationType(relationTypeRef.value))
@@ -185,7 +185,7 @@ function onConstellationChange(e: any) { profile.constellation = constellationOp
 
 function handleSubmit() {
   if (!questionsOnly.value && !caseName.value.trim()) {
-    uni.showToast({ title: '请输入对象名称', icon: 'none' })
+    uni.showToast({ title: '请输入 Crush 名称', icon: 'none' })
     return
   }
   // 验证必填单选
@@ -232,7 +232,7 @@ function handleSubmit() {
   border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111;
   box-sizing: border-box; border-radius: 0;
 }
-.assessment-form input.text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
+.assessment-form .text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
 
 .assessment-form .picker-view { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; border-radius: 0; }
 
@@ -253,7 +253,7 @@ function handleSubmit() {
   background: #4ECDC4; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111;
   font-size: 28rpx; font-weight: 900; color: #111; margin-top: 14rpx;
 }
-.assessment-form .btn-primary[disabled] { opacity: 0.6; }
+.assessment-form .btn-primary:disabled { opacity: 0.6; }
 
 .assessment-form .btn-secondary {
   width: 100%; height: 64rpx; line-height: 64rpx; text-align: center;
@@ -267,6 +267,6 @@ function handleSubmit() {
 .assessment-form .actions .btn-primary, .assessment-form .actions .btn-secondary { flex: 1; }
 .assessment-form .profile-avatar { border: 3rpx solid #111; border-radius: 50%; }
 
-.assessment-form .field input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
-.assessment-form .field picker { display: block; }
+.assessment-form .field .text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
+.assessment-form .field .field-picker { display: block; }
 </style>

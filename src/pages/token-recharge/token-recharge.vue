@@ -1,7 +1,7 @@
 <template>
   <view class="page v2-mode">
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">ENERGY</text>
+        <text class="hero-tag-v2">TOKEN RECHARGE</text>
         <text class="hero-title-v2">充点<text class="hl-v2">Token能量</text></text>
         <text class="hero-copy-v2">当前可用额度：{{ balance.toLocaleString() }} token</text>
       </view>
@@ -126,7 +126,7 @@ async function createOrder(planId: string) {
 
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; text-transform: uppercase; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: #666; line-height: 1.5; }
 

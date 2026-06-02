@@ -4,17 +4,17 @@
 
     <view v-else-if="!caseFile" class="card-v2">
       <text class="section-title-v2">分析记录不可用</text>
-      <text class="card-text-v2">当前对象不存在或已被删除。</text>
+      <text class="card-text-v2">当前 Crush 不存在或已被删除。</text>
     </view>
 
     <template v-else>
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">Decision Records / {{ caseFile.name }}</text>
-        <text class="hero-title-v2">一个对象已经支持多次分析记录</text>
+        <text class="hero-tag-v2">DECISION RECORDS / {{ caseFile.name }}</text>
+        <text class="hero-title-v2">一个 Crush 已经支持多次分析记录</text>
         <text class="hero-copy-v2">初评、手动重判和事件驱动重算都会累计到这里，方便你回看判断是怎么变化的。</text>
         <view class="hero-actions-v2">
-          <button class="btn-v2 sm" @click="goCaseDetail">返回关系主页</button>
-          <button class="btn-v2 sm" @click="goTimeline">打开时间线</button>
+          <button class="btn-v2 sm" @click="goCaseDetail">返回我们</button>
+          <button class="btn-v2 sm" @click="goTimeline">打开往事</button>
         </view>
       </view>
 
@@ -101,7 +101,7 @@
 
           <view v-if="statusSnapshots[index]" class="status-snapshot-box">
             <view class="status-head">
-              <text class="ai-panel-label">对象状态</text>
+              <text class="ai-panel-label">Crush 状态</text>
               <view class="status-tags">
                 <text class="status-chip">{{ statusSnapshots[index].phase }}</text>
                 <text class="status-chip">{{ statusSnapshots[index].vibe }}</text>
@@ -131,7 +131,7 @@
           </view>
 
           <view v-if="sideSnapshots[index]" class="side-snapshot-box">
-            <text class="ai-panel-label">侧写快照</text>
+            <text class="ai-panel-label">星象速写快照</text>
             <text class="headline" user-select>{{ sideSnapshots[index].summary }}</text>
             <view class="side-grid">
               <view v-for="section in sideSnapshots[index].sections" :key="section.label" class="side-item">
@@ -464,16 +464,17 @@ function goTimelineEvent(eventId: string) {
   box-shadow: 8rpx 8rpx 0 #111;
   transform: rotate(-0.5deg);
 }
-.v2-mode .hero-tag-v2 { display: block; font-size: 22rpx; font-weight: 800; color: rgba(0,0,0,0.5); letter-spacing: 3rpx; text-transform: uppercase; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; margin: 8rpx 0; line-height: 1.2; }
-.v2-mode .hero-copy-v2 { display: block; font-size: 24rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.6; margin-top: 8rpx; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .hero-actions-v2 { display: flex; gap: 12rpx; margin-top: 20rpx; flex-wrap: wrap; }
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; padding: 28rpx; margin-bottom: 24rpx; box-shadow: 6rpx 6rpx 0 #111; }
 .v2-mode .section-title-v2 { display: block; font-size: 32rpx; font-weight: 900; color: #111; margin-bottom: 14rpx; line-height: 1.3; }
 .v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.6; margin: 6rpx 0; }
 
-.v2-mode .btn-v2 { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; background: #4ECDC4; color: #111; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .btn-v2 { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; background: #fff; color: #111; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; }
+.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2.sm { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; font-size: 24rpx; }
 
 .v2-mode .grid-v2 { display: flex; flex-direction: column; gap: 18rpx; }
@@ -486,7 +487,7 @@ function goTimelineEvent(eventId: string) {
   padding: 28rpx;
   box-shadow: 6rpx 6rpx 0 #111;
 }
-.v2-mode .a-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18rpx; padding-bottom: 18rpx; border-bottom: 2rpx solid #e0e0e0; }
+.v2-mode .a-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18rpx; padding-bottom: 18rpx; border-bottom: 2rpx solid #111; }
 .v2-mode .a-title-group { flex: 1; min-width: 0; }
 .v2-mode .a-title { display: block; font-size: 30rpx; line-height: 1.35; font-weight: 900; color: #111; }
 .v2-mode .a-time { display: block; margin-top: 4rpx; font-size: 22rpx; font-weight: 600; color: #999; }
@@ -507,7 +508,7 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .label-chip,
 .v2-mode .status-chip { display: inline-block; min-height: 38rpx; padding: 0 14rpx; border: 2rpx solid #111; background: #fff; font-size: 21rpx; line-height: 38rpx; font-weight: 700; color: #111; }
 .v2-mode .event-actions { margin-top: 14rpx; }
-.v2-mode .mini-link { display: inline-flex; align-items: center; justify-content: center; height: 48rpx; line-height: 48rpx; margin: 0; padding: 0 18rpx; border: 2rpx solid #111; background: #FFD93D; color: #111; font-size: 22rpx; font-weight: 800; }
+.v2-mode .mini-link { display: inline-flex; align-items: center; justify-content: center; height: 48rpx; line-height: 48rpx; margin: 0; padding: 0 18rpx; border: 2rpx solid #111; background: #fff; color: #111; font-size: 22rpx; font-weight: 800; }
 .v2-mode .mini-link::after { border: 0; }
 
 /* Evidence */
@@ -538,8 +539,9 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .trace-label { color: #111; font-size: 22rpx; font-weight: 800; }
 .v2-mode .trace-value { color: #111; font-size: 24rpx; font-weight: 700; }
 .v2-mode .image-link-list { display: flex; flex-direction: column; gap: 12rpx; margin-top: 10rpx; }
-.v2-mode .image-link-item { padding: 14rpx 16rpx; background: #fff; border: 2rpx solid #111; }
-.v2-mode .image-link-url { margin-top: 6rpx; color: #666; font-size: 21rpx; line-height: 1.35; word-break: break-all; font-weight: 600; }
+.v2-mode .image-link-item { min-width: 0; overflow: hidden; padding: 14rpx 16rpx; background: #fff; border: 2rpx solid #111; }
+.v2-mode .image-link-item .trace-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2-mode .image-link-url { display: block; margin-top: 6rpx; color: #666; font-size: 21rpx; line-height: 1.35; word-break: break-all; font-weight: 600; }
 .v2-mode .side-grid { display: flex; flex-direction: column; gap: 12rpx; margin-top: 14rpx; }
 .v2-mode .side-item { padding: 16rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .side-label { display: block; color: #111; font-size: 23rpx; font-weight: 800; }
@@ -564,6 +566,6 @@ function goTimelineEvent(eventId: string) {
 
 .v2-mode .headline { display: block; font-size: 26rpx; line-height: 1.55; font-weight: 800; color: #111; }
 .v2-mode .bullets { margin-top: 12rpx; }
-.v2-mode .caution-list { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #e0e0e0; }
+.v2-mode .caution-list { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #111; }
 .v2-mode .bullet { display: block; margin-top: 8rpx; font-size: 24rpx; font-weight: 600; line-height: 1.55; color: #666; }
 </style>

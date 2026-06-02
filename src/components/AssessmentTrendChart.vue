@@ -215,7 +215,7 @@ function formatTime(createdAt?: string) {
 
 .legend-row { display: flex; align-items: center; flex-wrap: wrap; gap: 16rpx; margin-bottom: 14rpx; }
 .legend-item { display: flex; align-items: center; gap: 8rpx; color: #111; font-size: 23rpx; font-weight: 700; }
-.legend-line { width: 34rpx; height: 5rpx; }
+.legend-line { width: 34rpx; height: 3rpx; }
 .legend-line.intent { background: #111; }
 .legend-line.risk { background: #FF5252; }
 .legend-tip { color: #666; font-size: 21rpx; font-weight: 600; }
@@ -228,32 +228,32 @@ function formatTime(createdAt?: string) {
 
 .grid-line {
   position: absolute; left: 34rpx; right: 28rpx; height: 2rpx;
-  background: #e0e0e0;
+  background: #111;
 }
 .grid-line text {
   position: absolute; left: -4rpx; top: -18rpx; transform: translateX(-100%);
-  color: #666; font-size: 19rpx; font-weight: 600;
+  color: #666; font-size: 16rpx; font-weight: 600;
 }
 .grid-line.top { top: 44rpx; }
 .grid-line.middle { top: 174rpx; }
 .grid-line.bottom { top: 304rpx; }
 
-.line-segment { position: absolute; height: 5rpx; transform-origin: 0 50%; }
+.line-segment { position: absolute; height: 3rpx; transform-origin: 0 50%; }
 .line-segment.intent { background: #111; }
 .line-segment.risk { background: #FF5252; }
 
 .point {
-  position: absolute; width: 34rpx; height: 34rpx;
-  margin-left: -17rpx; margin-top: -17rpx;
+  position: absolute; width: 22rpx; height: 22rpx;
+  margin-left: -11rpx; margin-top: -11rpx;
   border-radius: 50%;
-  border: 4rpx solid #fff;
+  border: 2rpx solid #fff;
   box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
 }
-.point text { position: absolute; top: -34rpx; color: #111; font-size: 19rpx; font-weight: 800; }
+.point text { position: absolute; top: -22rpx; color: #111; font-size: 19rpx; font-weight: 800; }
 .point.intent { background: #111; }
 .point.risk { background: #FF5252; }
-.point.risk text { top: 28rpx; }
+.point.risk text { top: 18rpx; }
 
 .x-label { position: absolute; top: 330rpx; width: 116rpx; margin-left: -58rpx; text-align: center; }
 .x-index, .x-time { display: block; color: #666; font-size: 20rpx; line-height: 1.3; font-weight: 600; }

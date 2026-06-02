@@ -4,25 +4,25 @@
 
     <view v-else-if="!caseFile" class="card-v2">
       <text class="section-title-v2">无法编辑画像</text>
-      <text class="card-text-v2">当前对象不存在或已被删除。</text>
+      <text class="card-text-v2">当前 Crush 不存在或已被删除。</text>
     </view>
 
     <template v-else>
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">编辑画像 / {{ caseFile.name }}</text>
+        <text class="hero-tag-v2">EDIT PROFILE / {{ caseFile.name }}</text>
         <view class="hero-head-v2">
           <view class="profile-avatar-v2 lg">
             <image v-if="profile.avatar" :src="profile.avatarPreviewUrl || profile.avatar" mode="aspectFill" />
             <text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseName || caseFile.name) }}</text>
           </view>
           <view class="hero-copy-v2">
-            <text class="hero-title-v2">修改对象名称和画像信息</text>
-            <text class="hero-copy-v2-sub">更新的是对象资料层信息，不会改动历史分析。</text>
+            <text class="hero-title-v2">修改 Crush 名称和画像信息</text>
+            <text class="hero-copy-v2-sub">更新的是 Crush 资料层信息，不会改动历史分析。</text>
           </view>
         </view>
         <view class="hero-actions-v2">
-          <button class="btn-v2 sm" @click="goCaseDetail">返回关系主页</button>
-          <button class="btn-v2 sm" @click="goTimeline">查看时间线</button>
+          <button class="btn-v2 sm" @click="goCaseDetail">返回我们</button>
+          <button class="btn-v2 sm" @click="goTimeline">查看往事</button>
         </view>
       </view>
 
@@ -43,15 +43,15 @@
       </view>
 
       <view class="card-v2">
-        <text class="section-title-v2">对象基础信息</text>
+        <text class="section-title-v2">Crush 基础信息</text>
         <view class="field-v2">
-          <text class="field-label-v2">对象名称 / 关系名称</text>
+          <text class="field-label-v2">Crush 名称 / 关系名称</text>
           <input v-model="caseName" class="input-v2" />
         </view>
       </view>
 
       <view class="card-v2">
-        <text class="section-title-v2">对象画像</text>
+        <text class="section-title-v2">Crush 画像</text>
         <text class="card-text-v2">这些信息只用于辅助理解，不参与核心评分。</text>
 
         <view class="field-v2">
@@ -125,7 +125,7 @@ const caseName = ref('')
 const themeVars = ref(getThemeStyle())
 
 const relationTypeOptions = ['romantic', 'close_friend', 'colleague', 'classmate', 'teacher']
-const relationTypeLabels = ['恋爱对象', '朋友', '同事', '同学', '老师']
+const relationTypeLabels = ['Crush', '朋友', '同事', '同学', '老师']
 const genderOptions = ['男', '女', '非二元', '未说明']
 const zodiacOptions = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
 const constellationOptions = [
@@ -145,7 +145,7 @@ const profile = reactive({
 })
 
 const relationTypeIndex = computed(() => Math.max(0, relationTypeOptions.indexOf(profile.relationType)))
-const relationTypeLabel = computed(() => relationTypeLabels[relationTypeIndex.value] || '恋爱对象')
+const relationTypeLabel = computed(() => relationTypeLabels[relationTypeIndex.value] || 'Crush')
 const genderIndex = computed(() => Math.max(0, genderOptions.indexOf(profile.gender)))
 const zodiacIndex = computed(() => Math.max(0, zodiacOptions.indexOf(profile.zodiac)))
 const constellationIndex = computed(() => Math.max(0, constellationOptions.indexOf(profile.constellation)))
@@ -214,7 +214,7 @@ async function loadData() {
 
 async function onSave() {
   if (!caseName.value.trim()) {
-    showError('请填写对象名称')
+    showError('请填写 Crush 名称')
     return
   }
   saving.value = true
@@ -271,19 +271,23 @@ function goTimeline() {
   transform: rotate(-0.5deg);
 }
 .v2-mode .hero-tag-v2 {
-  display: block;
-  font-size: 22rpx;
-  font-weight: 800;
-  color: rgba(0,0,0,0.5);
-  letter-spacing: 3rpx;
-  text-transform: uppercase;
+  display: inline-block;
+  background: #111;
+  color: #FFD93D;
+  padding: 6rpx 16rpx;
+  font-size: 20rpx;
+  font-weight: 900;
+  letter-spacing: 4rpx;
+  margin-bottom: 16rpx;
 }
 .v2-mode .hero-title-v2 {
   display: block;
-  font-size: 36rpx;
+  font-size: 48rpx;
   font-weight: 900;
   color: #111;
-  line-height: 1.25;
+  line-height: 1.15;
+  letter-spacing: -2rpx;
+  text-transform: uppercase;
 }
 .v2-mode .hero-head-v2 { display: flex; gap: 20rpx; align-items: center; margin-top: 14rpx; }
 .v2-mode .hero-copy-v2 { flex: 1; }
@@ -353,7 +357,7 @@ function goTimeline() {
 .v2-mode .insight-item-v2 { font-size: 26rpx; font-weight: 700; color: #111; line-height: 1.6; }
 
 /* Fields */
-.v2-mode .field-v2 { margin-top: 16rpx; padding: 18rpx 0; border-bottom: 2rpx solid #e0e0e0; }
+.v2-mode .field-v2 { margin-top: 16rpx; padding: 18rpx 0; border-bottom: 2rpx solid #111; }
 .v2-mode .field-v2:last-child { border-bottom: 0; }
 .v2-mode .field-label-v2 {
   display: block;
@@ -401,13 +405,13 @@ function goTimeline() {
   height: 56rpx;
   line-height: 56rpx;
   padding: 0 24rpx;
-  background: #4ECDC4;
+  background: #fff;
   color: #111;
   border: 3rpx solid #111;
   font-size: 24rpx;
   font-weight: 800;
-  box-shadow: 4rpx 4rpx 0 #111;
 }
+.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2.sm {
   height: 56rpx;
   line-height: 56rpx;

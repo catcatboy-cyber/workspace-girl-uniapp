@@ -1,6 +1,6 @@
 <template>
   <view class="page v2-mode" :style="themeVars">
-    <view class="hero-block-v2"><text class="hero-tag-v2">NEW CASE</text><text class="hero-title-v2">新建<text class="hl-v2">对象</text></text><text class="hero-copy-v2">只有当你要开始判断一个新的对象时，才需要重新填写这份初次分析。已有对象更适合继续追加事件和滚动观察。</text><view class="btn-row-v2"><button class="btn-v2-n" @click="goHome">返回首页</button><button class="btn-v2-n" @click="goCases">查看已有对象</button></view></view>
+    <view class="hero-block-v2"><text class="hero-tag-v2">NEW CRUSH</text><text class="hero-title-v2">新建<text class="hl-v2">Crush</text></text><text class="hero-copy-v2">只有当你要开始判断一个新的 Crush 时，才需要重新填写这份初次分析。已有 Crush 更适合继续追加事件和滚动观察。</text><view class="btn-row-v2"><button class="btn-v2-n" @click="goHome">返回首页</button><button class="btn-v2-n" @click="goCases">查看 Crushes</button></view></view>
     <AssessmentForm @submit="onSubmit" />
   </view>
 </template>
@@ -37,7 +37,6 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
     })
 
     uni.hideLoading()
-    console.log('[createCase] result:', res)
 
     if (res.success) {
       showSuccess('已创建')
@@ -81,7 +80,7 @@ function goCases() {
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }

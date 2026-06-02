@@ -9,7 +9,7 @@
     {
       "path": "pages/new/new",
       "style": {
-        "navigationBarTitleText": "新建案例"
+        "navigationBarTitleText": "新建 Crush"
       }
     },
     {
@@ -29,13 +29,13 @@
     {
       "path": "pages/cases/cases",
       "style": {
-        "navigationBarTitleText": "我的案例"
+        "navigationBarTitleText": "Crushes"
       }
     },
     {
       "path": "pages/case-detail/case-detail",
       "style": {
-        "navigationBarTitleText": "关系主页"
+        "navigationBarTitleText": "我们"
       }
     },
     {
@@ -53,7 +53,7 @@
     {
       "path": "pages/weekly-review/weekly-review",
       "style": {
-        "navigationBarTitleText": "周复盘"
+        "navigationBarTitleText": "14天复盘"
       }
     },
     {
@@ -136,6 +136,13 @@
       }
     }
   ],
+  "permission": {
+    "scope.record": {
+      "desc": "用于语音识别输入，将你说的话转为文字"
+    }
+  },
+  "requiredPrivateInfos": ["record"],
+  "__usePrivacyCheck__": true,
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Dom-Crush",

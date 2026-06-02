@@ -12,6 +12,9 @@
   align-items: center;
   z-index: 10;
 }
+.tab-bar.is-hidden {
+  display: none;
+}
 .tab-inner {
   flex: 1;
   display: flex;

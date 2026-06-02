@@ -40,7 +40,6 @@ function ensureWxCloudReady() {
   if (!wx?.cloud) {
     throw new Error('微信云开发能力不可用，请在微信开发者工具中启用云开发')
   }
-  console.log('[cloudbase] init wx cloud env:', ENV_ID)
   wx.cloud.init({
     env: ENV_ID,
     traceUser: true
@@ -56,7 +55,6 @@ export const app = {
   callFunction(options: { name: string; data?: Record<string, any> }) {
     ensureWxCloudReady()
     const userId = getStoredUserId()
-    console.log(`[cloudbase] callFunction ${options.name} start`)
     return wx.cloud.callFunction({
       name: options.name,
       config: {
@@ -66,7 +64,6 @@ export const app = {
         ? { ...(options.data || {}), userId }
         : (options.data || {})
     }).then((result: any) => {
-      console.log(`[cloudbase] callFunction ${options.name} success`)
       return result
     }).catch((error: any) => {
       console.error(`[cloudbase] callFunction ${options.name} failed:`, error)
@@ -140,6 +137,9 @@ export async function resetCloudAuthState(options: { clearBusinessUser?: boolean
     removeLocalStorageKey('userId')
     removeLocalStorageKey('userEmail')
     removeLocalStorageKey('userPhone')
+    removeLocalStorageKey('userDisplayName')
+    removeLocalStorageKey('userNickName')
+    removeLocalStorageKey('userAvatarUrl')
     removeLocalStorageKey('userRole')
     removeLocalStorageKey('userIsAdmin')
     removeLocalStorageKey('currentUser')
@@ -180,6 +180,9 @@ export async function resetCloudAuthState(options: { clearBusinessUser?: boolean
     removeLocalStorageKey('userId')
     removeLocalStorageKey('userEmail')
     removeLocalStorageKey('userPhone')
+    removeLocalStorageKey('userDisplayName')
+    removeLocalStorageKey('userNickName')
+    removeLocalStorageKey('userAvatarUrl')
     removeLocalStorageKey('userRole')
     removeLocalStorageKey('userIsAdmin')
     removeLocalStorageKey('currentUser')
@@ -246,7 +249,6 @@ export function ensureCloudAuthReady(): Promise<void> {
 
       const customUserId = extractCustomUserId(loginState)
       if (customUserId) {
-        console.log('ensureCloudAuthReady: authenticated as', customUserId)
         return
         /*
       }
@@ -266,7 +268,6 @@ export function ensureCloudAuthReady(): Promise<void> {
         */
       }
 
-      console.log('ensureCloudAuthReady: no stored user, signing in anonymously')
       if (!loginState) {
         await auth.anonymousAuthProvider().signIn()
       }

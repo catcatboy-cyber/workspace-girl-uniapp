@@ -190,7 +190,7 @@ function onSkip() {
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 14rpx; }
 .v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 10rpx; }
 
-.v2-mode .field-v2 { padding: 20rpx 0; border-bottom: 3rpx solid #e0e0e0; }
+.v2-mode .field-v2 { padding: 20rpx 0; border-bottom: 3rpx solid #111; }
 .v2-mode .field-v2:last-child { border-bottom: 0; }
 .v2-mode .field-label-v2 { display: block; font-size: 24rpx; font-weight: 800; color: #111; margin-bottom: 10rpx; }
 

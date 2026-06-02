@@ -1,5 +1,5 @@
 const relationTypeOptions = [
-  { value: 'romantic', label: '恋爱对象' },
+  { value: 'romantic', label: 'Crush' },
   { value: 'close_friend', label: '亲密朋友' }
 ]
 
@@ -27,7 +27,7 @@ function normalizeRelationType(value) {
 }
 
 function getRelationTypeLabel(value) {
-  return value === 'close_friend' ? '亲密朋友' : '恋爱对象'
+  return value === 'close_friend' ? '亲密朋友' : 'Crush'
 }
 
 module.exports = {

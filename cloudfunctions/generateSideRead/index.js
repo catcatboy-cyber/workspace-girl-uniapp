@@ -270,23 +270,42 @@ function clampRuntimeNumber(value, fallback, min, max, integer = false) {
 function getRuntimeConfig(settings = {}) {
   const source = settings.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {}
   return {
-    sideReadMaxTokens: clampRuntimeNumber(source.sideReadMaxTokens, 900, 700, 1600, true),
+    sideReadMaxTokens: clampRuntimeNumber(source.sideReadMaxTokens, 550, 200, 1200, true),
     sideReadTemperature: clampRuntimeNumber(source.sideReadTemperature, 0.35, 0, 1)
   }
 }
 
 function normalizeSideRead(value) {
   const input = value && typeof value === 'object' ? value : {}
-  const title = clean(input.title, 36) || '侧写'
-  const summary = clean(input.summary, 300)
+  const title = sanitizeSideReadText(clean(input.title, 36) || '星象速写')
+  const summary = sanitizeSideReadText(clean(input.summary, 300))
   const sections = Array.isArray(input.sections)
     ? input.sections.slice(0, 3).map((item) => ({
-        label: clean(item?.label, 24),
-        text: clean(item?.text, 400)
+        label: sanitizeSideReadText(clean(item?.label, 24)),
+        text: sanitizeSideReadText(clean(item?.text, 400))
       })).filter((item) => item.label && item.text)
     : []
   if (!summary && sections.length === 0) throw new Error('SIDE_READ_EMPTY')
   return { title, summary, sections }
+}
+
+function sanitizeSideReadText(value) {
+  return String(value || '')
+    .replace(/属相星座侧写/g, '星象速写')
+    .replace(/属相星座侧\s*写/g, '星象速写')
+    .replace(/星座侧写/g, '星座速写')
+    .replace(/星座侧\s*写/g, '星座速写')
+    .replace(/属相侧写/g, '属相速写')
+    .replace(/属相侧\s*写/g, '属相速写')
+    .replace(/综合侧写/g, '综合星象速写')
+    .replace(/综合侧\s*写/g, '综合星象速写')
+    .replace(/保守侧写/g, '保守星象速写')
+    .replace(/保守侧\s*写/g, '保守星象速写')
+    .replace(/侧写资料不足/g, '星象速写资料不足')
+    .replace(/侧\s*写资料不足/g, '星象速写资料不足')
+    .replace(/側寫/g, '星象速写')
+    .replace(/侧写/g, '星象速写')
+    .replace(/侧\s*写/g, '星象速写')
 }
 
 function fallbackSideRead(caseProfile, latest) {
@@ -295,8 +314,8 @@ function fallbackSideRead(caseProfile, latest) {
   const eventTitle = clean(latest?.triggerEventTitle || latest?.explanation?.headline, 32)
   const basis = [zodiac ? `属相：${zodiac}` : '', constellation ? `星座：${constellation}` : ''].filter(Boolean).join('，')
   const summary = eventTitle
-    ? `这次先按已知画像和事件做保守侧写：${eventTitle}。`
-    : '这次先按已知画像做保守侧写，结果只作为轻量参考。'
+    ? `这次先按已知画像和事件做保守星象速写：${eventTitle}。`
+    : '这次先按已知画像做保守星象速写，结果只作为轻量参考。'
   const sections = []
   if (zodiac) {
     sections.push({
@@ -307,17 +326,17 @@ function fallbackSideRead(caseProfile, latest) {
   if (constellation) {
     sections.push({
       label: '星座角度',
-      text: `参考${constellation}的表达习惯，更适合看细节回应和稳定度，不要把侧写当成确定事实。`
+      text: `参考${constellation}的表达习惯，更适合看细节回应和稳定度，不要把星象速写当成确定事实。`
     })
   }
   if (sections.length === 0) {
     sections.push({
-      label: '侧写提醒',
-      text: '对象画像里缺少属相或星座，建议先补充资料，再生成更贴合的侧写。'
+      label: '星象速写提醒',
+      text: 'Crush 画像里缺少属相或星座，建议先补充资料，再生成更贴合的星象速写。'
     })
   }
   return {
-    title: basis ? '保守侧写' : '侧写资料不足',
+    title: basis ? '保守星象速写' : '星象速写资料不足',
     summary,
     sections
   }
@@ -383,7 +402,7 @@ exports.main = async (event = {}) => {
       ]
     })
     if (!messages) {
-      return { success: false, message: '后台未配置侧写提示词' }
+      return { success: false, message: '后台未配置星象速写提示词' }
     }
 
     const runtimeConfig = getRuntimeConfig(aiSettings)
@@ -426,7 +445,7 @@ exports.main = async (event = {}) => {
       userId,
       type: 'note',
       feature: 'sideRead',
-      title: sideReadAdvice.title || '属相星座侧写',
+      title: sideReadAdvice.title || '星象速写',
       description: sideReadAdvice.summary || '',
       sections: sideReadAdvice.sections || [],
       occurrenceAt: new Date(),
@@ -448,9 +467,9 @@ exports.main = async (event = {}) => {
       return { success: false, message: '请先登录' }
     }
     if (error?.message === 'AI_REQUEST_TIMEOUT') {
-      return { success: false, message: '侧写生成超时，请稍后再试' }
+      return { success: false, message: '星象速写生成超时，请稍后再试' }
     }
-    return { success: false, message: error?.message || '侧写生成失败' }
+    return { success: false, message: error?.message || '星象速写生成失败' }
   }
 }
 

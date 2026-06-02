@@ -2,7 +2,7 @@
   <view class="avatar-picker">
     <view class="avatar-preview">
       <view class="profile-avatar lg">
-        <image v-if="avatarPreviewSrc" :src="avatarPreviewSrc" mode="aspectFill" />
+        <image v-if="avatarPreviewSrc" :src="avatarPreviewSrc" mode="aspectFill" class="avatar-img" />
         <text v-else class="avatar-placeholder">像</text>
       </view>
       <view class="avatar-info">
@@ -20,7 +20,7 @@
         @click="selectPreset(item.value)"
       >
         <view class="profile-avatar md">
-          <image :src="item.value" mode="aspectFill" />
+          <image :src="item.value" mode="aspectFill" class="avatar-img" />
         </view>
         <text class="preset-label">{{ item.label }}</text>
       </view>
@@ -154,7 +154,7 @@ function clearAvatar() {
 .profile-avatar { border-radius: 50%; overflow: hidden; background: #FFD93D; display: flex; align-items: center; justify-content: center; border: 3rpx solid #111; }
 .profile-avatar.lg { width: 120rpx; height: 120rpx; }
 .profile-avatar.md { width: 80rpx; height: 80rpx; }
-.profile-avatar image { width: 100%; height: 100%; }
+.profile-avatar .avatar-img { width: 100%; height: 100%; }
 
 .avatar-placeholder { font-size: 48rpx; font-weight: 900; color: #111; }
 
@@ -171,7 +171,7 @@ function clearAvatar() {
 
 .avatar-actions { display: flex; gap: 12rpx; margin-bottom: 16rpx; }
 .btn-secondary { flex: 1; height: 72rpx; line-height: 72rpx; background: #fff; color: #111; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; }
-.btn-secondary[disabled] { opacity: 0.6; }
+.btn-secondary:disabled { opacity: 0.6; }
 
 .error-text { display: block; font-size: 24rpx; color: #FF5252; margin-top: 12rpx; font-weight: 600; }
 </style>

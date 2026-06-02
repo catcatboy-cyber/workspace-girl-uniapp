@@ -290,7 +290,7 @@ function isWithinLastDays(date, now, days) {
 
 function summarizeWeeklyDirection(caseFile, now) {
   const recentAssessments = caseFile.assessments
-    .filter((item) => isWithinLastDays(item.createdAt ? new Date(item.createdAt) : null, now, 7))
+    .filter((item) => isWithinLastDays(item.createdAt ? new Date(item.createdAt) : null, now, 14))
     .sort((a, b) => (a.createdAt ?? '') < (b.createdAt ?? '') ? -1 : 1)
 
   if (recentAssessments.length >= 2) {
@@ -305,7 +305,7 @@ function summarizeWeeklyDirection(caseFile, now) {
 }
 
 export function buildCaseWeeklyReview(caseFile, now = new Date()) {
-  const recentTimeline = caseFile.timeline.filter((item) => isWithinLastDays(getTimelineRecordTime(item), now, 7))
+  const recentTimeline = caseFile.timeline.filter((item) => isWithinLastDays(getTimelineRecordTime(item), now, 14))
   const userFacingTimeline = recentTimeline.filter((item) => item.type === 'positive' || item.type === 'risk' || item.type === 'verification' || item.type === 'note')
   const verificationCount = userFacingTimeline.filter((item) => item.type === 'verification').length
   const riskEvent = userFacingTimeline.find((item) => item.type === 'risk')
@@ -316,29 +316,29 @@ export function buildCaseWeeklyReview(caseFile, now = new Date()) {
 
   const summary =
     userFacingTimeline.length === 0
-      ? '最近 7 天还没有新增事件，下一次关键互动出现时更适合回来记录。'
+      ? '近14天还没有新增事件，下一次关键互动出现时更适合回来记录。'
       : direction?.warningText
         ? direction.warningText
         : direction?.intentDirection === 'up' && direction.riskDirection !== 'up'
-          ? '最近 7 天关系信号在变清晰，重点继续看后续是否稳定落地。'
+          ? '近14天关系信号在变清晰，重点继续看后续是否稳定落地。'
           : direction?.riskDirection === 'up'
-            ? '最近 7 天风险线索更活跃，最值得做的是回看有没有回避、改口或失约。'
-            : '最近 7 天有新变化，但还需要更多连续事件才能把方向看清。'
+            ? '近14天风险线索更活跃，最值得做的是回看有没有回避、改口或失约。'
+            : '近14天有新变化，但还需要更多连续事件才能把方向看清。'
 
   const highlight = positiveEvent
-    ? `本周最真实的一次推进：${positiveEvent.title}`
+    ? `近14天最真实的一次推进：${positiveEvent.title}`
     : direction?.intentDelta && direction.intentDelta > 0
-      ? '本周意向有抬升，但还没有特别明确的一次推进事件。'
-      : '本周还没有特别明确的推进事件。'
+      ? '近14天意向有抬升，但还没有特别明确的一次推进事件。'
+      : '近14天还没有特别明确的推进事件。'
 
   const warning = riskEvent
-    ? `本周最该警惕的信号：${riskEvent.title}`
+    ? `近14天最该警惕的信号：${riskEvent.title}`
     : direction?.riskDelta && direction.riskDelta > 0
-      ? '本周风险在抬头，但还没有单个特别突出的风险事件。'
-      : '本周暂时没有特别尖锐的风险信号。'
+      ? '近14天风险在抬头，但还没有单个特别突出的风险事件。'
+      : '近14天暂时没有特别尖锐的风险信号。'
 
   return {
-    title: '最近 7 天回顾',
+    title: '近14天回顾',
     summary,
     highlight,
     warning,
@@ -356,7 +356,7 @@ export function buildObservationAchievements(cases, now = new Date()) {
   const allAssessments = cases.flatMap((item) => item.assessments || [])
   const userEvents = allTimeline.filter((item) => item && (item.type === 'positive' || item.type === 'risk' || item.type === 'verification' || item.type === 'note'))
   const verificationCount = userEvents.filter((item) => item.type === 'verification').length
-  const recentEventCount = userEvents.filter((item) => isWithinLastDays(getTimelineRecordTime(item), now, 7)).length
+  const recentEventCount = userEvents.filter((item) => isWithinLastDays(getTimelineRecordTime(item), now, 14)).length
 
   const achievements = []
 
@@ -386,9 +386,9 @@ export function buildObservationAchievements(cases, now = new Date()) {
 
   if (recentEventCount >= 3) {
     achievements.push({
-      title: '本周持续观察',
+      title: '近14天持续观察',
       value: `${recentEventCount} 条`,
-      description: '最近 7 天没有只靠感觉，持续在补真实互动。'
+      description: '近14天没有只靠感觉，持续在补真实互动。'
     })
   }
 
@@ -396,7 +396,7 @@ export function buildObservationAchievements(cases, now = new Date()) {
     achievements.push({
       title: '画像补全中',
       value: `${cases.filter((item) => item.profile.relationType || item.profile.age || item.profile.gender || item.profile.occupation || item.profile.zodiac || item.profile.constellation).length} 个`,
-      description: '已经开始给对象补充画像，后续侧写会更有意思。'
+      description: '已经开始给 Crush 补充画像，后续星象速写会更有意思。'
     })
   }
 
@@ -424,7 +424,7 @@ export function buildProfileItems(profile) {
   else if (profile.relationType === 'colleague') items.push('类型 同事')
   else if (profile.relationType === 'classmate') items.push('类型 同学')
   else if (profile.relationType === 'teacher') items.push('类型 老师')
-  else if (profile.relationType === 'romantic') items.push('类型 恋爱对象')
+  else if (profile.relationType === 'romantic') items.push('类型 Crush')
   if (profile.age) items.push(`年龄 ${profile.age}`)
   if (profile.gender) items.push(`性别 ${profile.gender}`)
   if (profile.occupation) items.push(`工作 ${profile.occupation}`)
@@ -454,7 +454,7 @@ function getRelationTypeLabel(relationType) {
   if (relationType === 'colleague') return '同事'
   if (relationType === 'classmate') return '同学'
   if (relationType === 'teacher') return '老师'
-  if (relationType === 'romantic') return '恋爱对象'
+  if (relationType === 'romantic') return 'Crush'
   return relationType || '未说明'
 }
 
@@ -1311,7 +1311,6 @@ function isActualMeetRecord(item) {
 export function buildCaseOverviewStats(caseFile, now = new Date()) {
   const manualTimeline = sortTimelineRecordsDesc((caseFile?.timeline || []).filter((item) => isUserFacingTimelineRecord(item)))
   const latestRecord = manualTimeline[0] || null
-  const recent7Days = manualTimeline.filter((item) => isWithinRecentDays(getTimelineRecordTimestamp(item), now, 7))
   const recent14Days = manualTimeline.filter((item) => isWithinRecentDays(getTimelineRecordTimestamp(item), now, 14))
   const recent10Records = manualTimeline.slice(0, 10)
 
@@ -1342,9 +1341,9 @@ export function buildCaseOverviewStats(caseFile, now = new Date()) {
       },
       {
         key: 'week-records',
-        label: '本周记录',
-        value: `${recent7Days.length} 条`,
-        hint: recent7Days.length > 0 ? '最近 7 天新增的真实事件数' : '最近 7 天还没有新记录'
+        label: '近14天记录',
+        value: `${recent14Days.length} 条`,
+        hint: recent14Days.length > 0 ? '近14天新增的真实事件数' : '近14天还没有新记录'
       },
       {
         key: 'target-initiative',
@@ -1910,7 +1909,7 @@ function buildConstellationPairMeaning(selfConstellation, targetConstellation, e
   if (selfConstellation === targetConstellation) {
     return `你和对方同为${selfConstellation}，趣味上容易理解彼此的表达习惯，但也可能互相放大同一种敏感点。${eventTail}`
   }
-  return `从星座侧写看，你是${selfConstellation}、对方是${targetConstellation}，可以把它当成沟通风格差异的小提示：一个人怎么表达热度，另一个人怎么确认安全感。${eventTail}`
+  return `从星象速写看，你是${selfConstellation}、对方是${targetConstellation}，可以把它当成沟通风格差异的小提示：一个人怎么表达热度，另一个人怎么确认安全感。${eventTail}`
 }
 
 export function buildProfileSideRead(params) {
@@ -1939,13 +1938,13 @@ export function buildProfileSideRead(params) {
           : eventType === 'verification'
             ? `这次围绕"${eventTitle}"，重点是事实、承诺和说法能不能对上。`
             : `这次围绕"${eventTitle}"，先把它放进连续行为里看，不单独下结论。`
-      : '当前还没有明确触发事件，侧写会更多参考画像和当前分数。'
+      : '当前还没有明确触发事件，星象速写会更多参考画像和当前分数。'
 
   const facts = [
     profile?.age ? `${profile.age}岁` : '',
     profile?.gender || '',
     profile?.occupation ? `工作是${profile.occupation}` : '',
-    relationType ? `对象类别是${relationType}` : '',
+    relationType ? `Crush 类别是${relationType}` : '',
     profile?.zodiac ? `属${profile.zodiac}` : '',
     profile?.constellation || ''
   ].filter(Boolean)
@@ -1956,12 +1955,12 @@ export function buildProfileSideRead(params) {
   if (false && (selfFacts.length > 0 || facts.length > 0)) {
     sections.push({
       label: '画像对照',
-      text: `${selfFacts.length ? `你这边：${selfFacts.join('、')}。` : ''}${facts.length ? `对方这边：${facts.join('、')}。` : ''}这部分只作为侧写入口，不参与意向和风险评分。`
+      text: `${selfFacts.length ? `你这边：${selfFacts.join('、')}。` : ''}${facts.length ? `对方这边：${facts.join('、')}。` : ''}这部分只作为星象速写入口，不参与意向和风险评分。`
     })
   }
 
   sections.push({
-    label: '综合侧写',
+    label: '综合星象速写',
     text: `${facts.length > 0 ? `结合${facts.join('、')}来看，` : ''}${eventBase} 当前意向分是${intentScore}，风险分是${riskScore}。${trendText}${intentScore >= 60 && riskScore < 45
       ? '这类组合更适合看持续兑现，不要只看一时热度。'
       : riskScore >= 60
@@ -2010,7 +2009,7 @@ export function buildProfileSideRead(params) {
   }
 
   return {
-    title: '侧写',
+    title: '星象速写',
     summary: '结合本人画像、对方画像、最新事件和趋势变化做趣味解读，不参与核心评分。',
     sections: sections.filter((item) => item.text)
   }
@@ -2043,7 +2042,7 @@ export function buildZodiacConstellationSideRead(params) {
   } else {
     if (targetZodiac) {
       sections.push({
-        label: `属相侧写 (${targetZodiac})`,
+        label: `属相速写 (${targetZodiac})`,
         text: event
           ? withAISideReadAnchor(buildZodiacMeaning(targetZodiac, event), latestResult)
           : zodiacNotes[targetZodiac] || '属相只能作为轻量观察角度，真正要看的仍然是连续行为和事实证据。'
@@ -2051,7 +2050,7 @@ export function buildZodiacConstellationSideRead(params) {
     }
     if (targetConstellation) {
       sections.push({
-        label: `星座侧写 (${targetConstellation})`,
+        label: `星座速写 (${targetConstellation})`,
         text: event
           ? withAISideReadAnchor(buildConstellationMeaning(targetConstellation, event), latestResult)
           : constellationNotes[targetConstellation] || '星座只能帮助增加一点观察角度，不能替代实际沟通和证据。'
@@ -2063,10 +2062,10 @@ export function buildZodiacConstellationSideRead(params) {
   if (availableSections.length === 0) return null
 
   return {
-    title: '侧写',
+    title: '星象速写',
     summary: hasSelfAstroProfile
       ? '结合你们的属相、星座和本次事件来看，不参与评分。'
-      : '结合对象的属相、星座和本次事件来看，不参与评分。',
+      : '结合 Crush 的属相、星座和本次事件来看，不参与评分。',
     sections: availableSections
   }
 }
@@ -2074,16 +2073,27 @@ export function buildZodiacConstellationSideRead(params) {
 function normalizeAISideRead(value) {
   const input = value && typeof value === 'object' ? value : null
   if (!input) return null
-  const title = cleanShortText(input.title || '侧写', 24) || '侧写'
-  const summary = cleanShortText(input.summary || '', 120)
+  const title = sanitizeSideReadText(cleanShortText(input.title || '星象速写', 24) || '星象速写')
+  const summary = sanitizeSideReadText(cleanShortText(input.summary || '', 120))
   const sections = Array.isArray(input.sections)
     ? input.sections.slice(0, 3).map((item) => ({
-        label: cleanShortText(item?.label || '', 24),
-        text: cleanShortText(item?.text || '', 180)
+        label: sanitizeSideReadText(cleanShortText(item?.label || '', 24)),
+        text: sanitizeSideReadText(cleanShortText(item?.text || '', 180))
       })).filter((item) => item.label && item.text)
     : []
   if (!summary && sections.length === 0) return null
   return { title, summary, sections }
+}
+
+function sanitizeSideReadText(value) {
+  return String(value || '')
+    .replace(/属相星座侧写/g, '星象速写')
+    .replace(/星座侧写/g, '星座速写')
+    .replace(/属相侧写/g, '属相速写')
+    .replace(/综合侧写/g, '综合星象速写')
+    .replace(/保守侧写/g, '保守星象速写')
+    .replace(/侧写资料不足/g, '星象速写资料不足')
+    .replace(/侧写/g, '星象速写')
 }
 
 function withAISideReadAnchor(text, latestResult) {

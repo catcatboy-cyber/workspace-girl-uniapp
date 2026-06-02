@@ -2,23 +2,23 @@
   <view class="page v2-mode" :style="themeVars">
       <!-- Hero -->
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">CASE BOARD</text>
-        <text class="hero-title-v2">对<text class="hl-v2">象</text>列表</text>
-        <text class="hero-copy-v2">先切换，再进入当前对象。共 <text class="strong">{{ cases.length }}</text> 个 case。</text>
+        <text class="hero-tag-v2">CRUSHES</text>
+        <text class="hero-title-v2">Crushes <text class="hl-v2">列表</text></text>
+        <text class="hero-copy-v2">先切换，再进入当前 Crush。共 <text class="strong">{{ cases.length }}</text> 个 Crushes。</text>
         <button class="btn-v2-hero" @click="goNew">+ 开个新的</button>
       </view>
 
       <!-- Deleted notice -->
       <view v-if="deleted" class="notice-v2 ok">
-        <text class="notice-title-v2">对象已删除</text>
-        <text class="notice-sub-v2">相关主页、时间线和分析记录已经一起移除。</text>
+        <text class="notice-title-v2">Crush 已删除</text>
+        <text class="notice-sub-v2">相关主页、往事和分析记录已经一起移除。</text>
       </view>
 
       <view v-if="loading" class="loading-v2">LOADING...</view>
 
       <view v-else>
         <view v-if="cases.length === 0" class="empty-v2">
-          <text class="empty-title-v2">还没有关系对象</text>
+          <text class="empty-title-v2">还没有 Crush</text>
           <text class="empty-sub-v2">先回到首页做一次初评，系统会自动创建第一个入口。</text>
         </view>
 
@@ -69,7 +69,7 @@
               :disabled="isActiveCase(item.caseId)"
               @click="switchActiveCase(item.caseId)"
             >
-              {{ isActiveCase(item.caseId) ? '当前对象' : '切换到首页' }}
+              {{ isActiveCase(item.caseId) ? '当前 Crush' : '切换到首页' }}
             </button>
           </view>
         </view>
@@ -184,7 +184,7 @@ function getRelationTypeLabel(p: any): string {
   if (relationType === 'colleague') return '同事'
   if (relationType === 'classmate') return '同学'
   if (relationType === 'teacher') return '老师'
-  if (relationType === 'romantic') return '恋爱对象'
+  if (relationType === 'romantic') return 'Crush'
   return ''
 }
 
@@ -238,7 +238,7 @@ function switchActiveCase(caseId: string) {
   setActiveCaseId(caseId)
   activeCaseId.value = caseId
   bumpDataVersion()
-  showSuccess('已切换当前对象')
+  showSuccess('已切换当前 Crush')
   setTimeout(() => {
     uni.switchTab({ url: '/pages/index/index' })
   }, 300)
@@ -258,7 +258,7 @@ function switchActiveCase(caseId: string) {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; }
 
 .v2-mode .hero-block-v2 {
-  background: var(--hero-bg, #FF6B6B); border: 3px solid #111;
+  background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111;
   box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx;
   transform: rotate(-0.5deg);
 }
@@ -328,5 +328,5 @@ function switchActiveCase(caseId: string) {
   font-size: 26rpx; font-weight: 800; color: #111;
 }
 .v2-mode .btn-v2-action.disabled,
-.v2-mode .btn-v2-action[disabled] { background: #e8e8e8; box-shadow: none; opacity: 0.7; }
+.v2-mode .btn-v2-action[disabled] { opacity: 0.5; box-shadow: none; }
 </style>

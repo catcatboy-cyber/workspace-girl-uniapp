@@ -1,7 +1,7 @@
 <template>
   <view class="page v2-mode">
         <view class="hero-block-v2"><text class="hero-tag-v2">TOKEN USAGE</text><text class="hero-title-v2">消费<text class="hl-v2">明细</text></text><text class="hero-copy-v2">当前账号的 token 调用和额度变动记录。</text></view>
-        <view class="tabs-v2"><view :class="['tab-btn-v2', activeTab === 'usage' ? 'active' : '']" @click="switchTab('usage')">消费明细</view><view :class="['tab-btn-v2', activeTab === 'ledger' ? 'active' : '']" @click="switchTab('ledger')">充值记录</view></view>
+        <view class="tabs-v2"><view :class="['tab-btn-v2', activeTab === 'usage' ? 'active' : '']" @click="switchTab('usage')">消费明细</view><view :class="['tab-btn-v2', activeTab === 'ledger' ? 'active' : '']" @click="switchTab('ledger')">充值记录</view><view :class="['tab-btn-v2', activeTab === 'voice' ? 'active' : '']" @click="switchTab('voice')">语音识别</view></view>
         <view v-if="activeTab === 'usage'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">汇总</text><button class="btn-v2-t sm" :disabled="loading" @click="loadUsage">{{ loading ? '读取中' : '刷新' }}</button></view><text class="card-text-v2">最近 {{ records.length }} 条记录</text><view class="stats-grid-v2"><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.totalTokens }}</text><text class="stat-lbl-v2">总 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.promptTokens }}</text><text class="stat-lbl-v2">输入 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.completionTokens }}</text><text class="stat-lbl-v2">输出 token</text></view></view><text v-if="summary.unavailableCount" class="card-text-v2 muted">有 {{ summary.unavailableCount }} 次未返回 usage。</text></view>
           <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature) }}</text><text class="usage-meta-v2">{{ item.model || '未知模型' }} · {{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text class="usage-total-v2">{{ item.totalTokens }}</text><text class="usage-meta-v2">in {{ item.promptTokens }} / out {{ item.completionTokens }}</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
@@ -12,20 +12,33 @@
             <text v-else class="card-text-v2">{{ ledgerLoading ? '正在读取...' : '暂无记录。' }}</text>
           </view>
         </view>
+        <view v-if="activeTab === 'voice'">
+          <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">语音识别汇总</text><button class="btn-v2-t sm" :disabled="voiceLoading" @click="loadVoice">{{ voiceLoading ? '读取中' : '刷新' }}</button></view>
+            <text class="card-text-v2 muted">语音识别由腾讯云 ASR 单独计费，不消耗 Token 能量。</text>
+            <view class="stats-grid-v2" style="grid-template-columns: repeat(2, 1fr);"><view class="stat-box-v2"><text class="stat-num-v2">{{ voiceSummary.totalCount }}</text><text class="stat-lbl-v2">识别次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ formatSeconds(voiceSummary.totalDurationMs) }}</text><text class="stat-lbl-v2">累计时长</text></view></view>
+          </view>
+          <view class="card-v2"><text class="section-title-v2">明细</text>
+            <view v-if="voiceRecords.length > 0" class="usage-list-v2"><view v-for="item in voiceRecords" :key="item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">语音识别</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text class="usage-total-v2">{{ formatSeconds(item.durationMs) }}</text><text class="usage-meta-v2">时长</text></view></view></view>
+            <text v-else class="card-text-v2">{{ voiceLoading ? '正在读取...' : '暂无记录。' }}</text>
+          </view>
+        </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getTokenUsage, getTokenLedger } from '@/utils/api'
+import { getCurrentUserId, getTokenUsage, getTokenLedger, getVoiceUsage } from '@/utils/api'
 
-const activeTab = ref<'usage' | 'ledger'>('usage')
-const loading = ref(false)
+const activeTab = ref<'usage' | 'ledger' | 'voice'>('usage')
+const loading = ref(true)
 const summary = ref({ promptTokens: 0, completionTokens: 0, totalTokens: 0, callCount: 0, unavailableCount: 0 })
 const records = ref<Array<any>>([])
 const ledgerRecords = ref<Array<any>>([])
 const ledgerLoading = ref(false)
+const voiceRecords = ref<Array<any>>([])
+const voiceLoading = ref(false)
+const voiceSummary = ref({ totalCount: 0, totalDurationMs: 0 })
 
 onShow(() => {
   if (!getCurrentUserId()) {
@@ -35,10 +48,11 @@ onShow(() => {
   loadUsage()
 })
 
-function switchTab(tab: 'usage' | 'ledger') {
+function switchTab(tab: 'usage' | 'ledger' | 'voice') {
   activeTab.value = tab
   if (tab === 'usage' && records.value.length === 0) loadUsage()
   if (tab === 'ledger' && ledgerRecords.value.length === 0) loadLedger()
+  if (tab === 'voice' && voiceRecords.value.length === 0) loadVoice()
 }
 
 async function loadUsage() {
@@ -82,12 +96,41 @@ async function loadLedger() {
   }
 }
 
+async function loadVoice() {
+  if (voiceLoading.value) return
+  voiceLoading.value = true
+  try {
+    const result = await getVoiceUsage(200)
+    if (!result?.success) {
+      uni.showToast({ title: result?.message || '读取失败', icon: 'none' })
+      return
+    }
+    voiceSummary.value = {
+      totalCount: Number(result.totalCount || 0),
+      totalDurationMs: Number(result.totalDurationMs || 0)
+    }
+    voiceRecords.value = Array.isArray(result.records) ? result.records : []
+  } catch (error: any) {
+    uni.showToast({ title: error?.message || '读取失败', icon: 'none' })
+  } finally {
+    voiceLoading.value = false
+  }
+}
+
+function formatSeconds(ms: number) {
+  const seconds = Math.round(Number(ms || 0) / 1000)
+  if (seconds < 60) return `${seconds} 秒`
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return s > 0 ? `${m} 分 ${s} 秒` : `${m} 分钟`
+}
+
 function mapFeature(feature: string) {
   const map: Record<string, string> = {
     eventAssessment: '即时反馈',
-    weeklyReview: '本周复盘',
-    weeklySideRead: '本周侧写',
-    sideRead: '侧写',
+    weeklyReview: '近14天复盘',
+    weeklySideRead: '近14天星象速写',
+    sideRead: '星象速写',
     attachmentAnalysis: '附件识别',
     petReply: '宠物帮说'
   }
@@ -151,7 +194,7 @@ function formatDate(value: string) {
 .v2-mode .usage-meta-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
 .v2-mode .usage-counts-v2 { text-align: right; flex-shrink: 0; }
 .v2-mode .usage-total-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; }
-.v2-mode .tabs-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8rpx; margin-bottom: 18rpx; }
+.v2-mode .tabs-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8rpx; margin-bottom: 18rpx; }
 .v2-mode .tab-btn-v2 { text-align: center; padding: 16rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 800; color: #111; }
 .v2-mode .tab-btn-v2.active { background: #111; color: #FFD93D; }
 .v2-mode .positive { color: #27ae60 !important; }

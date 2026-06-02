@@ -4,18 +4,18 @@
 
     <view v-else-if="!caseFile" class="card-v2">
       <text class="section-title-v2">无法重新分析</text>
-      <text class="card-text-v2">当前对象不存在或已被删除。</text>
+      <text class="card-text-v2">当前 Crush 不存在或已被删除。</text>
     </view>
 
     <template v-else>
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">重新分析 / {{ caseFile.name }}</text>
-        <text class="hero-title-v2">给同一个对象再做一次分析</text>
+        <text class="hero-tag-v2">REASSESSMENT / {{ caseFile.name }}</text>
+        <text class="hero-title-v2">给同一个 Crush 再做一次分析</text>
         <text class="hero-copy-v2">提交后不会覆盖历史，会追加成新的 assessment 记录。</text>
-        <text class="card-text-v2" style="color: rgba(0,0,0,0.5)">对象名称、关系类型和画像不在这里修改，避免你改了但本次提交并不会保存。</text>
+        <text class="card-text-v2" style="color: rgba(0,0,0,0.5)">Crush 名称、关系类型和画像不在这里修改，避免你改了但本次提交并不会保存。</text>
         <view class="hero-actions-v2">
-          <button class="btn-v2 sm" @click="goCaseDetail">返回关系主页</button>
-          <button class="btn-v2 sm" @click="goTimeline">打开时间线</button>
+          <button class="btn-v2 sm" @click="goCaseDetail">返回我们</button>
+          <button class="btn-v2 sm" @click="goTimeline">打开往事</button>
         </view>
       </view>
 
@@ -124,20 +124,23 @@ function goTimeline() {
   transform: rotate(-0.5deg);
 }
 .v2-mode .hero-tag-v2 {
-  display: block;
-  font-size: 22rpx;
-  font-weight: 800;
-  color: rgba(0,0,0,0.5);
-  letter-spacing: 3rpx;
-  text-transform: uppercase;
+  display: inline-block;
+  background: #111;
+  color: #FFD93D;
+  padding: 6rpx 16rpx;
+  font-size: 20rpx;
+  font-weight: 900;
+  letter-spacing: 4rpx;
+  margin-bottom: 16rpx;
 }
 .v2-mode .hero-title-v2 {
   display: block;
   font-size: 48rpx;
   font-weight: 900;
   color: #111;
-  margin: 8rpx 0;
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -2rpx;
+  text-transform: uppercase;
 }
 .v2-mode .hero-copy-v2 {
   display: block;
@@ -177,12 +180,12 @@ function goTimeline() {
   height: 56rpx;
   line-height: 56rpx;
   padding: 0 24rpx;
-  background: #4ECDC4;
+  background: #fff;
   color: #111;
   border: 3rpx solid #111;
   font-size: 24rpx;
   font-weight: 800;
-  box-shadow: 4rpx 4rpx 0 #111;
 }
+.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2.sm { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; font-size: 24rpx; }
 </style>

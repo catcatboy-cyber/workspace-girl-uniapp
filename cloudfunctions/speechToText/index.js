@@ -6,6 +6,9 @@ const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_share
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
+const db = app.database()
+
+const VOICE_USAGE_COLLECTION = 'voice_usage'
 
 const ASR_HOST = 'asr.tencentcloudapi.com'
 const ASR_ENDPOINT = `https://${ASR_HOST}`
@@ -104,7 +107,7 @@ async function callTencentSentenceRecognition(payload) {
 
 exports.main = async (event = {}) => {
   try {
-    await requireAuthenticatedUserId(app, event)
+    const userId = await requireAuthenticatedUserId(app, event)
     const fileID = String(event.fileID || '').trim()
     const fileName = String(event.fileName || '').trim()
     const durationMs = Number(event.durationMs || 0)
@@ -127,6 +130,18 @@ exports.main = async (event = {}) => {
     const result = await callTencentSentenceRecognition(payload)
     const text = normalizeText(result.Result)
     if (!text) return { success: false, message: '没有识别到语音文字' }
+
+    try {
+      await db.collection(VOICE_USAGE_COLLECTION).add({
+        userId,
+        durationMs,
+        fileID,
+        requestId: result.RequestId || '',
+        createdAt: new Date()
+      })
+    } catch (writeErr) {
+      console.warn('voice_usage 写入失败:', writeErr?.message || writeErr)
+    }
 
     return {
       success: true,

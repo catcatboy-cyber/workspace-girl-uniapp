@@ -4,13 +4,13 @@
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2">
         <text class="empty-title-v2">结果不可用</text>
-        <text class="empty-sub-v2">当前对象不存在或已被删除。</text>
+        <text class="empty-sub-v2">当前 Crush 不存在或已被删除。</text>
       </view>
       <template v-else>
-        <view v-if="profileUpdated" class="notice-v2 ok"><text class="notice-title-v2">画像已更新</text><text class="notice-sub-v2">对象画像信息已保存。</text></view>
+        <view v-if="profileUpdated" class="notice-v2 ok"><text class="notice-title-v2">画像已更新</text><text class="notice-sub-v2">Crush 画像信息已保存。</text></view>
         <!-- Hero -->
         <view class="hero-block-v2">
-          <text class="hero-tag-v2">{{ caseFile.name }} / 关系主页</text>
+          <text class="hero-tag-v2">WE / {{ caseFile.name }}</text>
           <text class="hero-title-v2">{{ result?.explanation?.petLine || result?.explanation?.bullets?.[0] || '暂无分析结果' }}</text>
           <text class="hero-copy-v2">AI 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
           <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">最新 · {{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">风险 · {{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 分析</text></view>
@@ -69,16 +69,16 @@
           <view v-if="aiWeeklyPreview.avoidMisread?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.avoidMisread" :key="item" class="bullet-v2">• {{ item }}</text></view>
           <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2"><text class="focus-label-v2">后续验证重点 · 最该看</text><text class="focus-question-v2">{{ primaryWeeklyFocus }}</text><view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view></view>
         </view>
-        <view v-else-if="hasFallbackWeeklyPreview" class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">本周只生成了规则兜底版本，请去周复盘页重新生成 AI 版本。</text></view>
+        <view v-else-if="hasFallbackWeeklyPreview" class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">近14天只生成了规则兜底版本，请去14天复盘页重新生成 AI 版本。</text></view>
         <!-- Weekly side read -->
         <view class="card-v2">
-          <text class="section-title-v2">本周侧写</text>
+          <text class="section-title-v2">近14天星象速写</text>
           <view v-if="currentWeeklySideRead">
             <text v-if="currentWeeklySideRead.title" class="weekly-title-v2">{{ currentWeeklySideRead.title }}</text>
             <text v-if="currentWeeklySideRead.summary" class="weekly-desc-v2">{{ currentWeeklySideRead.summary }}</text>
             <view v-if="currentWeeklySideRead.sections?.length" class="side-grid-v2"><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2">• {{ item.text }}</text></view></view>
           </view>
-          <text v-else class="empty-sub-v2">本周侧写还没有生成。</text>
+          <text v-else class="empty-sub-v2">近14天星象速写还没有生成。</text>
         </view>
         <!-- Bottom action: matches original -->
         <view class="bottom-action-v2">
@@ -141,7 +141,7 @@ const objectTypeLabel = computed(() => {
   if (relationType === 'colleague') return '同事'
   if (relationType === 'classmate') return '同学'
   if (relationType === 'teacher') return '老师'
-  if (relationType === 'romantic') return '恋爱对象'
+  if (relationType === 'romantic') return 'Crush'
   return ''
 })
 
@@ -292,7 +292,12 @@ const hasNewEventsSinceReview = computed(() => {
   if (!review) return true
   const timeline = caseFile.value?.timeline || []
   const latestEventTime = Math.max(0, ...timeline
-    .filter((item: any) => !['assessment', 'trend'].includes(item.type) && item.occurrenceAt)
+    .filter((item: any) => {
+      if (!item.occurrenceAt) return false
+      if (['assessment', 'trend', 'weekly_review'].includes(item.type)) return false
+      if (item.type === 'note' && item.feature === 'weeklySideRead') return false
+      return true
+    })
     .map((item: any) => new Date(item.occurrenceAt).getTime())
   )
   const reviewTime = review.generatedAt ? new Date(review.generatedAt).getTime() : 0
@@ -301,9 +306,9 @@ const hasNewEventsSinceReview = computed(() => {
 
 const weeklyButtonLabel = computed(() => {
   const review = weeklyPreview.value
-  if (!review) return '本周复盘'
+  if (!review) return '近14天复盘'
   if (!hasNewEventsSinceReview.value) return '还没新事件'
-  return '重新生成本周复盘'
+  return '重新生成近14天复盘'
 })
 
 const hasFallbackWeeklyPreview = computed(() => {
@@ -650,17 +655,17 @@ function buildTrendDataTags(intentDelta: number, riskDelta: number, stability: n
 function mapWeeklyTrendLabel(label: any) {
   const normalized = String(label || '').trim()
   const map: Record<string, string> = {
-    持续向好: '本周回暖',
-    持续走低: '本周转弱',
-    风险抬头: '本周承压',
-    基本平稳: '本周平稳',
-    稳定观察: '本周观察',
-    升温期: '本周回暖',
-    升温中: '本周回暖',
-    走弱期: '本周转弱',
-    暂时平稳: '本周平稳'
+    持续向好: '近14天回暖',
+    持续走低: '近14天转弱',
+    风险抬头: '近14天承压',
+    基本平稳: '近14天平稳',
+    稳定观察: '近14天观察',
+    升温期: '近14天回暖',
+    升温中: '近14天回暖',
+    走弱期: '近14天转弱',
+    暂时平稳: '近14天平稳'
   }
-  return map[normalized] || (normalized ? `本周${normalized.replace(/^本周/, '')}` : '本周复盘')
+  return map[normalized] || (normalized ? `近14天${normalized.replace(/^近14天/, '')}` : '近14天复盘')
 }
 
 function formatSignedDelta(value: any) {
@@ -697,7 +702,7 @@ function goWeeklyReview() {
   box-sizing: border-box;
 }
 
-.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; min-height: 100vh; }
 
 .v2-mode .loading-v2 { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
 .v2-mode .empty-v2 { padding: 40rpx; border: 3rpx solid #111; background: #fff; margin-bottom: 18rpx; }
@@ -709,9 +714,9 @@ function goWeeklyReview() {
 .v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .notice-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; }
 
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -1rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; }
 .v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
@@ -799,7 +804,7 @@ function goWeeklyReview() {
 
 .v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; padding: 0 28rpx; }
 .v2-mode .btn-v2-bottom { display: block; width: 100%; height: 72rpx; line-height: 72rpx; background: #4ECDC4; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .btn-v2-bottom[disabled] { opacity: 0.5; background: #e0e0e0; box-shadow: none; }
+.v2-mode .btn-v2-bottom[disabled] { opacity: 0.5; box-shadow: none; }
 .sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: linear-gradient(90deg, transparent, #FF6B6B, transparent); animation: sync-slide 0.8s ease-in-out infinite; }
 @keyframes sync-slide {
   0% { width: 30%; left: -30%; }

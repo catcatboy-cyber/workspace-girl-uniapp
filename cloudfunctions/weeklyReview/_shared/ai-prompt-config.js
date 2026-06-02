@@ -43,7 +43,7 @@ const SAFETY_GUARDRAILS = {
   ],
   weeklyReview: [
     {
-      zh: '只总结本周提供的事件和评估变化；不要编造没有提供的长期趋势。',
+      zh: '只总结近14天提供的事件和评估变化；不要编造没有提供的长期趋势。',
       en: 'Summarize only the provided weekly events and assessment changes; do not invent long-term trends.'
     },
     {
@@ -57,7 +57,7 @@ const SAFETY_GUARDRAILS = {
   ],
   sideRead: [
     {
-      zh: '侧写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。',
+      zh: '星象速写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。',
       en: 'Profile reading is only lightweight reference; it must not be presented as fact or medical/psychological diagnosis.'
     },
     {

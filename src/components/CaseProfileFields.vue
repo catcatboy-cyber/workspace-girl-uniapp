@@ -133,6 +133,7 @@ watch(localProfile, (newVal) => {
 }, { deep: true })
 
 watch(() => props.modelValue, (newVal) => {
+  if (!newVal || JSON.stringify(newVal) === JSON.stringify(localProfile.value)) return
   localProfile.value = { ...newVal }
 }, { deep: true })
 </script>

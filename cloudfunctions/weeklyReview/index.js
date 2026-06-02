@@ -26,22 +26,21 @@ function dateKey(date) {
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`
 }
 
-function parseWeekStart(value) {
+function parseRangeStart(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
   const date = new Date(`${value}T00:00:00.000+08:00`)
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-function getCurrentWeekStart(now = new Date()) {
+function getCurrent14DayStart(now = new Date()) {
   const local = new Date(now.getTime() + TZ_OFFSET_MS)
-  const day = local.getUTCDay() || 7
   local.setUTCHours(0, 0, 0, 0)
-  return new Date(local.getTime() - (day - 1) * MS_PER_DAY - TZ_OFFSET_MS)
+  return new Date(local.getTime() - 13 * MS_PER_DAY - TZ_OFFSET_MS)
 }
 
 function getWeekRange(weekStartValue) {
-  const start = parseWeekStart(weekStartValue) || getCurrentWeekStart()
-  const end = new Date(start.getTime() + 7 * MS_PER_DAY)
+  const start = parseRangeStart(weekStartValue) || getCurrent14DayStart()
+  const end = new Date(start.getTime() + 14 * MS_PER_DAY)
   return {
     start,
     end,
@@ -74,14 +73,14 @@ function getRuntimeConfig(settings = {}) {
     weeklyEventLimit: clampRuntimeNumber(source.weeklyEventLimit, 10, 5, 20, true),
     weeklySideEventLimit: clampRuntimeNumber(source.weeklySideEventLimit, 8, 3, 12, true),
     weeklyMaxTokens: clampRuntimeNumber(source.weeklyMaxTokens, 650, 300, 1600, true),
-    sideReadMaxTokens: clampRuntimeNumber(source.sideReadMaxTokens, 380, 200, 1200, true),
+    sideReadMaxTokens: clampRuntimeNumber(source.sideReadMaxTokens, 550, 200, 1200, true),
     weeklyTemperature: clampRuntimeNumber(source.weeklyTemperature, 0.25, 0, 1),
     sideReadTemperature: clampRuntimeNumber(source.sideReadTemperature, 0.35, 0, 1)
   }
 }
 
 function mapRelationTypeLabel(value) {
-  const map = { romantic: '恋爱对象', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
+  const map = { romantic: 'Crush', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
   return map[value] || cleanText(String(value || ''), 24)
 }
 
@@ -120,23 +119,50 @@ function hasWeeklySideReadProfile(selfProfile, caseProfile) {
 }
 
 function normalizeWeeklySideRead(value) {
-  const input = value && typeof value === 'object' ? value : {}
-  const title = cleanText(input.title, 36) || '本周侧写'
-  const summary = cleanText(input.summary, 300)
-  const sections = Array.isArray(input.sections)
-    ? input.sections
-      .slice(0, 3)
-      .map((item) => ({
-        label: cleanText(item?.label, 24),
-        text: cleanText(item?.text, 400)
-      }))
-      .filter((item) => item.label && item.text)
-    : []
+  const sanitized = sanitizeWeeklySideReadObject(value)
+  const title = sanitized.title || '近14天星象速写'
+  const summary = sanitized.summary
+  const sections = sanitized.sections
 
   if (!summary && sections.length === 0) {
     throw new Error('WEEKLY_SIDE_READ_EMPTY')
   }
 
+  return { title, summary, sections }
+}
+
+function sanitizeSideReadText(value) {
+  return String(value || '')
+    .replace(/属相星座侧写/g, '星象速写')
+    .replace(/属相星座侧\s*写/g, '星象速写')
+    .replace(/星座侧写/g, '星座速写')
+    .replace(/星座侧\s*写/g, '星座速写')
+    .replace(/属相侧写/g, '属相速写')
+    .replace(/属相侧\s*写/g, '属相速写')
+    .replace(/综合侧写/g, '综合星象速写')
+    .replace(/综合侧\s*写/g, '综合星象速写')
+    .replace(/保守侧写/g, '保守星象速写')
+    .replace(/保守侧\s*写/g, '保守星象速写')
+    .replace(/侧写资料不足/g, '星象速写资料不足')
+    .replace(/侧\s*写资料不足/g, '星象速写资料不足')
+    .replace(/側寫/g, '星象速写')
+    .replace(/侧写/g, '星象速写')
+    .replace(/侧\s*写/g, '星象速写')
+}
+
+function sanitizeWeeklySideReadObject(value) {
+  const input = value && typeof value === 'object' ? value : {}
+  const title = sanitizeSideReadText(cleanText(input.title, 36))
+  const summary = sanitizeSideReadText(cleanText(input.summary, 300))
+  const sections = Array.isArray(input.sections)
+    ? input.sections
+      .slice(0, 3)
+      .map((item) => ({
+        label: sanitizeSideReadText(cleanText(item?.label, 24)),
+        text: sanitizeSideReadText(cleanText(item?.text, 400))
+      }))
+      .filter((item) => item.label && item.text)
+    : []
   return { title, summary, sections }
 }
 
@@ -298,23 +324,23 @@ function fallbackReview(params) {
     .filter(Boolean)
 
   const summary = weekEvents.length === 0
-    ? '这周还没有新增事件。现在不适合下重结论，先继续记录真实互动。'
+    ? '近14天还没有新增事件。现在不适合下重结论，先继续记录真实互动。'
     : trend.riskDelta >= 10
-      ? '这周风险分明显抬头，重点不是继续猜，而是回看是否出现回避、拖延、失约或说法变化。'
+      ? '近14天风险分明显抬头，重点不是继续猜，而是回看是否出现回避、拖延、失约或说法变化。'
       : trend.intentDelta >= 8 && trend.riskDelta <= 3
-        ? '这周意向信号有增强，但重点仍是看推进是否持续落地，而不是只看一次热度。'
-        : '这周关系有变化，但还没形成足够强的单向结论，适合继续积累连续证据。'
+        ? '近14天意向信号有增强，但重点仍是看推进是否持续落地，而不是只看一次热度。'
+        : '近14天关系有变化，但还没形成足够强的单向结论，适合继续积累连续证据。'
 
   return {
-    title: `${cleanText(caseDoc.name, 24) || '当前对象'} · 本周复盘`,
+    title: `${cleanText(caseDoc.name, 24) || '当前 Crush'} · 近14天复盘`,
     trendLabel,
     summary,
     keyChanges: [
-      `本周新增 ${weekEvents.length} 条真实事件。`,
-      `本周产生 ${weekAssessments.length} 次评估变化。`,
+      `近14天新增 ${weekEvents.length} 条真实事件。`,
+      `近14天产生 ${weekAssessments.length} 次评估变化。`,
       `意向变化 ${trend.intentDelta > 0 ? '+' : ''}${trend.intentDelta}，风险变化 ${trend.riskDelta > 0 ? '+' : ''}${trend.riskDelta}。`
     ],
-    keyEvents: keyEvents.length > 0 ? keyEvents : ['本周暂无新增关键事件。'],
+    keyEvents: keyEvents.length > 0 ? keyEvents : ['近14天暂无新增关键事件。'],
     nextWeekFocus: [
       '下一次最该验证的一件事：看对方是否有明确的后续动作，而不只是停在聊天气氛里。',
       '关注答应过的事情有没有兑现。',
@@ -345,13 +371,13 @@ async function buildAIReview(params) {
       `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
       `Target name: ${cleanText(params.caseDoc.name, 24) || 'current target'}`,
       `Target profile: ${serializeCaseProfile(params.caseDoc.profile)}`,
-      `Review week: ${params.weekStart} to ${params.weekEnd}`,
-      `Weekly stats: ${JSON.stringify({
+      `14-day review range: ${params.weekStart} to ${params.weekEnd}`,
+      `14-day stats: ${JSON.stringify({
         eventCount: params.weekEvents.length,
         assessmentCount: params.weekAssessments.length,
         scoreTrend: params.scoreTrend
       })}`,
-      `Weekly key events, max ${runtimeConfig.weeklyEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklyEventLimit))}`
+      `14-day key events, max ${runtimeConfig.weeklyEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklyEventLimit))}`
     ]
   })
   if (!messages) return fallback
@@ -413,7 +439,9 @@ async function getReviews(caseId) {
     .orderBy('weekStart', 'desc')
     .limit(20)
     .get()
-  return data || []
+  return (data || []).map((item) => item?.weeklySideRead
+    ? { ...item, weeklySideRead: sanitizeWeeklySideReadObject(item.weeklySideRead) }
+    : item)
 }
 
 async function generateReview(params) {
@@ -483,7 +511,7 @@ async function generateReview(params) {
     sourceEventIds: weekEvents.map((item) => item._id || item.id).filter(Boolean),
     sourceAssessmentIds: weekAssessments.map((item) => item._id || item.assessmentId).filter(Boolean),
     ...(existingReview?.weeklySideRead ? {
-      weeklySideRead: existingReview.weeklySideRead,
+      weeklySideRead: sanitizeWeeklySideReadObject(existingReview.weeklySideRead),
       weeklySideReadGeneratedAt: existingReview.weeklySideReadGeneratedAt || null
     } : {}),
     ...aiReview
@@ -496,7 +524,7 @@ async function generateReview(params) {
     reviewId,
     weekStart: range.weekStart,
     weekEnd: range.weekEnd,
-    title: `本周复盘：${aiReview.title || weekStart}`,
+    title: `近14天复盘：${aiReview.title || weekStart}`,
     description: aiReview.summary || '',
     trendLabel: aiReview.trendLabel || '',
     eventCount: weekEvents.length,
@@ -527,13 +555,13 @@ async function buildAIWeeklySideRead(params) {
     systemExtra: personaPrompt.systemPrompt,
     contextLines: [
       personaPrompt.userPrompt,
-      `Week: ${params.weekStart} to ${params.weekEnd}`,
+      `14-day range: ${params.weekStart} to ${params.weekEnd}`,
       `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
       `Target name: ${cleanText(params.caseDoc.name, 24) || 'current target'}`,
       `Target profile: ${serializeCaseProfile(params.caseDoc.profile)}`,
-      `Weekly review summary: ${cleanText(params.review?.summary, 160) || 'not provided'}`,
-      `Weekly score change: ${JSON.stringify(params.scoreTrend)}`,
-      `Weekly key events, max ${runtimeConfig.weeklySideEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklySideEventLimit))}`
+      `14-day review summary: ${cleanText(params.review?.summary, 160) || 'not provided'}`,
+      `14-day score change: ${JSON.stringify(params.scoreTrend)}`,
+      `14-day key events, max ${runtimeConfig.weeklySideEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklySideEventLimit))}`
     ]
   })
   if (!messages) {
@@ -632,7 +660,7 @@ async function generateWeeklySideRead(params) {
   await db.collection('timeline_records').add({
     caseId, userId, type: 'note',
     feature: 'weeklySideRead',
-    title: weeklySideRead.title || '本周属相星座侧写',
+    title: weeklySideRead.title || '近14天星象速写',
     description: weeklySideRead.summary || '',
     sections: weeklySideRead.sections || [],
     occurrenceAt: new Date(), createdAt: new Date(),
@@ -674,10 +702,10 @@ exports.main = async (event = {}) => {
       return { success: false, message: error.message, code: 'INSUFFICIENT_BALANCE', balance: error.balance, required: error.required }
     }
     if (error?.message === 'WEEKLY_REVIEW_REQUIRED') {
-      return { success: false, message: '请先生成本周复盘' }
+      return { success: false, message: '请先生成近14天复盘' }
     }
     if (error?.message === 'WEEKLY_SIDE_READ_PROFILE_MISSING') {
-      return { success: false, message: '请先完善你或对象的属相、星座信息' }
+      return { success: false, message: '请先完善你或 Crush 的属相、星座信息' }
     }
     if (error?.message === 'AI_DISABLED') {
       return { success: false, message: 'AI 未启用' }
@@ -687,6 +715,6 @@ exports.main = async (event = {}) => {
     }
 
     console.error('weeklyReview error:', error)
-    return { success: false, message: '周复盘处理失败' }
+    return { success: false, message: '14天复盘处理失败' }
   }
 }

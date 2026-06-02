@@ -37,7 +37,7 @@ function normalizeCurrentStatus(value) {
 }
 
 function mapRelationType(value) {
-  const map = { romantic: '恋爱对象', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
+  const map = { romantic: 'Crush', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
   return map[value] || value || ''
 }
 
@@ -300,6 +300,7 @@ function normalizeSettings(settings) {
     const provider = typeof defaultModel.provider === 'string' && defaultModel.provider.trim()
       ? defaultModel.provider.trim()
       : 'openai-compatible'
+    const rc = settings?.runtimeConfig || {}
     return {
       enabled: Boolean(settings.aiEnabled),
       provider,
@@ -314,7 +315,9 @@ function normalizeSettings(settings) {
         : provider.toLowerCase() === 'anthropic'
           ? 'claude-3-5-sonnet-20241022'
           : 'gpt-4o-mini',
-      fallbackToRules: settings.aiFallbackToRules !== false
+      fallbackToRules: settings.aiFallbackToRules !== false,
+      eventMaxTokens: Number.isFinite(Number(rc.eventMaxTokens)) ? Number(rc.eventMaxTokens) : 650,
+      eventTemperature: Number.isFinite(Number(rc.eventTemperature)) ? Number(rc.eventTemperature) : 0.2
     }
   }
 
@@ -322,6 +325,7 @@ function normalizeSettings(settings) {
   const provider = typeof settings?.aiProvider === 'string' && settings.aiProvider.trim()
     ? settings.aiProvider.trim()
     : 'openai-compatible'
+  const rc = settings?.runtimeConfig || {}
   return {
     enabled: Boolean(settings?.aiEnabled),
     provider,
@@ -336,7 +340,9 @@ function normalizeSettings(settings) {
       : provider.toLowerCase() === 'anthropic'
         ? 'claude-3-5-sonnet-20241022'
         : 'gpt-4o-mini',
-    fallbackToRules: settings?.aiFallbackToRules !== false
+    fallbackToRules: settings?.aiFallbackToRules !== false,
+    eventMaxTokens: Number.isFinite(Number(rc.eventMaxTokens)) ? Number(rc.eventMaxTokens) : 650,
+    eventTemperature: Number.isFinite(Number(rc.eventTemperature)) ? Number(rc.eventTemperature) : 0.2
   }
 }
 
@@ -382,7 +388,8 @@ async function analyzeTimelineEvent(params) {
       timeoutMs: AI_REQUEST_TIMEOUT_MS,
       responseFormat: { type: 'json_object' },
       messages,
-      temperature: 0.2
+      temperature: settings.eventTemperature,
+      maxTokens: settings.eventMaxTokens
     })
 
     if (!response.ok) {

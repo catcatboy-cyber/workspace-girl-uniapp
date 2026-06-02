@@ -1,7 +1,7 @@
 <template>
   <view class="page v2-mode" :style="themeVars">
     <view class="hero-block-v2">
-      <text class="hero-tag-v2">CUSTOM</text>
+      <text class="hero-tag-v2">CUSTOM PET</text>
       <text class="hero-title-v2">定制<text class="hl-v2">宠物</text></text>
       <text class="hero-copy-v2">描述你心中的专属陪伴形象，我们会为你制作。</text>
     </view>
@@ -116,7 +116,7 @@ async function submit() {
 }
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; }
 
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }

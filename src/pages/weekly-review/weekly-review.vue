@@ -3,29 +3,29 @@
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else>
-        <view class="hero-block-v2"><text class="hero-tag-v2">Weekly Review / {{ caseName }}</text><text class="hero-title-v2">本周<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按周回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">回去</button><button class="btn-v2-wr" @click="goTimeline">往事</button></view></view>
+        <view class="hero-block-v2"><text class="hero-tag-v2">14-DAY REVIEW / {{ caseName }}</text><text class="hero-title-v2">近14天<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按近14天窗口回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">回去</button><button class="btn-v2-wr" @click="goTimeline">往事</button></view></view>
         <!-- Generate -->
-        <view class="card-v2"><text class="section-title-v2">本周 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、本周真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating" @click="generateCurrentWeek">{{ generating ? '生成中...' : currentReview ? '重新生成本周复盘' : '生成本周复盘' }}</button></view>
+        <view class="card-v2"><text class="section-title-v2">近14天 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、近14天真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating || (currentReview && !hasNewEventsSinceReview)" @click="generateCurrentWeek">{{ generating ? '生成中...' : (currentReview && !hasNewEventsSinceReview) ? '还没新事件' : (currentReview ? '重新生成近14天复盘' : '生成近14天复盘') }}</button></view>
         <!-- Current review -->
         <view v-if="currentReview" class="card-v2 review-v2">
           <view class="review-head-v2"><view><text class="review-week-v2">{{ currentReview.weekStart }} - {{ currentReview.weekEnd }}</text><text class="review-title-v2">{{ currentReview.title }}</text></view><view class="tag-row-v2"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(currentReview.trendLabel) }}</text><text v-if="currentReview.aiUsed" class="tag-v2 black">AI 复盘</text></view></view>
           <text class="review-summary-v2" user-select>{{ currentReview.summary }}</text>
           <view class="tag-row-v2" style="margin-top:10rpx;"><text class="tag-v2">事件 {{ currentReview.eventCount }}</text><text class="tag-v2">分析 {{ currentReview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(currentReview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(currentReview.riskDelta) }}</text></view>
-          <view v-if="currentReview.keyChanges?.length" class="review-block-v2"><text class="section-title-v2">本周关键变化</text><text v-for="item in currentReview.keyChanges" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
+          <view v-if="currentReview.keyChanges?.length" class="review-block-v2"><text class="section-title-v2">近14天关键变化</text><text v-for="item in currentReview.keyChanges" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
           <view v-if="currentReview.keyEvents?.length" class="review-block-v2"><text class="section-title-v2">关键事件</text><text v-for="item in currentReview.keyEvents" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
-          <view v-if="currentReview.nextWeekFocus?.length" class="review-block-v2"><text class="section-title-v2">下周观察重点</text><text v-for="item in currentReview.nextWeekFocus" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
-          <view v-if="currentReview.avoidMisread?.length" class="review-block-v2"><text class="section-title-v2">本周避免误判</text><text v-for="item in currentReview.avoidMisread" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
+          <view v-if="currentReview.nextWeekFocus?.length" class="review-block-v2"><text class="section-title-v2">下个14天观察重点</text><text v-for="item in currentReview.nextWeekFocus" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
+          <view v-if="currentReview.avoidMisread?.length" class="review-block-v2"><text class="section-title-v2">近14天避免误判</text><text v-for="item in currentReview.avoidMisread" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
         </view>
-        <view v-else class="empty-v2"><text class="empty-title-v2">本周还没有复盘</text><text class="empty-sub-v2">先生成一次本周复盘，后续会沉淀为历史。</text></view>
+        <view v-else class="empty-v2"><text class="empty-title-v2">近14天还没有复盘</text><text class="empty-sub-v2">先生成一次近14天复盘，后续会沉淀为历史。</text></view>
         <!-- Side read -->
-        <view class="card-v2"><text class="section-title-v2">本周侧写</text><text class="card-text-v2">结合属相、星座和本周事件，给出本周侧写。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="!currentReview || sideReadLoading" @click="generateCurrentWeeklySideRead">{{ sideReadLoading ? '生成中...' : currentWeeklySideRead ? '重新生成本周侧写' : '生成本周属相星座侧写' }}</button>
+        <view class="card-v2"><text class="section-title-v2">近14天星象速写</text><text class="card-text-v2">结合属相、星座和近14天事件，给出近14天星象速写。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="!currentReview || sideReadLoading || (currentWeeklySideRead && !hasNewEventsSinceSideRead)" @click="generateCurrentWeeklySideRead">{{ sideReadLoading ? '生成中...' : (currentWeeklySideRead && !hasNewEventsSinceSideRead) ? '还没新事件' : (currentWeeklySideRead ? '重新生成近14天星象速写' : '生成近14天星象速写') }}</button>
           <view v-if="currentWeeklySideRead" class="side-body-v2"><text class="review-title-v2">{{ currentWeeklySideRead.title }}</text><text class="review-summary-v2" user-select>{{ currentWeeklySideRead.summary }}</text><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2" user-select>{{ item.text }}</text></view></view>
-          <text v-else-if="currentReview" class="card-text-v2 muted" style="margin-top:10rpx;">这周还没有侧写，可以单独生成。</text>
-          <text v-else class="card-text-v2 muted" style="margin-top:10rpx;">请先生成本周复盘，再生成本周侧写。</text>
+          <text v-else-if="currentReview" class="card-text-v2 muted" style="margin-top:10rpx;">近14天还没有星象速写，可以单独生成。</text>
+          <text v-else class="card-text-v2 muted" style="margin-top:10rpx;">请先生成近14天复盘，再生成近14天星象速写。</text>
         </view>
         <!-- History -->
-        <view class="card-v2"><text class="section-title-v2">历史周复盘</text><text class="card-text-v2">按周保存，帮助你看连续趋势。</text></view>
-        <view v-if="historyReviews.length === 0" class="empty-v2"><text class="empty-sub-v2">暂无历史周复盘。</text></view>
+        <view class="card-v2"><text class="section-title-v2">历史14天复盘</text><text class="card-text-v2">按近14天窗口保存，帮助你看连续趋势。</text></view>
+        <view v-if="historyReviews.length === 0" class="empty-v2"><text class="empty-sub-v2">暂无历史14天复盘。</text></view>
         <view v-else class="history-list-v2"><view v-for="item in historyReviews" :key="item._id" class="card-v2 history-card-v2"><view class="review-head-v2"><view><text class="review-week-v2">{{ item.weekStart }} - {{ item.weekEnd }}</text><text class="review-title-v2">{{ item.title }}</text></view><text class="tag-v2">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text></view><text class="review-summary-v2" user-select>{{ item.summary }}</text><view class="tag-row-v2" style="margin-top:8rpx;"><text class="tag-v2">意向 {{ formatDelta(item.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(item.riskDelta) }}</text><text class="tag-v2">事件 {{ item.eventCount }}</text></view></view></view>
       </view>
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
@@ -45,7 +45,7 @@ import {
   getWeeklyReviews
 } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
-import { getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import { bumpDataVersion, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 
 const loading = ref(true)
 const syncing = ref(false)
@@ -53,8 +53,9 @@ const generating = ref(false)
 const sideReadLoading = ref(false)
 const userId = ref('')
 const caseId = ref('')
-const caseName = ref('当前对象')
+const caseName = ref('当前 Crush')
 const reviews = ref<any[]>([])
+const caseTimeline = ref<any[]>([])
 const currentWeekStart = ref('')
 const themeVars = ref(getThemeStyle())
 const initialized = ref(false)
@@ -65,6 +66,35 @@ const currentReview = computed(() => {
 
 const currentWeeklySideRead = computed(() => {
   return currentReview.value?.weeklySideRead || null
+})
+
+const latestEventTime = computed(() => {
+  let max = 0
+  for (const item of caseTimeline.value) {
+    if (!item || !item.occurrenceAt) continue
+    if (item.type === 'assessment' || item.type === 'trend' || item.type === 'weekly_review') continue
+    if (item.type === 'note' && item.feature === 'weeklySideRead') continue
+    const t = new Date(item.occurrenceAt).getTime()
+    if (t > max) max = t
+  }
+  return max
+})
+
+const hasNewEventsSinceReview = computed(() => {
+  const r = currentReview.value
+  if (!r) return true
+  const reviewTime = r.generatedAt ? new Date(r.generatedAt).getTime() : 0
+  return latestEventTime.value > reviewTime
+})
+
+const hasNewEventsSinceSideRead = computed(() => {
+  const r = currentReview.value
+  const side = currentWeeklySideRead.value
+  if (!r) return false
+  if (!side) return true
+  const t = side.generatedAt || r.weeklySideReadGeneratedAt || r.generatedAt
+  const sideTime = t ? new Date(t).getTime() : 0
+  return latestEventTime.value > sideTime
 })
 
 const historyReviews = computed(() => {
@@ -144,7 +174,7 @@ async function loadData(options?: { silent?: boolean }) {
     const cacheKey = caseId.value || getActiveCaseId()
     const cached = cacheKey ? readWeeklyCache(uid, cacheKey) : null
     if (cached) {
-      caseName.value = cached.caseName || '当前对象'
+      caseName.value = cached.caseName || '当前 Crush'
       reviews.value = cached.reviews || []
       currentWeekStart.value = cached.currentWeekStart || ''
       loading.value = false
@@ -157,17 +187,22 @@ async function loadData(options?: { silent?: boolean }) {
     const hasCase = await ensureCaseId(uid)
     if (!hasCase) {
       reviews.value = []
-      caseName.value = '当前对象'
+      caseName.value = '当前 Crush'
       return
     }
     setActiveCaseId(caseId.value)
     const [caseFile, reviewRes] = await Promise.all([
-      getCaseDetail(uid, caseId.value),
-      getWeeklyReviews(uid, caseId.value)
+      getCaseDetail(uid, caseId.value).catch(() => null),
+      getWeeklyReviews(uid, caseId.value).catch(() => null)
     ])
-    caseName.value = caseFile?.name || '当前对象'
-    reviews.value = reviewRes.reviews || []
-    currentWeekStart.value = reviewRes.currentWeekStart || ''
+    if (!caseFile && !reviewRes) {
+      showError('加载14天复盘失败')
+      return
+    }
+    caseName.value = caseFile?.name || '当前 Crush'
+    caseTimeline.value = Array.isArray(caseFile?.timeline) ? caseFile.timeline : []
+    reviews.value = reviewRes?.reviews || []
+    currentWeekStart.value = reviewRes?.currentWeekStart || ''
     lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
     writeWeeklyCache(uid, caseId.value, {
       caseName: caseName.value,
@@ -175,7 +210,7 @@ async function loadData(options?: { silent?: boolean }) {
       currentWeekStart: currentWeekStart.value
     })
   } catch (error: any) {
-    showError(error?.message || '加载周复盘失败')
+    showError(error?.message || '加载14天复盘失败')
   } finally {
     loading.value = false
     syncing.value = false
@@ -191,10 +226,10 @@ async function generateCurrentWeek() {
     currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
     bumpDataVersion()
     writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentWeekStart: currentWeekStart.value })
-    showSuccess('已生成本周复盘')
+    showSuccess('已生成近14天复盘')
   } catch (error: any) {
     if (handleInsufficientBalance(error)) return
-    showError(error?.message || '生成周复盘失败')
+    showError(error?.message || '生成14天复盘失败')
   } finally {
     generating.value = false
   }
@@ -209,20 +244,13 @@ async function generateCurrentWeeklySideRead() {
     currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
     bumpDataVersion()
     writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentWeekStart: currentWeekStart.value })
-    showSuccess('已生成本周侧写')
+    showSuccess('已生成近14天星象速写')
   } catch (error: any) {
     if (handleInsufficientBalance(error)) return
-    showError(error?.message || '生成本周侧写失败')
+    showError(error?.message || '生成近14天星象速写失败')
   } finally {
     sideReadLoading.value = false
   }
-}
-
-function bumpDataVersion() {
-  try {
-    const v = (Number(uni.getStorageSync('dataVersion')) || 0) + 1
-    uni.setStorageSync('dataVersion', v)
-  } catch { /* noop */ }
 }
 
 function formatDelta(value: any) {
@@ -235,18 +263,18 @@ function formatDelta(value: any) {
 function mapWeeklyTrendLabel(label: any) {
   const normalized = String(label || '').trim()
   const map: Record<string, string> = {
-    持续向好: '本周回暖',
-    持续走低: '本周转弱',
-    风险抬头: '本周承压',
-    起伏不定: '本周波动',
-    基本持平: '本周平稳',
-    稳定观察: '本周观察',
-    升温期: '本周回暖',
-    升温中: '本周回暖',
-    走弱期: '本周转弱',
-    暂时平稳: '本周平稳'
+    持续向好: '近14天回暖',
+    持续走低: '近14天转弱',
+    风险抬头: '近14天承压',
+    起伏不定: '近14天波动',
+    基本持平: '近14天平稳',
+    稳定观察: '近14天观察',
+    升温期: '近14天回暖',
+    升温中: '近14天回暖',
+    走弱期: '近14天转弱',
+    暂时平稳: '近14天平稳'
   }
-  return map[normalized] || (normalized ? `本周${normalized.replace(/^本周/, '')}` : '本周复盘')
+  return map[normalized] || (normalized ? `近14天${normalized.replace(/^近14天/, '')}` : '近14天复盘')
 }
 
 function goCaseDetail() {
@@ -278,7 +306,7 @@ function goTimeline() {
 .v2-mode .empty-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
 .v2-mode .empty-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.5; }
 
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
@@ -304,11 +332,11 @@ function goTimeline() {
 .v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
 
-.v2-mode .review-block-v2 { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #e0e0e0; }
+.v2-mode .review-block-v2 { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #111; }
 .v2-mode .bullet-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 4rpx; }
 
 .v2-mode .side-body-v2 { margin-top: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
-.v2-mode .side-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #e0e0e0; }
+.v2-mode .side-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #111; }
 .v2-mode .side-item-v2:last-child { border-bottom: none; }
 .v2-mode .side-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; }
 .v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; margin-top: 4rpx; }
