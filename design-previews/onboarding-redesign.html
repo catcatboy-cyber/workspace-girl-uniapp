@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新用户引导改版 — 设计预览</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#e8e8e8; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; display:flex; justify-content:center; padding:20px; gap:40px; flex-wrap:wrap; }
+  .section-label { width:100%; text-align:center; font-size:11px; font-weight:900; color:#999; letter-spacing:3px; text-transform:uppercase; margin-bottom:-10px; }
+
+  .phone { width:375px; height:700px; background:#FFFDF5; border:3px solid #111; box-shadow:8px 8px 0 #111; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+
+  /* ====== 顶部栏 ====== */
+  .top-bar { background:#111; color:#FFD93D; padding:12px 16px; font-size:12px; font-weight:900; letter-spacing:2px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+  .top-bar .skip { background:transparent; color:#FFD93D; border:1.5px solid #FFD93D; padding:5px 14px; font-size:11px; font-weight:800; cursor:pointer; }
+
+  /* ====== 聊天区域 ====== */
+  .chat { flex:1; overflow-y:auto; padding:18px 14px; display:flex; flex-direction:column; gap:14px; }
+  .msg { display:flex; gap:8px; align-items:flex-end; animation:in .3s ease-out both; }
+  .msg.pet { }
+  .msg.mine { justify-content:flex-end; }
+  .avatar { width:34px; height:34px; border:2px solid #111; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; background:#FFD93D; }
+  .bubble { max-width:75%; padding:12px 14px; border:2px solid #111; font-size:14px; font-weight:700; color:#111; line-height:1.5; background:#fff; }
+  .mine .bubble { background:#111; color:#FFD93D; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { padding:10px 16px; background:#fff; border:2px solid #111; font-size:13px; font-weight:800; color:#111; cursor:pointer; }
+  .chip:hover { background:#111; color:#FFD93D; }
+  .chip.chosen { background:#111; color:#FFD93D; pointer-events:none; }
+  .typing { display:flex; gap:4px; padding:6px 0; }
+  .typing span { width:6px; height:6px; background:#999; border-radius:50%; animation:bounce 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay:.2s; }
+  .typing span:nth-child(3) { animation-delay:.4s; }
+  @keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-6px); } }
+  @keyframes in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ====== 底部输入栏（装饰） ====== */
+  .chat-foot { border-top:2px solid #111; padding:12px 14px; display:flex; gap:8px; flex-shrink:0; background:#fff; }
+  .chat-foot input { flex:1; padding:10px 14px; border:2px solid #111; font-size:13px; font-weight:600; background:#f9f9f9; color:#999; }
+  .chat-foot button { padding:10px 18px; background:#4ECDC4; border:2px solid #111; font-size:13px; font-weight:900; color:#111; }
+
+  /* ====== 旧版表单 ====== */
+  .old-form { flex:1; overflow-y:auto; padding:18px 16px; }
+  .field-label { font-size:11px; font-weight:900; color:#111; text-transform:uppercase; letter-spacing:2px; margin:14px 0 4px; display:block; }
+  .field-select { width:100%; padding:12px 14px; border:2.5px solid #111; background:#fff; font-size:14px; font-weight:700; color:#111; }
+  .btn-save { width:100%; margin-top:24px; padding:14px; background:#4ECDC4; border:2.5px solid #111; box-shadow:4px 4px 0 #111; font-size:15px; font-weight:900; color:#111; cursor:pointer; }
+
+  .vs-badge { position:absolute; top:-10px; left:50%; transform:translateX(-50%); padding:3px 14px; font-size:10px; font-weight:900; letter-spacing:2px; color:#FFD93D; background:#111; z-index:5; white-space:nowrap; }
+  .vs-badge.old { background:#e0e0e0; color:#999; }
+
+  .phone-title { text-align:center; padding:8px 0 0; font-size:10px; color:#999; font-weight:700; }
+
+  /* 首页提醒卡片 */
+  .remind-card { background:#FFFBEB; border:2px solid #FFD93D; padding:14px 16px; margin:14px 16px; display:flex; align-items:center; gap:10px; }
+  .remind-card .dot { width:8px; height:8px; background:#FFD93D; border:2px solid #111; flex-shrink:0; }
+  .remind-card .txt { flex:1; font-size:13px; font-weight:700; color:#111; line-height:1.5; }
+  .card { background:#fff; border:2px solid #111; padding:16px; margin:0 16px 12px; }
+  .card-title { font-size:12px; font-weight:900; color:#111; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+  .hero-block { background:#FF6B6B; border:2px solid #111; box-shadow:6px 6px 0 #111; padding:24px; margin:14px 16px 0; transform:rotate(-.5deg); }
+  .hero-tag { display:inline-block; background:#111; color:#FFD93D; padding:4px 12px; font-size:10px; font-weight:900; letter-spacing:3px; margin-bottom:10px; }
+  .hero-title { font-size:26px; font-weight:900; color:#111; line-height:1.15; }
+  .hero-hl { display:inline-block; background:#FFD93D; padding:0 6px; }
+  .hero-sub { font-size:13px; font-weight:600; color:rgba(0,0,0,.7); margin-top:8px; line-height:1.5; }
+  .quick-btn { width:100%; margin-top:8px; padding:12px; background:#4ECDC4; border:2px solid #111; box-shadow:4px 4px 0 #111; font-size:14px; font-weight:900; color:#111; }
+  .quick-input { width:100%; padding:12px 14px; border:2px solid #111; background:#fff; font-size:14px; font-weight:600; color:#111; }
+</style>
+</head>
+<body>
+
+
+<!-- ============================================= -->
+<!-- SCREEN 1: 对话式画像 (逐轮，交互式)          -->
+<!-- ============================================= -->
+<div class="section-label">新方案 ↓</div>
+<div class="phone" id="phone1">
+  <div class="top-bar">
+    <span>小咪认识你</span>
+    <span style="font-size:10px;opacity:.5;">Chat Mode</span>
+    <button class="skip">先跳过 →</button>
+  </div>
+  <div class="chat" id="chat1">
+    <!-- JS 动态注入 -->
+  </div>
+  <div class="chat-foot">
+    <input placeholder="这是一次对话，不是表单..." disabled>
+    <button disabled>→</button>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SCREEN 2: 首页（画像未完善提醒）             -->
+<!-- ============================================= -->
+<div class="section-label">新方案 ↓</div>
+<div class="phone">
+  <div class="top-bar">
+    <span>今日</span>
+    <span style="font-size:10px;opacity:.5;">Dom-Crush</span>
+  </div>
+  <div style="flex:1;overflow-y:auto;">
+    <div class="hero-block">
+      <div class="hero-tag">TODAY</div>
+      <div class="hero-title">先做一次<view class="hero-hl">初次</view>分析</div>
+      <div class="hero-sub">第一次进来先完成一轮结构化问答。</div>
+    </div>
+
+    <div class="remind-card" onclick="this.style.background='#fff';alert('跳转到对话式画像页')" style="cursor:pointer;">
+      <div class="dot"></div>
+      <div class="txt">你的画像还没完善，分析可能没那么准。<br><span style="font-size:11px;color:#FF5252;">花 30 秒跟小咪聊聊 →</span></div>
+      <span style="font-size:18px;font-weight:900;color:#111;">→</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">快速记录</div>
+      <input class="quick-input" placeholder="比如：他今天主动问我周末有没有空" disabled style="opacity:.4">
+      <button class="quick-btn" style="opacity:.5;">补完画像再记录更准 →</button>
+    </div>
+
+    <div class="card" style="border-color:#FFD93D;background:#FFFBEB;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:20px;">🐱</span>
+        <span style="font-size:12px;font-weight:700;color:#111;">小咪：先简单认识一下，我就能给出更靠谱的分析啦～</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SCREEN 3: 旧版（对比）                       -->
+<!-- ============================================= -->
+<div class="section-label">当前旧版 ↓</div>
+<div class="phone">
+  <div class="top-bar">
+    <span>本人画像</span>
+  </div>
+  <div class="old-form">
+    <div class="field-label">性别</div>
+    <select class="field-select"><option>请选择</option></select>
+    <div class="field-label">年龄段</div>
+    <select class="field-select"><option>请选择</option></select>
+    <div class="field-label">身份</div>
+    <select class="field-select"><option>请选择</option></select>
+    <div class="field-label">属相</div>
+    <select class="field-select"><option>请选择</option></select>
+    <div class="field-label">星座</div>
+    <select class="field-select"><option>请选择</option></select>
+    <button class="btn-save">保存</button>
+    <div style="text-align:center;margin-top:18px;font-size:12px;color:#999;line-height:1.6;">
+      ❌ 5 个下拉框<br>
+      ❌ 没有跳过按钮<br>
+      ❌ 像在填档案，不像被认识
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== 逐轮对话引擎 ======
+(function() {
+  var chat = document.getElementById('chat1');
+  var step = 0;
+  var answers = {};
+
+  var questions = [
+    {
+      pet: '嗨～我是小咪！在开始之前，想先简单认识你一下。你多大了？',
+      chips: ['18 岁以下', '18–22 岁', '23–26 岁', '27 岁以上'],
+      key: 'age'
+    },
+    {
+      pet: '收到！那你是男生还是女生？（选哪个都行，只是我会根据它调整说话方式）',
+      chips: ['男生', '女生', '暂不说明'],
+      key: 'gender'
+    },
+    {
+      pet: '嗯，最后问问——你现在是学生还是已经工作了？',
+      chips: ['高中/中专', '大学生', '研究生', '已工作', '不想说'],
+      key: 'identity'
+    },
+    {
+      pet: '可以啦！这些就够了。<br><br>接下来想聊聊你的 Crush？<br><span style="font-size:12px;color:#666;">（后面是答题流程，但在对话体验里无缝接过去）</span>',
+      chips: ['好的，开始吧', '先逛逛再说'],
+      key: 'done'
+    }
+  ];
+
+  function addPetMsg(html, delay) {
+    setTimeout(function() {
+      var div = document.createElement('div');
+      div.className = 'msg pet';
+      div.innerHTML = '<div class="avatar">🐱</div><div class="bubble">' + html + '</div>';
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }, delay || 100);
+  }
+
+  function addMineMsg(text) {
+    var div = document.createElement('div');
+    div.className = 'msg mine';
+    div.innerHTML = '<div class="bubble">' + text + '</div>';
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function addChips(chips, key) {
+    var div = document.createElement('div');
+    div.className = 'msg mine';
+    var html = '<div class="chips">';
+    chips.forEach(function(c) {
+      html += '<div class="chip" data-key="' + key + '" data-val="' + c + '" onclick="window._onChipClick(this)">' + c + '</div>';
+    });
+    html += '</div>';
+    div.innerHTML = html;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function showQuestion(idx, delay) {
+    setTimeout(function() {
+      var q = questions[idx];
+      addPetMsg(q.pet, 100);
+      setTimeout(function() {
+        addChips(q.chips, q.key);
+      }, 400);
+    }, delay || 600);
+  }
+
+  window._onChipClick = function(el) {
+    if (el.classList.contains('chosen')) return;
+    // 禁用同组所有 chips
+    var all = el.parentElement.querySelectorAll('.chip');
+    for (var i = 0; i < all.length; i++) all[i].classList.add('chosen');
+    el.classList.add('chosen');
+
+    var key = el.getAttribute('data-key');
+    var val = el.getAttribute('data-val');
+    answers[key] = val;
+    addMineMsg(val);
+
+    step++;
+    if (step < questions.length) {
+      showQuestion(step, 500);
+    } else {
+      // 最后一轮
+      setTimeout(function() {
+        addPetMsg('那我先不打扰你啦～需要我帮忙时，点底部「今日」随时找我。画像随时可以在「我」页修改。<br><br><span style="font-size:11px;color:#666;">（你选了：' + (answers.age||'') + ' · ' + (answers.gender||'') + ' · ' + (answers.identity||'') + '）</span>', 600);
+      }, 800);
+    }
+  };
+
+  // 启动第一轮
+  showQuestion(0, 300);
+})();
+</script>
+
+
+<!-- ============================================= -->
+<!-- SCREEN 4: 过渡到答题                           -->
+<!-- ============================================= -->
+<div class="section-label">后续衔接 ↓</div>
+<div class="phone">
+  <div class="top-bar">
+    <span>初次分析</span>
+    <span style="font-size:10px;opacity:.5;">Chat Continuation</span>
+  </div>
+  <div class="chat">
+    <div class="msg pet">
+      <div class="avatar">🐱</div>
+      <div class="bubble">好啦，我大概了解你了！现在聊聊你那个 Crush——他是谁、你们怎么认识的、他对你怎么样。</div>
+    </div>
+    <div class="msg pet" style="animation-delay:.5s">
+      <div class="avatar">🐱</div>
+      <div class="bubble">先告诉我，他叫什么？（可以是昵称）</div>
+    </div>
+    <div class="msg mine" style="animation-delay:.8s">
+      <div class="bubble" style="background:#fff;color:#111;border-style:dashed;">
+        ← 从这里开始就是现在的答题流程了，<br>但用户已经在对话状态里，<br>答题像聊天接话而非考试。
+      </div>
+    </div>
+  </div>
+  <div class="chat-foot">
+    <input placeholder="输入名字..." style="background:#fff;color:#111;">
+    <button style="background:#4ECDC4;">发送</button>
+  </div>
+</div>
+
+
+<div style="width:100%;text-align:center;padding:30px;font-size:12px;color:#999;line-height:1.8;">
+  设计预览 · 2026-06-02 · Campus Pop V2 风格<br>
+  上方 Screen 1 是<strong>可交互的</strong>——点击气泡里的选项，下一问才会出现。
+</div>
+
+</body>
+</html>

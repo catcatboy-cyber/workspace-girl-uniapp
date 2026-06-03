@@ -15,6 +15,11 @@
           <text class="hero-copy-v2">AI 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
           <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">最新 · {{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">风险 · {{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 分析</text></view>
         </view>
+        <!-- 补初评入口 -->
+        <view v-if="!isCurrentResultAIReviewed" class="card-v2" @click="goNewAssessment">
+          <text class="section-title-v2">还没有进行初评</text>
+          <text class="remind-text-v2">回答几个问题，让小咪帮你看看有没有戏。点击前往 →</text>
+        </view>
         <!-- Profile -->
         <view class="card-v2">
           <view class="card-head-v2">
@@ -519,6 +524,11 @@ function goTimeline() {
   uni.switchTab({ url: '/pages/timeline/timeline' })
 }
 
+function goNewAssessment() {
+  setActiveCaseId(caseId.value)
+  uni.navigateTo({ url: '/pages/reassess/reassess?caseId=' + caseId.value })
+}
+
 function getAssessmentTimestamp(item: any) {
   const raw = item?.createdAt
   if (!raw) return 0
@@ -739,6 +749,7 @@ function goWeeklyReview() {
 .v2-mode .stat-hint-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
 
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.v2-mode .remind-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.5; }
 .v2-mode .trend-block-v2 { margin-top: 18rpx; padding-top: 16rpx; border-top: 3rpx solid #111; }
 .v2-mode .trend-grid-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8rpx; }
 .v2-mode .trend-item-v2 { padding: 14rpx 10rpx; border: 2rpx solid #111; text-align: center; background: #fff; }

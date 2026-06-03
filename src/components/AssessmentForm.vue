@@ -1,7 +1,7 @@
 <template>
   <view class="assessment-form">
     <!-- 基础信息 -->
-    <view v-if="!questionsOnly" class="card">
+    <view v-if="!questionsOnly || profileOnly" class="card">
       <text class="h2">创建 Crush</text>
       <view class="field-label">关系类型</view>
       <view class="toggle-row">
@@ -28,7 +28,7 @@
     </view>
 
     <!-- Crush 画像 -->
-    <view v-if="!questionsOnly" class="card">
+    <view v-if="!questionsOnly || profileOnly" class="card">
       <text class="h2">Crush 画像</text>
       <text class="muted">画像信息仅辅助理解，不参与核心评分。</text>
 
@@ -50,8 +50,8 @@
         </view>
 
         <view class="field">
-          <view class="field-label">工作</view>
-          <input v-model="profile.occupation" class="text-input" placeholder="例如：产品经理" />
+          <view class="field-label">身份</view>
+          <input v-model="profile.occupation" class="text-input" placeholder="例如：大学生、产品经理" />
         </view>
 
         <view class="field">
@@ -71,7 +71,7 @@
     </view>
 
     <!-- 结构化问答 -->
-    <view class="card">
+    <view v-if="!profileOnly" class="card">
       <text class="h2">结构化问答</text>
       <text class="muted">按"{{ relationTypeLabel }}"调整。</text>
 
@@ -99,7 +99,7 @@
     </view>
 
     <!-- 补充场景 -->
-    <view class="card">
+    <view v-if="!profileOnly" class="card">
       <text class="h2">关键场景补充</text>
       <view class="questions">
         <view v-for="q in textQuestions" :key="q.id" class="question">
@@ -115,7 +115,7 @@
     </view>
 
     <view class="card sticky-actions">
-      <button class="btn-primary" @click="handleSubmit">{{ submitLabel }}</button>
+      <button class="btn-primary" @click="handleSubmit">{{ profileOnly ? '创建' : submitLabel }}</button>
     </view>
   </view>
 </template>
@@ -131,6 +131,7 @@ const props = defineProps<{
   initialProfile?: any
   initialName?: string
   questionsOnly?: boolean
+  profileOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -166,6 +167,7 @@ const answers = reactive<Record<string, any>>({})
 
 const submitLabel = computed(() => props.submitLabel || '生成分析结果')
 const questionsOnly = computed(() => props.questionsOnly === true)
+const profileOnly = computed(() => props.profileOnly === true)
 
 const relationTypeLabel = computed(() =>
   relationTypeRef.value === 'close_friend' ? '朋友' : relationTypeRef.value === 'colleague' ? '同事' : relationTypeRef.value === 'classmate' ? '同学' : relationTypeRef.value === 'teacher' ? '老师' : 'Crush'
@@ -188,15 +190,16 @@ function handleSubmit() {
     uni.showToast({ title: '请输入 Crush 名称', icon: 'none' })
     return
   }
-  // 验证必填单选
-  for (const q of structuredQuestions.value) {
-    if (q.required && !answers[q.id]) {
-      uni.showToast({ title: `请回答第 ${q.order} 题`, icon: 'none' })
-      return
+  if (!profileOnly.value) {
+    for (const q of structuredQuestions.value) {
+      if (q.required && !answers[q.id]) {
+        uni.showToast({ title: `请回答第 ${q.order} 题`, icon: 'none' })
+        return
+      }
     }
   }
 
-  const answersArray = allQuestions.value.map((q: any) => ({
+  const answersArray = profileOnly.value ? [] : allQuestions.value.map((q: any) => ({
     questionId: q.id,
     value: answers[q.id] ?? ''
   }))

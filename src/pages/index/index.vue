@@ -10,7 +10,31 @@
           <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
-        <AssessmentForm @submit="onCreateCase" />
+        <view v-if="showProfileReminder" class="remind-card-v2" @click="goSelfProfile">
+          <text class="remind-card-title-v2">画像未完善</text>
+          <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
+        </view>
+
+        <!-- 两条路径选择 -->
+        <view v-if="!showFullAssessment && !showQuickCreate" class="onboard-options-v2">
+          <view class="onboard-card-v2 primary" @click="showFullAssessment = true">
+            <text class="onboard-card-title-v2">开始初评</text>
+            <text class="onboard-card-desc-v2">填画像 + 回答 8 题 → AI 分析结果</text>
+          </view>
+          <view class="onboard-card-v2" @click="showQuickCreate = true">
+            <text class="onboard-card-title-v2">快速创建</text>
+            <text class="onboard-card-desc-v2">只填画像 → 30 秒建好，后续可补分析</text>
+          </view>
+        </view>
+
+        <view v-if="showFullAssessment">
+          <AssessmentForm @submit="onCreateCase" />
+          <text class="back-link-v2" @click="showFullAssessment = false">← 返回选择</text>
+        </view>
+        <view v-if="showQuickCreate">
+          <AssessmentForm profileOnly @submit="onCreateCase" />
+          <text class="back-link-v2" @click="showQuickCreate = false">← 返回选择</text>
+        </view>
       </template>
 
       <template v-else>
@@ -28,6 +52,11 @@
           <view v-if="latestProfileItems.length > 0" class="tag-row">
             <text v-for="item in latestProfileItems" :key="item" class="tag">{{ item }}</text>
           </view>
+        </view>
+
+        <view v-if="showProfileReminder" class="remind-card-v2" @click="goSelfProfile">
+          <text class="remind-card-title-v2">画像未完善</text>
+          <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
         </view>
 
         <!-- Quick record -->
@@ -177,7 +206,7 @@ import { ref, computed, watch } from 'vue'
 import { onHide, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
-import { getCases, createCase, createTimeline, analyzeAttachment, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile } from '@/utils/api'
+import { getCases, createCase, createTimeline, analyzeAttachment, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
@@ -237,6 +266,8 @@ const voiceUploading = ref(false)
 const recording = ref(false)
 const voiceStatus = ref('')
 const sideReadLoading = ref(false)
+const showFullAssessment = ref(false)
+const showQuickCreate = ref(false)
 const aiFeedbackLoading = ref(false)
 const aiFeedbackSeconds = ref(0)
 const sideReadSeconds = ref(0)
@@ -486,6 +517,10 @@ const showSideReadEntry = computed(() => {
     || selfProfile.value?.constellation
   )
 })
+
+const showProfileReminder = computed(() =>
+  !hasUsableSelfProfile(getCachedSelfProfile())
+)
 
 const hasInstantFeedbackRecord = computed(() => {
   const result = latestCase.value?.latestResult
@@ -1432,6 +1467,10 @@ function goCaseDetail(caseId: string) {
   setActiveCaseId(caseId)
   uni.switchTab({ url: '/pages/case-detail/case-detail' })
 }
+
+function goSelfProfile() {
+  uni.navigateTo({ url: '/pages/self-profile/self-profile' })
+}
 </script>
 
 <style scoped>
@@ -1650,4 +1689,15 @@ function goCaseDetail(caseId: string) {
   0% { height: 8rpx; }
   100% { height: 28rpx; }
 }
+
+.v2-mode .remind-card-v2 { background: #fff; border: 3rpx solid #111; padding: 20rpx 24rpx; margin-bottom: 16rpx; }
+.v2-mode .remind-card-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 6rpx; }
+.v2-mode .remind-card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; }
+
+.v2-mode .onboard-options-v2 { display: flex; gap: 14rpx; margin: 12rpx 0; }
+.v2-mode .onboard-card-v2 { flex: 1; padding: 20rpx 16rpx; background: #fff; border: 2rpx solid #111; cursor: pointer; }
+.v2-mode .onboard-card-v2.primary { border-color: #4ECDC4; background: #f6fffd; }
+.v2-mode .onboard-card-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
+.v2-mode .onboard-card-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.4; }
+.v2-mode .back-link-v2 { display: block; text-align: center; margin-top: 16rpx; font-size: 22rpx; font-weight: 700; color: #666; }
 </style>

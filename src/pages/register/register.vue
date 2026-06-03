@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { register } from '@/utils/api'
+import { register, shouldCompleteSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const email = ref('')
@@ -73,8 +73,11 @@ const handleRegister = async () => {
     const result = await register(email.value, password.value)
 
     if (result.success) {
-      // 注册成功，跳转到首页
-      uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
+      if (shouldCompleteSelfProfile(result)) {
+        uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
+      } else {
+        uni.switchTab({ url: '/pages/index/index' })
+      }
     } else {
       errorMessage.value = result.message || '注册失败'
     }
