@@ -80,7 +80,7 @@ function getRuntimeConfig(settings = {}) {
 }
 
 function mapRelationTypeLabel(value) {
-  const map = { romantic: 'Crush', close_friend: '亲密朋友', colleague: '同事', classmate: '同学', teacher: '老师' }
+  const map = { romantic: 'Crush', close_friend: 'Friend Crush' }
   return map[value] || cleanText(String(value || ''), 24)
 }
 

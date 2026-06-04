@@ -11,7 +11,7 @@
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
         <view v-if="showProfileReminder" class="remind-card-v2" @click="goSelfProfile">
-          <text class="remind-card-title-v2">画像未完善</text>
+          <text class="remind-card-title-v2">你的画像未完善</text>
           <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
         </view>
 
@@ -19,21 +19,21 @@
         <view v-if="!showFullAssessment && !showQuickCreate" class="onboard-options-v2">
           <view class="onboard-card-v2 primary" @click="showFullAssessment = true">
             <text class="onboard-card-title-v2">开始初评</text>
-            <text class="onboard-card-desc-v2">填画像 + 回答 8 题 → AI 分析结果</text>
+            <text class="onboard-card-desc-v2">填Crush画像 + 回答 14 题 → AI 分析结果</text>
           </view>
           <view class="onboard-card-v2" @click="showQuickCreate = true">
             <text class="onboard-card-title-v2">快速创建</text>
-            <text class="onboard-card-desc-v2">只填画像 → 30 秒建好，后续可补分析</text>
+            <text class="onboard-card-desc-v2">只填Crush画像 → 30 秒建好，后续可补分析</text>
           </view>
         </view>
 
         <view v-if="showFullAssessment">
-          <AssessmentForm @submit="onCreateCase" />
           <text class="back-link-v2" @click="showFullAssessment = false">← 返回选择</text>
+          <AssessmentForm @submit="onCreateCase" />
         </view>
         <view v-if="showQuickCreate">
-          <AssessmentForm profileOnly @submit="onCreateCase" />
           <text class="back-link-v2" @click="showQuickCreate = false">← 返回选择</text>
+          <AssessmentForm profileOnly @submit="onCreateCase" />
         </view>
       </template>
 
@@ -55,7 +55,7 @@
         </view>
 
         <view v-if="showProfileReminder" class="remind-card-v2" @click="goSelfProfile">
-          <text class="remind-card-title-v2">画像未完善</text>
+          <text class="remind-card-title-v2">你的画像未完善</text>
           <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
         </view>
 
@@ -1699,5 +1699,5 @@ function goSelfProfile() {
 .v2-mode .onboard-card-v2.primary { border-color: #4ECDC4; background: #f6fffd; }
 .v2-mode .onboard-card-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .onboard-card-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.4; }
-.v2-mode .back-link-v2 { display: block; text-align: center; margin-top: 16rpx; font-size: 22rpx; font-weight: 700; color: #666; }
+.v2-mode .back-link-v2 { display: inline-block; text-align: left; padding: 12rpx 0; margin-bottom: 16rpx; font-size: 28rpx; font-weight: 600; color: #111; }
 </style>

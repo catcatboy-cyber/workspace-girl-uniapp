@@ -88,38 +88,21 @@ function summarizeSignals(signals) {
 
 function countEvidenceScore(answers) {
   const byId = new Map(answers.map((a) => [a.questionId, a.value]))
-  let score = 0
-
   const q20 = byId.get('Q20')
-  if (q20 === 'mostly_feelings') score += 0
-  else if (q20 === 'few_facts_many_guesses') score += 1
-  else if (q20 === 'half_half') score += 2
-  else if (q20 === 'many_concrete_facts') score += 3
-  else if (q20 === 'mostly_fact_based') score += 4
-
-  const q21 = byId.get('Q21')
-  if (q21 === 'almost_none') score += 0
-  else if (q21 === 'only_one') score += 1
-  else if (q21 === 'two_or_three') score += 2
-  else if (q21 === 'multiple') score += 3
-  else if (q21 === 'highly_repetitive') score += 4
-
-  const q22 = byId.get('Q22')
-  if (q22 === 'under_3_days') score += 0
-  else if (q22 === 'several_days') score += 1
-  else if (q22 === 'one_to_two_weeks') score += 2
-  else if (q22 === 'two_to_six_weeks') score += 3
-  else if (q22 === 'longer') score += 4
-
-  return score
+  if (q20 === 'mostly_feelings') return 0
+  if (q20 === 'few_facts_many_guesses') return 1
+  if (q20 === 'half_half') return 2
+  if (q20 === 'many_concrete_facts') return 3
+  if (q20 === 'mostly_fact_based') return 4
+  return 2
 }
 
 function deriveEvidenceLevel(answers) {
   const score = countEvidenceScore(answers)
-  if (score <= 2) return 'E1'
-  if (score <= 5) return 'E2'
-  if (score <= 8) return 'E3'
-  if (score <= 10) return 'E4'
+  if (score <= 0) return 'E1'
+  if (score <= 1) return 'E2'
+  if (score <= 2) return 'E3'
+  if (score <= 3) return 'E4'
   return 'E5'
 }
 

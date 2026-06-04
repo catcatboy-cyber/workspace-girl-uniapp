@@ -140,10 +140,7 @@ const emit = defineEmits<{
 
 const relationTypeOptions = [
   { value: 'romantic', label: 'Crush' },
-  { value: 'close_friend', label: '朋友' },
-  { value: 'colleague', label: '同事' },
-  { value: 'classmate', label: '同学' },
-  { value: 'teacher', label: '老师' }
+  { value: 'close_friend', label: 'Friend Crush' }
 ]
 const genderOptions = ['男', '女', '非二元', '未说明']
 const zodiacOptions = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
@@ -170,7 +167,7 @@ const questionsOnly = computed(() => props.questionsOnly === true)
 const profileOnly = computed(() => props.profileOnly === true)
 
 const relationTypeLabel = computed(() =>
-  relationTypeRef.value === 'close_friend' ? '朋友' : relationTypeRef.value === 'colleague' ? '同事' : relationTypeRef.value === 'classmate' ? '同学' : relationTypeRef.value === 'teacher' ? '老师' : 'Crush'
+  relationTypeRef.value === 'close_friend' ? 'Friend Crush' : 'Crush'
 )
 
 const allQuestions = computed(() => getQuestionsForRelationType(relationTypeRef.value))
@@ -249,7 +246,9 @@ function handleSubmit() {
 .assessment-form .option { padding: 14rpx 22rpx; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 600; color: #111; border-radius: 0; }
 .assessment-form .option.selected { background: #111; color: #FFD93D; }
 
-.assessment-form .muted { display: block; font-size: 22rpx; font-weight: 600; color: #999; margin: 6rpx 0; line-height: 1.5; }
+.assessment-form .muted { display: block; font-size: 20rpx; font-weight: 600; color: #999; margin: 6rpx 0; line-height: 1.5; }
+.assessment-form .text-area { width: 100%; min-height: 160rpx; padding: 18rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; font-family: inherit; }
+.assessment-form .text-area::placeholder { font-size: 20rpx; color: #bbb; font-weight: 500; }
 
 .assessment-form .btn-primary {
   width: 100%; height: 80rpx; line-height: 80rpx; text-align: center;

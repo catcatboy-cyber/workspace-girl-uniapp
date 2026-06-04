@@ -420,10 +420,7 @@ export function buildProfileItems(profile) {
   if (!profile) return []
 
   const items = []
-  if (profile.relationType === 'close_friend') items.push('类型 朋友')
-  else if (profile.relationType === 'colleague') items.push('类型 同事')
-  else if (profile.relationType === 'classmate') items.push('类型 同学')
-  else if (profile.relationType === 'teacher') items.push('类型 老师')
+  if (profile.relationType === 'close_friend') items.push('类型 Friend Crush')
   else if (profile.relationType === 'romantic') items.push('类型 Crush')
   if (profile.age) items.push(`年龄 ${profile.age}`)
   if (profile.gender) items.push(`性别 ${profile.gender}`)
@@ -450,10 +447,7 @@ function occupationNote(occupation) {
 }
 
 function getRelationTypeLabel(relationType) {
-  if (relationType === 'close_friend') return '朋友'
-  if (relationType === 'colleague') return '同事'
-  if (relationType === 'classmate') return '同学'
-  if (relationType === 'teacher') return '老师'
+  if (relationType === 'close_friend') return 'Friend Crush'
   if (relationType === 'romantic') return 'Crush'
   return relationType || '未说明'
 }

@@ -107,7 +107,7 @@ const snapshotOtherItems = [
 ]
 
 const profileRelationItems = [
-  { label: 'Crush / 朋友 / 同事 / 同学 / 老师', description: 'Crush 关系类型，只说明分析语境，不直接代表好坏。' },
+  { label: 'Crush / Friend Crush', description: 'Crush 关系类型，只说明分析语境，不直接代表好坏。' },
 ]
 
 const profileBasicItems = [

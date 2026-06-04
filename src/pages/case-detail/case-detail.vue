@@ -142,10 +142,7 @@ const profileItems = computed(() => {
 
 const objectTypeLabel = computed(() => {
   const relationType = String(caseFile.value?.profile?.relationType || '').trim()
-  if (relationType === 'close_friend') return '朋友'
-  if (relationType === 'colleague') return '同事'
-  if (relationType === 'classmate') return '同学'
-  if (relationType === 'teacher') return '老师'
+  if (relationType === 'close_friend') return 'Friend Crush'
   if (relationType === 'romantic') return 'Crush'
   return ''
 })
