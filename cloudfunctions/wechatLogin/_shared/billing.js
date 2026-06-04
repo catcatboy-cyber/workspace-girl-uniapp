@@ -80,6 +80,18 @@ async function grantFirstGift(db, userId) {
   }
 }
 
+async function checkBalance(db, userId, estimatedCost) {
+  if (!userId) return { ok: false, balance: 0, reason: 'no_user' }
+  const billing = await ensureBillingSettings(db)
+  const account = await ensureTokenAccount(db, userId)
+  const balance = account.balanceTokens || 0
+  const required = estimatedCost || 0
+  if (billing.insufficientBalanceMode === 'block' && balance < required) {
+    return { ok: false, balance, required }
+  }
+  return { ok: true, balance, required }
+}
+
 async function chargeTokenUsage(db, payload) {
   const { userId, realTokens, provider, model, usageId, feature } = payload
   if (!userId) return null
@@ -129,5 +141,6 @@ module.exports = {
   ensureBillingSettings,
   ensureTokenAccount,
   grantFirstGift,
-  chargeTokenUsage
+  chargeTokenUsage,
+  checkBalance
 }

@@ -8,7 +8,7 @@ const { buildPromptMessages } = require('./ai-prompt-config')
 
 const EVENT_TYPES = ['positive', 'risk', 'verification', 'note']
 const SEMANTIC_SCENES = ['offline_meet', 'movie', 'meal', 'coffee_tea', 'walk_shop', 'group_social', 'trip', 'chat']
-const SEMANTIC_BEHAVIORS = ['target_side', 'self_initiated', 'both_interaction', 'target_initiated']
+const SEMANTIC_BEHAVIORS = ['target_side', 'self_side', 'self_initiated', 'both_interaction', 'target_initiated']
 const SEMANTIC_OUTCOMES = ['planned', 'fulfilled', 'cancelled_delayed', 'pending', 'ai_reviewed']
 const SEMANTIC_RISKS = ['risk_event', 'rejected', 'cold', 'vague_delay']
 const INITIATORS = ['target', 'self', 'both', 'unknown']
@@ -54,10 +54,10 @@ function serializeCaseProfile(profile) {
 
 function describeSubjectRole(role) {
   if (role === 'self') {
-    return 'self：这条记录主要描述用户自己。文本里的“我”是用户本人，不是关系对象。不要把用户的穿着、化妆、准备、情绪、表达当成对方释放的信号；请分析它可能怎样影响互动，以及后续应该观察对方什么反应。'
+    return 'self：这条记录主要描述用户自己。文本里的“我”是用户本人，不是关系对象。不要把用户的穿着、化妆、准备、情绪、表达当成对方释放的信号；“我主动问对方/我问他/我问她/我问对方”表示用户主动向关系对象提问，不能写成对方主动问用户；请分析它可能怎样影响互动，以及后续应该观察对方什么反应。'
   }
   if (role === 'both') {
-    return 'both：这条记录描述双方互动。请先拆开“用户做了什么”和“关系对象回应/做了什么”，不要把用户自己的主动当成对方主动；只有对方的回应、承诺、兑现、回避等动作才能作为对方信号。'
+    return 'both：这条记录描述双方互动。请先拆开“用户做了什么”和“关系对象回应/做了什么”，不要把用户自己的主动当成对方主动；尤其“我主动问对方/我问他/我问她/我问对方”是用户发起询问，不是对方问用户；只有对方的回应、承诺、兑现、回避等动作才能作为对方信号。'
   }
   if (role === 'unknown') {
     return 'unknown：行为主体不确定。请弱化权重，优先判为 note；除非文本明确写出对方回应、承诺、兑现、回避或失约，否则不要把它当成对方意向或风险信号。'
@@ -185,10 +185,10 @@ function fallbackSemanticTags(params) {
 
   const subjectRole = ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target'
   if (subjectRole === 'target') pushUnique(behavior, 'target_side')
-  if (subjectRole === 'self') pushUnique(behavior, 'self_initiated')
+  if (subjectRole === 'self') pushUnique(behavior, 'self_side')
   if (subjectRole === 'both') pushUnique(behavior, 'both_interaction')
-  if (includesAnyText(text, ['主动约我', '主动找我', '主动联系我', '他主动', '她主动', '对方主动', '邀请我', '来找我', '主动确认'])) pushUnique(behavior, 'target_initiated')
-  if (includesAnyText(text, ['我主动', '我先', '我约', '我问', '我发', '我联系'])) pushUnique(behavior, 'self_initiated')
+  if (includesAnyText(text, ['主动约我', '主动找我', '主动联系我', '主动问我', '他问我', '她问我', '对方问我', '他主动', '她主动', '对方主动', '邀请我', '来找我', '主动确认'])) pushUnique(behavior, 'target_initiated')
+  if (includesAnyText(text, ['我主动', '我先', '我约', '我问', '我问他', '我问她', '我问对方', '我主动问他', '我主动问她', '我主动问对方', '我发', '我联系'])) pushUnique(behavior, 'self_initiated')
 
   if (includesAnyText(text, ['答应', '说好', '确定', '确认', '约好', '安排', '计划', '下次', '改天', '周末'])) pushUnique(outcome, 'planned')
   if (includesAnyText(text, [
@@ -216,7 +216,7 @@ function fallbackSemanticTags(params) {
     behavior,
     outcome,
     risk,
-    initiator: behavior.includes('target_initiated') ? 'target' : behavior.includes('self_initiated') ? 'self' : subjectRole === 'both' ? 'both' : subjectRole,
+    initiator: behavior.includes('target_initiated') ? 'target' : behavior.includes('self_initiated') ? 'self' : subjectRole === 'both' ? 'both' : subjectRole === 'self' ? 'unknown' : subjectRole,
     response: risk.includes('rejected') ? 'rejected' : outcome.includes('fulfilled') || outcome.includes('planned') ? 'accepted' : outcome.includes('pending') ? 'pending' : 'unclear',
     commitment: {
       exists: outcome.includes('planned') || outcome.includes('fulfilled') || commitmentType !== 'none',
@@ -280,6 +280,7 @@ async function inferTimelineRecord(params) {
     contextLines: [
       describeSubjectRole(params.subjectRole),
       `targetProfile=${serializeCaseProfile(params.caseProfile)}`,
+      '主体宾语校验：“我主动问对方 / 我问他 / 我问她 / 我问对方”表示用户主动向关系对象提问；不要改写成“对方问我”或“对方主动问用户”。只有“对方问我 / 他问我 / 她问我 / 问我”才表示关系对象主动问用户。',
       `recentTimeline=${JSON.stringify((params.recentTimeline || []).slice(0, 3))}`,
       `newEvent=${JSON.stringify({
         subjectRole: ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target',

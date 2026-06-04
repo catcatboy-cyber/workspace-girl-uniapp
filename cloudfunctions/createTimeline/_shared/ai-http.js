@@ -90,6 +90,11 @@ function normalizeAnthropicResponse(payload) {
     : ''
 
   return {
+    usage: {
+      prompt_tokens: payload?.usage?.input_tokens || 0,
+      completion_tokens: payload?.usage?.output_tokens || 0,
+      total_tokens: (payload?.usage?.input_tokens || 0) + (payload?.usage?.output_tokens || 0)
+    },
     model: payload?.model || '',
     choices: [
       {

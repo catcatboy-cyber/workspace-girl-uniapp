@@ -48,22 +48,6 @@ const questionDefinitions = [
     ]
   },
   {
-    id: 'Q4',
-    version: 'v0.1',
-    title: '你现在最主要的依据是什么？',
-    type: 'single_select',
-    category: 'evidence',
-    required: true,
-    order: 4,
-    options: [
-      { value: 'mostly_instinct', label: '直觉' },
-      { value: 'one_or_two_events', label: '一两次关键互动' },
-      { value: 'continued_observation', label: '一段时间的持续观察' },
-      { value: 'verifiable_facts', label: '一些可验证事实' },
-      { value: 'many_chats_unstructured', label: '聊天记录很多但没整理' }
-    ]
-  },
-  {
     id: 'Q5',
     version: 'v0.1',
     title: '通常是谁先发起联系？',
@@ -81,23 +65,6 @@ const questionDefinitions = [
     ]
   },
   {
-    id: 'Q6',
-    version: 'v0.1',
-    title: '对方会主动延续话题吗？',
-    type: 'single_select',
-    category: 'intent',
-    required: true,
-    order: 6,
-    weightHint: 3,
-    options: [
-      { value: 'rarely', label: '很少' },
-      { value: 'occasionally', label: '偶尔' },
-      { value: 'normal', label: '一般' },
-      { value: 'often', label: '经常' },
-      { value: 'very_obvious', label: '很明显会' }
-    ]
-  },
-  {
     id: 'Q7',
     version: 'v0.1',
     title: '对方回复通常是什么状态？',
@@ -112,23 +79,6 @@ const questionDefinitions = [
       { value: 'normal', label: '正常交流' },
       { value: 'engaged', label: '有内容、有追问' },
       { value: 'highly_invested', label: '明显投入很多' }
-    ]
-  },
-  {
-    id: 'Q8',
-    version: 'v0.1',
-    title: '对方会记住你的细节、情绪或之前说过的话吗？',
-    type: 'single_select',
-    category: 'intent',
-    required: true,
-    order: 8,
-    weightHint: 2,
-    options: [
-      { value: 'almost_never', label: '几乎不会' },
-      { value: 'occasionally', label: '偶尔' },
-      { value: 'average', label: '一般' },
-      { value: 'noticeable', label: '比较明显' },
-      { value: 'very_noticeable', label: '很明显' }
     ]
   },
   {
@@ -164,23 +114,6 @@ const questionDefinitions = [
       { value: 'occasionally', label: '偶尔' },
       { value: 'several_times', label: '有过几次' },
       { value: 'clear_future_reference', label: '比较明确' }
-    ]
-  },
-  {
-    id: 'Q11',
-    version: 'v0.1',
-    title: '你感觉这段互动里，谁在承担更多推进成本？',
-    type: 'single_select',
-    category: 'intent',
-    required: true,
-    order: 11,
-    weightHint: 4,
-    options: [
-      { value: 'almost_all_me', label: '几乎全是我' },
-      { value: 'mostly_me', label: '大多是我' },
-      { value: 'balanced', label: '差不多' },
-      { value: 'mostly_them', label: '大多是对方' },
-      { value: 'clearly_them', label: '很明显是对方' }
     ]
   },
   {
@@ -252,23 +185,6 @@ const questionDefinitions = [
     ]
   },
   {
-    id: 'Q16',
-    version: 'v0.1',
-    title: '你是否能验证对方一些关键说法？',
-    type: 'single_select',
-    category: 'evidence',
-    required: true,
-    order: 16,
-    weightHint: 4,
-    options: [
-      { value: 'almost_cannot', label: '基本不能' },
-      { value: 'rarely_can', label: '很少能' },
-      { value: 'partially_can', label: '部分能' },
-      { value: 'mostly_can', label: '大多能' },
-      { value: 'easily_can', label: '很容易验证' }
-    ]
-  },
-  {
     id: 'Q17',
     version: 'v0.1',
     title: '对方对你的态度是否忽冷忽热？',
@@ -283,40 +199,6 @@ const questionDefinitions = [
       { value: 'a_little', label: '有一点' },
       { value: 'not_much', label: '不太明显' },
       { value: 'stable', label: '很稳定' }
-    ]
-  },
-  {
-    id: 'Q18',
-    version: 'v0.1',
-    title: '线上和线下，对方表现是否差很多？',
-    type: 'single_select',
-    category: 'consistency',
-    required: true,
-    order: 18,
-    weightHint: 3,
-    options: [
-      { value: 'very_different', label: '差很多' },
-      { value: 'noticeably_different', label: '有明显差异' },
-      { value: 'cannot_compare', label: '不确定 / 没法比较' },
-      { value: 'similar', label: '差异不大' },
-      { value: 'very_similar', label: '很一致' }
-    ]
-  },
-  {
-    id: 'Q19',
-    version: 'v0.1',
-    title: '对方在敏感点上，是更倾向澄清，还是转移/防御？',
-    type: 'single_select',
-    category: 'consistency',
-    required: true,
-    order: 19,
-    weightHint: 4,
-    options: [
-      { value: 'often_deflect', label: '常转移或防御' },
-      { value: 'sometimes_deflect', label: '偶尔会' },
-      { value: 'uncertain', label: '不确定' },
-      { value: 'mostly_explain', label: '大多会解释' },
-      { value: 'willing_to_clarify', label: '基本愿意澄清' }
     ]
   },
   {
@@ -337,73 +219,26 @@ const questionDefinitions = [
     ]
   },
   {
-    id: 'Q21',
+    id: 'QC',
     version: 'v0.1',
-    title: '你能举出几个重复出现的模式，而不是单次事件吗？',
+    title: '对方是否有过暧昧或让你觉得”不止是朋友”的暗示？',
     type: 'single_select',
-    category: 'evidence',
+    category: 'intent',
     required: true,
-    order: 21,
-    weightHint: 4,
-    options: [
-      { value: 'almost_none', label: '几乎不能' },
-      { value: 'only_one', label: '只能举出1次' },
-      { value: 'two_or_three', label: '有2-3次' },
-      { value: 'multiple', label: '有多次' },
-      { value: 'highly_repetitive', label: '非常稳定地重复出现' }
-    ]
-  },
-  {
-    id: 'Q22',
-    version: 'v0.1',
-    title: '你观察这段关系多久了？',
-    type: 'single_select',
-    category: 'evidence',
-    required: true,
-    order: 22,
-    weightHint: 3,
-    options: [
-      { value: 'under_3_days', label: '不到3天' },
-      { value: 'several_days', label: '几天' },
-      { value: 'one_to_two_weeks', label: '1-2周' },
-      { value: 'two_to_six_weeks', label: '2-6周' },
-      { value: 'longer', label: '更久' }
-    ]
-  },
-  {
-    id: 'Q23',
-    version: 'v0.1',
-    title: '最近有没有一件事让你明显觉得“他/她可能是认真的”？',
-    type: 'single_select',
-    category: 'scene_context',
-    required: true,
-    order: 23,
+    order: 14,
     weightHint: 3,
     options: [
       { value: 'none', label: '没有' },
-      { value: 'yes_but_uncertain', label: '有，但不确定' },
-      { value: 'yes_clear', label: '有，比较明确' }
-    ]
-  },
-  {
-    id: 'Q24',
-    version: 'v0.1',
-    title: '最近有没有一件事让你明显觉得“哪里不对劲”？',
-    type: 'single_select',
-    category: 'scene_context',
-    required: true,
-    order: 24,
-    weightHint: 3,
-    options: [
-      { value: 'none', label: '没有' },
-      { value: 'a_little', label: '有一点' },
-      { value: 'yes_significant', label: '有，且影响很大' }
+      { value: 'a_little', label: '有一点但不明显' },
+      { value: 'yes_clear', label: '有，比较明确' },
+      { value: 'often', label: '经常有' },
+      { value: 'unsure', label: '说不清' }
     ]
   },
   {
     id: 'T1',
     version: 'v0.1',
-    title: '请描述最近一次让你觉得“关系有推进”或“有好感迹象”的互动。',
+    title: '请描述最近一次让你觉得”关系有推进”或”有好感迹象”的互动。',
     type: 'text_long',
     category: 'scene_context',
     required: false,
@@ -441,8 +276,15 @@ const closeFriendQuestionOverrides = {
   Q10: {
     title: '对方是否会把你放进后续安排或长期联系设想里？'
   },
-  Q23: {
-    title: '最近有没有一件事让你明显觉得“他/她是真的把你当回事”？'
+  QC: {
+    title: '对方是否主要在自己需要时才找你？',
+    options: [
+      { value: 'almost_always_need', label: '基本只在需要时找我' },
+      { value: 'often_need', label: '经常是这样' },
+      { value: 'half_half', label: '一半一半' },
+      { value: 'rarely_need', label: '很少' },
+      { value: 'no_proactive', label: '不会，平时也会主动联系' }
+    ]
   },
   T1: {
     title: '请描述最近一次让你觉得“关系更靠近”或“信任在上升”的互动。',
@@ -483,26 +325,12 @@ const questionMappingRules = [
     { value: 'mostly_them', category: 'initiative', direction: 'positive', weight: 3, magnitude: 2 },
     { value: 'almost_always_them', category: 'initiative', direction: 'positive', weight: 3, magnitude: 3 }
   ]),
-  ...fiveLevel('Q6', [
-    { value: 'rarely', category: 'initiative', direction: 'negative', weight: 3, magnitude: 3 },
-    { value: 'occasionally', category: 'initiative', direction: 'negative', weight: 3, magnitude: 1 },
-    { value: 'normal', category: 'initiative', direction: 'neutral', weight: 2, magnitude: 1 },
-    { value: 'often', category: 'initiative', direction: 'positive', weight: 3, magnitude: 2 },
-    { value: 'very_obvious', category: 'initiative', direction: 'positive', weight: 3, magnitude: 3 }
-  ]),
   ...fiveLevel('Q7', [
     { value: 'perfunctory', category: 'investment', direction: 'negative', weight: 3, magnitude: 3 },
     { value: 'simple', category: 'investment', direction: 'negative', weight: 3, magnitude: 2 },
     { value: 'normal', category: 'investment', direction: 'neutral', weight: 2, magnitude: 1 },
     { value: 'engaged', category: 'investment', direction: 'positive', weight: 3, magnitude: 2 },
     { value: 'highly_invested', category: 'investment', direction: 'positive', weight: 3, magnitude: 3 }
-  ]),
-  ...fiveLevel('Q8', [
-    { value: 'almost_never', category: 'investment', direction: 'negative', weight: 2, magnitude: 3 },
-    { value: 'occasionally', category: 'investment', direction: 'negative', weight: 2, magnitude: 1 },
-    { value: 'average', category: 'investment', direction: 'neutral', weight: 1, magnitude: 1 },
-    { value: 'noticeable', category: 'investment', direction: 'positive', weight: 2, magnitude: 2 },
-    { value: 'very_noticeable', category: 'investment', direction: 'positive', weight: 2, magnitude: 3 }
   ]),
   ...fiveLevel('Q9', [
     { value: 'rarely', category: 'progression', direction: 'negative', weight: 4, magnitude: 3 },
@@ -518,46 +346,6 @@ const questionMappingRules = [
     { value: 'several_times', category: 'progression', direction: 'positive', weight: 2, magnitude: 2 },
     { value: 'clear_future_reference', category: 'progression', direction: 'positive', weight: 2, magnitude: 3 }
   ]),
-  {
-    questionId: 'Q11',
-    optionValue: 'almost_all_me',
-    signals: [
-      { category: 'initiative', direction: 'negative', weight: 4, magnitude: 3 },
-      { category: 'investment', direction: 'negative', weight: 4, magnitude: 3 }
-    ]
-  },
-  {
-    questionId: 'Q11',
-    optionValue: 'mostly_me',
-    signals: [
-      { category: 'initiative', direction: 'negative', weight: 4, magnitude: 2 },
-      { category: 'investment', direction: 'negative', weight: 4, magnitude: 2 }
-    ]
-  },
-  {
-    questionId: 'Q11',
-    optionValue: 'balanced',
-    signals: [
-      { category: 'initiative', direction: 'neutral', weight: 2, magnitude: 1 },
-      { category: 'investment', direction: 'neutral', weight: 2, magnitude: 1 }
-    ]
-  },
-  {
-    questionId: 'Q11',
-    optionValue: 'mostly_them',
-    signals: [
-      { category: 'initiative', direction: 'positive', weight: 4, magnitude: 2 },
-      { category: 'investment', direction: 'positive', weight: 4, magnitude: 2 }
-    ]
-  },
-  {
-    questionId: 'Q11',
-    optionValue: 'clearly_them',
-    signals: [
-      { category: 'initiative', direction: 'positive', weight: 4, magnitude: 3 },
-      { category: 'investment', direction: 'positive', weight: 4, magnitude: 3 }
-    ]
-  },
   ...fiveLevel('Q12', [
     { value: 'wont_reach_out', category: 'initiative', direction: 'negative', weight: 4, magnitude: 3 },
     { value: 'occasionally_reach_out', category: 'initiative', direction: 'negative', weight: 4, magnitude: 1 },
@@ -607,33 +395,12 @@ const questionMappingRules = [
     { value: 'respond', category: 'avoidance', direction: 'positive', weight: 5, magnitude: 2 },
     { value: 'clarify', category: 'avoidance', direction: 'positive', weight: 5, magnitude: 3 }
   ]),
-  ...fiveLevel('Q16', [
-    { value: 'almost_cannot', category: 'verifiability', direction: 'negative', weight: 4, magnitude: 3 },
-    { value: 'rarely_can', category: 'verifiability', direction: 'negative', weight: 4, magnitude: 2 },
-    { value: 'partially_can', category: 'verifiability', direction: 'neutral', weight: 2, magnitude: 1 },
-    { value: 'mostly_can', category: 'verifiability', direction: 'positive', weight: 4, magnitude: 2 },
-    { value: 'easily_can', category: 'verifiability', direction: 'positive', weight: 4, magnitude: 3 }
-  ]),
   ...fiveLevel('Q17', [
     { value: 'very_obvious', category: 'instability', direction: 'negative', weight: 5, magnitude: 3 },
     { value: 'noticeable', category: 'instability', direction: 'negative', weight: 5, magnitude: 2 },
     { value: 'a_little', category: 'instability', direction: 'negative', weight: 4, magnitude: 1 },
     { value: 'not_much', category: 'instability', direction: 'positive', weight: 3, magnitude: 1 },
     { value: 'stable', category: 'instability', direction: 'positive', weight: 5, magnitude: 3 }
-  ]),
-  ...fiveLevel('Q18', [
-    { value: 'very_different', category: 'consistency', direction: 'negative', weight: 3, magnitude: 3 },
-    { value: 'noticeably_different', category: 'consistency', direction: 'negative', weight: 3, magnitude: 2 },
-    { value: 'cannot_compare', category: 'consistency', direction: 'uncertain', weight: 1, magnitude: 1 },
-    { value: 'similar', category: 'consistency', direction: 'positive', weight: 3, magnitude: 2 },
-    { value: 'very_similar', category: 'consistency', direction: 'positive', weight: 3, magnitude: 3 }
-  ]),
-  ...fiveLevel('Q19', [
-    { value: 'often_deflect', category: 'avoidance', direction: 'negative', weight: 4, magnitude: 3 },
-    { value: 'sometimes_deflect', category: 'avoidance', direction: 'negative', weight: 4, magnitude: 2 },
-    { value: 'uncertain', category: 'avoidance', direction: 'uncertain', weight: 1, magnitude: 1 },
-    { value: 'mostly_explain', category: 'avoidance', direction: 'positive', weight: 4, magnitude: 2 },
-    { value: 'willing_to_clarify', category: 'avoidance', direction: 'positive', weight: 4, magnitude: 3 }
   ]),
   ...fiveLevel('Q20', [
     { value: 'mostly_feelings', category: 'evidence_strength', direction: 'negative', weight: 4, magnitude: 3 },
@@ -642,47 +409,20 @@ const questionMappingRules = [
     { value: 'many_concrete_facts', category: 'evidence_strength', direction: 'positive', weight: 4, magnitude: 2 },
     { value: 'mostly_fact_based', category: 'evidence_strength', direction: 'positive', weight: 4, magnitude: 3 }
   ]),
-  ...fiveLevel('Q21', [
-    { value: 'almost_none', category: 'evidence_strength', direction: 'negative', weight: 4, magnitude: 3 },
-    { value: 'only_one', category: 'evidence_strength', direction: 'negative', weight: 4, magnitude: 2 },
-    { value: 'two_or_three', category: 'evidence_strength', direction: 'positive', weight: 3, magnitude: 1 },
-    { value: 'multiple', category: 'evidence_strength', direction: 'positive', weight: 4, magnitude: 2 },
-    { value: 'highly_repetitive', category: 'evidence_strength', direction: 'positive', weight: 4, magnitude: 3 }
-  ]),
-  ...fiveLevel('Q22', [
-    { value: 'under_3_days', category: 'evidence_strength', direction: 'negative', weight: 3, magnitude: 3 },
-    { value: 'several_days', category: 'evidence_strength', direction: 'negative', weight: 3, magnitude: 2 },
-    { value: 'one_to_two_weeks', category: 'evidence_strength', direction: 'positive', weight: 3, magnitude: 1 },
-    { value: 'two_to_six_weeks', category: 'evidence_strength', direction: 'positive', weight: 3, magnitude: 2 },
-    { value: 'longer', category: 'evidence_strength', direction: 'positive', weight: 3, magnitude: 3 }
-  ]),
-  ...fiveLevel('Q23', [
-    { value: 'none', category: 'progression', direction: 'negative', weight: 3, magnitude: 2 },
-    { value: 'yes_but_uncertain', category: 'progression', direction: 'positive', weight: 2, magnitude: 1 },
-    { value: 'yes_clear', category: 'progression', direction: 'positive', weight: 3, magnitude: 3 }
-  ]),
-  {
-    questionId: 'Q24',
-    optionValue: 'none',
-    signals: [{ category: 'consistency', direction: 'neutral', weight: 1, magnitude: 1 }]
-  },
-  {
-    questionId: 'Q24',
-    optionValue: 'a_little',
-    signals: [
-      { category: 'consistency', direction: 'negative', weight: 2, magnitude: 1 },
-      { category: 'instability', direction: 'negative', weight: 2, magnitude: 1 }
-    ]
-  },
-  {
-    questionId: 'Q24',
-    optionValue: 'yes_significant',
-    signals: [
-      { category: 'consistency', direction: 'negative', weight: 3, magnitude: 3 },
-      { category: 'avoidance', direction: 'negative', weight: 3, magnitude: 2 },
-      { category: 'instability', direction: 'negative', weight: 2, magnitude: 2 }
-    ]
-  }
+  ...fiveLevel('QC', [
+    { value: 'none', category: 'progression', direction: 'negative', weight: 2, magnitude: 2 },
+    { value: 'a_little', category: 'progression', direction: 'positive', weight: 1, magnitude: 1 },
+    { value: 'yes_clear', category: 'progression', direction: 'positive', weight: 3, magnitude: 2 },
+    { value: 'often', category: 'progression', direction: 'positive', weight: 3, magnitude: 3 },
+    { value: 'unsure', category: 'verifiability', direction: 'negative', weight: 1, magnitude: 1 },
+    // Friend Crush override option values
+    { value: 'almost_always_need', category: 'investment', direction: 'negative', weight: 3, magnitude: 3 },
+    { value: 'often_need', category: 'investment', direction: 'negative', weight: 3, magnitude: 2 },
+    { value: 'half_half', category: 'investment', direction: 'neutral', weight: 1, magnitude: 1 },
+    { value: 'rarely_need', category: 'investment', direction: 'positive', weight: 3, magnitude: 1 },
+    { value: 'no_proactive', category: 'investment', direction: 'positive', weight: 3, magnitude: 2 }
+  ])
+
 ]
 
 module.exports = {

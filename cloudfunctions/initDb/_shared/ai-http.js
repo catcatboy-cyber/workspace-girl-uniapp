@@ -2,7 +2,7 @@ const http = require('http')
 const https = require('https')
 const { URL } = require('url')
 
-const DEFAULT_TIMEOUT_MS = 15000
+const DEFAULT_TIMEOUT_MS = 45000
 
 function trimTrailingSlash(value) {
   return String(value || '').replace(/\/+$/, '')
@@ -90,6 +90,11 @@ function normalizeAnthropicResponse(payload) {
     : ''
 
   return {
+    usage: {
+      prompt_tokens: payload?.usage?.input_tokens || 0,
+      completion_tokens: payload?.usage?.output_tokens || 0,
+      total_tokens: (payload?.usage?.input_tokens || 0) + (payload?.usage?.output_tokens || 0)
+    },
     model: payload?.model || '',
     choices: [
       {

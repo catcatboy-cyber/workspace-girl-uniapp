@@ -2,7 +2,7 @@ const http = require('http')
 const https = require('https')
 const { URL } = require('url')
 
-const DEFAULT_TIMEOUT_MS = 15000
+const DEFAULT_TIMEOUT_MS = 45000
 
 function trimTrailingSlash(value) {
   return String(value || '').replace(/\/+$/, '')
