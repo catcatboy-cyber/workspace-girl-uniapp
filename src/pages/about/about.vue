@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <view class="hero-block-v2">
       <text class="hero-tag-v2">ABOUT</text>
       <text class="hero-title-v2">关<text class="hl-v2">于</text></text>

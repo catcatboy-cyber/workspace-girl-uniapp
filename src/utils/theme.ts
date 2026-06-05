@@ -279,3 +279,32 @@ export function setCurrentTheme(id: ThemeId) {
   applyThemeChrome(theme)
   return theme
 }
+
+const FONT_SIZE_STORAGE_KEY = 'fontSizeMode'
+export type FontSizeMode = 'default' | 'large'
+
+export function getFontSizeMode(): FontSizeMode {
+  try {
+    const value = uni.getStorageSync(FONT_SIZE_STORAGE_KEY)
+    if (value === 'large') return 'large'
+  } catch {}
+  return 'default'
+}
+
+export function setFontSizeMode(mode: FontSizeMode) {
+  try {
+    uni.setStorageSync(FONT_SIZE_STORAGE_KEY, mode)
+  } catch {}
+  // 即时更新 page 属性的工具函数，由调用方在合适的上下文中执行
+  const pageStyle = mode === 'large' ? { 'data-font-size': 'large' } : {}
+  // 仅 H5 可通过 DOM 更新; 微信小程序通过 page 选择器自动生效
+  // #ifdef H5
+  if (typeof document !== 'undefined' && document.documentElement) {
+    if (mode === 'large') {
+      document.documentElement.setAttribute('data-font-size', 'large')
+    } else {
+      document.documentElement.removeAttribute('data-font-size')
+    }
+  }
+  // #endif
+}

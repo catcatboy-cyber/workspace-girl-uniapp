@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="themeVars">
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">往事不可用</text><text class="empty-sub-v2">当前 Crush 不存在或已被删除。</text></view>
@@ -130,11 +130,12 @@ import { getSelectedPetId, getPetById } from '@/utils/pets.js'
 import { buildProfileItems, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { buildTimelineFromLatestResult, compareAssessments, sortTimelineRecordsDesc, isSystemTimelineRecord, getTimelineRecordTimestamp } from '@/utils/insights'
 import { buildTimelineStats, getTimelineRecordTags, buildObjectStatusCard } from '@/utils/insights'
-import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
 const loading = ref(true)
 const syncing = ref(false)
+const fontSizeMode = ref(getFontSizeMode())
 const caseFile = ref<any>(null)
 const assessmentVisibleMax = ref(7)
 const userId = ref('')
@@ -1012,6 +1013,7 @@ const lastDataVersion = ref(0)
 onShow(() => {
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
+    fontSizeMode.value = getFontSizeMode()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   if (!initialized.value) return
@@ -1294,9 +1296,6 @@ async function syncSemanticTags() {
 .v2-mode .info-icon-v2 { width: 44rpx; height: 44rpx; line-height: 42rpx; text-align: center; border: 2rpx solid #111; font-size: 18rpx; font-weight: 900; color: #111; }
 .v2-mode .tag-v2.muted { background: #111; color: #666; }
 
-.v2-mode .delta-row-v2 { display: flex; gap: 8rpx; }
-.v2-mode .delta-item-v2 { flex: 1; padding: 10rpx; border: 2rpx solid #111; text-align: center; background: #fff; }
-.v2-mode .delta-lbl-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
 
 .v2-mode .expand-row-v2 { margin-top: 12rpx; text-align: center; }
 

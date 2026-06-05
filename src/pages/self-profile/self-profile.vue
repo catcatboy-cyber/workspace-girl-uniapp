@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <!-- ==================== Onboarding：对话式 ==================== -->
     <template v-if="isOnboarding">
       <view class="chat-head">

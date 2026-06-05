@@ -1,5 +1,5 @@
 <template>
-  <view v-if="_uid" :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="pageStyle">
+  <view v-if="_uid" :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
 
     <view v-if="loading" class="loading">LOADING...</view>
 
@@ -98,7 +98,7 @@
 
         <!-- Feedback -->
         <view v-if="showQuickFeedback && latestCase.latestResult && latestTrend" :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']">
-          <view class="block-head"><text class="block-title">本次分析</text><text class="block-badge black">{{ mapTimelineTypeLabel(latestFeedbackEventType) }}</text></view>
+          <view class="block-head"><text class="block-title">本次分析</text></view>
           <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
           <view v-if="aiFeedbackLoading" class="action-box">
             <text class="action-label">AI 分析中...</text>
@@ -114,16 +114,14 @@
                 <text class="score-label-v2">意向</text><text class="score-num-v2">{{ clampScore(latestCase.latestResult.intentScore) }}</text>
                 <text class="score-bucket-v2">{{ mapIntentLabel(latestCase.latestResult?.intentBucket) }}</text>
                 <view class="bar-track-v2"><view class="bar-fill-v2" :style="{ width: clampScore(latestCase.latestResult.intentScore) + '%' }"></view></view>
+                <text class="score-delta-v2"><text class="score-delta-label">变化</text><text :class="['score-delta-val', deltaClass(latestTrend.intentDelta)]">{{ formatDelta(latestTrend.intentDelta) }}</text></text>
               </view>
               <view class="score-item">
                 <text class="score-label-v2">风险</text><text class="score-num-v2 risk">{{ clampScore(latestCase.latestResult.consistencyRiskScore) }}</text>
                 <text class="score-bucket-v2">{{ mapRiskLabel(latestCase.latestResult?.riskBucket) }}</text>
                 <view class="bar-track-v2"><view class="bar-fill-v2 risk" :style="{ width: clampScore(latestCase.latestResult.consistencyRiskScore) + '%' }"></view></view>
+                <text class="score-delta-v2"><text class="score-delta-label">变化</text><text :class="['score-delta-val', deltaClass(latestTrend.riskDelta)]">{{ formatDelta(latestTrend.riskDelta) }}</text></text>
               </view>
-            </view>
-            <view class="delta-row">
-              <view class="delta-item"><text class="delta-label-v2">意向变化</text><text :class="['delta-val', deltaClass(latestTrend.intentDelta)]">{{ formatDelta(latestTrend.intentDelta) }}</text></view>
-              <view class="delta-item"><text class="delta-label-v2">风险变化</text><text :class="['delta-val', deltaClass(latestTrend.riskDelta)]">{{ formatDelta(latestTrend.riskDelta) }}</text></view>
             </view>
             <view v-if="statusStateTags.length || problemTypeTags.length" class="tag-row-v2" style="margin-top:12px;">
               <text v-for="tag in statusStateTags" :key="tag" class="tag-v2 black">{{ tag }}</text>
@@ -199,7 +197,7 @@
 
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
-  <view v-else class="page v2-mode" />
+  <view v-else :class="['page v2-mode', fontSizeMode === 'large' ? 'font-large' : '']" />
 </template>
 
 <script setup lang="ts">
@@ -210,7 +208,7 @@ import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
-import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
@@ -222,7 +220,7 @@ if (!_uid) {
 
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
-import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
@@ -266,6 +264,7 @@ const pageStyle = computed(() => {
   return base
 })
 const loading = ref(true)
+const fontSizeMode = ref(getFontSizeMode())
 const cases = ref<any[]>([])
 const userId = ref('')
 const activeCaseId = ref('')
@@ -878,6 +877,7 @@ async function refreshSelfProfileInBackground() {
 onShow(() => {
   const _t0 = Date.now()
   console.log('[PERF] index onShow start')
+  fontSizeMode.value = getFontSizeMode()
   // Sync cached profile so showProfileReminder recomputes
   selfProfile.value = getCachedSelfProfile()
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
@@ -1570,21 +1570,20 @@ function goSelfProfile() {
 
 .v2-mode .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 14rpx; }
 .v2-mode .score-item { padding: 20rpx; border: 2rpx solid #111; background: #f9f9f9; }
-.v2-mode .score-label-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .score-label-v2 { display: block; font-size: 18rpx; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 2rpx; }
 .v2-mode .score-num-v2 { display: block; font-size: 56rpx; font-weight: 900; color: #111; line-height: 1; margin-top: 6rpx; }
 .v2-mode .score-num-v2.risk { color: #FF5252; }
-.v2-mode .score-bucket-v2 { display: block; font-size: 20rpx; font-weight: 700; color: #999; margin-top: 4rpx; }
+.v2-mode .score-bucket-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #999; margin-top: 4rpx; }
 .v2-mode .bar-track-v2 { height: 12rpx; background: #111; margin-top: 12rpx; border: 2rpx solid #111; }
 .v2-mode .bar-fill-v2 { height: 12rpx; background: #111; }
 .v2-mode .bar-fill-v2.risk { background: #FF5252; }
 
-.v2-mode .delta-row { display: flex; gap: 10rpx; margin-top: 14rpx; }
-.v2-mode .delta-item { flex: 1; padding: 18rpx; border: 2rpx solid #111; text-align: center; background: #fff; }
-.v2-mode .delta-label-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 2rpx; }
-.v2-mode .delta-val { display: block; font-size: 40rpx; font-weight: 900; color: #111; margin-top: 6rpx; }
-.v2-mode .delta-val.up { color: #4ECDC4; }
-.v2-mode .delta-val.down { color: #FF5252; }
-.v2-mode .delta-val.flat { color: #999; }
+.v2-mode .score-delta-v2 { display: block; margin-top: 8rpx; font-size: 18rpx; }
+.v2-mode .score-delta-label { font-weight: 700; color: #999; margin-right: 4rpx; }
+.v2-mode .score-delta-val { font-weight: 800; color: #111; }
+.v2-mode .score-delta-val.up { color: #4ECDC4; }
+.v2-mode .score-delta-val.down { color: #FF5252; }
+.v2-mode .score-delta-val.flat { color: #999; }
 
 .v2-mode .reason-box { margin-top: 16rpx; padding: 18rpx; border: 2rpx solid #111; background: #FFFBEB; }
 .v2-mode .reason-line { display: block; font-size: 24rpx; font-weight: 600; color: #111; line-height: 1.6; }
@@ -1595,7 +1594,7 @@ function goSelfProfile() {
 .v2-mode .action-text.muted { color: #999; }
 .v2-mode .action-item { padding: 14rpx; border: 2rpx solid #111; background: #fff; margin-top: 10rpx; }
 .v2-mode .action-item-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; }
-.v2-mode .action-item-text { display: block; font-size: 24rpx; color: #555; margin-top: 6rpx; line-height: 1.5; }
+.v2-mode .action-item-text { display: block; font-size: 22rpx; color: #555; margin-top: 6rpx; line-height: 1.5; }
 
 .v2-mode .ai-badge { display: flex; align-items: center; gap: 8rpx; margin-top: 14rpx; padding: 10rpx 14rpx; border: 2rpx solid #111; }
 .v2-mode .ai-badge.ai { background: #e8f5e9; }
@@ -1606,11 +1605,11 @@ function goSelfProfile() {
 .v2-mode .ai-badge-text { font-size: 20rpx; font-weight: 700; color: #111; }
 
 .v2-mode .side-box { margin-top: 20rpx; padding: 18rpx; border: 2rpx dashed #111; background: #FFFBEB; }
-.v2-mode .side-title { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
-.v2-mode .side-text { display: block; font-size: 24rpx; color: #555; line-height: 1.5; }
+.v2-mode .side-title { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .side-text { display: block; font-size: 22rpx; color: #555; line-height: 1.5; }
 .v2-mode .side-grid { display: flex; flex-direction: column; gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .side-item { padding: 14rpx; border: 2rpx solid #111; background: #fff; }
-.v2-mode .side-item-label { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 4rpx; }
+.v2-mode .side-item-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 4rpx; }
 .v2-mode .side-item-text { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
 
 .v2-mode .info-mask { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }

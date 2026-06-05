@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else>
@@ -313,13 +313,13 @@ function goTimeline() {
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .btn-v2-wr { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-wr { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; }
 .v2-mode .btn-v2-wr.full { flex: none; width: 100%; height: 72rpx; line-height: 72rpx; font-size: 26rpx; }
 .v2-mode .btn-v2-wr.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2-wr[disabled] { opacity: 0.6; }
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
-.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; }
+.v2-mode .card-text-v2 { display: block; font-size: 26rpx; font-weight: 600; color: #666; line-height: 1.5; }
 .v2-mode .card-text-v2.muted { color: #999; font-size: 20rpx; }
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
 

@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="themeVars">
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2">
@@ -79,7 +79,6 @@
         <view class="card-v2 anim-card" style="animation-delay:0.3s">
           <text class="section-title-v2">近14天星象速写</text>
           <view v-if="currentWeeklySideRead">
-            <text v-if="currentWeeklySideRead.title" class="weekly-title-v2">{{ currentWeeklySideRead.title }}</text>
             <text v-if="currentWeeklySideRead.summary" class="weekly-desc-v2">{{ currentWeeklySideRead.summary }}</text>
             <view v-if="currentWeeklySideRead.sections?.length" class="side-grid-v2"><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2">• {{ item.text }}</text></view></view>
           </view>
@@ -100,11 +99,12 @@ import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/un
 import { getCaseDetail, getCurrentUserId, getWeeklyReviews, getCases } from '@/utils/api'
 import { consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments } from '@/utils/insights'
-import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
 const loading = ref(true)
 const syncing = ref(false)
+const fontSizeMode = ref(getFontSizeMode())
 const caseFile = ref<any>(null)
 const userId = ref('')
 const caseId = ref('')
@@ -412,6 +412,7 @@ onShow(() => {
   console.log('[PERF] case-detail onShow start')
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
+    fontSizeMode.value = getFontSizeMode()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   if (!initialized.value) return
@@ -727,7 +728,7 @@ function goWeeklyReview() {
 
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; }
 .v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
@@ -780,7 +781,7 @@ function goWeeklyReview() {
 
 .v2-mode .relationship-line-chart-v2 { margin-top: 16rpx; }
 .v2-mode .line-legend-v2 { display: flex; align-items: center; flex-wrap: wrap; gap: 14rpx; margin-bottom: 12rpx; }
-.v2-mode .line-legend-item-v2 { display: flex; align-items: center; gap: 8rpx; font-size: 21rpx; font-weight: 800; color: #111; }
+.v2-mode .line-legend-item-v2 { display: flex; align-items: center; gap: 8rpx; font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .line-legend-mark-v2 { width: 34rpx; height: 5rpx; border-radius: 999rpx; background: #111; }
 .v2-mode .line-legend-mark-v2.risk { background: #FF5252; }
 .v2-mode .line-legend-tip-v2 { font-size: 20rpx; font-weight: 700; color: #999; }
@@ -798,7 +799,7 @@ function goWeeklyReview() {
 .v2-mode .line-point-v2 text { position: absolute; top: -34rpx; color: #111; font-size: 18rpx; font-weight: 900; }
 .v2-mode .line-point-v2.risk text { top: 28rpx; color: #FF5252; }
 .v2-mode .line-x-label-v2 { position: absolute; top: 330rpx; width: 116rpx; margin-left: -58rpx; text-align: center; }
-.v2-mode .line-x-label-v2 text { display: block; color: #999; font-size: 18rpx; line-height: 1.3; font-weight: 650; }
+.v2-mode .line-x-label-v2 text { display: block; color: #999; font-size: 18rpx; line-height: 1.3; font-weight: 600; }
 .v2-mode .line-x-index-v2 { color: #111 !important; font-weight: 900 !important; }
 
 .v2-mode .turning-row-v2 { display: flex; align-items: center; justify-content: space-between; padding: 6rpx 0; }

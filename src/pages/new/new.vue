@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <view class="hero-block-v2"><text class="hero-tag-v2">NEW CRUSH</text><text class="hero-title-v2">新建<text class="hl-v2">Crush</text></text><text class="hero-copy-v2">只有当你要开始判断一个新的 Crush 时，才需要重新填写这份初次分析。已有 Crush 更适合继续追加事件和滚动观察。</text><view class="btn-row-v2"><button class="btn-v2-n" @click="goHome">返回首页</button><button class="btn-v2-n" @click="goCases">查看 Crushes</button></view></view>
     <AssessmentForm @submit="onSubmit" />
   </view>
@@ -87,5 +87,5 @@ function goCases() {
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .btn-v2-n { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
+.v2-mode .btn-v2-n { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; }
 </style>

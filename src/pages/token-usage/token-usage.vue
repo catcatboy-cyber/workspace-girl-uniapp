@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
         <view class="hero-block-v2"><text class="hero-tag-v2">TOKEN USAGE</text><text class="hero-title-v2">消费<text class="hl-v2">明细</text></text><text class="hero-copy-v2">当前账号的 token 调用和额度变动记录。</text></view>
         <view class="tabs-v2"><view :class="['tab-btn-v2', activeTab === 'usage' ? 'active' : '']" @click="switchTab('usage')">消费明细</view><view :class="['tab-btn-v2', activeTab === 'ledger' ? 'active' : '']" @click="switchTab('ledger')">充值记录</view><view :class="['tab-btn-v2', activeTab === 'voice' ? 'active' : '']" @click="switchTab('voice')">语音识别</view></view>
         <view v-if="activeTab === 'usage'">

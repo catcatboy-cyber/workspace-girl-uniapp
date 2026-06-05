@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode anim-ready" :style="themeVars">
+  <view :class="['page v2-mode anim-ready', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <view class="hero-block-v2 anim-hero"><text class="hero-tag-v2">SETTINGS</text><text class="hero-title-v2">我<text class="hl-v2">的</text></text><text class="hero-copy-v2">管理账号、系统能力说明和个人设置。</text></view>
       <!-- Profile -->
       <view class="card-v2 anim-card" style="animation-delay:0.15s"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn-v2-me outline" @click="goSelfProfile">编辑本人画像</button></view>
@@ -13,6 +13,8 @@
       <view class="card-v2 anim-card" style="animation-delay:0.3s"><text class="section-title-v2">能量</text><view class="balance-hero-v2"><text class="balance-num-v2">{{ tokenBalance.toLocaleString() }}</text><text class="balance-unit-v2">可用额度</text></view><view class="balance-sub-row-v2"><text class="card-text-v2">累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text></view><view class="stats-grid-v2" style="margin-top:16rpx;"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">模型 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出</text></view></view><view class="voice-row-v2"><text class="voice-row-lbl-v2">语音识别</text><text class="voice-row-val-v2">{{ voiceUsageSummary.totalCount }} 次 · 累计 {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" @click="goRecharge">充点Token能量</button><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="refreshTokenData">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
+      <!-- Font size -->
+      <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2" style="font-size:28rpx;">Dom-Crush</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2" style="font-size:32rpx;">Dom-Crush</text></view></view></view>
       <!-- AI analysis style -->
       <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">AI 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><text class="sub-title-v2">陪伴风格</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
       <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、AI、Token 和反馈管理 →</text></view>
@@ -41,7 +43,7 @@ import {
   type AIStyleValue,
   type SelfProfile
 } from '@/utils/api'
-import { applyThemeChrome, getCurrentThemeId, getThemeStyle, setCurrentTheme, themeOptions, type ThemeId } from '@/utils/theme'
+import { applyThemeChrome, getCurrentThemeId, getFontSizeMode, getThemeStyle, setCurrentTheme, setFontSizeMode, themeOptions, type ThemeId } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 import { downloadPetAssets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, setSelectedPetId } from '@/utils/pets.js'
 
@@ -53,6 +55,11 @@ const selfProfileSummary = ref('还没填写。系统会用它调整措辞、入
 const aiStatusSummary = ref('当前：温柔陪伴 · 平衡。未满 18 岁时会自动切换为谨慎守护 + 保守建议。')
 const currentThemeId = ref<ThemeId>(getCurrentThemeId())
 const themeVars = ref(getThemeStyle())
+const fontSizeMode = ref(getFontSizeMode())
+function setFontSize(mode: 'default' | 'large') {
+  fontSizeMode.value = mode
+  setFontSizeMode(mode)
+}
 const currentSelfProfile = ref<SelfProfile | null>(getCachedSelfProfile())
 const aiStyle = ref<AIStyleValue>('gentle_bestie')
 const aiBoldness = ref<AIBoldnessValue>('balanced')
@@ -426,7 +433,7 @@ async function onLogout() {
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 14rpx; }
 .v2-mode .switch-row-v2 { display: flex; align-items: center; gap: 24rpx; padding: 12rpx 0; }
-.v2-mode .btn-v2-me { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; white-space: nowrap; }
+.v2-mode .btn-v2-me { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; white-space: nowrap; }
 .v2-mode .btn-v2-me.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2-me.danger { background: #fff; color: #FF5252; border-color: #FF5252; }
 .v2-mode .btn-v2-me.outline { background: #fff; }
@@ -449,8 +456,17 @@ async function onLogout() {
 .v2-mode .theme-card-v2.active .theme-dot-v2 { border-color: #FFD93D; }
 .v2-mode .theme-name-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .theme-card-v2.active .theme-name-v2 { color: #FFD93D; }
-.v2-mode .theme-desc-v2 { display: block; font-size: 16rpx; font-weight: 600; color: #999; margin-top: 4rpx; line-height: 1.3; }
+.v2-mode .theme-desc-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 4rpx; line-height: 1.3; }
 .v2-mode .theme-card-v2.active .theme-desc-v2 { color: rgba(255,255,255,0.6); }
+
+/* Font size picker */
+.v2-mode .font-size-row-v2 { display: flex; gap: 14rpx; }
+.v2-mode .font-size-option-v2 { flex: 1; padding: 20rpx; border: 2rpx solid #111; background: #fff; text-align: center; cursor: pointer; }
+.v2-mode .font-size-option-v2.active { background: #111; }
+.v2-mode .font-size-label-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #111; margin-bottom: 10rpx; }
+.v2-mode .font-size-option-v2.active .font-size-label-v2 { color: #FFD93D; }
+.v2-mode .font-size-sample-v2 { display: block; font-weight: 900; color: #111; }
+.v2-mode .font-size-option-v2.active .font-size-sample-v2 { color: #FFD93D; }
 
 /* pet row layout: avatar + info + button */
 .v2-mode .pet-row-v2 { display: flex; align-items: center; gap: 24rpx; margin-top: 14rpx; }
@@ -479,7 +495,7 @@ async function onLogout() {
 .v2-mode .pet-option-v2.active .pet-option-desc-v2 { color: rgba(255,255,255,0.6); }
 .v2-mode .pet-option-check-v2 { position: absolute; top: 8rpx; right: 10rpx; font-size: 22rpx; font-weight: 900; color: #FFD93D; }
 .v2-mode .pet-option-name-row-v2 { display: flex; align-items: center; gap: 8rpx; }
-.v2-mode .pet-option-badge-v2 { display: inline-block; padding: 2rpx 10rpx; font-size: 16rpx; font-weight: 800; color: #4ECDC4; border: 1rpx solid #4ECDC4; }
+.v2-mode .pet-option-badge-v2 { display: inline-block; padding: 2rpx 10rpx; font-size: 18rpx; font-weight: 800; color: #4ECDC4; border: 1rpx solid #4ECDC4; }
 .v2-mode .pet-option-badge-v2.download { color: #FF6B6B; border-color: #FF6B6B; }
 .v2-mode .pet-option-v2.active .pet-option-badge-v2 { color: #FFD93D; border-color: #FFD93D; }
 

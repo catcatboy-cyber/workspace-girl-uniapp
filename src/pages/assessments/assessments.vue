@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <view v-if="loading" class="loading-v2">加载中...</view>
 
     <view v-else-if="!caseFile" class="card-v2">
@@ -467,7 +467,7 @@ function goTimelineEvent(eventId: string) {
 .page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5); }
-.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 26rpx; font-weight: 600; color: #666; }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
 
 .v2-mode .hero-block-v2 {
   background: var(--hero-bg, #FF6B6B);
@@ -486,9 +486,9 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
 .v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.6; margin: 6rpx 0; }
 
-.v2-mode .btn-v2 { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; background: #fff; color: #111; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; }
+.v2-mode .btn-v2 { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; background: #fff; color: #111; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; }
 .v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .btn-v2.sm { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; font-size: 24rpx; }
+.v2-mode .btn-v2.sm { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; font-size: 26rpx; }
 
 .v2-mode .grid-v2 { display: flex; flex-direction: column; gap: 18rpx; }
 
@@ -508,7 +508,7 @@ function goTimelineEvent(eventId: string) {
 
 .v2-mode .source-pill,
 .v2-mode .ai-badge,
-.v2-mode .delta-pill { display: inline-block; min-height: 40rpx; padding: 0 14rpx; border: 2rpx solid #111; font-size: 21rpx; line-height: 40rpx; font-weight: 800; }
+.v2-mode .delta-pill { display: inline-block; min-height: 40rpx; padding: 0 14rpx; border: 2rpx solid #111; font-size: 20rpx; line-height: 40rpx; font-weight: 800; }
 .v2-mode .source-pill { background: #111; color: #FFD93D; }
 .v2-mode .ai-badge { background: #FFD93D; color: #111; }
 
@@ -516,10 +516,10 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .event-strip { display: flex; align-items: stretch; justify-content: space-between; gap: 18rpx; margin-top: 20rpx; padding: 20rpx; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .event-label,
 .v2-mode .ai-panel-label { display: block; margin-bottom: 8rpx; font-size: 22rpx; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 1rpx; }
-.v2-mode .event-title { display: block; font-size: 27rpx; line-height: 1.45; font-weight: 800; color: #111; }
+.v2-mode .event-title { display: block; font-size: 26rpx; line-height: 1.45; font-weight: 800; color: #111; }
 .v2-mode .label-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 12rpx; }
 .v2-mode .label-chip,
-.v2-mode .status-chip { display: inline-block; min-height: 38rpx; padding: 0 14rpx; border: 2rpx solid #111; background: #fff; font-size: 21rpx; line-height: 38rpx; font-weight: 700; color: #111; }
+.v2-mode .status-chip { display: inline-block; min-height: 38rpx; padding: 0 14rpx; border: 2rpx solid #111; background: #fff; font-size: 20rpx; line-height: 38rpx; font-weight: 700; color: #111; }
 .v2-mode .event-actions { margin-top: 14rpx; }
 .v2-mode .mini-link { display: inline-flex; align-items: center; justify-content: center; height: 48rpx; line-height: 48rpx; margin: 0; padding: 0 18rpx; border: 2rpx solid #111; background: #fff; color: #111; font-size: 22rpx; font-weight: 800; }
 .v2-mode .mini-link::after { border: 0; }
@@ -533,9 +533,9 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .score-panel { margin-top: 20rpx; padding: 20rpx; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .score-row + .score-row { margin-top: 18rpx; }
 .v2-mode .score-head { display: flex; align-items: baseline; gap: 12rpx; margin-bottom: 10rpx; }
-.v2-mode .score-label { font-size: 23rpx; font-weight: 700; color: #111; }
+.v2-mode .score-label { font-size: 18rpx; font-weight: 700; color: #111; }
 .v2-mode .score-value { font-size: 36rpx; line-height: 1; font-weight: 900; color: #111; }
-.v2-mode .score-bucket { font-size: 23rpx; font-weight: 700; color: #111; }
+.v2-mode .score-bucket { font-size: 18rpx; font-weight: 700; color: #111; }
 .v2-mode .score-track { width: 100%; height: 18rpx; overflow: hidden; border: 2rpx solid #111; background: #fff; }
 .v2-mode .score-fill { height: 18rpx; min-width: 4rpx; }
 
@@ -567,14 +567,14 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .tag-v2.sm.conf-low { background: #fff; color: #999; border-color: #999; }
 .v2-mode .side-grid { display: flex; flex-direction: column; gap: 12rpx; margin-top: 14rpx; }
 .v2-mode .side-item { padding: 16rpx; border: 2rpx solid #111; background: #fff; }
-.v2-mode .side-label { display: block; color: #111; font-size: 23rpx; font-weight: 800; }
-.v2-mode .side-text { display: block; margin-top: 8rpx; color: #666; font-size: 24rpx; font-weight: 600; line-height: 1.55; }
+.v2-mode .side-label { display: block; color: #111; font-size: 20rpx; font-weight: 800; }
+.v2-mode .side-text { display: block; margin-top: 8rpx; color: #666; font-size: 22rpx; font-weight: 600; line-height: 1.55; }
 
 .v2-mode .status-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14rpx; margin-bottom: 12rpx; }
 .v2-mode .status-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8rpx; max-width: 430rpx; }
 .v2-mode .status-chip { background: #fff; }
-.v2-mode .status-summary { display: block; color: #111; font-size: 25rpx; line-height: 1.55; font-weight: 800; }
-.v2-mode .status-caution { display: block; margin-top: 8rpx; color: #666; font-size: 24rpx; font-weight: 600; line-height: 1.55; }
+.v2-mode .status-summary { display: block; color: #111; font-size: 24rpx; line-height: 1.55; font-weight: 800; }
+.v2-mode .status-caution { display: block; margin-top: 8rpx; color: #666; font-size: 22rpx; font-weight: 600; line-height: 1.55; }
 
 /* Trend deltas */
 .v2-mode .trend-deltas { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
@@ -583,12 +583,12 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .delta-down { background: #FFEEEC; color: #111; border-color: #FF6B6B; }
 .v2-mode .delta-flat { background: #f9f9f9; color: #999; }
 .v2-mode .evidence-delta { background: #FFD93D; color: #111; }
-.v2-mode .trend-summary { display: block; font-size: 25rpx; line-height: 1.55; font-weight: 800; color: #111; }
+.v2-mode .trend-summary { display: block; font-size: 24rpx; line-height: 1.55; font-weight: 800; color: #111; }
 .v2-mode .trend-warning { display: block; margin-top: 8rpx; font-size: 24rpx; line-height: 1.55; font-weight: 700; color: #FF5252; }
 .v2-mode .first-summary { background: #f9f9f9; }
 
 .v2-mode .headline { display: block; font-size: 26rpx; line-height: 1.55; font-weight: 800; color: #111; }
 .v2-mode .bullets { margin-top: 12rpx; }
 .v2-mode .caution-list { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #111; }
-.v2-mode .bullet { display: block; margin-top: 8rpx; font-size: 24rpx; font-weight: 600; line-height: 1.55; color: #666; }
+.v2-mode .bullet { display: block; margin-top: 8rpx; font-size: 22rpx; font-weight: 600; line-height: 1.55; color: #666; }
 </style>

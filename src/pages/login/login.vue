@@ -1,5 +1,5 @@
 <template>
-  <view class="login-page v2-mode" :style="themeVars">
+  <view :class="['login-page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
 
 
 <view class="container">

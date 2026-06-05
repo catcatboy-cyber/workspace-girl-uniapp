@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <view class="hero-block-v2">
       <text class="hero-tag-v2">CUSTOM PET</text>
       <text class="hero-title-v2">定制<text class="hl-v2">宠物</text></text>
@@ -124,7 +124,7 @@ async function submit() {
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
-.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #999; line-height: 1.4; margin-bottom: 10rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.4; margin-bottom: 10rpx; }
 
 .v2-mode .input-v2 { width: 100%; height: 80rpx; border: 2rpx solid #111; padding: 0 20rpx; font-size: 26rpx; font-weight: 700; color: #111; box-sizing: border-box; background: #fff; }
 .v2-mode .textarea-v2 { width: 100%; height: 240rpx; border: 2rpx solid #111; padding: 16rpx 20rpx; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; background: #fff; line-height: 1.6; }

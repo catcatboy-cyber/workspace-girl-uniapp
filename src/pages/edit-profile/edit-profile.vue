@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <view v-if="loading" class="loading-v2">加载中...</view>
 
     <view v-else-if="!caseFile" class="card-v2">
@@ -260,7 +260,7 @@ function goTimeline() {
 
 /* V2 Mode */
 .v2-mode { background: var(--app-bg, #FFFDF5); }
-.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 26rpx; font-weight: 600; color: #666; }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
 
 .v2-mode .hero-block-v2 {
   background: var(--hero-bg, #FF6B6B);
@@ -386,7 +386,7 @@ function goTimeline() {
   padding: 0 24rpx;
   background: #fff;
   border: 3rpx solid #111;
-  font-size: 28rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #111;
 }
@@ -411,7 +411,7 @@ function goTimeline() {
   background: #fff;
   color: #111;
   border: 3rpx solid #111;
-  font-size: 24rpx;
+  font-size: 26rpx;
   font-weight: 800;
 }
 .v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }

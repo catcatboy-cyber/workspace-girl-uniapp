@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <view class="hero-block-v2">
       <text class="hero-tag-v2">SYSTEM TRACKS</text>
       <text class="hero-title-v2">系统<text class="hl-v2">轨迹</text></text>
@@ -189,7 +189,7 @@ function formatRecordedAt(record: any) {
 .v2-mode .event-dot-v2.verification { background: #FFD93D; }
 .v2-mode .event-dot-v2.assessment { background: #111; }
 .v2-mode .event-dot-v2.trend { background: #666; }
-.v2-mode .event-dot-v2.note { background: #e0e0e0; }
+.v2-mode .event-dot-v2.note { background: #111; }
 .v2-mode .event-body-v2 { flex: 1; min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
 .v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }

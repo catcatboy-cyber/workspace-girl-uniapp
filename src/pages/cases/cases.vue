@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="themeVars">
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <!-- Hero -->
       <view class="hero-block-v2 anim-hero">
         <text class="hero-tag-v2">CRUSHES</text>
@@ -82,7 +82,7 @@ import { ref } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCases, getCurrentUserId } from '@/utils/api'
 import { bumpDataVersion, formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
-import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
 const loading = ref(true)
@@ -90,6 +90,7 @@ const cases = ref<any[]>([])
 const userId = ref('')
 const deleted = ref(false)
 const themeVars = ref(getThemeStyle())
+const fontSizeMode = ref(getFontSizeMode())
 
 onShareAppMessage(() => buildSafeShareMessage())
 
@@ -106,6 +107,7 @@ const lastDataVersion = ref(0)
 onShow(() => {
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
+    fontSizeMode.value = getFontSizeMode()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   activeCaseId.value = getActiveCaseId()
@@ -318,7 +320,7 @@ function switchActiveCase(caseId: string) {
 .v2-mode .kpi-cell-v2:last-child { border-right: none; }
 .v2-mode .kpi-num-v2 { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .kpi-num-v2.risk { color: #FF5252; }
-.v2-mode .kpi-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 4rpx; }
+.v2-mode .kpi-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 4rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
 .v2-mode .btn-v2-action {
   width: 100%; height: 68rpx; line-height: 68rpx; text-align: center;

@@ -1,5 +1,5 @@
 <template>
-  <view class="register-page v2-mode" :style="themeVars">
+  <view :class="['register-page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
 
 
 <view class="container">
@@ -110,7 +110,7 @@ const goLogin = () => {
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 28rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }
 .v2-mode .input-v2::placeholder { color: #999; }
 
 .v2-mode .error-v2 { padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 22rpx; font-weight: 600; color: #FF5252; }
