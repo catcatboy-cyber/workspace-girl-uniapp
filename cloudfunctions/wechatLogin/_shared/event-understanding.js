@@ -7,7 +7,7 @@
 const { buildPromptMessages } = require('./ai-prompt-config')
 
 const EVENT_TYPES = ['positive', 'risk', 'verification', 'note']
-const SEMANTIC_SCENES = ['offline_meet', 'movie', 'meal', 'coffee_tea', 'walk_shop', 'group_social', 'trip', 'chat']
+const SEMANTIC_SCENES = ['offline_meet', 'movie', 'meal', 'coffee_tea', 'walk', 'chat', 'gift', 'phone_call', 'online_chat', 'shopping', 'activity', 'study', 'work', 'travel', 'game', 'sport', 'music', 'pet', 'food', 'group_social']
 const SEMANTIC_BEHAVIORS = ['target_side', 'self_side', 'self_initiated', 'both_interaction', 'target_initiated']
 const SEMANTIC_OUTCOMES = ['planned', 'fulfilled', 'cancelled_delayed', 'pending', 'ai_reviewed']
 const SEMANTIC_RISKS = ['risk_event', 'rejected', 'cold', 'vague_delay']
@@ -174,14 +174,27 @@ function fallbackSemanticTags(params) {
   const outcome = []
   const risk = []
 
-  if (includesAnyText(text, ['见面', '碰面', '线下见', '出来见', '约会', '赴约', '见到了', '碰面了', '出来了'])) pushUnique(scene, 'offline_meet')
-  if (includesAnyText(text, ['电影', '影院', '看电影'])) pushUnique(scene, 'movie')
-  if (includesAnyText(text, ['吃饭', '晚饭', '午饭', '早餐', '夜宵', '火锅', '烧烤', '餐厅'])) pushUnique(scene, 'meal')
-  if (includesAnyText(text, ['咖啡', '奶茶', '喝咖啡', '喝奶茶'])) pushUnique(scene, 'coffee_tea')
-  if (includesAnyText(text, ['散步', '逛街', '走走', '压马路'])) pushUnique(scene, 'walk_shop')
+  if (includesAnyText(text, ['电影', '影院', '看电影', '看片', '观影'])) pushUnique(scene, 'movie')
+  if (includesAnyText(text, ['吃饭', '晚饭', '午饭', '早餐', '夜宵', '火锅', '烧烤', '餐厅', '美食', '小吃'])) pushUnique(scene, 'meal')
+  if (includesAnyText(text, ['咖啡', '奶茶', '喝咖啡', '喝奶茶', '饮料', '下午茶', '喝茶'])) pushUnique(scene, 'coffee_tea')
+  if (includesAnyText(text, ['散步', '走走', '压马路', '逛公园', '逛'])) pushUnique(scene, 'walk')
+  if (includesAnyText(text, ['逛街', '购物', '买东西', '逛商场', '买'])) pushUnique(scene, 'shopping')
   if (includesAnyText(text, ['朋友局', '朋友一起', '同学聚会', '多人活动', '聚会', '带我见朋友', '介绍朋友'])) pushUnique(scene, 'group_social')
-  if (includesAnyText(text, ['旅行', '旅游', '出游', '郊游', '露营'])) pushUnique(scene, 'trip')
-  if (includesAnyText(text, ['聊天', '微信', '消息', '回复', '发消息', '语音', '电话', '视频'])) pushUnique(scene, 'chat')
+  if (includesAnyText(text, ['旅行', '旅游', '出游', '郊游', '露营', '出行', '自驾'])) pushUnique(scene, 'travel')
+  if (includesAnyText(text, ['聊天', '微信', '消息', '回复', '发消息', '语音', '视频'])) pushUnique(scene, 'chat')
+  if (includesAnyText(text, ['打电话', '打电话给我', '打给我', '来电', '通话', '打电话', '拨电话'])) pushUnique(scene, 'phone_call')
+  if (includesAnyText(text, ['微信聊', '线上聊', '语音聊', '发语音', '网上聊'])) pushUnique(scene, 'online_chat')
+  if (includesAnyText(text, ['礼物', '送礼物', '送了', '送给', '礼物给我', '给我买了'])) pushUnique(scene, 'gift')
+  if (includesAnyText(text, ['运动', '打球', '篮球', '足球', '羽毛球', '乒乓球', '网球', '游泳', '健身', '跑步', '锻炼', '爬山'])) pushUnique(scene, 'sport')
+  if (includesAnyText(text, ['游戏', '打游戏', '玩游戏', '组队', '开黑', '电竞', '王者', '吃鸡'])) pushUnique(scene, 'game')
+  if (includesAnyText(text, ['音乐', '听歌', '唱歌', 'ktv', '演唱会', '音乐会', '看演出', '看音乐剧', 'livehouse', '音乐节'])) pushUnique(scene, 'music')
+  if (includesAnyText(text, ['宠物', '猫', '狗', '宠物', '遛狗'])) pushUnique(scene, 'pet')
+  if (includesAnyText(text, ['看戏', '看剧', '看展', '看话剧', '看舞台剧', '看脱口秀', '看相声', '看展览', '博物馆', '美术馆', '活动', '参加活动', '看演出', '去演出', '演出'])) pushUnique(scene, 'activity')
+  if (includesAnyText(text, ['学习', '上课', '图书馆', '自习', '一起学习', '读书', '看书'])) pushUnique(scene, 'study')
+  if (includesAnyText(text, ['工作', '加班', '同事', '开会', '出差', '项目'])) pushUnique(scene, 'work')
+  if (includesAnyText(text, ['美食', '探店', '甜品', '冰淇淋', '蛋糕', '小吃', '吃东西', '好吃的'])) pushUnique(scene, 'food')
+  // 无具体活动时才归为"线下见面"，避免与电影/吃饭/运动等重叠
+  if (scene.length === 0 && includesAnyText(text, ['见面', '碰面', '线下见', '出来见', '约会', '赴约', '见到了', '碰面了', '出来了'])) pushUnique(scene, 'offline_meet')
 
   const subjectRole = ['target', 'self', 'both', 'unknown'].includes(params.subjectRole) ? params.subjectRole : 'target'
   if (subjectRole === 'target') pushUnique(behavior, 'target_side')
@@ -278,6 +291,8 @@ async function inferTimelineRecord(params) {
     moduleKey: 'eventUnderstanding',
     settings: params.settings,
     contextLines: [
+      '所有输出（eventTitle, summary）必须是简体中文，不允许英文。',
+      `semanticTags 可选值：scene=[${SEMANTIC_SCENES.join('|')}] behavior=[${SEMANTIC_BEHAVIORS.join('|')}] outcome=[${SEMANTIC_OUTCOMES.join('|')}] risk=[${SEMANTIC_RISKS.join('|')}]。必须从可选值中选择，不要自创标签。同一事件优先选最具体的场景标签，offline_meet 仅在无更具体场景时使用（如仅描述'见面'而无电影/吃饭/运动等具体活动）。`,
       describeSubjectRole(params.subjectRole),
       `targetProfile=${serializeCaseProfile(params.caseProfile)}`,
       '主体宾语校验：“我主动问对方 / 我问他 / 我问她 / 我问对方”表示用户主动向关系对象提问；不要改写成“对方问我”或“对方主动问用户”。只有“对方问我 / 他问我 / 她问我 / 问我”才表示关系对象主动问用户。',

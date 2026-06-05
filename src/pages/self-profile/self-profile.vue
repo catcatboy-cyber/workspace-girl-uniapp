@@ -9,7 +9,7 @@
 
       <scroll-view class="chat-area" scroll-y :scroll-into-view="scrollTarget" :scroll-with-animation="true">
         <view v-for="(msg, i) in messages" :key="i" :id="'msg-' + i" :class="['msg', msg.role === 'pet' ? 'msg-pet' : 'msg-user']">
-          <view v-if="msg.role === 'pet'" class="msg-avatar">🐱</view>
+          <view v-if="msg.role === 'pet'" class="msg-avatar"><image :src="petAvatar" mode="aspectFill" style="width:100%;height:100%;" /></view>
           <view v-if="msg.role === 'pet'" class="msg-bubble">
             <text v-for="(line, li) in msg.lines" :key="li" :class="['msg-line', line.style || '']">{{ line.text }}</text>
           </view>
@@ -21,7 +21,7 @@
           </view>
         </view>
         <view v-if="typing" class="msg msg-pet">
-          <view class="msg-avatar">🐱</view>
+          <view class="msg-avatar"><image :src="petAvatar" mode="aspectFill" style="width:100%;height:100%;" /></view>
           <view class="msg-typing"><view></view><view></view><view></view></view>
         </view>
         <view style="height:40rpx;"></view>
@@ -100,6 +100,9 @@ import {
 } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { showError, showSuccess } from '@/utils/helpers'
+import { getPetById, getSelectedPetId } from '@/utils/pets.js'
+
+const petAvatar = getPetById(getSelectedPetId()).avatarPath
 
 // ====== Options ======
 const genderOptions = [
@@ -385,7 +388,7 @@ function onSkip() {
 .chat-head-title { font-size: 28rpx; font-weight: 900; color: #FFD93D; }
 .chat-head-skip { padding: 8rpx 20rpx; background: transparent; border: 2rpx solid #FFD93D; color: #FFD93D; font-size: 22rpx; font-weight: 800; }
 
-.chat-area { flex: 1; padding: 20rpx 20rpx 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16rpx; }
+.chat-area { flex: 1; padding: 20rpx 20rpx 0; overflow-y: auto; display: flex; flex-direction: column; gap: 28rpx; }
 
 .msg { display: flex; gap: 10rpx; align-items: flex-end; max-width: 92%; }
 .msg-pet { align-self: flex-start; }

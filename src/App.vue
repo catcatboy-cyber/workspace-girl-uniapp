@@ -97,6 +97,35 @@ button::after {
   line-height: var(--text-line-height, 1.55);
 }
 
+/* ===== Entrance Animations (shared across all tab pages) ===== */
+@keyframes hero-drop {
+  0%   { transform: translateY(-130%) rotate(-2deg); opacity: 0; }
+  50%  { transform: translateY(12rpx) rotate(-0.3deg); opacity: 1; animation-timing-function: ease-out; }
+  65%  { transform: translateY(-18rpx) rotate(-0.6deg); animation-timing-function: ease-in; }
+  78%  { transform: translateY(6rpx) rotate(-0.4deg); animation-timing-function: ease-out; }
+  100% { transform: translateY(0) rotate(-0.5deg); opacity: 1; }
+}
+@keyframes card-in {
+  from { transform: translateY(40rpx); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+
+.v2-mode.anim-ready .anim-hero {
+  animation: hero-drop 0.7s ease-out both;
+}
+.v2-mode.anim-ready .anim-card {
+  opacity: 0;
+  animation: card-in 0.4s ease-out forwards;
+}
+.v2-mode.anim-ready .anim-pulse {
+  animation: btn-pulse 2s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
 /* AI disclaimer footer */
 .ai-disclaimer {
   margin-top: 24rpx;

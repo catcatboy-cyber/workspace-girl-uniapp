@@ -25,9 +25,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { login, shouldCompleteSelfProfile, wechatLogin } from '@/utils/api'
+import { getCurrentUserId, login, shouldCompleteSelfProfile, wechatLogin } from '@/utils/api'
 import { resetCloudAuthState } from '@/utils/cloudbase'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+
+// 已登录则直接进首页，避免登录页闪现
+if (getCurrentUserId()) {
+  uni.reLaunch({ url: '/pages/index/index' })
+}
 
 const email = ref('')
 const password = ref('')

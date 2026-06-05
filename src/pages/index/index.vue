@@ -1,27 +1,27 @@
 <template>
-  <view class="page v2-mode" :style="pageStyle">
+  <view v-if="_uid" :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="pageStyle">
 
     <view v-if="loading" class="loading">LOADING...</view>
 
     <block v-else>
       <template v-if="cases.length === 0">
-        <view class="hero-block">
+        <view class="hero-block anim-hero">
           <text class="hero-tag">DOM-CRUSH BOARD</text>
           <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
-        <view v-if="showProfileReminder" class="remind-card-v2" @click="goSelfProfile">
+        <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
           <text class="remind-card-title-v2">你的画像未完善</text>
           <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
         </view>
 
         <!-- 两条路径选择 -->
         <view v-if="!showFullAssessment && !showQuickCreate" class="onboard-options-v2">
-          <view class="onboard-card-v2 primary" @click="showFullAssessment = true">
+          <view class="onboard-card-v2 primary anim-card" style="animation-delay:0.2s" @click="showFullAssessment = true">
             <text class="onboard-card-title-v2">开始初评</text>
             <text class="onboard-card-desc-v2">填Crush画像 + 回答 14 题 → AI 分析结果</text>
           </view>
-          <view class="onboard-card-v2" @click="showQuickCreate = true">
+          <view class="onboard-card-v2 anim-card" style="animation-delay:0.3s" @click="showQuickCreate = true">
             <text class="onboard-card-title-v2">快速创建</text>
             <text class="onboard-card-desc-v2">只填Crush画像 → 30 秒建好，后续可补分析</text>
           </view>
@@ -39,28 +39,28 @@
 
       <template v-else>
         <!-- Hero -->
-        <view class="hero-block">
+        <view class="hero-block anim-hero">
           <text class="hero-tag">DOM-CRUSH BOARD</text>
           <text class="hero-title">今天他<text class="hl">有戏</text>吗？</text>
           <view class="hero-identity"><view class="profile-avatar-v2 sm"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(latestCase.name) }}</text></view><text class="hero-identity-name">{{ latestCase.name || '--' }}</text></view>
           <text class="hero-copy">别靠脑补，先把真实互动记下来。共 {{ cases.length }} 个 Crushes。</text>
-          <view class="kpi-strip">
-            <view class="kpi-cell"><text class="kpi-num">{{ latestCase.latestResult?.intentScore ?? '--' }}</text><text class="kpi-lbl">意向分</text></view>
-            <view class="kpi-cell"><text class="kpi-num">{{ latestCase.latestResult?.consistencyRiskScore ?? '--' }}</text><text class="kpi-lbl">风险分</text></view>
-            <view class="kpi-cell"><text class="kpi-num">{{ latestCase.timeline?.length ?? 0 }}</text><text class="kpi-lbl">事件</text></view>
+          <view class="kpi-strip-v2">
+            <view class="kpi-cell-v2"><text class="kpi-num-v2">{{ latestCase.latestResult?.intentScore ?? '--' }}</text><text class="kpi-lbl-v2">意向分</text></view>
+            <view class="kpi-cell-v2"><text class="kpi-num-v2">{{ latestCase.latestResult?.consistencyRiskScore ?? '--' }}</text><text class="kpi-lbl-v2">风险分</text></view>
+            <view class="kpi-cell-v2"><text class="kpi-num-v2">{{ latestCase.timeline?.length ?? 0 }}</text><text class="kpi-lbl-v2">事件</text></view>
           </view>
-          <view v-if="latestProfileItems.length > 0" class="tag-row">
-            <text v-for="item in latestProfileItems" :key="item" class="tag">{{ item }}</text>
+          <view v-if="latestProfileItems.length > 0" class="tag-row-v2">
+            <text v-for="item in latestProfileItems" :key="item" class="tag-v2">{{ item }}</text>
           </view>
         </view>
 
-        <view v-if="showProfileReminder" class="remind-card-v2" @click="goSelfProfile">
+        <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.1s" @click="goSelfProfile">
           <text class="remind-card-title-v2">你的画像未完善</text>
           <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
         </view>
 
         <!-- Quick record -->
-        <view class="record-block">
+        <view class="record-block anim-card" style="animation-delay:0.15s">
           <view class="block-head"><text class="block-title">快速记录</text><text class="block-badge">别脑补</text></view>
           <textarea v-model="quickDesc" class="text-area-v2" placeholder="他说下次一起去图书馆..." />
           <view class="role-row">
@@ -87,13 +87,13 @@
               </view>
             </view>
           </view>
-          <view v-if="quickAttachments.length > 0" class="attach-list">
-            <view v-for="(item, index) in quickAttachments" :key="item.fileID" class="attach-item" @click="previewQuickAttachment(index)">
-              <text class="attach-name">{{ item.name }}</text>
-              <button class="btn-del" @click.stop="removeQuickAttachment(index)">删除</button>
+          <view v-if="quickAttachments.length > 0" class="img-grid-v2">
+            <view v-for="(item, index) in quickAttachments" :key="item.fileID" class="img-box-v2" @click="previewQuickAttachment(index)">
+              <image :src="item.url" class="img-preview-v2" mode="aspectFill" />
+              <text class="img-del-v2" @click.stop="removeQuickAttachment(index)">x</text>
             </view>
           </view>
-          <button class="btn-v2 primary" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记上！' }}</button>
+          <button class="btn-v2 primary anim-pulse" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记上！' }}</button>
         </view>
 
         <!-- Feedback -->
@@ -125,13 +125,13 @@
               <view class="delta-item"><text class="delta-label-v2">意向变化</text><text :class="['delta-val', deltaClass(latestTrend.intentDelta)]">{{ formatDelta(latestTrend.intentDelta) }}</text></view>
               <view class="delta-item"><text class="delta-label-v2">风险变化</text><text :class="['delta-val', deltaClass(latestTrend.riskDelta)]">{{ formatDelta(latestTrend.riskDelta) }}</text></view>
             </view>
-            <view v-if="statusStateTags.length || problemTypeTags.length" class="tag-row" style="margin-top:12px;">
-              <text v-for="tag in statusStateTags" :key="tag" class="tag black">{{ tag }}</text>
-              <text v-for="tag in problemTypeTags" :key="tag" class="tag">{{ tag }}</text>
+            <view v-if="statusStateTags.length || problemTypeTags.length" class="tag-row-v2" style="margin-top:12px;">
+              <text v-for="tag in statusStateTags" :key="tag" class="tag-v2 black">{{ tag }}</text>
+              <text v-for="tag in problemTypeTags" :key="tag" class="tag-v2">{{ tag }}</text>
             </view>
             <view v-if="quickReasonBullets.length > 0 || eventInsightTags.length > 0" class="reason-box">
-              <view v-if="eventInsightTags.length > 0" class="tag-row compact">
-                <text v-for="tag in eventInsightTags" :key="tag" class="tag">{{ tag }}</text>
+              <view v-if="eventInsightTags.length > 0" class="tag-row-v2 compact">
+                <text v-for="tag in eventInsightTags" :key="tag" class="tag-v2">{{ tag }}</text>
               </view>
               <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
             </view>
@@ -199,6 +199,7 @@
 
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
+  <view v-else class="page v2-mode" />
 </template>
 
 <script setup lang="ts">
@@ -206,7 +207,19 @@ import { ref, computed, watch } from 'vue'
 import { onHide, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
-import { getCases, createCase, createTimeline, analyzeAttachment, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile } from '@/utils/api'
+import { getCases, createCase, createTimeline, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile } from '@/utils/api'
+import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
+
+// 无登录态时立即跳转，避免挂载整个首页组件树
+const _uid = getCurrentUserId()
+if (!_uid) {
+  uni.reLaunch({ url: '/pages/login/login' })
+}
+
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
@@ -519,7 +532,7 @@ const showSideReadEntry = computed(() => {
 })
 
 const showProfileReminder = computed(() =>
-  !hasUsableSelfProfile(getCachedSelfProfile())
+  !hasUsableSelfProfile(selfProfile.value)
 )
 
 const hasInstantFeedbackRecord = computed(() => {
@@ -863,6 +876,10 @@ async function refreshSelfProfileInBackground() {
 }
 
 onShow(() => {
+  const _t0 = Date.now()
+  console.log('[PERF] index onShow start')
+  // Sync cached profile so showProfileReminder recomputes
+  selfProfile.value = getCachedSelfProfile()
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
   themeVars.value = getThemeStyle()
@@ -881,6 +898,7 @@ onShow(() => {
   if (!dataReady.value || dv > lastDataVersion.value || activeMissing || activeChanged || activeNeedsDetail) {
     loadData()
   }
+  console.log('[PERF] index onShow end', Date.now() - _t0, 'ms')
 })
 
 onShareAppMessage(() => buildSafeShareMessage())
@@ -1182,15 +1200,13 @@ async function chooseQuickImages() {
           const filePath = file.path || file.tempFilePath
           if (!filePath) continue
           const fileID = await uploadFile(filePath, buildQuickCloudPath(filePath, i))
-          const analysisRes = await analyzeAttachment({ fileID, mediaType: 'image' }).catch(() => null)
           const url = await getTempFileURL(fileID).catch(() => '')
           uploaded.push({
             type: 'image',
             fileID,
             name: getFileName(filePath, `图片${quickAttachments.value.length + uploaded.length + 1}`),
             size: file.size || 0,
-            url,
-            analysis: analysisRes?.success ? analysisRes.analysis : undefined
+            url
           })
         }
         quickAttachments.value = [...quickAttachments.value, ...uploaded]
@@ -1496,16 +1512,16 @@ function goSelfProfile() {
 .v2-mode .hero-copy { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .hero-copy .strong { color: #111; font-weight: 900; }
 
-.v2-mode .kpi-strip { display: flex; margin-top: 24rpx; border: 3rpx solid #111; background: #fff; }
-.v2-mode .kpi-cell { flex: 1; text-align: center; padding: 20rpx 8rpx; border-right: 3rpx solid #111; }
-.v2-mode .kpi-cell:last-child { border-right: none; }
-.v2-mode .kpi-num { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1; }
-.v2-mode .kpi-lbl { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 6rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: 3rpx solid #111; background: #f9f9f9; }
+.v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 20rpx 8rpx; border-right: 3rpx solid #111; }
+.v2-mode .kpi-cell-v2:last-child { border-right: none; }
+.v2-mode .kpi-num-v2 { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .kpi-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 6rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
-.v2-mode .tag-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 18rpx; }
-.v2-mode .tag-row.compact { margin-top: 0; margin-bottom: 12rpx; }
-.v2-mode .tag { display: inline-flex; align-items: center; min-height: 40rpx; padding: 6rpx 16rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .tag.black { background: #111; color: #fff; }
+.v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
+.v2-mode .tag-row-v2.compact { margin-top: 0; margin-bottom: 12rpx; }
+.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .tag-v2.black { background: #111; color: #fff; }
 
 .v2-mode .record-block { background: #f9f9f9; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
@@ -1519,19 +1535,21 @@ function goSelfProfile() {
 .v2-mode .role-label { font-size: 22rpx; font-weight: 700; color: #666; }
 .v2-mode .role-options { display: flex; gap: 8rpx; }
 .v2-mode .role-chip { padding: 8rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: 22rpx; font-weight: 700; color: #666; }
-.v2-mode .role-chip.active { background: #111; color: #fff; }
+.v2-mode .role-chip.active { background: #111; color: #FFD93D; }
 
 .v2-mode .datetime-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .picker-v2 { padding: 12rpx 20rpx; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
+.v2-mode .picker-v2 { height: 56rpx; line-height: 56rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
 
+/* Image thumbnail grid */
 .v2-mode .attach-row { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .attach-list { display: flex; flex-direction: column; gap: 10rpx; margin-top: 14rpx; }
-.v2-mode .attach-item { display: flex; justify-content: space-between; align-items: center; padding: 14rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: 22rpx; font-weight: 700; }
-.v2-mode .attach-name { color: #111; max-width: 360rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.v2-mode .btn-del { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #fff; font-size: 20rpx; font-weight: 700; color: #FF5252; }
+.v2-mode .img-grid-v2 { display: flex; flex-wrap: wrap; gap: 14rpx; margin-top: 14rpx; }
+.v2-mode .img-box-v2 { width: 160rpx; height: 160rpx; position: relative; }
+.v2-mode .img-preview-v2 { width: 100%; height: 100%; border-radius: 4rpx; }
+.v2-mode .img-preview-v2 { width: 100%; height: 100%; }
+.v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: #FF5252; color: #fff; font-size: 24rpx; font-weight: 900; text-align: center; line-height: 44rpx; border: 2rpx solid #111; }
 
 .v2-mode .btn-v2 { flex: 1; height: 72rpx; line-height: 72rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-sizing: border-box; padding: 0 24rpx; }
-.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 6rpx 6rpx 0 #111; margin-top: 16rpx; width: 100%; }
+.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; margin-top: 16rpx; width: 100%; }
 .v2-mode .btn-v2.outline { margin-top: 20rpx; width: 100%; }
 .v2-mode .btn-v2.sm { width: 100%; margin-top: 14rpx; height: 60rpx; line-height: 60rpx; font-size: 24rpx; }
 .v2-mode .btn-v2[disabled] { opacity: 0.6; }
@@ -1700,4 +1718,5 @@ function goSelfProfile() {
 .v2-mode .onboard-card-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .onboard-card-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.4; }
 .v2-mode .back-link-v2 { display: inline-block; text-align: left; padding: 12rpx 0; margin-bottom: 16rpx; font-size: 28rpx; font-weight: 600; color: #111; }
+
 </style>

@@ -161,11 +161,12 @@ function goTimeline() {
 }
 .v2-mode .section-title-v2 {
   display: block;
-  font-size: 32rpx;
+  font-size: 22rpx;
   font-weight: 900;
   color: #111;
-  margin-bottom: 14rpx;
-  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 2rpx;
+  margin-bottom: 10rpx;
 }
 .v2-mode .card-text-v2 {
   display: block;

@@ -72,6 +72,7 @@ function sanitizeAttachment(item) {
     ? {
         isChatRecord: Boolean(item.analysis.isChatRecord),
         extractedText: typeof item.analysis.extractedText === 'string' ? item.analysis.extractedText.slice(0, 4000) : '',
+        suggestedTitle: typeof item.analysis.suggestedTitle === 'string' ? item.analysis.suggestedTitle.slice(0, 30) : '',
         summary: typeof item.analysis.summary === 'string' ? item.analysis.summary.slice(0, 500) : '',
         confidence: ['low', 'medium', 'high'].includes(item.analysis.confidence) ? item.analysis.confidence : 'medium'
       }

@@ -1,5 +1,5 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2">
@@ -9,19 +9,19 @@
       <template v-else>
         <view v-if="profileUpdated" class="notice-v2 ok"><text class="notice-title-v2">画像已更新</text><text class="notice-sub-v2">Crush 画像信息已保存。</text></view>
         <!-- Hero -->
-        <view class="hero-block-v2">
+        <view class="hero-block-v2 anim-hero">
           <text class="hero-tag-v2">WE / {{ caseFile.name }}</text>
           <text class="hero-title-v2">{{ result?.explanation?.petLine || result?.explanation?.bullets?.[0] || '暂无分析结果' }}</text>
           <text class="hero-copy-v2">AI 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
           <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">最新 · {{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">风险 · {{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 分析</text></view>
         </view>
         <!-- 补初评入口 -->
-        <view v-if="!isCurrentResultAIReviewed" class="card-v2" @click="goNewAssessment">
+        <view v-if="!isCurrentResultAIReviewed" class="card-v2 anim-card" style="animation-delay:0.15s" @click="goNewAssessment">
           <text class="section-title-v2">还没有进行初评</text>
           <text class="remind-text-v2">回答几个问题，让小咪帮你看看有没有戏。点击前往 →</text>
         </view>
         <!-- Profile -->
-        <view class="card-v2">
+        <view class="card-v2 anim-card" style="animation-delay:0.2s">
           <view class="card-head-v2">
             <view class="avatar-v2 lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseFile.name) }}</text></view>
             <view><text class="profile-name-v2">{{ caseFile.name }}</text><text v-if="objectTypeLabel" class="profile-type-v2">{{ objectTypeLabel }}</text></view>
@@ -63,7 +63,7 @@
           </view>
         </view>
         <!-- Weekly review -->
-        <view v-if="aiWeeklyPreview" class="card-v2">
+        <view v-if="aiWeeklyPreview" class="card-v2 anim-card" style="animation-delay:0.25s">
           <text class="section-title-v2">{{ aiWeeklyPreview.weekStart }} - {{ aiWeeklyPreview.weekEnd }}</text>
           <text class="weekly-title-v2">{{ aiWeeklyPreview.title }}</text>
           <view class="tag-row-v2" style="margin:10rpx 0;"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(aiWeeklyPreview.trendLabel) }}</text><text class="tag-v2 black">AI 复盘</text></view>
@@ -76,7 +76,7 @@
         </view>
         <view v-else-if="hasFallbackWeeklyPreview" class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">近14天只生成了规则兜底版本，请去14天复盘页重新生成 AI 版本。</text></view>
         <!-- Weekly side read -->
-        <view class="card-v2">
+        <view class="card-v2 anim-card" style="animation-delay:0.3s">
           <text class="section-title-v2">近14天星象速写</text>
           <view v-if="currentWeeklySideRead">
             <text v-if="currentWeeklySideRead.title" class="weekly-title-v2">{{ currentWeeklySideRead.title }}</text>
@@ -87,7 +87,7 @@
         </view>
         <!-- Bottom action: matches original -->
         <view class="bottom-action-v2">
-          <button class="btn-v2-bottom" :disabled="weeklyPreview && !hasNewEventsSinceReview" @click="goWeeklyReview">{{ weeklyButtonLabel }}</button>
+          <button class="btn-v2-bottom anim-pulse" :disabled="weeklyPreview && !hasNewEventsSinceReview" @click="goWeeklyReview">{{ weeklyButtonLabel }}</button>
         </view>
       </template>
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
@@ -408,6 +408,8 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  const _t0 = Date.now()
+  console.log('[PERF] case-detail onShow start')
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
   themeVars.value = getThemeStyle()
@@ -431,6 +433,7 @@ onShow(() => {
   }
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
   if (dv > lastDataVersion.value) { lastDataVersion.value = dv; loadData({ silent: true }) }
+  console.log('[PERF] case-detail onShow end', Date.now() - _t0, 'ms')
 })
 
 async function ensureCaseId(uid: string) {
@@ -717,7 +720,8 @@ function goWeeklyReview() {
 .v2-mode .empty-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.5; }
 
 .v2-mode .notice-v2 { padding: 20rpx; border: 3rpx solid #111; margin-bottom: 18rpx; }
-.v2-mode .notice-v2.ok { background: #E0FFF0; }
+.v2-mode .notice-v2.ok { background: #E0FFF0; border-left: 12rpx solid #4ECDC4; }
+.v2-mode .notice-v2.warn { background: #FFEEEC; border-left: 12rpx solid #FF6B6B; }
 .v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .notice-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; }
 
@@ -738,11 +742,11 @@ function goWeeklyReview() {
 .v2-mode .profile-name-v2 { display: block; font-size: 34rpx; font-weight: 900; color: #111; }
 .v2-mode .profile-type-v2 { display: block; font-size: 22rpx; font-weight: 700; color: #FF5252; margin-top: 2rpx; }
 
-.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .stat-box-v2 { padding: 18rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
+.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8rpx; margin-top: 16rpx; }
+.v2-mode .stat-box-v2 { padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
 .v2-mode .stat-box-v2.warn { background: #FFF0EE; }
 .v2-mode .stat-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
-.v2-mode .stat-lbl-v2 { display: block; font-size: 20rpx; font-weight: 700; color: #666; margin-top: 4rpx; }
+.v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 2rpx; }
 .v2-mode .stat-hint-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
 
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }

@@ -79,7 +79,7 @@ async function submit() {
 .v2-mode .text-area-v2 { width: 100%; min-height: 200rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; }
 .v2-mode .char-count-v2 { display: block; text-align: right; font-size: 20rpx; font-weight: 600; color: #999; margin-top: 8rpx; }
 .v2-mode .input-v2 { width: 100%; height: 72rpx; padding: 0 18rpx; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; }
-.v2-mode .btn-v2-submit { width: 100%; height: 72rpx; line-height: 72rpx; text-align: center; background: #4ECDC4; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; font-size: 26rpx; font-weight: 800; color: #111; margin-top: 0; }
+.v2-mode .btn-v2-submit { width: 100%; height: 72rpx; line-height: 72rpx; text-align: center; background: #4ECDC4; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; font-size: 26rpx; font-weight: 800; color: #111; margin-top: 0; }
 .v2-mode .btn-v2-submit[disabled] { opacity: 0.6; }
 .v2-mode .result-text-v2 { display: block; margin-top: 20rpx; text-align: center; font-size: 24rpx; font-weight: 700; }
 .v2-mode .result-text-v2.ok { color: #4ECDC4; }

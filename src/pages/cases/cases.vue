@@ -1,11 +1,11 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="themeVars">
       <!-- Hero -->
-      <view class="hero-block-v2">
+      <view class="hero-block-v2 anim-hero">
         <text class="hero-tag-v2">CRUSHES</text>
         <text class="hero-title-v2">Crushes <text class="hl-v2">列表</text></text>
         <text class="hero-copy-v2">先切换，再进入当前 Crush。共 <text class="strong">{{ cases.length }}</text> 个 Crushes。</text>
-        <button class="btn-v2-hero" @click="goNew">+ 开个新的</button>
+        <button class="btn-v2-hero anim-pulse" @click="goNew">+ 开个新的</button>
       </view>
 
       <!-- Deleted notice -->
@@ -23,7 +23,7 @@
         </view>
 
         <view v-else class="case-list-v2">
-          <view v-for="item in cases" :key="item.caseId" class="case-block-v2">
+          <view v-for="(item, idx) in cases" :key="item.caseId" :class="['case-block-v2', idx === 0 ? 'anim-card' : '']" :style="idx === 0 ? 'animation-delay:0.15s' : ''">
             <!-- Case head -->
             <view class="case-head-v2">
               <view class="case-identity-v2">
@@ -272,7 +272,8 @@ function switchActiveCase(caseId: string) {
 }
 
 .v2-mode .notice-v2 { padding: 20rpx; border: 3rpx solid #111; margin-bottom: 18rpx; }
-.v2-mode .notice-v2.ok { background: #E0FFF0; }
+.v2-mode .notice-v2.ok { background: #E0FFF0; border-left: 12rpx solid #4ECDC4; }
+.v2-mode .notice-v2.warn { background: #FFEEEC; border-left: 12rpx solid #FF6B6B; }
 .v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .notice-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; }
 

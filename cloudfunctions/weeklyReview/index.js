@@ -519,6 +519,14 @@ async function generateReview(params) {
 
   await db.collection(REVIEW_COLLECTION).doc(reviewId).set(review)
 
+  // 删除同周期旧 timeline 记录，避免重复
+  const oldRecords = await db.collection('timeline_records')
+    .where({ caseId, reviewId })
+    .get()
+  for (const doc of oldRecords.data || []) {
+    await db.collection('timeline_records').doc(doc._id).remove()
+  }
+
   await db.collection('timeline_records').add({
     caseId, userId, type: 'weekly_review',
     reviewId,
@@ -657,8 +665,16 @@ async function generateWeeklySideRead(params) {
     updatedAt: _.set(now)
   })
 
+  // 删除同周期旧星象速写 timeline 记录，避免重复
+  const oldSideReads = await db.collection('timeline_records')
+    .where({ caseId, reviewId })
+    .get()
+  for (const doc of oldSideReads.data || []) {
+    await db.collection('timeline_records').doc(doc._id).remove()
+  }
+
   await db.collection('timeline_records').add({
-    caseId, userId, type: 'note',
+    caseId, userId, type: 'note', reviewId,
     feature: 'weeklySideRead',
     title: weeklySideRead.title || '近14天星象速写',
     description: weeklySideRead.summary || '',

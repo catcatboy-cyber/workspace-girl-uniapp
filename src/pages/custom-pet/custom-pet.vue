@@ -137,6 +137,6 @@ async function submit() {
 .v2-mode .img-add-icon-v2 { font-size: 48rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .img-add-label-v2 { font-size: 20rpx; font-weight: 700; color: #999; }
 
-.v2-mode .submit-btn-v2 { width: 100%; height: 88rpx; line-height: 88rpx; text-align: center; background: #4ECDC4; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; font-size: 26rpx; font-weight: 800; color: #111; margin-bottom: 40rpx; }
+.v2-mode .submit-btn-v2 { width: 100%; height: 88rpx; line-height: 88rpx; text-align: center; background: #4ECDC4; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; font-size: 26rpx; font-weight: 800; color: #111; margin-bottom: 40rpx; }
 .v2-mode .submit-btn-v2[disabled] { opacity: 0.5; }
 </style>

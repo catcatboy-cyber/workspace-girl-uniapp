@@ -324,11 +324,12 @@ function goTimeline() {
 }
 .v2-mode .section-title-v2 {
   display: block;
-  font-size: 32rpx;
+  font-size: 22rpx;
   font-weight: 900;
   color: #111;
-  margin-bottom: 14rpx;
-  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 2rpx;
+  margin-bottom: 10rpx;
 }
 .v2-mode .card-text-v2 {
   display: block;
@@ -342,11 +343,13 @@ function goTimeline() {
 /* Tags */
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-v2 {
-  display: inline-block;
-  padding: 8rpx 16rpx;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36rpx;
+  padding: 4rpx 14rpx;
   background: #FFD93D;
   border: 2rpx solid #111;
-  font-size: 22rpx;
+  font-size: 20rpx;
   font-weight: 800;
   color: #111;
 }
@@ -382,7 +385,7 @@ function goTimeline() {
   line-height: 80rpx;
   padding: 0 24rpx;
   background: #fff;
-  border: 2rpx solid #111;
+  border: 3rpx solid #111;
   font-size: 28rpx;
   font-weight: 600;
   color: #111;

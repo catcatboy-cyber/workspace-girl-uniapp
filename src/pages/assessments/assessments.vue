@@ -117,15 +117,19 @@
               <text class="trace-label">下一步动作</text>
               <text class="trace-value">{{ mapAction(item.nextAction) }}</text>
             </view>
-            <view v-if="getImageLinkItems(item).length > 0" class="image-link-list">
-              <view
-                v-for="(link, linkIndex) in getImageLinkItems(item)"
-                :key="link.fileID"
-                class="image-link-item"
-                @click="previewAssessmentImages(item, linkIndex)"
-              >
-                <text class="trace-label">{{ link.name }}</text>
-                <text class="image-link-url" selectable>{{ link.url || '授权链接生成中...' }}</text>
+            <view v-if="getImageLinkItems(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;">
+              <view v-for="(link, linkIndex) in getImageLinkItems(item)" :key="link.fileID" class="img-box-v2" @click="previewAssessmentImages(item, linkIndex)">
+                <image :src="link.url || imageUrlMap[link.fileID] || ''" class="img-preview-v2" mode="aspectFill" />
+                <text v-if="link.isChatRecord" class="img-chat-badge">聊</text>
+              </view>
+            </view>
+            <view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list">
+              <view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card">
+                <view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view>
+                <view v-else class="img-analysis-label">图片 · AI 摘要</view>
+                <text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text>
+                <text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text>
+                <view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', imgConfidenceClass(att.analysis.confidence)]">可信度：{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view>
               </view>
             </view>
           </view>
@@ -296,11 +300,20 @@ function getImageAttachments(item: any) {
   return attachments.filter((attachment: any) => attachment?.type === 'image' && attachment?.fileID)
 }
 
+function getImageAnalyses(item: any) {
+  return getImageAttachments(item).filter((att: any) => att?.analysis && typeof att.analysis === 'object')
+}
+
+function imgConfidenceClass(confidence: string) {
+  return confidence === 'high' ? 'conf-high' : confidence === 'low' ? 'conf-low' : ''
+}
+
 function getImageLinkItems(item: any) {
   return getImageAttachments(item).map((attachment: any, index: number) => ({
     fileID: attachment.fileID,
     name: attachment.name || `图片${index + 1}`,
-    url: imageUrlMap.value[attachment.fileID] || ''
+    url: imageUrlMap.value[attachment.fileID] || '',
+    isChatRecord: Boolean(attachment?.analysis?.isChatRecord)
   }))
 }
 
@@ -470,7 +483,7 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .hero-actions-v2 { display: flex; gap: 12rpx; margin-top: 20rpx; flex-wrap: wrap; }
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; padding: 28rpx; margin-bottom: 24rpx; box-shadow: 6rpx 6rpx 0 #111; }
-.v2-mode .section-title-v2 { display: block; font-size: 32rpx; font-weight: 900; color: #111; margin-bottom: 14rpx; line-height: 1.3; }
+.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
 .v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.6; margin: 6rpx 0; }
 
 .v2-mode .btn-v2 { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; background: #fff; color: #111; border: 3rpx solid #111; font-size: 24rpx; font-weight: 800; }
@@ -538,10 +551,20 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .trace-row { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; padding: 12rpx 0; }
 .v2-mode .trace-label { color: #111; font-size: 22rpx; font-weight: 800; }
 .v2-mode .trace-value { color: #111; font-size: 24rpx; font-weight: 700; }
-.v2-mode .image-link-list { display: flex; flex-direction: column; gap: 12rpx; margin-top: 10rpx; }
-.v2-mode .image-link-item { min-width: 0; overflow: hidden; padding: 14rpx 16rpx; background: #fff; border: 2rpx solid #111; }
-.v2-mode .image-link-item .trace-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.v2-mode .image-link-url { display: block; margin-top: 6rpx; color: #666; font-size: 21rpx; line-height: 1.35; word-break: break-all; font-weight: 600; }
+/* Image thumbnail grid */
+.v2-mode .img-grid-v2 { display: flex; flex-wrap: wrap; gap: 14rpx; }
+.v2-mode .img-box-v2 { width: 160rpx; height: 160rpx; position: relative; }
+.v2-mode .img-preview-v2 { width: 100%; height: 100%; border-radius: 4rpx; }
+.v2-mode .img-chat-badge { position: absolute; top: 0; left: 0; padding: 2rpx 10rpx; background: #FFD93D; color: #111; font-size: 18rpx; font-weight: 900; }
+
+.v2-mode .img-analysis-list { display: flex; flex-direction: column; gap: 10rpx; margin-top: 10rpx; }
+.v2-mode .img-analysis-card { padding: 14rpx 16rpx; border-left: 3rpx solid #999; background: #f9f9f9; border-radius: 0 4rpx 4rpx 0; }
+.v2-mode .img-analysis-label { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; text-transform: uppercase; letter-spacing: 1rpx; }
+.v2-mode .img-analysis-extracted { display: block; padding: 12rpx; border: 2rpx dashed #111; background: #fff; font-size: 22rpx; font-weight: 600; color: #333; line-height: 1.6; white-space: pre-wrap; word-break: break-all; margin-bottom: 8rpx; }
+.v2-mode .img-analysis-summary { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
+.v2-mode .img-analysis-footer { display: flex; justify-content: flex-end; margin-top: 8rpx; }
+.v2-mode .tag-v2.sm.conf-high { background: #E0FFF0; color: #111; border-color: #4ECDC4; }
+.v2-mode .tag-v2.sm.conf-low { background: #fff; color: #999; border-color: #999; }
 .v2-mode .side-grid { display: flex; flex-direction: column; gap: 12rpx; margin-top: 14rpx; }
 .v2-mode .side-item { padding: 16rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .side-label { display: block; color: #111; font-size: 23rpx; font-weight: 800; }

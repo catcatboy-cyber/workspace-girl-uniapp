@@ -937,24 +937,24 @@ export async function adminUpdateBillingSettings(data: Record<string, any>) {
  * 娴嬭瘯 AI 杩炴帴锛堟敮鎸侀€氳繃 modelId 娴嬭瘯鎸囧畾妯″瀷锛?
  */
 export async function adminListFeedbacks() {
-  return callFunction({ name: 'adminManage', data: { action: 'listFeedbacks' } }).then((res: any) => res.result)
+  return callFunction({ name: 'adminManage', data: { action: 'listFeedbacks', ...getBusinessAuthPayload() } }).then((res: any) => res.result)
 }
 
 export async function adminResolveFeedback(feedbackId: string, rewardTokens: number, targetUserId?: string) {
   return callFunction({
     name: 'adminManage',
-    data: { action: 'resolveFeedback', feedbackId, rewardTokens, targetUserId }
+    data: { action: 'resolveFeedback', feedbackId, rewardTokens, targetUserId, ...getBusinessAuthPayload() }
   }).then((res: any) => res.result)
 }
 
 export async function adminListCustomPetRequests() {
-  return callFunction({ name: 'adminManage', data: { action: 'listCustomPetRequests' } }).then((res: any) => res.result)
+  return callFunction({ name: 'adminManage', data: { action: 'listCustomPetRequests', ...getBusinessAuthPayload() } }).then((res: any) => res.result)
 }
 
 export async function adminUpdateCustomPetRequest(requestId: string, data: { status: string; adminNote?: string; deliveredPetId?: string }) {
   return callFunction({
     name: 'adminManage',
-    data: { action: 'updateCustomPetRequest', requestId, ...data }
+    data: { action: 'updateCustomPetRequest', requestId, ...getBusinessAuthPayload(), ...data }
   }).then((res: any) => res.result)
 }
 

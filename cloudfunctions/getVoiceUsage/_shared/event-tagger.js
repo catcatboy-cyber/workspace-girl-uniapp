@@ -2,7 +2,7 @@
 // 打开时间轴时懒加载调用，不阻塞页面
 
 const TAG_VOCAB = {
-  scene: ['offline_meet', 'movie', 'meal', 'coffee_tea', 'walk_shop', 'chat', 'group_social', 'trip'],
+  scene: ['offline_meet', 'movie', 'meal', 'coffee_tea', 'walk', 'chat', 'gift', 'phone_call', 'online_chat', 'shopping', 'activity', 'study', 'work', 'travel', 'game', 'sport', 'music', 'pet', 'food', 'group_social'],
   behavior: ['target_initiated', 'self_initiated', 'both_interaction'],
   outcome: ['planned', 'target_committed', 'fulfilled', 'cancelled_delayed', 'pending', 'rejected'],
   risk: ['cold', 'vague_delay', 'risk_event']

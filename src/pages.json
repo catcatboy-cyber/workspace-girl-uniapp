@@ -1,18 +1,6 @@
 {
   "pages": [
     {
-      "path": "pages/index/index",
-      "style": {
-        "navigationBarTitleText": "首页"
-      }
-    },
-    {
-      "path": "pages/new/new",
-      "style": {
-        "navigationBarTitleText": "新建 Crush"
-      }
-    },
-    {
       "path": "pages/login/login",
       "style": {
         "navigationBarTitleText": "登录",
@@ -20,10 +8,22 @@
       }
     },
     {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页"
+      }
+    },
+    {
       "path": "pages/register/register",
       "style": {
         "navigationBarTitleText": "注册",
         "navigationStyle": "default"
+      }
+    },
+    {
+      "path": "pages/new/new",
+      "style": {
+        "navigationBarTitleText": "新建 Crush"
       }
     },
     {

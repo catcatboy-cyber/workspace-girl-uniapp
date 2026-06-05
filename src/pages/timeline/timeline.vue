@@ -1,13 +1,13 @@
 <template>
-  <view class="page v2-mode" :style="themeVars">
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '']" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">往事不可用</text><text class="empty-sub-v2">当前 Crush 不存在或已被删除。</text></view>
       <template v-else>
-        <view class="hero-block-v2"><text class="hero-tag-v2">MEMORIES / {{ caseFile.name }}</text><text class="hero-title-v2">往<text class="hl-v2">事</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
+        <view class="hero-block-v2 anim-hero"><text class="hero-tag-v2">MEMORIES / {{ caseFile.name }}</text><text class="hero-title-v2">往<text class="hl-v2">事</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
         <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
         <view v-if="activeTimelineView === 'events'">
-          <view class="card-v2" style="border-color:#4ECDC4;">
+          <view class="card-v2 anim-card" style="animation-delay:0.15s;border-color:#4ECDC4;">
   <view class="stat-pair-grid-v2">
     <view :class="['stat-pair-box-v2', activeTimelineFilter === 'target_initiated' ? 'active' : '', activeTimelineFilter === 'self_initiated' ? 'active' : '']" @click="toggleStatFilter('target_initiated', 'self_initiated')">
       <text class="section-title-v2" style="margin-bottom:8rpx;">谁更主动</text>
@@ -27,17 +27,22 @@
   </view>
   <scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view>
 </view>
-          <view class="card-v2"><text class="section-title-v2">关键事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getAttachmentBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAttachmentBadges(item)" :key="badge" :class="['tag-v2 sm', isImageAttachmentBadge(badge) ? 'clickable' : '']" @click="isImageAttachmentBadge(badge) && previewTimelineImages(item)">{{ badge }}</text></view></view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
+          <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">关键事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view><view v-else class="img-analysis-label">图片 · AI 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view></view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
         </view>
         <view v-if="activeTimelineView === 'weeklyReviews'">
-          <view class="card-v2">
-            <text class="section-title-v2">14天复盘时间轴</text>
+          <view class="card-v2 anim-card" style="animation-delay:0.25s">
+            <text class="section-title-v2">14天复盘 · 按日历双周归档</text>
+            <text class="section-hint-v2">按自然双周划分，每周期仅保留最新生成记录。</text>
             <view v-if="weeklyReviewTimeline.length === 0" class="empty-sub-v2">还没有14天复盘记录。先在14天复盘页生成一次，本页会自动沉淀到这里。</view>
             <view v-else class="event-list-v2">
               <view v-for="item in weeklyReviewTimeline" :key="item._id || item.id" class="event-row-v2 system">
-                <view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', isWeeklySideReadRecord(item) ? 'note' : 'trend']"></view></view>
+                <view class="event-time-v2 week-range">
+                  <text class="week-range-start">{{ formatAxisWeekRange(item).start }}</text>
+                  <text class="week-range-connector">↓</text>
+                  <text class="week-range-end">{{ formatAxisWeekRange(item).end }}</text>
+                  <view :class="['event-dot-v2', isWeeklySideReadRecord(item) ? 'note' : 'trend']"></view>
+                </view>
                 <view class="event-body-v2 assessment-card-v2">
-                  <view class="event-meta-v2"><text>{{ item.weekStart && item.weekEnd ? item.weekStart + ' — ' + item.weekEnd : '' }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view>
                   <text class="event-title-v2">{{ item.title || '近14天复盘' }}</text>
                   <view class="tag-row-v2" style="margin:6rpx 0;">
                     <text class="tag-v2 black sm">{{ isWeeklySideReadRecord(item) ? '星象速写' : '14天复盘' }}</text>
@@ -52,31 +57,33 @@
                     <text v-if="item.riskDelta !== undefined" class="tag-v2 sm">风险 {{ item.riskDelta > 0 ? '+' : '' }}{{ item.riskDelta }}</text>
                   </view>
                   <view v-if="item.keyChanges && item.keyChanges.length" class="review-block-v2"><text class="section-title-v2">近14天关键变化</text><text v-for="change in item.keyChanges" :key="change" class="bullet-v2">• {{ change }}</text></view>
-                  <view v-if="item.keyEvents && item.keyEvents.length" class="review-block-v2"><text class="section-title-v2">关键事件</text><text v-for="evt in item.keyEvents" :key="evt" class="bullet-v2">• {{ evt }}</text></view>
-                  <view v-if="item.nextWeekFocus && item.nextWeekFocus.length" class="review-block-v2"><text class="section-title-v2">下个14天观察重点</text><text v-for="focus in item.nextWeekFocus" :key="focus" class="bullet-v2">• {{ focus }}</text></view>
-                  <view v-if="item.avoidMisread && item.avoidMisread.length" class="review-block-v2"><text class="section-title-v2">近14天避免误判</text><text v-for="avoid in item.avoidMisread" :key="avoid" class="bullet-v2">• {{ avoid }}</text></view>
-                  <view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view>
+                  <view v-if="item.keyEvents && item.keyEvents.length" class="review-block-v2 events"><text class="section-title-v2">关键事件</text><text v-for="evt in item.keyEvents" :key="evt" class="bullet-v2">• {{ evt }}</text></view>
+                  <view v-if="item.nextWeekFocus && item.nextWeekFocus.length" class="review-block-v2 focus"><text class="section-title-v2">下个14天观察重点</text><text v-for="focus in item.nextWeekFocus" :key="focus" class="bullet-v2">• {{ focus }}</text></view>
+                  <view v-if="item.avoidMisread && item.avoidMisread.length" class="review-block-v2 avoid"><text class="section-title-v2">近14天避免误判</text><text v-for="avoid in item.avoidMisread" :key="avoid" class="bullet-v2">• {{ avoid }}</text></view>
+                  <view v-if="item.sections && item.sections.length" class="review-block-v2 sideread"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view>
+                  <text v-if="formatRecordedAt(item)" class="event-meta-recorded">{{ formatRecordedAt(item) }}</text>
                 </view>
               </view>
             </view>
           </view>
         </view>
         <view v-if="activeTimelineView === 'assessments'">
-          <view class="card-v2"><view class="stats-grid-v2 stats-grid-4col-v2"><view v-for="item in assessmentStatItems" :key="item.key" :class="['stat-box-v2', activeAssessmentFilter === item.key ? 'active' : '']" @click="toggleAssessmentStatFilter(item.key)"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view></view>
-          <view v-if="filteredAssessmentEntries.length > 0" class="event-list-v2">
+          <view class="card-v2" style="border-color:#4ECDC4;"><view class="stats-grid-v2 stats-grid-4col-v2"><view v-for="item in assessmentStatItems" :key="item.key" :class="['stat-box-v2', activeAssessmentFilter === item.key ? 'active' : '']" @click="toggleAssessmentStatFilter(item.key)"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view></view>
+          <view v-if="filteredAssessmentEntries.length > 0" class="card-v2">
+            <text class="section-title-v2">分析记录 · {{ activeAssessmentFilterLabel }}</text>
+            <view class="event-list-v2">
             <view v-for="entry in visibleAssessmentEntriesV2" :key="getAssessmentKey(entry.item)" class="event-row-v2">
               <view class="event-time-v2"><text class="event-date-v2">{{ formatAssessmentAxisDate(entry.item) }}</text><text class="event-clock-v2">{{ formatAssessmentAxisTime(entry.item) }}</text><view class="event-dot-v2 assessment"></view></view>
               <view class="event-body-v2 assessment-card-v2">
                 <text class="event-title-v2">已记录：{{ getAssessmentTitle(entry.item) }}</text>
                 <view class="tag-row-v2" style="margin:6rpx 0;"><text v-if="hasAIReview(entry.item)" class="tag-v2 black sm">AI 分析</text></view>
                 <text class="event-desc-v2">{{ getAssessmentOriginalRecordText(entry.item) }}</text>
-                <!-- Scores -->
+                <!-- Scores + Deltas -->
                 <view class="score-block-v2">
                   <view class="score-row-v2"><text class="score-lbl-v2">意向</text><text class="score-val-v2">{{ clampScore(entry.item.intentScore) }}</text><text class="score-tag-v2">{{ mapIntentLabel(entry.item.intentBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2" :style="'width:' + clampScore(entry.item.intentScore) + '%'"></view></view></view>
                   <view class="score-row-v2"><text class="score-lbl-v2">风险</text><text class="score-val-v2 risk">{{ clampScore(entry.item.consistencyRiskScore) }}</text><text class="score-tag-v2">{{ mapRiskLabel(entry.item.riskBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2 risk" :style="'width:' + clampScore(entry.item.consistencyRiskScore) + '%'"></view></view></view>
+                  <view class="delta-row-v2"><text class="delta-lbl-v2">意向变化</text><text :class="['delta-val-v2', deltaClass(entry.trend.intentDelta)]">{{ formatDelta(entry.trend.intentDelta) }}</text><text class="delta-lbl-v2" style="margin-left:20rpx;">风险变化</text><text :class="['delta-val-v2', deltaClass(entry.trend.riskDelta)]">{{ formatDelta(entry.trend.riskDelta) }}</text></view>
                 </view>
-                <!-- Deltas -->
-                <view class="delta-row-v2"><view class="delta-item-v2"><text class="delta-lbl-v2">意向变化</text><text :class="['delta-val-v2', deltaClass(entry.trend.intentDelta)]">{{ formatDelta(entry.trend.intentDelta) }}</text></view><view class="delta-item-v2"><text class="delta-lbl-v2">风险变化</text><text :class="['delta-val-v2', deltaClass(entry.trend.riskDelta)]">{{ formatDelta(entry.trend.riskDelta) }}</text></view></view>
                 <text v-if="entry.trend.warningText" class="trend-warn-v2">{{ entry.trend.warningText }}</text>
                 <!-- Reason bullets -->
                 <view v-if="getAssessmentReasonBullets(entry.item).length > 0" class="reason-box-v2"><text class="section-title-v2">判断依据</text><text v-for="reason in getAssessmentReasonBullets(entry.item)" :key="reason" class="reason-line-v2">• {{ reason }}</text></view>
@@ -100,11 +107,13 @@
                   </view>
                 </view>
                 <!-- Image links -->
-                <view v-if="getAssessmentImageLinkItems(entry.item).length > 0" class="attach-v2"><text class="section-title-v2">图片链接</text><view v-for="(link, li) in getAssessmentImageLinkItems(entry.item)" :key="link.fileID" class="attach-link-v2" @click="previewAssessmentImages(entry.item, li)"><text class="attach-name-v2">{{ link.name }}</text></view></view>
+                <view v-if="getAssessmentImageLinkItems(entry.item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(link, li) in getAssessmentImageLinkItems(entry.item)" :key="link.fileID" class="img-box-v2" @click="previewAssessmentImages(entry.item, li)"><image :src="link.url || imageUrlMap[link.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="link.isChatRecord" class="img-chat-badge">聊</text></view></view>
+                <view v-if="getAssessmentImageAnalyses(entry.item).length > 0" class="img-analysis-list"><view v-for="att in getAssessmentImageAnalyses(entry.item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view><view v-else class="img-analysis-label">图片 · AI 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view>
               </view>
             </view>
           </view>
           <view v-if="filteredAssessmentEntries.length > assessmentVisibleMax" class="expand-row-v2"><view class="tag-v2" @click="assessmentVisibleMax = assessmentVisibleMax + 7">加载更多（还有 {{ filteredAssessmentEntries.length - assessmentVisibleMax }} 条）</view></view>
+          </view>
         </view>
         <view v-if="selectedStatusInfo" class="info-mask-v2" @click="selectedStatusInfo = null"><view class="info-modal-v2" @click.stop><view class="info-head-v2"><text class="info-title-v2">当前状态怎么看</text><text class="info-close-v2" @click="selectedStatusInfo = null">X</text></view><scroll-view scroll-y class="info-body-v2"><view v-if="selectedStatusInfo.summary || selectedStatusInfo.caution" class="info-section-v2 ylw"><text class="info-sec-title-v2">这次状态说明</text><text v-if="selectedStatusInfo.summary" class="info-sec-copy-v2 strong">{{ selectedStatusInfo.summary }}</text><text v-if="selectedStatusInfo.caution" class="info-sec-copy-v2">{{ selectedStatusInfo.caution }}</text></view><view class="info-section-v2"><text class="info-sec-title-v2">状态标签</text><view v-for="item in selectedStatusStateItems" :key="`${item.group}-${item.tag}`" class="info-tag-row-v2"><text class="info-chip-v2">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">{{ item.group }}</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view><view class="info-section-v2"><text class="info-sec-title-v2">问题类型</text><view v-for="item in selectedProblemItems" :key="item.tag" class="info-tag-row-v2"><text class="info-chip-v2 muted">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">问题类型</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view></scroll-view></view></view>
       </template>
@@ -193,7 +202,7 @@ const timelineFilterOptions = computed(() => {
   }
   const sceneItems = Array.from(sceneKeys).map((key) => {
     const count = manualTimeline.value.filter((item: any) => getTimelineRecordTags(item).all.includes(key)).length
-    const labelMap = { offline_meet: '见面', movie: '电影', meal: '吃饭', coffee_tea: '咖啡奶茶', walk: '散步', chat: '聊天', gift: '礼物', phone_call: '电话', online_chat: '线上聊天', shopping: '逛街', activity: '活动', study: '学习', work: '工作', travel: '出行', game: '游戏', sport: '运动', music: '音乐', pet: '宠物', food: '美食' }
+    const labelMap = { offline_meet: '碰面', movie: '电影', meal: '吃饭', coffee_tea: '咖啡奶茶', walk: '散步', walk_shop: '散步逛街', chat: '聊天', gift: '礼物', phone_call: '电话', online_chat: '线上聊天', shopping: '逛街', activity: '活动', study: '学习', work: '工作', travel: '出行', trip: '出行', game: '游戏', sport: '运动', music: '音乐', pet: '宠物', food: '美食', group_social: '朋友聚会' }
     const label = labelMap[key] || key
     return { key, label, count }
   }).filter((item) => item.count > 0).sort((a, b) => b.count - a.count)
@@ -367,6 +376,11 @@ const assessmentStatItems = computed(() => [
   { key: 'risk_flat', label: '风险持平', value: `${assessmentStats.value.riskFlat} 次` },
   { key: 'risk_down', label: '风险下降', value: `${assessmentStats.value.riskDown} 次` }
 ])
+
+const activeAssessmentFilterLabel = computed(() => {
+  const item = assessmentStatItems.value.find((option) => option.key === activeAssessmentFilter.value)
+  return item && item.key !== 'all' ? `当前只看：${item.label}` : '当前查看全部记录'
+})
 
 const filteredAssessmentEntries = computed(() => {
   if (activeAssessmentFilter.value === 'all') return assessmentEntries.value
@@ -608,8 +622,13 @@ function getAssessmentImageLinkItems(item: any) {
   return getImageAttachments(getAssessmentEvent(item)).map((attachment: any, index: number) => ({
     fileID: attachment.fileID,
     name: attachment.name || `图片${index + 1}`,
-    url: imageUrlMap.value[attachment.fileID] || ''
+    url: imageUrlMap.value[attachment.fileID] || '',
+    isChatRecord: Boolean(attachment?.analysis?.isChatRecord)
   }))
+}
+
+function getAssessmentImageAnalyses(item: any) {
+  return getImageAttachments(getAssessmentEvent(item)).filter((att: any) => att?.analysis && typeof att.analysis === 'object')
 }
 
 function getAssessmentHistory(item: any) {
@@ -702,26 +721,47 @@ function isImageAttachmentBadge(badge: string) {
   return badge.startsWith('图片') || badge.startsWith('聊天截图')
 }
 
+function getAudioBadges(item: any) {
+  const attachments = Array.isArray(item?.attachments) ? item.attachments : []
+  if (attachments.length === 0) return []
+  const audioCount = attachments.filter((a: any) => a?.type === 'audio').length
+  return audioCount ? [`语音 ${audioCount}`] : []
+}
+
 function getImageAttachments(item: any) {
   const attachments = Array.isArray(item?.attachments) ? item.attachments : []
   return attachments.filter((attachment: any) => attachment?.type === 'image' && attachment?.fileID)
 }
 
-async function previewTimelineImages(item: any) {
+function getImageAnalyses(item: any) {
+  return getImageAttachments(item).filter((att: any) => att?.analysis && typeof att.analysis === 'object')
+}
+
+function mapConfidenceLabel(confidence: string) {
+  const map: Record<string, string> = { low: '可信度：低', medium: '可信度：中', high: '可信度：高' }
+  return map[confidence] || ''
+}
+
+function confidenceClass(confidence: string) {
+  return confidence === 'high' ? 'conf-high' : confidence === 'low' ? 'conf-low' : ''
+}
+
+async function previewTimelineImages(item: any, index = 0) {
   const imageAttachments = getImageAttachments(item)
   if (imageAttachments.length === 0) return
   try {
-    uni.showLoading({ title: '加载图片...' })
     const urls = (await Promise.all(
-      imageAttachments.map((attachment: any) => getTempFileURL(attachment.fileID).catch(() => ''))
+      imageAttachments.map((attachment: any) => {
+        if (imageUrlMap.value[attachment.fileID]) return imageUrlMap.value[attachment.fileID]
+        return getTempFileURL(attachment.fileID).catch(() => '')
+      })
     )).filter(Boolean)
-    uni.hideLoading()
     if (urls.length === 0) {
       showError('图片暂时无法预览')
       return
     }
     uni.previewImage({
-      current: urls[0],
+      current: urls[Math.min(index, urls.length - 1)] || urls[0],
       urls
     })
   } catch (error: any) {
@@ -744,6 +784,16 @@ async function loadTriggerImageLinks() {
 async function loadAssessmentImageLinks() {
   const nextMap = { ...imageUrlMap.value }
   const attachments = assessmentTimeline.value.flatMap((item: any) => getImageAttachments(getAssessmentEvent(item)))
+  await Promise.all(attachments.map(async (attachment: any) => {
+    if (!attachment.fileID || nextMap[attachment.fileID]) return
+    nextMap[attachment.fileID] = await getTempFileURL(attachment.fileID).catch(() => '')
+  }))
+  imageUrlMap.value = nextMap
+}
+
+async function loadEventImageLinks() {
+  const nextMap = { ...imageUrlMap.value }
+  const attachments = manualTimeline.value.flatMap((item: any) => getImageAttachments(item))
   await Promise.all(attachments.map(async (attachment: any) => {
     if (!attachment.fileID || nextMap[attachment.fileID]) return
     nextMap[attachment.fileID] = await getTempFileURL(attachment.fileID).catch(() => '')
@@ -864,6 +914,18 @@ function toggleAssessmentStatFilter(key: string) {
     activeAssessmentFilter.value = key
   }
   assessmentVisibleMax.value = 7
+}
+
+function formatAxisWeekRange(record: any) {
+  const ws = record?.weekStart
+  const we = record?.weekEnd
+  if (!ws || !we) return { start: formatAxisDate(record), end: '' }
+  const s = new Date(ws)
+  const e = new Date(we)
+  return {
+    start: `${s.getMonth() + 1}/${s.getDate()}`,
+    end: `${e.getMonth() + 1}/${e.getDate()}`
+  }
 }
 
 function formatAxisDate(record: any) {
@@ -1070,7 +1132,8 @@ async function loadTimelineExtras(uid: string) {
     .catch((error: any) => console.warn('[page:timeline] load self profile failed:', error))
   await Promise.all([
     loadTriggerImageLinks(),
-    loadAssessmentImageLinks()
+    loadAssessmentImageLinks(),
+    loadEventImageLinks()
   ]).catch(() => {})
   syncSemanticTags()
 }
@@ -1129,6 +1192,7 @@ async function syncSemanticTags() {
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 .v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.v2-mode .section-hint-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #999; margin-bottom: 14rpx; }
 
 .v2-mode .feedback-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1.3; }
 .v2-mode .feedback-desc-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 6rpx; }
@@ -1141,13 +1205,13 @@ async function syncSemanticTags() {
 .v2-mode .trend-summary-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 10rpx; }
 .v2-mode .trend-warn-v2 { display: block; font-size: 22rpx; font-weight: 700; color: #FF5252; margin-top: 6rpx; }
 
-.v2-mode .side-inline-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #FFFBEB; }
+.v2-mode .side-inline-v2 { margin-top: 12rpx; padding: 14rpx; border-left: 3rpx dashed #111; background: #FFFBEB; border-radius: 0 4rpx 4rpx 0; }
 .v2-mode .focus-label-v2 { display: block; font-size: 20rpx; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 1rpx; }
 .v2-mode .weekly-desc-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 4rpx; }
 
-.v2-mode .action-box-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx solid #111; background: #f5f5ff; }
+.v2-mode .action-box-v2 { margin-top: 12rpx; padding: 14rpx; border-left: 3rpx solid #4ECDC4; background: #f5f5ff; border-radius: 0 4rpx 4rpx 0; }
 .v2-mode .action-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
-.v2-mode .action-item-v2 { padding: 10rpx; border: 2rpx solid #111; background: #fff; margin-top: 8rpx; }
+.v2-mode .action-item-v2 { padding: 10rpx; background: #fff; margin-top: 8rpx; border-radius: 4rpx; }
 .v2-mode .action-item-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; }
 .v2-mode .action-item-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; margin-top: 4rpx; }
 
@@ -1155,7 +1219,7 @@ async function syncSemanticTags() {
 .v2-mode .tab-btn-v2 { text-align: center; padding: 16rpx 8rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 800; color: #111; }
 .v2-mode .tab-btn-v2.active { background: #111; color: #FFD93D; }
 
-.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-bottom: 14rpx; }
+.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8rpx; margin-bottom: 14rpx; }
 .v2-mode .stat-box-v2 { padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
 .v2-mode .stat-num-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 2rpx; }
@@ -1163,14 +1227,17 @@ async function syncSemanticTags() {
 .v2-mode .filter-scroll-v2 { width: 100%; margin-top: 8rpx; white-space: nowrap; }
 .v2-mode .filter-row-v2 { display: inline-flex; gap: 8rpx; }
 .v2-mode .filter-chip-v2 { display: inline-flex; align-items: center; min-height: 48rpx; padding: 0 16rpx; border: 2rpx solid #111; background: #fff; font-size: 20rpx; font-weight: 700; color: #111; }
-.v2-mode .filter-chip-v2.active { background: #111; color: #fff; }
+.v2-mode .filter-chip-v2.active { background: #111; color: #FFD93D; }
 
 .v2-mode .event-list-v2 { display: flex; flex-direction: column; gap: 14rpx; margin-top: 14rpx; }
-.v2-mode .event-row-v2 { display: flex; gap: 14rpx; padding: 18rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .event-row-v2 { display: flex; gap: 14rpx; padding: 18rpx; border: 2rpx dashed #111; background: #f9f9f9; }
 .v2-mode .event-row-v2.system { background: #fff; border-style: dashed; }
 .v2-mode .event-time-v2 { display: flex; flex-direction: column; align-items: center; width: 80rpx; flex-shrink: 0; }
 .v2-mode .event-date-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .event-clock-v2 { font-size: 18rpx; font-weight: 600; color: #999; }
+.v2-mode .week-range-start,
+.v2-mode .week-range-end { font-size: 20rpx; font-weight: 800; color: #111; line-height: 1.2; }
+.v2-mode .week-range-connector { font-size: 18rpx; font-weight: 700; color: #bbb; line-height: 1; padding: 2rpx 0; }
 .v2-mode .event-dot-v2 { width: 14rpx; height: 14rpx; border-radius: 50%; margin-top: 6rpx; border: 2rpx solid #111; }
 .v2-mode .event-dot-v2.positive { background: #4ECDC4; }
 .v2-mode .event-dot-v2.risk { background: #FF5252; }
@@ -1181,22 +1248,27 @@ async function syncSemanticTags() {
 .v2-mode .event-dot-v2.note { background: #111; }
 .v2-mode .event-dot-v2.weekly { background: #4ECDC4; }
 
-.v2-mode .review-block-v2 { margin-top: 16rpx; padding-top: 14rpx; border-top: 2rpx solid #111; }
+.v2-mode .review-block-v2 { margin-top: 12rpx; padding: 14rpx; border-left: 3rpx solid #FFD93D; background: #FFFBEB; border-radius: 0 4rpx 4rpx 0; }
+.v2-mode .review-block-v2.events { border-left-color: #111; background: #f9f9f9; }
+.v2-mode .review-block-v2.focus { border-left-color: #4ECDC4; background: #f5f5ff; }
+.v2-mode .review-block-v2.avoid { border-left-color: #FF6B6B; background: #FFFBEB; }
+.v2-mode .review-block-v2.sideread { border-left: 3rpx dashed #111; background: #FFFBEB; }
 .v2-mode .bullet-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 4rpx; }
 
-.v2-mode .side-body-v2 { margin-top: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
-.v2-mode .side-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #111; }
+.v2-mode .side-body-v2 { margin-top: 10rpx; padding: 12rpx 14rpx; background: #f9f9f9; border-radius: 4rpx; }
+.v2-mode .side-item-v2 { padding: 10rpx 0; border-bottom: 2rpx dashed rgba(0,0,0,0.08); }
 .v2-mode .side-item-v2:last-child { border-bottom: none; }
 .v2-mode .side-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; }
 .v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; margin-top: 4rpx; }
 .v2-mode .event-body-v2 { flex: 1; min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
 .v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }
+.v2-mode .event-meta-recorded { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 10rpx; }
 .v2-mode .event-title-v2 { display: block; font-size: 26rpx; font-weight: 800; color: #111; line-height: 1.4; }
 .v2-mode .event-desc-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 4rpx; }
 
-.v2-mode .assessment-card-v2 { background: #fff; padding: 16rpx; border: 2rpx solid #111; }
-.v2-mode .score-block-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .assessment-card-v2 { background: #fff; padding: 16rpx; }
+.v2-mode .score-block-v2 { margin-top: 10rpx; padding: 14rpx; background: #f9f9f9; border-radius: 4rpx; }
 .v2-mode .score-row-v2 { display: flex; align-items: center; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .score-row-v2:first-child { margin-top: 0; }
 .v2-mode .score-lbl-v2 { width: 40rpx; font-size: 18rpx; font-weight: 700; color: #666; }
@@ -1207,15 +1279,17 @@ async function syncSemanticTags() {
 .v2-mode .score-fill-v2 { height: 10rpx; background: #111; }
 .v2-mode .score-fill-v2.risk { background: #FF5252; }
 
-.v2-mode .delta-val-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; }
+.v2-mode .delta-row-v2 { display: flex; align-items: center; margin-top: 10rpx; padding-top: 10rpx; border-top: 1rpx solid rgba(0,0,0,0.08); }
+.v2-mode .delta-lbl-v2 { font-size: 18rpx; font-weight: 600; color: #999; margin-right: 4rpx; }
+.v2-mode .delta-val-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
 .v2-mode .delta-val-v2.up { color: #4ECDC4; }
 .v2-mode .delta-val-v2.down { color: #FF5252; }
 .v2-mode .delta-val-v2.flat { color: #999; }
 
-.v2-mode .reason-box-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #FFFBEB; }
+.v2-mode .reason-box-v2 { margin-top: 10rpx; padding: 14rpx; border-left: 3rpx solid #FFD93D; background: #FFFBEB; border-radius: 0 4rpx 4rpx 0; }
 .v2-mode .reason-line-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #555; line-height: 1.6; margin-top: 2rpx; }
 
-.v2-mode .status-box-v2 { margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .status-box-v2 { margin-top: 10rpx; padding: 14rpx; border-left: 3rpx solid #111; background: #f9f9f9; border-radius: 0 4rpx 4rpx 0; }
 .v2-mode .status-head-v2 { display: flex; align-items: center; gap: 8rpx; margin-bottom: 8rpx; }
 .v2-mode .info-icon-v2 { width: 44rpx; height: 44rpx; line-height: 42rpx; text-align: center; border: 2rpx solid #111; font-size: 18rpx; font-weight: 900; color: #111; }
 .v2-mode .tag-v2.muted { background: #111; color: #666; }
@@ -1226,9 +1300,21 @@ async function syncSemanticTags() {
 
 .v2-mode .expand-row-v2 { margin-top: 12rpx; text-align: center; }
 
-.v2-mode .attach-v2 { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #FFFBEB; }
-.v2-mode .attach-link-v2 { min-width: 0; overflow: hidden; padding: 8rpx 0; }
-.v2-mode .attach-name-v2 { display: block; max-width: 100%; font-size: 22rpx; font-weight: 700; color: #111; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Image thumbnail grid */
+.v2-mode .img-grid-v2 { display: flex; flex-wrap: wrap; gap: 14rpx; }
+.v2-mode .img-box-v2 { width: 160rpx; height: 160rpx; position: relative; }
+.v2-mode .img-preview-v2 { width: 100%; height: 100%; border-radius: 4rpx; }
+.v2-mode .img-chat-badge { position: absolute; top: 0; left: 0; padding: 2rpx 10rpx; background: #FFD93D; color: #111; font-size: 18rpx; font-weight: 900; }
+
+/* Image analysis cards */
+.v2-mode .img-analysis-list { display: flex; flex-direction: column; gap: 10rpx; margin-top: 10rpx; }
+.v2-mode .img-analysis-card { padding: 14rpx 16rpx; border-left: 3rpx solid #999; background: #f9f9f9; border-radius: 0 4rpx 4rpx 0; }
+.v2-mode .img-analysis-label { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; text-transform: uppercase; letter-spacing: 1rpx; }
+.v2-mode .img-analysis-extracted { display: block; padding: 12rpx; border: 2rpx dashed #111; background: #fff; font-size: 22rpx; font-weight: 600; color: #333; line-height: 1.6; white-space: pre-wrap; word-break: break-all; margin-bottom: 8rpx; }
+.v2-mode .img-analysis-summary { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
+.v2-mode .img-analysis-footer { display: flex; justify-content: flex-end; margin-top: 8rpx; }
+.v2-mode .tag-v2.sm.conf-high { background: #E0FFF0; color: #111; border-color: #4ECDC4; }
+.v2-mode .tag-v2.sm.conf-low { background: #fff; color: #999; border-color: #999; }
 
 .v2-mode .info-mask-v2 { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }
 .v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: #fff; border: 3rpx solid #111; box-shadow: 10rpx 10rpx 0 #111; }
