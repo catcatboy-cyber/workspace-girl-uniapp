@@ -115,6 +115,27 @@ async function createWechatUser({ openid, phone = '', profile }) {
   const userId = `user_${Date.now()}_${randomHex(4)}`
   const now = new Date()
   const profilePatch = buildWechatProfilePatch(profile, {}, true)
+
+  // 生成邀请码和订阅字段
+  const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig } = require('./_shared/subscription')
+  const inviteCode = generateInviteCode(userId)
+  const subFields = getDefaultUserSubscriptionFields()
+
+  // 读取试用期配置
+  let trialDurationDays = 7
+  let welcomeTokens = 10000
+  try {
+    const config = await getSubscriptionConfig(db)
+    if (config.trial?.enabled && config.trial?.durationDays > 0) {
+      trialDurationDays = config.trial.durationDays
+    }
+    welcomeTokens = config.welcomeTokens || 10000
+  } catch (_) {}
+
+  subFields.inviteCode = inviteCode
+  subFields.trialEndsAt = new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000)
+  subFields.extraTokens = welcomeTokens > 0 ? welcomeTokens : 0
+
   await db.collection('users').add({
     _id: userId,
     openid,
@@ -125,7 +146,18 @@ async function createWechatUser({ openid, phone = '', profile }) {
     loginType: 'wechat_phone',
     createdAt: now,
     updatedAt: now,
-    seedFromLegacy: false
+    seedFromLegacy: false,
+    plan: subFields.plan,
+    trialEndsAt: subFields.trialEndsAt,
+    planExpiresAt: subFields.planExpiresAt,
+    monthlyTokensReset: subFields.monthlyTokensReset,
+    monthlyTokensUsed: subFields.monthlyTokensUsed,
+    extraTokens: subFields.extraTokens,
+    inviteCode: subFields.inviteCode,
+    invitedBy: subFields.invitedBy,
+    referralCount: subFields.referralCount,
+    referralWeekStart: subFields.referralWeekStart,
+    referralWeekCount: subFields.referralWeekCount
   })
   return {
     _id: userId,

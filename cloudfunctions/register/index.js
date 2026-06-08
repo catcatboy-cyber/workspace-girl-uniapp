@@ -87,16 +87,54 @@ exports.main = async (event) => {
     const userId = `user_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`
     const now = new Date()
 
+    // 生成邀请码
+    const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig } = require('./_shared/subscription')
+    const inviteCode = generateInviteCode(userId)
+    const subFields = getDefaultUserSubscriptionFields(event.inviteCode || null)
+
+    // 读取配置获取试用天数
+    let trialDurationDays = 7
+    try {
+      const config = await getSubscriptionConfig(db)
+      if (config.trial?.enabled && config.trial?.durationDays > 0) {
+        trialDurationDays = config.trial.durationDays
+      }
+    } catch (_) {}
+
+    subFields.inviteCode = inviteCode
+    subFields.trialEndsAt = new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000)
+
+    // 注册赠送Token → 读 billing 的 welcomeTokens
+    try {
+      const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => null)
+      const billing = billingRes?.data?.[0] || {}
+      if (billing.firstGiftEnabled !== false) {
+        const welcomeTokens = billing.welcomeTokens || 1000000
+        subFields.extraTokens = welcomeTokens
+      }
+    } catch (_) {}
+
     await db.collection('users').add({
       _id: userId,
       email: normalizedEmail,
       passwordHash,
       selfProfile: null,
       createdAt: now,
-      seedFromLegacy: false
+      seedFromLegacy: false,
+      plan: subFields.plan,
+      trialEndsAt: subFields.trialEndsAt,
+      planExpiresAt: subFields.planExpiresAt,
+      monthlyTokensReset: subFields.monthlyTokensReset,
+      monthlyTokensUsed: subFields.monthlyTokensUsed,
+      extraTokens: subFields.extraTokens,
+      inviteCode: subFields.inviteCode,
+      invitedBy: subFields.invitedBy,
+      referralCount: subFields.referralCount,
+      referralWeekStart: subFields.referralWeekStart,
+      referralWeekCount: subFields.referralWeekCount
     })
 
-    // 首次赠送额度（幂等，不会重复赠送）
+    // 首次赠送额度（旧 token 体系保留，作为后备）
     try {
       const { grantFirstGift } = require('./_shared/billing')
       await grantFirstGift(db, userId)

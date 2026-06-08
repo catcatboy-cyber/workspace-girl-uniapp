@@ -272,6 +272,69 @@
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
+    },
+    {
+      "name": "getSubscriptionConfig",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getSubscriptionStatus",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "redeemInviteCode",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getCallUsageHistory",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "queryTaohua",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "sendTaohuaNotify",
+      "timeout": 60,
+      "envVariables": {
+        "WX_SUBSCRIBE_TMPL_ID": ""
+      },
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "handler": "index.main",
+      "installDependency": true,
+      "triggers": [
+        {
+          "name": "dailyTrigger",
+          "type": "timer",
+          "config": "0 55 7 * * * *"
+        }
+      ]
     }
   ]
 }

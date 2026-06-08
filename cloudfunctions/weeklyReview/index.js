@@ -8,6 +8,7 @@ const {
 } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
 const { checkBalance } = require('./_shared/billing')
+const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
 const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 const { buildPersonaPrompt } = require('./_shared/persona-config')
 
@@ -382,6 +383,12 @@ async function buildAIReview(params) {
   })
   if (!messages) return fallback
 
+  // 功能 + Token 门控
+  const accessW = await checkFeatureAccess(db, params.userId, '周复盘')
+  if (!accessW.allowed) throw Object.assign(new Error(accessW.reason), { code: 'FEATURE_NOT_AVAILABLE' })
+  const tokW = await checkTokenBalance(db, params.userId, 2000)
+  if (!tokW.ok) throw Object.assign(new Error(tokW.message || 'Token不足'), { code: tokW.code, ...tokW })
+
   const balCheck = await checkBalance(db, params.userId, runtimeConfig.weeklyMaxTokens)
   if (!balCheck.ok) {
     throw Object.assign(new Error('余额不足，请充值'), { code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required })
@@ -575,6 +582,12 @@ async function buildAIWeeklySideRead(params) {
   if (!messages) {
     throw new Error('SIDE_READ_PROMPT_DISABLED')
   }
+
+  // 功能 + Token 门控 - sideRead
+  const accessSR = await checkFeatureAccess(db, params.userId, '星象速写')
+  if (!accessSR.allowed) throw Object.assign(new Error(accessSR.reason), { code: 'FEATURE_NOT_AVAILABLE' })
+  const tokSR = await checkTokenBalance(db, params.userId, 1500)
+  if (!tokSR.ok) throw Object.assign(new Error(tokSR.message || 'Token不足'), { code: tokSR.code, ...tokSR })
 
   const balCheck = await checkBalance(db, params.userId, runtimeConfig.sideReadMaxTokens)
   if (!balCheck.ok) {

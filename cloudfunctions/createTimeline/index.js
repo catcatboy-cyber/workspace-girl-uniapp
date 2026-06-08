@@ -2,6 +2,7 @@ const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { buildTimelineRecordTitle, classifyTimelineEvent, inferTimelineRecord } = require('./_shared/event-understanding')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
+const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
@@ -215,6 +216,18 @@ exports.main = async (event) => {
     })
     const trimmedRecentTimeline = recentTimeline
       .slice(0, 8)
+
+    // Token门控 - 事件理解
+    const accessEU = await checkFeatureAccess(db, userId, '事件理解')
+    if (!accessEU.allowed) {
+      const fallbackEvent = classifyTimelineEvent(safeDescription, {})
+      return { ...draftRecord, ...fallbackEvent, aiConsumed: false }
+    }
+    const tokEU = await checkTokenBalance(db, userId, 700)
+    if (!tokEU.ok) {
+      const fallbackEvent = classifyTimelineEvent(safeDescription, {})
+      return { ...draftRecord, ...fallbackEvent, aiConsumed: false }
+    }
 
     const understoodEvent = await inferTimelineRecord({
       description: safeDescription,

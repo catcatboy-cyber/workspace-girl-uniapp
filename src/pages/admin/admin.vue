@@ -41,6 +41,7 @@
         <button :class="['tab-btn', activeTab === 'users' ? 'active' : '']" @click="activeTab = 'users'">用户管理</button>
         <button :class="['tab-btn', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'">AI 设置</button>
         <button :class="['tab-btn', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">Token 额度</button>
+        <button :class="['tab-btn', activeTab === 'subscription' ? 'active' : '']" @click="switchToSubscription">订阅配置</button>
         <button :class="['tab-btn', activeTab === 'feedback' ? 'active' : '']" @click="switchToFeedback">反馈管理</button>
         <button :class="['tab-btn', activeTab === 'customPet' ? 'active' : '']" @click="switchToCustomPet">宠物需求</button>
       </view>
@@ -604,6 +605,138 @@
         </view>
       </view>
 
+      <!-- 订阅配置 -->
+      <view v-if="activeTab === 'subscription'" class="panel">
+        <view class="panel-head">
+          <view>
+            <text class="panel-title">订阅配置</text>
+            <text class="panel-meta">管理试用期、三档套餐、分享奖励。修改即时生效，无需发版。</text>
+          </view>
+        </view>
+
+        <!-- 试用期 -->
+        <view class="switch-row">
+          <view>
+            <text class="field-title">免费试用期</text>
+            <text class="field-desc">新用户注册后享有全功能不限次体验。关闭后新用户直接进入免费版。</text>
+          </view>
+          <switch :checked="subForm.trialEnabled" @change="subForm.trialEnabled = $event.detail.value" />
+        </view>
+        <view v-if="subForm.trialEnabled" class="form-grid">
+          <view class="field">
+            <text>试用天数</text>
+            <input v-model.number="subForm.trialDurationDays" type="number" placeholder="7" />
+          </view>
+          <view class="field">
+            <text>邀请延长天数</text>
+            <input v-model.number="subForm.trialExtendOnReferral" type="number" placeholder="3" />
+          </view>
+        </view>
+        <view v-if="subForm.trialEnabled" style="margin-top:12rpx;">
+          <text style="font-size:22rpx;color:#999;font-weight:700;display:block;margin-bottom:8rpx;">试用期可用功能（点击切换）</text>
+          <view style="display:flex;flex-wrap:wrap;gap:8rpx;">
+            <view
+              v-for="f in ALL_FEATURES"
+              :key="'trial_' + f"
+              :class="['chip-v2', hasTrialFeature(f) ? 'active' : '']"
+              style="padding:6rpx 16rpx;font-size:20rpx;"
+              @click="toggleTrialFeature(f)"
+            >{{ hasTrialFeature(f) ? '✓' : '✗' }} {{ f }}</view>
+          </view>
+        </view>
+
+        <view class="note-text" style="padding:12rpx 0;color:#999;font-size:22rpx;">
+          倍率 → 「Token 额度」tab 的模型扣费倍率 · 新用户赠送 → 「Token 额度」tab 的首次赠送额度 · 加油包 → 「Token 额度」tab 的充值档位
+        </view>
+
+        <!-- 三档套餐 -->
+        <view class="settings-section">
+          <view class="section-head">
+            <text class="section-title">套餐方案</text>
+          </view>
+          <view v-for="planKey in ['free', 'pro', 'ultra']" :key="planKey" class="model-card">
+            <view class="model-head">
+              <text class="model-title">{{ subForm.plans[planKey].name || planKey }}</text>
+            </view>
+            <view class="form-grid">
+              <view class="field">
+                <text>名称</text>
+                <input v-model="subForm.plans[planKey].name" />
+              </view>
+              <view class="field">
+                <text>月度Token（-1=不限）</text>
+                <input v-model.number="subForm.plans[planKey].monthlyTokens" type="number" placeholder="30000" />
+              </view>
+              <view class="field">
+                <text>Crush 上限（-1=不限）</text>
+                <input v-model.number="subForm.plans[planKey].maxCrushes" type="number" placeholder="1" />
+              </view>
+              <view class="field" v-if="planKey !== 'free'">
+                <text>月费 (¥)</text>
+                <input v-model.number="subForm.plans[planKey].priceYuan" type="number" placeholder="19" />
+              </view>
+              <view class="field" v-if="planKey !== 'free'">
+                <text>年费 (¥)</text>
+                <input v-model.number="subForm.plans[planKey].priceYuanAnnual" type="number" placeholder="168" />
+              </view>
+              <view class="field" v-if="planKey !== 'free'">
+                <text>学生价 (¥/月)</text>
+                <input v-model.number="subForm.plans[planKey].priceYuanStudent" type="number" placeholder="12" />
+              </view>
+              <view class="field" v-if="planKey !== 'free'">
+                <text>学生年费 (¥)</text>
+                <input v-model.number="subForm.plans[planKey].priceYuanStudentAnnual" type="number" placeholder="99" />
+              </view>
+            </view>
+            <view style="margin-top:12rpx;">
+              <text style="font-size:22rpx;color:#999;font-weight:700;">可用功能（点击切换）</text>
+              <view style="display:flex;flex-wrap:wrap;gap:8rpx;margin-top:8rpx;">
+                <view
+                  v-for="f in ALL_FEATURES"
+                  :key="f"
+                  :class="['chip-v2', hasFeature(planKey, f) ? 'active' : '']"
+                  style="padding:6rpx 16rpx;font-size:20rpx;"
+                  @click="toggleFeature(planKey, f)"
+                >{{ hasFeature(planKey, f) ? '✓' : '✗' }} {{ f }}</view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 分享奖励 -->
+        <view class="settings-section">
+          <view class="section-head">
+            <text class="section-title">分享奖励</text>
+          </view>
+          <view class="switch-row">
+            <view>
+              <text class="field-title">启用邀请奖励</text>
+              <text class="field-desc">双方均获得额外 Token。被邀请人需创建 Crush 并记录事件后才发放。</text>
+            </view>
+            <switch :checked="subForm.referralEnabled" @change="subForm.referralEnabled = $event.detail.value" />
+          </view>
+          <view v-if="subForm.referralEnabled" class="form-grid" style="margin-top:16rpx;">
+            <view class="field">
+              <text>邀请人奖励（Token）</text>
+              <input v-model.number="subForm.inviterRewardTokens" type="number" placeholder="3000" />
+            </view>
+            <view class="field">
+              <text>被邀请人奖励（Token）</text>
+              <input v-model.number="subForm.inviteeRewardTokens" type="number" placeholder="5000" />
+            </view>
+            <view class="field">
+              <text>单周邀请上限</text>
+              <input v-model.number="subForm.weeklyInviteCap" type="number" placeholder="5" />
+            </view>
+          </view>
+        </view>
+
+        <view v-if="subSaveMsg" class="save-message">{{ subSaveMsg }}</view>
+        <button class="primary-btn" :disabled="subSaving" @click="saveSubscriptionConfig">
+          {{ subSaving ? '保存中...' : '保存订阅配置' }}
+        </button>
+      </view>
+
       <view v-if="activeTab === 'feedback'" class="panel">
         <view class="panel-head">
           <view>
@@ -689,6 +822,8 @@ import {
   adminUpdateAISettings,
   adminGetBillingSettings,
   adminUpdateBillingSettings,
+  adminGetSubscriptionConfig,
+  adminUpdateSubscriptionConfig,
   adminManualRecharge,
   adminGetTokenLedger,
   adminListFeedbacks,
@@ -917,7 +1052,7 @@ const runtimeFields = [
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
 
-const activeTab = ref<'users' | 'ai' | 'billing' | 'feedback'>('users')
+const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'feedback'>('users')
 const users = ref<AdminUser[]>([])
 const selectedUserId = ref('')
 const currentUserId = ref('')
@@ -964,6 +1099,60 @@ const insufficientModeOptions = [
   { value: 'block', label: '阻断调用' },
   { value: 'allow', label: '允许欠费' }
 ]
+
+// 订阅配置
+const subForm = reactive({
+  trialEnabled: true,
+  trialDurationDays: 7,
+  trialExtendOnReferral: 3,
+  trialFeatures: [] as string[],
+  trialExcludedFeatures: [] as string[],
+  plans: {
+    free: { name: '免费版', monthlyTokens: 30000, maxCrushes: 1, priceYuan: 0, priceYuanAnnual: 0, priceYuanStudent: 0, features: [] as string[], excludedFeatures: [] as string[] },
+    pro: { name: 'Pro', monthlyTokens: 300000, maxCrushes: 3, priceYuan: 19, priceYuanAnnual: 168, priceYuanStudent: 12, priceYuanStudentAnnual: 99, features: [] as string[], excludedFeatures: [] as string[] },
+    ultra: { name: '无限版', monthlyTokens: -1, maxCrushes: -1, priceYuan: 39, priceYuanAnnual: 298, priceYuanStudent: 25, priceYuanStudentAnnual: 199, features: [] as string[], excludedFeatures: [] as string[] }
+  },
+  referralEnabled: true,
+  inviterRewardTokens: 3000,
+  inviteeRewardTokens: 5000,
+  weeklyInviteCap: 5
+})
+const ALL_FEATURES = [
+  '记录', '时间轴', '规则分析', '即时反馈', '事件理解',
+  '周复盘', '附件识别', '星象速写', '小咪帮你说（单轮）',
+  '小咪多轮策略', '自定义宠物', '自定义AI风格'
+]
+const subSaving = ref(false)
+const subSaveMsg = ref('')
+
+function hasTrialFeature(f: string) {
+  return subForm.trialFeatures.includes(f)
+}
+function toggleTrialFeature(f: string) {
+  const idx = subForm.trialFeatures.indexOf(f)
+  if (idx >= 0) {
+    subForm.trialFeatures.splice(idx, 1)
+    if (!subForm.trialExcludedFeatures.includes(f)) subForm.trialExcludedFeatures.push(f)
+  } else {
+    subForm.trialExcludedFeatures = subForm.trialExcludedFeatures.filter((x: string) => x !== f)
+    subForm.trialFeatures.push(f)
+  }
+}
+function hasFeature(planKey: string, f: string) {
+  const plan = subForm.plans[planKey]
+  return plan.features.includes(f)
+}
+function toggleFeature(planKey: string, f: string) {
+  const plan = subForm.plans[planKey]
+  const idx = plan.features.indexOf(f)
+  if (idx >= 0) {
+    plan.features.splice(idx, 1)
+    if (!plan.excludedFeatures.includes(f)) plan.excludedFeatures.push(f)
+  } else {
+    plan.excludedFeatures = plan.excludedFeatures.filter((x: string) => x !== f)
+    plan.features.push(f)
+  }
+}
 
 const manualRechargeUserId = ref('')
 const manualRechargeAmount = ref(0)
@@ -1733,6 +1922,87 @@ const feedbackLoading = ref(false)
 const rewardInputs = reactive<Record<string, number>>({})
 const targetUserIds = reactive<Record<string, string>>({})
 const resolvingId = ref('')
+
+async function switchToSubscription() {
+  activeTab.value = 'subscription'
+  await loadSubscriptionConfig()
+}
+
+async function loadSubscriptionConfig() {
+  subSaving.value = true
+  try {
+    const result = await adminGetSubscriptionConfig()
+    if (!result?.success || !result?.config) return
+    const c = result.config
+    subForm.trialEnabled = c.trial?.enabled !== false
+    subForm.trialDurationDays = Number(c.trial?.durationDays ?? 7)
+    subForm.trialExtendOnReferral = Number(c.trial?.extendOnReferral ?? 3)
+    if (Array.isArray(c.trial?.features)) subForm.trialFeatures = [...c.trial.features]
+    if (Array.isArray(c.trial?.excludedFeatures)) subForm.trialExcludedFeatures = [...c.trial.excludedFeatures]
+    subForm.welcomeCalls = Number(c.welcomeCalls ?? 10)
+    if (c.plans) {
+      for (const key of ['free', 'pro', 'ultra']) {
+        if (c.plans[key]) {
+          subForm.plans[key].name = c.plans[key].name || subForm.plans[key].name
+          subForm.plans[key].monthlyCalls = Number(c.plans[key].monthlyCalls ?? subForm.plans[key].monthlyCalls)
+          subForm.plans[key].maxCrushes = Number(c.plans[key].maxCrushes ?? subForm.plans[key].maxCrushes)
+          if (Array.isArray(c.plans[key].features)) subForm.plans[key].features = [...c.plans[key].features]
+          if (Array.isArray(c.plans[key].excludedFeatures)) subForm.plans[key].excludedFeatures = [...c.plans[key].excludedFeatures]
+          if (key !== 'free') {
+            subForm.plans[key].priceYuan = Number(c.plans[key].priceYuan ?? subForm.plans[key].priceYuan)
+            subForm.plans[key].priceYuanAnnual = Number(c.plans[key].priceYuanAnnual ?? subForm.plans[key].priceYuanAnnual)
+            subForm.plans[key].priceYuanStudent = Number(c.plans[key].priceYuanStudent ?? subForm.plans[key].priceYuanStudent)
+            subForm.plans[key].priceYuanStudentAnnual = Number(c.plans[key].priceYuanStudentAnnual ?? subForm.plans[key].priceYuanStudentAnnual)
+          }
+        }
+      }
+    }
+    if (c.referral) {
+      subForm.referralEnabled = c.referral.enabled !== false
+      subForm.inviterRewardCalls = Number(c.referral.inviterRewardCalls ?? 3)
+      subForm.inviteeRewardCalls = Number(c.referral.inviteeRewardCalls ?? 5)
+      subForm.weeklyInviteCap = Number(c.referral.weeklyInviteCap ?? 5)
+    }
+  } catch { /* ignore */ }
+  finally { subSaving.value = false }
+}
+
+async function saveSubscriptionConfig() {
+  subSaving.value = true
+  subSaveMsg.value = ''
+  try {
+    const result = await adminUpdateSubscriptionConfig({
+      trial: {
+        enabled: subForm.trialEnabled,
+        durationDays: subForm.trialDurationDays,
+        extendOnReferral: subForm.trialExtendOnReferral,
+        features: [...subForm.trialFeatures],
+        excludedFeatures: [...subForm.trialExcludedFeatures]
+      },
+      plans: {
+        free: { name: subForm.plans.free.name, monthlyTokens: Number(subForm.plans.free.monthlyTokens) || 30000, maxCrushes: Number(subForm.plans.free.maxCrushes) || 1, features: [...subForm.plans.free.features], excludedFeatures: [...subForm.plans.free.excludedFeatures] },
+        pro: { name: subForm.plans.pro.name, monthlyTokens: Number(subForm.plans.pro.monthlyTokens) || 300000, maxCrushes: Number(subForm.plans.pro.maxCrushes) || 3, priceYuan: Number(subForm.plans.pro.priceYuan) || 19, priceYuanAnnual: Number(subForm.plans.pro.priceYuanAnnual) || 168, priceYuanStudent: Number(subForm.plans.pro.priceYuanStudent) || 12, priceYuanStudentAnnual: Number(subForm.plans.pro.priceYuanStudentAnnual) || 99, features: [...subForm.plans.pro.features], excludedFeatures: [...subForm.plans.pro.excludedFeatures] },
+        ultra: { name: subForm.plans.ultra.name, monthlyTokens: Number(subForm.plans.ultra.monthlyTokens) || -1, maxCrushes: Number(subForm.plans.ultra.maxCrushes) || -1, priceYuan: Number(subForm.plans.ultra.priceYuan) || 39, priceYuanAnnual: Number(subForm.plans.ultra.priceYuanAnnual) || 298, priceYuanStudent: Number(subForm.plans.ultra.priceYuanStudent) || 25, priceYuanStudentAnnual: Number(subForm.plans.ultra.priceYuanStudentAnnual) || 199, features: [...subForm.plans.ultra.features], excludedFeatures: [...subForm.plans.ultra.excludedFeatures] }
+      },
+      referral: {
+        enabled: subForm.referralEnabled,
+        inviterRewardTokens: Number(subForm.inviterRewardTokens) || 3000,
+        inviteeRewardTokens: Number(subForm.inviteeRewardTokens) || 5000,
+        weeklyInviteCap: Number(subForm.weeklyInviteCap) || 5
+      }
+    })
+    if (!result?.success) {
+      subSaveMsg.value = result?.message || '保存失败'
+      return
+    }
+    subSaveMsg.value = '订阅配置已保存'
+    setTimeout(() => { subSaveMsg.value = '' }, 3000)
+  } catch (e: any) {
+    subSaveMsg.value = e?.message || '保存失败'
+  } finally {
+    subSaving.value = false
+  }
+}
 
 async function switchToFeedback() {
   activeTab.value = 'feedback'

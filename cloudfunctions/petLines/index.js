@@ -3,6 +3,8 @@ const http = require('http')
 const https = require('https')
 const { URL } = require('url')
 
+const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
+
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
@@ -395,6 +397,12 @@ function ensureTokenAccount(userId) {
 
 async function checkReplyBalance(userId) {
   try {
+    // 功能 + Token 门控（v3.2）
+    const access = await checkFeatureAccess(db, userId, '小咪帮你说（单轮）')
+    if (!access.allowed) return { ok: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason, balance: 0, required: 0 }
+    const tokCheck = await checkTokenBalance(db, userId, 700)
+    if (!tokCheck.ok) return { ok: false, code: tokCheck.code, message: tokCheck.message, balance: 0, required: 0 }
+
     const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => ({ data: [] }))
     const billing = billingRes.data?.[0] || { insufficientBalanceMode: 'block' }
     const account = await ensureTokenAccount(userId)

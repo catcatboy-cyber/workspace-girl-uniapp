@@ -94,13 +94,46 @@ exports.main = async (event = {}) => {
     const billing = await ensureBillingSettings()
     const action = String(event.action || 'getAccount')
 
+    // 并行获取订阅状态
+    let subscription = null
+    try {
+      const { getSubscriptionConfig, getMonthStart } = require('./_shared/subscription')
+      const config = await getSubscriptionConfig(db)
+      const { data } = await db.collection('users').doc(userId).get()
+      const user = (data && data.length > 0) ? data[0] : null
+
+      if (user && user.plan !== undefined) {
+        const now = new Date()
+        const monthStart = getMonthStart(now)
+        let monthlyUsed = user.monthlyCallsUsed || 0
+        const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+        const monthlyLimit = planConfig.monthlyTokens
+
+        let isTrial = false
+        if (user.trialEndsAt && now < new Date(user.trialEndsAt)) isTrial = true
+
+        subscription = {
+          plan: user.plan || 'free',
+          planName: planConfig.name,
+          isTrial,
+          trialEndsAt: user.trialEndsAt || null,
+          monthlyTokensUsed: monthlyUsed,
+          monthlyTokensLimit: monthlyLimit,
+          extraTokens: user.extraTokens || 0,
+          inviteCode: user.inviteCode || ''
+        }
+      }
+    } catch (err) {
+      console.warn('getSubscriptionStatus in getTokenAccount failed (non-fatal):', err.message)
+    }
+
     if (action === 'claimGift') {
       const result = await grantFirstGift(userId, billing)
-      return { success: true, account: result || await ensureTokenAccount(userId), billing }
+      return { success: true, account: result || await ensureTokenAccount(userId), billing, subscription }
     }
 
     const account = await ensureTokenAccount(userId)
-    return { success: true, account, billing }
+    return { success: true, account, billing, subscription }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)
     if (authError) return authError

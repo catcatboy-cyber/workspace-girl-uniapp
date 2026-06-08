@@ -7,6 +7,7 @@ const { SYSTEM_PROMPT, buildEventsContext, parseTagResults } = require('./_share
 const { postChatCompletions } = require('./_shared/ai-http')
 const { checkBalance } = require('./_shared/billing')
 const { recordTokenUsage } = require('./_shared/token-usage')
+const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -158,6 +159,12 @@ async function batchTagEvents(event) {
   const runtimeConfig = getRuntimeConfig(rawSettings)
   if (!model) return { success: false, message: '没有可用 AI 模型' }
 
+  // Token门控 - batchTag
+  const accessBT = await checkFeatureAccess(db, userId, '事件理解')
+  if (!accessBT.allowed) return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: accessBT.reason }
+  const tokBT = await checkTokenBalance(db, userId, 800)
+  if (!tokBT.ok) return { success: false, code: tokBT.code, message: tokBT.message, ...tokBT }
+
   const balCheck = await checkBalance(db, userId, runtimeConfig.batchTagMaxTokens)
   if (!balCheck.ok) return { success: false, message: '余额不足', code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required }
 
@@ -284,6 +291,13 @@ exports.main = async (event = {}) => {
     }
 
     let recalculated = null
+
+    // Token门控 - eventAssessment
+    const accessEA = await checkFeatureAccess(db, userId, '即时反馈')
+    if (!accessEA.allowed) return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: accessEA.reason }
+    const tokEA = await checkTokenBalance(db, userId, 2000)
+    if (!tokEA.ok) return { success: false, code: tokEA.code, message: tokEA.message, ...tokEA }
+
     const estCost = 1000 // conservative estimate; precise deduction via recordTokenUsage after AI call
     const balCheck = await checkBalance(db, userId, estCost)
     if (!balCheck.ok) {

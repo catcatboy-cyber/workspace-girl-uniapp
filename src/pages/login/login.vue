@@ -24,15 +24,25 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, login, shouldCompleteSelfProfile, wechatLogin } from '@/utils/api'
 import { resetCloudAuthState } from '@/utils/cloudbase'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
-// 已登录则直接进首页，避免登录页闪现
-if (getCurrentUserId()) {
-  uni.reLaunch({ url: '/pages/index/index' })
-}
+const INVITE_CODE_KEY = 'pendingInviteCode'
+const pendingRedirect = ref('')
+
+// 接收分享链接中的邀请码
+onLoad((options: any) => {
+  const code = options?.inviteCode || options?.invite_code || ''
+  if (code && typeof code === 'string' && code.trim()) {
+    uni.setStorageSync(INVITE_CODE_KEY, code.trim().toUpperCase())
+  }
+  pendingRedirect.value = normalizeRedirect(options?.redirect || '')
+  if (getCurrentUserId()) {
+    goRedirectOrHome()
+  }
+})
 
 const email = ref('')
 const password = ref('')
@@ -111,10 +121,35 @@ function goAfterLogin(result: any) {
     return
   }
   if (shouldCompleteSelfProfile(result)) {
-    uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
+    const redirect = pendingRedirect.value ? `&redirect=${encodeURIComponent(pendingRedirect.value)}` : ''
+    uni.redirectTo({ url: `/pages/self-profile/self-profile?mode=onboarding${redirect}` })
+    return
+  }
+  if (pendingRedirect.value) {
+    goRedirectOrHome()
     return
   }
   uni.switchTab({ url: '/pages/index/index' })
+}
+
+function normalizeRedirect(value: string) {
+  const decoded = decodeURIComponent(String(value || '')).trim()
+  if (!decoded.startsWith('/pages/')) return ''
+  if (decoded.includes('://') || decoded.includes('\\')) return ''
+  return decoded
+}
+
+function goRedirectOrHome() {
+  const url = pendingRedirect.value
+  if (!url) {
+    uni.switchTab({ url: '/pages/index/index' })
+    return
+  }
+  if (url.startsWith('/pages/index/index') || url.startsWith('/pages/me/me')) {
+    uni.switchTab({ url })
+    return
+  }
+  uni.redirectTo({ url })
 }
 
 function getWechatLoginCode(): Promise<string> {

@@ -138,10 +138,44 @@ function getBusinessAuthPayload() {
 }
 
 /**
- * 检查云函数返回结果，如果是余额不足则弹窗引导充值。
- * 在各 AI 调用页面中使用：if (handleInsufficientBalance(result)) return
+ * 检查云函数返回结果，如果是 Token 不足则弹窗引导充值/升级。
  */
 export function handleInsufficientBalance(result: any): boolean {
+  // v3.2 Token 体系：TOKEN_INSUFFICIENT
+  if (result?.code === 'TOKEN_INSUFFICIENT') {
+    const monthlyRemaining = (result.monthlyRemaining || 0).toLocaleString()
+    const extraTokens = (result.extraTokens || 0).toLocaleString()
+    const required = (result.required || 0).toLocaleString()
+
+    uni.showModal({
+      title: 'Token 不足',
+      content: `本月套餐剩余 ${monthlyRemaining} Token，加油包剩余 ${extraTokens} Token。本次预估消耗 ${required} Token。`,
+      confirmText: '去充值',
+      cancelText: '取消',
+      success(res: any) {
+        if (res.confirm) {
+          uni.navigateTo({ url: '/pages/token-recharge/token-recharge' })
+        }
+      }
+    })
+    return true
+  }
+
+  // 兼容旧 QUOTA_EXCEEDED
+  if (result?.code === 'QUOTA_EXCEEDED') {
+    uni.showModal({
+      title: '次数不足',
+      content: result.message || '次数已用完，请升级套餐或购买加油包。',
+      confirmText: '去充值',
+      cancelText: '取消',
+      success(res: any) {
+        if (res.confirm) uni.navigateTo({ url: '/pages/token-recharge/token-recharge' })
+      }
+    })
+    return true
+  }
+
+  // 旧 token 体系：INSUFFICIENT_BALANCE（保留兼容）
   if (result?.code === 'INSUFFICIENT_BALANCE') {
     const balance = (result.balance || 0).toLocaleString()
     const required = (result.required || 0).toLocaleString()
@@ -304,13 +338,16 @@ export async function wechatLogin(code = '', profile: { nickName?: string; nickn
   return res.result
 }
 
-export async function register(email: string, password: string) {
+export async function register(email: string, password: string, inviteCode?: string) {
   await clearLocalAuthState()
   await ensureAnonymousAuth()
 
+  const data: Record<string, any> = { email, password }
+  if (inviteCode) data.inviteCode = inviteCode
+
   const res = await app.callFunction({
     name: 'register',
-    data: { email, password }
+    data
   })
 
   // #ifdef MP-WEIXIN
@@ -766,6 +803,77 @@ export async function adminGetTokenLedger(userId: string, limit = 50) {
   const res = await callFunction({
     name: 'adminManage',
     data: { action: 'getTokenLedger', targetUserId: userId, limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+// ==================== 订阅体系（平台 Token） ====================
+
+/** 公开读取订阅配置（套餐/试用/奖励），无需登录 */
+export async function getSubscriptionConfig() {
+  const res = await callFunction({
+    name: 'getSubscriptionConfig',
+    data: {}
+  })
+  return res.result
+}
+
+/** 登录后读取用户订阅状态（plan / Token 余额） */
+export async function getSubscriptionStatus() {
+  const res = await callFunction({
+    name: 'getSubscriptionStatus',
+    data: { ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** 检查某个功能是否对当前用户可用 */
+export async function checkFeatureAccess(featureKey: string) {
+  const res = await callFunction({
+    name: 'getSubscriptionStatus',
+    data: { action: 'checkFeature', featureKey, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** 兑换邀请码 */
+export async function redeemInviteCode(inviteCode: string) {
+  const res = await callFunction({
+    name: 'redeemInviteCode',
+    data: { inviteCode, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 读取订阅配置 */
+export async function adminGetSubscriptionConfig() {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getSubscriptionConfig', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 更新订阅配置 */
+export async function adminUpdateSubscriptionConfig(data: Record<string, any>) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'updateSubscriptionConfig', ...data, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 手动给用户加 Token */
+export async function adminGrantExtraCalls(targetUserId: string, amount: number, remark?: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: {
+      action: 'adminGrantExtraCalls',
+      targetUserId,
+      amount,
+      remark: remark || '',
+      ...getBusinessAuthPayload()
+    }
   })
   return res.result
 }

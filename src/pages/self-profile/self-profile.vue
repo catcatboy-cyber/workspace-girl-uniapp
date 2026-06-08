@@ -156,6 +156,7 @@ const identityMap: Record<string, string> = {
 const themeVars = ref(getThemeStyle())
 const saving = ref(false)
 const isOnboarding = ref(false)
+const pendingRedirect = ref('')
 const step = ref(0)
 const typing = ref(false)
 const scrollTarget = ref('')
@@ -223,6 +224,7 @@ const questions = [
 // ====== Lifecycle ======
 onLoad((options) => {
   isOnboarding.value = options?.mode === 'onboarding'
+  pendingRedirect.value = normalizeRedirect(options?.redirect || '')
   themeVars.value = getThemeStyle()
   applyThemeChrome()
   if (isOnboarding.value) {
@@ -328,7 +330,18 @@ function onConstellationChange(event: any) {
 
 // ====== Actions ======
 function goNext() {
+  if (pendingRedirect.value) {
+    uni.redirectTo({ url: pendingRedirect.value })
+    return
+  }
   uni.switchTab({ url: '/pages/index/index' })
+}
+
+function normalizeRedirect(value: string) {
+  const decoded = decodeURIComponent(String(value || '')).trim()
+  if (!decoded.startsWith('/pages/')) return ''
+  if (decoded.includes('://') || decoded.includes('\\')) return ''
+  return decoded
 }
 
 async function onSave() {

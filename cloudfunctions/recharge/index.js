@@ -47,8 +47,10 @@ async function getRechargePlans(event) {
     name: t.name,
     priceFen: t.priceFen,
     amountYuan: (t.priceFen / 100).toFixed(2),
-    grantTokens: Math.floor(t.priceFen / 100 * (billing.tokensPerYuan || 100000)) + (t.bonusTokens || 0),
-    bonusTokens: t.bonusTokens || 0
+    grantTokens: t.grantTokens || Math.floor(t.priceFen / 100 * (billing.tokensPerYuan || 100000)) + (t.bonusTokens || 0),
+    bonusTokens: t.bonusTokens || 0,
+    grantCalls: t.grantTokens || t.grantCalls || 0,  // 兼容
+    tagline: t.tagline || ''
   }))
   return { success: true, tiers, tokensPerYuan: billing.tokensPerYuan || 100000 }
 }
@@ -67,6 +69,7 @@ async function createRechargeOrder(event) {
   const amountFen = Number(tier.priceFen) || 0
   const amountYuan = (amountFen / 100).toFixed(2)
   const grantTokens = Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0)
+  const grantCalls = (tier.grantCalls || 0) + (tier.bonusCalls || 0)
   const now = new Date()
 
   const order = {
@@ -77,6 +80,8 @@ async function createRechargeOrder(event) {
     amountYuan,
     grantTokens,
     bonusTokens: tier.bonusTokens || 0,
+    grantCalls,
+    bonusCalls: tier.bonusCalls || 0,
     status: 'pending',
     createdAt: now,
     updatedAt: now
@@ -133,7 +138,18 @@ async function adminConfirmRecharge(event) {
     createdAt: now
   })
 
-  return { success: true, order: { ...order, status: 'paid', paidAt: now } }
+  // 新次数体系：给用户加额外次数（加油包次数，不过期）
+  const grantCalls = order.grantCalls || 0
+  if (grantCalls > 0) {
+    try {
+      const { addExtraTokens } = require('./_shared/subscription')
+      await addExtraTokens(db, order.userId, grantCalls, `recharge_${order.planId}`)
+    } catch (err) {
+      console.warn('addExtraTokens on recharge failed (non-fatal):', err.message)
+    }
+  }
+
+  return { success: true, order: { ...order, status: 'paid', paidAt: now, grantTokens: grantCalls } }
 }
 
 exports.main = async (event = {}) => {

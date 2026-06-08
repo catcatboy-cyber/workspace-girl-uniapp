@@ -18,9 +18,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { register, shouldCompleteSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+
+const INVITE_CODE_KEY = 'pendingInviteCode'
 
 const email = ref('')
 const password = ref('')
@@ -28,6 +30,18 @@ const confirmPassword = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 const themeVars = ref(getThemeStyle())
+const inviteCode = ref('')
+
+onLoad((options: any) => {
+  // 从分享链接参数或存储中获取邀请码
+  const fromParam = options?.inviteCode || options?.invite_code || ''
+  const fromStorage = uni.getStorageSync(INVITE_CODE_KEY) || ''
+  const code = (fromParam || fromStorage).trim().toUpperCase()
+  if (code && code.length >= 4) {
+    inviteCode.value = code
+    uni.removeStorageSync(INVITE_CODE_KEY)
+  }
+})
 
 onShow(() => {
   themeVars.value = getThemeStyle()
@@ -70,7 +84,7 @@ const handleRegister = async () => {
   errorMessage.value = ''
 
   try {
-    const result = await register(email.value, password.value)
+    const result = await register(email.value, password.value, inviteCode.value || undefined)
 
     if (result.success) {
       if (shouldCompleteSelfProfile(result)) {

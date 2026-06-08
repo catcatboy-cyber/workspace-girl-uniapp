@@ -1,28 +1,29 @@
 <template>
   <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">TOKEN RECHARGE</text>
-        <text class="hero-title-v2">充点<text class="hl-v2">Token能量</text></text>
-        <text class="hero-copy-v2">当前可用额度：{{ balance.toLocaleString() }} token</text>
+        <text class="hero-tag-v2">BOOST</text>
+        <text class="hero-title-v2">Token<text class="hl-v2">加油包</text></text>
+        <text class="hero-copy-v2">套餐 Token 不够？买加油包，不过期。当前额外 Token：{{ extraTokens.toLocaleString() }}</text>
       </view>
 
       <view v-if="plansLoading" class="card-v2">
-        <text class="card-text-v2">正在加载充值档位...</text>
+        <text class="card-text-v2">正在加载...</text>
       </view>
 
       <view v-else-if="plans.length === 0" class="card-v2">
-        <text class="card-text-v2">{{ plansError || '暂无可用充值档位。' }}</text>
+        <text class="card-text-v2">{{ plansError || '暂无可用档位。' }}</text>
       </view>
 
       <view v-else class="card-v2" v-for="plan in plans" :key="plan.id">
         <view class="card-head-v2">
           <text class="section-title-v2">{{ plan.name }}</text>
           <button class="btn-v2-t" :disabled="orderingId === plan.id" @click="createOrder(plan.id)">
-            {{ orderingId === plan.id ? '处理中' : '购买' }}
+            {{ orderingId === plan.id ? '处理中' : '¥' + plan.amountYuan }}
           </button>
         </view>
-        <text class="card-text-v2">¥{{ plan.amountYuan }} · 到账 {{ plan.grantTokens.toLocaleString() }} token</text>
-        <text v-if="plan.bonusTokens > 0" class="card-text-v2" style="color: #e67e22;">含赠送 {{ plan.bonusTokens.toLocaleString() }} token</text>
+        <text class="card-text-v2" style="font-size:32rpx;font-weight:900;">+{{ totalTokens(plan).toLocaleString() }} Token</text>
+        <text v-if="plan.bonusTokens > 0" class="card-text-v2" style="color:#e67e22;">含赠送 {{ plan.bonusTokens.toLocaleString() }} Token</text>
+        <text v-if="plan.tagline" class="card-text-v2" style="color:#999;font-size:22rpx;">{{ plan.tagline }}</text>
       </view>
 
       <view v-if="orderMessage" class="card-v2">
@@ -36,9 +37,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getTokenAccount, getRechargePlans, createRechargeOrder, adminConfirmRecharge } from '@/utils/api'
+import { getCurrentUserId, getRechargePlans, createRechargeOrder, getSubscriptionStatus } from '@/utils/api'
 
-const balance = ref(0)
+const extraTokens = ref(0)
 const plans = ref<Array<any>>([])
 const plansLoading = ref(false)
 const plansError = ref('')
@@ -52,15 +53,19 @@ onShow(() => {
     uni.reLaunch({ url: '/pages/login/login' })
     return
   }
-  loadBalance()
+  loadStatus()
   loadPlans()
 })
 
-async function loadBalance() {
+function totalTokens(plan: any) {
+  return (plan.grantTokens || plan.grantCalls || 0) + (plan.bonusTokens || plan.bonusCalls || 0)
+}
+
+async function loadStatus() {
   try {
-    const result = await getTokenAccount()
-    if (result?.success && result?.account) {
-      balance.value = Number(result.account.balanceTokens || 0)
+    const result = await getSubscriptionStatus()
+    if (result?.success && result?.subscription) {
+      extraTokens.value = result.subscription.extraTokens || 0
     }
   } catch { /* ignore */ }
 }
@@ -96,22 +101,10 @@ async function createOrder(planId: string) {
       return
     }
     createdOrderId.value = result.order?._id || ''
-    // 自动尝试管理员确认（过渡方案）
-    if (createdOrderId.value) {
-      const confirmResult = await adminConfirmRecharge(createdOrderId.value)
-      if (confirmResult?.success) {
-        orderOk.value = true
-        orderMessage.value = '充值成功！额度已到账。'
-        await loadBalance()
-      } else if (confirmResult?.alreadyConfirmed) {
-        orderOk.value = true
-        orderMessage.value = '该订单已确认，额度已到账。'
-        await loadBalance()
-      } else {
-        orderOk.value = false
-        orderMessage.value = confirmResult?.message || '确认失败，请联系管理员'
-      }
-    }
+    // 创建订单成功，等待支付（后续接微信支付）
+    orderOk.value = true
+    orderMessage.value = `订单已创建（¥${result.order?.amountYuan || '?'}），请联系管理员确认充值。`
+    await loadStatus()
   } catch (error: any) {
     orderMessage.value = error?.message || '操作失败'
   } finally {

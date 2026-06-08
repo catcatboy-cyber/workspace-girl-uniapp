@@ -9,8 +9,55 @@
       <view class="card-v2 anim-card" style="animation-delay:0.25s"><text class="section-title-v2">陪伴形象</text><view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn-v2-me sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view></view>
       <!-- Pet select sheet -->
       <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
-      <!-- Token (fixed button) -->
-      <view class="card-v2 anim-card" style="animation-delay:0.3s"><text class="section-title-v2">能量</text><view class="balance-hero-v2"><text class="balance-num-v2">{{ tokenBalance.toLocaleString() }}</text><text class="balance-unit-v2">可用额度</text></view><view class="balance-sub-row-v2"><text class="card-text-v2">累计赠送 {{ tokenGiftedTotal.toLocaleString() }} · 累计消费 {{ tokenConsumedTotal.toLocaleString() }}</text></view><view class="stats-grid-v2" style="margin-top:16rpx;"><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.totalTokens }}</text><text class="stat-lbl-v2">模型 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.promptTokens }}</text><text class="stat-lbl-v2">输入</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ tokenUsageSummary.completionTokens }}</text><text class="stat-lbl-v2">输出</text></view></view><view class="voice-row-v2"><text class="voice-row-lbl-v2">语音识别</text><text class="voice-row-val-v2">{{ voiceUsageSummary.totalCount }} 次 · 累计 {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text></view><text v-if="tokenUsageSummary.unavailableCount" class="card-text-v2 muted">有 {{ tokenUsageSummary.unavailableCount }} 次调用未返回 usage。</text><view class="btn-row-v2" style="margin-top:14rpx;"><button class="btn-v2-me sm" @click="goRecharge">充点Token能量</button><button class="btn-v2-me sm" :disabled="tokenUsageLoading" @click="refreshTokenData">{{ tokenUsageLoading ? '读取中' : '刷新' }}</button><button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button></view></view>
+      <!-- Token（订阅体系 v3.2） -->
+      <view class="card-v2 anim-card" style="animation-delay:0.3s">
+        <view style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16rpx;">
+          <text class="section-title-v2" style="margin-bottom:0;">Token</text>
+          <view :class="['plan-badge', planBadgeClass]">
+            <text v-if="isTrial" class="plan-badge-text">✦ 试用期 · 剩{{ trialDaysLeft }}天</text>
+            <text v-else class="plan-badge-text">{{ planBadgeLabel }}</text>
+          </view>
+        </view>
+        <view v-if="subLoading" class="card-text-v2" style="text-align:center;padding:20rpx 0;">加载中…</view>
+        <template v-else>
+          <view class="balance-hero-v2">
+            <text class="balance-num-v2">{{ totalAvailableDisplay }}</text>
+            <text class="balance-unit-v2">Token 可用</text>
+          </view>
+          <view class="stats-grid-v2" style="margin-top:16rpx;">
+            <view class="stat-box-v2">
+              <text class="stat-num-v2">{{ monthlyRemainingDisplay }}</text>
+              <text class="stat-lbl-v2">本月套餐</text>
+            </view>
+            <view class="stat-box-v2">
+              <text class="stat-num-v2">{{ extraTokens }}</text>
+              <text class="stat-lbl-v2">加油包</text>
+            </view>
+            <view class="stat-box-v2">
+              <text class="stat-num-v2">{{ subMonthlyUsed }}/{{ subMonthlyLimit }}</text>
+              <text class="stat-lbl-v2">已用/上限</text>
+            </view>
+            <view class="stat-box-v2">
+              <text class="stat-num-v2">{{ referralCount }}</text>
+              <text class="stat-lbl-v2">已邀请</text>
+            </view>
+          </view>
+          <view v-if="exchangeRate > 1" class="voice-row-v2" style="margin-top:8rpx;">
+            <text class="voice-row-lbl-v2">兑换倍率</text>
+            <text class="voice-row-val-v2">{{ exchangeRate }}x</text>
+          </view>
+          <view class="voice-row-v2">
+            <text class="voice-row-lbl-v2">语音识别</text>
+            <text class="voice-row-val-v2">{{ voiceUsageSummary.totalCount }} 次 · 累计 {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text>
+          </view>
+          <view class="btn-row-v2" style="margin-top:14rpx;">
+            <button class="btn-v2-me sm" @click="goSubscriptionPlan">升级套餐</button>
+            <button class="btn-v2-me sm" @click="goRecharge">买加油包</button>
+            <button class="btn-v2-me sm" open-type="share">邀请好友 +{{ referralRewardTokens }}</button>
+            <button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button>
+          </view>
+        </template>
+      </view>
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
       <!-- Font size -->
@@ -21,6 +68,7 @@
       <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的分析和趋势记录 →</text></view>
       <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
       <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
+      <view class="card-v2" @click="goReferences"><text class="section-title-v2">引用经典</text><text class="card-text-v2">本小程序引用的古今中外经典文献 →</text></view>
       <view class="card-v2" @click="goAbout"><text class="section-title-v2">关于</text><text class="card-text-v2">v1.0.0 · 查看版本信息 →</text></view>
   </view>
 </template>
@@ -33,6 +81,8 @@ import {
   getCases,
   getCurrentUserId,
   getSelfProfile,
+  getSubscriptionConfig,
+  getSubscriptionStatus,
   getTokenAccount,
   getTokenUsage,
   getVoiceUsage,
@@ -78,8 +128,49 @@ const tokenConsumedTotal = ref(0)
 const tokenBalanceLoading = ref(false)
 const voiceUsageSummary = ref({ totalCount: 0, totalDurationMs: 0 })
 const voiceUsageLoading = ref(false)
+// 次数（订阅体系）
+const subLoading = ref(false)
+const subPlan = ref('free')
+const subPlanName = ref('免费版')
+const subIsTrial = ref(false)
+const subTrialDaysLeft = ref(0)
+const subMonthlyUsed = ref(0)
+const subMonthlyLimit = ref(20)
+const subExtraTokens = ref(0)
+const subTokenExchangeRate = ref(1)
+const subInviteCode = ref('')
+const subReferralCount = ref(0)
+const subReferralRewardTokens = ref(3000)
 const currentUserIsAdmin = ref(false)
 const canSaveAIPersona = computed(() => hasUsableSelfProfile(currentSelfProfile.value) && !aiSaving.value)
+
+// 次数显示用 computed
+const monthlyRemainingDisplay = computed(() => {
+  if (subIsTrial.value || subPlan.value === 'ultra' || subMonthlyLimit.value === -1) return '∞'
+  return Math.max(0, subMonthlyLimit.value - subMonthlyUsed.value)
+})
+const extraTokens = computed(() => subExtraTokens.value)
+const exchangeRate = computed(() => subTokenExchangeRate.value)
+const planName = computed(() => subPlanName.value)
+const isTrial = computed(() => subIsTrial.value)
+const trialDaysLeft = computed(() => subTrialDaysLeft.value)
+const referralCount = computed(() => subReferralCount.value)
+const referralRewardTokens = computed(() => subReferralRewardTokens.value)
+const totalAvailableDisplay = computed(() => {
+  if (subIsTrial.value || subPlan.value === 'ultra' || subMonthlyLimit.value === -1) return '∞'
+  return (Math.max(0, subMonthlyLimit.value - subMonthlyUsed.value) + subExtraTokens.value).toLocaleString()
+})
+const planBadgeLabel = computed(() => {
+  if (subPlan.value === 'pro') return 'PRO 会员'
+  if (subPlan.value === 'ultra') return 'ULTRA 会员'
+  return '免费用户'
+})
+const planBadgeClass = computed(() => {
+  if (subIsTrial.value) return 'badge-trial'
+  if (subPlan.value === 'pro') return 'badge-pro'
+  if (subPlan.value === 'ultra') return 'badge-ultra'
+  return 'badge-free'
+})
 
 onShareAppMessage(() => buildSafeShareMessage())
 
@@ -165,6 +256,7 @@ onShow(() => {
   currentPetId.value = getSelectedPetId()
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
   if (!userEmail.value || dv > lastDataVersion.value) loadData()
+  loadSubscriptionStatus()
   loadTokenUsage()
   loadTokenBalance()
   loadVoiceUsage()
@@ -216,6 +308,39 @@ async function loadData() {
   lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
 }
 
+async function loadSubscriptionStatus() {
+  subLoading.value = true
+  try {
+    const result = await getSubscriptionStatus()
+    if (!result?.success || !result?.subscription) return
+    const s = result.subscription
+    subPlan.value = s.plan || 'free'
+    subPlanName.value = s.planName || '免费版'
+    subIsTrial.value = !!s.isTrial
+    subTrialDaysLeft.value = s.trialDaysLeft || 0
+    subMonthlyUsed.value = s.monthlyTokensUsed || 0
+    subMonthlyLimit.value = s.monthlyTokensLimit || 0
+    subExtraTokens.value = s.extraTokens || 0
+    subTokenExchangeRate.value = s.tokenExchangeRate || 1
+    subInviteCode.value = s.inviteCode || ''
+    subReferralCount.value = s.referralCount || 0
+  } catch {
+    // ignore
+  } finally {
+    subLoading.value = false
+  }
+  try {
+    const cfg = await getSubscriptionConfig()
+    if (cfg?.success && cfg?.config?.referral) {
+      subReferralRewardTokens.value = cfg.config.referral.inviterRewardTokens || 3000
+    }
+  } catch { /* ignore */ }
+}
+
+async function refreshSubStatus() {
+  await Promise.all([loadSubscriptionStatus(), loadTokenUsage(), loadVoiceUsage(), loadTokenBalance()])
+}
+
 async function loadTokenBalance() {
   if (tokenBalanceLoading.value) return
   tokenBalanceLoading.value = true
@@ -233,7 +358,7 @@ async function loadTokenBalance() {
 }
 
 async function refreshTokenData() {
-  await Promise.all([loadTokenUsage(), loadTokenBalance(), loadVoiceUsage()])
+  await Promise.all([loadSubscriptionStatus(), loadTokenUsage(), loadTokenBalance(), loadVoiceUsage()])
 }
 
 async function loadVoiceUsage() {
@@ -370,6 +495,10 @@ function goTokenUsage() {
   uni.navigateTo({ url: '/pages/token-usage/token-usage' })
 }
 
+function goSubscriptionPlan() {
+  uni.navigateTo({ url: '/pages/subscription/subscription' })
+}
+
 function goRecharge() {
   uni.navigateTo({ url: '/pages/token-recharge/token-recharge' })
 }
@@ -393,6 +522,10 @@ function goAdmin() {
 function goCustomPet() {
   showPetSheet.value = false
   uni.navigateTo({ url: '/pages/custom-pet/custom-pet' })
+}
+
+function goReferences() {
+  uni.navigateTo({ url: '/pages/references/references' })
 }
 
 function goAbout() {
@@ -429,6 +562,14 @@ async function onLogout() {
 .v2-mode .balance-hero-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; padding: 20rpx 24rpx; margin-bottom: 12rpx; display: flex; align-items: baseline; gap: 10rpx; }
 .v2-mode .balance-num-v2 { font-size: 44rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; }
 .v2-mode .balance-unit-v2 { font-size: 22rpx; font-weight: 800; color: rgba(0,0,0,0.6); }
+
+/* 套餐身份标签 */
+.plan-badge { padding: 8rpx 20rpx; border: 2rpx solid #111; font-size: 22rpx; font-weight: 900; letter-spacing: 2rpx; }
+.plan-badge.badge-trial { background: #4ECDC4; color: #fff; }
+.plan-badge.badge-pro { background: #111; color: #FFD93D; }
+.plan-badge.badge-ultra { background: #111; color: #FFD93D; }
+.plan-badge.badge-free { background: #eee; color: #999; border-color: #ccc; }
+.plan-badge-text { }
 .v2-mode .balance-sub-row-v2 { margin-bottom: 4rpx; }
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 14rpx; }

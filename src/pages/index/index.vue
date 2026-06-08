@@ -10,6 +10,11 @@
           <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
+        <!-- [TEMP] 命理桃花入口 — Phase 3 替换为正式 teaser 卡片 -->
+        <view class="card-v2 anim-card" style="animation-delay:0.1s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx dashed #111;cursor:pointer;text-align:center;" @click="goTaohua">
+          <text class="section-title-v2">🧭 今日桃花（测试入口）</text>
+          <text class="card-text-v2 muted">点击查看完整命理分析 →</text>
+        </view>
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
           <text class="remind-card-title-v2">你的画像未完善</text>
           <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
@@ -52,6 +57,12 @@
           <view v-if="latestProfileItems.length > 0" class="tag-row-v2">
             <text v-for="item in latestProfileItems" :key="item" class="tag-v2">{{ item }}</text>
           </view>
+        </view>
+
+        <!-- [TEMP] 命理桃花入口 — Phase 3 替换为正式 teaser 卡片 -->
+        <view class="card-v2 anim-card" style="animation-delay:0.05s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx dashed #111;cursor:pointer;text-align:center;" @click="goTaohua">
+          <text class="section-title-v2">🧭 今日桃花（测试入口）</text>
+          <text class="card-text-v2 muted">点击查看完整命理分析 →</text>
         </view>
 
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.1s" @click="goSelfProfile">
@@ -1486,6 +1497,10 @@ function goCaseDetail(caseId: string) {
 
 function goSelfProfile() {
   uni.navigateTo({ url: '/pages/self-profile/self-profile' })
+}
+
+function goTaohua() {
+  uni.navigateTo({ url: '/pages/taohua/taohua' })
 }
 </script>
 

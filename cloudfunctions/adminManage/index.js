@@ -1272,6 +1272,9 @@ async function updateBillingSettings(event, adminUserId) {
       name: t.name,
       priceFen: Number(t.priceFen),
       bonusTokens: Number(t.bonusTokens),
+      grantCalls: t.grantCalls != null ? Number(t.grantCalls) : undefined,
+      bonusCalls: t.bonusCalls != null ? Number(t.bonusCalls) : 0,
+      tagline: t.tagline || '',
       enabled: t.enabled !== false,
       sortOrder: t.sortOrder != null ? Number(t.sortOrder) : i
     })),
@@ -1291,6 +1294,97 @@ async function updateBillingSettings(event, adminUserId) {
   const { data } = await db.collection('system_settings').doc(existing._id).get()
   const saved = (data && data.length > 0) ? data[0] : update
   return { success: true, billing: saved }
+}
+
+// ─── 订阅配置管理 ─────────────────────────────────────
+
+async function getSubscriptionConfigAdmin(event) {
+  const { ensureSubscriptionConfig } = require('./_shared/subscription')
+  const config = await ensureSubscriptionConfig(db)
+  return { success: true, config }
+}
+
+async function updateSubscriptionConfigAdmin(event, adminUserId) {
+  try {
+    const { ensureSubscriptionConfig } = require('./_shared/subscription')
+    const existing = await ensureSubscriptionConfig(db)
+
+    if (!existing || !existing._id) {
+      return { success: false, message: '订阅配置文档初始化失败' }
+    }
+
+    // 合并传入的字段（不能包含 _id）
+    const { _id, ...updated } = { ...existing }
+
+    if (event.trial) {
+      updated.trial = {
+        enabled: event.trial.enabled !== undefined ? Boolean(event.trial.enabled) : existing.trial?.enabled,
+        durationDays: Number.isFinite(Number(event.trial.durationDays)) ? Number(event.trial.durationDays) : existing.trial?.durationDays,
+        extendOnReferral: Number.isFinite(Number(event.trial.extendOnReferral)) ? Number(event.trial.extendOnReferral) : existing.trial?.extendOnReferral
+      }
+      if (Array.isArray(event.trial.features)) updated.trial.features = event.trial.features
+      if (Array.isArray(event.trial.excludedFeatures)) updated.trial.excludedFeatures = event.trial.excludedFeatures
+    }
+
+    if (event.plans) {
+      updated.plans = { ...existing.plans }
+      for (const key of ['free', 'pro', 'ultra']) {
+        if (event.plans[key]) {
+          // features/excludedFeatures 用数组原样，其他字段用展开合并
+          const { features, excludedFeatures, ...rest } = event.plans[key]
+          updated.plans[key] = { ...existing.plans[key], ...rest }
+          if (Array.isArray(features)) updated.plans[key].features = features
+          if (Array.isArray(excludedFeatures)) updated.plans[key].excludedFeatures = excludedFeatures
+        }
+      }
+    }
+
+    if (event.referral) {
+      updated.referral = { ...existing.referral, ...event.referral }
+    }
+
+    if (event.tokenExchangeRate !== undefined) {
+      updated.tokenExchangeRate = Number(event.tokenExchangeRate) || 1
+    }
+    if (event.featureEstTokens) {
+      updated.featureEstTokens = { ...existing.featureEstTokens, ...event.featureEstTokens }
+    }
+    if (event.welcomeTokens !== undefined) {
+      updated.welcomeTokens = Number(event.welcomeTokens) || 0
+    }
+    // 兼容旧字段名
+    if (event.welcomeCalls !== undefined && event.welcomeTokens === undefined) {
+      updated.welcomeTokens = Number(event.welcomeCalls) || 0
+    }
+
+    updated.updatedAt = new Date()
+
+    await db.collection('system_settings').doc(existing._id).update(updated)
+
+    const { data } = await db.collection('system_settings').doc(existing._id).get()
+    const saved = (data && data.length > 0) ? data[0] : updated
+    return { success: true, config: saved }
+  } catch (error) {
+    console.error('updateSubscriptionConfigAdmin error:', error)
+    return { success: false, message: '订阅配置保存失败: ' + (error?.message || String(error)) }
+  }
+}
+
+async function adminGrantExtraCallsAction(event, adminUserId) {
+  const targetUserId = String(event.targetUserId || '').trim()
+  if (!targetUserId) return { success: false, message: '缺少 targetUserId' }
+  const amount = Number(event.amount)
+  if (Number.isNaN(amount) || amount <= 0 || amount > 10000) {
+    return { success: false, message: '次数需在 1 ~ 10000 之间' }
+  }
+  const remark = String(event.remark || '管理员手动加次数').trim()
+
+  const { addExtraTokens } = require('./_shared/subscription')
+  const result = await addExtraTokens(db, targetUserId, amount, remark)
+
+  if (!result.success) return result
+
+  return { success: true, userId: targetUserId, amount, extraCallsAfter: 'see user doc' }
 }
 
 async function getTokenLedger(event) {
@@ -1490,6 +1584,9 @@ exports.main = async (event = {}) => {
     if (action === 'previewPrompt') return await previewPrompt(event)
     if (action === 'getBillingSettings') return await getBillingSettings(event)
     if (action === 'updateBillingSettings') return await updateBillingSettings(event, userId)
+    if (action === 'getSubscriptionConfig') return await getSubscriptionConfigAdmin(event)
+    if (action === 'updateSubscriptionConfig') return await updateSubscriptionConfigAdmin(event, userId)
+    if (action === 'adminGrantExtraCalls') return await adminGrantExtraCallsAction(event, userId)
     if (action === 'getTokenLedger') return await getTokenLedger(event)
     if (action === 'adminManualRecharge') return await adminManualRecharge(event, userId)
     if (action === 'listFeedbacks') return await listFeedbacks()

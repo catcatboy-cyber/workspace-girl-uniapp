@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dom-Crush 订阅体系 & 定价策略 v3.1 · 统一次数体系</title>
+<style>
+  :root {
+    --bg: #FFFDF5; --fg: #111; --accent: #FFD93D; --green: #4ECDC4;
+    --red: #FF5252; --blue: #5B8DEF; --purple: #9B59B6; --border: 3px solid #111;
+    --shadow: 8px 8px 0 #111;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; line-height:1.7; max-width:960px; margin:0 auto; padding:40px 20px; }
+  h1 { font-size:44px; font-weight:900; letter-spacing:-2px; margin-bottom:8px; }
+  h2 { font-size:28px; font-weight:900; margin:52px 0 18px; padding-bottom:10px; border-bottom:3px solid #111; }
+  h3 { font-size:21px; font-weight:900; margin:28px 0 14px; }
+  h4 { font-size:17px; font-weight:900; margin:20px 0 10px; color:#333; }
+  p { margin:12px 0; }
+  .subtitle { color:#666; font-size:16px; margin-bottom:32px; }
+  .section-desc { color:#666; font-size:14px; margin-bottom:16px; line-height:1.7; }
+
+  .card { border:var(--border); background:#fff; padding:28px; box-shadow:var(--shadow); margin:24px 0; }
+  .card.hero { background:var(--accent); }
+  .card.warn { background:#FFF8E1; border-color:var(--red); }
+  .card.green { background:#E8F8F5; border-color:var(--green); }
+  .card.blue { background:#EDF3FF; border-color:var(--blue); }
+  .card.purple { background:#F5EEF8; border-color:var(--purple); }
+
+  .tag { display:inline-block; padding:4px 14px; border:2px solid #111; font-size:12px; font-weight:800; margin-right:6px; }
+  .tag.free { background:#fff; }
+  .tag.pro { background:var(--green); }
+  .tag.ultra { background:#111; color:var(--accent); }
+  .tag.config { background:var(--accent); color:#111; font-size:11px; border:1.5px solid #111; }
+
+  .badge { display:inline-block; padding:2px 10px; font-size:11px; font-weight:800; border-radius:2px; }
+  .badge.new { background:var(--accent); color:#111; }
+  .badge.unified { background:var(--green); color:#fff; }
+  .badge.real { background:#111; color:#FFD93D; }
+  .badge.rec { background:var(--green); color:#fff; }
+
+  .price { font-size:48px; font-weight:900; line-height:1; }
+  .price small { font-size:18px; color:#666; font-weight:600; }
+
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+
+  table { width:100%; border-collapse:collapse; margin:16px 0 24px; border: var(--border); font-size:13px; }
+  th, td { padding:10px 14px; text-align:left; border-bottom:2px solid #111; }
+  th { background:#111; color:var(--accent); font-weight:900; font-size:12px; text-transform:uppercase; letter-spacing:1px; }
+  td { background:#fff; }
+  tr:last-child td { border-bottom:none; }
+  td.config-path { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size:11px; color:#666; background:#fafafa; }
+  td.yes { color:#27ae60; font-weight:900; }
+  td.no { color:#ccc; }
+
+  .kpi { text-align:center; padding:20px 16px; border:var(--border); background:#fff; }
+  .kpi .num { font-size:34px; font-weight:900; }
+  .kpi .lbl { font-size:13px; color:#666; font-weight:700; margin-top:6px; }
+
+  .highlight { background:var(--accent); padding:2px 6px; }
+  .hl-green { background:var(--green); padding:2px 6px; color:#fff; }
+  .hl-red { background:var(--red); padding:2px 6px; color:#fff; }
+
+  ul, ol { margin:8px 0 8px 24px; }
+  li { margin:4px 0; }
+  .divider { border:none; border-top:3px solid #111; margin:44px 0; }
+  .note { font-size:12px; color:#999; }
+  .cost-zero { color:#27ae60; font-weight:900; }
+
+  .config-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#111; color:var(--accent); font-size:10px; font-weight:800; border-radius:2px; }
+
+  .flow-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:16px 0; }
+  .flow-step { flex:1; min-width:100px; padding:16px 12px; border:var(--border); background:#fff; text-align:center; font-size:13px; font-weight:700; }
+  .flow-arrow { font-size:24px; font-weight:900; color:#666; flex:0 0 auto; }
+
+  .json-block { background:#1e1e1e; color:#e0e0e0; padding:20px 24px; border-radius:2px; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size:12px; line-height:1.6; overflow-x:auto; margin:12px 0; }
+  .json-block .key { color:#FFD93D; }
+  .json-block .str { color:#4ECDC4; }
+  .json-block .num { color:#9B59B6; }
+  .json-block .comment { color:#6a9955; }
+
+  .plan-card { text-align:center; display:flex; flex-direction:column; }
+  .plan-card .plan-header { padding:24px 20px 16px; border-bottom:2px solid #111; }
+  .plan-card .plan-body { padding:20px; flex:1; text-align:left; font-size:13px; }
+  .plan-card .plan-body p { margin:3px 0; }
+  .plan-card.free-card { border-color:#999; }
+  .plan-card.pro-card { border-color:var(--green); background:#fff; }
+  .plan-card.ultra-card { border-color:#111; }
+  .student-tag { display:inline-block; margin-top:6px; padding:4px 10px; background:var(--blue); color:#fff; font-size:11px; font-weight:800; border-radius:2px; }
+
+  .mega-num { font-size:72px; font-weight:900; line-height:1; }
+  .big-arrow { font-size:32px; color:#999; display:flex; align-items:center; justify-content:center; }
+
+  @media(max-width:640px){
+    .grid2,.grid3,.grid4{ grid-template-columns:1fr; }
+    body{padding:20px 12px;} h1{font-size:32px;}
+    .flow-row{flex-direction:column;} .flow-arrow{transform:rotate(90deg);}
+    .mega-num{font-size:48px;}
+  }
+</style>
+</head>
+<body>
+
+<h1>Dom-Crush</h1>
+<p class="subtitle">订阅体系 &amp; 定价策略 v3.1 · 统一次数体系 <span class="badge unified">UNIFIED</span> <span class="badge new">可配置</span></p>
+
+<div class="card hero">
+  <p style="font-size:20px;font-weight:700;margin:0;">read the signals, not your mind.</p>
+  <p style="margin-top:8px;color:rgba(0,0,0,0.6);">
+    v3.1 核心变更：<strong>统一为"次数"</strong>。套餐是次数，奖励是次数，充值也是次数。用户永远只看一个数字。<br>
+    <span style="font-size:14px;">调用一次 AI = 消耗一次。不管底层是即时反馈还是周复盘，对用户来说都是"1 次"。</span>
+  </p>
+</div>
+
+<!-- ===== 为什么统一次数 ===== -->
+<div class="card blue">
+  <p style="font-weight:900;margin:0 0 8px;">v3.0 → v3.1：为什么去掉 Token，统一用"次数"</p>
+  <table style="margin:12px 0 0;border:none;">
+    <tr><th style="width:120px;">问题</th><th>v3.0（混合体系）</th><th style="background:var(--green);">v3.1（统一次数）</th></tr>
+    <tr>
+      <td>用户认知</td>
+      <td>"套餐有 18 次即时反馈 + 1 次周复盘，但邀请奖励是 3,000 Token…Token 等于几次？"</td>
+      <td style="background:#E8F8F5;"><strong>"本月还剩 15 次"</strong></td>
+    </tr>
+    <tr>
+      <td>加油包</td>
+      <td>"¥3 买 5,000 Token…这够分析几次？"</td>
+      <td style="background:#E8F8F5;"><strong>"¥3 = 5 次，直接加进余额"</strong></td>
+    </tr>
+    <tr>
+      <td>邀请奖励</td>
+      <td>"你获得了 3,000 Token"（然后呢？）</td>
+      <td style="background:#E8F8F5;"><strong>"你获得了 3 次额外分析"</strong></td>
+    </tr>
+    <tr>
+      <td>套餐对比</td>
+      <td>每项功能独立配额，横向比较困难</td>
+      <td style="background:#E8F8F5;"><strong>一个数字：20 vs 200 vs ∞</strong></td>
+    </tr>
+    <tr>
+      <td>后端</td>
+      <td>Token 核算照常（用户不可见）</td>
+      <td style="background:#E8F8F5;"><strong>Token 核算照常（用户不可见），对外只减次数</strong></td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== 一、整体架构 ===== -->
+<h2>一、统一次数体系总览</h2>
+<p class="section-desc">
+  全系统只用一个用户可见单位：<strong>"次"</strong>。1 次 = 1 次 AI 调用，不论功能。<br>
+  后端内部用 Token 做成本核算，但永远不暴露给前端用户。
+</p>
+
+<div class="card" style="text-align:center;padding:40px;">
+  <p style="font-size:18px;color:#666;margin:0 0 8px;">用户能看到的全部</p>
+  <div style="display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;">
+    <div style="text-align:center;">
+      <div class="mega-num" style="color:var(--green);">15</div>
+      <div style="font-size:16px;font-weight:700;">本月剩余次数</div>
+    </div>
+    <div class="big-arrow">+</div>
+    <div style="text-align:center;">
+      <div class="mega-num" style="color:var(--purple);">8</div>
+      <div style="font-size:16px;font-weight:700;">加油包次数</div>
+    </div>
+    <div class="big-arrow">=</div>
+    <div style="text-align:center;background:var(--accent);padding:20px 28px;border:var(--border);">
+      <div class="mega-num">23</div>
+      <div style="font-size:16px;font-weight:700;">总共可用</div>
+    </div>
+  </div>
+  <p style="margin-top:20px;font-size:14px;color:#666;">
+    每月 1 号套餐次数自动刷新。加油包次数不过期。<br>
+    两种次数分开存储，消耗时<strong>先扣月度套餐次数，用完再扣加油包次数</strong>（最大化用户利益）。
+  </p>
+</div>
+
+<!-- ===== 二、数据库配置 ===== -->
+<h2>二、配置存储架构</h2>
+<p class="section-desc">
+  所有参数存储在 CloudBase <code>system_settings</code> 集合。Admin 后台修改即时生效。
+</p>
+
+<h3>2.1 订阅配置：<code>settings_subscription</code></h3>
+<div class="json-block">
+<span class="comment">// CloudBase 集合: system_settings</span>
+<span class="comment">// 文档 _id: settings_subscription</span>
+{
+  <span class="key">"configVersion"</span>: <span class="num">2</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"2026-06-08T00:00:00Z"</span>,
+
+  <span class="comment">// ===== 免费试用 =====</span>
+  <span class="key">"trial"</span>: {
+    <span class="key">"enabled"</span>: <span class="num">true</span>,
+    <span class="key">"durationDays"</span>: <span class="num">7</span>,                <span class="comment">// 注册后 N 天全功能体验（不限次数）</span>
+    <span class="key">"extendOnReferral"</span>: <span class="num">3</span>           <span class="comment">// 成功邀请一人，试用期延长天数</span>
+  },
+
+  <span class="comment">// ===== 三档套餐（统一月度次数） =====</span>
+  <span class="key">"plans"</span>: {
+    <span class="key">"free"</span>: {
+      <span class="key">"name"</span>: <span class="str">"免费版"</span>,
+      <span class="key">"priceYuan"</span>: <span class="num">0</span>,
+      <span class="key">"monthlyCalls"</span>: <span class="num">20</span>,              <span class="comment">// 每月 20 次 AI 调用</span>
+      <span class="key">"maxCrushes"</span>: <span class="num">1</span>,
+      <span class="key">"features"</span>: [<span class="str">"记录"</span>, <span class="str">"时间轴"</span>, <span class="str">"规则分析"</span>, <span class="str">"即时反馈"</span>, <span class="str">"事件理解"</span>, <span class="str">"周复盘"</span>, <span class="str">"附件识别"</span>],
+      <span class="key">"excludedFeatures"</span>: [<span class="str">"星象速写"</span>, <span class="str">"小咪帮你说"</span>, <span class="str">"自定义宠物"</span>, <span class="str">"自定义AI风格"</span>, <span class="str">"小咪多轮策略"</span>]
+    },
+    <span class="key">"pro"</span>: {
+      <span class="key">"name"</span>: <span class="str">"Pro"</span>,
+      <span class="key">"priceYuan"</span>: <span class="num">19</span>,
+      <span class="key">"priceYuanAnnual"</span>: <span class="num">168</span>,
+      <span class="key">"priceYuanStudent"</span>: <span class="num">12</span>,
+      <span class="key">"monthlyCalls"</span>: <span class="num">200</span>,             <span class="comment">// 每月 200 次 AI 调用</span>
+      <span class="key">"maxCrushes"</span>: <span class="num">3</span>,
+      <span class="key">"features"</span>: [<span class="str">"免费版全部"</span>, <span class="str">"星象速写"</span>, <span class="str">"小咪帮你说（单轮）"</span>, <span class="str">"更多附件识别"</span>],
+      <span class="key">"excludedFeatures"</span>: [<span class="str">"小咪多轮策略"</span>, <span class="str">"自定义宠物"</span>, <span class="str">"自定义AI风格"</span>]
+    },
+    <span class="key">"ultra"</span>: {
+      <span class="key">"name"</span>: <span class="str">"无限版"</span>,
+      <span class="key">"priceYuan"</span>: <span class="num">39</span>,
+      <span class="key">"priceYuanAnnual"</span>: <span class="num">298</span>,
+      <span class="key">"priceYuanStudent"</span>: <span class="num">25</span>,
+      <span class="key">"monthlyCalls"</span>: <span class="num">-1</span>,              <span class="comment">// -1 = 不限次数</span>
+      <span class="key">"maxCrushes"</span>: <span class="num">-1</span>,
+      <span class="key">"features"</span>: [<span class="str">"Pro全部"</span>, <span class="str">"小咪多轮策略"</span>, <span class="str">"自定义宠物"</span>, <span class="str">"自定义AI风格"</span>],
+      <span class="key">"excludedFeatures"</span>: []
+    }
+  },
+
+  <span class="comment">// ===== 分享奖励（统一用次数） =====</span>
+  <span class="key">"referral"</span>: {
+    <span class="key">"enabled"</span>: <span class="num">true</span>,
+    <span class="key">"inviterRewardCalls"</span>: <span class="num">3</span>,         <span class="comment">// 邀请人奖励 3 次（加油包次数，不过期）</span>
+    <span class="key">"inviterTrialExtendDays"</span>: <span class="num">3</span>,   <span class="comment">// 邀请人试用期延长（仅免费用户）</span>
+    <span class="key">"inviteeRewardCalls"</span>: <span class="num">5</span>,         <span class="comment">// 被邀请人奖励 5 次（加油包次数，不过期）</span>
+    <span class="key">"inviteeRewardLabel"</span>: <span class="str">"好友邀请奖励"</span>,
+    <span class="key">"weeklyInviteCap"</span>: <span class="num">5</span>,           <span class="comment">// 邀请人单周有效邀请上限</span>
+    <span class="key">"requireFirstEvent"</span>: <span class="num">true</span>      <span class="comment">// 被邀请人需创建 Crush 并记录 ≥1 条事件</span>
+  }
+}
+</div>
+
+<h3>2.2 充值配置：<code>settings_billing</code>（扩展）</h3>
+<div class="json-block">
+<span class="comment">// 原有 system_settings.settings_billing 的 rechargeTiers 字段</span>
+<span class="comment">// 改为售卖"次数"（底层仍追踪 token 消耗用于成本核算）</span>
+{
+  <span class="key">"rechargeTiers"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"rescue_3"</span>,   <span class="key">"name"</span>: <span class="str">"急救包"</span>,
+      <span class="key">"priceFen"</span>: <span class="num">300</span>,        <span class="key">"grantCalls"</span>: <span class="num">5</span>,
+      <span class="key">"bonusCalls"</span>: <span class="num">0</span>,      <span class="key">"enabled"</span>: <span class="num">true</span>,
+      <span class="key">"tagline"</span>: <span class="str">"差一点，救个急"</span>
+    },
+    {
+      <span class="key">"id"</span>: <span class="str">"boost_8"</span>,    <span class="key">"name"</span>: <span class="str">"加油包"</span>,
+      <span class="key">"priceFen"</span>: <span class="num">800</span>,        <span class="key">"grantCalls"</span>: <span class="num">20</span>,
+      <span class="key">"bonusCalls"</span>: <span class="num">3</span>,      <span class="key">"enabled"</span>: <span class="num">true</span>,
+      <span class="key">"tagline"</span>: <span class="str">"这个月特别需要"</span>
+    },
+    {
+      <span class="key">"id"</span>: <span class="str">"turbo_18"</span>,   <span class="key">"name"</span>: <span class="str">"大补包"</span>,
+      <span class="key">"priceFen"</span>: <span class="num">1800</span>,       <span class="key">"grantCalls"</span>: <span class="num">50</span>,
+      <span class="key">"bonusCalls"</span>: <span class="num">10</span>,     <span class="key">"enabled"</span>: <span class="num">true</span>,
+      <span class="key">"tagline"</span>: <span class="str">"重度用户续命"</span>
+    }
+  ]
+}
+</div>
+
+<h3>2.3 用户集合 <code>users</code> 新增字段</h3>
+
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><code>plan</code></td><td>string</td><td>当前套餐：<code>"free"</code> | <code>"pro"</code> | <code>"ultra"</code></td></tr>
+  <tr><td><code>trialEndsAt</code></td><td>Date|null</td><td>试用期结束时间。试用期内不限次数 + 全功能</td></tr>
+  <tr><td><code>planExpiresAt</code></td><td>Date|null</td><td>Pro/Ultra 到期时间。免费用户为 <code>null</code></td></tr>
+  <tr><td><code>monthlyCallsReset</code></td><td>Date</td><td>套餐次数重置时间（每月 1 号）。到达后 <code>monthlyCallsUsed</code> 清零</td></tr>
+  <tr><td><code>monthlyCallsUsed</code></td><td>number</td><td>当月已用套餐次数。与 <code>plan.monthlyCalls</code> 比较判断是否超额</td></tr>
+  <tr><td><code>extraCalls</code></td><td>number</td><td>加油包/邀请奖励的额外次数余额。不过期，用完为止</td></tr>
+  <tr><td><code>inviteCode</code></td><td>string</td><td>用户唯一邀请码（6 位，注册时生成）</td></tr>
+  <tr><td><code>invitedBy</code></td><td>string|null</td><td>邀请人 userId</td></tr>
+  <tr><td><code>referralCount</code></td><td>number</td><td>累计成功邀请人数</td></tr>
+  <tr><td><code>referralWeekStart</code></td><td>Date</td><td>本周邀请计数起点</td></tr>
+  <tr><td><code>referralWeekCount</code></td><td>number</td><td>本周成功邀请次数</td></tr>
+</table>
+
+<!-- ===== 三、免费试用期 ===== -->
+<h2>三、免费试用期</h2>
+<p class="section-desc">
+  新用户注册即进入 <strong>N 天全功能不限次数</strong> 体验。试用期结束后回落免费版（20 次/月）。
+</p>
+
+<div class="grid2">
+  <div class="kpi">
+    <div class="num" style="font-size:48px;color:var(--green);">7</div>
+    <div class="lbl">试用天数（默认）<br><span class="note config-badge" style="display:inline-block;margin-top:8px;">后台可配</span></div>
+  </div>
+  <div class="kpi">
+    <div class="num" style="font-size:48px;">∞</div>
+    <div class="lbl">试用期内不限次数<br><span style="color:var(--green);font-weight:900;">全功能开放</span></div>
+  </div>
+</div>
+
+<div class="card green">
+  <p style="font-weight:900;margin:0 0 8px;">用户时间线</p>
+  <div class="flow-row" style="margin-top:12px;">
+    <div class="flow-step" style="background:var(--accent);">Day 0<br>📱 注册<br><small>试用开始</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Day 0-7<br>⭐ 全功能 ∞ 次<br><small>随便用</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Day 7<br>🔄 回落免费版<br><small>20次/月 · 部分功能受限</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="background:#E8F8F5;">Day N<br>💡 升级 Pro<br><small>200次/月</small></div>
+  </div>
+  <p style="margin-top:12px;font-size:13px;color:#666;">
+    ⚙ 配置路径：<code>settings_subscription.trial.durationDays</code>（默认 7，可改 3/14/30）
+  </p>
+</div>
+
+<h3>试用期 vs 正式免费版 对比</h3>
+<table>
+  <tr><th></th><th>试用期（Day 0-N）</th><th>正式免费版</th></tr>
+  <tr><td>每月 AI 次数</td><td class="yes">不限</td><td><strong>20 次/月</strong> <span class="tag config">可配</span></td></tr>
+  <tr><td>星象速写</td><td class="yes">✓</td><td class="no">✗</td></tr>
+  <tr><td>小咪帮你说</td><td class="yes">✓</td><td class="no">✗</td></tr>
+  <tr><td>周复盘</td><td class="yes">✓</td><td class="yes">✓（消耗次数）</td></tr>
+  <tr><td>即时反馈</td><td class="yes">✓</td><td class="yes">✓（消耗次数）</td></tr>
+  <tr><td>Crush 数量</td><td>3 个</td><td>1 个</td></tr>
+</table>
+
+<!-- ===== 四、三档套餐 ===== -->
+<h2>四、三档套餐</h2>
+<p class="section-desc">
+  <strong>核心指标：月度可用次数。</strong>所有 AI 功能统一从这里扣，1 次调用 = 1 次消耗。<br>
+  以下功能不可用（不消耗次数、页面不可见或灰色）：星象速写、小咪帮你说、自定义宠物、自定义AI风格、小咪多轮策略。
+</p>
+
+<div class="grid3">
+  <!-- 免费版 -->
+  <div class="card plan-card free-card">
+    <div class="plan-header">
+      <span class="tag free">免费版</span>
+      <div class="price" style="margin:14px 0 8px;">¥0</div>
+      <p style="font-size:13px;color:#666;">永久可用</p>
+    </div>
+    <div class="plan-body">
+      <p style="font-size:18px;font-weight:900;">📊 <span style="font-size:28px;">20</span> 次/月</p>
+      <p style="color:#999;font-size:12px;margin-bottom:8px;">⚙ 可配</p>
+      <p>✓ 1 个 Crush</p>
+      <p>✓ 即时反馈 / 事件理解</p>
+      <p>✓ 周复盘 / 附件识别</p>
+      <p style="color:#999;">✗ 星象速写</p>
+      <p style="color:#999;">✗ 小咪帮你说</p>
+      <p style="color:#999;">✗ 自定义 / 多轮策略</p>
+    </div>
+  </div>
+
+  <!-- Pro -->
+  <div class="card plan-card pro-card" style="border-width:3px;">
+    <div class="plan-header" style="background:var(--green);color:#fff;">
+      <span class="tag" style="background:#fff;color:var(--green);">Pro · 推荐</span>
+      <div class="price" style="margin:14px 0 8px;color:#fff;">¥19<small style="color:rgba(255,255,255,0.7);">/月</small></div>
+      <p style="font-size:14px;color:#fff;">年付 ¥168（¥14/月）</p>
+      <div class="student-tag">🎓 学生价 ¥12/月</div>
+    </div>
+    <div class="plan-body">
+      <p style="font-size:18px;font-weight:900;">📊 <span style="font-size:28px;">200</span> 次/月</p>
+      <p style="color:#999;font-size:12px;margin-bottom:8px;">⚙ 可配</p>
+      <p>✓ 免费版全部功能</p>
+      <p>✓ 3 个 Crush</p>
+      <p>✓ 星象速写</p>
+      <p>✓ 小咪帮你说（单轮）</p>
+      <p style="color:#999;">✗ 小咪多轮策略</p>
+      <p style="color:#999;">✗ 自定义宠物/分析风格</p>
+    </div>
+  </div>
+
+  <!-- 无限版 -->
+  <div class="card plan-card ultra-card">
+    <div class="plan-header" style="background:#111;color:var(--accent);">
+      <span class="tag ultra">无限版</span>
+      <div class="price" style="margin:14px 0 8px;color:var(--accent);">¥39<small style="color:rgba(255,217,61,0.7);">/月</small></div>
+      <p style="font-size:14px;color:var(--accent);">年付 ¥298（¥25/月）</p>
+      <div class="student-tag" style="background:var(--accent);color:#111;">🎓 学生价 ¥25/月</div>
+    </div>
+    <div class="plan-body">
+      <p style="font-size:18px;font-weight:900;">📊 <span style="font-size:28px;">∞</span> 不限次</p>
+      <p style="color:#999;font-size:12px;margin-bottom:8px;">⚙ 可配</p>
+      <p>✓ Pro 全部功能</p>
+      <p>✓ 不限 Crush 数量</p>
+      <p>✓ 小咪多轮策略</p>
+      <p>✓ 自定义宠物形象</p>
+      <p>✓ 自定义 AI 分析风格</p>
+      <p style="color:var(--accent);">✓ 优先体验新功能</p>
+    </div>
+  </div>
+</div>
+
+<h3>4.1 价格参数一览</h3>
+<table>
+  <tr><th>参数</th><th>默认值</th><th>配置路径</th></tr>
+  <tr><td>免费版 月次数</td><td><strong>20 次</strong></td><td class="config-path">plans.free.monthlyCalls</td></tr>
+  <tr><td>Pro 月费</td><td><strong>¥19</strong></td><td class="config-path">plans.pro.priceYuan</td></tr>
+  <tr><td>Pro 年费</td><td><strong>¥168</strong>（¥14/月）</td><td class="config-path">plans.pro.priceYuanAnnual</td></tr>
+  <tr><td>Pro 学生价</td><td><strong>¥12</strong>/月</td><td class="config-path">plans.pro.priceYuanStudent</td></tr>
+  <tr><td>Pro 月次数</td><td><strong>200 次</strong></td><td class="config-path">plans.pro.monthlyCalls</td></tr>
+  <tr><td>无限版 月费</td><td><strong>¥39</strong></td><td class="config-path">plans.ultra.priceYuan</td></tr>
+  <tr><td>无限版 年费</td><td><strong>¥298</strong>（¥25/月）</td><td class="config-path">plans.ultra.priceYuanAnnual</td></tr>
+  <tr><td>无限版 学生价</td><td><strong>¥25</strong>/月</td><td class="config-path">plans.ultra.priceYuanStudent</td></tr>
+</table>
+
+<h3>4.2 功能开放矩阵</h3>
+<table>
+  <tr><th>功能</th><th>免费版<br><small>20次/月</small></th><th>Pro<br><small>200次/月</small></th><th>无限版<br><small>∞</small></th></tr>
+  <tr><td>快速记录 & 时间轴</td><td>✓</td><td>✓</td><td>✓</td></tr>
+  <tr><td>规则分析（本地计算）</td><td>✓ 不耗次数</td><td>✓ 不耗次数</td><td>✓ 不耗次数</td></tr>
+  <tr><td>AI 事件理解</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td></tr>
+  <tr><td>AI 即时反馈</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td></tr>
+  <tr><td>周复盘</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td></tr>
+  <tr><td>附件识别</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td></tr>
+  <tr><td>星象速写</td><td class="no">✗</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td></tr>
+  <tr><td>小咪帮你说（单轮）</td><td class="no">✗</td><td>✓ 消耗 1 次</td><td>✓ 消耗 1 次</td></tr>
+  <tr><td>小咪帮你说（多轮策略）</td><td class="no">✗</td><td class="no">✗</td><td>✓ 消耗 1 次</td></tr>
+  <tr><td>自定义宠物形象</td><td class="no">✗</td><td class="no">✗</td><td>✓</td></tr>
+  <tr><td>自定义 AI 分析风格</td><td class="no">✗</td><td class="no">✗</td><td>✓</td></tr>
+  <tr><td>Crush 数量</td><td>1</td><td>3</td><td>不限</td></tr>
+</table>
+
+<div class="card green">
+  <p style="font-weight:900;margin:0 0 6px;">💡 为什么可以"全部统一 1 次"</p>
+  <p style="margin:0;font-size:14px;">
+    即时反馈（~1,700 token）和周复盘（~1,670 token）的 API 成本差异不到 <strong>¥0.001</strong>。<br>
+    从成本角度完全没有必要对用户做差异化定价。统一消耗对用户心智友好，后端成本可忽略。<br>
+    如果未来上线"超深度分析"（如 ¥0.05+ 成本的功能），可以在该功能上标注"消耗 3 次"作为例外。
+  </p>
+</div>
+
+<!-- ===== 五、次数消耗逻辑 ===== -->
+<h2>五、次数消耗逻辑</h2>
+
+<div class="card">
+  <p style="font-weight:900;margin-bottom:8px;">每次 AI 调用前执行（伪代码）</p>
+  <div class="json-block" style="margin:0;">
+<span class="comment">// 云函数入口处统一调用 checkAndConsumeCall()</span>
+<span class="keyword">async function</span> <span class="key">checkAndConsumeCall</span>(db, userId) {
+  <span class="keyword">const</span> user = <span class="keyword">await</span> db.collection(<span class="str">'users'</span>).doc(userId).get()
+  <span class="keyword">const</span> now = <span class="keyword">new</span> <span class="keyword">Date</span>()
+
+  <span class="comment">// 1. 试用期内 → 直接放行</span>
+  <span class="keyword">if</span> (user.trialEndsAt && now &lt; user.trialEndsAt) {
+    <span class="keyword">return</span> { <span class="key">allowed</span>: <span class="num">true</span>, <span class="key">source</span>: <span class="str">'trial'</span> }
+  }
+
+  <span class="comment">// 2. 无限版 → 直接放行</span>
+  <span class="keyword">if</span> (user.plan === <span class="str">'ultra'</span>) {
+    <span class="keyword">return</span> { <span class="key">allowed</span>: <span class="num">true</span>, <span class="key">source</span>: <span class="str">'ultra'</span> }
+  }
+
+  <span class="comment">// 3. 月初重置套餐次数</span>
+  <span class="keyword">const</span> monthStart = <span class="keyword">new</span> <span class="keyword">Date</span>(now.getFullYear(), now.getMonth(), <span class="num">1</span>)
+  <span class="keyword">if</span> (!user.monthlyCallsReset || user.monthlyCallsReset &lt; monthStart) {
+    <span class="keyword">await</span> db.collection(<span class="str">'users'</span>).doc(userId).update({
+      <span class="key">monthlyCallsUsed</span>: <span class="num">0</span>,
+      <span class="key">monthlyCallsReset</span>: monthStart
+    })
+    user.monthlyCallsUsed = <span class="num">0</span>
+  }
+
+  <span class="comment">// 4. 获取当前套餐次数上限</span>
+  <span class="keyword">const</span> planConfig = <span class="keyword">await</span> getSubscriptionConfig()
+  <span class="keyword">const</span> monthlyLimit = planConfig.plans[user.plan].monthlyCalls
+
+  <span class="comment">// 5. 先扣套餐次数</span>
+  <span class="keyword">if</span> (user.monthlyCallsUsed &lt; monthlyLimit) {
+    <span class="keyword">await</span> db.collection(<span class="str">'users'</span>).doc(userId).update({
+      <span class="key">monthlyCallsUsed</span>: user.monthlyCallsUsed + <span class="num">1</span>
+    })
+    <span class="keyword">return</span> { <span class="key">allowed</span>: <span class="num">true</span>, <span class="key">source</span>: <span class="str">'monthly'</span>, <span class="key">remaining</span>: monthlyLimit - user.monthlyCallsUsed - <span class="num">1</span> }
+  }
+
+  <span class="comment">// 6. 套餐用完，扣加油包/奖励次数</span>
+  <span class="keyword">if</span> (user.extraCalls &gt; <span class="num">0</span>) {
+    <span class="keyword">await</span> db.collection(<span class="str">'users'</span>).doc(userId).update({
+      <span class="key">extraCalls</span>: user.extraCalls - <span class="num">1</span>
+    })
+    <span class="keyword">return</span> { <span class="key">allowed</span>: <span class="num">true</span>, <span class="key">source</span>: <span class="str">'extra'</span>, <span class="key">remaining</span>: user.extraCalls - <span class="num">1</span> }
+  }
+
+  <span class="comment">// 7. 全没了 → 拒绝</span>
+  <span class="keyword">return</span> {
+    <span class="key">allowed</span>: <span class="num">false</span>,
+    <span class="key">code</span>: <span class="str">'QUOTA_EXCEEDED'</span>,
+    <span class="key">message</span>: <span class="str">'本月次数已用完'</span>,
+    <span class="key">actions</span>: [
+      { <span class="key">type</span>: <span class="str">'upgrade'</span>, <span class="key">label</span>: <span class="str">'升级 Pro（200次/月）'</span> },
+      { <span class="key">type</span>: <span class="str">'recharge'</span>, <span class="key">label</span>: <span class="str">'买个加油包'</span> }
+    ]
+  }
+}
+  </div>
+</div>
+
+<div class="card blue" style="margin-top:16px;">
+  <p style="font-weight:900;margin:0 0 6px;">消耗优先级</p>
+  <p style="margin:0;font-size:14px;">
+    <strong>套餐月度次数 → 加油包/奖励次数</strong><br>
+    先扣每月刷新的套餐次数（不用白不用），套餐次数用完才扣加油包的不过期次数。<br>
+    这样用户买加油包不会觉得浪费——它永远在套餐用完后再扣。
+  </p>
+</div>
+
+<!-- ===== 六、加油包 ===== -->
+<h2>六、次数加油包</h2>
+<p class="section-desc">
+  套餐次数用完后的补充方案。买的次数<strong>不过期</strong>，直到用完为止。<br>
+  价格和次数在 <code>settings_billing.rechargeTiers</code> 配置。
+</p>
+
+<div class="grid3">
+  <div class="card" style="text-align:center;">
+    <p style="font-weight:900;font-size:18px;">🚑 急救包</p>
+    <div class="price" style="font-size:40px;">¥3</div>
+    <p style="font-size:15px;font-weight:700;">+5 次</p>
+    <p style="font-size:12px;color:#999;">¥0.60 / 次</p>
+    <p style="background:var(--accent);display:inline-block;padding:4px 12px;font-size:12px;font-weight:700;margin-top:8px;">差一点，救个急</p>
+  </div>
+  <div class="card" style="text-align:center;border-color:var(--green);">
+    <p style="font-weight:900;font-size:18px;">⚡ 加油包</p>
+    <div class="price" style="font-size:40px;">¥8</div>
+    <p style="font-size:15px;font-weight:700;">+20 次 <span style="color:var(--green);font-size:13px;">(+3赠)</span></p>
+    <p style="font-size:12px;color:#999;">¥0.35 / 次</p>
+    <p style="background:var(--green);color:#fff;display:inline-block;padding:4px 12px;font-size:12px;font-weight:700;margin-top:8px;">这个月特别需要 🌟</p>
+  </div>
+  <div class="card" style="text-align:center;">
+    <p style="font-weight:900;font-size:18px;">💪 大补包</p>
+    <div class="price" style="font-size:40px;">¥18</div>
+    <p style="font-size:15px;font-weight:700;">+50 次 <span style="color:var(--green);font-size:13px;">(+10赠)</span></p>
+    <p style="font-size:12px;color:#999;">¥0.30 / 次</p>
+    <p style="background:#111;color:var(--accent);display:inline-block;padding:4px 12px;font-size:12px;font-weight:700;margin-top:8px;">重度用户续命</p>
+  </div>
+</div>
+
+<p class="note" style="margin-top:12px;">⚙ 每档的 priceFen、grantCalls、bonusCalls 均可独立配置。enable=false 可临时下架某档。</p>
+
+<!-- ===== 七、分享奖励 ===== -->
+<h2>七、分享奖励</h2>
+<p class="section-desc">
+  <strong>双方都奖。</strong>所有参数可配。
+</p>
+
+<div class="grid2">
+  <div class="card" style="border-color:var(--green);">
+    <p style="font-weight:900;font-size:17px;">👤 邀请人（分享者）</p>
+    <table style="margin-top:12px;border:none;">
+      <tr><td style="border:none;font-weight:700;">次数奖励</td><td style="border:none;color:#27ae60;font-weight:900;font-size:18px;">+3 次</td></tr>
+      <tr><td style="border:none;font-weight:700;">类型</td><td style="border:none;">加油包次数（不过期）</td></tr>
+      <tr><td style="border:none;font-weight:700;">试用期延长</td><td style="border:none;color:#9B59B6;font-weight:900;">+3 天</td></tr>
+      <tr><td style="border:none;font-weight:700;">上限</td><td style="border:none;">5 人/周 <span class="tag config">可配</span></td></tr>
+    </table>
+  </div>
+  <div class="card" style="border-color:var(--blue);">
+    <p style="font-weight:900;font-size:17px;">👥 被邀请人（新用户）</p>
+    <table style="margin-top:12px;border:none;">
+      <tr><td style="border:none;font-weight:700;">次数奖励</td><td style="border:none;color:#5B8DEF;font-weight:900;font-size:18px;">+5 次</td></tr>
+      <tr><td style="border:none;font-weight:700;">类型</td><td style="border:none;">加油包次数（不过期）</td></tr>
+      <tr><td style="border:none;font-weight:700;">显示标签</td><td style="border:none;">"好友邀请奖励"</td></tr>
+      <tr><td style="border:none;font-weight:700;">叠加</td><td style="border:none;">与注册奖励叠加</td></tr>
+    </table>
+  </div>
+</div>
+
+<h3>7.1 防滥用规则</h3>
+<table>
+  <tr><th>规则</th><th>默认值</th><th>配置路径</th></tr>
+  <tr><td>邀请人周上限</td><td>5 人/周</td><td class="config-path">referral.weeklyInviteCap</td></tr>
+  <tr><td>有效邀请条件</td><td>被邀请人创建 Crush + 记录 ≥1 条事件</td><td class="config-path">referral.requireFirstEvent</td></tr>
+  <tr><td>奖励发放时机</td><td>被邀请人完成首条事件记录后 → 双方同时到账</td><td class="config-path">—（云函数逻辑）</td></tr>
+  <tr><td>同设备检测</td><td>同 deviceId 不计为有效邀请</td><td class="config-path">—（云函数逻辑）</td></tr>
+</table>
+
+<h3>7.2 分享路径</h3>
+<div class="flow-row">
+  <div class="flow-step" style="background:var(--accent);">📤 A 分享邀请卡片</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">📥 B 通过链接注册</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">📝 B 创建 Crush + 首条事件</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:#E8F8F5;">🎁 A +3次<br>B +5次</div>
+</div>
+
+<!-- ===== 八、用户看到的界面 ===== -->
+<h2>八、前端展示示意</h2>
+<p class="section-desc">用户永远只看两个数字。Token、模型定价、API 成本等后端概念完全不出现。</p>
+
+<div class="card" style="background:#fff;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+    <div style="text-align:center;flex:1;min-width:140px;">
+      <div style="font-size:13px;color:#999;font-weight:700;text-transform:uppercase;">本月套餐</div>
+      <div style="font-size:12px;color:#999;">Pro · 200次/月</div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-top:8px;">
+        <span style="font-size:48px;font-weight:900;">156</span>
+        <span style="font-size:16px;color:#666;">/ 200</span>
+      </div>
+      <div style="font-size:12px;color:#999;">剩余套餐次数</div>
+      <div style="font-size:11px;color:#ccc;">每月 1 号刷新</div>
+    </div>
+    <div style="font-size:28px;color:#ccc;font-weight:900;">+</div>
+    <div style="text-align:center;flex:1;min-width:140px;">
+      <div style="font-size:13px;color:#999;font-weight:700;text-transform:uppercase;">加油包</div>
+      <div style="font-size:12px;color:#999;">不过期</div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-top:8px;">
+        <span style="font-size:48px;font-weight:900;">8</span>
+        <span style="font-size:16px;color:#666;">次</span>
+      </div>
+      <div style="font-size:12px;color:#999;">额外次数</div>
+      <div style="font-size:11px;color:#ccc;">用完为止</div>
+    </div>
+    <div style="font-size:28px;color:#ccc;font-weight:900;">=</div>
+    <div style="text-align:center;flex:1;min-width:140px;background:var(--accent);padding:16px;border:2px solid #111;">
+      <div style="font-size:13px;font-weight:900;">总共可用</div>
+      <div style="font-size:56px;font-weight:900;line-height:1;">164</div>
+      <div style="font-size:14px;font-weight:700;">次</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;">
+    <button style="padding:8px 16px;background:var(--green);color:#fff;border:2px solid #111;font-weight:700;font-size:13px;cursor:pointer;">升级套餐</button>
+    <button style="padding:8px 16px;background:#fff;border:2px solid #111;font-weight:700;font-size:13px;cursor:pointer;">买加油包</button>
+    <button style="padding:8px 16px;background:var(--accent);border:2px solid #111;font-weight:700;font-size:13px;cursor:pointer;">邀请好友 +3次</button>
+  </div>
+</div>
+
+<!-- ===== 九、与 v2.0 / v3.0 对比 ===== -->
+<h2>九、版本对比</h2>
+
+<table>
+  <tr><th>维度</th><th>v2.0</th><th>v3.0</th><th style="background:var(--green);">v3.1（当前）</th></tr>
+  <tr>
+    <td>用户计价单位</td>
+    <td>Token（模糊）</td>
+    <td>Token + 次数（两套）</td>
+    <td style="background:#E8F8F5;"><strong>次数（唯一）</strong></td>
+  </tr>
+  <tr>
+    <td>套餐配额</td>
+    <td>各功能独立 Token 上限</td>
+    <td>各功能独立次数 + Token 总额</td>
+    <td style="background:#E8F8F5;"><strong>统一月度次数池</strong></td>
+  </tr>
+  <tr>
+    <td>加油包</td>
+    <td>¥6/12/25 · 卖 Token</td>
+    <td>¥3/8/18 · 卖 Token</td>
+    <td style="background:#E8F8F5;"><strong>¥3/8/18 · 卖次数</strong></td>
+  </tr>
+  <tr>
+    <td>分享奖励</td>
+    <td>双方 +2,000 Token</td>
+    <td>邀请人 +3,000 Token · 被邀请人 +5,000 Token</td>
+    <td style="background:#E8F8F5;"><strong>邀请人 +3次 · 被邀请人 +5次</strong></td>
+  </tr>
+  <tr>
+    <td>用户心智</td>
+    <td>"Token 是什么？"</td>
+    <td>"次数和 Token 什么关系？"</td>
+    <td style="background:#E8F8F5;"><strong>"我还剩几次"</strong></td>
+  </tr>
+  <tr>
+    <td>后台配置</td>
+    <td>无（写死）</td>
+    <td>全部可配</td>
+    <td style="background:#E8F8F5;"><strong>全部可配（更简洁）</strong></td>
+  </tr>
+  <tr>
+    <td>后端 Token 核算</td>
+    <td>有</td>
+    <td>有</td>
+    <td style="background:#E8F8F5;"><strong>有（用户不可见）</strong></td>
+  </tr>
+</table>
+
+<!-- ===== 十、收入预测 ===== -->
+<h2>十、收入预测</h2>
+
+<h3>保守场景（月活 5,000）</h3>
+<table>
+  <tr><th>层级</th><th>用户数</th><th>占比</th><th>月单价</th><th>月收入</th></tr>
+  <tr><td>免费版</td><td>3,250</td><td>65%</td><td>¥0</td><td>¥0</td></tr>
+  <tr><td>Pro（月付）</td><td>700</td><td>14%</td><td>¥19</td><td>¥13,300</td></tr>
+  <tr><td>Pro（年付）</td><td>450</td><td>9%</td><td>¥14/月</td><td>¥6,300</td></tr>
+  <tr><td>Pro（学生）</td><td>200</td><td>4%</td><td>¥12</td><td>¥2,400</td></tr>
+  <tr><td>无限版</td><td>320</td><td>6.4%</td><td>¥39</td><td>¥12,480</td></tr>
+  <tr><td>无限版（年付）</td><td>80</td><td>1.6%</td><td>¥25/月</td><td>¥2,000</td></tr>
+  <tr><td>加油包</td><td>250</td><td>5%</td><td>~¥8 avg</td><td>¥2,000</td></tr>
+  <tr style="font-weight:900;background:var(--accent);"><td>合计</td><td>5,000</td><td>100%</td><td></td><td><strong>¥38,480/月</strong></td></tr>
+</table>
+
+<div class="grid4" style="margin-top:24px;">
+  <div class="kpi"><div class="num">~¥46万</div><div class="lbl">保守年收入</div></div>
+  <div class="kpi"><div class="num">35%</div><div class="lbl">付费转化率</div></div>
+  <div class="kpi"><div class="num">~¥184万</div><div class="lbl">乐观年收入（2万MAU）</div></div>
+  <div class="kpi"><div class="num">99%+</div><div class="lbl">Pro 毛利率</div></div>
+</div>
+
+<!-- ===== 十一、API 成本附注 ===== -->
+<h2>十一、API 成本（内部核算，用户不可见）</h2>
+
+<div class="card green">
+  <p style="font-weight:900;margin:0 0 6px;">后端追踪实际 Token 消耗，仅用于成本核算，不暴露给用户</p>
+  <p style="margin:0;font-size:14px;">
+    基于 v2.0 365 条真实调用数据：<br>
+    · 每次 AI 调用的 API 成本：<strong>¥0.001 ~ ¥0.01</strong>（混元 HY）<br>
+    · 免费用户 20 次/月 → 月成本 ¥0.02 ~ ¥0.20<br>
+    · Pro 用户 200 次/月 → 月成本 ¥0.20 ~ ¥2.00<br>
+    · Pro 月费 ¥19，毛利率 <strong>90% ~ 99%</strong><br>
+    <code>token_usage_records</code> 集合持续记录每次调用的实际 token 消耗，用于运营分析和成本监控。<br>
+    用户侧永远只看到"次数"，不需要知道 token 是什么。
+  </p>
+</div>
+
+<!-- ===== 十二、实施优先级 ===== -->
+<h2>十二、实施优先级</h2>
+
+<table>
+  <tr><th>优先级</th><th>模块</th><th>说明</th></tr>
+  <tr style="background:#E8F8F5;">
+    <td><span class="badge rec">P0</span></td>
+    <td><strong>settings_subscription 配置文档 + 读写云函数</strong></td>
+    <td>基础设施。所有模块依赖此配置。</td>
+  </tr>
+  <tr style="background:#E8F8F5;">
+    <td><span class="badge rec">P0</span></td>
+    <td><strong>users 集合扩展（plan / trial / monthlyCalls / extraCalls）</strong></td>
+    <td>注册时初始化，调用时扣减。</td>
+  </tr>
+  <tr style="background:#FFF8E1;">
+    <td><span class="badge rec">P1</span></td>
+    <td><strong>AI 调用统一门控（checkAndConsumeCall）</strong></td>
+    <td>所有 AI 云函数接入，先扣次数再调 AI。</td>
+  </tr>
+  <tr style="background:#FFF8E1;">
+    <td><span class="badge rec">P1</span></td>
+    <td><strong>前端"我的次数"展示 + 升级/充值引导</strong></td>
+    <td>"我"页面显示套餐次数 + 额外次数 + 升级入口。</td>
+  </tr>
+  <tr style="background:#EDF3FF;">
+    <td><span class="badge rec">P2</span></td>
+    <td><strong>Admin 后台 subscription tab</strong></td>
+    <td>可视化编辑三档套餐、试用天数、奖励参数。</td>
+  </tr>
+  <tr style="background:#EDF3FF;">
+    <td><span class="badge rec">P2</span></td>
+    <td><strong>分享裂变云函数 + 前端邀请链路</strong></td>
+    <td>邀请码生成、分享卡片、奖励发放、防滥用。</td>
+  </tr>
+  <tr>
+    <td>P3</td>
+    <td>学生认证</td>
+    <td>edu 邮箱 / 学信网对接。</td>
+  </tr>
+  <tr>
+    <td>P3</td>
+    <td>邀请排行榜</td>
+    <td>社交传播 gamification。</td>
+  </tr>
+</table>
+
+<hr class="divider">
+
+<p style="text-align:center;color:#666;font-size:13px;margin-bottom:40px;">
+  Dom-Crush Subscription Model v3.1 · 2026-06-08 · 统一次数体系 · 全参数后台可配置<br>
+  套餐 = 次数 · 加油包 = 次数 · 邀请奖励 = 次数 · 用户只看一个数字<br>
+  配置存储：<code>system_settings.settings_subscription</code> + <code>system_settings.settings_billing</code>
+</p>
+
+</body>
+</html>

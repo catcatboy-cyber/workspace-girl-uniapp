@@ -31,7 +31,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, getTokenUsage, getTokenLedger, getVoiceUsage } from '@/utils/api'
 
 const activeTab = ref<'usage' | 'ledger' | 'voice'>('usage')
-const loading = ref(true)
+const loading = ref(false)
 const summary = ref({ promptTokens: 0, completionTokens: 0, totalTokens: 0, callCount: 0, unavailableCount: 0 })
 const records = ref<Array<any>>([])
 const ledgerRecords = ref<Array<any>>([])

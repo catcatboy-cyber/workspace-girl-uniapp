@@ -4,6 +4,7 @@ const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_share
 const { AI_REQUEST_TIMEOUT_MS, postChatCompletions, parseJSONContent } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
 const { checkBalance } = require('./_shared/billing')
+const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
 const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -121,6 +122,12 @@ exports.main = async (event = {}) => {
       return { success: true, analysis: { isChatRecord: false, extractedText: '', summary: 'Attachment prompt is disabled in admin.', confidence: 'low' } }
     }
     const prompt = promptMessages.map((item) => item.content).join('\n\n')
+
+    // Token门控
+    const accessAA = await checkFeatureAccess(db, userId, '附件识别')
+    if (!accessAA.allowed) return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: accessAA.reason }
+    const tokAA = await checkTokenBalance(db, userId, 1000)
+    if (!tokAA.ok) return { success: false, code: tokAA.code, message: tokAA.message, ...tokAA }
 
     const balCheck = await checkBalance(db, userId, runtimeConfig.attachmentMaxTokens)
     if (!balCheck.ok) {

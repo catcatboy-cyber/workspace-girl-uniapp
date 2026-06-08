@@ -89,7 +89,13 @@
     {
       "path": "pages/token-recharge/token-recharge",
       "style": {
-        "navigationBarTitleText": "充点Token能量"
+        "navigationBarTitleText": "Token 加油包"
+      }
+    },
+    {
+      "path": "pages/subscription/subscription",
+      "style": {
+        "navigationBarTitleText": "升级套餐"
       }
     },
     {
@@ -127,6 +133,24 @@
       "path": "pages/about/about",
       "style": {
         "navigationBarTitleText": "关于"
+      }
+    },
+    {
+      "path": "pages/taohua/taohua",
+      "style": {
+        "navigationBarTitleText": "命理桃花"
+      }
+    },
+    {
+      "path": "pages/taohua-share/taohua-share",
+      "style": {
+        "navigationBarTitleText": "桃花人格卡"
+      }
+    },
+    {
+      "path": "pages/references/references",
+      "style": {
+        "navigationBarTitleText": "引用经典"
       }
     },
     {

@@ -1,0 +1,10 @@
+{
+  "name": "sendTaohuaNotify",
+  "version": "1.0.0",
+  "description": "每日桃花运势推送（定时触发）",
+  "main": "index.js",
+  "dependencies": {
+    "lunar-javascript": "^1.7.7",
+    "@cloudbase/node-sdk": "^3.0.0"
+  }
+}
