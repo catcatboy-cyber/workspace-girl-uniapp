@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研发计划：月度复盘改造 + 命理桃花接入</title>
+<style>
+  :root {
+    --bg: #FFFDF5;
+    --card: #fff;
+    --border: #111;
+    --accent: #FFD93D;
+    --hero: #FF6B6B;
+    --green: #4ECDC4;
+    --text: #111;
+    --muted: #666;
+    --light: #999;
+    --red: #FF5252;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 24px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 900; border: 3px solid var(--border); background: var(--hero); padding: 28px 32px; margin-bottom: 28px; box-shadow: 6px 6px 0 var(--border); transform: rotate(-0.3deg); letter-spacing: -1px; }
+  h1::before { content: "CRUSH MASTER"; display: block; font-size: 11px; letter-spacing: 3px; color: rgba(0,0,0,0.5); margin-bottom: 6px; font-weight: 800; }
+  h2 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; border: 2px solid var(--border); background: var(--border); color: var(--accent); padding: 10px 18px; margin: 40px 0 18px; display: inline-block; }
+  h3 { font-size: 17px; font-weight: 900; margin: 28px 0 10px; padding-left: 12px; border-left: 5px solid var(--accent); }
+  h4 { font-size: 15px; font-weight: 800; margin: 18px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  p { margin: 8px 0; font-size: 15px; }
+  strong { color: var(--text); }
+  ul, ol { margin: 8px 0 8px 20px; }
+  li { margin: 4px 0; font-size: 14px; }
+  code { background: #f9f9f9; border: 1px solid #ddd; padding: 1px 6px; font-size: 13px; border-radius: 2px; }
+  pre { background: #fff; border: 2px solid var(--border); padding: 16px 20px; margin: 10px 0; font-size: 13px; line-height: 1.5; overflow-x: auto; box-shadow: 3px 3px 0 var(--border); }
+  pre code { background: none; border: none; padding: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th { background: var(--border); color: var(--accent); font-weight: 900; text-align: left; padding: 8px 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  td { padding: 8px 14px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafaf7; }
+
+  .card { background: var(--card); border: 2px solid var(--border); padding: 20px 24px; margin: 14px 0; box-shadow: 3px 3px 0 var(--border); }
+  .card.warn { border-left: 8px solid var(--red); }
+  .card.good { border-left: 8px solid var(--green); }
+  .card.ylw { border-left: 8px solid var(--accent); background: #FFFBEB; }
+
+  .tag { display: inline-block; padding: 3px 10px; border: 1.5px solid var(--border); font-size: 12px; font-weight: 800; margin: 2px 3px; }
+  .tag.blk { background: var(--border); color: #fff; }
+  .tag.ylw { background: var(--accent); }
+  .tag.grn { background: var(--green); }
+  .tag.red { background: var(--red); color: #fff; }
+
+  .phase-badge { display: inline-block; padding: 4px 14px; border: 2px solid var(--border); font-size: 13px; font-weight: 900; margin-right: 8px; }
+  .phase-badge.p0 { background: var(--border); color: var(--accent); }
+  .phase-badge.p1 { background: var(--green); color: var(--border); }
+  .phase-badge.p2 { background: var(--hero); color: #fff; }
+
+  hr { border: none; border-top: 2px dashed #ccc; margin: 32px 0; }
+
+  .signal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+  .signal-box { padding: 14px; border: 2px solid var(--border); text-align: center; background: #fff; }
+  .signal-box .emoji { font-size: 28px; }
+  .signal-box .label { display: block; font-weight: 900; font-size: 15px; margin-top: 4px; }
+  .signal-box .desc { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .mock-ui { background: #f9f9f9; border: 2px dashed #ccc; padding: 16px; margin: 10px 0; font-family: monospace; font-size: 13px; white-space: pre; line-height: 1.5; }
+
+  .info-popup { background: #fff; border: 3px solid var(--border); box-shadow: 8px 8px 0 var(--border); padding: 20px; margin: 10px 0; }
+  .info-popup .title { font-weight: 900; font-size: 16px; border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; }
+  .info-popup .section { background: #f9f9f9; border: 1.5px solid var(--border); padding: 10px 14px; margin: 8px 0; }
+  .info-popup .section-label { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<h1>研发计划<br>月度复盘改造 + 命理桃花接入</h1>
+
+<div class="card">
+  <h4>改动驱动</h4>
+  <p><strong>1. 复盘体系</strong>：当前 14 天滑动窗口——任意时间可生成、窗口高度重叠、变化微小、用户不知道该什么时候看。改为<strong>自然月复盘</strong>，认知清晰、变化明显、与 Token 月配额天然对齐。</p>
+  <p style="margin-top:8px"><strong>2. 命理桃花</strong>：当前是独立页面，与 Crush 工作流割裂。需要渗入核心流程——首页 teaser + case-detail 双人解读。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>Phase 0 · 复盘体系月度化</h2>
+<!-- ============================================================ -->
+
+<h3>0.1 &nbsp;14 天 → 自然月</h3>
+
+<table>
+<tr><th>层面</th><th>文件</th><th>改动</th></tr>
+<tr>
+  <td>云函数</td>
+  <td><code>cloudfunctions/weeklyReview/index.js</code></td>
+  <td>窗口逻辑从 14 天滑动 → 自然月；<code>getWeekRange()</code> → <code>getMonthRange()</code>；字段 <code>weekStart/weekEnd</code> → <code>monthStart/monthEnd</code>；<code>type: 'weekly_review'</code> → <code>'monthly_review'</code></td>
+</tr>
+<tr><td>数据库集合</td><td><code>weekly_reviews</code></td><td>新建记录写 monthStart/monthEnd；读取时兼容旧字段</td></tr>
+<tr><td>数据库集合</td><td><code>timeline_records</code></td><td>新记录 type: 'monthly_review'；查询兼容旧值</td></tr>
+<tr><td>"我们"页面</td><td><code>src/pages/case-detail/case-detail.vue</code></td><td>"近14天复盘"→"本月复盘"；日期范围显示 monthStart/monthEnd；趋势数据窗口改为当月</td></tr>
+<tr><td>复盘页</td><td><code>src/pages/weekly-review/weekly-review.vue</code></td><td>标题/按钮/文案全部 14天→月</td></tr>
+<tr><td>"往事"页面</td><td><code>src/pages/timeline/timeline.vue</code></td><td>Tab "14天复盘"→"月度复盘"；日期格式化改为月度范围</td></tr>
+<tr><td>"系统轨迹"</td><td><code>src/pages/system-tracks/system-tracks.vue</code></td><td>自动生成记录的标题/描述文案更新</td></tr>
+<tr><td>首页</td><td><code>src/pages/index/index.vue</code></td><td>趋势文案"近14天"→"本月"</td></tr>
+</table>
+
+<h3>0.2 &nbsp;月度复盘节奏</h3>
+<div class="mock-ui">
+每月 1 号：可以生成上月复盘（覆盖上月 1 号 ~ 上月末）
+月中：只显示"积累中"，不提供生成入口
+月底：提示"下月 1 号可生成本月复盘"
+
+"我们"页面顶部状态区：
+  · 月初（1-3 号）：[生成本月复盘] 按钮可用
+  · 其他时间："本月已记录 X 条事件，Y 次分析变化 · 下月 1 号可生成复盘"
+</div>
+
+<h3>0.3 &nbsp;按月自动生成 + 手动触发</h3>
+<ul>
+  <li>月初进入"我们"页面时，检查上月是否已有复盘记录</li>
+  <li>无记录 → 自动触发 AI 生成（后台静默）</li>
+  <li>有记录 → 直接展示；同时保留手动"重新生成"按钮</li>
+</ul>
+
+<h3>0.4 &nbsp;兼容策略</h3>
+<ul>
+  <li><code>weekly_reviews</code> 集合不重命名，旧 14 天记录保留不动</li>
+  <li>查询时按 <code>monthStart</code> 倒序，fallback 到 <code>weekStart</code></li>
+  <li>前端优先读新字段，没有则读旧字段并标记"（旧版14天）"</li>
+  <li>旧 <code>type: 'weekly_review'</code> 记录保留，新记录写 <code>type: 'monthly_review'</code></li>
+</ul>
+
+<!-- ============================================================ -->
+<h3>0.5 &nbsp;时间轴合并：关键事件 + 分析记录 → 单一事件流</h3>
+
+<p><strong>原则</strong>：事件是锚点，分析是附属。合并在一个视图里，信息只出现一次。</p>
+
+<table>
+<tr><th>旧 Tab</th><th>新 Tab</th></tr>
+<tr><td>关键事件</td><td style="font-weight:900">事件流（合并）</td></tr>
+<tr><td>分析记录</td><td style="color:var(--red)">去掉，融入事件流</td></tr>
+<tr><td>14天复盘</td><td style="font-weight:900">月度复盘</td></tr>
+</table>
+
+<h4>事件流卡片结构</h4>
+<div class="mock-ui">
+┌─ 统计栏 ───────────────────────────────────┐
+│  谁更主动：对方3  我5  │  承诺：承诺2 · 兑现1 · 取消0  │
+├─ 过滤栏 ───────────────────────────────────┐
+│  [全部 12] [意向↑ 3] [意向↓ 2] [高风险 1]     │
+│  [碰面 4] [聊天 6] [电影 1] ...               │
+└────────────────────────────────────────────┘
+
+┌─ 事件卡片（始终可见）──────────────────────────┐
+│  6/11 │ 他说下次一起去图书馆                   │
+│  14:30│ 对方记录 · AI                         │
+│       │                                      │
+│       │ ┌─ AI 分析摘要 ──────────────────┐   │
+│       │ │ 意向 72 ↑+5 · 风险 28 · 🔥好感 ⓘ │   │  ← 摘要条，不展开也可见
+│       │ │ [展开详情 ▼]                    │   │
+│       │ └────────────────────────────────┘   │
+│       │                                      │
+│       │ （展开后）                             │
+│       │ ┌─ AI 分析 · 详细 ──────────────┐   │
+│       │ │ 判断依据 · 信号解析              │   │
+│       │ │ AI 回复 · 星象速写 · 图片分析     │   │
+│       │ └────────────────────────────────┘   │
+│       │   ↕ （别针连线效果）                   │
+└────────────────────────────────────────────┘
+</div>
+
+<h4>改动要点</h4>
+<table>
+<tr><th>层面</th><th>改动</th></tr>
+<tr><td>统计栏</td><td>合并"谁更主动/承诺兑现"+"分析统计（意向↑↓/高风险）"，全部放顶部</td></tr>
+<tr><td>过滤栏</td><td>合并场景过滤 + 分析维度过滤，单选切换</td></tr>
+<tr><td>摘要条</td><td>每个有分析的事件底部内联显示：分数+变化+信号标签。无分析事件不显示</td></tr>
+<tr><td>详情面板</td><td>点击展开 → 卡片下方插入完整分析面板，事件与分析用别针视觉效果连接</td></tr>
+<tr><td>无分析事件</td><td>灰色标注"等待分析"；aiPending 时显示"AI 分析中..."</td></tr>
+<tr><td>图片/附件</td><td>事件附件在事件体内；分析图片摘要仍在展开面板内</td></tr>
+<tr><td>删除 Tab</td><td>完全移除 <code>activeTimelineView === 'assessments'</code> 分支</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h3>0.6 &nbsp;信号标签简化：从 AI 标签 → 用户信号</h3>
+
+<p><strong>原则</strong>：标签是给用户看的信号，不是给开发者看的分类。一个事件一个信号，一眼能看懂。</p>
+
+<div class="signal-grid">
+  <div class="signal-box">
+    <span class="emoji">🔥</span>
+    <span class="label">好感</span>
+    <span class="desc">对方有积极动作<br>值得继续</span>
+  </div>
+  <div class="signal-box">
+    <span class="emoji">❄️</span>
+    <span class="label">降温</span>
+    <span class="desc">对方在退缩<br>需要警惕</span>
+  </div>
+  <div class="signal-box">
+    <span class="emoji">⚠️</span>
+    <span class="label">矛盾</span>
+    <span class="desc">言行不一致<br>有风险</span>
+  </div>
+  <div class="signal-box">
+    <span class="emoji">➖</span>
+    <span class="label">平稳</span>
+    <span class="desc">无明显信号<br>持续观察</span>
+  </div>
+</div>
+
+<table>
+<tr><th>信号</th><th>判断来源（从现有 eventInsight 映射）</th></tr>
+<tr><td>🔥 好感</td><td><code>actor=target + interaction≠rejected/delayed</code> 或 <code>intentDelta≥8</code></td></tr>
+<tr><td>❄️ 降温</td><td><code>actor=target + interaction∈{rejected,delayed}</code> 或 <code>intentDelta≤-8</code></td></tr>
+<tr><td>⚠️ 矛盾</td><td><code>commitment=broken</code> 或 <code>riskDelta≥10</code> 或 evidence 与 outcome 冲突</td></tr>
+<tr><td>➖ 平稳</td><td>以上都不满足，或 <code>evidence=feeling + commitment=unclear</code></td></tr>
+</table>
+
+<h4>展示位置</h4>
+<div class="mock-ui">
+首页即时反馈区：
+  意向 72  ↑+5    风险 28     🔥 好感 ⓘ
+  ─────────────────────────────────────
+  "等他主动约具体时间，别催"
+
+case-detail Hero：
+  WE / 小明    本月信号：🔥 好感 ⓘ
+  意向 68  ↑+3  ·  风险 22  ↓-5
+
+时间轴事件流（摘要条）：
+  意向 72 ↑+5 · 风险 28 · 🔥 好感 ⓘ  [展开 ▼]
+</div>
+
+<h4>ⓘ 图标交互（复用现有 info-icon-v2 + info-modal-v2）</h4>
+<div class="info-popup">
+  <div class="title">信号解析：🔥 好感</div>
+  <p style="margin-bottom:12px">本次记录显示对方主动发起互动，有积极投入信号。</p>
+
+  <div class="section">
+    <div class="section-label">数据来源</div>
+    <table style="font-size:13px">
+      <tr><td>动作主体</td><td>对方主动</td></tr>
+      <tr><td>互动类型</td><td>发起（initiated）</td></tr>
+      <tr><td>兑现状态</td><td>已兑现</td></tr>
+      <tr><td>证据类型</td><td>事实依据</td></tr>
+      <tr><td>意向变化</td><td>+8（较上次上升）</td></tr>
+      <tr><td>风险变化</td><td>-4（较上次下降）</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-label">算法说明</div>
+    <p style="font-size:13px; color:var(--muted)">
+      信号由 AI 事件理解 + 趋势对比综合判定。AI 分析事件类型后，系统根据对方行为模式
+      （主动/被动/承诺兑现情况）与近期意向/风险变化趋势加权计算，给出单一信号标签。<br>
+      <strong>权重：</strong>对方动作 40% · 兑现情况 30% · 趋势变化 30%
+    </p>
+  </div>
+</div>
+
+<p style="margin-top:8px"><strong>实现</strong>：映射逻辑放 <code>src/utils/insights.js</code>，新增 <code>mapEventSignal(eventInsight, trend) → { signal, label, detail }</code>。首页、case-detail、时间轴三处统一调用。</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Phase 1 · 桃花首页入口升级</h2>
+<!-- ============================================================ -->
+
+<h3>1.1 &nbsp;替换临时入口卡片</h3>
+<p><strong>改什么</strong>：<code>src/pages/index/index.vue</code></p>
+<ul>
+  <li>删除两处 <code>[TEMP] 命理桃花入口</code> 虚线卡片（空状态 + 有 case 各一处）</li>
+  <li>替换为正式 <code>taohua-teaser</code> 卡片：今日桃花分数 + 方位 + 一句话，点击进入完整页</li>
+  <li>卡片只在 <code>checkFeatureAccess('命理桃花')</code> 允许时显示</li>
+  <li>数据来源：客户端直接调 <code>taohua.ts</code> 纯查表函数，不调云函数、不耗 Token</li>
+</ul>
+
+<div class="mock-ui">
+onShow / loadData 时：
+  1. checkFeatureAccess('命理桃花') → 不允许则隐藏
+  2. 允许 → 用 getTodayStr() + 日支从 taohua.ts 算出预览
+  3. 渲染 teaser：分数大数字 + 方位 + "查看完整命理分析 →"
+</div>
+
+<h3>1.2 &nbsp;清理临时标记</h3>
+<p>删除 taohua.vue 和 index.vue 中 <code>[TEMP]</code> 注释标记。</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Phase 2 · 双人桃花解读嵌入 case-detail</h2>
+<!-- ============================================================ -->
+
+<h3>2.1 &nbsp;静态双人解读卡片（无 AI，不耗 Token）</h3>
+<p><strong>改什么</strong>：<code>src/pages/case-detail/case-detail.vue</code> — 插入一张新卡片，放在月度复盘之后、星象速写之前。</p>
+
+<p><strong>数据来源</strong>：<code>getCachedSelfProfile()</code> + <code>caseFile.profile</code> + <code>src/utils/taohua.ts</code> 的 <code>zodiacSignMatch()</code> + <code>generatePairInsight()</code></p>
+
+<div class="card ylw">
+<strong>桃花匹配度</strong>
+<div style="margin-top:8px">
+  <span class="tag grn">六合（大吉）</span><br>
+  <span style="font-size:13px">💫 风格碰撞：你们天生互补——阴阳完美咬合...</span><br>
+  <span style="font-size:13px">🎯 适合一起：一起运动、看演出、深度约会...</span><br>
+  <span style="font-size:13px">⚠️ 注意：太合拍了反而容易忽视问题...</span><br>
+  <span style="font-size:12px;color:var(--light)">📖 《三命通会》地支六合...</span>
+</div>
+<div style="margin-top:10px">
+  <span class="tag blk">结合互动记录 AI 深度解读</span>
+  <span style="font-size:11px;color:var(--light);margin-left:6px">Pro/Ultra</span>
+</div>
+</div>
+
+<p><strong>门控</strong>：<code>checkFeatureAccess('命理桃花')</code> 不允许 → 不渲染。双方画像不完整 → 引导卡片。</p>
+
+<h3>2.2 &nbsp;AI 增强双人解读（Pro/Ultra，消耗 Token）</h3>
+
+<p><strong>新建</strong>：<code>cloudfunctions/generatePairRead/index.js</code></p>
+<ul>
+  <li>入口：<code>{ caseId }</code> + auth</li>
+  <li>门控：<code>checkFeatureAccess</code> → <code>checkTokenBalance</code> → AI 调用 → <code>consumeTokens</code></li>
+  <li>返回：静态匹配结果 + AI 增强解读（结合 timeline 上下文）</li>
+  <li>前端：按钮 → loading → 展开 AI 解读区块（复用 <code>action-box</code> 风格）</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>权限体系总结</h2>
+<!-- ============================================================ -->
+
+<table>
+<tr><th>功能</th><th>featureKey</th><th>Token</th><th>实现位置</th></tr>
+<tr><td>月度复盘</td><td><code>周复盘</code></td><td>✅（倍率扣）</td><td>weeklyReview CF</td></tr>
+<tr><td>星象速写</td><td><code>星象速写</code></td><td>✅（倍率扣）</td><td>weeklyReview CF (sideRead)</td></tr>
+<tr><td>首页桃花 teaser</td><td><code>命理桃花</code></td><td class="tag grn">0</td><td>index.vue 纯客户端</td></tr>
+<tr><td>桃花完整页</td><td><code>命理桃花</code></td><td class="tag grn">0</td><td>taohua.vue + queryTaohua CF</td></tr>
+<tr><td>静态双人解读</td><td><code>命理桃花</code></td><td class="tag grn">0</td><td>case-detail.vue 纯客户端</td></tr>
+<tr><td>AI 双人解读</td><td><code>命理桃花</code></td><td>✅（倍率扣）</td><td>generatePairRead CF</td></tr>
+</table>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>文件清单</h2>
+<!-- ============================================================ -->
+
+<h3>新建</h3>
+<ul>
+  <li><code>cloudfunctions/generatePairRead/index.js</code> + <code>package.json</code> + <code>_shared/</code> symlink</li>
+</ul>
+
+<h3>修改 — Phase 0</h3>
+<table>
+<tr><th>文件</th><th>改动</th></tr>
+<tr><td><code>cloudfunctions/weeklyReview/index.js</code></td><td>14天→自然月窗口；字段重命名；type 改为 monthly_review</td></tr>
+<tr><td><code>src/pages/case-detail/case-detail.vue</code></td><td>"近14天"→"本月"；趋势面板时间窗口；日期格式化</td></tr>
+<tr><td><code>src/pages/timeline/timeline.vue</code></td><td>Tab 3→2；事件+分析合并为单一事件流（摘要条+展开面板+统计过滤合并）</td></tr>
+<tr><td><code>src/pages/weekly-review/weekly-review.vue</code></td><td>全部 14 天文案→月度</td></tr>
+<tr><td><code>src/pages/system-tracks/system-tracks.vue</code></td><td>自动生成记录的标题/描述</td></tr>
+<tr><td><code>src/pages/index/index.vue</code></td><td>趋势文案"近14天"→"本月"；标签区替换为单一信号+ⓘ</td></tr>
+<tr><td><code>src/utils/insights.js</code></td><td>新增 <code>mapEventSignal()</code> 信号判定函数</td></tr>
+</table>
+
+<h3>修改 — Phase 1+2</h3>
+<table>
+<tr><th>文件</th><th>改动</th></tr>
+<tr><td><code>src/pages/index/index.vue</code></td><td>替换临时 teaser → 正式卡片；删除 [TEMP] 标记</td></tr>
+<tr><td><code>src/pages/case-detail/case-detail.vue</code></td><td>插入静态双人解读卡片 + AI 解读区块</td></tr>
+<tr><td><code>src/pages/taohua/taohua.vue</code></td><td>删除 [TEMP] 注释标记</td></tr>
+<tr><td><code>src/utils/api.ts</code></td><td>新增 <code>generatePairRead()</code> 函数</td></tr>
+</table>
+
+<h3>不变</h3>
+<ul>
+  <li><code>src/utils/taohua.ts</code> — 646 行静态算法全部复用</li>
+  <li><code>cloudfunctions/queryTaohua/</code> — 桃花日历云函数不变</li>
+  <li><code>cloudfunctions/_shared/subscription.js</code> — 门控模块不变</li>
+  <li><code>src/components/TaohuaCompass.vue</code> — 罗盘组件不变</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>验证方法</h2>
+<!-- ============================================================ -->
+
+<ol>
+  <li><strong>构建</strong>：<code>npm run build:h5</code> + <code>npm run build:mp-weixin</code> 无编译错误</li>
+  <li><strong>月度复盘</strong>：进入"我们"页面 → 月初显示生成按钮 → 点击生成上月复盘 → "往事"中查看归档</li>
+  <li><strong>时间轴合并</strong>：Tab 只有"事件流"+"月度复盘"；事件卡片底部显示分析摘要条；点击展开完整分析面板；无分析的事件不显示摘要条</li>
+  <li><strong>兼容旧数据</strong>：旧的 14 天复盘记录仍可正常显示（标记为旧版）</li>
+  <li><strong>首页 teaser</strong>：免费版无卡片；Pro 版显示今日桃花分数+方位</li>
+  <li><strong>case-detail 双人解读</strong>：有画像→匹配卡片；无画像→引导卡片；AI 按钮→结果展示</li>
+  <li><strong>信号标签</strong>：首页/我们/时间轴三处统一显示单一信号+ⓘ；点击ⓘ弹出专业解析面板</li>
+  <li><strong>冒烟测试</strong>：taohua 页面不受影响</li>
+</ol>
+
+</body>
+</html>

@@ -849,6 +849,15 @@ export async function checkFeatureAccess(featureKey: string) {
   return res.result
 }
 
+/** AI增强双人桃花解读 */
+export async function generatePairRead(caseId: string) {
+  const res = await callFunction({
+    name: 'generatePairRead',
+    data: { caseId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 /** 获取平台 Token 消费明细（已乘倍率） */
 export async function queryTaohua(zodiac: string, sign: string) {
   const res = await callFunction({
@@ -935,34 +944,34 @@ export async function adminGrantExtraCalls(targetUserId: string, amount: number,
   return res.result
 }
 
-// ==================== 14天复盘 ====================
+// ==================== 月度复盘 ====================
 
-export async function getWeeklyReviews(_userId: string, caseId: string) {
+export async function getMonthlyReviews(_userId: string, caseId: string) {
   const res = await callFunction({
     name: 'weeklyReview',
     data: { action: 'list', caseId }
   })
   if (!res.result?.success) {
-    throw new Error(res.result?.message || '获取14天复盘失败')
+    throw new Error(res.result?.message || '获取月度复盘失败')
   }
   return res.result
 }
 
-export async function generateWeeklyReview(_userId: string, caseId: string, weekStart?: string) {
+export async function generateMonthlyReview(_userId: string, caseId: string, monthStart?: string) {
   const res = await callFunction({
     name: 'weeklyReview',
-    data: { action: 'generate', caseId, weekStart }
+    data: { action: 'generate', caseId, monthStart }
   })
   if (!res.result?.success) {
-    throw Object.assign(new Error(res.result?.message || '生成14天复盘失败'), res.result || {})
+    throw Object.assign(new Error(res.result?.message || '生成月度复盘失败'), res.result || {})
   }
   return res.result
 }
 
-export async function generateWeeklySideRead(_userId: string, caseId: string, weekStart?: string) {
+export async function generateMonthlySideRead(_userId: string, caseId: string, monthStart?: string) {
   const res = await callFunction({
     name: 'weeklyReview',
-    data: { action: 'generateSideRead', caseId, weekStart }
+    data: { action: 'generateSideRead', caseId, monthStart }
   })
   if (!res.result?.success) {
     throw Object.assign(new Error(res.result?.message || '生成近14天星象速写失败'), res.result || {})

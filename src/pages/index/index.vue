@@ -10,10 +10,14 @@
           <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
-        <!-- [TEMP] 命理桃花入口 — Phase 3 替换为正式 teaser 卡片 -->
-        <view class="card-v2 anim-card" style="animation-delay:0.1s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx dashed #111;cursor:pointer;text-align:center;" @click="goTaohua">
-          <text class="section-title-v2">🧭 今日桃花（测试入口）</text>
-          <text class="card-text-v2 muted">点击查看完整命理分析 →</text>
+        <!-- 命理桃花 teaser -->
+        <view v-if="showTaohuaTeaser" class="card-v2 anim-card" style="animation-delay:0.1s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx solid #FFD93D;cursor:pointer;" @click="goTaohua">
+          <view style="display:flex;align-items:center;justify-content:space-between;">
+            <text class="section-title-v2" style="margin-bottom:0;">🧭 今日桃花</text>
+            <text v-if="taohuaTeaserData" class="tag-v2 black" style="font-size:24rpx;">{{ taohuaTeaserData.score }}/100</text>
+          </view>
+          <text v-if="taohuaTeaserData" class="card-text-v2" style="margin-top:6rpx;">今日桃花位：{{ taohuaTeaserData.direction }} · {{ taohuaTeaserData.summary }}</text>
+          <text v-else class="card-text-v2 muted">加载中...</text>
         </view>
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
           <text class="remind-card-title-v2">你的画像未完善</text>
@@ -59,10 +63,14 @@
           </view>
         </view>
 
-        <!-- [TEMP] 命理桃花入口 — Phase 3 替换为正式 teaser 卡片 -->
-        <view class="card-v2 anim-card" style="animation-delay:0.05s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx dashed #111;cursor:pointer;text-align:center;" @click="goTaohua">
-          <text class="section-title-v2">🧭 今日桃花（测试入口）</text>
-          <text class="card-text-v2 muted">点击查看完整命理分析 →</text>
+        <!-- 命理桃花 teaser -->
+        <view v-if="showTaohuaTeaser" class="card-v2 anim-card" style="animation-delay:0.05s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx solid #FFD93D;cursor:pointer;" @click="goTaohua">
+          <view style="display:flex;align-items:center;justify-content:space-between;">
+            <text class="section-title-v2" style="margin-bottom:0;">🧭 今日桃花</text>
+            <text v-if="taohuaTeaserData" class="tag-v2 black">{{ taohuaTeaserData.score }}/100</text>
+          </view>
+          <text v-if="taohuaTeaserData" class="card-text-v2 muted" style="margin-top:6rpx;">今日桃花位：{{ taohuaTeaserData.direction }} · {{ taohuaTeaserData.summary }}</text>
+          <text v-else class="card-text-v2 muted">加载中...</text>
         </view>
 
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.1s" @click="goSelfProfile">
@@ -134,14 +142,10 @@
                 <text class="score-delta-v2"><text class="score-delta-label">变化</text><text :class="['score-delta-val', deltaClass(latestTrend.riskDelta)]">{{ formatDelta(latestTrend.riskDelta) }}</text></text>
               </view>
             </view>
-            <view v-if="statusStateTags.length || problemTypeTags.length" class="tag-row-v2" style="margin-top:12px;">
-              <text v-for="tag in statusStateTags" :key="tag" class="tag-v2 black">{{ tag }}</text>
-              <text v-for="tag in problemTypeTags" :key="tag" class="tag-v2">{{ tag }}</text>
+            <view v-if="quickFeedbackSignal" class="tag-row-v2" style="margin-top:12px;">
+              <text class="tag-v2 black" style="font-size:22rpx;">{{ quickFeedbackSignal.emoji }} {{ quickFeedbackSignal.label }}</text>
             </view>
-            <view v-if="quickReasonBullets.length > 0 || eventInsightTags.length > 0" class="reason-box">
-              <view v-if="eventInsightTags.length > 0" class="tag-row-v2 compact">
-                <text v-for="tag in eventInsightTags" :key="tag" class="tag-v2">{{ tag }}</text>
-              </view>
+            <view v-if="quickReasonBullets.length > 0" class="reason-box">
               <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
             </view>
             <view v-if="latestActionPlanPanel.show" class="action-box">
@@ -218,9 +222,10 @@ import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
-import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
+import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { xianchiAlgorithm, getTodayStr } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
 // 无登录态时立即跳转，避免挂载整个首页组件树
@@ -230,9 +235,10 @@ if (!_uid) {
 }
 
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
-import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag } from '@/utils/insights'
+import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { xianchiAlgorithm, getTodayStr } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
 type PetScene =
@@ -498,6 +504,14 @@ const eventInsightTags = computed(() => {
     mapEventInsightEvidence(insight.evidenceType)
   ].filter(Boolean)
   return [...new Set(tags)].slice(0, 4)
+})
+
+const quickFeedbackSignal = computed(() => {
+  if (!latestCase.value?.latestResult) return null
+  const insight = latestCase.value.latestResult.eventInsight
+  const trend = latestTrend.value
+  if (!insight && !trend) return null
+  return mapEventSignal(insight, trend)
 })
 
 const statusStateTags = computed(() => {
@@ -959,6 +973,7 @@ async function loadData() {
     applyCasesList(list)
     writeHomeCasesCache(uid, cases.value)
     refreshSelfProfileInBackground()
+    loadTaohuaTeaser()
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
@@ -1497,6 +1512,25 @@ function goCaseDetail(caseId: string) {
 
 function goSelfProfile() {
   uni.navigateTo({ url: '/pages/self-profile/self-profile' })
+}
+
+// Taohua teaser
+const showTaohuaTeaser = ref(false)
+const taohuaTeaserData = ref<{ score: number; direction: string; summary: string } | null>(null)
+
+async function loadTaohuaTeaser() {
+  const today = new Date()
+  try {
+    const access = await checkFeatureAccess('命理桃花')
+    showTaohuaTeaser.value = access?.allowed !== false
+  } catch { showTaohuaTeaser.value = true /* show if gate check fails, backend will enforce */ }
+  if (!showTaohuaTeaser.value) return
+  const dayZhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][(today.getDay() + 2) % 12]
+  const result = xianchiAlgorithm(dayZhi)
+  const jianchu = ['建','除','满','平','定','执','破','危','成','收','开','闭'][(today.getDate() + today.getMonth()) % 12]
+  const scoreBase: Record<string, number> = { '成': 80, '开': 80, '满': 70, '定': 65, '除': 65, '建': 60, '平': 50, '收': 45, '执': 40, '危': 35, '破': 20, '闭': 20 }
+  const score = scoreBase[jianchu] || 50
+  taohuaTeaserData.value = { score, direction: result.direction, summary: jianchu + '日 · ' + (score >= 70 ? '适合行动' : score >= 50 ? '平常心' : '观望为上') }
 }
 
 function goTaohua() {

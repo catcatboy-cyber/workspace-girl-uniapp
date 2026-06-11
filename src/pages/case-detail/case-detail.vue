@@ -31,12 +31,12 @@
           <view v-if="overviewStats.length > 0" class="stats-grid-v2"><view v-for="item in overviewStats" :key="item.key" :class="['stat-box-v2', item.tone === 'risk' ? 'warn' : '']"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text><text class="stat-hint-v2">{{ item.hint }}</text></view></view>
           <!-- Trend data + line chart -->
           <view v-if="trendDataPanel" class="trend-block-v2">
-            <text class="section-title-v2">趋势数据 · 14天</text>
+            <text class="section-title-v2">趋势数据 · 月度</text>
             <view class="trend-grid-v2">
               <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.latestIntent }}</text><text class="trend-chg-v2" :class="deltaClass(trendDataPanel.intentDelta14)">{{ formatSignedDelta(trendDataPanel.intentDelta14) }}</text><text class="trend-unit-v2">意向</text></view>
               <view class="trend-item-v2"><text class="trend-num-v2 risk">{{ trendDataPanel.latestRisk }}</text><text class="trend-chg-v2" :class="deltaClass(-trendDataPanel.riskDelta14)">{{ formatSignedDelta(trendDataPanel.riskDelta14) }}</text><text class="trend-unit-v2">风险</text></view>
               <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.stability }}%</text><text class="trend-unit-v2">稳定性 · {{ trendDataPanel.sampleCount }}次</text></view>
-              <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.evidenceCount }}</text><text class="trend-unit-v2">证据量 · 14天</text></view>
+              <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.evidenceCount }}</text><text class="trend-unit-v2">证据量 · 月度</text></view>
             </view>
             <view v-if="trendDataPanel.tags.length" class="tag-row-v2" style="margin-top:12rpx;"><text v-for="tag in trendDataPanel.tags" :key="tag" class="tag-v2">{{ tag }}</text></view>
             <view v-if="trendDataPanel.lineChart.points.length > 1" class="relationship-line-chart-v2">
@@ -74,15 +74,30 @@
           <view v-if="aiWeeklyPreview.avoidMisread?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.avoidMisread" :key="item" class="bullet-v2">• {{ item }}</text></view>
           <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2"><text class="focus-label-v2">后续验证重点 · 最该看</text><text class="focus-question-v2">{{ primaryWeeklyFocus }}</text><view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view></view>
         </view>
-        <view v-else-if="hasFallbackWeeklyPreview" class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">近14天只生成了规则兜底版本，请去14天复盘页重新生成 AI 版本。</text></view>
-        <!-- Weekly side read -->
+        <view v-else-if="hasFallbackWeeklyPreview" class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">本月只生成了规则兜底版本，请去月度复盘页重新生成 AI 版本。</text></view>
+        <!-- Pair reading (taohua) -->
+        <view v-if="pairMatch" class="card-v2 anim-card" style="animation-delay:0.28s;background:#FFFBEB;">
+          <text class="section-title-v2">桃花匹配度</text>
+          <text :class="['tag-v2', pairMatchBadgeClass]">{{ pairMatch.relation }}</text>
+          <text class="card-text-v2" style="margin-top:4rpx;">{{ pairMatch.relationDesc }}</text>
+          <view v-if="pairInsight" class="reason-box" style="margin-top:12rpx;">
+            <text class="reason-line">💫 {{ pairInsight.styleClash }}</text>
+            <view class="tag-row-v2" style="margin-top:8rpx;"><text v-for="(a, i) in (pairInsight.activities || []).slice(0, 2)" :key="i" class="tag-v2">{{ a }}</text></view>
+            <text class="card-text-v2 muted" style="margin-top:6rpx;">📖 {{ pairInsight.classicalNote }}</text>
+          </view>
+        </view>
+        <view v-else-if="showPairReadGuide" class="card-v2 anim-card" style="animation-delay:0.28s;border-style:dashed;background:#FFFBEB;" @click="goSelfProfile">
+          <text class="section-title-v2">桃花匹配度</text>
+          <text class="card-text-v2">完善你和 Crush 的生肖星座，解锁桃花匹配解读 →</text>
+        </view>
+        <!-- Side read -->
         <view class="card-v2 anim-card" style="animation-delay:0.3s">
-          <text class="section-title-v2">近14天星象速写</text>
+          <text class="section-title-v2">月度星象速写</text>
           <view v-if="currentWeeklySideRead">
             <text v-if="currentWeeklySideRead.summary" class="weekly-desc-v2">{{ currentWeeklySideRead.summary }}</text>
             <view v-if="currentWeeklySideRead.sections?.length" class="side-grid-v2"><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2">• {{ item.text }}</text></view></view>
           </view>
-          <text v-else class="empty-sub-v2">近14天星象速写还没有生成。</text>
+          <text v-else class="empty-sub-v2">本月星象速写还没有生成。</text>
         </view>
         <!-- Bottom action: matches original -->
         <view class="bottom-action-v2">
@@ -96,7 +111,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { getCaseDetail, getCurrentUserId, getWeeklyReviews, getCases } from '@/utils/api'
+import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, checkFeatureAccess, getCachedSelfProfile } from '@/utils/api'
+import { zodiacSignMatch, generatePairInsight } from '@/utils/taohua'
 import { consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
@@ -116,7 +132,7 @@ onShareAppMessage(() => buildSafeShareMessage())
 onShareTimeline(() => buildSafeTimelineShare())
 const showRelationshipLegacySections = false
 const weeklyReviews = ref<any[]>([])
-const currentWeekStart = ref('')
+const currentMonthStart = ref('')
 const initialized = ref(false)
 const skipNextShowRefresh = ref(false)
 const CASE_DETAIL_CACHE_PREFIX = 'caseDetailCache:v1:'
@@ -282,7 +298,7 @@ const trendDataPanel = computed(() => {
 
 const weeklyPreview = computed(() => {
   if (!weeklyReviews.value.length) return null
-  return weeklyReviews.value.find((item: any) => item.weekStart === currentWeekStart.value) || weeklyReviews.value[0]
+  return weeklyReviews.value.find((item: any) => item.monthStart === currentMonthStart.value || item.weekStart === currentMonthStart.value) || weeklyReviews.value[0]
 })
 
 const aiWeeklyPreview = computed(() => {
@@ -308,9 +324,9 @@ const hasNewEventsSinceReview = computed(() => {
 
 const weeklyButtonLabel = computed(() => {
   const review = weeklyPreview.value
-  if (!review) return '近14天复盘'
+  if (!review) return '本月复盘'
   if (!hasNewEventsSinceReview.value) return '还没新事件'
-  return '重新生成近14天复盘'
+  return '重新生成本月复盘'
 })
 
 const hasFallbackWeeklyPreview = computed(() => {
@@ -483,6 +499,7 @@ async function loadData(options: { silent?: boolean } = {}) {
     writeCaseDetailCache(uid, caseId.value, detail)
     lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
     loadWeeklyReviewsInBackground(uid)
+    loadPairRead()
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
@@ -511,9 +528,9 @@ function writeCaseDetailCache(uid: string, id: string, detail: any) {
 
 async function loadWeeklyReviewsInBackground(uid: string) {
   try {
-    const weeklyRes = await getWeeklyReviews(uid, caseId.value)
-    weeklyReviews.value = weeklyRes.reviews || []
-    currentWeekStart.value = weeklyRes.currentWeekStart || ''
+    const monthlyRes = await getMonthlyReviews(uid, caseId.value)
+    weeklyReviews.value = monthlyRes.reviews || []
+    currentMonthStart.value = monthlyRes.currentMonthStart || ''
   } catch (error) {
     console.warn('[page:case-detail] load weekly reviews failed:', error)
   }
@@ -528,6 +545,10 @@ function goTimeline() {
 function goNewAssessment() {
   setActiveCaseId(caseId.value)
   uni.navigateTo({ url: '/pages/reassess/reassess?caseId=' + caseId.value })
+}
+
+function goSelfProfile() {
+  uni.navigateTo({ url: '/pages/self-profile/self-profile' })
 }
 
 function getAssessmentTimestamp(item: any) {
@@ -647,13 +668,13 @@ function formatChartTime(createdAt?: string) {
 
 function buildTrendDataTags(intentDelta: number, riskDelta: number, stability: number, sampleCount: number) {
   const tags: string[] = []
-  if (intentDelta >= 8) tags.push('14天意向上行')
-  else if (intentDelta <= -8) tags.push('14天意向回落')
-  else tags.push('14天意向平稳')
+  if (intentDelta >= 8) tags.push('月度意向上行')
+  else if (intentDelta <= -8) tags.push('月度意向回落')
+  else tags.push('月度意向平稳')
 
-  if (riskDelta <= -6) tags.push('14天风险回落')
-  else if (riskDelta >= 6) tags.push('14天风险抬头')
-  else tags.push('14天风险平稳')
+  if (riskDelta <= -6) tags.push('月度风险回落')
+  else if (riskDelta >= 6) tags.push('月度风险抬头')
+  else tags.push('月度风险平稳')
 
   if (stability >= 76) tags.push('波动偏低')
   else if (stability >= 52) tags.push('波动中等')
@@ -666,17 +687,17 @@ function buildTrendDataTags(intentDelta: number, riskDelta: number, stability: n
 function mapWeeklyTrendLabel(label: any) {
   const normalized = String(label || '').trim()
   const map: Record<string, string> = {
-    持续向好: '近14天回暖',
-    持续走低: '近14天转弱',
-    风险抬头: '近14天承压',
-    基本平稳: '近14天平稳',
-    稳定观察: '近14天观察',
-    升温期: '近14天回暖',
-    升温中: '近14天回暖',
-    走弱期: '近14天转弱',
-    暂时平稳: '近14天平稳'
+    持续向好: '本月回暖',
+    持续走低: '本月转弱',
+    风险抬头: '本月承压',
+    基本平稳: '本月平稳',
+    稳定观察: '本月观察',
+    升温期: '本月回暖',
+    升温中: '本月回暖',
+    走弱期: '本月转弱',
+    暂时平稳: '本月平稳'
   }
-  return map[normalized] || (normalized ? `近14天${normalized.replace(/^近14天/, '')}` : '近14天复盘')
+  return map[normalized] || (normalized ? `本月${normalized.replace(/^本月/, '')}` : '本月复盘')
 }
 
 function formatSignedDelta(value: any) {
@@ -697,6 +718,38 @@ function formatDelta(value: any) {
   if (numeric > 0) return `+${numeric}`
   if (numeric < 0) return String(numeric)
   return '持平'
+}
+
+// Pair reading (taohua)
+const showPairReadGuide = ref(false)
+const pairMatch = ref<any>(null)
+const pairInsight = ref<any>(null)
+
+const pairMatchBadgeClass = computed(() => {
+  const r = pairMatch.value?.relation || ''
+  if (r.includes('六合')) return 'green'
+  if (r.includes('三合')) return 'ylw'
+  if (r.includes('冲')) return 'red'
+  return ''
+})
+
+async function loadPairRead() {
+  try {
+    const access = await checkFeatureAccess('命理桃花')
+    if (!access?.allowed) { showPairReadGuide.value = false; return }
+    const self = getCachedSelfProfile()
+    const crush = caseFile.value?.profile
+    if (!self?.zodiac || !self?.constellation || !crush?.zodiac || !crush?.constellation) {
+      showPairReadGuide.value = !!(self?.zodiac || crush?.zodiac)
+      return
+    }
+    const match = zodiacSignMatch(crush.zodiac, crush.constellation)
+    const selfMatch = zodiacSignMatch(self.zodiac, self.constellation)
+    const insight = generatePairInsight(selfMatch, match)
+    pairMatch.value = match
+    pairInsight.value = insight
+    showPairReadGuide.value = false
+  } catch { showPairReadGuide.value = false }
 }
 
 function goWeeklyReview() {
@@ -814,6 +867,9 @@ function goWeeklyReview() {
 .v2-mode .side-item-v2 { padding: 14rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .side-label-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 4rpx; }
 .v2-mode .side-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
+.v2-mode .tag-v2.green { background: #4ECDC4; color: #111; }
+.v2-mode .tag-v2.ylw { background: #FFD93D; color: #111; }
+.v2-mode .tag-v2.red { background: #FF5252; color: #fff; }
 
 .v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; padding: 0 28rpx; }
 .v2-mode .btn-v2-bottom { display: block; width: 100%; height: 72rpx; line-height: 72rpx; background: #4ECDC4; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }

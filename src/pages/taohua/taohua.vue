@@ -362,7 +362,7 @@
     </view>
 
     <!-- 隐藏 Canvas -->
-    <canvas type="2d" id="taohuaShareCanvas" style="position:fixed;left:-9999px;top:-9999px;width:640px;height:960px;"></canvas>
+    <canvas type="2d" id="taohuaShareCanvas" style="position:fixed;left:-9999px;top:-9999px;width:640px;height:512px;"></canvas>
 
     <view class="ai-disclaimer">
       <text class="ai-disclaimer-text">AI 辅助分析 · 仅供辅助参考，不构成专业意见</text>
@@ -874,12 +874,12 @@ const showSharePreview = ref(false)
 const shareImagePath = ref('')
 let shareCanvasNode: any = null
 const SHARE_CARD_W = 640
-const SHARE_CARD_H = 960
+const SHARE_CARD_H = 512
 
 onShareAppMessage(() => ({
   title: `${userZodiac.value || '我'} · ${userSign.value || '星座'} 的桃花人格卡`,
   path: buildTaohuaSharePath(),
-  imageUrl: shareImagePath.value || undefined,
+  imageUrl: shareImagePath.value || '/static/share-taohua-persona.png',
 }))
 
 function sharePersona() {
@@ -932,7 +932,6 @@ function drawShareCard(ctx: any) {
   const planetLine = western.planet
     ? `${western.planet}守护 · ${western.element || ''}象${String(western.mode || '').split('（')[0]}`
     : '星座能量待解锁'
-  const cnText = chinese.character || '你的关系气质，会在熟悉感和吸引力之间慢慢显形。'
   const bestMatch = Array.isArray(western.bestMatch) ? western.bestMatch.slice(0, 3) : []
 
   ctx.clearRect(0, 0, W, H)
@@ -944,120 +943,108 @@ function drawShareCard(ctx: any) {
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, W, H)
 
-  // Soft background motifs.
+  drawCompassMark(ctx, 532, 90, 74)
+
+  // Page screenshot frame for the WeChat 5:4 share thumbnail.
+  drawHardPanel(ctx, 26, 24, 588, 448, '#FFFDF5', 8, 3)
+
+  drawHardPanel(ctx, 48, 46, 544, 112, '#FF6B6B', 7, 3)
+  ctx.fillStyle = '#111'
+  ctx.fillRect(72, 66, 88, 25)
+  ctx.font = 'bold 15px sans-serif'
+  ctx.fillStyle = '#FFD93D'
+  ctx.fillText('TAOHUA', 82, 85)
+  ctx.font = 'bold 32px sans-serif'
+  ctx.fillStyle = '#111'
+  ctx.fillText('TA 的桃花人格卡', 72, 126)
+  ctx.font = 'bold 18px sans-serif'
+  ctx.fillStyle = 'rgba(0,0,0,0.68)'
+  ctx.fillText(`${zodiac} · ${sign} · ${starName}`, 350, 126)
+
+  drawHardPanel(ctx, 48, 184, 350, 210, '#FFFFFF', 7, 3)
   ctx.save()
   ctx.globalAlpha = 0.18
-  ctx.fillStyle = '#FF6B6B'
+  ctx.strokeStyle = '#7F2B1D'
+  ctx.lineWidth = 3
   ctx.beginPath()
-  ctx.arc(538, 120, 156, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = '#FFD93D'
-  ctx.beginPath()
-  ctx.arc(72, 780, 148, 0, Math.PI * 2)
-  ctx.fill()
+  ctx.arc(336, 236, 52, 0, Math.PI * 2)
+  ctx.stroke()
   ctx.restore()
 
-  drawCompassMark(ctx, 500, 162, 94)
-
-  // Main paper.
-  drawRoundRect(ctx, 28, 32, W - 56, H - 64, 34, '#111')
-  ctx.fillStyle = '#fff'
-  drawRoundRect(ctx, 20, 24, W - 56, H - 64, 34)
-
-  const header = ctx.createLinearGradient(20, 24, W - 36, 220)
-  header.addColorStop(0, '#7F2B1D')
-  header.addColorStop(0.62, '#C84A3D')
-  header.addColorStop(1, '#FFD36E')
-  ctx.fillStyle = header
-  drawRoundRect(ctx, 20, 24, W - 56, 224, 34)
-  ctx.fillStyle = '#fff'
-  ctx.fillRect(20, 204, W - 56, 70)
-
-  ctx.font = 'bold 22px sans-serif'
-  ctx.fillStyle = 'rgba(255,255,255,0.86)'
-  ctx.fillText('Crush Master · 命理桃花', 58, 80)
-  drawPill(ctx, 386, 54, 144, 42, '桃花人格卡', '#FFF3BF', '#7A2C1B', 20)
-
-  ctx.font = 'bold 42px sans-serif'
-  ctx.fillStyle = '#fff'
-  ctx.fillText('我的桃花人设', 58, 142)
-  ctx.font = 'bold 24px sans-serif'
-  ctx.fillStyle = 'rgba(255,255,255,0.84)'
-  ctx.fillText(`${zodiac} · ${sign} · ${starName}`, 58, 184)
-
-  // Avatar seal.
   ctx.fillStyle = '#111'
   ctx.beginPath()
-  ctx.arc(116, 286, 70, 0, Math.PI * 2)
+  ctx.arc(102, 248, 43, 0, Math.PI * 2)
   ctx.fill()
-  const seal = ctx.createLinearGradient(58, 216, 174, 354)
+  const seal = ctx.createLinearGradient(62, 206, 136, 286)
   seal.addColorStop(0, '#FFD93D')
   seal.addColorStop(1, '#FF8E7D')
   ctx.fillStyle = seal
   ctx.beginPath()
-  ctx.arc(108, 278, 70, 0, Math.PI * 2)
+  ctx.arc(96, 242, 43, 0, Math.PI * 2)
   ctx.fill()
   ctx.strokeStyle = '#111'
-  ctx.lineWidth = 5
+  ctx.lineWidth = 4
   ctx.beginPath()
-  ctx.arc(108, 278, 54, 0, Math.PI * 2)
+  ctx.arc(96, 242, 33, 0, Math.PI * 2)
   ctx.stroke()
-  ctx.font = 'bold 54px sans-serif'
+  ctx.font = 'bold 34px sans-serif'
   ctx.fillStyle = '#111'
   ctx.textAlign = 'center'
-  ctx.fillText(zodiac.slice(0, 1), 108, 296)
+  ctx.fillText(zodiac.slice(0, 1), 96, 254)
   ctx.textAlign = 'left'
 
-  ctx.font = 'bold 24px sans-serif'
+  ctx.font = 'bold 17px sans-serif'
   ctx.fillStyle = '#8A3A28'
-  ctx.fillText('你的吸引力关键词', 202, 260)
-  ctx.font = 'bold 46px sans-serif'
+  ctx.fillText('吸引力关键词', 162, 228)
+  ctx.font = 'bold 30px sans-serif'
   ctx.fillStyle = '#111'
-  wrapTextLimited(ctx, personaTitle, 202, 320, 360, 52, 2)
+  wrapTextLimited(ctx, personaTitle, 162, 266, 204, 34, 2)
 
-  drawPill(ctx, 58, 386, 128, 42, zodiac, '#111', '#FFD93D', 21)
-  drawPill(ctx, 200, 386, 150, 42, sign, '#FFF0E5', '#8A3A28', 21)
-  drawPill(ctx, 366, 386, 154, 42, starMeta, '#F5F0E8', '#111', 19)
+  drawPill(ctx, 72, 306, 84, 32, zodiac, '#111', '#FFD93D', 16)
+  drawPill(ctx, 168, 306, 94, 32, sign, '#FFF0E5', '#8A3A28', 16)
+  drawPill(ctx, 274, 306, 86, 32, starMeta, '#F5F0E8', '#111', 14)
 
-  drawSection(ctx, 58, 452, 524, 172, '桃花风格', '#FFE7E1')
-  ctx.font = 'bold 24px sans-serif'
+  ctx.fillStyle = '#FFE7E1'
+  ctx.fillRect(72, 352, 296, 28)
+  ctx.strokeStyle = '#111'
+  ctx.lineWidth = 2
+  ctx.strokeRect(72, 352, 296, 28)
+  ctx.font = 'bold 15px sans-serif'
   ctx.fillStyle = '#111'
-  wrapTextLimited(ctx, personaDesc, 88, 534, 464, 34, 3)
+  wrapTextLimited(ctx, personaDesc, 84, 372, 272, 20, 1)
 
-  drawSection(ctx, 58, 656, 248, 150, '西方星座', '#FFF4C7')
-  ctx.font = 'bold 22px sans-serif'
+  drawHardPanel(ctx, 424, 184, 142, 74, '#FFF4C7', 5, 3)
+  ctx.font = 'bold 16px sans-serif'
+  ctx.fillStyle = '#8A3A28'
+  ctx.fillText('西方星座', 442, 214)
+  ctx.font = 'bold 15px sans-serif'
   ctx.fillStyle = '#111'
-  wrapTextLimited(ctx, planetLine, 84, 734, 196, 30, 2)
+  wrapTextLimited(ctx, planetLine, 442, 242, 104, 20, 1)
 
-  drawSection(ctx, 334, 656, 248, 150, '中国星次', '#F2F0EA')
-  ctx.font = 'bold 22px sans-serif'
+  drawHardPanel(ctx, 424, 276, 142, 74, '#F2F0EA', 5, 3)
+  ctx.font = 'bold 16px sans-serif'
+  ctx.fillStyle = '#8A3A28'
+  ctx.fillText('中国星次', 442, 306)
+  ctx.font = 'bold 15px sans-serif'
   ctx.fillStyle = '#111'
-  ctx.fillText(starName, 360, 734)
-  ctx.font = '19px sans-serif'
-  ctx.fillStyle = '#5F5148'
-  wrapTextLimited(ctx, cnText, 360, 766, 176, 26, 2)
+  wrapTextLimited(ctx, starName, 442, 334, 104, 20, 1)
 
   if (bestMatch.length > 0) {
-    ctx.font = 'bold 20px sans-serif'
+    ctx.font = 'bold 15px sans-serif'
     ctx.fillStyle = '#8A3A28'
-    ctx.fillText('高频适配', 58, 842)
-    bestMatch.forEach((m: string, i: number) => {
-      drawPill(ctx, 156 + i * 120, 818, 104, 42, m, '#FFF0E5', '#8A3A28', 19)
+    ctx.fillText('高频适配', 424, 382)
+    bestMatch.slice(0, 2).forEach((m: string, i: number) => {
+      drawPill(ctx, 494 + i * 58, 361, 52, 28, m, '#FFF0E5', '#8A3A28', 13)
     })
   }
 
-  ctx.strokeStyle = '#111'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.moveTo(58, 878)
-  ctx.lineTo(W - 72, 878)
-  ctx.stroke()
-  ctx.font = 'bold 22px sans-serif'
-  ctx.fillStyle = '#111'
-  ctx.fillText('打开小程序，测你的桃花人格与今日桃花位', 58, 918)
-  ctx.font = '18px sans-serif'
-  ctx.fillStyle = '#8E8177'
-  ctx.fillText('AI 辅助分析，仅供文化娱乐参考', 58, 946)
+  drawHardPanel(ctx, 48, 412, 544, 38, '#111111', 5, 3)
+  ctx.font = 'bold 18px sans-serif'
+  ctx.fillStyle = '#FFD93D'
+  ctx.fillText('Crush Master · 命理桃花', 70, 437)
+  ctx.font = 'bold 16px sans-serif'
+  ctx.fillStyle = 'rgba(255,255,255,0.82)'
+  ctx.fillText('打开小程序，生成你的专属人格卡', 322, 437)
 
   // 导出
   setTimeout(() => {
@@ -1072,6 +1059,16 @@ function drawShareCard(ctx: any) {
       },
     })
   }, 300)
+}
+
+function drawHardPanel(ctx: any, x: number, y: number, w: number, h: number, bg: string, shadow = 6, border = 3) {
+  ctx.fillStyle = '#111'
+  ctx.fillRect(x + shadow, y + shadow, w, h)
+  ctx.fillStyle = bg
+  ctx.fillRect(x, y, w, h)
+  ctx.strokeStyle = '#111'
+  ctx.lineWidth = border
+  ctx.strokeRect(x, y, w, h)
 }
 
 function drawRoundRect(ctx: any, x: number, y: number, w: number, h: number, r: number, fill?: string) {
@@ -1102,11 +1099,7 @@ function drawPill(ctx: any, x: number, y: number, w: number, h: number, text: st
 }
 
 function drawSection(ctx: any, x: number, y: number, w: number, h: number, title: string, bg: string) {
-  drawRoundRect(ctx, x + 6, y + 8, w, h, 20, '#111')
-  drawRoundRect(ctx, x, y, w, h, 20, bg)
-  ctx.strokeStyle = '#111'
-  ctx.lineWidth = 3
-  ctx.stroke()
+  drawHardPanel(ctx, x, y, w, h, bg, 5, 3)
   ctx.font = 'bold 20px sans-serif'
   ctx.fillStyle = '#8A3A28'
   ctx.fillText(title, x + 28, y + 42)

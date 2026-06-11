@@ -3,32 +3,32 @@
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else>
-        <view class="hero-block-v2"><text class="hero-tag-v2">14-DAY REVIEW / {{ caseName }}</text><text class="hero-title-v2">近14天<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按近14天窗口回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">回去</button><button class="btn-v2-wr" @click="goTimeline">往事</button></view></view>
+        <view class="hero-block-v2"><text class="hero-tag-v2">MONTHLY REVIEW / {{ caseName }}</text><text class="hero-title-v2">月度<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按月度窗口回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">回去</button><button class="btn-v2-wr" @click="goTimeline">往事</button></view></view>
         <!-- Generate -->
-        <view class="card-v2"><text class="section-title-v2">近14天 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、近14天真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating || (currentReview && !hasNewEventsSinceReview)" @click="generateCurrentWeek">{{ generating ? '生成中...' : (currentReview && !hasNewEventsSinceReview) ? '还没新事件' : (currentReview ? '重新生成近14天复盘' : '生成近14天复盘') }}</button>
-        <AiLoading v-if="generating" label="近14天复盘分析中..." :seconds="generatingSeconds" /></view>
+        <view class="card-v2"><text class="section-title-v2">月度 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、月度真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating || (currentReview && !hasNewEventsSinceReview)" @click="generateCurrentWeek">{{ generating ? '生成中...' : (currentReview && !hasNewEventsSinceReview) ? '还没新事件' : (currentReview ? '重新生成月度复盘' : '生成月度复盘') }}</button>
+        <AiLoading v-if="generating" label="月度复盘分析中..." :seconds="generatingSeconds" /></view>
         <!-- Current review -->
         <view v-if="currentReview" class="card-v2 review-v2">
-          <view class="review-head-v2"><view><text class="review-week-v2">{{ currentReview.weekStart }} - {{ currentReview.weekEnd }}</text><text class="review-title-v2">{{ currentReview.title }}</text></view><view class="tag-row-v2"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(currentReview.trendLabel) }}</text><text v-if="currentReview.aiUsed" class="tag-v2 black">AI 复盘</text></view></view>
+          <view class="review-head-v2"><view><text class="review-week-v2">{{ currentReview.monthStart }} - {{ currentReview.monthEnd }}</text><text class="review-title-v2">{{ currentReview.title }}</text></view><view class="tag-row-v2"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(currentReview.trendLabel) }}</text><text v-if="currentReview.aiUsed" class="tag-v2 black">AI 复盘</text></view></view>
           <text class="review-summary-v2" user-select>{{ currentReview.summary }}</text>
           <view class="tag-row-v2" style="margin-top:10rpx;"><text class="tag-v2">事件 {{ currentReview.eventCount }}</text><text class="tag-v2">分析 {{ currentReview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(currentReview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(currentReview.riskDelta) }}</text></view>
-          <view v-if="currentReview.keyChanges?.length" class="review-block-v2"><text class="section-title-v2">近14天关键变化</text><text v-for="item in currentReview.keyChanges" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
+          <view v-if="currentReview.keyChanges?.length" class="review-block-v2"><text class="section-title-v2">月度关键变化</text><text v-for="item in currentReview.keyChanges" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
           <view v-if="currentReview.keyEvents?.length" class="review-block-v2"><text class="section-title-v2">关键事件</text><text v-for="item in currentReview.keyEvents" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
-          <view v-if="currentReview.nextWeekFocus?.length" class="review-block-v2"><text class="section-title-v2">下个14天观察重点</text><text v-for="item in currentReview.nextWeekFocus" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
-          <view v-if="currentReview.avoidMisread?.length" class="review-block-v2"><text class="section-title-v2">近14天避免误判</text><text v-for="item in currentReview.avoidMisread" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
+          <view v-if="currentReview.nextWeekFocus?.length" class="review-block-v2"><text class="section-title-v2">下月观察重点</text><text v-for="item in currentReview.nextWeekFocus" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
+          <view v-if="currentReview.avoidMisread?.length" class="review-block-v2"><text class="section-title-v2">月度避免误判</text><text v-for="item in currentReview.avoidMisread" :key="item" class="bullet-v2" user-select>• {{ item }}</text></view>
         </view>
-        <view v-else class="empty-v2"><text class="empty-title-v2">近14天还没有复盘</text><text class="empty-sub-v2">先生成一次近14天复盘，后续会沉淀为历史。</text></view>
+        <view v-else class="empty-v2"><text class="empty-title-v2">月度还没有复盘</text><text class="empty-sub-v2">先生成一次月度复盘，后续会沉淀为历史。</text></view>
         <!-- Side read -->
-        <view class="card-v2"><text class="section-title-v2">近14天星象速写</text><text class="card-text-v2">结合属相、星座和近14天事件，给出近14天星象速写。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="!currentReview || sideReadLoading || (currentWeeklySideRead && !hasNewEventsSinceSideRead)" @click="generateCurrentWeeklySideRead">{{ sideReadLoading ? '生成中...' : (currentWeeklySideRead && !hasNewEventsSinceSideRead) ? '还没新事件' : (currentWeeklySideRead ? '重新生成近14天星象速写' : '生成近14天星象速写') }}</button>
+        <view class="card-v2"><text class="section-title-v2">月度星象速写</text><text class="card-text-v2">结合属相、星座和月度事件，给出月度星象速写。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="!currentReview || sideReadLoading || (currentWeeklySideRead && !hasNewEventsSinceSideRead)" @click="generateCurrentWeeklySideRead">{{ sideReadLoading ? '生成中...' : (currentWeeklySideRead && !hasNewEventsSinceSideRead) ? '还没新事件' : (currentWeeklySideRead ? '重新生成月度星象速写' : '生成月度星象速写') }}</button>
         <AiLoading v-if="sideReadLoading" label="星象速写中..." :seconds="sideReadSeconds" />
           <view v-if="currentWeeklySideRead" class="side-body-v2"><text class="review-title-v2">{{ currentWeeklySideRead.title }}</text><text class="review-summary-v2" user-select>{{ currentWeeklySideRead.summary }}</text><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2" user-select>{{ item.text }}</text></view></view>
-          <text v-else-if="currentReview" class="card-text-v2 muted" style="margin-top:10rpx;">近14天还没有星象速写，可以单独生成。</text>
-          <text v-else class="card-text-v2 muted" style="margin-top:10rpx;">请先生成近14天复盘，再生成近14天星象速写。</text>
+          <text v-else-if="currentReview" class="card-text-v2 muted" style="margin-top:10rpx;">月度还没有星象速写，可以单独生成。</text>
+          <text v-else class="card-text-v2 muted" style="margin-top:10rpx;">请先生成月度复盘，再生成月度星象速写。</text>
         </view>
         <!-- History -->
-        <view class="card-v2"><text class="section-title-v2">历史14天复盘</text><text class="card-text-v2">按近14天窗口保存，帮助你看连续趋势。</text></view>
-        <view v-if="historyReviews.length === 0" class="empty-v2"><text class="empty-sub-v2">暂无历史14天复盘。</text></view>
-        <view v-else class="history-list-v2"><view v-for="item in historyReviews" :key="item._id" class="card-v2 history-card-v2"><view class="review-head-v2"><view><text class="review-week-v2">{{ item.weekStart }} - {{ item.weekEnd }}</text><text class="review-title-v2">{{ item.title }}</text></view><text class="tag-v2">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text></view><text class="review-summary-v2" user-select>{{ item.summary }}</text><view class="tag-row-v2" style="margin-top:8rpx;"><text class="tag-v2">意向 {{ formatDelta(item.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(item.riskDelta) }}</text><text class="tag-v2">事件 {{ item.eventCount }}</text></view></view></view>
+        <view class="card-v2"><text class="section-title-v2">历史月度复盘</text><text class="card-text-v2">按月度窗口保存，帮助你看连续趋势。</text></view>
+        <view v-if="historyReviews.length === 0" class="empty-v2"><text class="empty-sub-v2">暂无历史月度复盘。</text></view>
+        <view v-else class="history-list-v2"><view v-for="item in historyReviews" :key="item._id" class="card-v2 history-card-v2"><view class="review-head-v2"><view><text class="review-week-v2">{{ item.monthStart }} - {{ item.monthEnd }}</text><text class="review-title-v2">{{ item.title }}</text></view><text class="tag-v2">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text></view><text class="review-summary-v2" user-select>{{ item.summary }}</text><view class="tag-row-v2" style="margin-top:8rpx;"><text class="tag-v2">意向 {{ formatDelta(item.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(item.riskDelta) }}</text><text class="tag-v2">事件 {{ item.eventCount }}</text></view></view></view>
       </view>
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
@@ -38,13 +38,13 @@
 import { computed, ref, onBeforeUnmount, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import {
-  generateWeeklyReview,
-  generateWeeklySideRead,
+  generateMonthlyReview,
+  generateMonthlySideRead,
   getCaseDetail,
   getCases,
   getCurrentUserId,
   handleInsufficientBalance,
-  getWeeklyReviews
+  getMonthlyReviews
 } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
@@ -63,12 +63,12 @@ const caseId = ref('')
 const caseName = ref('当前 Crush')
 const reviews = ref<any[]>([])
 const caseTimeline = ref<any[]>([])
-const currentWeekStart = ref('')
+const currentMonthStart = ref('')
 const themeVars = ref(getThemeStyle())
 const initialized = ref(false)
 
 const currentReview = computed(() => {
-  return reviews.value.find((item) => item.weekStart === currentWeekStart.value) || null
+  return reviews.value.find((item) => item.monthStart === currentMonthStart.value) || null
 })
 
 const currentWeeklySideRead = computed(() => {
@@ -79,7 +79,7 @@ const latestEventTime = computed(() => {
   let max = 0
   for (const item of caseTimeline.value) {
     if (!item || !item.occurrenceAt) continue
-    if (item.type === 'assessment' || item.type === 'trend' || item.type === 'weekly_review') continue
+    if (item.type === 'assessment' || item.type === 'trend' || item.type === 'monthly_review') continue
     if (item.type === 'note' && item.feature === 'weeklySideRead') continue
     const t = new Date(item.occurrenceAt).getTime()
     if (t > max) max = t
@@ -105,7 +105,7 @@ const hasNewEventsSinceSideRead = computed(() => {
 })
 
 const historyReviews = computed(() => {
-  return reviews.value.filter((item) => item.weekStart !== currentWeekStart.value)
+  return reviews.value.filter((item) => item.monthStart !== currentMonthStart.value)
 })
 
 onLoad((options) => {
@@ -163,7 +163,7 @@ function writeWeeklyCache(uid, id, data) {
       cachedAt: Date.now(),
       caseName: data.caseName,
       reviews: data.reviews,
-      currentWeekStart: data.currentWeekStart
+      currentMonthStart: data.currentMonthStart
     })
   } catch {}
 }
@@ -183,7 +183,7 @@ async function loadData(options?: { silent?: boolean }) {
     if (cached) {
       caseName.value = cached.caseName || '当前 Crush'
       reviews.value = cached.reviews || []
-      currentWeekStart.value = cached.currentWeekStart || ''
+      currentMonthStart.value = cached.currentMonthStart || ''
       loading.value = false
     }
   }
@@ -200,7 +200,7 @@ async function loadData(options?: { silent?: boolean }) {
     setActiveCaseId(caseId.value)
     const [caseFile, reviewRes] = await Promise.all([
       getCaseDetail(uid, caseId.value).catch(() => null),
-      getWeeklyReviews(uid, caseId.value).catch(() => null)
+      getMonthlyReviews(uid, caseId.value).catch(() => null)
     ])
     if (!caseFile && !reviewRes) {
       showError('加载14天复盘失败')
@@ -209,12 +209,12 @@ async function loadData(options?: { silent?: boolean }) {
     caseName.value = caseFile?.name || '当前 Crush'
     caseTimeline.value = Array.isArray(caseFile?.timeline) ? caseFile.timeline : []
     reviews.value = reviewRes?.reviews || []
-    currentWeekStart.value = reviewRes?.currentWeekStart || ''
+    currentMonthStart.value = reviewRes?.currentMonthStart || ''
     lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
     writeWeeklyCache(uid, caseId.value, {
       caseName: caseName.value,
       reviews: reviews.value,
-      currentWeekStart: currentWeekStart.value
+      currentMonthStart: currentMonthStart.value
     })
   } catch (error: any) {
     showError(error?.message || '加载14天复盘失败')
@@ -230,12 +230,12 @@ async function generateCurrentWeek() {
   generatingSeconds.value = 0
   generatingTimer = setInterval(() => { generatingSeconds.value++ }, 1000)
   try {
-    const res = await generateWeeklyReview(userId.value, caseId.value, currentWeekStart.value)
+    const res = await generateMonthlyReview(userId.value, caseId.value, currentMonthStart.value)
     reviews.value = res.reviews || []
-    currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
+    currentMonthStart.value = res.review?.monthStart || currentMonthStart.value
     bumpDataVersion()
-    writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentWeekStart: currentWeekStart.value })
-    showSuccess('已生成近14天复盘')
+    writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentMonthStart: currentMonthStart.value })
+    showSuccess('已生成月度复盘')
   } catch (error: any) {
     if (handleInsufficientBalance(error)) return
     showError(error?.message || '生成14天复盘失败')
@@ -252,15 +252,15 @@ async function generateCurrentWeeklySideRead() {
   sideReadSeconds.value = 0
   sideReadTimer = setInterval(() => { sideReadSeconds.value++ }, 1000)
   try {
-    const res = await generateWeeklySideRead(userId.value, caseId.value, currentWeekStart.value)
+    const res = await generateMonthlySideRead(userId.value, caseId.value, currentMonthStart.value)
     reviews.value = res.reviews || reviews.value
-    currentWeekStart.value = res.review?.weekStart || currentWeekStart.value
+    currentMonthStart.value = res.review?.monthStart || currentMonthStart.value
     bumpDataVersion()
-    writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentWeekStart: currentWeekStart.value })
-    showSuccess('已生成近14天星象速写')
+    writeWeeklyCache(userId.value, caseId.value, { caseName: caseName.value, reviews: reviews.value, currentMonthStart: currentMonthStart.value })
+    showSuccess('已生成月度星象速写')
   } catch (error: any) {
     if (handleInsufficientBalance(error)) return
-    showError(error?.message || '生成近14天星象速写失败')
+    showError(error?.message || '生成月度星象速写失败')
   } finally {
     sideReadLoading.value = false
     clearInterval(sideReadTimer)
@@ -283,18 +283,18 @@ function formatDelta(value: any) {
 function mapWeeklyTrendLabel(label: any) {
   const normalized = String(label || '').trim()
   const map: Record<string, string> = {
-    持续向好: '近14天回暖',
-    持续走低: '近14天转弱',
-    风险抬头: '近14天承压',
-    起伏不定: '近14天波动',
-    基本持平: '近14天平稳',
-    稳定观察: '近14天观察',
-    升温期: '近14天回暖',
-    升温中: '近14天回暖',
-    走弱期: '近14天转弱',
-    暂时平稳: '近14天平稳'
+    持续向好: '月度回暖',
+    持续走低: '月度转弱',
+    风险抬头: '月度承压',
+    起伏不定: '月度波动',
+    基本持平: '月度平稳',
+    稳定观察: '月度观察',
+    升温期: '月度回暖',
+    升温中: '月度回暖',
+    走弱期: '月度转弱',
+    暂时平稳: '月度平稳'
   }
-  return map[normalized] || (normalized ? `近14天${normalized.replace(/^近14天/, '')}` : '近14天复盘')
+  return map[normalized] || (normalized ? `月度${normalized.replace(/^月度/, '')}` : '月度复盘')
 }
 
 function goCaseDetail() {

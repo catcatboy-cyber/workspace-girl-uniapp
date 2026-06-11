@@ -289,8 +289,12 @@ function isWithinLastDays(date, now, days) {
 }
 
 function summarizeWeeklyDirection(caseFile, now) {
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const recentAssessments = caseFile.assessments
-    .filter((item) => isWithinLastDays(item.createdAt ? new Date(item.createdAt) : null, now, 14))
+    .filter((item) => {
+      const t = item.createdAt ? new Date(item.createdAt).getTime() : 0
+      return t >= monthStart.getTime()
+    })
     .sort((a, b) => (a.createdAt ?? '') < (b.createdAt ?? '') ? -1 : 1)
 
   if (recentAssessments.length >= 2) {
@@ -305,7 +309,8 @@ function summarizeWeeklyDirection(caseFile, now) {
 }
 
 export function buildCaseWeeklyReview(caseFile, now = new Date()) {
-  const recentTimeline = caseFile.timeline.filter((item) => isWithinLastDays(getTimelineRecordTime(item), now, 14))
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const recentTimeline = caseFile.timeline.filter((item) => getTimelineRecordTime(item) >= monthStart.getTime())
   const userFacingTimeline = recentTimeline.filter((item) => item.type === 'positive' || item.type === 'risk' || item.type === 'verification' || item.type === 'note')
   const verificationCount = userFacingTimeline.filter((item) => item.type === 'verification').length
   const riskEvent = userFacingTimeline.find((item) => item.type === 'risk')
@@ -316,29 +321,29 @@ export function buildCaseWeeklyReview(caseFile, now = new Date()) {
 
   const summary =
     userFacingTimeline.length === 0
-      ? '近14天还没有新增事件，下一次关键互动出现时更适合回来记录。'
+      ? '本月还没有新增事件，下一次关键互动出现时更适合回来记录。'
       : direction?.warningText
         ? direction.warningText
         : direction?.intentDirection === 'up' && direction.riskDirection !== 'up'
-          ? '近14天关系信号在变清晰，重点继续看后续是否稳定落地。'
+          ? '本月关系信号在变清晰，重点继续看后续是否稳定落地。'
           : direction?.riskDirection === 'up'
-            ? '近14天风险线索更活跃，最值得做的是回看有没有回避、改口或失约。'
-            : '近14天有新变化，但还需要更多连续事件才能把方向看清。'
+            ? '本月风险线索更活跃，最值得做的是回看有没有回避、改口或失约。'
+            : '本月有新变化，但还需要更多连续事件才能把方向看清。'
 
   const highlight = positiveEvent
-    ? `近14天最真实的一次推进：${positiveEvent.title}`
+    ? `本月最真实的一次推进：${positiveEvent.title}`
     : direction?.intentDelta && direction.intentDelta > 0
-      ? '近14天意向有抬升，但还没有特别明确的一次推进事件。'
-      : '近14天还没有特别明确的推进事件。'
+      ? '本月意向有抬升，但还没有特别明确的一次推进事件。'
+      : '本月还没有特别明确的推进事件。'
 
   const warning = riskEvent
-    ? `近14天最该警惕的信号：${riskEvent.title}`
+    ? `本月最该警惕的信号：${riskEvent.title}`
     : direction?.riskDelta && direction.riskDelta > 0
-      ? '近14天风险在抬头，但还没有单个特别突出的风险事件。'
-      : '近14天暂时没有特别尖锐的风险信号。'
+      ? '本月风险在抬头，但还没有单个特别突出的风险事件。'
+      : '本月暂时没有特别尖锐的风险信号。'
 
   return {
-    title: '近14天回顾',
+    title: '本月回顾',
     summary,
     highlight,
     warning,
@@ -356,7 +361,8 @@ export function buildObservationAchievements(cases, now = new Date()) {
   const allAssessments = cases.flatMap((item) => item.assessments || [])
   const userEvents = allTimeline.filter((item) => item && (item.type === 'positive' || item.type === 'risk' || item.type === 'verification' || item.type === 'note'))
   const verificationCount = userEvents.filter((item) => item.type === 'verification').length
-  const recentEventCount = userEvents.filter((item) => isWithinLastDays(getTimelineRecordTime(item), now, 14)).length
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const recentEventCount = userEvents.filter((item) => getTimelineRecordTime(item) >= monthStart.getTime()).length
 
   const achievements = []
 
@@ -386,9 +392,9 @@ export function buildObservationAchievements(cases, now = new Date()) {
 
   if (recentEventCount >= 3) {
     achievements.push({
-      title: '近14天持续观察',
+      title: '本月持续观察',
       value: `${recentEventCount} 条`,
-      description: '近14天没有只靠感觉，持续在补真实互动。'
+      description: '本月没有只靠感觉，持续在补真实互动。'
     })
   }
 
@@ -1305,7 +1311,8 @@ function isActualMeetRecord(item) {
 export function buildCaseOverviewStats(caseFile, now = new Date()) {
   const manualTimeline = sortTimelineRecordsDesc((caseFile?.timeline || []).filter((item) => isUserFacingTimelineRecord(item)))
   const latestRecord = manualTimeline[0] || null
-  const recent14Days = manualTimeline.filter((item) => isWithinRecentDays(getTimelineRecordTimestamp(item), now, 14))
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const recentMonth = manualTimeline.filter((item) => getTimelineRecordTimestamp(item) >= monthStart.getTime())
   const recent10Records = manualTimeline.slice(0, 10)
 
   let blockedStreak = 0
@@ -1314,8 +1321,8 @@ export function buildCaseOverviewStats(caseFile, now = new Date()) {
     blockedStreak += 1
   }
 
-  const targetInitiatedCount = recent14Days.filter((item) => hasTargetInitiative(item)).length
-  const recentMeetCount = recent14Days.filter((item) => isActualMeetRecord(item)).length
+  const targetInitiatedCount = recentMonth.filter((item) => hasTargetInitiative(item)).length
+  const recentMeetCount = recentMonth.filter((item) => isActualMeetRecord(item)).length
   const { commitmentCount, deliveredCount } = summarizeCommitmentDeliveryStats(recent10Records)
   const trendAssessments = [...(caseFile?.assessments || [])]
     .sort((a, b) => {
@@ -1335,21 +1342,21 @@ export function buildCaseOverviewStats(caseFile, now = new Date()) {
       },
       {
         key: 'week-records',
-        label: '近14天记录',
-        value: `${recent14Days.length} 条`,
-        hint: recent14Days.length > 0 ? '近14天新增的真实事件数' : '近14天还没有新记录'
+        label: '本月记录',
+        value: `${recentMonth.length} 条`,
+        hint: recentMonth.length > 0 ? '本月新增的真实事件数' : '本月还没有新记录'
       },
       {
         key: 'target-initiative',
         label: '对方主动',
         value: `${targetInitiatedCount} 次`,
-        hint: '近 14 天里由对方发起或推进的次数'
+        hint: '本月里由对方发起或推进的次数'
       },
       {
         key: 'recent-meetings',
-        label: '近14天见面',
+        label: '本月见面',
         value: `${recentMeetCount} 次`,
-        hint: recentMeetCount > 0 ? '只统计已实际发生的线下见面，不把计划中的约见算进去' : '近 14 天还没有记录到实际发生的线下见面'
+        hint: recentMeetCount > 0 ? '只统计已实际发生的线下见面，不把计划中的约见算进去' : '本月还没有记录到实际发生的线下见面'
       },
       {
         key: 'blocked-streak',
@@ -2235,4 +2242,72 @@ export function buildTimelineFromLatestResult(latestResult) {
   })
 
   return items
+}
+
+// ============================================================================
+// Signal tag: user-facing single signal with drill-down detail
+// ============================================================================
+
+/**
+ * Map event insights + trend to a user-facing signal label.
+ * Returns { signal, emoji, label, detail } — one signal per event.
+ *
+ * Signal priority:
+ *   1. ⚠️ 矛盾 — broken commitments or risk spike
+ *   2. 🔥 好感 — target-initiated positive actions or intent uptrend
+ *   3. ❄️ 降温 — target rejected/delayed or intent downtrend
+ *   4. ➖ 平稳 — everything else
+ */
+export function mapEventSignal(eventInsight, trend) {
+  const insight = eventInsight && typeof eventInsight === 'object' ? eventInsight : {}
+  const t = trend && typeof trend === 'object' ? trend : {}
+  const actor = String(insight.actor || '')
+  const interaction = String(insight.interaction || '')
+  const commitment = String(insight.commitmentStatus || insight.commitment || '')
+  const evidence = String(insight.evidenceType || insight.evidence || '')
+  const intentDelta = Number(t.intentDelta || 0)
+  const riskDelta = Number(t.riskDelta || 0)
+
+  const detail = {
+    actor: actor ? explainSignalField('actor', actor) : '未识别',
+    interaction: interaction ? explainSignalField('interaction', interaction) : '未识别',
+    commitment: commitment ? explainSignalField('commitment', commitment) : '未识别',
+    evidence: evidence ? explainSignalField('evidence', evidence) : '未识别',
+    intentDelta: intentDelta !== 0 ? `${intentDelta > 0 ? '+' : ''}${intentDelta}` : '持平',
+    riskDelta: riskDelta !== 0 ? `${riskDelta > 0 ? '+' : ''}${riskDelta}` : '持平'
+  }
+
+  // ⚠️ 矛盾
+  if (commitment === 'broken' || riskDelta >= 10) {
+    return { signal: 'contradiction', emoji: '⚠️', label: '矛盾',
+      summary: commitment === 'broken' ? '对方言行不一致，有承诺未兑现' : '风险显著上升，信号矛盾',
+      detail }
+  }
+  // ❄️ 降温
+  if ((actor === 'target' && (interaction === 'rejected' || interaction === 'delayed')) || intentDelta <= -8) {
+    return { signal: 'cooling', emoji: '❄️', label: '降温',
+      summary: intentDelta <= -8 ? '近期对方积极信号在减少' : '对方出现退缩或回避行为',
+      detail }
+  }
+  // 🔥 好感
+  if ((actor === 'target' && interaction && interaction !== 'rejected' && interaction !== 'delayed' && interaction !== 'unclear') || intentDelta >= 8) {
+    return { signal: 'warming', emoji: '🔥', label: '好感',
+      summary: actor === 'target' ? '对方有主动积极投入信号' : '近期意向趋势上升',
+      detail }
+  }
+  // ➖ 平稳
+  return { signal: 'stable', emoji: '➖', label: '平稳',
+    summary: '无明显变化信号，保持观察',
+    detail }
+}
+
+function explainSignalField(field, value) {
+  const map = {
+    actor: { target: '对方主动', self: '自己发起', both: '双方互动', unknown: '主体不清' },
+    interaction: { initiated: '发起', responded: '回应', rejected: '拒绝', delayed: '拖延', fulfilled: '兑现', promised: '承诺', observed: '观察记录', unclear: '互动不明' },
+    commitment: { promised: '有承诺', fulfilled: '已兑现', broken: '未兑现', unclear: '兑现不明' },
+    evidence: { fact: '事实依据', feeling: '感受为主', mixed: '事实+感受', unclear: '依据不清' }
+  }
+  const fieldMap = map[field] || {}
+  return fieldMap[value] || value
 }

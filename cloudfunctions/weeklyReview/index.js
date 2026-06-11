@@ -32,20 +32,33 @@ function parseRangeStart(value) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-function getCurrent14DayStart(now = new Date()) {
-  const local = new Date(now.getTime() + TZ_OFFSET_MS)
-  local.setUTCHours(0, 0, 0, 0)
-  return new Date(local.getTime() - 13 * MS_PER_DAY - TZ_OFFSET_MS)
+function getCurrentMonthStart(now = new Date()) {
+  return getMonthStart(now)
 }
 
-function getWeekRange(weekStartValue) {
-  const start = parseRangeStart(weekStartValue) || getCurrent14DayStart()
-  const end = new Date(start.getTime() + 14 * MS_PER_DAY)
+function getLastMonthRange(now = new Date()) {
+  const thisMonth = getMonthStart(now)
+  const lastMonth = new Date(thisMonth.getTime() - 1)
+  const start = getMonthStart(lastMonth)
+  const end = new Date(thisMonth.getTime() - 1)
+  return { start, end, monthStart: dateKey(start), monthEnd: dateKey(end) }
+}
+
+function getCurrentMonthRange(now = new Date()) {
+  const start = getMonthStart(now)
+  const nextMonth = new Date(start.getFullYear(), start.getMonth() + 1, 1)
+  const end = new Date(nextMonth.getTime() - 1)
+  return { start, end, monthStart: dateKey(start), monthEnd: dateKey(end) }
+}
+
+function getMonthRange(monthStartValue) {
+  const start = parseRangeStart(monthStartValue) || getLastMonthRange().start
+  const end = new Date(start.getFullYear(), start.getMonth() + 1, 1, 0, 0, 0, -1)
   return {
     start,
     end,
-    weekStart: dateKey(new Date(start.getTime() + TZ_OFFSET_MS)),
-    weekEnd: dateKey(new Date(end.getTime() - 1 + TZ_OFFSET_MS))
+    monthStart: dateKey(new Date(start.getTime() + TZ_OFFSET_MS)),
+    monthEnd: dateKey(new Date(end.getTime() + TZ_OFFSET_MS))
   }
 }
 
@@ -120,7 +133,7 @@ function hasWeeklySideReadProfile(selfProfile, caseProfile) {
 
 function normalizeWeeklySideRead(value) {
   const sanitized = sanitizeWeeklySideReadObject(value)
-  const title = sanitized.title || '近14天星象速写'
+  const title = sanitized.title || '本月星象速写'
   const summary = sanitized.summary
   const sections = sanitized.sections
 
@@ -324,23 +337,23 @@ function fallbackReview(params) {
     .filter(Boolean)
 
   const summary = weekEvents.length === 0
-    ? '近14天还没有新增事件。现在不适合下重结论，先继续记录真实互动。'
+    ? '本月还没有新增事件。现在不适合下重结论，先继续记录真实互动。'
     : trend.riskDelta >= 10
-      ? '近14天风险分明显抬头，重点不是继续猜，而是回看是否出现回避、拖延、失约或说法变化。'
+      ? '本月风险分明显抬头，重点不是继续猜，而是回看是否出现回避、拖延、失约或说法变化。'
       : trend.intentDelta >= 8 && trend.riskDelta <= 3
-        ? '近14天意向信号有增强，但重点仍是看推进是否持续落地，而不是只看一次热度。'
-        : '近14天关系有变化，但还没形成足够强的单向结论，适合继续积累连续证据。'
+        ? '本月意向信号有增强，但重点仍是看推进是否持续落地，而不是只看一次热度。'
+        : '本月关系有变化，但还没形成足够强的单向结论，适合继续积累连续证据。'
 
   return {
-    title: `${cleanText(caseDoc.name, 24) || '当前 Crush'} · 近14天复盘`,
+    title: `${cleanText(caseDoc.name, 24) || '当前 Crush'} · 本月复盘`,
     trendLabel,
     summary,
     keyChanges: [
-      `近14天新增 ${weekEvents.length} 条真实事件。`,
-      `近14天产生 ${weekAssessments.length} 次评估变化。`,
+      `本月新增 ${weekEvents.length} 条真实事件。`,
+      `本月产生 ${weekAssessments.length} 次评估变化。`,
       `意向变化 ${trend.intentDelta > 0 ? '+' : ''}${trend.intentDelta}，风险变化 ${trend.riskDelta > 0 ? '+' : ''}${trend.riskDelta}。`
     ],
-    keyEvents: keyEvents.length > 0 ? keyEvents : ['近14天暂无新增关键事件。'],
+    keyEvents: keyEvents.length > 0 ? keyEvents : ['本月暂无新增关键事件。'],
     nextWeekFocus: [
       '下一次最该验证的一件事：看对方是否有明确的后续动作，而不只是停在聊天气氛里。',
       '关注答应过的事情有没有兑现。',
@@ -371,13 +384,13 @@ async function buildAIReview(params) {
       `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
       `Target name: ${cleanText(params.caseDoc.name, 24) || 'current target'}`,
       `Target profile: ${serializeCaseProfile(params.caseDoc.profile)}`,
-      `14-day review range: ${params.weekStart} to ${params.weekEnd}`,
-      `14-day stats: ${JSON.stringify({
+      `Monthly review range: ${params.monthStart} to ${params.monthEnd}`,
+      `Monthly stats: ${JSON.stringify({
         eventCount: params.weekEvents.length,
         assessmentCount: params.weekAssessments.length,
         scoreTrend: params.scoreTrend
       })}`,
-      `14-day key events, max ${runtimeConfig.weeklyEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklyEventLimit))}`
+      `Monthly key events, max ${runtimeConfig.weeklyEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklyEventLimit))}`
     ]
   })
   if (!messages) return fallback
@@ -437,7 +450,7 @@ async function getReviews(caseId) {
   await ensureReviewCollection()
   const { data } = await db.collection(REVIEW_COLLECTION)
     .where({ caseId })
-    .orderBy('weekStart', 'desc')
+    .orderBy('monthStart', 'desc')
     .limit(20)
     .get()
   return (data || []).map((item) => item?.weeklySideRead
@@ -447,9 +460,9 @@ async function getReviews(caseId) {
 
 async function generateReview(params) {
   await ensureReviewCollection()
-  const { caseDoc, caseId, userId, weekStart } = params
-  const range = getWeekRange(weekStart)
-  const reviewId = `weekly_${caseId}_${range.weekStart}`
+  const { caseDoc, caseId, userId, monthStart: monthStartParam } = params
+  const range = getMonthRange(monthStartParam)
+  const reviewId = `monthly_${caseId}_${range.monthStart}`
 
   const [timelineRes, assessmentsRes, userRes, existingReviewRes] = await Promise.all([
     db.collection('timeline_records')
@@ -480,8 +493,8 @@ async function generateReview(params) {
     userId,
     selfProfile: userDoc?.selfProfile || null,
     caseDoc,
-    weekStart: range.weekStart,
-    weekEnd: range.weekEnd,
+    monthStart: range.monthStart,
+    monthEnd: range.monthEnd,
     weekEvents,
     weekAssessments,
     previousAssessment,
@@ -494,8 +507,8 @@ async function generateReview(params) {
     userId,
     caseId,
     caseName: caseDoc.name || '',
-    weekStart: range.weekStart,
-    weekEnd: range.weekEnd,
+    monthStart: range.monthStart,
+    monthEnd: range.monthEnd,
     createdAt: existingReview?.createdAt || now,
     generatedAt: now,
     updatedAt: now,
@@ -529,11 +542,11 @@ async function generateReview(params) {
   }
 
   await db.collection('timeline_records').add({
-    caseId, userId, type: 'weekly_review',
+    caseId, userId, type: 'monthly_review',
     reviewId,
-    weekStart: range.weekStart,
-    weekEnd: range.weekEnd,
-    title: `近14天复盘：${aiReview.title || weekStart}`,
+    monthStart: range.monthStart,
+    monthEnd: range.monthEnd,
+    title: `月度复盘：${aiReview.title || range.monthStart}`,
     description: aiReview.summary || '',
     trendLabel: aiReview.trendLabel || '',
     eventCount: weekEvents.length,
@@ -564,13 +577,13 @@ async function buildAIWeeklySideRead(params) {
     systemExtra: personaPrompt.systemPrompt,
     contextLines: [
       personaPrompt.userPrompt,
-      `14-day range: ${params.weekStart} to ${params.weekEnd}`,
+      `Monthly range: ${params.monthStart} to ${params.monthEnd}`,
       `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
       `Target name: ${cleanText(params.caseDoc.name, 24) || 'current target'}`,
       `Target profile: ${serializeCaseProfile(params.caseDoc.profile)}`,
-      `14-day review summary: ${cleanText(params.review?.summary, 160) || 'not provided'}`,
-      `14-day score change: ${JSON.stringify(params.scoreTrend)}`,
-      `14-day key events, max ${runtimeConfig.weeklySideEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklySideEventLimit))}`
+      `Monthly review summary: ${cleanText(params.review?.summary, 160) || 'not provided'}`,
+      `Monthly score change: ${JSON.stringify(params.scoreTrend)}`,
+      `Monthly key events, max ${runtimeConfig.weeklySideEventLimit}: ${JSON.stringify(params.weekEvents.map(compactEvent).slice(0, runtimeConfig.weeklySideEventLimit))}`
     ]
   })
   if (!messages) {
@@ -613,11 +626,11 @@ async function buildAIWeeklySideRead(params) {
   return normalizeWeeklySideRead(parseJSONContent(raw))
 }
 
-async function generateWeeklySideRead(params) {
+async function generateMonthlySideRead(params) {
   await ensureReviewCollection()
-  const { caseDoc, caseId, userId, weekStart } = params
-  const range = getWeekRange(weekStart)
-  const reviewId = `weekly_${caseId}_${range.weekStart}`
+  const { caseDoc, caseId, userId, monthStart: monthStartParam } = params
+  const range = getMonthRange(monthStartParam)
+  const reviewId = `monthly_${caseId}_${range.monthStart}`
 
   const [reviewRes, userRes, timelineRes] = await Promise.all([
     db.collection(REVIEW_COLLECTION).doc(reviewId).get().catch(() => null),
@@ -651,8 +664,8 @@ async function generateWeeklySideRead(params) {
     selfProfile,
     caseDoc,
     review,
-    weekStart: range.weekStart,
-    weekEnd: range.weekEnd,
+    monthStart: range.monthStart,
+    monthEnd: range.monthEnd,
     weekEvents,
     scoreTrend: {
       intentDelta: review.intentDelta || 0,
@@ -678,7 +691,7 @@ async function generateWeeklySideRead(params) {
   await db.collection('timeline_records').add({
     caseId, userId, type: 'note', reviewId,
     feature: 'weeklySideRead',
-    title: weeklySideRead.title || '近14天星象速写',
+    title: weeklySideRead.title || '月度星象速写',
     description: weeklySideRead.summary || '',
     sections: weeklySideRead.sections || [],
     occurrenceAt: new Date(), createdAt: new Date(),
@@ -686,12 +699,12 @@ async function generateWeeklySideRead(params) {
   })
 
   const reviews = await getReviews(caseId)
-  const nextReview = reviews.find((item) => item.weekStart === range.weekStart) || null
+  const nextReview = reviews.find((item) => item.monthStart === range.monthStart || item.weekStart === range.monthStart) || null
   return { review: nextReview, reviews }
 }
 
 exports.main = async (event = {}) => {
-  const { caseId, action = 'list', weekStart } = event
+  const { caseId, action = 'list', monthStart } = event
   try {
     const userId = await requireAuthenticatedUserId(app, event)
     if (!caseId) return { success: false, message: '缺少 caseId' }
@@ -700,18 +713,18 @@ exports.main = async (event = {}) => {
     if (caseError) return caseError
 
     if (action === 'generate') {
-      const review = await generateReview({ caseDoc, caseId, userId, weekStart })
+      const review = await generateReview({ caseDoc, caseId, userId, monthStart })
       const reviews = await getReviews(caseId)
       return { success: true, review, reviews }
     }
 
     if (action === 'generateSideRead') {
-      const result = await generateWeeklySideRead({ caseDoc, caseId, userId, weekStart })
+      const result = await generateMonthlySideRead({ caseDoc, caseId, userId, monthStart })
       return { success: true, ...result }
     }
 
     const reviews = await getReviews(caseId)
-    return { success: true, reviews, currentWeekStart: getWeekRange(weekStart).weekStart }
+    return { success: true, reviews, currentMonthStart: getMonthRange(monthStart).monthStart }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)
     if (authError) return authError
@@ -720,7 +733,7 @@ exports.main = async (event = {}) => {
       return { success: false, message: error.message, code: 'INSUFFICIENT_BALANCE', balance: error.balance, required: error.required }
     }
     if (error?.message === 'WEEKLY_REVIEW_REQUIRED') {
-      return { success: false, message: '请先生成近14天复盘' }
+      return { success: false, message: '请先生成本月复盘' }
     }
     if (error?.message === 'WEEKLY_SIDE_READ_PROFILE_MISSING') {
       return { success: false, message: '请先完善你或 Crush 的属相、星座信息' }
@@ -733,6 +746,6 @@ exports.main = async (event = {}) => {
     }
 
     console.error('weeklyReview error:', error)
-    return { success: false, message: '14天复盘处理失败' }
+    return { success: false, message: '月度复盘处理失败' }
   }
 }

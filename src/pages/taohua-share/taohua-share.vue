@@ -92,6 +92,7 @@ onLoad((options: any) => {
 onShareAppMessage(() => ({
   title: `${zodiac.value} · ${sign.value} 的桃花人格卡`,
   path: `/pages/taohua-share/taohua-share?zodiac=${encodeURIComponent(zodiac.value)}&sign=${encodeURIComponent(sign.value)}&from=reshare`,
+  imageUrl: '/static/share-taohua-persona.png',
 }))
 
 function startMine() {

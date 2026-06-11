@@ -1,4 +1,4 @@
-export const SAFE_SHARE_TITLE = '关系信号记录助手'
+export const SAFE_SHARE_TITLE = 'Crush Master｜读懂关系信号'
 export const SAFE_SHARE_PATH = '/pages/index/index'
 export const SAFE_SHARE_IMAGE = '/static/share-card.png'
 
