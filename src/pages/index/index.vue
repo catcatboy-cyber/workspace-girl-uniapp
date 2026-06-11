@@ -6,7 +6,7 @@
     <block v-else>
       <template v-if="cases.length === 0">
         <view class="hero-block anim-hero">
-          <text class="hero-tag">DOM-CRUSH BOARD</text>
+          <text class="hero-tag">Crush Master BOARD</text>
           <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
@@ -45,7 +45,7 @@
       <template v-else>
         <!-- Hero -->
         <view class="hero-block anim-hero">
-          <text class="hero-tag">DOM-CRUSH BOARD</text>
+          <text class="hero-tag">Crush Master BOARD</text>
           <text class="hero-title">今天他<text class="hl">有戏</text>吗？</text>
           <view class="hero-identity"><view class="profile-avatar-v2 sm"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(latestCase.name) }}</text></view><text class="hero-identity-name">{{ latestCase.name || '--' }}</text></view>
           <text class="hero-copy">别靠脑补，先把真实互动记下来。共 {{ cases.length }} 个 Crushes。</text>

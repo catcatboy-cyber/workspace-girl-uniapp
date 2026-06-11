@@ -247,6 +247,12 @@ export function setActiveCaseId(caseId?: string) {
   } catch {}
 }
 
+export function clearActiveCaseId() {
+  try {
+    uni.removeStorageSync(ACTIVE_CASE_KEY)
+  } catch {}
+}
+
 export function bumpDataVersion() {
   try {
     const current = Number(uni.getStorageSync('dataVersion')) || 0

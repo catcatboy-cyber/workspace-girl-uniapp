@@ -7,7 +7,13 @@
  * 依赖：lunar-javascript（寿星天文历 JS 移植，MIT 协议）
  * 等价于 Python 引擎的 lunar-python
  */
+const cloudbase = require('@cloudbase/node-sdk')
 const { Solar } = require('lunar-javascript')
+const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { checkFeatureAccess } = require('./_shared/subscription')
+
+const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
+const db = app.database()
 
 function buildDailyData() {
   const solar = Solar.fromDate(new Date())
@@ -222,7 +228,23 @@ function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu
  * @param {object} event — { zodiac: string, sign: string }
  */
 exports.main = async (event) => {
-  const { zodiac, sign } = event || {}
+  let { zodiac, sign } = event || {}
+
+  try {
+    const userId = await requireAuthenticatedUserId(app, event)
+    const access = await checkFeatureAccess(db, userId, '命理桃花')
+    if (!access.allowed) {
+      return {
+        success: false,
+        code: 'FEATURE_NOT_AVAILABLE',
+        message: access.reason || '当前套餐不支持命理桃花功能，请升级套餐。'
+      }
+    }
+  } catch (error) {
+    const authError = buildAuthErrorResponse(error)
+    if (authError) return authError
+    return { success: false, message: '功能权限检查失败' }
+  }
 
   // 校验生肖
   const validZodiac = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']

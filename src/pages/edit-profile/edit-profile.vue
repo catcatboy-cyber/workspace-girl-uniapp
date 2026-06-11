@@ -109,7 +109,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCaseDetail, updateCaseProfile, getCurrentUserId } from '@/utils/api'
 import { markActiveCaseProfileUpdated, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
@@ -123,6 +123,7 @@ const userId = ref('')
 const caseId = ref('')
 const caseName = ref('')
 const themeVars = ref(getThemeStyle())
+const lastDataVersion = ref(0)
 
 const relationTypeOptions = ['romantic', 'close_friend']
 const relationTypeLabels = ['Crush', 'Friend Crush']
@@ -173,10 +174,16 @@ function avatarLabel(name?: string) {
 }
 
 onLoad((options) => {
+  caseId.value = options?.caseId || ''
+})
+
+onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
-  caseId.value = options?.caseId || ''
-  loadData()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  if (dv > lastDataVersion.value || !caseFile.value) {
+    loadData()
+  }
 })
 
 async function loadData() {
@@ -209,6 +216,7 @@ async function loadData() {
     showError(e?.message || '加载失败')
   } finally {
     loading.value = false
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
   }
 }
 

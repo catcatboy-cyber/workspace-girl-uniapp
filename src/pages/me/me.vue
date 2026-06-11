@@ -42,10 +42,6 @@
               <text class="stat-lbl-v2">已邀请</text>
             </view>
           </view>
-          <view v-if="exchangeRate > 1" class="voice-row-v2" style="margin-top:8rpx;">
-            <text class="voice-row-lbl-v2">兑换倍率</text>
-            <text class="voice-row-val-v2">{{ exchangeRate }}x</text>
-          </view>
           <view class="voice-row-v2">
             <text class="voice-row-lbl-v2">语音识别</text>
             <text class="voice-row-val-v2">{{ voiceUsageSummary.totalCount }} 次 · 累计 {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text>
@@ -61,7 +57,7 @@
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
       <!-- Font size -->
-      <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2" style="font-size:28rpx;">Dom-Crush</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2" style="font-size:32rpx;">Dom-Crush</text></view></view></view>
+      <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2" style="font-size:28rpx;">Crush Master</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2" style="font-size:32rpx;">Crush Master</text></view></view></view>
       <!-- AI analysis style -->
       <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">AI 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><text class="sub-title-v2">陪伴风格</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn-v2-me primary" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
       <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、AI、Token 和反馈管理 →</text></view>
@@ -79,11 +75,11 @@ import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import {
   getCachedSelfProfile,
   getCases,
+  checkFeatureAccess,
   getCurrentUserId,
   getSelfProfile,
   getSubscriptionConfig,
   getSubscriptionStatus,
-  getTokenAccount,
   getTokenUsage,
   getVoiceUsage,
   hasUsableSelfProfile,
@@ -122,10 +118,6 @@ const tokenUsageSummary = ref({
   callCount: 0,
   unavailableCount: 0
 })
-const tokenBalance = ref(0)
-const tokenGiftedTotal = ref(0)
-const tokenConsumedTotal = ref(0)
-const tokenBalanceLoading = ref(false)
 const voiceUsageSummary = ref({ totalCount: 0, totalDurationMs: 0 })
 const voiceUsageLoading = ref(false)
 // 次数（订阅体系）
@@ -137,7 +129,6 @@ const subTrialDaysLeft = ref(0)
 const subMonthlyUsed = ref(0)
 const subMonthlyLimit = ref(20)
 const subExtraTokens = ref(0)
-const subTokenExchangeRate = ref(1)
 const subInviteCode = ref('')
 const subReferralCount = ref(0)
 const subReferralRewardTokens = ref(3000)
@@ -150,7 +141,6 @@ const monthlyRemainingDisplay = computed(() => {
   return Math.max(0, subMonthlyLimit.value - subMonthlyUsed.value)
 })
 const extraTokens = computed(() => subExtraTokens.value)
-const exchangeRate = computed(() => subTokenExchangeRate.value)
 const planName = computed(() => subPlanName.value)
 const isTrial = computed(() => subIsTrial.value)
 const trialDaysLeft = computed(() => subTrialDaysLeft.value)
@@ -255,11 +245,12 @@ onShow(() => {
   showPetBar.value = uni.getStorageSync('showPetBar') !== false
   currentPetId.value = getSelectedPetId()
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
-  if (!userEmail.value || dv > lastDataVersion.value) loadData()
-  loadSubscriptionStatus()
-  loadTokenUsage()
-  loadTokenBalance()
-  loadVoiceUsage()
+  const changed = !userEmail.value || dv > lastDataVersion.value
+  if (changed) loadData()
+  if (changed) loadSubscriptionStatus()
+  if (changed) loadTokenUsage()
+  if (changed) loadVoiceUsage()
+  if (changed) lastDataVersion.value = dv
 })
 
 function syncTheme() {
@@ -321,7 +312,6 @@ async function loadSubscriptionStatus() {
     subMonthlyUsed.value = s.monthlyTokensUsed || 0
     subMonthlyLimit.value = s.monthlyTokensLimit || 0
     subExtraTokens.value = s.extraTokens || 0
-    subTokenExchangeRate.value = s.tokenExchangeRate || 1
     subInviteCode.value = s.inviteCode || ''
     subReferralCount.value = s.referralCount || 0
   } catch {
@@ -338,27 +328,7 @@ async function loadSubscriptionStatus() {
 }
 
 async function refreshSubStatus() {
-  await Promise.all([loadSubscriptionStatus(), loadTokenUsage(), loadVoiceUsage(), loadTokenBalance()])
-}
-
-async function loadTokenBalance() {
-  if (tokenBalanceLoading.value) return
-  tokenBalanceLoading.value = true
-  try {
-    const result = await getTokenAccount('claimGift')
-    if (!result?.success || !result?.account) return
-    tokenBalance.value = Number(result.account.balanceTokens || 0)
-    tokenGiftedTotal.value = Number(result.account.giftedTokens || 0)
-    tokenConsumedTotal.value = Number(result.account.consumedTokens || 0)
-  } catch {
-    // ignore
-  } finally {
-    tokenBalanceLoading.value = false
-  }
-}
-
-async function refreshTokenData() {
-  await Promise.all([loadSubscriptionStatus(), loadTokenUsage(), loadTokenBalance(), loadVoiceUsage()])
+  await Promise.all([loadSubscriptionStatus(), loadTokenUsage(), loadVoiceUsage()])
 }
 
 async function loadVoiceUsage() {
@@ -465,6 +435,12 @@ async function saveAIPersona() {
 
   aiSaving.value = true
   try {
+    const access = await checkFeatureAccess('自定义AI风格')
+    if (!access?.success || !access?.allowed) {
+      uni.showToast({ title: access?.message || access?.reason || '当前套餐不支持自定义AI风格', icon: 'none' })
+      return
+    }
+
     const result = await updateSelfProfile({
       ...currentSelfProfile.value,
       aiStyle: aiStyle.value,
@@ -519,8 +495,23 @@ function goAdmin() {
   uni.navigateTo({ url: '/pages/admin/admin' })
 }
 
-function goCustomPet() {
+async function goCustomPet() {
   showPetSheet.value = false
+  try {
+    const access = await checkFeatureAccess('自定义宠物')
+    if (access?.allowed === false) {
+      uni.showModal({
+        title: '功能不可用',
+        content: access.reason || '当前套餐不支持自定义宠物功能，请升级套餐。',
+        confirmText: '去升级',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) uni.navigateTo({ url: '/pages/subscription/subscription' })
+        }
+      })
+      return
+    }
+  } catch (_) { /* ignore */ }
   uni.navigateTo({ url: '/pages/custom-pet/custom-pet' })
 }
 

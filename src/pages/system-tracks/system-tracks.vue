@@ -67,6 +67,7 @@ const caseFile = ref<any>(null)
 const activeCaseId = ref('')
 const visibleMax = ref(7)
 const themeVars = ref(getThemeStyle())
+const lastDataVersion = ref(0)
 
 const tracks = computed(() => {
   const timeline = caseFile.value?.timeline || []
@@ -78,15 +79,18 @@ const tracks = computed(() => {
 const visibleTracks = computed(() => tracks.value.slice(0, visibleMax.value))
 
 onLoad(() => {
-  themeVars.value = getThemeStyle()
-  applyThemeChrome()
   activeCaseId.value = getActiveCaseId()
-  loadData()
 })
 
 onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  const active = getActiveCaseId()
+  if (dv > lastDataVersion.value || active !== activeCaseId.value || !caseFile.value) {
+    activeCaseId.value = active
+    loadData()
+  }
 })
 
 async function loadData() {
@@ -103,7 +107,10 @@ async function loadData() {
       setActiveCaseId(targetId)
       caseFile.value = await getCaseDetail(uid, targetId)
     }
-  } catch (e: any) { showError(e?.message || '加载失败') } finally { loading.value = false }
+  } catch (e: any) { showError(e?.message || '加载失败') } finally {
+    loading.value = false
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
+  }
 }
 
 async function switchCase(caseId: string) {

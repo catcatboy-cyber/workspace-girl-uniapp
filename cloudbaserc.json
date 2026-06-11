@@ -319,22 +319,13 @@
       "installDependency": true
     },
     {
-      "name": "sendTaohuaNotify",
-      "timeout": 60,
-      "envVariables": {
-        "WX_SUBSCRIBE_TMPL_ID": ""
-      },
+      "name": "tmpUpdateUser",
+      "timeout": 15,
+      "envVariables": {},
       "runtime": "Nodejs18.15",
-      "memorySize": 256,
+      "memorySize": 128,
       "handler": "index.main",
-      "installDependency": true,
-      "triggers": [
-        {
-          "name": "dailyTrigger",
-          "type": "timer",
-          "config": "0 55 7 * * * *"
-        }
-      ]
+      "installDependency": true
     }
   ]
 }

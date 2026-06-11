@@ -2,7 +2,7 @@ const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { evaluateAssessment } = require('./_shared/engine')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
-const { checkBalance } = require('./_shared/billing')
+const { checkFeatureAccess, checkTokenBalance, getSubscriptionConfig } = require('./_shared/subscription')
 const { recordTokenUsage } = require('./_shared/token-usage')
 const { analyzeTextSignals } = require('./_shared/ai-text-analyzer')
 
@@ -16,6 +16,31 @@ const AI_ESTIMATED_TOKENS = 800
 
 function randomHex(n) {
   return crypto.randomBytes(n).toString('hex')
+}
+
+async function checkCrushLimit(userId) {
+  const userRes = await db.collection('users').doc(userId).get()
+  const user = userRes?.data?.[0] || userRes?.data || null
+  const config = await getSubscriptionConfig(db)
+  const planConfig = config.plans?.[user?.plan || 'free'] || config.plans?.free || {}
+  const maxCrushes = Number(planConfig.maxCrushes)
+
+  if (!Number.isFinite(maxCrushes) || maxCrushes < 0) {
+    return { ok: true, maxCrushes }
+  }
+
+  const countRes = await db.collection('cases').where({ userId }).count()
+  const currentCount = Number(countRes?.total || 0)
+  if (currentCount >= maxCrushes) {
+    return {
+      ok: false,
+      maxCrushes,
+      currentCount,
+      planName: planConfig.name || '当前套餐'
+    }
+  }
+
+  return { ok: true, maxCrushes, currentCount }
 }
 
 async function getAISettings() {
@@ -47,7 +72,7 @@ async function analyzeTextAnswers(answers, userId) {
     if (!model?.apiKey) return { signals: [], aiUsed: false }
 
     // 检查余额（block 模式下余额不足则跳过）
-    const bal = await checkBalance(db, userId, AI_ESTIMATED_TOKENS)
+    const bal = await checkTokenBalance(db, userId, AI_ESTIMATED_TOKENS)
     if (!bal.ok) {
       console.log('[createCase] insufficient balance for AI text analysis, skipping')
       return { signals: [], aiUsed: false, balanceInsufficient: true }
@@ -79,10 +104,41 @@ exports.main = async (event) => {
       return { success: false, message: '名称不能为空' }
     }
 
-    const caseId = `case_${Date.now()}_${randomHex(4)}`
-    const now = new Date()
+    const recordAccess = await checkFeatureAccess(db, userId, '记录')
+    if (!recordAccess.allowed) {
+      return {
+        success: false,
+        code: 'FEATURE_NOT_AVAILABLE',
+        message: recordAccess.reason || '当前套餐不支持记录功能'
+      }
+    }
+
     const answersList = answers || []
     const hasAnswers = answersList.length > 0
+    if (hasAnswers) {
+      const ruleAccess = await checkFeatureAccess(db, userId, '规则分析')
+      if (!ruleAccess.allowed) {
+        return {
+          success: false,
+          code: 'FEATURE_NOT_AVAILABLE',
+          message: ruleAccess.reason || '当前套餐不支持规则分析功能'
+        }
+      }
+    }
+
+    const crushLimit = await checkCrushLimit(userId)
+    if (!crushLimit.ok) {
+      return {
+        success: false,
+        code: 'CRUSH_LIMIT_REACHED',
+        message: `${crushLimit.planName}最多可创建 ${crushLimit.maxCrushes} 个 Crush，请升级套餐或删除旧档案后再创建。`,
+        maxCrushes: crushLimit.maxCrushes,
+        currentCount: crushLimit.currentCount
+      }
+    }
+
+    const caseId = `case_${Date.now()}_${randomHex(4)}`
+    const now = new Date()
 
     let assessmentId = ''
     let aiAnalysis = { signals: [], aiUsed: false }

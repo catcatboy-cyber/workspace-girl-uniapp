@@ -1,0 +1,266 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1120" viewBox="0 0 1200 1120">
+  <defs>
+    <style>
+      .bg { fill: #FFFDF5; }
+      .title { font: 900 34px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #111; }
+      .sub { font: 700 17px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #666; }
+      .cell { fill: #fff; stroke: #111; stroke-width: 4; }
+      .shadow { fill: #111; }
+      .old { font: 34px "Apple Color Emoji", "Segoe UI Emoji", system-ui, sans-serif; }
+      .label { font: 900 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #111; }
+      .usage { font: 700 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #666; }
+      .chip { fill: #FFD93D; stroke: #111; stroke-width: 3; }
+      .icon { fill: none; stroke: #111; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+      .note { font: 700 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #777; }
+    </style>
+
+    <symbol id="book-open" viewBox="0 0 24 24">
+      <path class="icon" d="M12 7v14"/>
+      <path class="icon" d="M4 5.5c2.7 0 5 .7 8 2.4v12.2c-3-1.6-5.3-2.3-8-2.3V5.5z"/>
+      <path class="icon" d="M20 5.5c-2.7 0-5 .7-8 2.4v12.2c3-1.6 5.3-2.3 8-2.3V5.5z"/>
+    </symbol>
+    <symbol id="list-checks" viewBox="0 0 24 24">
+      <path class="icon" d="m3 6 1.6 1.6L8 4.2"/>
+      <path class="icon" d="M11 6h10"/>
+      <path class="icon" d="m3 12 1.6 1.6L8 10.2"/>
+      <path class="icon" d="M11 12h10"/>
+      <path class="icon" d="m3 18 1.6 1.6L8 16.2"/>
+      <path class="icon" d="M11 18h10"/>
+    </symbol>
+    <symbol id="compass" viewBox="0 0 24 24">
+      <circle class="icon" cx="12" cy="12" r="9"/>
+      <path class="icon" d="m15.5 8.5-2.2 5-5 2.2 2.2-5 5-2.2z"/>
+      <circle class="icon" cx="12" cy="12" r=".8"/>
+    </symbol>
+    <symbol id="target" viewBox="0 0 24 24">
+      <circle class="icon" cx="12" cy="12" r="9"/>
+      <circle class="icon" cx="12" cy="12" r="5"/>
+      <circle class="icon" cx="12" cy="12" r="1.5"/>
+    </symbol>
+    <symbol id="check-circle" viewBox="0 0 24 24">
+      <circle class="icon" cx="12" cy="12" r="9"/>
+      <path class="icon" d="m8 12.5 2.5 2.5L16.5 9"/>
+    </symbol>
+    <symbol id="alert-triangle" viewBox="0 0 24 24">
+      <path class="icon" d="M12 3 22 20H2L12 3z"/>
+      <path class="icon" d="M12 9v5"/>
+      <path class="icon" d="M12 17h.01"/>
+    </symbol>
+    <symbol id="shirt" viewBox="0 0 24 24">
+      <path class="icon" d="M8 4 5 6 3 11l4 2 1-3v10h8V10l1 3 4-2-2-5-3-2-2 2h-4L8 4z"/>
+    </symbol>
+    <symbol id="landmark" viewBox="0 0 24 24">
+      <path class="icon" d="M3 21h18"/>
+      <path class="icon" d="M5 10h14"/>
+      <path class="icon" d="M6 10v8"/>
+      <path class="icon" d="M10 10v8"/>
+      <path class="icon" d="M14 10v8"/>
+      <path class="icon" d="M18 10v8"/>
+      <path class="icon" d="M4 10 12 4l8 6"/>
+    </symbol>
+    <symbol id="stars" viewBox="0 0 24 24">
+      <path class="icon" d="m12 3 1.3 4.1L17.5 8l-4.2.9L12 13l-1.3-4.1L6.5 8l4.2-.9L12 3z"/>
+      <path class="icon" d="m18.5 13 .8 2.4 2.2.6-2.2.6-.8 2.4-.8-2.4-2.2-.6 2.2-.6.8-2.4z"/>
+      <path class="icon" d="m5.5 14 .6 1.8 1.9.5-1.9.5-.6 1.8-.6-1.8-1.9-.5 1.9-.5.6-1.8z"/>
+    </symbol>
+    <symbol id="heart" viewBox="0 0 24 24">
+      <path class="icon" d="M12 20s-7-4.4-9-8.4C1.5 8.5 3.4 5 6.7 5c1.9 0 3.2 1 4 2.1.8-1.1 2.1-2.1 4-2.1 3.3 0 5.2 3.5 3.7 6.6C19 15.6 12 20 12 20z"/>
+    </symbol>
+    <symbol id="share-2" viewBox="0 0 24 24">
+      <circle class="icon" cx="18" cy="5" r="3"/>
+      <circle class="icon" cx="6" cy="12" r="3"/>
+      <circle class="icon" cx="18" cy="19" r="3"/>
+      <path class="icon" d="M8.6 10.6 15.4 6.4"/>
+      <path class="icon" d="M8.6 13.4 15.4 17.6"/>
+    </symbol>
+    <symbol id="lock" viewBox="0 0 24 24">
+      <rect class="icon" x="5" y="10" width="14" height="10" rx="2"/>
+      <path class="icon" d="M8 10V7a4 4 0 0 1 8 0v3"/>
+    </symbol>
+    <symbol id="bell" viewBox="0 0 24 24">
+      <path class="icon" d="M6 9a6 6 0 0 1 12 0c0 7 2 7 2 9H4c0-2 2-2 2-9z"/>
+      <path class="icon" d="M10 21h4"/>
+    </symbol>
+    <symbol id="search" viewBox="0 0 24 24">
+      <circle class="icon" cx="11" cy="11" r="7"/>
+      <path class="icon" d="m16 16 5 5"/>
+    </symbol>
+    <symbol id="x" viewBox="0 0 24 24">
+      <path class="icon" d="M6 6l12 12"/>
+      <path class="icon" d="M18 6 6 18"/>
+    </symbol>
+    <symbol id="sparkles" viewBox="0 0 24 24">
+      <path class="icon" d="m12 3 1.2 4.1L17 9l-3.8 1.9L12 15l-1.2-4.1L7 9l3.8-1.9L12 3z"/>
+      <path class="icon" d="m19 14 .7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7L19 14z"/>
+      <path class="icon" d="m5 14 .6 1.8L7.5 16l-1.9.6L5 18.5l-.6-1.9L2.5 16l1.9-.2L5 14z"/>
+    </symbol>
+  </defs>
+
+  <rect class="bg" width="1200" height="1120"/>
+  <text class="title" x="48" y="58">命理桃花小图标替换候选</text>
+  <text class="sub" x="48" y="88">线性图标 + Campus Pop 黑边黄底预览。左上角保留当前 emoji，中心为建议替换图标。</text>
+
+  <g id="grid">
+    <g transform="translate(48,120)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">📖</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#book-open" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">BookOpen</text>
+      <text class="usage" x="18" y="160">出处 / 古籍说明</text>
+    </g>
+
+    <g transform="translate(336,120)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🎯</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#list-checks" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">ListChecks</text>
+      <text class="usage" x="18" y="160">今日行动指南</text>
+    </g>
+
+    <g transform="translate(624,120)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🧭</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#compass" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Compass</text>
+      <text class="usage" x="18" y="160">去哪约会 / 桃花方位</text>
+    </g>
+
+    <g transform="translate(912,120)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🎯</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#target" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Target</text>
+      <text class="usage" x="18" y="160">建议活动 / 目标行动</text>
+    </g>
+
+    <g transform="translate(48,350)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">✅</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#check-circle" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">CheckCircle</text>
+      <text class="usage" x="18" y="160">宜做 / 可执行项</text>
+    </g>
+
+    <g transform="translate(336,350)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">⚠️</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#alert-triangle" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">TriangleAlert</text>
+      <text class="usage" x="18" y="160">忌 / 当心 / 低分提醒</text>
+    </g>
+
+    <g transform="translate(624,350)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">👗</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#shirt" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Shirt</text>
+      <text class="usage" x="18" y="160">穿什么戴什么</text>
+    </g>
+
+    <g transform="translate(912,350)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🌏</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#landmark" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Landmark</text>
+      <text class="usage" x="18" y="160">中国星次 / 传统维度</text>
+    </g>
+
+    <g transform="translate(48,580)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🌍</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#stars" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Stars</text>
+      <text class="usage" x="18" y="160">西方星座 / 星象</text>
+    </g>
+
+    <g transform="translate(336,580)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">❤️</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#heart" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Heart</text>
+      <text class="usage" x="18" y="160">高频适配 / 喜欢</text>
+    </g>
+
+    <g transform="translate(624,580)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">📤</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#share-2" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Share2</text>
+      <text class="usage" x="18" y="160">分享人格卡</text>
+    </g>
+
+    <g transform="translate(912,580)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🔒</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#lock" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Lock</text>
+      <text class="usage" x="18" y="160">画像未完善 / 解锁</text>
+    </g>
+
+    <g transform="translate(48,810)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🔔</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#bell" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Bell</text>
+      <text class="usage" x="18" y="160">每日桃花推送</text>
+    </g>
+
+    <g transform="translate(336,810)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🔍</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#search" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Search</text>
+      <text class="usage" x="18" y="160">测匹配度 / 配对检查</text>
+    </g>
+
+    <g transform="translate(624,810)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">✕</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#x" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">X</text>
+      <text class="usage" x="18" y="160">弹窗关闭</text>
+    </g>
+
+    <g transform="translate(912,810)">
+      <rect class="shadow" x="8" y="8" width="250" height="190"/>
+      <rect class="cell" width="250" height="190"/>
+      <text class="old" x="18" y="42">🔥</text>
+      <rect class="chip" x="88" y="24" width="74" height="74"/>
+      <use href="#sparkles" x="103" y="39" width="44" height="44"/>
+      <text class="label" x="18" y="130">Sparkles</text>
+      <text class="usage" x="18" y="160">天喜日 / 加分项</text>
+    </g>
+  </g>
+
+  <text class="note" x="48" y="1076">建议：图标线宽统一 2.4，默认黑色；放在黄色或白色方形底里，和现有黑边硬阴影系统一致。</text>
+</svg>

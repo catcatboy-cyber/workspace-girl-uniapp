@@ -43,6 +43,7 @@
         <button :class="['tab-btn', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">Token 额度</button>
         <button :class="['tab-btn', activeTab === 'subscription' ? 'active' : '']" @click="switchToSubscription">订阅配置</button>
         <button :class="['tab-btn', activeTab === 'feedback' ? 'active' : '']" @click="switchToFeedback">反馈管理</button>
+        <button :class="['tab-btn', activeTab === 'tokenUsers' ? 'active' : '']" @click="switchToTokenUsers">Token 消耗</button>
         <button :class="['tab-btn', activeTab === 'customPet' ? 'active' : '']" @click="switchToCustomPet">宠物需求</button>
       </view>
 
@@ -56,6 +57,7 @@
             <view class="table-row table-header">
               <text>账号</text>
               <text>方式</text>
+              <text>套餐</text>
               <text>Crush</text>
               <text>权限</text>
             </view>
@@ -67,6 +69,7 @@
             >
               <text class="mono">{{ user.email || user.phone || user.id }}</text>
               <text>{{ user.loginType || 'email' }}</text>
+              <text :class="['plan-tag', planTagClass(user)]">{{ user.planLabel || '免费版' }}</text>
               <text>{{ user.caseCount }}</text>
               <text>{{ user.id === effectiveCurrentUserId ? '当前' : (user.isAdmin ? '管理员' : '用户') }}</text>
             </view>
@@ -89,7 +92,52 @@
               <text class="detail-label">注册时间</text>
               <text class="detail-value">{{ formatDate(selectedDetail.user.createdAt) }}</text>
             </view>
-            <view class="case-list">
+
+            <view class="settings-section" style="margin-top:16px;">
+              <view class="section-head" style="margin-bottom:12px;">
+                <text class="section-title">编辑用户信息</text>
+              </view>
+              <view class="form-grid">
+                <view class="field">
+                  <text>套餐</text>
+                  <picker :range="planOptions" :value="planOptions.indexOf(userEditForm.plan)" @change="onPlanChange">
+                    <view class="picker-like">{{ userEditForm.plan || 'free' }} · {{ planLabelText(userEditForm.plan) }}</view>
+                  </picker>
+                </view>
+                <view class="field">
+                  <text>管理员权限</text>
+                  <switch :checked="userEditForm.isAdmin" @change="userEditForm.isAdmin = $event.detail.value" />
+                </view>
+                <view class="field">
+                  <text>试用到期</text>
+                  <picker mode="date" :value="userEditForm.trialEndsAt" @change="onTrialDateChange">
+                    <view class="picker-like">{{ userEditForm.trialEndsAt || '留空 = 无试用期' }}</view>
+                  </picker>
+                </view>
+                <view class="field">
+                  <text>套餐到期</text>
+                  <picker mode="date" :value="userEditForm.planExpiresAt" @change="onPlanDateChange">
+                    <view class="picker-like">{{ userEditForm.planExpiresAt || '留空 = 无期限' }}</view>
+                  </picker>
+                </view>
+                <view class="field">
+                  <text>加油包 Token</text>
+                  <input v-model.number="userEditForm.extraTokens" type="number" placeholder="0" />
+                </view>
+                <view class="field">
+                  <text>本月已用 Token</text>
+                  <input v-model.number="userEditForm.monthlyTokensUsed" type="number" placeholder="0" />
+                </view>
+                <view class="field">
+                  <text>邀请码</text>
+                  <input v-model="userEditForm.inviteCode" placeholder="6位邀请码" />
+                </view>
+              </view>
+              <button class="primary-btn" :disabled="userEditSaving" @click="saveUserEdit" style="margin-top:12px;width:100%;">{{ userEditSaving ? '保存中...' : '保存用户信息' }}</button>
+              <text v-if="userEditMsg" :class="userEditOk ? 'save-message' : 'test-result fail'" style="margin-top:8px;display:block;">{{ userEditMsg }}</text>
+            </view>
+
+            <view class="case-list" style="margin-top:16px;">
               <view v-for="item in selectedDetail.cases" :key="item.id" class="case-item">
                 <view>
                   <text class="case-name">{{ item.name }}</text>
@@ -766,6 +814,64 @@
         </view>
       </view>
 
+      <!-- 各用户 Token 消耗 -->
+      <view v-if="activeTab === 'tokenUsers'" class="panel">
+        <view class="panel-head">
+          <view>
+            <text class="panel-title">各用户 Token 消耗</text>
+            <text class="panel-meta">{{ tokenUserRows.length }} 个用户 · 点击展开明细</text>
+          </view>
+          <button class="ghost-btn wide-btn" :disabled="tokenUsersLoading" @click="loadTokenUsers">{{ tokenUsersLoading ? '加载中' : '刷新' }}</button>
+        </view>
+        <view v-if="tokenUserRows.length === 0 && !tokenUsersLoading" class="empty">暂无数据。</view>
+        <view v-else>
+          <view class="table" style="max-height:500px;overflow-y:auto;margin-bottom:16px;">
+            <view class="table-row table-header">
+              <text style="width:40rpx;"></text>
+              <text style="flex:1;">用户</text>
+              <text style="width:130rpx;text-align:right;">平台 Token</text>
+              <text style="width:130rpx;text-align:right;">模型 Token</text>
+              <text style="width:80rpx;text-align:right;">次数</text>
+              <text style="width:140rpx;text-align:right;">最近使用</text>
+            </view>
+            <view v-for="row in tokenUserRows" :key="row.userId" :class="['table-row', tokenDetailUserId === row.userId ? 'selected' : '']" @click="toggleTokenUserDetail(row.userId)" style="cursor:pointer;">
+              <text style="width:40rpx;font-weight:900;">{{ tokenDetailUserId === row.userId ? '▼' : '▶' }}</text>
+              <text style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ row.email || row.phone || row.userId }}</text>
+              <text style="width:130rpx;text-align:right;font-weight:800;color:#111;">{{ row.platformTokens.toLocaleString() }}</text>
+              <text style="width:130rpx;text-align:right;color:#999;">{{ row.modelTokens.toLocaleString() }}</text>
+              <text style="width:80rpx;text-align:right;color:#999;">{{ row.callCount }}</text>
+              <text style="width:140rpx;text-align:right;color:#999;font-size:18rpx;">{{ formatShortDate(row.lastUsed) }}</text>
+            </view>
+          </view>
+
+          <!-- 明细展开 -->
+          <view v-if="tokenDetailUserId && tokenDetailRecords.length > 0" class="token-detail-panel">
+            <view class="token-detail-head">
+              <text class="token-detail-title">{{ tokenDetailUserLabel }} · 最近 {{ tokenDetailRecords.length }} 次调用</text>
+              <button class="small-btn" @click="tokenDetailUserId = ''">收起</button>
+            </view>
+            <view class="table" style="max-height:400px;overflow-y:auto;">
+              <view class="table-row table-header" style="font-size:18rpx;">
+                <text style="flex:1.5;">功能</text>
+                <text style="width:110rpx;text-align:right;">平台 Token</text>
+                <text style="width:110rpx;text-align:right;">模型 Token</text>
+                <text style="width:60rpx;text-align:right;">倍率</text>
+                <text style="width:140rpx;text-align:right;">时间</text>
+              </view>
+              <view v-for="rec in tokenDetailRecords" :key="rec._id" class="table-row" style="font-size:20rpx;">
+                <text style="flex:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ formatTokenFeature(rec.feature) }}</text>
+                <text style="width:110rpx;text-align:right;font-weight:700;color:#111;">{{ rec.platformTokens.toLocaleString() }}</text>
+                <text style="width:110rpx;text-align:right;color:#999;">{{ rec.modelTokens.toLocaleString() }}</text>
+                <text style="width:60rpx;text-align:right;color:#999;">{{ rec.rate }}x</text>
+                <text style="width:140rpx;text-align:right;color:#999;font-size:16rpx;">{{ formatShortDate(rec.createdAt) }}</text>
+              </view>
+            </view>
+          </view>
+          <view v-if="tokenDetailUserId && tokenDetailLoading" class="empty">加载中…</view>
+          <view v-if="tokenDetailUserId && !tokenDetailLoading && tokenDetailRecords.length === 0" class="empty">暂无明细。</view>
+        </view>
+      </view>
+
       <view v-if="activeTab === 'customPet'" class="panel">
         <view class="panel-head">
           <view>
@@ -826,10 +932,13 @@ import {
   adminUpdateSubscriptionConfig,
   adminManualRecharge,
   adminGetTokenLedger,
+  adminUpdateUser,
   adminListFeedbacks,
   adminResolveFeedback,
   adminListCustomPetRequests,
   adminUpdateCustomPetRequest,
+  adminGetUsersTokenConsumption,
+  adminGetUserTokenDetails,
   getCurrentUserId,
   logout,
   testAIConnection
@@ -850,7 +959,15 @@ type AdminDetail = {
     id: string
     email: string
     phone: string
+    isAdmin?: boolean
+    plan?: string
+    trialEndsAt?: string | null
+    planExpiresAt?: string | null
+    extraTokens?: number
+    monthlyTokensUsed?: number
+    inviteCode?: string
     createdAt: string
+    updatedAt?: string
   }
   cases: Array<{
     id: string
@@ -1052,7 +1169,7 @@ const runtimeFields = [
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
 
-const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'feedback'>('users')
+const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'tokenUsers' | 'feedback' | 'customPet'>('users')
 const users = ref<AdminUser[]>([])
 const selectedUserId = ref('')
 const currentUserId = ref('')
@@ -1110,7 +1227,7 @@ const subForm = reactive({
   plans: {
     free: { name: '免费版', monthlyTokens: 30000, maxCrushes: 1, priceYuan: 0, priceYuanAnnual: 0, priceYuanStudent: 0, features: [] as string[], excludedFeatures: [] as string[] },
     pro: { name: 'Pro', monthlyTokens: 300000, maxCrushes: 3, priceYuan: 19, priceYuanAnnual: 168, priceYuanStudent: 12, priceYuanStudentAnnual: 99, features: [] as string[], excludedFeatures: [] as string[] },
-    ultra: { name: '无限版', monthlyTokens: -1, maxCrushes: -1, priceYuan: 39, priceYuanAnnual: 298, priceYuanStudent: 25, priceYuanStudentAnnual: 199, features: [] as string[], excludedFeatures: [] as string[] }
+    ultra: { name: 'Ultra', monthlyTokens: -1, maxCrushes: -1, priceYuan: 39, priceYuanAnnual: 298, priceYuanStudent: 25, priceYuanStudentAnnual: 199, features: [] as string[], excludedFeatures: [] as string[] }
   },
   referralEnabled: true,
   inviterRewardTokens: 3000,
@@ -1120,37 +1237,35 @@ const subForm = reactive({
 const ALL_FEATURES = [
   '记录', '时间轴', '规则分析', '即时反馈', '事件理解',
   '周复盘', '附件识别', '星象速写', '小咪帮你说（单轮）',
-  '小咪多轮策略', '自定义宠物', '自定义AI风格'
+  '小咪多轮策略', '自定义宠物', '自定义AI风格', '命理桃花'
 ]
 const subSaving = ref(false)
 const subSaveMsg = ref('')
 
 function hasTrialFeature(f: string) {
-  return subForm.trialFeatures.includes(f)
+  return !subForm.trialExcludedFeatures.includes(f)
 }
 function toggleTrialFeature(f: string) {
-  const idx = subForm.trialFeatures.indexOf(f)
-  if (idx >= 0) {
-    subForm.trialFeatures.splice(idx, 1)
+  if (hasTrialFeature(f)) {
+    subForm.trialFeatures = subForm.trialFeatures.filter((x: string) => x !== f)
     if (!subForm.trialExcludedFeatures.includes(f)) subForm.trialExcludedFeatures.push(f)
   } else {
     subForm.trialExcludedFeatures = subForm.trialExcludedFeatures.filter((x: string) => x !== f)
-    subForm.trialFeatures.push(f)
+    if (!subForm.trialFeatures.includes(f)) subForm.trialFeatures.push(f)
   }
 }
 function hasFeature(planKey: string, f: string) {
   const plan = subForm.plans[planKey]
-  return plan.features.includes(f)
+  return !plan.excludedFeatures.includes(f)
 }
 function toggleFeature(planKey: string, f: string) {
   const plan = subForm.plans[planKey]
-  const idx = plan.features.indexOf(f)
-  if (idx >= 0) {
-    plan.features.splice(idx, 1)
+  if (hasFeature(planKey, f)) {
+    plan.features = plan.features.filter((x: string) => x !== f)
     if (!plan.excludedFeatures.includes(f)) plan.excludedFeatures.push(f)
   } else {
     plan.excludedFeatures = plan.excludedFeatures.filter((x: string) => x !== f)
-    plan.features.push(f)
+    if (!plan.features.includes(f)) plan.features.push(f)
   }
 }
 
@@ -1577,6 +1692,7 @@ async function selectUser(userId: string) {
   selectedDetail.value = null
   promptPreviewCaseId.value = ''
   promptPreviewRecentTimeline.value = []
+  userEditMsg.value = ''
   detailLoading.value = true
   errorMessage.value = ''
   try {
@@ -1584,6 +1700,15 @@ async function selectUser(userId: string) {
     if (result?.success) {
       selectedDetail.value = result
       promptPreviewCaseId.value = result.cases?.[0]?.id || ''
+      // 填充编辑表单
+      const u = result.user || {}
+      userEditForm.plan = u.plan || 'free'
+      userEditForm.isAdmin = Boolean(u.isAdmin)
+      userEditForm.trialEndsAt = u.trialEndsAt ? u.trialEndsAt.slice(0, 10) : ''
+      userEditForm.planExpiresAt = u.planExpiresAt ? u.planExpiresAt.slice(0, 10) : ''
+      userEditForm.extraTokens = Number(u.extraTokens || 0)
+      userEditForm.monthlyTokensUsed = Number(u.monthlyTokensUsed || 0)
+      userEditForm.inviteCode = u.inviteCode || ''
     } else {
       errorMessage.value = result?.message || '用户详情读取失败'
     }
@@ -1592,6 +1717,78 @@ async function selectUser(userId: string) {
   } finally {
     detailLoading.value = false
   }
+}
+
+const userEditForm = reactive({
+  plan: 'free',
+  isAdmin: false,
+  trialEndsAt: '',
+  planExpiresAt: '',
+  extraTokens: 0,
+  monthlyTokensUsed: 0,
+  inviteCode: ''
+})
+const userEditSaving = ref(false)
+const userEditMsg = ref('')
+const userEditOk = ref(false)
+const planOptions = ['free', 'pro', 'ultra']
+
+function planLabelText(plan: string) {
+  return plan === 'free' ? '免费版' : plan === 'pro' ? 'Pro' : plan === 'ultra' ? 'Ultra' : plan
+}
+
+function onPlanChange(e: any) {
+  userEditForm.plan = planOptions[Number(e.detail.value)] || 'free'
+}
+
+async function saveUserEdit() {
+  if (!selectedUserId.value) return
+
+  // 确认弹窗
+  const confirmed = await new Promise<boolean>(resolve => {
+    uni.showModal({
+      title: '确认保存',
+      content: `确定要修改此用户的信息吗？\n套餐: ${userEditForm.plan}\n管理员: ${userEditForm.isAdmin ? '是' : '否'}\n试用到期: ${userEditForm.trialEndsAt || '无'}\n套餐到期: ${userEditForm.planExpiresAt || '无'}\n加油包: ${userEditForm.extraTokens}\n本月已用: ${userEditForm.monthlyTokensUsed}`,
+      success: (res: any) => resolve(res.confirm),
+      fail: () => resolve(false)
+    })
+  })
+  if (!confirmed) return
+
+  userEditSaving.value = true
+  userEditMsg.value = ''
+  userEditOk.value = false
+  try {
+    const patch: Record<string, any> = {
+      plan: userEditForm.plan,
+      isAdmin: userEditForm.isAdmin,
+      trialEndsAt: userEditForm.trialEndsAt || null,
+      planExpiresAt: userEditForm.planExpiresAt || null,
+      extraTokens: Number(userEditForm.extraTokens) || 0,
+      monthlyTokensUsed: Number(userEditForm.monthlyTokensUsed) || 0,
+      inviteCode: userEditForm.inviteCode || ''
+    }
+    const result = await adminUpdateUser(selectedUserId.value, patch)
+    if (result?.success) {
+      userEditMsg.value = '用户信息已保存'
+      userEditOk.value = true
+      // 刷新顶部用户列表（让套餐列更新）
+      await refresh()
+    } else {
+      userEditMsg.value = result?.message || '保存失败'
+    }
+  } catch (e: any) {
+    userEditMsg.value = e?.message || '保存失败'
+  } finally {
+    userEditSaving.value = false
+  }
+}
+
+function onTrialDateChange(e: any) {
+  userEditForm.trialEndsAt = e.detail.value
+}
+function onPlanDateChange(e: any) {
+  userEditForm.planExpiresAt = e.detail.value
 }
 
 function onAIEnabledChange(event: any) {
@@ -1944,7 +2141,7 @@ async function loadSubscriptionConfig() {
       for (const key of ['free', 'pro', 'ultra']) {
         if (c.plans[key]) {
           subForm.plans[key].name = c.plans[key].name || subForm.plans[key].name
-          subForm.plans[key].monthlyCalls = Number(c.plans[key].monthlyCalls ?? subForm.plans[key].monthlyCalls)
+          subForm.plans[key].monthlyTokens = Number(c.plans[key].monthlyTokens ?? subForm.plans[key].monthlyTokens)
           subForm.plans[key].maxCrushes = Number(c.plans[key].maxCrushes ?? subForm.plans[key].maxCrushes)
           if (Array.isArray(c.plans[key].features)) subForm.plans[key].features = [...c.plans[key].features]
           if (Array.isArray(c.plans[key].excludedFeatures)) subForm.plans[key].excludedFeatures = [...c.plans[key].excludedFeatures]
@@ -1959,12 +2156,18 @@ async function loadSubscriptionConfig() {
     }
     if (c.referral) {
       subForm.referralEnabled = c.referral.enabled !== false
-      subForm.inviterRewardCalls = Number(c.referral.inviterRewardCalls ?? 3)
-      subForm.inviteeRewardCalls = Number(c.referral.inviteeRewardCalls ?? 5)
+      subForm.trialExtendOnReferral = Number(c.referral.inviterTrialExtendDays ?? subForm.trialExtendOnReferral)
+      subForm.inviterRewardTokens = Number(c.referral.inviterRewardTokens ?? subForm.inviterRewardTokens)
+      subForm.inviteeRewardTokens = Number(c.referral.inviteeRewardTokens ?? subForm.inviteeRewardTokens)
       subForm.weeklyInviteCap = Number(c.referral.weeklyInviteCap ?? 5)
     }
   } catch { /* ignore */ }
   finally { subSaving.value = false }
+}
+
+function numberOr(value: any, fallback: number) {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
 }
 
 async function saveSubscriptionConfig() {
@@ -1980,15 +2183,16 @@ async function saveSubscriptionConfig() {
         excludedFeatures: [...subForm.trialExcludedFeatures]
       },
       plans: {
-        free: { name: subForm.plans.free.name, monthlyTokens: Number(subForm.plans.free.monthlyTokens) || 30000, maxCrushes: Number(subForm.plans.free.maxCrushes) || 1, features: [...subForm.plans.free.features], excludedFeatures: [...subForm.plans.free.excludedFeatures] },
-        pro: { name: subForm.plans.pro.name, monthlyTokens: Number(subForm.plans.pro.monthlyTokens) || 300000, maxCrushes: Number(subForm.plans.pro.maxCrushes) || 3, priceYuan: Number(subForm.plans.pro.priceYuan) || 19, priceYuanAnnual: Number(subForm.plans.pro.priceYuanAnnual) || 168, priceYuanStudent: Number(subForm.plans.pro.priceYuanStudent) || 12, priceYuanStudentAnnual: Number(subForm.plans.pro.priceYuanStudentAnnual) || 99, features: [...subForm.plans.pro.features], excludedFeatures: [...subForm.plans.pro.excludedFeatures] },
-        ultra: { name: subForm.plans.ultra.name, monthlyTokens: Number(subForm.plans.ultra.monthlyTokens) || -1, maxCrushes: Number(subForm.plans.ultra.maxCrushes) || -1, priceYuan: Number(subForm.plans.ultra.priceYuan) || 39, priceYuanAnnual: Number(subForm.plans.ultra.priceYuanAnnual) || 298, priceYuanStudent: Number(subForm.plans.ultra.priceYuanStudent) || 25, priceYuanStudentAnnual: Number(subForm.plans.ultra.priceYuanStudentAnnual) || 199, features: [...subForm.plans.ultra.features], excludedFeatures: [...subForm.plans.ultra.excludedFeatures] }
+        free: { name: subForm.plans.free.name, monthlyTokens: numberOr(subForm.plans.free.monthlyTokens, 30000), maxCrushes: numberOr(subForm.plans.free.maxCrushes, 1), features: [...subForm.plans.free.features], excludedFeatures: [...subForm.plans.free.excludedFeatures] },
+        pro: { name: subForm.plans.pro.name, monthlyTokens: numberOr(subForm.plans.pro.monthlyTokens, 300000), maxCrushes: numberOr(subForm.plans.pro.maxCrushes, 3), priceYuan: numberOr(subForm.plans.pro.priceYuan, 19), priceYuanAnnual: numberOr(subForm.plans.pro.priceYuanAnnual, 168), priceYuanStudent: numberOr(subForm.plans.pro.priceYuanStudent, 12), priceYuanStudentAnnual: numberOr(subForm.plans.pro.priceYuanStudentAnnual, 99), features: [...subForm.plans.pro.features], excludedFeatures: [...subForm.plans.pro.excludedFeatures] },
+        ultra: { name: subForm.plans.ultra.name, monthlyTokens: numberOr(subForm.plans.ultra.monthlyTokens, -1), maxCrushes: numberOr(subForm.plans.ultra.maxCrushes, -1), priceYuan: numberOr(subForm.plans.ultra.priceYuan, 39), priceYuanAnnual: numberOr(subForm.plans.ultra.priceYuanAnnual, 298), priceYuanStudent: numberOr(subForm.plans.ultra.priceYuanStudent, 25), priceYuanStudentAnnual: numberOr(subForm.plans.ultra.priceYuanStudentAnnual, 199), features: [...subForm.plans.ultra.features], excludedFeatures: [...subForm.plans.ultra.excludedFeatures] }
       },
       referral: {
         enabled: subForm.referralEnabled,
-        inviterRewardTokens: Number(subForm.inviterRewardTokens) || 3000,
-        inviteeRewardTokens: Number(subForm.inviteeRewardTokens) || 5000,
-        weeklyInviteCap: Number(subForm.weeklyInviteCap) || 5
+        inviterTrialExtendDays: numberOr(subForm.trialExtendOnReferral, 0),
+        inviterRewardTokens: numberOr(subForm.inviterRewardTokens, 3000),
+        inviteeRewardTokens: numberOr(subForm.inviteeRewardTokens, 5000),
+        weeklyInviteCap: numberOr(subForm.weeklyInviteCap, 5)
       }
     })
     if (!result?.success) {
@@ -2051,6 +2255,75 @@ async function resolveFeedback(feedbackId: string) {
 const petRequests = ref<any[]>([])
 const petRequestsLoading = ref(false)
 const tempDeliveredPetIds = reactive<Record<string, string>>({})
+
+// ── 各用户 Token 消耗 ──
+const tokenUsersLoading = ref(false)
+const tokenUserRows = ref<Array<{ userId: string; email: string; phone: string; platformTokens: number; modelTokens: number; callCount: number; lastUsed: string }>>([])
+const tokenDetailUserId = ref('')
+const tokenDetailRecords = ref<Array<any>>([])
+const tokenDetailLoading = ref(false)
+
+const tokenDetailUserLabel = computed(() => {
+  const row = tokenUserRows.value.find(r => r.userId === tokenDetailUserId.value)
+  return row ? (row.email || row.phone || row.userId) : ''
+})
+
+function switchToTokenUsers() {
+  activeTab.value = 'tokenUsers'
+  if (tokenUserRows.value.length === 0) loadTokenUsers()
+}
+
+async function loadTokenUsers() {
+  if (tokenUsersLoading.value) return
+  tokenUsersLoading.value = true
+  try {
+    const result = await adminGetUsersTokenConsumption(500)
+    if (result?.success) {
+      tokenUserRows.value = result.rows || []
+    }
+  } catch { /* ignore */ }
+  finally { tokenUsersLoading.value = false }
+}
+
+async function toggleTokenUserDetail(userId: string) {
+  if (tokenDetailUserId.value === userId) {
+    tokenDetailUserId.value = ''
+    return
+  }
+  tokenDetailUserId.value = userId
+  tokenDetailRecords.value = []
+  tokenDetailLoading.value = true
+  try {
+    const result = await adminGetUserTokenDetails(userId, 200)
+    if (result?.success) {
+      tokenDetailRecords.value = result.records || []
+    }
+  } catch { /* ignore */ }
+  finally { tokenDetailLoading.value = false }
+}
+
+function formatTokenFeature(feature: string) {
+  const map: Record<string, string> = {
+    eventAssessment: '即时反馈',
+    eventUnderstanding: '事件理解',
+    weeklyReview: '近14天复盘',
+    sideRead: '星象速写',
+    attachmentAnalysis: '附件识别',
+    petReply: '宠物帮说',
+    batchTag: '批量标签',
+    unknown: '未知调用'
+  }
+  // 也处理 remark 中的 feature 关键字
+  const clean = (feature || '').split(' · ')[0].trim()
+  return map[clean] || clean || 'AI 调用'
+}
+
+function formatShortDate(value: string) {
+  if (!value) return '-'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 
 function switchToCustomPet() {
   activeTab.value = 'customPet'
@@ -2136,6 +2409,13 @@ async function deliverPetRequest(requestId: string) {
   } catch (e: any) {
     errorMessage.value = e?.message || '交付失败'
   }
+}
+
+function planTagClass(user: any) {
+  if (user.planLabel === '试用期') return 'plan-trial'
+  if (user.planLabel === 'Pro') return 'plan-pro'
+  if (user.planLabel === 'Ultra') return 'plan-ultra'
+  return 'plan-free'
 }
 
 function formatDate(value: string) {
@@ -2900,4 +3180,9 @@ input {
 .pet-request-note { margin-top: 6px; font-size: 13px; color: #68766f; }
 .pet-request-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(23,35,31,0.08); }
 .pet-request-petid-input { width: 200px; height: 34px; padding: 0 10px; border: 1px solid rgba(23,35,31,0.18); border-radius: 6px; font-size: 13px; }
+.plan-tag { font-size: 18rpx; font-weight: 800; padding: 4rpx 12rpx; display: inline-block; }
+.plan-tag.plan-trial { background: #4ECDC4; color: #fff; }
+.plan-tag.plan-pro { background: #111; color: #FFD93D; }
+.plan-tag.plan-ultra { background: #111; color: #FFD93D; }
+.plan-tag.plan-free { color: #999; }
 </style>

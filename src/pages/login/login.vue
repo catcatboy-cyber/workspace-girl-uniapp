@@ -3,7 +3,7 @@
 
 
 <view class="container">
-              <view class="header-v2"><text class="title-v2 en-title">Dom-Crush</text><text class="subtitle-v2">read the signals, not your mind.</text></view>
+              <view class="header-v2"><text class="title-v2 en-title">Crush Master</text><text class="subtitle-v2">read the signals, not your mind.</text></view>
         <view v-if="isWechatMiniProgram" class="card-v2">
           <button class="btn-v2-l primary" :disabled="wechatLoading" @click="handleWechatLogin">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
           <text class="privacy-v2" @click="goAbout">{{ privacyCopy }}</text>
@@ -210,8 +210,10 @@ const handleWechatLogin = async () => {
 
   try {
     const loginCode = await getWechatLoginCode()
-    const result = await wechatLogin('', { loginCode })
+    const inviteCode = String(uni.getStorageSync(INVITE_CODE_KEY) || '').trim().toUpperCase()
+    const result = await wechatLogin('', { loginCode, inviteCode })
     if (result?.success) {
+      if (inviteCode) uni.removeStorageSync(INVITE_CODE_KEY)
       goAfterLogin(result)
     } else {
       wechatErrorMessage.value = result?.message || '\u5fae\u4fe1\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\uff1b\u5982\u679c\u4ecd\u4e0d\u53ef\u7528\uff0c\u53ef\u624b\u52a8\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'

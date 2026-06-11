@@ -111,30 +111,30 @@ async function updateUser(userId, patch) {
   })
 }
 
-async function createWechatUser({ openid, phone = '', profile }) {
+async function createWechatUser({ openid, phone = '', profile, inviteCodeParam = '' }) {
   const userId = `user_${Date.now()}_${randomHex(4)}`
   const now = new Date()
   const profilePatch = buildWechatProfilePatch(profile, {}, true)
 
   // 生成邀请码和订阅字段
-  const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig } = require('./_shared/subscription')
+  const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig, redeemInviteCode } = require('./_shared/subscription')
   const inviteCode = generateInviteCode(userId)
   const subFields = getDefaultUserSubscriptionFields()
 
   // 读取试用期配置
-  let trialDurationDays = 7
-  let welcomeTokens = 10000
+  let trialDurationDays = 0
   try {
     const config = await getSubscriptionConfig(db)
     if (config.trial?.enabled && config.trial?.durationDays > 0) {
       trialDurationDays = config.trial.durationDays
     }
-    welcomeTokens = config.welcomeTokens || 10000
   } catch (_) {}
 
   subFields.inviteCode = inviteCode
-  subFields.trialEndsAt = new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000)
-  subFields.extraTokens = welcomeTokens > 0 ? welcomeTokens : 0
+  subFields.trialEndsAt = trialDurationDays > 0
+    ? new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000)
+    : null
+  subFields.extraTokens = 0
 
   await db.collection('users').add({
     _id: userId,
@@ -159,6 +159,15 @@ async function createWechatUser({ openid, phone = '', profile }) {
     referralWeekStart: subFields.referralWeekStart,
     referralWeekCount: subFields.referralWeekCount
   })
+
+  let referralResult = null
+  if (inviteCodeParam && typeof inviteCodeParam === 'string') {
+    try {
+      referralResult = await redeemInviteCode(db, inviteCodeParam.trim(), userId)
+    } catch (err) {
+      console.warn('wechatLogin redeem invite failed (non-fatal):', err?.message || err)
+    }
+  }
   return {
     _id: userId,
     openid,
@@ -166,12 +175,14 @@ async function createWechatUser({ openid, phone = '', profile }) {
     email: '',
     ...profilePatch,
     selfProfile: null,
-    loginType: 'wechat_phone'
+    loginType: 'wechat_phone',
+    referral: referralResult
   }
 }
 
 exports.main = async (event = {}) => {
   const code = String(event.code || '').trim()
+  const inviteCodeParam = String(event.inviteCode || event.invite_code || '').trim()
   const profile = normalizeWechatProfile(event)
 
   try {
@@ -213,7 +224,7 @@ exports.main = async (event = {}) => {
         await updateUser(user._id, patch)
         user = { ...user, ...patch }
       } else {
-        user = await createWechatUser({ openid, phone, profile })
+        user = await createWechatUser({ openid, phone, profile, inviteCodeParam })
         // 新用户首次赠送额度
         try {
           const { grantFirstGift } = require('./_shared/billing')

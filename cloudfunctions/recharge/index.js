@@ -140,16 +140,85 @@ async function adminConfirmRecharge(event) {
 
   // 新次数体系：给用户加额外次数（加油包次数，不过期）
   const grantCalls = order.grantCalls || 0
-  if (grantCalls > 0) {
+  if (order.grantTokens > 0) {
     try {
       const { addExtraTokens } = require('./_shared/subscription')
-      await addExtraTokens(db, order.userId, grantCalls, `recharge_${order.planId}`)
+      await addExtraTokens(db, order.userId, order.grantTokens, `recharge_${order.planId}`)
     } catch (err) {
       console.warn('addExtraTokens on recharge failed (non-fatal):', err.message)
     }
   }
 
-  return { success: true, order: { ...order, status: 'paid', paidAt: now, grantTokens: grantCalls } }
+  return { success: true, order: { ...order, status: 'paid', paidAt: now } }
+}
+
+// action: createSubscriptionUpgrade — 创建套餐升级订单（过渡阶段 pending，后续接入微信支付）
+async function createSubscriptionUpgrade(event) {
+  const userId = await requireAuthenticatedUserId(app, event)
+  const planKey = String(event.planKey || '').trim()
+  const billingCycle = String(event.billingCycle || 'monthly').trim()
+  const priceVariant = String(event.priceVariant || 'standard').trim()
+  if (!planKey) return { success: false, message: '缺少 planKey' }
+  if (!['pro', 'ultra'].includes(planKey)) return { success: false, message: '不支持的套餐类型' }
+  if (!['monthly', 'annual'].includes(billingCycle)) return { success: false, message: '不支持的计费周期' }
+  if (!['standard', 'student'].includes(priceVariant)) return { success: false, message: '不支持的价格类型' }
+
+  const { getSubscriptionConfig } = require('./_shared/subscription')
+  const config = await getSubscriptionConfig(db)
+  const planConfig = config.plans[planKey]
+  if (!planConfig) return { success: false, message: '套餐配置不存在' }
+
+  // 检查用户当前套餐
+  let user
+  try {
+    const { data } = await db.collection('users').doc(userId).get()
+    if (!data || data.length === 0) return { success: false, message: '用户不存在' }
+    user = data[0]
+  } catch (_) {
+    return { success: false, message: '查询用户失败' }
+  }
+
+  if (user.plan === planKey) return { success: false, message: `你当前已是 ${planConfig.name} 套餐，无需升级` }
+
+  const toAmount = (value, fallback) => {
+    const n = Number(value)
+    if (Number.isFinite(n) && n >= 0) return n
+    const f = Number(fallback)
+    return Number.isFinite(f) && f >= 0 ? f : 0
+  }
+  const standardMonthly = toAmount(planConfig.priceYuan, 0)
+  const standardAnnual = toAmount(planConfig.priceYuanAnnual, standardMonthly * 12)
+  const studentMonthly = toAmount(planConfig.priceYuanStudent, standardMonthly)
+  const studentAnnual = toAmount(planConfig.priceYuanStudentAnnual, standardAnnual || studentMonthly * 12)
+  const amountYuan = priceVariant === 'student'
+    ? (billingCycle === 'annual' ? studentAnnual : studentMonthly)
+    : (billingCycle === 'annual' ? standardAnnual : standardMonthly)
+  const priceLabel = `${priceVariant === 'student' ? '学生价' : '标准价'} · ${billingCycle === 'annual' ? '年付' : '月付'}`
+
+  const now = new Date()
+  const order = {
+    userId,
+    type: 'subscription_upgrade',
+    planKey,
+    planName: planConfig.name,
+    fromPlan: user.plan || 'free',
+    billingCycle,
+    priceVariant,
+    priceLabel,
+    amountYuan,
+    amountFen: Math.round(amountYuan * 100),
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now
+  }
+  const result = await db.collection(RECHARGE_ORDERS).add(order)
+  order._id = result.id || result._id
+
+  return {
+    success: true,
+    order,
+    message: `已创建 ${planConfig.name} 升级订单，等待支付确认`
+  }
 }
 
 exports.main = async (event = {}) => {
@@ -158,6 +227,7 @@ exports.main = async (event = {}) => {
 
     if (action === 'getRechargePlans') return await getRechargePlans(event)
     if (action === 'createRechargeOrder') return await createRechargeOrder(event)
+    if (action === 'createSubscriptionUpgrade') return await createSubscriptionUpgrade(event)
     if (action === 'adminConfirmRecharge') return await adminConfirmRecharge(event)
 
     return { success: false, message: '未知操作' }

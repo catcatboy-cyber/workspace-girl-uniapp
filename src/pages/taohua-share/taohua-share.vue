@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <view class="hero">
-      <text class="brand">Dom-Crush · 命理桃花</text>
+      <text class="brand">Crush Master · 命理桃花</text>
       <text class="title">TA 的桃花人格卡</text>
       <text class="subtitle">{{ zodiac }} · {{ sign }} · {{ crossData?.chinese?.name || '中国星次' }}</text>
     </view>

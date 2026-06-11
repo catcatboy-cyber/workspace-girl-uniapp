@@ -53,7 +53,7 @@ async function grantFirstGift(db, userId) {
   const account = await ensureTokenAccount(db, userId)
   if (account.firstGiftGranted) return { ...account, alreadyGranted: true }
 
-  const tokens = billing.welcomeTokens || 1000000
+  const tokens = billing.welcomeTokens ?? 1000000
   const now = new Date()
   await db.collection(TOKEN_ACCOUNTS).doc(account._id).update({
     balanceTokens: tokens,
@@ -61,6 +61,14 @@ async function grantFirstGift(db, userId) {
     firstGiftGranted: true,
     updatedAt: now
   })
+
+  try {
+    await db.collection('users').doc(userId).update({
+      extraTokens: db.command.inc(tokens)
+    })
+  } catch (err) {
+    console.warn('sync first gift to users.extraTokens failed:', err?.message || err)
+  }
 
   await db.collection('token_ledger_records').add({
     userId,

@@ -4,6 +4,7 @@
   "description": "每日命理桃花日历数据云函数",
   "main": "index.js",
   "dependencies": {
+    "@cloudbase/node-sdk": "^2.4.0",
     "lunar-javascript": "^1.7.7"
   }
 }

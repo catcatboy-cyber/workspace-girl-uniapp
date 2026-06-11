@@ -17,6 +17,14 @@ const QA_MAX_HISTORY = 80
 const QA_AI_TRIGGER_COUNT = 20
 const QA_AI_INTERVAL = 5
 
+function getUsageTotalTokens(usage, fallback = 0) {
+  const promptTokens = Number(usage?.prompt_tokens ?? usage?.input_tokens ?? 0)
+  const completionTokens = Number(usage?.completion_tokens ?? usage?.output_tokens ?? 0)
+  const totalTokens = Number(usage?.total_tokens ?? (promptTokens + completionTokens))
+  if (Number.isFinite(totalTokens) && totalTokens > 0) return Math.round(totalTokens)
+  return Math.max(0, Math.round(Number(fallback) || 0))
+}
+
 // ========== 小咪帮你说可配置提示词 ==========
 
 const DEFAULT_PET_SPEAK_CONFIG = {
@@ -381,7 +389,7 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
   }
   const data = await response.json()
   const reply = (data?.choices?.[0]?.message?.content || '').trim().replace(/^["'「『"']+|["'」』"']+$/g, '').replace(/^回复[：:]\s*/i, '')
-  if (userId) await recordReplyTokenUsage(userId, ai.model, data?.usage, false)
+  if (userId) await recordReplyTokenUsage(userId, getUsageTotalTokens(data?.usage, REPLY_PAIR_EST_COST), ai.model, data?.usage)
   return { success: true, reply: reply || '（AI 未生成有效回复）', inspirations: inspirations.map(l => ({ category: l.category, text: l.text })) }
 }
 
@@ -441,6 +449,7 @@ async function recordReplyTokenUsage(userId, realTokens, model, usage) {
 
     // 3. 写入 token_ledger_records（账本流水）
     await db.collection('token_ledger_records').add({ userId, type: 'consume', amountTokens: -deducted, balanceAfter, relatedUsageId: usageId, feature: 'petReply', provider: 'openai-compatible', model: model || '', realTokens: totalTokens, chargeMultiplier: multiplier, remark: `宠物帮说 · ${model || 'ai'} · 真实${totalTokens}t × ${multiplier}倍率`, createdAt: now }).catch(() => {})
+    await consumeTokens(db, userId, totalTokens, 'petReply', model)
   } catch (e) { console.error('recordReplyTokenUsage error:', e) }
 }
 
@@ -640,7 +649,7 @@ async function tagLinesLoop(startIndex, count, userId) {
     const batch = SEED_DATA.slice(current, Math.min(current + BATCH_SIZE, endTarget))
     const tagged = await tagOneBatch(ai, batch, current, cfg)
     allTagged.push(...tagged)
-    if (userId) await recordReplyTokenUsage(userId, ai.model, null, false)
+    if (userId) await recordReplyTokenUsage(userId, REPLY_PAIR_EST_COST, ai.model, null)
     current += batch.length
   }
   return { success: true, tagged: allTagged, startIndex, endIndex: endTarget, total: SEED_DATA.length }
@@ -1085,6 +1094,14 @@ async function generateReplyStrategy(content, userId, scene = 'reply', safetyCon
   if (!ai.enabled || !ai.apiKey) return { success: false, message: 'AI 配置未启用或缺少 API Key' }
 
   if (userId) {
+    const strategyAccess = await checkFeatureAccess(db, userId, '小咪多轮策略')
+    if (!strategyAccess.allowed) {
+      return {
+        success: false,
+        code: 'FEATURE_NOT_AVAILABLE',
+        message: strategyAccess.reason || '当前套餐不支持小咪多轮策略'
+      }
+    }
     const bal = await checkReplyBalance(userId)
     if (!bal.ok) return { success: false, code: 'INSUFFICIENT_BALANCE', balance: bal.balance, required: bal.required, message: '余额不足，请充值' }
   }
@@ -1254,6 +1271,7 @@ exports.main = async (event = {}) => {
         ])
         if (pairRes && pairRes.code === 'INSUFFICIENT_BALANCE') return pairRes
         if (stratRes && stratRes.code === 'INSUFFICIENT_BALANCE') return stratRes
+        if (stratRes && stratRes.code === 'FEATURE_NOT_AVAILABLE') return stratRes
         if (!pairRes?.success) {
           return { success: false, message: pairRes?.message || '生成失败，请重试' }
         }

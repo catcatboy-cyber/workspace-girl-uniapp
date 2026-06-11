@@ -35,14 +35,8 @@
         </button>
       </view>
 
-      <!-- Loading：读秒 + 闪烁，对齐首页 aiFeedbackLoading 风格 -->
-      <view v-if="generating" class="ps-loading">
-        <text class="ps-loading-label">小咪在想…</text>
-        <view class="ps-loading-row">
-          <view class="ps-loading-dot"></view>
-          <text class="ps-loading-text">后台生成中，已用时 {{ generatingSeconds }} 秒</text>
-        </view>
-      </view>
+      <!-- Loading -->
+      <AiLoading v-if="generating" label="小咪在想…" :seconds="generatingSeconds" />
 
       <!-- Results：5 项合一 -->
       <view v-if="!generating && options.length > 0" class="results-area">
@@ -106,6 +100,7 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from 'vue'
 import { generatePetReplyBundle, generatePetReplyPair, handleInsufficientBalance, getCachedSelfProfile } from '@/utils/api'
+import AiLoading from '@/components/AiLoading'
 
 const props = defineProps<{ visible: boolean; petName?: string }>()
 const emit = defineEmits(['close'])
@@ -356,16 +351,6 @@ function close() {
 .btn-generate:disabled { opacity: 0.4; }
 
 /* Loading：对齐首页 aiFeedbackLoading 风格 */
-.ps-loading { margin-top: 16rpx; padding: 18rpx; border: 2rpx solid #111; background: #f5f5ff; }
-.ps-loading-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; letter-spacing: 2rpx; margin-bottom: 12rpx; }
-.ps-loading-row { display: flex; align-items: center; gap: 14rpx; }
-.ps-loading-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; display: inline-block; animation: ps-blink-dot 1s ease-in-out infinite; }
-.ps-loading-text { font-size: 22rpx; color: #999; }
-@keyframes ps-blink-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(0.75); }
-}
-
 .results-area { margin-top: 24rpx; }
 .options-section { margin-bottom: 16rpx; }
 .section-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }

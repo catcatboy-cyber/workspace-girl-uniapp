@@ -1,5 +1,5 @@
 /**
- * Dom-Crush 平台 Token 订阅体系 — 共享模块 v3.2
+ * Crush Master 平台 Token 订阅体系 — 共享模块 v3.2
  *
  * 设计原则：
  * - 不改动现有 billing.js / token-usage.js，纯新增
@@ -13,6 +13,22 @@ const USERS = 'users'
 const SUBSCRIPTION_DOC_ID = 'settings_subscription'
 const CALL_USAGE = 'call_usage_records'
 
+const FEATURE_ALIASES = {
+  '小咪帮你说': ['小咪帮你说（单轮）'],
+  '小咪帮你说（单轮）': ['小咪帮你说'],
+  '自定义AI风格': ['自定义 AI 风格'],
+  '自定义 AI 风格': ['自定义AI风格'],
+  '时间轴': ['时间线'],
+  '时间线': ['时间轴']
+}
+
+function featureListIncludes(list, featureKey) {
+  if (!Array.isArray(list)) return false
+  const key = String(featureKey || '').trim()
+  const aliases = new Set([key, ...(FEATURE_ALIASES[key] || [])])
+  return list.some(item => aliases.has(String(item || '').trim()))
+}
+
 // ─── 默认配置 ───────────────────────────────────────────
 
 const DEFAULT_SUBSCRIPTION_CONFIG = {
@@ -21,25 +37,11 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
   key: 'subscription',
   configVersion: 3,
 
-  // 新增：平台Token兑换倍率（用户扣减 = 模型实际token × 此倍率）
-  tokenExchangeRate: 1.5,
-
-  // 新增：各功能预估Token（调用前余额检查用）
-  featureEstTokens: {
-    eventAssessment: 2000,
-    eventUnderstanding: 700,
-    weeklyReview: 2000,
-    sideRead: 1500,
-    petReply: 700,
-    attachmentAnalysis: 1000,
-    batchTag: 800
-  },
-
   trial: {
     enabled: true,
     durationDays: 7,
     extendOnReferral: 3,
-    features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '星象速写', '小咪帮你说（单轮）'],
+    features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '星象速写', '小咪帮你说（单轮）', '命理桃花'],
     excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格']
   },
 
@@ -48,8 +50,8 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       name: '免费版',
       monthlyTokens: 30000,
       maxCrushes: 1,
-      features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别'],
-      excludedFeatures: ['星象速写', '小咪帮你说', '自定义宠物', '自定义AI风格', '小咪多轮策略']
+      features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '小咪帮你说（单轮）'],
+      excludedFeatures: ['星象速写', '自定义宠物', '自定义AI风格', '小咪多轮策略', '命理桃花']
     },
     pro: {
       name: 'Pro',
@@ -59,16 +61,16 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       priceYuanStudentAnnual: 99,
       monthlyTokens: 300000,
       maxCrushes: 3,
-      features: ['免费版全部', '星象速写', '小咪帮你说（单轮）'],
+      features: ['免费版全部', '星象速写', '命理桃花'],
       excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格']
     },
     ultra: {
-      name: '无限版',
+      name: 'Ultra',
       priceYuan: 39,
       priceYuanAnnual: 298,
       priceYuanStudent: 25,
       priceYuanStudentAnnual: 199,
-      monthlyTokens: -1,   // -1 = 不限
+      monthlyTokens: -1,
       maxCrushes: -1,
       features: ['Pro全部', '小咪多轮策略', '自定义宠物', '自定义AI风格'],
       excludedFeatures: []
@@ -83,9 +85,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
     inviteeRewardLabel: '好友邀请奖励',
     weeklyInviteCap: 5,
     requireFirstEvent: true
-  },
-
-  welcomeTokens: 10000   // 新用户注册赠送平台Token
+  }
 }
 
 // ─── 配置管理 ───────────────────────────────────────────
@@ -97,10 +97,95 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
 async function ensureSubscriptionConfig(db) {
   try {
     const { data } = await db.collection(SYSTEM_SETTINGS).doc(SUBSCRIPTION_DOC_ID).get()
-    if (data && data.length > 0) return data[0]
-  } catch (_) {
-    // doc not found, create below
-  }
+    if (data && data.length > 0) {
+      const existing = data[0]
+      // 自动补全新字段（向后兼容旧版配置，每次读取时检查）
+      let needsUpdate = false
+      const set = (obj, key, defaultVal) => { if (obj[key] === undefined || obj[key] === null) { obj[key] = defaultVal; needsUpdate = true } }
+      if (existing.configVersion !== DEFAULT_SUBSCRIPTION_CONFIG.configVersion) {
+        existing.configVersion = DEFAULT_SUBSCRIPTION_CONFIG.configVersion
+        needsUpdate = true
+      }
+      for (const key of ['free', 'pro', 'ultra']) {
+        const plan = existing.plans?.[key]
+        if (!plan) continue
+        // 优先用 monthlyTokens，没有则从 monthlyCalls 换算
+        if (plan.monthlyTokens === undefined || plan.monthlyTokens === null) {
+          const oldVal = plan.monthlyCalls
+          plan.monthlyTokens = (oldVal === -1 || oldVal === undefined) ? -1 : (oldVal || 0) * 1500
+          needsUpdate = true
+        }
+        // v3→v4 迁移：免费版小咪帮你说从 excluded 移到 features
+        if (key === 'free' && Array.isArray(plan.excludedFeatures)) {
+          const aliases = ['小咪帮你说', '小咪帮你说（单轮）']
+          const idx = plan.excludedFeatures.findIndex((f) => aliases.includes(f))
+          if (idx !== -1) {
+            plan.excludedFeatures.splice(idx, 1)
+            if (!Array.isArray(plan.features)) plan.features = []
+            if (!plan.features.includes('小咪帮你说（单轮）')) {
+              plan.features.push('小咪帮你说（单轮）')
+            }
+            needsUpdate = true
+          }
+        }
+        // v4 迁移：清理 Pro/Ultra 中已被"全部"meta 覆盖的重复功能 + 补齐遗漏
+        if (key === 'pro' && Array.isArray(plan.features)) {
+          const hasFreeAll = plan.features.includes('免费版全部')
+          const freeFeatures = existing.plans?.free?.features || []
+          const freeExcluded = existing.plans?.free?.excludedFeatures || []
+          // 删除 Pro features 中已被 Free 覆盖的功能
+          const dupes = plan.features.filter((f) =>
+            f !== '免费版全部' && freeFeatures.includes(f))
+          if (dupes.length > 0) {
+            plan.features = plan.features.filter((f) => !dupes.includes(f))
+            needsUpdate = true
+          }
+          // 补齐：Free excluded 但不在 Pro features/excluded 中的，应加到 Pro（表示 Pro 解锁了）
+          for (const f of freeExcluded) {
+            if (!plan.features.includes(f) && !(plan.excludedFeatures || []).includes(f)) {
+              if (!Array.isArray(plan.features)) plan.features = []
+              plan.features.push(f)
+              needsUpdate = true
+            }
+          }
+          // Pro excluded 中如果有 Free features 已有的，移到 Pro features（不应同时 exclude）
+          for (const f of [...(plan.excludedFeatures || [])]) {
+            if (freeFeatures.includes(f)) {
+              plan.excludedFeatures = (plan.excludedFeatures || []).filter((x) => x !== f)
+              if (!plan.features.includes(f)) plan.features.push(f)
+              needsUpdate = true
+            }
+          }
+        }
+        if (key === 'ultra' && Array.isArray(plan.features)) {
+          const hasProAll = plan.features.some((f) => f === 'Pro全部' || f === 'Pro 全部')
+          const proFeatures = existing.plans?.pro?.features || []
+          if (hasProAll) {
+            const dupes = plan.features.filter((f) =>
+              f !== 'Pro全部' && f !== 'Pro 全部' && proFeatures.includes(f))
+            if (dupes.length > 0) {
+              plan.features = plan.features.filter((f) => !dupes.includes(f))
+              needsUpdate = true
+            }
+          }
+        }
+      }
+      if (existing.referral) {
+        set(existing.referral, 'inviterRewardTokens', (existing.referral.inviterRewardCalls || 3) * 1000)
+        set(existing.referral, 'inviteeRewardTokens', (existing.referral.inviteeRewardCalls || 5) * 1000)
+      }
+      if (needsUpdate) {
+        try {
+          const { _id, scope, key, ...patch } = existing
+          await db.collection(SYSTEM_SETTINGS).doc(SUBSCRIPTION_DOC_ID).update(patch)
+          console.log('subscription config auto-migrated to v3.2')
+        } catch (e) {
+          console.warn('subscription config migration failed:', e.message)
+        }
+      }
+      return existing
+    }
+  } catch (_) {}
   const doc = { ...DEFAULT_SUBSCRIPTION_CONFIG }
   await db.collection(SYSTEM_SETTINGS).add(doc)
   return doc
@@ -250,7 +335,14 @@ async function checkTokenBalance(db, userId, estTokens) {
   const monthlyRemaining = monthlyLimit - monthlyUsed
   const extraRemaining = user.extraTokens || 0
   const totalRemaining = monthlyRemaining + extraRemaining
-  const required = Math.ceil((estTokens || 1000) * (config.tokenExchangeRate || 1))
+  let estimatedRate = 1
+  try {
+    const billingRes = await db.collection(SYSTEM_SETTINGS).doc('settings_billing').get().catch(() => null)
+    const billing = billingRes?.data?.[0] || {}
+    const pricing = (billing.modelPricing || []).find(p => p.enabled !== false && p.modelId === '*')
+    if (pricing?.costMultiplier) estimatedRate = Number(pricing.costMultiplier)
+  } catch (_) {}
+  const required = Math.ceil((estTokens || 1000) * estimatedRate)
 
   if (totalRemaining < required) {
     return {
@@ -263,7 +355,7 @@ async function checkTokenBalance(db, userId, estTokens) {
       extraTokens: extraRemaining,
       required,
       actions: [
-        { type: 'upgrade', label: user.plan === 'free' ? '升级 Pro（300,000 Token/月）' : '升级无限版（不限）' },
+        { type: 'upgrade', label: user.plan === 'free' ? '升级 Pro（300,000 Token/月）' : '升级 Ultra（不限）' },
         { type: 'recharge', label: '买个加油包' }
       ]
     }
@@ -276,7 +368,7 @@ async function checkTokenBalance(db, userId, estTokens) {
  * 调用后：实际扣减平台 Token
  * @param {number} actualModelTokens - AI 返回的实际 token 数（prompt + completion）
  */
-async function consumeTokens(db, userId, actualModelTokens, feature) {
+async function consumeTokens(db, userId, actualModelTokens, feature, model) {
   if (!userId || !actualModelTokens || actualModelTokens <= 0) return { deducted: 0 }
 
   let user
@@ -292,8 +384,18 @@ async function consumeTokens(db, userId, actualModelTokens, feature) {
   if (user.trialEndsAt && new Date() < new Date(user.trialEndsAt)) return { deducted: 0, source: 'trial' }
   if (user.plan === 'ultra') return { deducted: 0, source: 'ultra' }
 
+  // 读取订阅配置（获取 plans 信息）
   const config = await getSubscriptionConfig(db)
-  const rate = config.tokenExchangeRate || 1
+  const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+
+  // 从 billing 读取模型倍率（按 modelId 匹配，fallback 到通配 *）
+  let rate = 1
+  try {
+    const billingRes = await db.collection(SYSTEM_SETTINGS).doc('settings_billing').get().catch(() => null)
+    const billing = billingRes?.data?.[0] || {}
+    const pricing = (billing.modelPricing || []).find(p => p.enabled !== false && (p.modelId === model || p.modelId === '*'))
+    if (pricing?.costMultiplier) rate = Number(pricing.costMultiplier)
+  } catch (_) {}
   const toConsume = Math.ceil(actualModelTokens * rate)
   if (toConsume <= 0) return { deducted: 0 }
 
@@ -304,8 +406,6 @@ async function consumeTokens(db, userId, actualModelTokens, feature) {
     monthlyUsed = 0
     await db.collection(USERS).doc(userId).update({ monthlyTokensUsed: 0, monthlyTokensReset: monthStart })
   }
-
-  const planConfig = config.plans[user.plan || 'free'] || config.plans.free
   const monthlyLimit = planConfig.monthlyTokens === -1 ? Infinity : (planConfig.monthlyTokens || 0)
   const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed)
 
@@ -361,14 +461,14 @@ async function checkFeatureAccess(db, userId, featureKey) {
 
   if (user.trialEndsAt && new Date() < new Date(user.trialEndsAt)) {
     const trialCfg = config.trial || {}
-    if (trialCfg.excludedFeatures && trialCfg.excludedFeatures.includes(featureKey)) {
+    if (featureListIncludes(trialCfg.excludedFeatures, featureKey)) {
       return { allowed: false, reason: `试用期暂不支持此功能（${featureKey}）` }
     }
     return { allowed: true }
   }
 
   const planConfig = config.plans[user.plan || 'free'] || config.plans.free
-  if (planConfig.excludedFeatures && planConfig.excludedFeatures.includes(featureKey)) {
+  if (featureListIncludes(planConfig.excludedFeatures, featureKey)) {
     return { allowed: false, reason: `${planConfig.name}不支持此功能，请升级套餐` }
   }
 
@@ -400,23 +500,67 @@ const addExtraCalls = addExtraTokens
  * @param {number} limit - 返回记录数上限
  * @returns {object} { records: [], summary: {} }
  */
-async function getCallUsageHistory(db, userId, limit = 100) {
-  if (!userId) return { records: [], summary: { totalCallsThisMonth: 0 } }
+async function getCallUsageHistory(db, userId, limit = 100, types = null) {
+  const emptySummary = {
+    totalCallsThisMonth: 0,
+    monthlyTokensUsed: 0,
+    recentRecordsTokens: 0,
+    recentRecordsCount: 0,
+    byFeature: {},
+    bySource: {}
+  }
+  if (!userId) return { records: [], summary: emptySummary }
 
   const currentMonth = new Date().toISOString().slice(0, 7)
 
   try {
+    let monthlyTokensUsed = 0
+    const userRes = await db.collection(USERS).doc(userId).get().catch(() => null)
+    const user = userRes?.data?.[0]
+    if (user) {
+      const monthStart = getMonthStart(new Date())
+      monthlyTokensUsed = Number(user.monthlyTokensUsed || 0)
+      if (!user.monthlyTokensReset || new Date(user.monthlyTokensReset) < monthStart) {
+        monthlyTokensUsed = 0
+        await db.collection(USERS).doc(userId).update({
+          monthlyTokensUsed: 0,
+          monthlyTokensReset: monthStart
+        }).catch(() => null)
+      }
+    }
+
+    const whereClause = { userId }
+    if (types) {
+      // types 可以是字符串（单类型）或数组（多类型），或特殊值 'all'（不过滤）
+      if (types === 'all') {
+        // 不过滤 type
+      } else if (Array.isArray(types)) {
+        whereClause.type = db.command.in(types)
+      } else {
+        whereClause.type = types
+      }
+    } else {
+      whereClause.type = 'consume'
+    }
     const { data: records } = await db.collection(CALL_USAGE)
-      .where({ userId, type: 'consume' })
+      .where(whereClause)
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .get()
 
     const thisMonthRecords = (records || []).filter(r => r.month === currentMonth)
+    const recentRecordsTokens = (records || []).reduce((sum, r) => {
+      const platformTokens = Number(r.platformTokens)
+      if (Number.isFinite(platformTokens) && platformTokens > 0) return sum + platformTokens
+      return sum + Math.abs(Number(r.amountTokens || r.totalTokens || 0))
+    }, 0)
 
     return {
       records: records || [],
       summary: {
+        monthlyTokensUsed,
+        recentRecordsTokens,
+        recentRecordsCount: (records || []).length,
         totalCallsThisMonth: thisMonthRecords.length,
         byFeature: thisMonthRecords.reduce((acc, r) => {
           acc[r.feature] = (acc[r.feature] || 0) + 1
@@ -430,7 +574,7 @@ async function getCallUsageHistory(db, userId, limit = 100) {
     }
   } catch (err) {
     console.error('getCallUsageHistory error:', err)
-    return { records: [], summary: { totalCallsThisMonth: 0 } }
+    return { records: [], summary: emptySummary }
   }
 }
 
@@ -487,14 +631,19 @@ async function redeemInviteCode(db, inviteCode, inviteeUserId) {
     weeklyCount = 0
   }
 
-  const weeklyCap = referral.weeklyInviteCap || 5
+  const weeklyCap = Number(referral.weeklyInviteCap ?? 5)
   if (weeklyCount >= weeklyCap) {
     return { success: false, message: `本周邀请已达上限（${weeklyCap}人）` }
   }
 
   // 检查有效邀请条件：被邀请人需创建 Crush 并记录 ≥1 条事件
   if (referral.requireFirstEvent) {
-    // 注册时调用，此时还未创建 crush，先记录 invitedBy，奖励在首次事件后发放
+    // 注册时调用，此时还未创建 crush，先记录邀请关系，奖励在首次事件后发放
+    await db.collection(USERS).doc(inviteeUserId).update({
+      invitedBy: inviter._id,
+      invitedByCode: inviteCode.toUpperCase().trim(),
+      referralPendingAt: now
+    })
     return {
       success: true,
       pending: true,
@@ -504,12 +653,12 @@ async function redeemInviteCode(db, inviteCode, inviteeUserId) {
   }
 
   // 发放奖励
-  const inviterReward = referral.inviterRewardTokens || 3000
-  const inviteeReward = referral.inviteeRewardTokens || 5000
-  const trialExtend = referral.inviterTrialExtendDays || 3
+  const inviterReward = Number(referral.inviterRewardTokens ?? 3000)
+  const inviteeReward = Number(referral.inviteeRewardTokens ?? 5000)
+  const trialExtend = Number(referral.inviterTrialExtendDays ?? 3)
 
   // 邀请人奖励
-  await addExtraTokens(db, inviter._id, inviterReward, 'referral_inviter')
+  if (inviterReward > 0) await addExtraTokens(db, inviter._id, inviterReward, 'referral_inviter')
   await db.collection(USERS).doc(inviter._id).update({
     referralCount: db.command.inc(1),
     referralWeekStart: weekStart,
@@ -526,7 +675,11 @@ async function redeemInviteCode(db, inviteCode, inviteeUserId) {
   }
 
   // 被邀请人奖励
-  await addExtraTokens(db, inviteeUserId, inviteeReward, 'referral_invitee')
+  await db.collection(USERS).doc(inviteeUserId).update({
+    invitedBy: inviter._id,
+    invitedByCode: inviteCode.toUpperCase().trim()
+  })
+  if (inviteeReward > 0) await addExtraTokens(db, inviteeUserId, inviteeReward, 'referral_invitee')
 
   return {
     success: true,
@@ -564,27 +717,50 @@ async function finalizePendingReferral(db, userId) {
   // 现在发放奖励
   const config = await getSubscriptionConfig(db)
   const referral = config.referral || {}
+  if (!referral.enabled) return
 
-  const inviterReward = referral.inviterRewardTokens || 3000
-  const inviteeReward = referral.inviteeRewardTokens || 5000
-  const trialExtend = referral.inviterTrialExtendDays || 3
+  let inviterId = user.invitedBy
+  let inviter = null
+  try {
+    const { data: inviterData } = await db.collection(USERS).doc(inviterId).get()
+    inviter = (inviterData && inviterData.length > 0) ? inviterData[0] : null
+  } catch (_) {}
 
-  await addExtraTokens(db, userId, inviteeReward, 'referral_invitee')
-  await addExtraTokens(db, user.invitedBy, inviterReward, 'referral_inviter')
+  if (!inviter) {
+    try {
+      const { data: inviterByCode } = await db.collection(USERS)
+        .where({ inviteCode: String(user.invitedBy || '').toUpperCase().trim() })
+        .limit(1)
+        .get()
+      inviter = (inviterByCode && inviterByCode.length > 0) ? inviterByCode[0] : null
+      if (inviter?._id) {
+        inviterId = inviter._id
+        await db.collection(USERS).doc(userId).update({ invitedBy: inviterId })
+      }
+    } catch (_) {}
+  }
+  if (!inviter?._id) return
+
+  const inviterWeekStart = inviter.referralWeekStart ? new Date(inviter.referralWeekStart) : null
+  let inviterWeekCount = inviter.referralWeekCount || 0
+  const weekStart = getWeekStart(new Date())
+  if (!inviterWeekStart || inviterWeekStart < weekStart) inviterWeekCount = 0
+  const weeklyCap = Number(referral.weeklyInviteCap ?? 5)
+  if (weeklyCap >= 0 && inviterWeekCount >= weeklyCap) return
+
+  const inviterReward = Number(referral.inviterRewardTokens ?? 3000)
+  const inviteeReward = Number(referral.inviteeRewardTokens ?? 5000)
+  const trialExtend = Number(referral.inviterTrialExtendDays ?? 3)
+
+  if (inviteeReward > 0) await addExtraTokens(db, userId, inviteeReward, 'referral_invitee')
+  if (inviterReward > 0) await addExtraTokens(db, inviterId, inviterReward, 'referral_inviter')
 
   const now = new Date()
-  const weekStart = getWeekStart(now)
 
   // 更新邀请人计数
   try {
-    const { data: inviterData } = await db.collection(USERS).doc(user.invitedBy).get()
-    const inviter = (inviterData && inviterData.length > 0) ? inviterData[0] : null
     if (inviter) {
-      const inviterWeekStart = inviter.referralWeekStart ? new Date(inviter.referralWeekStart) : null
-      let inviterWeekCount = inviter.referralWeekCount || 0
-      if (!inviterWeekStart || inviterWeekStart < weekStart) inviterWeekCount = 0
-
-      await db.collection(USERS).doc(user.invitedBy).update({
+      await db.collection(USERS).doc(inviterId).update({
         referralCount: db.command.inc(1),
         referralWeekStart: weekStart,
         referralWeekCount: inviterWeekCount + 1
@@ -595,7 +771,7 @@ async function finalizePendingReferral(db, userId) {
         const currentTrialEnd = inviter.trialEndsAt ? new Date(inviter.trialEndsAt) : now
         const baseTime = currentTrialEnd > now ? currentTrialEnd : now
         const newTrialEnd = new Date(baseTime.getTime() + trialExtend * 24 * 60 * 60 * 1000)
-        await db.collection(USERS).doc(user.invitedBy).update({
+        await db.collection(USERS).doc(inviterId).update({
           trialEndsAt: newTrialEnd
         })
       }

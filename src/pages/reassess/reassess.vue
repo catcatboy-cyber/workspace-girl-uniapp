@@ -27,14 +27,16 @@
         submit-label="提交新的分析版本"
         @submit="onSubmit"
       />
+      <AiLoading v-if="assessing" label="AI 分析中..." :seconds="assessingSeconds" />
     </template>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { ref, onBeforeUnmount } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
+import AiLoading from '@/components/AiLoading'
 import { getCaseDetail, reassess, getCurrentUserId } from '@/utils/api'
 import { setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
@@ -44,12 +46,22 @@ const caseFile = ref<any>(null)
 const userId = ref('')
 const caseId = ref('')
 const themeVars = ref(getThemeStyle())
+const lastDataVersion = ref(0)
+const assessing = ref(false)
+const assessingSeconds = ref(0)
+let assessingTimer: any = null
 
 onLoad((options) => {
+  caseId.value = options?.caseId || ''
+})
+
+onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
-  caseId.value = options?.caseId || ''
-  loadData()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  if (dv > lastDataVersion.value || !caseFile.value) {
+    loadData()
+  }
 })
 
 async function loadData() {
@@ -70,18 +82,20 @@ async function loadData() {
     showError(e?.message || '加载失败')
   } finally {
     loading.value = false
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
   }
 }
 
 async function onSubmit(payload: { name: string; answers: any[]; profile: any }) {
-  uni.showLoading({ title: '分析中...' })
+  assessing.value = true
+  assessingSeconds.value = 0
+  assessingTimer = setInterval(() => { assessingSeconds.value++ }, 1000)
   try {
     const res = await reassess({
       userId: userId.value,
       caseId: caseId.value,
       answers: payload.answers
     })
-    uni.hideLoading()
     if (res.success) {
       showSuccess('分析完成')
       setTimeout(() => {
@@ -92,10 +106,17 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
       showError(res.message || '分析失败')
     }
   } catch (e: any) {
-    uni.hideLoading()
     showError(e?.message || '分析失败')
+  } finally {
+    assessing.value = false
+    clearInterval(assessingTimer)
+    assessingTimer = null
   }
 }
+
+onBeforeUnmount(() => {
+  if (assessingTimer) clearInterval(assessingTimer)
+})
 
 function goCaseDetail() {
   setActiveCaseId(caseId.value)

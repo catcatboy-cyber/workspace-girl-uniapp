@@ -1,5 +1,6 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { checkFeatureAccess } = require('./_shared/subscription')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -112,6 +113,21 @@ exports.main = async (event = {}) => {
     }
 
     if (action === 'update') {
+      const profileInput = event.profile && typeof event.profile === 'object' ? event.profile : {}
+      const updatesAIPersona =
+        Object.prototype.hasOwnProperty.call(profileInput, 'aiStyle') ||
+        Object.prototype.hasOwnProperty.call(profileInput, 'aiBoldness')
+      if (updatesAIPersona) {
+        const access = await checkFeatureAccess(db, userId, '自定义AI风格')
+        if (!access.allowed) {
+          return {
+            success: false,
+            code: 'FEATURE_NOT_AVAILABLE',
+            message: access.reason || '当前套餐不支持自定义AI风格'
+          }
+        }
+      }
+
       const submittedProfile = normalizeProfilePatch(event.profile)
       const now = new Date()
       const user = await getUser(userId)

@@ -169,9 +169,15 @@
   "__usePrivacyCheck__": true,
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "Dom-Crush",
+    "navigationBarTitleText": "Crush Master",
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^AiLoading$": "@/components/AiLoading.vue"
+    }
   },
   "tabBar": {
     "custom": true,

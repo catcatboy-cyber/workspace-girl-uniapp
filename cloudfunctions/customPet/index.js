@@ -1,15 +1,37 @@
+const cloudbase = require('@cloudbase/node-sdk')
 const cloud = require('wx-server-sdk')
+const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { checkFeatureAccess } = require('./_shared/subscription')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
+const authDb = app.database()
 const db = cloud.database()
 
 const REQUESTS_COLLECTION = 'custom_pet_requests'
 
 exports.main = async (event = {}) => {
   const { action, nickname, description, referenceImages } = event
-  const userId = event.userId || event.authUserId || ''
   const { OPENID } = cloud.getWXContext()
 
   if (action === 'submit') {
+    let userId = ''
+    try {
+      userId = await requireAuthenticatedUserId(app, event)
+      const access = await checkFeatureAccess(authDb, userId, '自定义宠物')
+      if (!access.allowed) {
+        return {
+          success: false,
+          code: 'FEATURE_NOT_AVAILABLE',
+          message: access.reason || '当前套餐不支持自定义宠物，请升级套餐。'
+        }
+      }
+    } catch (error) {
+      const authError = buildAuthErrorResponse(error)
+      if (authError) return authError
+      console.error('customPet access check error:', error)
+      return { success: false, message: '功能权限检查失败' }
+    }
+
     if (!nickname || !nickname.trim()) {
       return { success: false, message: '请填写宠物昵称' }
     }

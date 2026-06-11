@@ -165,7 +165,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCachedSelfProfile, getCaseDetail, getCurrentUserId, getSelfProfile, getTempFileURL } from '@/utils/api'
 import { setActiveCaseId, setPendingTimelineContext, showError } from '@/utils/helpers'
 import { buildObjectStatusCard, buildProfileSideRead, compareAssessments } from '@/utils/insights'
@@ -176,6 +176,7 @@ const caseFile = ref<any>(null)
 const userId = ref('')
 const caseId = ref('')
 const themeVars = ref(getThemeStyle())
+const lastDataVersion = ref(0)
 const selfProfile = ref<any>(getCachedSelfProfile())
 const imageUrlMap = ref<Record<string, string>>({})
 
@@ -409,10 +410,17 @@ function hasAIReview(item: any) {
 }
 
 onLoad((options) => {
+  caseId.value = options?.caseId || ''
+})
+
+onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
-  caseId.value = options?.caseId || ''
-  loadData()
+  selfProfile.value = getCachedSelfProfile()
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  if (dv > lastDataVersion.value || !caseFile.value) {
+    loadData()
+  }
 })
 
 async function loadData() {
@@ -439,6 +447,7 @@ async function loadData() {
     showError(e?.message || '加载失败')
   } finally {
     loading.value = false
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
   }
 }
 

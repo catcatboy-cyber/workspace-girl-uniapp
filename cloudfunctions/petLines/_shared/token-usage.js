@@ -44,7 +44,7 @@ async function recordTokenUsage(db, payload = {}) {
       tokensDeducted: 0
     }
 
-    // 额度扣减
+    // 额度扣减（旧系统：token_accounts）
     if (doc.totalTokens > 0) {
       try {
         const { chargeTokenUsage } = require('./billing')
@@ -63,6 +63,14 @@ async function recordTokenUsage(db, payload = {}) {
         }
       } catch (chargeErr) {
         console.warn('[token charge failed (non-fatal)]', chargeErr)
+      }
+
+      // 同步扣减 v3.2 平台 Token（users.monthlyTokensUsed / extraTokens）
+      try {
+        const { consumeTokens } = require('./subscription')
+        await consumeTokens(db, userId, doc.totalTokens, doc.feature, doc.model)
+      } catch (subErr) {
+        console.warn('[v3.2 consumeTokens failed (non-fatal)]', subErr)
       }
     }
 

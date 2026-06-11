@@ -2,7 +2,7 @@
 
 ## 一、商业模式文档 v2.0
 
-基于 CloudBase 真实数据重做 Dom-Crush 定价方案：
+基于 CloudBase 真实数据重做 Crush Master 定价方案：
 - 从 `token_usage_records` 聚合 365 条真实调用记录，按 feature 统计实际 token 消耗
 - 查出主力模型为混元 hy3-preview（91%），DeepSeek V4 Flash 仅 8%
 - 真实月度消耗：轻度用户 ~33K Token、重度单 Crush ~60K Token

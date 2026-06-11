@@ -38,6 +38,7 @@
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, getRechargePlans, createRechargeOrder, getSubscriptionStatus } from '@/utils/api'
+import { bumpDataVersion } from '@/utils/helpers'
 
 const extraTokens = ref(0)
 const plans = ref<Array<any>>([])
@@ -58,7 +59,7 @@ onShow(() => {
 })
 
 function totalTokens(plan: any) {
-  return (plan.grantTokens || plan.grantCalls || 0) + (plan.bonusTokens || plan.bonusCalls || 0)
+  return plan.grantTokens || plan.grantCalls || 0
 }
 
 async function loadStatus() {
@@ -104,6 +105,7 @@ async function createOrder(planId: string) {
     // 创建订单成功，等待支付（后续接微信支付）
     orderOk.value = true
     orderMessage.value = `订单已创建（¥${result.order?.amountYuan || '?'}），请联系管理员确认充值。`
+    bumpDataVersion()
     await loadStatus()
   } catch (error: any) {
     orderMessage.value = error?.message || '操作失败'

@@ -39,9 +39,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { callFunction } from '@/utils/cloudbase'
-import { getCurrentUserId } from '@/utils/api'
+import { checkFeatureAccess, getCurrentUserId } from '@/utils/api'
 import { getCurrentThemeId, getThemeStyle } from '@/utils/theme'
 
 const themeVars = ref(getThemeStyle())
@@ -52,6 +52,21 @@ const images = ref<string[]>([])
 const submitting = ref(false)
 
 const canSubmit = computed(() => nickname.value.trim() && description.value.trim())
+
+onMounted(async () => {
+  try {
+    const access = await checkFeatureAccess('自定义宠物')
+    if (access?.allowed === false) {
+      uni.showModal({
+        title: '功能不可用',
+        content: access.reason || '当前套餐不支持自定义宠物功能，请升级套餐。',
+        confirmText: '返回',
+        showCancel: false,
+        success: () => uni.navigateBack({ delta: 1 })
+      })
+    }
+  } catch (_) { /* ignore */ }
+})
 
 function pickImage() {
   uni.chooseImage({

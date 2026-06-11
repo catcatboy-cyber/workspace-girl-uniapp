@@ -3,8 +3,8 @@
         <view class="hero-block-v2"><text class="hero-tag-v2">TOKEN USAGE</text><text class="hero-title-v2">消费<text class="hl-v2">明细</text></text><text class="hero-copy-v2">当前账号的 token 调用和额度变动记录。</text></view>
         <view class="tabs-v2"><view :class="['tab-btn-v2', activeTab === 'usage' ? 'active' : '']" @click="switchTab('usage')">消费明细</view><view :class="['tab-btn-v2', activeTab === 'ledger' ? 'active' : '']" @click="switchTab('ledger')">充值记录</view><view :class="['tab-btn-v2', activeTab === 'voice' ? 'active' : '']" @click="switchTab('voice')">语音识别</view></view>
         <view v-if="activeTab === 'usage'">
-          <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">汇总</text><button class="btn-v2-t sm" :disabled="loading" @click="loadUsage">{{ loading ? '读取中' : '刷新' }}</button></view><text class="card-text-v2">最近 {{ records.length }} 条记录</text><view class="stats-grid-v2"><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.totalTokens }}</text><text class="stat-lbl-v2">总 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.promptTokens }}</text><text class="stat-lbl-v2">输入 token</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.completionTokens }}</text><text class="stat-lbl-v2">输出 token</text></view></view><text v-if="summary.unavailableCount" class="card-text-v2 muted">有 {{ summary.unavailableCount }} 次未返回 usage。</text></view>
-          <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature) }}</text><text class="usage-meta-v2">{{ item.model || '未知模型' }} · {{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text class="usage-total-v2">{{ item.totalTokens }}</text><text class="usage-meta-v2">in {{ item.promptTokens }} / out {{ item.completionTokens }}</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
+          <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">汇总</text><button class="btn-v2-t sm" :disabled="loading" @click="loadUsage">{{ loading ? '读取中' : '刷新' }}</button></view><text class="card-text-v2">最近 {{ records.length }} 条记录</text><view class="stats-grid-v2" style="grid-template-columns: repeat(3, 1fr);"><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.monthlyTokensUsed.toLocaleString() }}</text><text class="stat-lbl-v2">本月已用</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.recentRecordsTokens.toLocaleString() }}</text><text class="stat-lbl-v2">最近合计</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view></view></view>
+          <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item._id || item.recordId || item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature || (item.remark || '').split(' · ')[0]) }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text class="usage-total-v2">-{{ (Math.abs(Number(item.amountTokens || 0)) || Number(item.platformTokens || item.totalTokens) || 0).toLocaleString() }}</text><text class="usage-meta-v2">Token</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
         </view>
         <view v-if="activeTab === 'ledger'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">额度变动记录</text><button class="btn-v2-t sm" :disabled="ledgerLoading" @click="loadLedger">{{ ledgerLoading ? '读取中' : '刷新' }}</button></view>
@@ -28,11 +28,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getTokenUsage, getTokenLedger, getVoiceUsage } from '@/utils/api'
+import { getCurrentUserId, getConsumeHistory, getTokenLedger, getVoiceUsage } from '@/utils/api'
+import { callFunction } from '@/utils/cloudbase'
 
 const activeTab = ref<'usage' | 'ledger' | 'voice'>('usage')
 const loading = ref(false)
-const summary = ref({ promptTokens: 0, completionTokens: 0, totalTokens: 0, callCount: 0, unavailableCount: 0 })
+const summary = ref({ monthlyTokensUsed: 0, recentRecordsTokens: 0, callCount: 0 })
 const records = ref<Array<any>>([])
 const ledgerRecords = ref<Array<any>>([])
 const ledgerLoading = ref(false)
@@ -59,19 +60,42 @@ async function loadUsage() {
   if (loading.value) return
   loading.value = true
   try {
-    const result = await getTokenUsage(100)
-    if (!result?.success) {
-      uni.showToast({ title: result?.message || '读取失败', icon: 'none' })
+    // 优先新系统账户口径；records 只作为最近明细展示。
+    const result = await getConsumeHistory(100)
+    if (result?.success && Array.isArray(result.records)) {
+      const recs = result.records
+      const recentRecordsTokens = Number(result.summary?.recentRecordsTokens)
+      const monthlyTokensUsed = Number(result.summary?.monthlyTokensUsed)
+      records.value = recs
+      summary.value = {
+        monthlyTokensUsed: Number.isFinite(monthlyTokensUsed) ? monthlyTokensUsed : 0,
+        recentRecordsTokens: Number.isFinite(recentRecordsTokens)
+          ? recentRecordsTokens
+          : recs.reduce((sum: number, r: any) => sum + (Number(r.platformTokens) || 0), 0),
+        callCount: recs.length
+      }
+      if (recs.length > 0) {
+        loading.value = false
+        return
+      }
+      // 新系统没有明细时再回退旧记录，但不覆盖账户本月已用口径。
+    }
+    const currentMonthlyUsed = summary.value.monthlyTokensUsed
+    // 回退到旧系统 token_ledger_records（amountTokens 是真实平台 Token，已乘倍率）
+    const old = await callFunction({ name: 'getCallUsageHistory', data: { source: 'ledger', limit: 100 } })
+    if (!old?.result?.success) {
+      if (!result?.success) uni.showToast({ title: '读取失败', icon: 'none' })
+      loading.value = false
       return
     }
+    const recs = Array.isArray(old.result.records) ? old.result.records : []
+    const oldRecentRecordsTokens = recs.reduce((sum: number, r: any) => sum + Math.abs(Number(r.amountTokens || 0)), 0)
+    records.value = recs
     summary.value = {
-      promptTokens: Number(result.summary?.promptTokens || 0),
-      completionTokens: Number(result.summary?.completionTokens || 0),
-      totalTokens: Number(result.summary?.totalTokens || 0),
-      callCount: Number(result.summary?.callCount || 0),
-      unavailableCount: Number(result.summary?.unavailableCount || 0)
+      monthlyTokensUsed: currentMonthlyUsed || oldRecentRecordsTokens,
+      recentRecordsTokens: oldRecentRecordsTokens,
+      callCount: recs.length
     }
-    records.value = Array.isArray(result.records) ? result.records : []
   } catch (error: any) {
     uni.showToast({ title: error?.message || '读取失败', icon: 'none' })
   } finally {
@@ -88,7 +112,15 @@ async function loadLedger() {
       uni.showToast({ title: result?.message || '读取失败', icon: 'none' })
       return
     }
-    ledgerRecords.value = Array.isArray(result.records) ? result.records : []
+    ledgerRecords.value = Array.isArray(result.records)
+      ? result.records
+        .filter((item: any) => item.type !== 'consume')
+        .map((item: any) => ({
+          ...item,
+          amountTokens: getLedgerAmount(item),
+          balanceAfter: item.balanceAfter ?? ''
+        }))
+      : []
   } catch (error: any) {
     uni.showToast({ title: error?.message || '读取失败', icon: 'none' })
   } finally {
@@ -146,6 +178,10 @@ function mapLedgerType(type: string) {
     adjust: '调整'
   }
   return map[type] || type || '未知'
+}
+
+function getLedgerAmount(item: any) {
+  return Number(item?.amount ?? item?.amountTokens ?? item?.platformTokens ?? 0)
 }
 
 function formatDate(value: string) {

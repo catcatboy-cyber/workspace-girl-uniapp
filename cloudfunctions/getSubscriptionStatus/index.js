@@ -9,7 +9,8 @@ const {
   getSubscriptionConfig,
   getDefaultUserSubscriptionFields,
   getMonthStart,
-  generateInviteCode
+  generateInviteCode,
+  checkFeatureAccess
 } = require('./_shared/subscription')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
@@ -19,6 +20,16 @@ const USERS = 'users'
 exports.main = async (event) => {
   try {
     const userId = await requireAuthenticatedUserId(app, event)
+    const action = String(event.action || '').trim()
+
+    // 功能访问检查（命理桃花等）
+    if (action === 'checkFeature') {
+      const featureKey = String(event.featureKey || '').trim()
+      if (!featureKey) return { success: false, message: '缺少 featureKey' }
+      const result = await checkFeatureAccess(db, userId, featureKey)
+      return { success: true, ...result }
+    }
+
     const config = await getSubscriptionConfig(db)
     const now = new Date()
 
@@ -111,7 +122,6 @@ exports.main = async (event) => {
         monthlyRemaining: isTrial ? -1 : (monthlyLimit === -1 ? -1 : Math.max(0, monthlyLimit - monthlyTokensUsed)),
         extraTokens,
         totalAvailable,
-        tokenExchangeRate: config.tokenExchangeRate || 1,
         maxCrushes: planConfig.maxCrushes,
         inviteCode: user.inviteCode || '',
         referralCount: user.referralCount || 0

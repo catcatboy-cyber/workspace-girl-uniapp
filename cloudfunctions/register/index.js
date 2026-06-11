@@ -88,12 +88,12 @@ exports.main = async (event) => {
     const now = new Date()
 
     // 生成邀请码
-    const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig } = require('./_shared/subscription')
+    const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig, redeemInviteCode } = require('./_shared/subscription')
     const inviteCode = generateInviteCode(userId)
-    const subFields = getDefaultUserSubscriptionFields(event.inviteCode || null)
+    const subFields = getDefaultUserSubscriptionFields()
 
     // 读取配置获取试用天数
-    let trialDurationDays = 7
+    let trialDurationDays = 0
     try {
       const config = await getSubscriptionConfig(db)
       if (config.trial?.enabled && config.trial?.durationDays > 0) {
@@ -102,17 +102,21 @@ exports.main = async (event) => {
     } catch (_) {}
 
     subFields.inviteCode = inviteCode
-    subFields.trialEndsAt = new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000)
+    subFields.trialEndsAt = trialDurationDays > 0
+      ? new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000)
+      : null
 
     // 注册赠送Token → 读 billing 的 welcomeTokens
     try {
       const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => null)
       const billing = billingRes?.data?.[0] || {}
       if (billing.firstGiftEnabled !== false) {
-        const welcomeTokens = billing.welcomeTokens || 1000000
+        const welcomeTokens = billing.welcomeTokens ?? 1000000
         subFields.extraTokens = welcomeTokens
       }
     } catch (_) {}
+
+    subFields.extraTokens = 0
 
     await db.collection('users').add({
       _id: userId,
@@ -142,6 +146,15 @@ exports.main = async (event) => {
       console.warn('grant first gift failed (non-fatal):', err.message)
     }
 
+    let referralResult = null
+    if (event.inviteCode && typeof event.inviteCode === 'string') {
+      try {
+        referralResult = await redeemInviteCode(db, event.inviteCode.trim(), userId)
+      } catch (err) {
+        console.warn('register redeem invite failed (non-fatal):', err?.message || err)
+      }
+    }
+
     // 创建自定义登录票据（7天有效期）
     const ticket = getCustomLoginCredentials() ? await app.auth().createTicket(userId, {
       refresh: 7 * 24 * 60 * 60 * 1000 // 7天（毫秒）
@@ -152,6 +165,7 @@ exports.main = async (event) => {
       ticket,
       userId,
       email: normalizedEmail,
+      referral: referralResult,
       selfProfile: null
     }
   } catch (error) {

@@ -1030,18 +1030,32 @@ async function getOverview(currentUserId = '', currentUser = null) {
     return map
   }, {})
 
-  const users = (usersRes.data || []).map((user) => ({
+  const users = (usersRes.data || []).map((user) => {
+    let planLabel = '免费版'
+    const trialEnd = user.trialEndsAt ? new Date(user.trialEndsAt) : null
+    if (trialEnd && !isNaN(trialEnd.getTime()) && new Date() < trialEnd) {
+      planLabel = '试用期'
+    } else if (user.plan === 'pro') {
+      planLabel = 'Pro'
+    } else if (user.plan === 'ultra') {
+      planLabel = 'Ultra'
+    } else if (user.plan) {
+      planLabel = user.plan === 'free' ? '免费版' : user.plan
+    }
+    return {
     id: user._id,
     email: user.email || '',
     phone: user.phone || '',
     loginType: user.loginType || (user.phone ? 'wechat_phone' : 'email'),
     role: user.role || (user.isAdmin ? 'admin' : 'user'),
     isAdmin: Boolean(user.isAdmin) || user.role === 'admin',
+    plan: user.plan || 'free',
+    planLabel,
     caseCount: caseCountByUser[user._id] || 0,
     createdAt: toISO(user.createdAt),
     updatedAt: toISO(user.updatedAt),
     lastLoginAt: toISO(user.lastLoginAt)
-  }))
+  }})
 
   return {
     success: true,
@@ -1081,18 +1095,28 @@ async function getUserDetail(event) {
     Promise.all(caseIds.map((caseId) => db.collection('assessments').where({ caseId }).limit(100).get()))
   ])
 
+  const userInfo = {
+    id: user._id || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    loginType: user.loginType || '',
+    role: user.role || (user.isAdmin ? 'admin' : 'user'),
+    isAdmin: Boolean(user.isAdmin) || user.role === 'admin',
+    plan: user.plan || 'free',
+    trialEndsAt: (user.trialEndsAt && !isNaN(new Date(user.trialEndsAt).getTime())) ? toISO(user.trialEndsAt) : null,
+    planExpiresAt: (user.planExpiresAt && !isNaN(new Date(user.planExpiresAt).getTime())) ? toISO(user.planExpiresAt) : null,
+    extraTokens: Number(user.extraTokens || 0),
+    monthlyTokensUsed: Number(user.monthlyTokensUsed || 0),
+    inviteCode: String(user.inviteCode || ''),
+    referralCount: Number(user.referralCount || 0),
+    createdAt: toISO(user.createdAt),
+    updatedAt: toISO(user.updatedAt),
+    lastLoginAt: toISO(user.lastLoginAt)
+  }
+
   return {
     success: true,
-    user: {
-      id: user._id,
-      email: user.email || '',
-      phone: user.phone || '',
-      loginType: user.loginType || '',
-      role: user.role || (user.isAdmin ? 'admin' : 'user'),
-      createdAt: toISO(user.createdAt),
-      updatedAt: toISO(user.updatedAt),
-      lastLoginAt: toISO(user.lastLoginAt)
-    },
+    user: userInfo,
     cases: cases.map((item, index) => ({
       id: item._id,
       name: item.name || item.profile?.name || '未命名 Crush',
@@ -1113,7 +1137,6 @@ async function updateAISettings(event, adminUserId) {
   const defaultModelId = event.defaultModelId || base.aiDefaultModelId || normalizedModels[0]?.id || 'default'
   const defaultModel = getDefaultModel(normalizedModels, defaultModelId)
   const now = new Date()
-
   const update = {
     scope: 'global',
     key: 'ai',
@@ -1304,6 +1327,25 @@ async function getSubscriptionConfigAdmin(event) {
   return { success: true, config }
 }
 
+function stripSystemAndUndefinedFields(value) {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (value instanceof Date) return value
+  if (Array.isArray(value)) {
+    return value.map(stripSystemAndUndefinedFields).filter(item => item !== undefined)
+  }
+  if (typeof value === 'object') {
+    const result = {}
+    for (const [key, item] of Object.entries(value)) {
+      if (key === '_id' || key === '_openid') continue
+      const cleaned = stripSystemAndUndefinedFields(item)
+      if (cleaned !== undefined) result[key] = cleaned
+    }
+    return result
+  }
+  return value
+}
+
 async function updateSubscriptionConfigAdmin(event, adminUserId) {
   try {
     const { ensureSubscriptionConfig } = require('./_shared/subscription')
@@ -1358,8 +1400,10 @@ async function updateSubscriptionConfigAdmin(event, adminUserId) {
     }
 
     updated.updatedAt = new Date()
+    updated.updatedBy = adminUserId
 
-    await db.collection('system_settings').doc(existing._id).update(updated)
+    const patch = stripSystemAndUndefinedFields(updated)
+    await db.collection('system_settings').doc(existing._id).update(patch)
 
     const { data } = await db.collection('system_settings').doc(existing._id).get()
     const saved = (data && data.length > 0) ? data[0] : updated
@@ -1399,6 +1443,143 @@ async function getTokenLedger(event) {
   return { success: true, records: data || [] }
 }
 
+// 各用户 Token 消耗汇总（平台 Token + 模型 Token）
+async function getUsersTokenConsumption(event = {}) {
+  const limit = Math.min(Number(event.limit) || 500, 2000)
+  const userMap = {}
+
+  // token_ledger_records 有真实倍率扣减记录，且不会和 call_usage_records 重复
+  try {
+    const { data } = await db.collection('token_ledger_records')
+      .where({ type: 'consume' })
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get()
+    for (const r of (data || [])) {
+      const uid = r.userId
+      if (!uid) continue
+      if (!userMap[uid]) userMap[uid] = { userId: uid, platformTokens: 0, modelTokens: 0, callCount: 0, lastUsed: null }
+      // amountTokens 是负数（扣减），取绝对值；这是真实平台 Token（已乘倍率）
+      userMap[uid].platformTokens += Math.abs(Number(r.amountTokens || 0))
+      userMap[uid].modelTokens += Number(r.realTokens || 0)
+      userMap[uid].callCount += 1
+      const d = new Date(r.createdAt)
+      if (!userMap[uid].lastUsed || d > userMap[uid].lastUsed) userMap[uid].lastUsed = d
+    }
+  } catch (_) {}
+  const ledgerUserIds = new Set(Object.keys(userMap))
+
+  // 补充：如果某用户在 ledger 里没有记录，尝试从 call_usage_records 补充
+  try {
+    const { data } = await db.collection('call_usage_records')
+      .where({ type: 'consume' })
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get()
+    for (const r of (data || [])) {
+      const uid = r.userId
+      if (!uid || ledgerUserIds.has(uid)) continue  // 已有 ledger 数据则跳过
+      if (!userMap[uid]) userMap[uid] = { userId: uid, platformTokens: 0, modelTokens: 0, callCount: 0, lastUsed: null }
+      userMap[uid].platformTokens += Number(r.platformTokens || 0)
+      userMap[uid].modelTokens += Number(r.modelTokens || 0)
+      userMap[uid].callCount += 1
+      const d = new Date(r.createdAt)
+      if (!userMap[uid].lastUsed || d > userMap[uid].lastUsed) userMap[uid].lastUsed = d
+    }
+  } catch (_) {}
+
+  // 3. 批量查用户邮箱/手机
+  const userIds = Object.keys(userMap)
+  const userInfos = {}
+  if (userIds.length > 0) {
+    const batches = []
+    for (let i = 0; i < userIds.length; i += 100) {
+      batches.push(userIds.slice(i, i + 100))
+    }
+    for (const batch of batches) {
+      try {
+        const { data: us } = await db.collection('users')
+          .where({ _id: db.command.in(batch) })
+          .field({ email: true, phone: true })
+          .get()
+        for (const u of (us || [])) {
+          userInfos[u._id] = { email: u.email || '', phone: u.phone || '' }
+        }
+      } catch (_) {}
+    }
+  }
+
+  // 4. 组装结果，按 platformTokens 降序
+  const rows = Object.values(userMap)
+    .sort((a, b) => b.platformTokens - a.platformTokens)
+    .map(r => ({
+      userId: r.userId,
+      email: userInfos[r.userId]?.email || '',
+      phone: userInfos[r.userId]?.phone || '',
+      platformTokens: r.platformTokens,
+      modelTokens: r.modelTokens,
+      callCount: r.callCount,
+      lastUsed: r.lastUsed ? r.lastUsed.toISOString() : ''
+    }))
+
+  return { success: true, rows, totalUsers: rows.length }
+}
+
+// 单用户 Token 消费明细
+async function getUserTokenDetails(event = {}) {
+  const targetUserId = String(event.targetUserId || '').trim()
+  if (!targetUserId) return { success: false, message: '缺少 targetUserId' }
+  const limit = Math.min(Number(event.limit) || 200, 500)
+
+  const records = []
+
+  // token_ledger_records（最完整：platform/模型 token + 倍率 + 功能名）
+  try {
+    const { data } = await db.collection('token_ledger_records')
+      .where({ userId: targetUserId, type: 'consume' })
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get()
+    for (const r of (data || [])) {
+      records.push({
+        _id: r._id,
+        feature: r.feature || r.remark || '',
+        platformTokens: Math.abs(Number(r.amountTokens || 0)),
+        modelTokens: Number(r.realTokens || 0),
+        rate: Number(r.chargeMultiplier || 1),
+        model: r.model || '',
+        createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : '',
+        source: 'ledger'
+      })
+    }
+  } catch (_) {}
+
+  // 如果 ledger 为空，从 call_usage_records 补充
+  if (records.length === 0) {
+    try {
+      const { data } = await db.collection('call_usage_records')
+        .where({ userId: targetUserId, type: 'consume' })
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get()
+      for (const r of (data || [])) {
+        records.push({
+          _id: r._id,
+          feature: r.feature || '',
+          platformTokens: Number(r.platformTokens || 0),
+          modelTokens: Number(r.modelTokens || 0),
+          rate: Number(r.exchangeRate || 1),
+          model: '',
+          createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : '',
+          source: 'call_usage'
+        })
+      }
+    } catch (_) {}
+  }
+
+  return { success: true, records }
+}
+
 async function adminManualRecharge(event, adminUserId) {
   const targetUserId = String(event.targetUserId || '').trim()
   if (!targetUserId) return { success: false, message: '缺少 targetUserId' }
@@ -1414,6 +1595,16 @@ async function adminManualRecharge(event, adminUserId) {
   const newBalance = (account.balanceTokens || 0) + amountTokens
   if (newBalance < 0) return { success: false, message: '扣减后余额不能为负' }
   const now = new Date()
+  try {
+    const userRes = await db.collection('users').doc(targetUserId).get()
+    const user = Array.isArray(userRes.data) ? userRes.data[0] : userRes.data
+    const currentExtraTokens = Number(user?.extraTokens || 0)
+    if (currentExtraTokens + amountTokens < 0) {
+      return { success: false, message: '扣减后前台额外 Token 不能为负' }
+    }
+  } catch (err) {
+    console.warn('precheck extraTokens on adminManualRecharge failed:', err?.message || err)
+  }
 
   await db.collection('token_accounts').doc(account._id).update({
     balanceTokens: newBalance,
@@ -1430,8 +1621,105 @@ async function adminManualRecharge(event, adminUserId) {
     createdAt: now
   })
 
+  try {
+    await db.collection('users').doc(targetUserId).update({
+      extraTokens: db.command.inc(amountTokens)
+    })
+    await db.collection('call_usage_records').add({
+      userId: targetUserId,
+      type: amountTokens > 0 ? 'grant' : 'adjust',
+      source: 'adminManualRecharge',
+      amount: amountTokens,
+      remark,
+      createdAt: now
+    })
+  } catch (err) {
+    console.warn('sync extraTokens on adminManualRecharge failed:', err?.message || err)
+  }
+
   const updatedPurchased = isDeduction ? (account.purchasedTokens || 0) : (account.purchasedTokens || 0) + amountTokens
   return { success: true, account: { ...account, balanceTokens: newBalance, purchasedTokens: updatedPurchased } }
+}
+
+async function adminUpdateUser(event, adminUserId) {
+  const targetUserId = String(event.userId || event.targetUserId || '').trim()
+  if (!targetUserId) return { success: false, message: '缺少 userId' }
+
+  const patch = {}
+  const ALLOWED = ['plan', 'trialEndsAt', 'planExpiresAt', 'extraTokens', 'monthlyTokensUsed', 'isAdmin', 'email', 'inviteCode']
+
+  for (const key of ALLOWED) {
+    if (event[key] !== undefined && event[key] !== null) {
+      if (key === 'plan') {
+        const planVal = String(event[key] || '').trim()
+        if (!planVal) continue
+        if (!['free', 'pro', 'ultra'].includes(planVal)) {
+          return { success: false, message: `无效套餐: "${planVal}"，可选值: free / pro / ultra` }
+        }
+        patch[key] = planVal
+      } else if (key === 'trialEndsAt' || key === 'planExpiresAt') {
+        if (!event[key]) {
+          patch[key] = null
+        } else {
+          const d = new Date(event[key])
+          if (isNaN(d.getTime())) {
+            return { success: false, message: `无效日期: "${event[key]}"，请使用 YYYY-MM-DD 格式` }
+          }
+          patch[key] = d
+        }
+      } else if (key === 'isAdmin') {
+        patch.isAdmin = Boolean(event.isAdmin)
+        patch.role = event.isAdmin ? 'admin' : 'user'
+      } else if (key === 'extraTokens' || key === 'monthlyTokensUsed') {
+        patch[key] = Number(event[key]) || 0
+      } else if (key === 'inviteCode') {
+        const code = String(event[key] || '').trim()
+        if (code && !/^[A-Za-z0-9]{4,10}$/.test(code)) {
+          return { success: false, message: '邀请码格式无效（4-10 位字母或数字）' }
+        }
+        patch[key] = code
+      } else if (key === 'email') {
+        const emailVal = String(event[key] || '').trim()
+        if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+          return { success: false, message: `邮箱格式无效: "${emailVal}"` }
+        }
+        patch[key] = emailVal
+      } else {
+        patch[key] = event[key]
+      }
+    }
+  }
+
+  if (Object.keys(patch).length === 0) return { success: false, message: '无可更新字段' }
+
+  // 最后一位管理员保护：不允许把自己降级（除非还有其他管理员）
+  if (patch.isAdmin === false && targetUserId !== adminUserId) {
+    // 检查目标用户是否是最后一个管理员
+    try {
+      const { data: admins } = await db.collection('users')
+        .where(db.command.or([{ isAdmin: true }, { role: 'admin' }]))
+        .limit(10).get()
+      const adminCount = (admins || []).filter(u =>
+        (u.isAdmin === true || u.role === 'admin') && u._id !== targetUserId
+      ).length
+      if (adminCount === 0) {
+        return { success: false, message: '不能移除最后一位管理员，请先指定另一位用户为管理员' }
+      }
+    } catch (err) {
+      console.warn('admin count check failed (non-fatal):', err.message)
+    }
+  }
+
+  patch.updatedAt = new Date()
+  patch.updatedBy = adminUserId
+
+  try {
+    await db.collection('users').doc(targetUserId).update(patch)
+    return { success: true, patch }
+  } catch (err) {
+    console.error('adminUpdateUser failed:', err)
+    return { success: false, message: '更新用户信息失败' }
+  }
 }
 
 async function listFeedbacks() {
@@ -1487,6 +1775,12 @@ async function resolveFeedback(event) {
         remark: `反馈采纳奖励：${fb.content.slice(0, 40)}`,
         createdAt: now
       })
+      try {
+        const { addExtraTokens } = require('./_shared/subscription')
+        await addExtraTokens(db, userId, tokens, 'feedback_reward')
+      } catch (err) {
+        console.warn('addExtraTokens on feedback reward failed:', err?.message || err)
+      }
     }
 
     await db.collection('system_feedback').doc(feedbackId).update({
@@ -1580,6 +1874,7 @@ exports.main = async (event = {}) => {
 
     if (action === 'getOverview') return await getOverview(userId, user)
     if (action === 'getUserDetail') return await getUserDetail(event)
+    if (action === 'adminUpdateUser') return await adminUpdateUser(event, userId)
     if (action === 'updateAISettings') return await updateAISettings(event, userId)
     if (action === 'previewPrompt') return await previewPrompt(event)
     if (action === 'getBillingSettings') return await getBillingSettings(event)
@@ -1588,6 +1883,8 @@ exports.main = async (event = {}) => {
     if (action === 'updateSubscriptionConfig') return await updateSubscriptionConfigAdmin(event, userId)
     if (action === 'adminGrantExtraCalls') return await adminGrantExtraCallsAction(event, userId)
     if (action === 'getTokenLedger') return await getTokenLedger(event)
+    if (action === 'getUsersTokenConsumption') return await getUsersTokenConsumption(event)
+    if (action === 'getUserTokenDetails') return await getUserTokenDetails(event)
     if (action === 'adminManualRecharge') return await adminManualRecharge(event, userId)
     if (action === 'listFeedbacks') return await listFeedbacks()
     if (action === 'resolveFeedback') return await resolveFeedback(event)

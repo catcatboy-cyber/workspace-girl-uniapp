@@ -13,6 +13,8 @@ const COLLECTIONS = [
   'token_usage_records',
   'token_accounts',
   'token_ledger_records',
+  'call_usage_records',
+  'voice_usage',
   'recharge_orders'
 ]
 

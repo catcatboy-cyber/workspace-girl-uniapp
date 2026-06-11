@@ -1,15 +1,10 @@
 <template>
-  <view :class="['page v2-mode anim-ready', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
-    <!-- 导航栏 -->
-    <view class="nav-bar-v2">
-      <text class="nav-back-v2" @click="goBack">← 返回</text>
-      <text class="nav-title-v2">命理桃花</text>
-      <text class="nav-placeholder-v2"></text>
-    </view>
-
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
+    <view v-if="loading" class="loading">LOADING...</view>
+    <block v-else>
     <!-- ① Hero -->
     <view class="hero-block-v2 anim-hero">
-      <text class="hero-tag-v2">桃花方位</text>
+      <text class="hero-tag-v2">TAOHUA</text>
       <text class="hero-title-v2">今日<text class="hl-v2">桃花</text></text>
       <text class="hero-copy-v2">
         {{ computedReport.今日方位?.['公历日期']?.split(' ')?.[0] || '--' }}
@@ -60,14 +55,22 @@
 
       <!-- 出处 -->
       <view class="cite-block-v2">
-        <text class="cite-title-v2">📖 出处</text>
+        <view class="inline-title-v2">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('bookOpen')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">📖</text>
+          <text class="cite-title-v2">出处</text>
+        </view>
         <text class="cite-desc-v2">咸池桃花：《三命通会》三合沐浴算法 · 神煞方位：《协纪辨方书》卷二十 · 日历：寿星天文历</text>
       </view>
     </view>
 
     <!-- ③ 今日行动指南 -->
     <view v-if="computedReport.今日行动指南" class="card-v2" style="background:#FFFBEB;">
-      <text class="section-title-v2">🎯 今日行动指南</text>
+      <view class="section-title-row-v2">
+        <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(30)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
+        <text v-else class="taohua-icon-emoji">🎯</text>
+        <text class="section-title-v2 no-margin">今日行动指南</text>
+      </view>
 
       <!-- 桃花指数条 -->
       <view v-if="computedReport.桃花指数" class="score-bar-v2">
@@ -81,13 +84,20 @@
         </view>
         <view style="display:flex;align-items:center;gap:8rpx;margin-top:4rpx;">
           <text class="guide-text-v2 muted">{{ computedReport.桃花指数?.一句话 || '' }}</text>
-          <text v-if="(computedReport.桃花指数?.加分项 || []).some((r:string)=>r.includes('天喜'))" class="tag-v2" style="background:#FF5252;color:#fff;">🔥 天喜日</text>
+          <view v-if="(computedReport.桃花指数?.加分项 || []).some((r:string)=>r.includes('天喜'))" class="tag-v2 tag-with-icon-v2" style="background:#FF5252;color:#fff;">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">🔥</text>
+            <text>天喜日</text>
+          </view>
         </view>
       </view>
 
       <!-- 去哪 -->
       <view class="guide-section-v2">
-        <text class="guide-icon-v2">🧭</text>
+        <view class="guide-icon-v2">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(40)" :src="taohuaIcon('compass')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">🧭</text>
+        </view>
         <view class="guide-content-v2">
           <text class="guide-label-v2">去哪约会 <text class="cite-inline-v2">《三命通会》</text></text>
           <text class="guide-text-v2">{{ dateAdviceText }}</text>
@@ -97,25 +107,43 @@
 
       <!-- 做啥 -->
       <view class="guide-section-v2">
-        <text class="guide-icon-v2">🎯</text>
+        <view class="guide-icon-v2">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(40)" :src="taohuaIcon('target')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">🎯</text>
+        </view>
         <view class="guide-content-v2">
           <text class="guide-label-v2">{{ computedReport.今日行动指南?.活动建议?.今日气场 || '今日感情运势' }} <text class="cite-inline-v2">《协纪辨方书》</text></text>
           <text class="guide-text-v2">{{ computedReport.今日行动指南?.活动建议?.一句话 || '' }}</text>
           <view v-if="(computedReport.今日行动指南?.活动建议?.建议活动 || []).length > 0" style="margin-top:6rpx;">
-            <text v-for="(a, i) in computedReport.今日行动指南?.活动建议?.建议活动 || []" :key="'act-'+i" class="tag-v2 green">🎯 {{ a }}</text>
+            <view v-for="(a, i) in computedReport.今日行动指南?.活动建议?.建议活动 || []" :key="'act-'+i" class="tag-v2 green tag-with-icon-v2">
+              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('target')" mode="aspectFit" />
+              <text v-else class="taohua-icon-emoji">🎯</text>
+              <text>{{ a }}</text>
+            </view>
           </view>
           <view v-if="(computedReport.今日行动指南?.活动建议?.宜做 || []).length > 0" style="margin-top:6rpx;">
-            <text v-for="(a, i) in computedReport.今日行动指南?.活动建议?.宜做 || []" :key="'do-'+i" class="guide-text-v2" style="color:#4ECDC4;">✅ {{ a }}</text>
+            <view v-for="(a, i) in computedReport.今日行动指南?.活动建议?.宜做 || []" :key="'do-'+i" class="guide-line-v2 good">
+              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('checkCircle')" mode="aspectFit" />
+              <text v-else class="taohua-icon-emoji">✅</text>
+              <text class="guide-text-v2 good">{{ a }}</text>
+            </view>
           </view>
           <view v-if="(computedReport.今日行动指南?.活动建议?.避开 || []).length > 0" style="margin-top:4rpx;">
-            <text v-for="(a, i) in computedReport.今日行动指南?.活动建议?.避开 || []" :key="'dont-'+i" class="guide-text-v2 muted">⚠️ {{ a }}</text>
+            <view v-for="(a, i) in computedReport.今日行动指南?.活动建议?.避开 || []" :key="'dont-'+i" class="guide-line-v2">
+              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
+              <text v-else class="taohua-icon-emoji">⚠️</text>
+              <text class="guide-text-v2 muted">{{ a }}</text>
+            </view>
           </view>
         </view>
       </view>
 
       <!-- 穿啥 -->
       <view class="guide-section-v2" v-if="computedReport.今日行动指南?.穿戴建议">
-        <text class="guide-icon-v2">👗</text>
+        <view class="guide-icon-v2">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(40)" :src="taohuaIcon('shirt')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">👗</text>
+        </view>
         <view class="guide-content-v2">
           <text class="guide-label-v2">穿什么戴什么 <text class="cite-inline-v2">《三命通会》</text></text>
           <text class="guide-text-v2 strong">{{ computedReport.今日行动指南?.穿戴建议?.一句话 || '' }}</text>
@@ -140,11 +168,19 @@
 
       <view class="split-row-v2">
         <view class="split-half-v2 yi">
-          <text class="split-label-v2 yi">✅ 宜</text>
+          <view class="split-label-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('checkCircle')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">✅</text>
+            <text class="split-label-v2 yi">宜</text>
+          </view>
           <text v-for="y in loveYi" :key="y" class="split-item-v2">{{ y }}</text>
         </view>
         <view class="split-half-v2 ji">
-          <text class="split-label-v2 ji">⚠️ 忌</text>
+          <view class="split-label-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">⚠️</text>
+            <text class="split-label-v2 ji">忌</text>
+          </view>
           <text v-for="j in loveJi" :key="j" class="split-item-v2">{{ j }}</text>
         </view>
       </view>
@@ -170,14 +206,22 @@
 
         <!-- 中国维度 -->
         <view class="persona-dim-v2">
-          <text class="persona-dim-label-v2">🌏 中国星次</text>
+          <view class="persona-dim-label-v2 label-with-icon-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('landmark')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">🌏</text>
+            <text>中国星次</text>
+          </view>
           <text class="persona-dim-text-v2">{{ crossData.chinese.character }}</text>
           <text class="persona-dim-src-v2">{{ crossData.chinese.source }}</text>
         </view>
 
         <!-- 西方维度 -->
         <view class="persona-dim-v2">
-          <text class="persona-dim-label-v2">🌍 西方星座</text>
+          <view class="persona-dim-label-v2 label-with-icon-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('stars')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">🌍</text>
+            <text>西方星座</text>
+          </view>
           <text class="persona-dim-text-v2">{{ crossData.western.planet }}守护 · {{ crossData.western.element }}象{{ crossData.western.mode.split('（')[0] }}</text>
           <text class="persona-dim-text-v2 strong">"{{ crossData.western.personality }}"</text>
           <text class="persona-dim-src-v2">{{ crossData.western.source }}</text>
@@ -185,19 +229,31 @@
 
         <!-- 最佳配对 -->
         <view class="tag-row-v2" style="margin-top:14rpx;">
-          <text v-for="m in crossData.western.bestMatch" :key="m" class="tag-v2 black">❤️ {{ m }}</text>
+          <view v-for="m in crossData.western.bestMatch" :key="m" class="tag-v2 black tag-with-icon-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('heart')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">❤️</text>
+            <text>{{ m }}</text>
+          </view>
           <text class="card-text-v2 muted" style="display:inline;font-size:18rpx;margin-left:6rpx;">{{ crossData.western.bestMatchReason }}</text>
         </view>
       </view>
 
       <button class="btn-v2-me outline" style="margin-top:16rpx;width:100%;" @click="sharePersona">
-        📤 分享我的桃花人格卡
+        <view class="button-label-v2">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('share2')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">📤</text>
+          <text>分享我的桃花人格卡</text>
+        </view>
       </button>
     </view>
 
     <!-- 画像引导卡（无画像时） -->
     <view v-else class="card-v2 guide-card-v2" @click="goSelfProfile">
-      <text class="section-title-v2">🔒 你的桃花人设</text>
+      <view class="section-title-row-v2">
+        <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(30)" :src="taohuaIcon('lock')" mode="aspectFit" />
+        <text v-else class="taohua-icon-emoji">🔒</text>
+        <text class="section-title-v2 no-margin">你的桃花人设</text>
+      </view>
       <text class="card-text-v2" style="color:#111;font-weight:800;">完善画像后解锁专属桃花分析</text>
       <text class="card-text-v2 muted">填写你的生肖和星座，即可查看中国星次解读、西方星座桃花风格、最佳配对等专属内容。点击前往 →</text>
     </view>
@@ -211,14 +267,24 @@
       </text>
 
       <view class="match-badge-wrap">
-        <text :class="['match-badge-v2', matchBadgeClass]">⚡ {{ crossData.relation }} ⚡</text>
+        <view :class="['match-badge-v2', matchBadgeClass, 'match-badge-line-v2']">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">⚡</text>
+          <text>{{ crossData.relation }}</text>
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">⚡</text>
+        </view>
       </view>
       <text class="card-text-v2 strong" style="text-align:center;display:block;">
         {{ crossData.relationDesc }}
       </text>
 
       <button class="btn-v2-me outline" style="margin-top:16rpx;width:100%;" @click="showMatchSheet = true">
-        🔍 测测和TA的匹配度
+        <view class="button-label-v2">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('search')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">🔍</text>
+          <text>测测和TA的匹配度</text>
+        </view>
       </button>
     </view>
 
@@ -259,31 +325,33 @@
     </view>
 
     <!-- ⑦ 订阅推送 -->
-    <view class="card-v2" style="text-align:center;">
-      <text class="section-title-v2">🔔 每日桃花推送</text>
-      <text class="card-text-v2 muted">每天早上 8:00 提醒你今日桃花方位、穿搭颜色、宜忌活动</text>
-      <button class="btn-v2-me primary" style="margin-top:16rpx;width:100%;" @click="subscribeNotify">
-        开启每日推送
-      </button>
-      <text class="card-text-v2 muted" style="margin-top:8rpx;">需要微信订阅消息授权，可随时关闭</text>
-    </view>
-
     <!-- ⑧ 免责声明 -->
     <view class="card-v2 disclaimer-card-v2">
-      <text class="card-text-v2 muted" style="text-align:center;display:block;">
-        📖 源自传统命理经典，仅供文化娱乐参考<br>
-        基于今日干支（{{ computedReport.今日方位?.['日柱'] || '--' }}）计算 · 每日自动刷新<br>
-        中国传统算法参考《三命通会》《协纪辨方书》<br>
-        西方星座参考 Ptolemy《Tetrabiblos》（《占星四书》）
-      </text>
+      <view class="disclaimer-lines-v2">
+        <view class="disclaimer-head-v2">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(24)" :src="taohuaIcon('bookOpen')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">📖</text>
+          <text class="card-text-v2 muted no-margin">源自传统命理经典，仅供文化娱乐参考</text>
+        </view>
+        <text class="card-text-v2 muted no-margin">基于今日干支（{{ computedReport.今日方位?.['日柱'] || '--' }}）计算 · 每日自动刷新</text>
+        <text class="card-text-v2 muted no-margin">中国传统算法参考《三命通会》《协纪辨方书》</text>
+        <text class="card-text-v2 muted no-margin">西方星座参考 Ptolemy《Tetrabiblos》（《占星四书》）</text>
+      </view>
     </view>
 
     <!-- 分享卡预览弹窗 -->
     <view v-if="showSharePreview" class="sheet-mask" @click="showSharePreview = false">
       <view class="sheet-panel" style="text-align:center;" @click.stop>
         <view class="sheet-head-v2">
-          <text class="sheet-title-v2">📤 我的桃花人格卡</text>
-          <text class="sheet-close-v2" @click="showSharePreview = false">✕</text>
+          <view class="sheet-title-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('share2')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">📤</text>
+            <text class="sheet-title-v2">我的桃花人格卡</text>
+          </view>
+          <view class="sheet-close-v2" @click="showSharePreview = false">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('x')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">✕</text>
+          </view>
         </view>
         <image v-if="shareImagePath" :src="shareImagePath" mode="widthFix" style="width:100%;border:3rpx solid #111;" />
         <view style="display:flex;gap:12rpx;margin-top:20rpx;">
@@ -304,8 +372,15 @@
     <view v-if="showMatchSheet" class="sheet-mask" @click="showMatchSheet = false">
       <view class="sheet-panel" @click.stop>
         <view class="sheet-head-v2">
-          <text class="sheet-title-v2">🔍 配对检查</text>
-          <text class="sheet-close-v2" @click="showMatchSheet = false">✕</text>
+          <view class="sheet-title-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('search')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">🔍</text>
+            <text class="sheet-title-v2">配对检查</text>
+          </view>
+          <view class="sheet-close-v2" @click="showMatchSheet = false">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('x')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">✕</text>
+          </view>
         </view>
 
         <view class="picker-row-v2">
@@ -328,31 +403,57 @@
         <!-- 配对结果 -->
         <view v-if="matchResult" class="match-result-v2">
           <view class="match-badge-wrap">
-            <text :class="['match-badge-v2', matchResultBadge]">💚 {{ matchResult.relation }} 💚</text>
+            <view :class="['match-badge-v2', matchResultBadge, 'match-badge-line-v2']">
+              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
+              <text v-else class="taohua-icon-emoji">💚</text>
+              <text>{{ matchResult.relation }}</text>
+              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
+              <text v-else class="taohua-icon-emoji">💚</text>
+            </view>
           </view>
 
           <!-- 双人深度解读 -->
           <view v-if="matchResult.insight" class="pair-insight-v2">
             <!-- 风格碰撞 -->
             <view class="pair-section-v2">
-              <text class="pair-label-v2">💫 风格碰撞</text>
+              <view class="pair-label-row-v2">
+                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('stars')" mode="aspectFit" />
+                <text v-else class="taohua-icon-emoji">💫</text>
+                <text class="pair-label-v2">风格碰撞</text>
+              </view>
               <text class="pair-text-v2">{{ matchResult.insight.styleClash }}</text>
             </view>
 
             <!-- 适合一起 -->
             <view class="pair-section-v2">
-              <text class="pair-label-v2">🎯 适合一起</text>
-              <text v-for="(a, i) in matchResult.insight.activities" :key="'act-'+i" class="pair-text-v2" style="color:#4ECDC4;">✅ {{ a }}</text>
+              <view class="pair-label-row-v2">
+                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('target')" mode="aspectFit" />
+                <text v-else class="taohua-icon-emoji">🎯</text>
+                <text class="pair-label-v2">适合一起</text>
+              </view>
+              <view v-for="(a, i) in matchResult.insight.activities" :key="'act-'+i" class="guide-line-v2 good">
+                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('checkCircle')" mode="aspectFit" />
+                <text v-else class="taohua-icon-emoji">✅</text>
+                <text class="pair-text-v2 good">{{ a }}</text>
+              </view>
             </view>
 
             <!-- 当心 -->
             <view class="pair-section-v2">
-              <text class="pair-label-v2">⚠️ 当心</text>
+              <view class="pair-label-row-v2">
+                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
+                <text v-else class="taohua-icon-emoji">⚠️</text>
+                <text class="pair-label-v2">当心</text>
+              </view>
               <text v-for="(w, i) in matchResult.insight.watchOut" :key="'wo-'+i" class="pair-text-v2 muted">· {{ w }}</text>
             </view>
 
             <!-- 古籍 -->
-            <text class="pair-classical-v2">📖 {{ matchResult.insight.classicalNote }}</text>
+            <view class="pair-classical-row-v2">
+              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('bookOpen')" mode="aspectFit" />
+              <text v-else class="taohua-icon-emoji">📖</text>
+              <text class="pair-classical-v2">{{ matchResult.insight.classicalNote }}</text>
+            </view>
           </view>
 
           <!-- 对方信息 -->
@@ -366,12 +467,13 @@
         </view>
       </view>
     </view>
+    </block>
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { onShareAppMessage } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import {
   zodiacSignMatch, zodiacToTaohua, hongluanTianxi, xianchiAlgorithm,
   getTodayStr, ZODIAC_NAMES, SIGN_NAMES, ZODIAC_TO_ZHI,
@@ -379,7 +481,9 @@ import {
 } from '@/utils/taohua'
 import type { CrossMatchResult, PairInsight } from '@/utils/taohua'
 import TaohuaCompass from '@/components/TaohuaCompass.vue'
-import { callFunction } from '@/utils/cloudbase'
+import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId } from '@/utils/api'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
+import { bumpDataVersion } from '@/utils/helpers'
 
 // ============================================================
 // Mock 降级数据（Phase 2：云函数不可用时降级）
@@ -392,66 +496,88 @@ import MOCK_REPORT from './mock-data'
 const selfProfile = ref<any>(null)
 const userZodiac = ref<string>('')
 const userSign = ref<string>('')
-const fontSizeMode = ref<string>('')
-const pageStyle = ref<string>('')
+const fontSizeMode = ref<string>(getFontSizeMode())
+const pageStyle = ref<string>(getThemeStyle())
 const loading = ref(true)
+const dataReady = ref(false)
+const lastDataVersion = ref(0)
+const useTaohuaLineIcons = true
 
-try {
-  const raw = uni.getStorageSync('selfProfile')
-  if (raw) selfProfile.value = typeof raw === 'string' ? JSON.parse(raw) : raw
-} catch (_) { /* ignore */ }
+const taohuaIconMap: Record<string, string> = {
+  bookOpen: '/static/icons/taohua/book-open.svg',
+  listChecks: '/static/icons/taohua/list-checks.svg',
+  compass: '/static/icons/taohua/compass.svg',
+  target: '/static/icons/taohua/target.svg',
+  checkCircle: '/static/icons/taohua/check-circle.svg',
+  alertTriangle: '/static/icons/taohua/alert-triangle.svg',
+  shirt: '/static/icons/taohua/shirt.svg',
+  landmark: '/static/icons/taohua/landmark.svg',
+  stars: '/static/icons/taohua/stars.svg',
+  heart: '/static/icons/taohua/heart.svg',
+  share2: '/static/icons/taohua/share-2.svg',
+  lock: '/static/icons/taohua/lock.svg',
+  bell: '/static/icons/taohua/bell.svg',
+  search: '/static/icons/taohua/search.svg',
+  x: '/static/icons/taohua/x.svg',
+  sparkles: '/static/icons/taohua/sparkles.svg'
+}
 
-userZodiac.value = selfProfile.value?.zodiac || '兔'
-userSign.value = selfProfile.value?.constellation || '双鱼座'
+function taohuaIcon(name: string) {
+  return taohuaIconMap[name] || ''
+}
 
-try {
-  fontSizeMode.value = uni.getStorageSync('fontSizeMode') || ''
-} catch (_) { /* ignore */ }
+function iconStyle(size: number) {
+  return `width:${size}rpx;height:${size}rpx;`
+}
 
-try {
-  const themeId = uni.getStorageSync('theme') || 'campus-pop'
-  if (themeId === 'campus-pop') {
-    pageStyle.value = '--app-bg:#FFFDF5;--hero-bg:#FF6B6B;--hero-bg-2:#e85d5d;'
-  }
-} catch (_) { /* ignore */ }
+function refreshProfile() {
+  selfProfile.value = getCachedSelfProfile()
+  userZodiac.value = selfProfile.value?.zodiac || '兔'
+  userSign.value = selfProfile.value?.constellation || '双鱼座'
+}
+refreshProfile()
 
 // ============================================================
-// 数据加载：混合云函数日历 + 本地个人计算
+// 首次渲染前预加载缓存 → 避免 LOADING 闪烁
 // ============================================================
-const dailyData = ref<any>(null)     // 云函数返回的日历数据
-const practicalData = ref<any>(null)  // 云函数返回的行动指南
-const scoreData = ref<any>(null)      // 云函数返回的桃花指数
-const reportData = ref<any>(null)     // 合并后的完整报告
+const dailyData = ref<any>(null)
+const practicalData = ref<any>(null)
+const scoreData = ref<any>(null)
+const reportData = ref<any>(null)
 
-async function loadData() {
-  loading.value = true
+function buildCacheKey() {
+  const uid = getCurrentUserId() || 'anon'
   const today = getTodayStr()
+  return `taohuaReport:v1:${uid}:${today}:${userZodiac.value}:${userSign.value}`
+}
 
-  // 检查缓存
+function tryPreloadCache() {
   try {
-    const cacheKey = `taohuaReport:${today}:${userZodiac.value}:${userSign.value}`
-    const cached = uni.getStorageSync(cacheKey)
+    const cached = uni.getStorageSync(buildCacheKey())
     if (cached) {
       const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached
       if (parsed?.daily) {
         dailyData.value = parsed.daily
         reportData.value = parsed
         loading.value = false
-        return
+        return true
       }
     }
   } catch (_) { /* ignore */ }
+  return false
+}
+const hasPreloadCache = tryPreloadCache()
 
-  // 尝试云函数
+async function loadData() {
+  const today = getTodayStr()
+
   try {
-    const res = await callFunction({
-      name: 'queryTaohua',
-      data: { zodiac: userZodiac.value, sign: userSign.value },
-    })
-    if (res?.result?.success) {
-      dailyData.value = res.result.data.daily
-      practicalData.value = res.result.data.practical || null
-      scoreData.value = res.result.data.score || null
+    try {
+      const result = await queryTaohua(userZodiac.value, userSign.value)
+    if (result?.success) {
+      dailyData.value = result.data.daily
+      practicalData.value = result.data.practical || null
+      scoreData.value = result.data.score || null
     }
   } catch (_) {
     // 云函数未部署 → 降级到 mock
@@ -516,14 +642,46 @@ async function loadData() {
 
   // 缓存
   try {
-    const cacheKey = `taohuaReport:${today}:${userZodiac.value}:${userSign.value}`
-    uni.setStorageSync(cacheKey, JSON.stringify(reportData.value))
+    uni.setStorageSync(buildCacheKey(), JSON.stringify(reportData.value))
+    bumpDataVersion()
   } catch (_) { /* ignore */ }
 
-  loading.value = false
+  lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
+  if (!dataReady.value) dataReady.value = true
+  } finally {
+    loading.value = false
+  }
 }
 
-onMounted(() => { loadData() })
+onMounted(async () => {
+  try {
+    const access = await checkFeatureAccess('命理桃花')
+    if (!access?.allowed) {
+      uni.showModal({
+        title: '功能不可用',
+        content: access?.reason || '当前套餐不支持命理桃花功能，请升级套餐。',
+        confirmText: '返回',
+        showCancel: false,
+        success: () => uni.navigateBack({ delta: 1 })
+      })
+      return
+    }
+  } catch (_) { /* ignore */ }
+  await loadData()
+})
+
+onShow(() => {
+  applyThemeChrome()
+  fontSizeMode.value = getFontSizeMode()
+  pageStyle.value = getThemeStyle()
+  refreshProfile()
+
+  const dv = Number(uni.getStorageSync('dataVersion') || 0)
+  if (dataReady.value && dv > lastDataVersion.value) {
+    loading.value = true
+    loadData()
+  }
+})
 
 // 统一报告：保持与旧 mock 相同结构，优先级：实时 > mock
 const computedReport = computed(() => {
@@ -705,10 +863,6 @@ function doMatchCheck() {
 // ============================================================
 // 导航
 // ============================================================
-function goBack() {
-  uni.navigateBack()
-}
-
 function goSelfProfile() {
   uni.navigateTo({ url: '/pages/self-profile/self-profile' })
 }
@@ -821,7 +975,7 @@ function drawShareCard(ctx: any) {
 
   ctx.font = 'bold 22px sans-serif'
   ctx.fillStyle = 'rgba(255,255,255,0.86)'
-  ctx.fillText('Dom-Crush · 命理桃花', 58, 80)
+  ctx.fillText('Crush Master · 命理桃花', 58, 80)
   drawPill(ctx, 386, 54, 144, 42, '桃花人格卡', '#FFF3BF', '#7A2C1B', 20)
 
   ctx.font = 'bold 42px sans-serif'
@@ -1026,49 +1180,6 @@ function saveShareImage() {
   })
 }
 
-// ── 每日推送订阅 ──
-const subscribedNotify = ref(false)
-
-function subscribeNotify() {
-  // #ifdef MP-WEIXIN
-  const tmplId = 'REPLACE_WITH_YOUR_TMPL_ID' // 在微信后台申请后替换
-  ;(wx as any).requestSubscribeMessage({
-    tmplIds: [tmplId],
-    success: async (res: any) => {
-      if (res[tmplId] === 'accept') {
-        try {
-          await callFunction({
-            name: 'sendTaohuaNotify',
-            data: { action: 'subscribe', openid: uni.getStorageSync('openid') || '' },
-          })
-          // 本地记录订阅
-          const sub = { tmplId, subscribedAt: Date.now() }
-          uni.setStorageSync('taohuaSubscription', JSON.stringify(sub))
-          subscribedNotify.value = true
-          uni.showToast({ title: '已开启每日推送', icon: 'success' })
-        } catch (e: any) {
-          // 如果云函数未部署，至少本地记录
-          uni.setStorageSync('taohuaSubscription', JSON.stringify({ tmplId, subscribedAt: Date.now() }))
-          subscribedNotify.value = true
-          uni.showToast({ title: '已开启（云函数部署后生效）', icon: 'none' })
-        }
-      }
-    },
-    fail: () => {
-      uni.showToast({ title: '授权已取消', icon: 'none' })
-    },
-  })
-  // #endif
-  // #ifndef MP-WEIXIN
-  uni.showToast({ title: '此功能仅支持微信小程序', icon: 'none' })
-  // #endif
-}
-
-// 初始化时检查是否已订阅
-try {
-  const stored = uni.getStorageSync('taohuaSubscription')
-  if (stored) subscribedNotify.value = true
-} catch (_) { /* ignore */ }
 </script>
 
 <style scoped>
@@ -1076,15 +1187,8 @@ try {
    页面级 v2 样式（复用全站 Campus Pop 设计系统）
    ============================================================ */
 
-/* 导航栏 */
-.nav-bar-v2 {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20rpx 28rpx; border-bottom: 3rpx solid #111;
-  background: #FFFDF5; margin-bottom: 20rpx;
-}
-.nav-back-v2 { font-size: 24rpx; font-weight: 800; color: #111; }
-.nav-title-v2 { font-size: 28rpx; font-weight: 900; color: #111; }
-.nav-placeholder-v2 { width: 60rpx; }
+/* Loading */
+.v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
 
 /* Hero */
 .hero-block-v2 {
@@ -1103,9 +1207,57 @@ try {
   padding: 28rpx; margin: 0 20rpx 24rpx;
 }
 .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 12rpx; }
+.section-title-v2.no-margin { margin-bottom: 0; }
 .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 4rpx; }
 .card-text-v2.muted { color: #999; font-size: 20rpx; }
 .card-text-v2.strong { color: #111; font-weight: 800; }
+.card-text-v2.no-margin { margin-bottom: 0; }
+.inline-title-v2,
+.section-title-row-v2,
+.sheet-title-row-v2,
+.split-label-row-v2,
+.pair-label-row-v2,
+.button-label-v2,
+.match-badge-line-v2,
+.pair-classical-row-v2 {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.section-title-row-v2 { margin-bottom: 12rpx; }
+.section-title-row-v2.center { justify-content: center; }
+.button-label-v2 { justify-content: center; }
+.tag-with-icon-v2,
+.label-with-icon-v2 {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6rpx;
+}
+.guide-line-v2 {
+  display: flex;
+  align-items: flex-start;
+  gap: 6rpx;
+  margin-top: 4rpx;
+}
+.guide-line-v2.good,
+.guide-text-v2.good,
+.pair-text-v2.good { color: #4ECDC4; }
+.pair-classical-row-v2 {
+  align-items: flex-start;
+  margin-top: 8rpx;
+  padding-top: 8rpx;
+  border-top: 1rpx dashed #ddd;
+}
+.taohua-icon-img {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.taohua-icon-emoji {
+  display: inline-block;
+  flex-shrink: 0;
+  line-height: 1;
+}
 
 /* 方位条 */
 .dir-strip-v2 { display: flex; gap: 8rpx; margin-top: 16rpx; }
@@ -1119,6 +1271,8 @@ try {
 .split-half-v2.yi { background: #f0fdfa; }
 .split-half-v2.ji { background: #fff5f5; }
 .split-label-v2 { font-size: 22rpx; font-weight: 900; display: block; margin-bottom: 8rpx; }
+.split-label-row-v2 { margin-bottom: 8rpx; }
+.split-label-row-v2 .split-label-v2 { margin-bottom: 0; }
 .split-label-v2.yi { color: #4ECDC4; }
 .split-label-v2.ji { color: #FF5252; }
 .split-item-v2 { font-size: 20rpx; font-weight: 600; color: #111; padding: 3rpx 0; display: block; }
@@ -1172,7 +1326,7 @@ try {
 .sheet-panel { width: 100%; max-width: 500rpx; background: #FFFDF5; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; border-radius: 16rpx 16rpx 0 0; padding: 28rpx 24rpx 60rpx; max-height: 70vh; overflow-y: auto; }
 .sheet-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24rpx; }
 .sheet-title-v2 { font-size: 24rpx; font-weight: 900; color: #111; }
-.sheet-close-v2 { font-size: 24rpx; font-weight: 900; color: #999; }
+.sheet-close-v2 { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; color: #999; }
 
 /* Picker */
 .picker-row-v2 { display: flex; gap: 12rpx; margin-bottom: 16rpx; }
@@ -1188,9 +1342,11 @@ try {
 .pair-insight-v2 { margin-top: 16rpx; }
 .pair-section-v2 { margin-bottom: 12rpx; }
 .pair-label-v2 { font-size: 22rpx; font-weight: 900; color: #111; display: block; margin-bottom: 4rpx; }
+.pair-label-row-v2 { margin-bottom: 4rpx; }
+.pair-label-row-v2 .pair-label-v2 { margin-bottom: 0; }
 .pair-text-v2 { font-size: 22rpx; font-weight: 600; color: #666; display: block; line-height: 1.5; }
 .pair-text-v2.muted { color: #999; font-size: 20rpx; }
-.pair-classical-v2 { font-size: 18rpx; color: #999; display: block; margin-top: 8rpx; padding-top: 8rpx; border-top: 1rpx dashed #ddd; }
+.pair-classical-v2 { font-size: 18rpx; color: #999; display: block; line-height: 1.45; }
 
 /* 桃花指数条 */
 .score-bar-v2 { margin-bottom: 16rpx; }
@@ -1204,7 +1360,7 @@ try {
 /* 行动指南 */
 .guide-section-v2 { display: flex; gap: 14rpx; padding: 16rpx 0; border-bottom: 1rpx dashed #ddd; }
 .guide-section-v2:last-child { border-bottom: none; }
-.guide-icon-v2 { font-size: 40rpx; flex-shrink: 0; width: 52rpx; text-align: center; line-height: 52rpx; }
+.guide-icon-v2 { flex-shrink: 0; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; }
 .guide-content-v2 { flex: 1; }
 .guide-label-v2 { font-size: 22rpx; font-weight: 900; color: #111; display: block; margin-bottom: 4rpx; }
 .guide-text-v2 { font-size: 22rpx; font-weight: 600; color: #666; display: block; line-height: 1.4; }
@@ -1218,6 +1374,19 @@ try {
 
 /* 免责声明 */
 .disclaimer-card-v2 { border-style: dashed; background: #FFFBEB; }
+.disclaimer-lines-v2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  text-align: center;
+}
+.disclaimer-head-v2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
 .ai-disclaimer { text-align: center; padding: 20rpx 20rpx 40rpx; }
 .ai-disclaimer-text { font-size: 20rpx; color: #999; }
 </style>

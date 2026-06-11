@@ -308,12 +308,13 @@ export async function login(email: string, password: string) {
 /**
  * 鐢ㄦ埛娉ㄥ唽
  */
-export async function wechatLogin(code = '', profile: { nickName?: string; nickname?: string; avatarUrl?: string; loginCode?: string } = {}) {
+export async function wechatLogin(code = '', profile: { nickName?: string; nickname?: string; avatarUrl?: string; loginCode?: string; inviteCode?: string } = {}) {
   await clearLocalAuthState()
   const phoneCode = String(code || '').trim()
   const nickName = String(profile.nickName || profile.nickname || '').trim()
   const avatarUrl = String(profile.avatarUrl || '').trim()
   const loginCode = String(profile.loginCode || '').trim()
+  const inviteCode = String(profile.inviteCode || '').trim()
 
   const res = await app.callFunction({
     name: 'wechatLogin',
@@ -321,7 +322,8 @@ export async function wechatLogin(code = '', profile: { nickName?: string; nickn
       ...(phoneCode ? { code: phoneCode } : {}),
       ...(loginCode ? { loginCode } : {}),
       ...(nickName ? { nickName } : {}),
-      ...(avatarUrl ? { avatarUrl } : {})
+      ...(avatarUrl ? { avatarUrl } : {}),
+      ...(inviteCode ? { inviteCode } : {})
     }
   })
 
@@ -755,8 +757,8 @@ export async function getTokenAccount(action?: string) {
 
 export async function getTokenLedger(limit = 50) {
   const res = await callFunction({
-    name: 'adminManage',
-    data: { action: 'getTokenLedger', targetUserId: getCurrentUserId(), limit, ...getBusinessAuthPayload() }
+    name: 'getCallUsageHistory',
+    data: { action: 'all', limit, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -773,6 +775,17 @@ export async function createRechargeOrder(planId: string) {
   const res = await callFunction({
     name: 'recharge',
     data: { action: 'createRechargeOrder', planId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function createSubscriptionPayment(
+  planKey: string,
+  options?: { billingCycle?: 'monthly' | 'annual'; priceVariant?: 'standard' | 'student' }
+) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'createSubscriptionUpgrade', planKey, ...(options || {}), ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -836,11 +849,46 @@ export async function checkFeatureAccess(featureKey: string) {
   return res.result
 }
 
+/** 获取平台 Token 消费明细（已乘倍率） */
+export async function queryTaohua(zodiac: string, sign: string) {
+  const res = await callFunction({
+    name: 'queryTaohua',
+    data: { zodiac, sign, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function getConsumeHistory(limit = 100) {
+  const res = await callFunction({
+    name: 'getCallUsageHistory',
+    data: { action: 'consume', limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 /** 兑换邀请码 */
 export async function redeemInviteCode(inviteCode: string) {
   const res = await callFunction({
     name: 'redeemInviteCode',
     data: { inviteCode, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 获取所有用户 Token 消耗汇总（平台 Token + 模型 Token） */
+export async function adminGetUsersTokenConsumption(limit = 500) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getUsersTokenConsumption', limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 单用户 Token 消费明细 */
+export async function adminGetUserTokenDetails(userId: string, limit = 200) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'getUserTokenDetails', targetUserId: userId, limit, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -859,6 +907,15 @@ export async function adminUpdateSubscriptionConfig(data: Record<string, any>) {
   const res = await callFunction({
     name: 'adminManage',
     data: { action: 'updateSubscriptionConfig', ...data, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 编辑用户信息（套餐/试用期/Token/权限等） */
+export async function adminUpdateUser(userId: string, patch: Record<string, any>) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'adminUpdateUser', ...getBusinessAuthPayload(), userId, ...patch }
   })
   return res.result
 }

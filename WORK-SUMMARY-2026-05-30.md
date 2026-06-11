@@ -7,7 +7,7 @@
 - 核心概念：对象/案例/关系对象 → Crush/Crushes（按单复数）
 - 时间线/互动时间轴 → 往事
 - 关系主页 → 我们
-- Hero tag 全部英文化（DOM-CRUSH BOARD、CRUSHES、ASSESSMENTS、MEMORIES 等）
+- Hero tag 全部英文化（Crush Master BOARD、CRUSHES、ASSESSMENTS、MEMORIES 等）
 - 侧写 → 星象速写（前后端 + 云函数全链路，含 AI 输出 sanitize 兜底）
 
 ## 二、小咪帮你说大改版
@@ -56,7 +56,7 @@
 
 ## 八、商业模式文档
 
-完成 Dom-Crush 定价方案 v1.0，输出 BUSINESS-MODEL.md + BUSINESS-MODEL.html：
+完成 Crush Master 定价方案 v1.0，输出 BUSINESS-MODEL.md + BUSINESS-MODEL.html：
 - 基于真实 Token 消耗数据的订阅方案（免费/Pro ¥19/无限 ¥49）
 - 增值 Token 包策略（¥9/¥18/¥38）
 - 功能开放矩阵、收入预测、增长飞轮、竞争壁垒

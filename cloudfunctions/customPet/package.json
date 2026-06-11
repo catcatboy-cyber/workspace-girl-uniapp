@@ -2,6 +2,7 @@
   "name": "customPet",
   "version": "1.0.0",
   "dependencies": {
+    "@cloudbase/node-sdk": "^2.4.0",
     "wx-server-sdk": "latest"
   }
 }

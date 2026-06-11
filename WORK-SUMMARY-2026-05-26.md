@@ -122,7 +122,7 @@
 ---
 
 ## 六、品牌更名
-- 关系评估 → Dom-Crush
+- 关系评估 → Crush Master
 - 所有页面 nav title、登录页、首页 hero tag 统一更新
 - 登录页标题设计：72rpx italic + 黄色高亮 + 黑色阴影
 

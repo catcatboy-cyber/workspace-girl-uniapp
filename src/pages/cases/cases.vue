@@ -63,14 +63,24 @@
               </view>
             </view>
 
-            <!-- Action -->
-            <button
-              :class="['btn-v2-action', isActiveCase(item.caseId) ? 'disabled' : '']"
-              :disabled="isActiveCase(item.caseId)"
-              @click="switchActiveCase(item.caseId)"
-            >
-              {{ isActiveCase(item.caseId) ? '当前 Crush' : '切换到首页' }}
-            </button>
+            <!-- Actions -->
+            <view class="case-actions-v2">
+              <button class="btn-v2-action sm" @click="goEditCase(item.caseId)">编辑</button>
+              <button
+                :class="['btn-v2-action sm danger', deletingCaseId === item.caseId ? 'disabled' : '']"
+                :disabled="!!deletingCaseId"
+                @click="confirmDeleteCase(item)"
+              >
+                {{ deletingCaseId === item.caseId ? '删除中' : '删除' }}
+              </button>
+              <button
+                :class="['btn-v2-action', isActiveCase(item.caseId) ? 'disabled' : '']"
+                :disabled="isActiveCase(item.caseId) || !!deletingCaseId"
+                @click="switchActiveCase(item.caseId)"
+              >
+                {{ isActiveCase(item.caseId) ? '当前 Crush' : '切换到首页' }}
+              </button>
+            </view>
           </view>
         </view>
       </view>
@@ -81,7 +91,8 @@
 import { ref } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCases, getCurrentUserId } from '@/utils/api'
-import { bumpDataVersion, formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
+import { callFunction } from '@/utils/cloudbase'
+import { bumpDataVersion, clearActiveCaseId, formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 
@@ -91,6 +102,7 @@ const userId = ref('')
 const deleted = ref(false)
 const themeVars = ref(getThemeStyle())
 const fontSizeMode = ref(getFontSizeMode())
+const deletingCaseId = ref('')
 
 onShareAppMessage(() => buildSafeShareMessage())
 
@@ -171,6 +183,22 @@ function writeCasesCache(uid: string, list: any[]) {
   } catch {}
 }
 
+function askDeleteCase(item: any): Promise<boolean> {
+  const name = String(item?.name || '这个 Crush').trim()
+  const isCurrent = isActiveCase(item?.caseId)
+  return new Promise((resolve) => {
+    uni.showModal({
+      title: '删除 Crush？',
+      content: `将删除「${name}」的档案、时间轴和分析记录，删除后无法恢复。${isCurrent ? '这是当前 Crush，删除后会自动切换到其他 Crush。' : ''}`,
+      confirmText: '删除',
+      confirmColor: '#FF5252',
+      cancelText: '取消',
+      success: (res) => resolve(Boolean(res.confirm)),
+      fail: () => resolve(false)
+    })
+  })
+}
+
 function applyCasesList(list: any[]) {
   cases.value = (list || []).map((c: any) => ({
       ...c,
@@ -228,6 +256,11 @@ function goNew() {
   uni.navigateTo({ url: '/pages/new/new' })
 }
 
+function goEditCase(caseId: string) {
+  if (!caseId) return
+  uni.navigateTo({ url: `/pages/edit-profile/edit-profile?caseId=${caseId}` })
+}
+
 function isActiveCase(caseId: string) {
   return Boolean(caseId && caseId === activeCaseId.value)
 }
@@ -241,6 +274,51 @@ function switchActiveCase(caseId: string) {
   setTimeout(() => {
     uni.switchTab({ url: '/pages/index/index' })
   }, 300)
+}
+
+async function confirmDeleteCase(item: any) {
+  const caseId = String(item?.caseId || item?._id || '').trim()
+  if (!caseId || deletingCaseId.value) return
+  const confirmed = await askDeleteCase({ ...item, caseId })
+  if (!confirmed) return
+
+  deletingCaseId.value = caseId
+  try {
+    const response = await callFunction({
+      name: 'deleteCase',
+      data: { caseId }
+    })
+    const result = response.result
+    if (!result?.success) {
+      showError(result?.message || '删除失败')
+      return
+    }
+
+    const wasActive = isActiveCase(caseId)
+    cases.value = cases.value.filter((c: any) => c.caseId !== caseId && c._id !== caseId)
+    writeCasesCache(userId.value, cases.value)
+
+    if (wasActive) {
+      const nextCaseId = cases.value[0]?.caseId || cases.value[0]?._id || ''
+      if (nextCaseId) {
+        setActiveCaseId(nextCaseId)
+        activeCaseId.value = nextCaseId
+      } else {
+        clearActiveCaseId()
+        activeCaseId.value = ''
+      }
+    }
+
+    deleted.value = true
+    uni.setStorageSync('casesDeletedFlag', '1')
+    bumpDataVersion()
+    lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
+    showSuccess('Crush 已删除')
+  } catch (error: any) {
+    showError(error?.message || '删除失败')
+  } finally {
+    deletingCaseId.value = ''
+  }
 }
 </script>
 
@@ -329,4 +407,9 @@ function switchActiveCase(caseId: string) {
 }
 .v2-mode .btn-v2-action.disabled,
 .v2-mode .btn-v2-action[disabled] { opacity: 0.5; box-shadow: none; }
+
+.v2-mode .case-actions-v2 { display: flex; gap: 12rpx; margin-top: 16rpx; }
+.v2-mode .case-actions-v2 .btn-v2-action { flex: 1; width: auto; }
+.v2-mode .case-actions-v2 .btn-v2-action.sm { flex: 0 0 auto; min-width: 120rpx; background: #fff; box-shadow: none; }
+.v2-mode .case-actions-v2 .btn-v2-action.danger { background: #FFEEEC; color: #C62828; }
 </style>

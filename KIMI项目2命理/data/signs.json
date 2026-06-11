@@ -1,0 +1,298 @@
+{
+  "_meta": {
+    "description": "十二星座双维度数据 — 中国传统星次 + 西方传统星座",
+    "chinese_source": "《汉书·律历志》十二次-地支-节气对应；《果老星宗》七政四余十二宫框架；地支五行/方位基于传统干支体系标准推导",
+    "western_source": "Ptolemy《Tetrabiblos》（《占星四书》）Book I 行星守护 + Book III Ch.13 星座三形态 + Ch.14-15 行星气质",
+    "calendar_note": "中国星次日期基于二十四节气（太阳黄经，每年微调±1天）；西方星座日期为热带黄道固定范围（回归黄道以春分为起点）"
+  },
+  "signs": {
+    "白羊座": {
+      "chinese": {
+        "cizodiac": "降娄",
+        "zhi": "戌",
+        "wuxing": "土",
+        "yinyang": "阳",
+        "gong": "戌宫",
+        "jieqi_range": "惊蛰 → 清明",
+        "date_approx": "约3月6日 – 4月5日",
+        "calendar": "农历节气（太阳黄经345°→15°）",
+        "character": "戌为火库，厚重诚实，刚毅果敢。降娄者降下而娄敛，具行动力与奉献精神。地支属土，藏戊辛丁，外刚内柔。"
+      },
+      "western": {
+        "planet": "火星",
+        "element": "火",
+        "mode": "创始（Cardinal，二至星座）",
+        "date_range": "3月21日 – 4月19日",
+        "calendar": "公历（热带黄道，太阳黄经0°→30°）",
+        "personality": "冲动热烈型——一见钟情、快速来电，但也容易三分钟热度",
+        "classical_note": "『适合人群交往、喜好荣誉、高贵活跃、善于推测』（《Tetrabiblos》III.13，二至星座共性）",
+        "best_match": ["狮子座", "射手座", "双子座"],
+        "best_match_reason": "同火象三合（狮/射）+ 风象六合（双子）"
+      }
+    },
+    "金牛座": {
+      "chinese": {
+        "cizodiac": "大梁",
+        "zhi": "酉",
+        "wuxing": "金",
+        "yinyang": "阴",
+        "gong": "酉宫",
+        "jieqi_range": "清明 → 立夏",
+        "date_approx": "约4月5日 – 5月6日",
+        "calendar": "农历节气（太阳黄经15°→45°）",
+        "character": "酉为金之正位，精致锐利，善于规划。大梁者强梁积蓄，成熟稳重。地支属金，藏辛金，纯粹专注。"
+      },
+      "western": {
+        "planet": "金星",
+        "element": "土",
+        "mode": "固定（Fixed，固定星座）",
+        "date_range": "4月20日 – 5月20日",
+        "calendar": "公历（热带黄道，太阳黄经30°→60°）",
+        "personality": "慢热稳重型——日久生情、注重物质安全感，感情持久",
+        "classical_note": "『公正、不受奉承影响、持久坚定、明智耐心、不妥协』（《Tetrabiblos》III.13，固定星座共性）",
+        "best_match": ["处女座", "摩羯座", "巨蟹座"],
+        "best_match_reason": "同土象三合（处/羯）+ 水象六合（巨蟹）"
+      }
+    },
+    "双子座": {
+      "chinese": {
+        "cizodiac": "实沈",
+        "zhi": "申",
+        "wuxing": "金",
+        "yinyang": "阳",
+        "gong": "申宫",
+        "jieqi_range": "立夏 → 芒种",
+        "date_approx": "约5月6日 – 6月6日",
+        "calendar": "农历节气（太阳黄经45°→75°）",
+        "character": "申为金之偏位，灵活善变，机智多变。实沈者伸张舒展，善随机应变。地支属金，藏庚壬戊，刚柔并济。"
+      },
+      "western": {
+        "planet": "水星",
+        "element": "风",
+        "mode": "变动（Mutable，双体星座）",
+        "date_range": "5月21日 – 6月21日",
+        "calendar": "公历（热带黄道，太阳黄经60°→90°）",
+        "personality": "灵动多变型——口才魅力吸引、朋友变恋人概率高",
+        "classical_note": "『复杂多变、难以捉摸、多情、多才多艺、易改变心意』（《Tetrabiblos》III.13，双体星座共性）",
+        "best_match": ["天秤座", "水瓶座", "白羊座"],
+        "best_match_reason": "同风象三合（秤/瓶）+ 火象六合（白羊）"
+      }
+    },
+    "巨蟹座": {
+      "chinese": {
+        "cizodiac": "鹑首",
+        "zhi": "未",
+        "wuxing": "土",
+        "yinyang": "阴",
+        "gong": "未宫",
+        "jieqi_range": "芒种 → 小暑",
+        "date_approx": "约6月6日 – 7月7日",
+        "calendar": "农历节气（太阳黄经75°→105°）",
+        "character": "未为木库，温和包容，沉稳内敛。鹑首者宁静致远，善解人意。地支属土，藏己丁乙，外柔内秀。"
+      },
+      "western": {
+        "planet": "月亮",
+        "element": "水",
+        "mode": "创始（Cardinal，二至星座）",
+        "date_range": "6月22日 – 7月22日",
+        "calendar": "公历（热带黄道，太阳黄经90°→120°）",
+        "personality": "温柔细腻型——家庭感召力、母性魅力，容易在照顾中产生感情",
+        "classical_note": "『适合人群交往、喜好荣誉、高贵活跃、善于推测』（《Tetrabiblos》III.13，二至星座共性）",
+        "best_match": ["天蝎座", "双鱼座", "金牛座"],
+        "best_match_reason": "同水象三合（蝎/鱼）+ 土象六合（金牛）"
+      }
+    },
+    "狮子座": {
+      "chinese": {
+        "cizodiac": "鹑火",
+        "zhi": "午",
+        "wuxing": "火",
+        "yinyang": "阳",
+        "gong": "午宫",
+        "jieqi_range": "小暑 → 立秋",
+        "date_approx": "约7月7日 – 8月7日",
+        "calendar": "农历节气（太阳黄经105°→135°）",
+        "character": "午为火之正位，光明热烈，热情坦率。鹑火者不死鸟之心，具燃烧生命力与领导气质。地支属火，藏丁己，外放内明。"
+      },
+      "western": {
+        "planet": "太阳",
+        "element": "火",
+        "mode": "固定（Fixed，固定星座）",
+        "date_range": "7月23日 – 8月22日",
+        "calendar": "公历（热带黄道，太阳黄经120°→150°）",
+        "personality": "光芒万丈型——舞台中央的吸引力，热情大方，桃花主动找上门",
+        "classical_note": "『公正、不受奉承影响、持久坚定、明智耐心、不妥协』（《Tetrabiblos》III.13，固定星座共性）",
+        "best_match": ["白羊座", "射手座", "天秤座"],
+        "best_match_reason": "同火象三合（羊/射）+ 风象六合（天秤）"
+      }
+    },
+    "处女座": {
+      "chinese": {
+        "cizodiac": "鹑尾",
+        "zhi": "巳",
+        "wuxing": "火",
+        "yinyang": "阴",
+        "gong": "巳宫",
+        "jieqi_range": "立秋 → 白露",
+        "date_approx": "约8月7日 – 9月8日",
+        "calendar": "农历节气（太阳黄经135°→165°）",
+        "character": "巳为火之偏位，热情细腻，精于细节。鹑尾者收束整理，善分析归纳。地支属火，藏丙戊庚，外热内刚。"
+      },
+      "western": {
+        "planet": "水星",
+        "element": "土",
+        "mode": "变动（Mutable，双体星座）",
+        "date_range": "8月23日 – 9月22日",
+        "calendar": "公历（热带黄道，太阳黄经150°→180°）",
+        "personality": "细致周到型——用细节打动人，服务型付出，日久见人心",
+        "classical_note": "『复杂多变、难以捉摸、多情、多才多艺、易改变心意』（《Tetrabiblos》III.13，双体星座共性）",
+        "best_match": ["金牛座", "摩羯座", "天蝎座"],
+        "best_match_reason": "同土象三合（牛/羯）+ 水象六合（天蝎）"
+      }
+    },
+    "天秤座": {
+      "chinese": {
+        "cizodiac": "寿星",
+        "zhi": "辰",
+        "wuxing": "土",
+        "yinyang": "阳",
+        "gong": "辰宫",
+        "jieqi_range": "白露 → 寒露",
+        "date_approx": "约9月8日 – 10月8日",
+        "calendar": "农历节气（太阳黄经165°→195°）",
+        "character": "辰为水库，包容和谐，善于平衡。寿星者福寿绵长，优雅从容。地支属土，藏戊乙癸，外圆内方。"
+      },
+      "western": {
+        "planet": "金星",
+        "element": "风",
+        "mode": "创始（Cardinal，二至星座）",
+        "date_range": "9月23日 – 10月23日",
+        "calendar": "公历（热带黄道，太阳黄经180°→210°）",
+        "personality": "优雅社交型——天生外交家，颜值魅力，容易在社交场合遇正缘",
+        "classical_note": "『适合人群交往、喜好荣誉、高贵活跃、善于推测』（《Tetrabiblos》III.13，二至星座共性）",
+        "best_match": ["双子座", "水瓶座", "狮子座"],
+        "best_match_reason": "同风象三合（双/瓶）+ 火象六合（狮子）"
+      }
+    },
+    "天蝎座": {
+      "chinese": {
+        "cizodiac": "大火",
+        "zhi": "卯",
+        "wuxing": "木",
+        "yinyang": "阴",
+        "gong": "卯宫",
+        "jieqi_range": "寒露 → 立冬",
+        "date_approx": "约10月8日 – 11月7日",
+        "calendar": "农历节气（太阳黄经195°→225°）",
+        "character": "卯为木之正位，柔美深沉，情感浓烈。大火者心宿之光，具神秘吸引力与深度洞察。地支属木，藏乙木，纯粹情深。"
+      },
+      "western": {
+        "planet": "火星",
+        "element": "水",
+        "mode": "固定（Fixed，固定星座）",
+        "date_range": "10月24日 – 11月22日",
+        "calendar": "公历（热带黄道，太阳黄经210°→240°）",
+        "personality": "深度魅惑型——神秘吸引力，一眼万年，感情浓度极高",
+        "classical_note": "『公正、不受奉承影响、持久坚定、明智耐心、不妥协』（《Tetrabiblos》III.13，固定星座共性）",
+        "best_match": ["巨蟹座", "双鱼座", "处女座"],
+        "best_match_reason": "同水象三合（蟹/鱼）+ 土象六合（处女）"
+      }
+    },
+    "射手座": {
+      "chinese": {
+        "cizodiac": "析木",
+        "zhi": "寅",
+        "wuxing": "木",
+        "yinyang": "阳",
+        "gong": "寅宫",
+        "jieqi_range": "立冬 → 大雪",
+        "date_approx": "约11月7日 – 12月7日",
+        "calendar": "农历节气（太阳黄经225°→255°）",
+        "character": "寅为木之偏位，生机勃发，自由奔放。析木者解析万物，胸怀广阔。地支属木，藏甲丙戊，外放内明。"
+      },
+      "western": {
+        "planet": "木星",
+        "element": "火",
+        "mode": "变动（Mutable，双体星座）",
+        "date_range": "11月23日 – 12月21日",
+        "calendar": "公历（热带黄道，太阳黄经240°→270°）",
+        "personality": "自由奔放型——异国/异地恋多发，旅行中邂逅正缘",
+        "classical_note": "『复杂多变、难以捉摸、多情、多才多艺、易改变心意』（《Tetrabiblos》III.13，双体星座共性）",
+        "best_match": ["白羊座", "狮子座", "水瓶座"],
+        "best_match_reason": "同火象三合（羊/狮）+ 风象六合（水瓶）"
+      }
+    },
+    "摩羯座": {
+      "chinese": {
+        "cizodiac": "星纪",
+        "zhi": "丑",
+        "wuxing": "土",
+        "yinyang": "阴",
+        "gong": "丑宫",
+        "jieqi_range": "大雪 → 小寒",
+        "date_approx": "约12月7日 – 1月6日",
+        "calendar": "农历节气（太阳黄经255°→285°）",
+        "character": "丑为金库，坚韧不拔，踏实稳重。星纪者星之纪纲，十二次之起点，具责任感与持久力。地支属土，藏己癸辛，内敛深厚。"
+      },
+      "western": {
+        "planet": "土星",
+        "element": "土",
+        "mode": "创始（Cardinal，二至星座）",
+        "date_range": "12月22日 – 1月19日",
+        "calendar": "公历（热带黄道，太阳黄经270°→300°）",
+        "personality": "事业型桃花——职场中遇正缘，事业合作伙伴变人生伴侣",
+        "classical_note": "『适合人群交往、喜好荣誉、高贵活跃、善于推测』（《Tetrabiblos》III.13，二至星座共性）",
+        "best_match": ["金牛座", "处女座", "双鱼座"],
+        "best_match_reason": "同土象三合（牛/处）+ 水象六合（双鱼）"
+      }
+    },
+    "水瓶座": {
+      "chinese": {
+        "cizodiac": "玄枵",
+        "zhi": "子",
+        "wuxing": "水",
+        "yinyang": "阳",
+        "gong": "子宫",
+        "jieqi_range": "小寒 → 立春",
+        "date_approx": "约1月6日 – 2月4日",
+        "calendar": "农历节气（太阳黄经285°→315°）",
+        "character": "子为水之正位，智慧灵动，独立独行。玄枵者玄妙虚空，具开创性与独特思维。地支属水，藏癸水，纯粹深邃。"
+      },
+      "western": {
+        "planet": "土星",
+        "element": "风",
+        "mode": "固定（Fixed，固定星座）",
+        "date_range": "1月20日 – 2月18日",
+        "calendar": "公历（热带黄道，太阳黄经300°→330°）",
+        "personality": "独特另类型——灵魂伴侣型，精神共鸣先于生理吸引",
+        "classical_note": "『公正、不受奉承影响、持久坚定、明智耐心、不妥协』（《Tetrabiblos》III.13，固定星座共性）",
+        "best_match": ["双子座", "天秤座", "射手座"],
+        "best_match_reason": "同风象三合（双/秤）+ 火象六合（射手）"
+      }
+    },
+    "双鱼座": {
+      "chinese": {
+        "cizodiac": "娵訾",
+        "zhi": "亥",
+        "wuxing": "水",
+        "yinyang": "阴",
+        "gong": "亥宫",
+        "jieqi_range": "立春 → 惊蛰",
+        "date_approx": "约2月4日 – 3月6日",
+        "calendar": "农历节气（太阳黄经315°→345°）",
+        "character": "亥为水之偏位，深邃浪漫，感应敏锐。娵訾者聚核含仁，具梦幻气质与包容力。地支属水，藏壬甲，外柔内深。"
+      },
+      "western": {
+        "planet": "木星",
+        "element": "水",
+        "mode": "变动（Mutable，双体星座）",
+        "date_range": "2月19日 – 3月20日",
+        "calendar": "公历（热带黄道，太阳黄经330°→360°）",
+        "personality": "梦幻浪漫型——自带滤镜，容易有宿命感恋情，感性至上",
+        "classical_note": "『复杂多变、难以捉摸、多情、多才多艺、易改变心意』（《Tetrabiblos》III.13，双体星座共性）",
+        "best_match": ["巨蟹座", "天蝎座", "摩羯座"],
+        "best_match_reason": "同水象三合（蟹/蝎）+ 土象六合（摩羯）"
+      }
+    }
+  }
+}

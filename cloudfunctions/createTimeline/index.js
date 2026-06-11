@@ -2,7 +2,7 @@ const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { buildTimelineRecordTitle, classifyTimelineEvent, inferTimelineRecord } = require('./_shared/event-understanding')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
-const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
+const { checkFeatureAccess, checkTokenBalance, consumeTokens, finalizePendingReferral } = require('./_shared/subscription')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
@@ -133,6 +133,15 @@ exports.main = async (event) => {
     const safeDescription = typeof description === 'string' ? description.trim() : ''
     if (!safeDescription) {
       return { success: false, message: '描述不能为空' }
+    }
+
+    const timelineAccess = await checkFeatureAccess(db, userId, '时间轴')
+    if (!timelineAccess.allowed) {
+      return {
+        success: false,
+        code: 'FEATURE_NOT_AVAILABLE',
+        message: timelineAccess.reason || '当前套餐不支持时间轴功能'
+      }
     }
 
     const ownedCase = await getOwnedCase(db, caseId, userId)
@@ -330,6 +339,12 @@ exports.main = async (event) => {
     await transaction.commit()
     transaction = null
     markPerf('committed')
+
+    try {
+      await finalizePendingReferral(db, userId)
+    } catch (err) {
+      console.warn('finalizePendingReferral failed (non-fatal):', err?.message || err)
+    }
 
     return {
       success: true,

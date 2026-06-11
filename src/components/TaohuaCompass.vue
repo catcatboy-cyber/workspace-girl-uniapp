@@ -171,7 +171,7 @@ const GUAS = [
 ]
 const guaLabels = computed(() => GUAS.map(item => ({
   ...item,
-  style: pointStyle(item.angle, 18),
+  style: pointStyle(item.angle, 15),
 })))
 </script>
 

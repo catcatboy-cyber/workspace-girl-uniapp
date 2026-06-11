@@ -4,8 +4,7 @@ const https = require('https')
 const { URL } = require('url')
 const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 const { buildPersonaPrompt } = require('./_shared/persona-config')
-const { checkBalance } = require('./_shared/billing')
-const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
+const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
 const { recordTokenUsage } = require('./_shared/token-usage')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
@@ -416,11 +415,6 @@ exports.main = async (event = {}) => {
     const tokCheck = await checkTokenBalance(db, userId, runtimeConfig.sideReadMaxTokens)
     if (!tokCheck.ok) return { success: false, code: tokCheck.code, message: tokCheck.message, ...tokCheck }
 
-    const balCheck = await checkBalance(db, userId, runtimeConfig.sideReadMaxTokens)
-    if (!balCheck.ok) {
-      return { success: false, message: '余额不足，请充值', code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required }
-    }
-
     const response = await postChatCompletions(aiSettings, messages)
     if (!response?.ok) {
       const text = await response?.text().catch(() => '')
@@ -437,10 +431,6 @@ exports.main = async (event = {}) => {
       model: aiSettings.model,
       usage: data?.usage
     })
-    // 扣减平台 Token
-    const actualTokens = (data?.usage?.prompt_tokens || 0) + (data?.usage?.completion_tokens || 0)
-    if (actualTokens > 0) await consumeTokens(db, userId, actualTokens, '星象速写')
-
     let sideReadAdvice
     try {
       sideReadAdvice = normalizeSideRead(parseJSONContent(raw))

@@ -5,7 +5,8 @@
       <view v-else>
         <view class="hero-block-v2"><text class="hero-tag-v2">14-DAY REVIEW / {{ caseName }}</text><text class="hero-title-v2">近14天<text class="hl-v2">复盘</text></text><text class="hero-copy-v2">按近14天窗口回看真实事件和分数净变化，避免被单次情绪带着走。</text><view class="btn-row-v2"><button class="btn-v2-wr" @click="goCaseDetail">回去</button><button class="btn-v2-wr" @click="goTimeline">往事</button></view></view>
         <!-- Generate -->
-        <view class="card-v2"><text class="section-title-v2">近14天 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、近14天真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating || (currentReview && !hasNewEventsSinceReview)" @click="generateCurrentWeek">{{ generating ? '生成中...' : (currentReview && !hasNewEventsSinceReview) ? '还没新事件' : (currentReview ? '重新生成近14天复盘' : '生成近14天复盘') }}</button></view>
+        <view class="card-v2"><text class="section-title-v2">近14天 AI 复盘</text><text class="card-text-v2">上下文只看基础画像、近14天真实事件和分数净变化。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="generating || (currentReview && !hasNewEventsSinceReview)" @click="generateCurrentWeek">{{ generating ? '生成中...' : (currentReview && !hasNewEventsSinceReview) ? '还没新事件' : (currentReview ? '重新生成近14天复盘' : '生成近14天复盘') }}</button>
+        <AiLoading v-if="generating" label="近14天复盘分析中..." :seconds="generatingSeconds" /></view>
         <!-- Current review -->
         <view v-if="currentReview" class="card-v2 review-v2">
           <view class="review-head-v2"><view><text class="review-week-v2">{{ currentReview.weekStart }} - {{ currentReview.weekEnd }}</text><text class="review-title-v2">{{ currentReview.title }}</text></view><view class="tag-row-v2"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(currentReview.trendLabel) }}</text><text v-if="currentReview.aiUsed" class="tag-v2 black">AI 复盘</text></view></view>
@@ -19,6 +20,7 @@
         <view v-else class="empty-v2"><text class="empty-title-v2">近14天还没有复盘</text><text class="empty-sub-v2">先生成一次近14天复盘，后续会沉淀为历史。</text></view>
         <!-- Side read -->
         <view class="card-v2"><text class="section-title-v2">近14天星象速写</text><text class="card-text-v2">结合属相、星座和近14天事件，给出近14天星象速写。</text><button class="btn-v2-wr primary full" style="margin-top:14rpx;" :disabled="!currentReview || sideReadLoading || (currentWeeklySideRead && !hasNewEventsSinceSideRead)" @click="generateCurrentWeeklySideRead">{{ sideReadLoading ? '生成中...' : (currentWeeklySideRead && !hasNewEventsSinceSideRead) ? '还没新事件' : (currentWeeklySideRead ? '重新生成近14天星象速写' : '生成近14天星象速写') }}</button>
+        <AiLoading v-if="sideReadLoading" label="星象速写中..." :seconds="sideReadSeconds" />
           <view v-if="currentWeeklySideRead" class="side-body-v2"><text class="review-title-v2">{{ currentWeeklySideRead.title }}</text><text class="review-summary-v2" user-select>{{ currentWeeklySideRead.summary }}</text><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2" user-select>{{ item.text }}</text></view></view>
           <text v-else-if="currentReview" class="card-text-v2 muted" style="margin-top:10rpx;">近14天还没有星象速写，可以单独生成。</text>
           <text v-else class="card-text-v2 muted" style="margin-top:10rpx;">请先生成近14天复盘，再生成近14天星象速写。</text>
@@ -33,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onBeforeUnmount, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import {
   generateWeeklyReview,
@@ -46,11 +48,16 @@ import {
 } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import AiLoading from '@/components/AiLoading'
 
 const loading = ref(true)
 const syncing = ref(false)
 const generating = ref(false)
 const sideReadLoading = ref(false)
+const generatingSeconds = ref(0)
+const sideReadSeconds = ref(0)
+let generatingTimer: any = null
+let sideReadTimer: any = null
 const userId = ref('')
 const caseId = ref('')
 const caseName = ref('当前 Crush')
@@ -220,6 +227,8 @@ async function loadData(options?: { silent?: boolean }) {
 async function generateCurrentWeek() {
   if (generating.value) return
   generating.value = true
+  generatingSeconds.value = 0
+  generatingTimer = setInterval(() => { generatingSeconds.value++ }, 1000)
   try {
     const res = await generateWeeklyReview(userId.value, caseId.value, currentWeekStart.value)
     reviews.value = res.reviews || []
@@ -232,12 +241,16 @@ async function generateCurrentWeek() {
     showError(error?.message || '生成14天复盘失败')
   } finally {
     generating.value = false
+    clearInterval(generatingTimer)
+    generatingTimer = null
   }
 }
 
 async function generateCurrentWeeklySideRead() {
   if (sideReadLoading.value || !currentReview.value) return
   sideReadLoading.value = true
+  sideReadSeconds.value = 0
+  sideReadTimer = setInterval(() => { sideReadSeconds.value++ }, 1000)
   try {
     const res = await generateWeeklySideRead(userId.value, caseId.value, currentWeekStart.value)
     reviews.value = res.reviews || reviews.value
@@ -250,8 +263,15 @@ async function generateCurrentWeeklySideRead() {
     showError(error?.message || '生成近14天星象速写失败')
   } finally {
     sideReadLoading.value = false
+    clearInterval(sideReadTimer)
+    sideReadTimer = null
   }
 }
+
+onBeforeUnmount(() => {
+  if (generatingTimer) clearInterval(generatingTimer)
+  if (sideReadTimer) clearInterval(sideReadTimer)
+})
 
 function formatDelta(value: any) {
   const numeric = Number(value || 0)

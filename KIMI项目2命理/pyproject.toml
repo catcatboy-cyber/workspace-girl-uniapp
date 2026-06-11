@@ -1,0 +1,12 @@
+[project]
+name = "kimi-mingli"
+version = "0.1.0"
+description = "生肖+星座命理分析引擎：桃花方位、感情旺位、每日宜忌"
+requires-python = ">=3.9"
+dependencies = ["lunar-python>=1.4.0"]
+
+[project.optional-dependencies]
+dev = []
+
+[tool.setuptools.packages.find]
+where = ["."]
