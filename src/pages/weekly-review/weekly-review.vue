@@ -203,7 +203,7 @@ async function loadData(options?: { silent?: boolean }) {
       getMonthlyReviews(uid, caseId.value).catch(() => null)
     ])
     if (!caseFile && !reviewRes) {
-      showError('加载14天复盘失败')
+      showError('加载月度复盘失败')
       return
     }
     caseName.value = caseFile?.name || '当前 Crush'
@@ -217,7 +217,7 @@ async function loadData(options?: { silent?: boolean }) {
       currentMonthStart: currentMonthStart.value
     })
   } catch (error: any) {
-    showError(error?.message || '加载14天复盘失败')
+    showError(error?.message || '加载月度复盘失败')
   } finally {
     loading.value = false
     syncing.value = false
@@ -238,7 +238,7 @@ async function generateCurrentWeek() {
     showSuccess('已生成月度复盘')
   } catch (error: any) {
     if (handleInsufficientBalance(error)) return
-    showError(error?.message || '生成14天复盘失败')
+    showError(error?.message || '生成月度复盘失败')
   } finally {
     generating.value = false
     clearInterval(generatingTimer)

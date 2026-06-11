@@ -319,6 +319,15 @@
       "installDependency": true
     },
     {
+      "name": "generatePairRead",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "tmpUpdateUser",
       "timeout": 15,
       "envVariables": {},

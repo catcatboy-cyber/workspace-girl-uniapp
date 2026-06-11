@@ -11,13 +11,35 @@
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
         <!-- 命理桃花 teaser -->
-        <view v-if="showTaohuaTeaser" class="card-v2 anim-card" style="animation-delay:0.1s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx solid #FFD93D;cursor:pointer;" @click="goTaohua">
-          <view style="display:flex;align-items:center;justify-content:space-between;">
-            <text class="section-title-v2" style="margin-bottom:0;">🧭 今日桃花</text>
-            <text v-if="taohuaTeaserData" class="tag-v2 black" style="font-size:24rpx;">{{ taohuaTeaserData.score }}/100</text>
+        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;" @click="goTaohua">
+          <view class="taohua-teaser-head">
+            <text class="taohua-teaser-head-title">🧭 今日桃花</text>
+            <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
           </view>
-          <text v-if="taohuaTeaserData" class="card-text-v2" style="margin-top:6rpx;">今日桃花位：{{ taohuaTeaserData.direction }} · {{ taohuaTeaserData.summary }}</text>
-          <text v-else class="card-text-v2 muted">加载中...</text>
+          <view v-if="taohuaTeaserData" class="taohua-teaser-body">
+            <view class="taohua-teaser-dirs">
+              <view class="taohua-teaser-dir">
+                <text class="taohua-teaser-dir-emoji">🌸</text>
+                <text class="taohua-teaser-dir-label">桃花</text>
+                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.direction }}（{{ taohuaTeaserData.directionZhi }}位）</text>
+              </view>
+              <view class="taohua-teaser-dir">
+                <text class="taohua-teaser-dir-emoji">🕊️</text>
+                <text class="taohua-teaser-dir-label">天喜</text>
+                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.tianxiDir }}方</text>
+              </view>
+            </view>
+            <text class="taohua-teaser-guide">💡 {{ taohuaTeaserData.guidance }}</text>
+            <text class="taohua-teaser-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
+          </view>
+          <view v-else class="taohua-teaser-body">
+            <text class="taohua-teaser-meta">加载中...</text>
+          </view>
+          <view class="taohua-teaser-cta">
+            <text>查看完整命理分析</text>
+            <text class="taohua-teaser-cta-arrow">→</text>
+          </view>
+          <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
         </view>
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
           <text class="remind-card-title-v2">你的画像未完善</text>
@@ -64,13 +86,35 @@
         </view>
 
         <!-- 命理桃花 teaser -->
-        <view v-if="showTaohuaTeaser" class="card-v2 anim-card" style="animation-delay:0.05s;margin-bottom:20rpx;background:#FFFBEB;border:2rpx solid #FFD93D;cursor:pointer;" @click="goTaohua">
-          <view style="display:flex;align-items:center;justify-content:space-between;">
-            <text class="section-title-v2" style="margin-bottom:0;">🧭 今日桃花</text>
-            <text v-if="taohuaTeaserData" class="tag-v2 black">{{ taohuaTeaserData.score }}/100</text>
+        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.05s;" @click="goTaohua">
+          <view class="taohua-teaser-head">
+            <text class="taohua-teaser-head-title">🧭 今日桃花</text>
+            <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
           </view>
-          <text v-if="taohuaTeaserData" class="card-text-v2 muted" style="margin-top:6rpx;">今日桃花位：{{ taohuaTeaserData.direction }} · {{ taohuaTeaserData.summary }}</text>
-          <text v-else class="card-text-v2 muted">加载中...</text>
+          <view v-if="taohuaTeaserData" class="taohua-teaser-body">
+            <view class="taohua-teaser-dirs">
+              <view class="taohua-teaser-dir">
+                <text class="taohua-teaser-dir-emoji">🌸</text>
+                <text class="taohua-teaser-dir-label">桃花</text>
+                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.direction }}（{{ taohuaTeaserData.directionZhi }}位）</text>
+              </view>
+              <view class="taohua-teaser-dir">
+                <text class="taohua-teaser-dir-emoji">🕊️</text>
+                <text class="taohua-teaser-dir-label">天喜</text>
+                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.tianxiDir }}方</text>
+              </view>
+            </view>
+            <text class="taohua-teaser-guide">💡 {{ taohuaTeaserData.guidance }}</text>
+            <text class="taohua-teaser-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
+          </view>
+          <view v-else class="taohua-teaser-body">
+            <text class="taohua-teaser-meta">加载中...</text>
+          </view>
+          <view class="taohua-teaser-cta">
+            <text>查看完整命理分析</text>
+            <text class="taohua-teaser-cta-arrow">→</text>
+          </view>
+          <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
         </view>
 
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.1s" @click="goSelfProfile">
@@ -225,7 +269,7 @@ import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDat
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
-import { xianchiAlgorithm, getTodayStr } from '@/utils/taohua'
+import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
 // 无登录态时立即跳转，避免挂载整个首页组件树
@@ -238,7 +282,7 @@ import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDat
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
-import { xianchiAlgorithm, getTodayStr } from '@/utils/taohua'
+import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
 type PetScene =
@@ -1516,21 +1560,46 @@ function goSelfProfile() {
 
 // Taohua teaser
 const showTaohuaTeaser = ref(false)
-const taohuaTeaserData = ref<{ score: number; direction: string; summary: string } | null>(null)
+const taohuaTeaserData = ref<{ score: number; direction: string; directionZhi: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
+
+/** 精确日支计算：1900-01-01=甲戌（index 10），据此推算任意日期的日支 */
+function getApproxDayZhi(date: Date) {
+  const ref = new Date(Date.UTC(1900, 0, 1))
+  const daysSince = Math.floor((date.getTime() - ref.getTime()) / 86400000)
+  const ganzhiIndex = ((daysSince % 60) + 10 + 60) % 60 // 从甲戌(10)起算
+  return ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][ganzhiIndex % 12]
+}
 
 async function loadTaohuaTeaser() {
   const today = new Date()
-  try {
-    const access = await checkFeatureAccess('命理桃花')
-    showTaohuaTeaser.value = access?.allowed !== false
-  } catch { showTaohuaTeaser.value = true /* show if gate check fails, backend will enforce */ }
+  try { const access = await checkFeatureAccess('命理桃花'); showTaohuaTeaser.value = access?.allowed !== false }
+  catch { showTaohuaTeaser.value = true }
   if (!showTaohuaTeaser.value) return
-  const dayZhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][(today.getDay() + 2) % 12]
-  const result = xianchiAlgorithm(dayZhi)
-  const jianchu = ['建','除','满','平','定','执','破','危','成','收','开','闭'][(today.getDate() + today.getMonth()) % 12]
+  // 精确日支计算（无需云函数）
+  const dayZhi = getApproxDayZhi(today)
+  const taohua = xianchiAlgorithm(dayZhi)
+  // 天喜：日支六合 = 天喜
+  const LIUHE: Record<string,string> = { '子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午' }
+  const tianxiZhi = LIUHE[dayZhi] || ''
+  const DIR: Record<string,string> = { '子':'正北','丑':'东北','寅':'东北','卯':'正东','辰':'东南','巳':'东南','午':'正南','未':'西南','申':'西南','酉':'正西','戌':'西北','亥':'西北' }
+  const tianxiDir = tianxiZhi ? DIR[tianxiZhi] || '' : ''
+  // 建除估值
+  const jianchuList = ['建','除','满','平','定','执','破','危','成','收','开','闭']
+  const jianchuIdx = (Math.floor(today.getTime() / 86400000 + 267) % 12 + 12) % 12 // 近似：以冬至为建
+  const jianchu = jianchuList[jianchuIdx]
   const scoreBase: Record<string, number> = { '成': 80, '开': 80, '满': 70, '定': 65, '除': 65, '建': 60, '平': 50, '收': 45, '执': 40, '危': 35, '破': 20, '闭': 20 }
   const score = scoreBase[jianchu] || 50
-  taohuaTeaserData.value = { score, direction: result.direction, summary: jianchu + '日 · ' + (score >= 70 ? '适合行动' : score >= 50 ? '平常心' : '观望为上') }
+  const summary = score >= 70 ? '气场佳，适合行动' : score >= 50 ? '平常心，顺其自然' : '宜观望，改天再约'
+  // 行动指导（桃花方位为主，天喜作参考）
+  let guidance = ''
+  if (score < 40) {
+    guidance = '今日气场偏弱，线上互动为主，改天再约'
+  } else if (taohua.direction === tianxiDir) {
+    guidance = `桃花天喜同聚${taohua.direction}——难得的双吉日，约会表白都合适`
+  } else {
+    guidance = `今近日往${taohua.direction}方向约会有利，${tianxiDir}可作后备。`
+  }
+  taohuaTeaserData.value = { score, direction: taohua.direction, directionZhi: taohua.taohua_zhi, tianxiDir, jianchu, summary, guidance }
 }
 
 function goTaohua() {
@@ -1767,4 +1836,22 @@ function goTaohua() {
 .v2-mode .onboard-card-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.4; }
 .v2-mode .back-link-v2 { display: inline-block; text-align: left; padding: 12rpx 0; margin-bottom: 16rpx; font-size: 28rpx; font-weight: 600; color: #111; }
 
+
+/* taohua teaser card */
+.v2-mode .taohua-teaser-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; cursor: pointer; margin-bottom: 24rpx; overflow: hidden; }
+.v2-mode .taohua-teaser-head { padding: 20rpx 24rpx; display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2rpx solid #f0f0f0; }
+.v2-mode .taohua-teaser-head-title { font-size: 24rpx; font-weight: 900; color: #111; }
+.v2-mode .taohua-teaser-head-score { font-size: 48rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .taohua-teaser-head-unit { font-size: 22rpx; font-weight: 700; color: #999; margin-left: 4rpx; }
+.v2-mode .taohua-teaser-body { padding: 18rpx 24rpx; }
+.v2-mode .taohua-teaser-dirs { display: flex; gap: 10rpx; margin-bottom: 10rpx; }
+.v2-mode .taohua-teaser-dir { flex: 1; padding: 12rpx 10rpx; border: 2rpx solid #111; background: #FFFBEB; display: flex; align-items: center; gap: 6rpx; }
+.v2-mode .taohua-teaser-dir-emoji { font-size: 24rpx; flex-shrink: 0; }
+.v2-mode .taohua-teaser-dir-label { font-size: 18rpx; font-weight: 700; color: #666; }
+.v2-mode .taohua-teaser-dir-val { font-size: 20rpx; font-weight: 900; color: #111; margin-left: auto; }
+.v2-mode .taohua-teaser-guide { display: block; font-size: 22rpx; font-weight: 800; color: #111; line-height: 1.45; margin-bottom: 4rpx; }
+.v2-mode .taohua-teaser-meta { display: block; font-size: 20rpx; font-weight: 600; color: #999; }
+.v2-mode .taohua-teaser-cta { margin: 0 24rpx 12rpx; padding: 12rpx 0; border-top: 2rpx dashed #999; text-align: center; font-size: 22rpx; font-weight: 800; color: #FF6B6B; display: flex; align-items: center; justify-content: center; gap: 4rpx; }
+.v2-mode .taohua-teaser-cta-arrow { font-size: 26rpx; font-weight: 900; }
+.v2-mode .taohua-teaser-cite { padding: 10rpx 24rpx; border-top: 1rpx solid #eee; font-size: 18rpx; font-weight: 600; color: #bbb; text-align: center; }
 </style>

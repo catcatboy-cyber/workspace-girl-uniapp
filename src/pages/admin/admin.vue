@@ -1132,7 +1132,7 @@ const personaBoldnessKeys = ['conservative', 'balanced', 'bold']
 const promptModuleTitles: Record<string, string> = {
   eventAssessment: '即时反馈',
   eventUnderstanding: '事件理解',
-  weeklyReview: '近14天复盘',
+  weeklyReview: '近月度复盘',
   sideRead: '星象速写',
   attachmentAnalysis: '附件识别'
 }
@@ -1153,18 +1153,18 @@ const personaBoldnessTitles: Record<string, string> = {
 
 const runtimeFields = [
   { key: 'eventContextLimit', label: '事件上下文条数', fallback: 3 },
-  { key: 'weeklyEventLimit', label: '14天复盘事件条数', fallback: 10 },
-  { key: 'weeklySideEventLimit', label: '14天星象速写事件条数', fallback: 6 },
+  { key: 'weeklyEventLimit', label: '月度复盘事件条数', fallback: 10 },
+  { key: 'weeklySideEventLimit', label: '月度星象速写事件条数', fallback: 6 },
   { key: 'eventMaxTokens', label: '即时反馈 Max Tokens', fallback: 650 },
   { key: 'eventUnderstandingMaxTokens', label: '事件理解 Max Tokens', fallback: 260 },
   { key: 'batchTagMaxTokens', label: '批量语义打标 Max Tokens', fallback: 600 },
   { key: 'eventUnderstandingTemperature', label: '事件理解温度', fallback: 0.1 },
-  { key: 'weeklyMaxTokens', label: '14天复盘 Max Tokens', fallback: 650 },
+  { key: 'weeklyMaxTokens', label: '月度复盘 Max Tokens', fallback: 650 },
   { key: 'sideReadMaxTokens', label: '星象速写 Max Tokens', fallback: 550 },
   { key: 'attachmentMaxTokens', label: '附件识别 Max Tokens', fallback: 1200 },
   { key: 'eventTemperature', label: '即时反馈温度', fallback: 0.2 },
   { key: 'batchTagTemperature', label: '批量语义打标温度', fallback: 0.1 },
-  { key: 'weeklyTemperature', label: '14天复盘温度', fallback: 0.25 },
+  { key: 'weeklyTemperature', label: '月度复盘温度', fallback: 0.25 },
   { key: 'sideReadTemperature', label: '星象速写温度', fallback: 0.35 },
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
@@ -2306,7 +2306,7 @@ function formatTokenFeature(feature: string) {
   const map: Record<string, string> = {
     eventAssessment: '即时反馈',
     eventUnderstanding: '事件理解',
-    weeklyReview: '近14天复盘',
+    weeklyReview: '近月度复盘',
     sideRead: '星象速写',
     attachmentAnalysis: '附件识别',
     petReply: '宠物帮说',

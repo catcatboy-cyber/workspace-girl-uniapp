@@ -7,7 +7,7 @@ const {
   getAIErrorMessage
 } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
-const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
+const { checkFeatureAccess, checkTokenBalance, getMonthStart } = require('./_shared/subscription')
 const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 const { buildPersonaPrompt } = require('./_shared/persona-config')
 
@@ -41,14 +41,14 @@ function getLastMonthRange(now = new Date()) {
   const lastMonth = new Date(thisMonth.getTime() - 1)
   const start = getMonthStart(lastMonth)
   const end = new Date(thisMonth.getTime() - 1)
-  return { start, end, monthStart: dateKey(start), monthEnd: dateKey(end) }
+  return { start, end, monthStart: dateKey(new Date(start.getTime() + TZ_OFFSET_MS)), monthEnd: dateKey(new Date(end.getTime() + TZ_OFFSET_MS)) }
 }
 
 function getCurrentMonthRange(now = new Date()) {
   const start = getMonthStart(now)
   const nextMonth = new Date(start.getFullYear(), start.getMonth() + 1, 1)
   const end = new Date(nextMonth.getTime() - 1)
-  return { start, end, monthStart: dateKey(start), monthEnd: dateKey(end) }
+  return { start, end, monthStart: dateKey(new Date(start.getTime() + TZ_OFFSET_MS)), monthEnd: dateKey(new Date(end.getTime() + TZ_OFFSET_MS)) }
 }
 
 function getMonthRange(monthStartValue) {
@@ -746,6 +746,6 @@ exports.main = async (event = {}) => {
     }
 
     console.error('weeklyReview error:', error)
-    return { success: false, message: '月度复盘处理失败' }
+    return { success: false, message: `月度复盘处理失败：${error?.message || error || '未知错误'}` }
   }
 }

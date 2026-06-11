@@ -27,14 +27,41 @@
             <view><text class="profile-name-v2">{{ caseFile.name }}</text><text v-if="objectTypeLabel" class="profile-type-v2">{{ objectTypeLabel }}</text></view>
           </view>
           <view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view>
-          <!-- Stats grid -->
-          <view v-if="overviewStats.length > 0" class="stats-grid-v2"><view v-for="item in overviewStats" :key="item.key" :class="['stat-box-v2', item.tone === 'risk' ? 'warn' : '']"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text><text class="stat-hint-v2">{{ item.hint }}</text></view></view>
-          <!-- Trend data + line chart -->
-          <view v-if="trendDataPanel" class="trend-block-v2">
+        </view>
+        <!-- Pair reading (taohua) -->
+        <view v-if="pairMatch" class="card-v2 anim-card" style="animation-delay:0.22s;background:#FFFBEB;">
+          <text class="section-title-v2">桃花匹配度</text>
+          <view class="tag-row-v2" style="margin-bottom:6rpx;"><text :class="['tag-v2', pairMatchBadgeClass]">{{ pairMatch.relation }}</text></view>
+          <text class="weekly-desc-v2">{{ pairMatch.relationDesc }}</text>
+          <view v-if="pairInsight" class="bullet-list-v2" style="margin-top:6rpx;">
+            <text class="bullet-v2">💫 {{ pairInsight.styleClash }}</text>
+            <view class="tag-row-v2" style="margin-top:4rpx;"><text v-for="(a, i) in (pairInsight.activities || []).slice(0, 2)" :key="i" class="tag-v2">{{ a }}</text></view>
+          </view>
+          <button class="btn-v2-me outline" style="margin-top:12rpx;width:100%;" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
+          <view v-if="pairReadLoading" class="action-box" style="margin-top:10rpx;">
+            <text class="action-label">AI 深度解读中...</text>
+            <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，结合今日气场...</text></view>
+          </view>
+          <view v-if="pairAIResult" class="action-box" style="margin-top:10rpx;">
+            <text class="action-label">深度解读（{{ pairAIResult.day || '今日' }}日）</text>
+            <text v-if="pairAIResult.dayEnergy" class="action-text" user-select>{{ pairAIResult.dayEnergy }}</text>
+            <text v-if="pairAIResult.monthTrend" class="action-text" user-select style="margin-top:6rpx;">{{ pairAIResult.monthTrend }}</text>
+            <text v-if="pairAIResult.relationshipDynamics" class="action-text" user-select style="margin-top:6rpx;">{{ pairAIResult.relationshipDynamics }}</text>
+            <text v-if="pairAIResult.advice" class="action-text" user-select style="margin-top:6rpx;font-weight:800;color:#111;">💡 {{ pairAIResult.advice }}</text>
+          </view>
+        </view>
+        <view v-else-if="showPairReadGuide" class="card-v2 anim-card" style="animation-delay:0.22s;border-style:dashed;background:#FFFBEB;" @click="goSelfProfile">
+          <text class="section-title-v2">桃花匹配度</text>
+          <text class="weekly-desc-v2">完善你和 Crush 的生肖星座，解锁桃花匹配解读 →</text>
+        </view>
+        <!-- Stats + Trends -->
+        <view class="card-v2 anim-card" style="animation-delay:0.24s">
+          <view v-if="overviewStats.length > 0" class="stats-grid-v2 stats-compact-v2"><view v-for="item in overviewStats" :key="item.key" :class="['stat-box-v2', item.tone === 'risk' ? 'warn' : '']"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view>
+          <view v-if="trendDataPanel" class="trend-block-v2" style="margin-top:0;padding-top:0;border-top:none;">
             <text class="section-title-v2">趋势数据 · 月度</text>
             <view class="trend-grid-v2">
-              <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.latestIntent }}</text><text class="trend-chg-v2" :class="deltaClass(trendDataPanel.intentDelta14)">{{ formatSignedDelta(trendDataPanel.intentDelta14) }}</text><text class="trend-unit-v2">意向</text></view>
-              <view class="trend-item-v2"><text class="trend-num-v2 risk">{{ trendDataPanel.latestRisk }}</text><text class="trend-chg-v2" :class="deltaClass(-trendDataPanel.riskDelta14)">{{ formatSignedDelta(trendDataPanel.riskDelta14) }}</text><text class="trend-unit-v2">风险</text></view>
+              <view class="trend-item-v2"><view class="trend-item-row-v2"><text class="trend-num-v2">{{ trendDataPanel.latestIntent }}</text><text class="trend-chg-v2" :class="deltaClass(trendDataPanel.intentDelta14)">{{ formatSignedDelta(trendDataPanel.intentDelta14) }}</text></view><text class="trend-unit-v2">意向</text></view>
+              <view class="trend-item-v2"><view class="trend-item-row-v2"><text class="trend-num-v2 risk">{{ trendDataPanel.latestRisk }}</text><text class="trend-chg-v2" :class="deltaClass(-trendDataPanel.riskDelta14)">{{ formatSignedDelta(trendDataPanel.riskDelta14) }}</text></view><text class="trend-unit-v2">风险</text></view>
               <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.stability }}%</text><text class="trend-unit-v2">稳定性 · {{ trendDataPanel.sampleCount }}次</text></view>
               <view class="trend-item-v2"><text class="trend-num-v2">{{ trendDataPanel.evidenceCount }}</text><text class="trend-unit-v2">证据量 · 月度</text></view>
             </view>
@@ -58,11 +85,10 @@
                 </view>
               </scroll-view>
             </view>
-            <!-- Turning points -->
             <view v-if="trendDataPanel.turningPoints.length > 0" class="turning-v2"><text class="section-title-v2">关键拐点</text><view v-for="tp in trendDataPanel.turningPoints" :key="tp.key" class="turning-row-v2"><text class="turning-name-v2">{{ tp.title }}</text><view class="turning-deltas-v2"><text :class="['delta-chip-v2', deltaClass(tp.intentDelta)]">意 {{ formatSignedDelta(tp.intentDelta) }}</text><text :class="['delta-chip-v2', deltaClass(-tp.riskDelta)]">险 {{ formatSignedDelta(tp.riskDelta) }}</text></view></view></view>
           </view>
         </view>
-        <!-- Weekly review -->
+        <!-- Monthly review -->
         <view v-if="aiWeeklyPreview" class="card-v2 anim-card" style="animation-delay:0.25s">
           <text class="section-title-v2">{{ aiWeeklyPreview.weekStart }} - {{ aiWeeklyPreview.weekEnd }}</text>
           <text class="weekly-title-v2">{{ aiWeeklyPreview.title }}</text>
@@ -74,22 +100,7 @@
           <view v-if="aiWeeklyPreview.avoidMisread?.length" class="bullet-list-v2"><text v-for="item in aiWeeklyPreview.avoidMisread" :key="item" class="bullet-v2">• {{ item }}</text></view>
           <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2"><text class="focus-label-v2">后续验证重点 · 最该看</text><text class="focus-question-v2">{{ primaryWeeklyFocus }}</text><view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view></view>
         </view>
-        <view v-else-if="hasFallbackWeeklyPreview" class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">本月只生成了规则兜底版本，请去月度复盘页重新生成 AI 版本。</text></view>
-        <!-- Pair reading (taohua) -->
-        <view v-if="pairMatch" class="card-v2 anim-card" style="animation-delay:0.28s;background:#FFFBEB;">
-          <text class="section-title-v2">桃花匹配度</text>
-          <text :class="['tag-v2', pairMatchBadgeClass]">{{ pairMatch.relation }}</text>
-          <text class="card-text-v2" style="margin-top:4rpx;">{{ pairMatch.relationDesc }}</text>
-          <view v-if="pairInsight" class="reason-box" style="margin-top:12rpx;">
-            <text class="reason-line">💫 {{ pairInsight.styleClash }}</text>
-            <view class="tag-row-v2" style="margin-top:8rpx;"><text v-for="(a, i) in (pairInsight.activities || []).slice(0, 2)" :key="i" class="tag-v2">{{ a }}</text></view>
-            <text class="card-text-v2 muted" style="margin-top:6rpx;">📖 {{ pairInsight.classicalNote }}</text>
-          </view>
-        </view>
-        <view v-else-if="showPairReadGuide" class="card-v2 anim-card" style="animation-delay:0.28s;border-style:dashed;background:#FFFBEB;" @click="goSelfProfile">
-          <text class="section-title-v2">桃花匹配度</text>
-          <text class="card-text-v2">完善你和 Crush 的生肖星座，解锁桃花匹配解读 →</text>
-        </view>
+        <view v-else class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">本月还没有复盘。有新事件后可生成。</text></view>
         <!-- Side read -->
         <view class="card-v2 anim-card" style="animation-delay:0.3s">
           <text class="section-title-v2">月度星象速写</text>
@@ -97,11 +108,18 @@
             <text v-if="currentWeeklySideRead.summary" class="weekly-desc-v2">{{ currentWeeklySideRead.summary }}</text>
             <view v-if="currentWeeklySideRead.sections?.length" class="side-grid-v2"><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2">• {{ item.text }}</text></view></view>
           </view>
-          <text v-else class="empty-sub-v2">本月星象速写还没有生成。</text>
+          <text v-else class="empty-sub-v2">本月星象速写还没有生成，先生成复盘后可生成。</text>
         </view>
-        <!-- Bottom action: matches original -->
+        <!-- Bottom action -->
         <view class="bottom-action-v2">
-          <button class="btn-v2-bottom anim-pulse" :disabled="weeklyPreview && !hasNewEventsSinceReview" @click="goWeeklyReview">{{ weeklyButtonLabel }}</button>
+          <view style="display:flex;gap:12rpx;">
+            <button class="btn-v2-bottom" style="flex:1;" :disabled="reviewGenerating || !hasNewEventsSinceReview" @click="generateThisMonthReview">{{ reviewGenerating ? '生成中...' : (aiWeeklyPreview ? '重新生成本月复盘' : '生成本月复盘') }}</button>
+            <button class="btn-v2-bottom" style="flex:1;" :disabled="sideReadGenerating || !hasNewEventsSinceReview || !aiWeeklyPreview" @click="generateThisMonthSideRead">{{ sideReadGenerating ? '生成中...' : (!aiWeeklyPreview ? '需先生成复盘' : (currentWeeklySideRead ? '重新生成星象速写' : '生成星象速写')) }}</button>
+          </view>
+          <view v-if="reviewGenerating || sideReadGenerating" class="action-box" style="margin-top:12rpx;">
+            <text class="action-label">{{ reviewGenerating ? '月度复盘' : '星象速写' }} 生成中...</text>
+            <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，完成后将自动刷新</text></view>
+          </view>
         </view>
       </template>
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
@@ -111,9 +129,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, checkFeatureAccess, getCachedSelfProfile } from '@/utils/api'
+import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, checkFeatureAccess, getCachedSelfProfile, generateMonthlyReview, generateMonthlySideRead, handleInsufficientBalance, generatePairRead } from '@/utils/api'
 import { zodiacSignMatch, generatePairInsight } from '@/utils/taohua'
-import { consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError } from '@/utils/helpers'
+import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
@@ -724,6 +742,8 @@ function formatDelta(value: any) {
 const showPairReadGuide = ref(false)
 const pairMatch = ref<any>(null)
 const pairInsight = ref<any>(null)
+const pairReadLoading = ref(false)
+const pairAIResult = ref<any>(null)
 
 const pairMatchBadgeClass = computed(() => {
   const r = pairMatch.value?.relation || ''
@@ -752,9 +772,52 @@ async function loadPairRead() {
   } catch { showPairReadGuide.value = false }
 }
 
-function goWeeklyReview() {
-  setActiveCaseId(caseId.value)
-  uni.navigateTo({ url: `/pages/weekly-review/weekly-review?caseId=${caseId.value}` })
+async function doPairAIDeepRead() {
+  if (pairReadLoading.value || !caseId.value) return
+  pairReadLoading.value = true
+  try {
+    const res = await generatePairRead(caseId.value)
+    if (res?.success) {
+      pairAIResult.value = res.aiEnhanced || { message: '暂无深度解读内容' }
+    } else {
+      pairAIResult.value = { fallback: true, message: res?.message || '解读暂不可用' }
+    }
+  } catch (error: any) {
+    pairAIResult.value = { fallback: true, message: error?.message || '解读请求失败，请稍后再试' }
+  } finally { pairReadLoading.value = false }
+}
+
+// Inline review + side read generation
+const reviewGenerating = ref(false)
+const sideReadGenerating = ref(false)
+
+async function generateThisMonthReview() {
+  if (reviewGenerating.value) return
+  reviewGenerating.value = true
+  try {
+    const res = await generateMonthlyReview(userId.value, caseId.value)
+    weeklyReviews.value = res.reviews || []
+    currentMonthStart.value = res.currentMonthStart || ''
+    bumpDataVersion()
+    showSuccess('本月复盘已生成')
+  } catch (error: any) {
+    if (handleInsufficientBalance(error)) return
+    showError(error?.message || '生成失败')
+  } finally { reviewGenerating.value = false }
+}
+
+async function generateThisMonthSideRead() {
+  if (sideReadGenerating.value || !aiWeeklyPreview.value) return
+  sideReadGenerating.value = true
+  try {
+    const res = await generateMonthlySideRead(userId.value, caseId.value)
+    if (res.reviews) weeklyReviews.value = res.reviews
+    bumpDataVersion()
+    showSuccess('星象速写已生成')
+  } catch (error: any) {
+    if (handleInsufficientBalance(error)) return
+    showError(error?.message || '生成失败')
+  } finally { sideReadGenerating.value = false }
 }
 </script>
 
@@ -808,11 +871,14 @@ function goWeeklyReview() {
 .v2-mode .trend-block-v2 { margin-top: 18rpx; padding-top: 16rpx; border-top: 3rpx solid #111; }
 .v2-mode .trend-grid-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8rpx; }
 .v2-mode .trend-item-v2 { padding: 14rpx 10rpx; border: 2rpx solid #111; text-align: center; background: #fff; }
+.v2-mode .stats-compact-v2 { margin-top: 0; }
+.v2-mode .trend-item-row-v2 { display: flex; align-items: baseline; justify-content: center; gap: 6rpx; }
 .v2-mode .trend-num-v2 { display: block; font-size: 32rpx; font-weight: 900; color: #111; line-height: 1; }
 .v2-mode .trend-num-v2.risk { color: #FF5252; }
-.v2-mode .trend-chg-v2 { display: block; font-size: 18rpx; font-weight: 800; margin-top: 2rpx; }
+.v2-mode .trend-chg-v2 { font-size: 18rpx; font-weight: 800; }
 .v2-mode .trend-chg-v2.positive { color: #4ECDC4; }
 .v2-mode .trend-chg-v2.negative { color: #FF5252; }
+.v2-mode .trend-chg-v2.flat { color: #999; }
 .v2-mode .trend-unit-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 4rpx; }
 
 .v2-mode .weekly-block-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
@@ -870,6 +936,7 @@ function goWeeklyReview() {
 .v2-mode .tag-v2.green { background: #4ECDC4; color: #111; }
 .v2-mode .tag-v2.ylw { background: #FFD93D; color: #111; }
 .v2-mode .tag-v2.red { background: #FF5252; color: #fff; }
+.v2-mode .tag-v2.sm { min-height: 28rpx; padding: 2rpx 10rpx; font-size: 18rpx; }
 
 .v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; padding: 0 28rpx; }
 .v2-mode .btn-v2-bottom { display: block; width: 100%; height: 72rpx; line-height: 72rpx; background: #4ECDC4; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
@@ -878,5 +945,16 @@ function goWeeklyReview() {
 @keyframes sync-slide {
   0% { width: 30%; left: -30%; }
   100% { width: 30%; left: 130%; }
+}
+.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; }
+.v2-mode .card-text-v2.muted { color: #999; font-size: 20rpx; }
+.v2-mode .action-box { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #f5f5ff; }
+.v2-mode .action-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
+.v2-mode .action-text { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.5; }
+.v2-mode .ai-row { display: flex; align-items: center; gap: 14rpx; }
+.v2-mode .ai-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; display: inline-block; animation: blink-dot 1s ease-in-out infinite; }
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.75); }
 }
 </style>

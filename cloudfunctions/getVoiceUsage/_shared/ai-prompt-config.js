@@ -43,7 +43,7 @@ const SAFETY_GUARDRAILS = {
   ],
   weeklyReview: [
     {
-      zh: '只总结近14天提供的事件和评估变化；不要编造没有提供的长期趋势。',
+      zh: '只总结本月提供的事件和评估变化；不要编造没有提供的长期趋势。',
       en: 'Summarize only the provided weekly events and assessment changes; do not invent long-term trends.'
     },
     {

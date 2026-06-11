@@ -32,6 +32,7 @@
       <text class="card-text-v2 muted">
         {{ computedReport.流日桃花?.['principle'] || '' }}
       </text>
+      <text class="card-text-v2 muted" style="font-size:18rpx;margin-top:4rpx;">方位以你当前位置为中心</text>
 
       <!-- 4 列方位条 -->
       <view class="dir-strip-v2">

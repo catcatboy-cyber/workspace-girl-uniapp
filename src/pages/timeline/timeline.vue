@@ -27,11 +27,35 @@
   </view>
   <scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view>
 </view>
-        <!-- Assessment trend stats -->
-        <view class="card-v2" style="border-color:#4ECDC4;padding:16rpx 20rpx;">
-          <view class="stats-grid-v2"><view v-for="item in assessmentStatItems" :key="item.key" :class="['stat-box-v2', activeAssessmentFilter === item.key ? 'active' : '']" @click="toggleAssessmentStatFilter(item.key)"><text class="stat-num-v2">{{ item.value }}</text><text class="stat-lbl-v2">{{ item.label }}</text></view></view>
-        </view>
-          <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view><view v-else class="img-analysis-label">图片 · AI 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view></view><view v-if="getLinkedAssessment(item)" class="analysis-summary-v2"><text class="summary-score-v2">意向<text class="summary-score-num-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text><text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).intentDelta)">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text></text><text class="summary-score-v2 risk">风险<text class="summary-score-num-v2 risk">{{ clampScore(getLinkedAssessment(item).consistencyRiskScore) }}</text></text><text class="summary-label-v2">{{ mapIntentLabel(getLinkedAssessment(item).intentBucket) }}</text><text v-if="hasAIReview(getLinkedAssessment(item))" class="tag-v2 black sm">AI</text><text class="summary-expand-v2">展开 ▼</text></view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
+          <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view><view v-else class="img-analysis-label">图片 · AI 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
+                <view v-if="getLinkedAssessment(item)" class="analysis-summary-v2" @click="toggleExpandedAnalysis(getLinkedAssessmentKey(item))">
+                  <text class="summary-score-v2">意向<text class="summary-score-num-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text><text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).intentDelta)">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text></text>
+                  <text class="summary-split-v2">|</text>
+                  <text class="summary-score-v2 risk">风险<text class="summary-score-num-v2 risk">{{ clampScore(getLinkedAssessment(item).consistencyRiskScore) }}</text></text>
+                  <text class="summary-expand-v2">{{ isAnalysisExpanded(getLinkedAssessmentKey(item)) ? '▲' : '▼' }}</text>
+                </view>
+                <view v-if="isAnalysisExpanded(getLinkedAssessmentKey(item))" class="expanded-analysis-v2">
+                  <view class="score-block-v2" style="margin-top:0;">
+                    <view class="score-row-v2"><text class="score-lbl-v2">意向</text><text class="score-val-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text><text class="score-tag-v2">{{ mapIntentLabel(getLinkedAssessment(item).intentBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2" :style="'width:' + clampScore(getLinkedAssessment(item).intentScore) + '%'"></view></view></view>
+                    <view class="score-row-v2"><text class="score-lbl-v2">风险</text><text class="score-val-v2 risk">{{ clampScore(getLinkedAssessment(item).consistencyRiskScore) }}</text><text class="score-tag-v2">{{ mapRiskLabel(getLinkedAssessment(item).riskBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2 risk" :style="'width:' + clampScore(getLinkedAssessment(item).consistencyRiskScore) + '%'"></view></view></view>
+                    <view class="delta-row-v2"><text class="delta-lbl-v2">意向变化</text><text :class="['delta-val-v2', deltaClass(getAssessmentTrendForItem(item).intentDelta)]">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text><text class="delta-lbl-v2" style="margin-left:20rpx;">风险变化</text><text :class="['delta-val-v2', deltaClass(getAssessmentTrendForItem(item).riskDelta)]">{{ formatDelta(getAssessmentTrendForItem(item).riskDelta) }}</text></view>
+                  </view>
+                  <view v-if="getAssessmentReasonBullets(getLinkedAssessment(item)).length > 0" class="reason-box-v2" style="margin-top:10rpx;"><text class="section-title-v2">判断依据</text><text v-for="reason in getAssessmentReasonBullets(getLinkedAssessment(item))" :key="reason" class="reason-line-v2">• {{ reason }}</text></view>
+                  <view v-if="getAssessmentLinkedStatusTags(item).length" class="status-box-v2" style="margin-top:10rpx;"><text class="section-title-v2">状态标签</text><view class="tag-row-v2"><text v-for="tag in getAssessmentLinkedStatusTags(item)" :key="tag" class="tag-v2 sm">{{ tag }}</text></view></view>
+                  <view v-if="getAssessmentProblemTypeTags(getLinkedAssessment(item)).length && getAssessmentProblemTypeTags(getLinkedAssessment(item))[0] !== '暂无突出问题'" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="tag in getAssessmentProblemTypeTags(getLinkedAssessment(item))" :key="tag" class="tag-v2 sm" style="background:#111;color:#666;">{{ tag }}</text></view>
+                  <view v-if="getAssessmentActionPlanPanel(getLinkedAssessment(item)).show" class="action-box-v2" style="margin-top:10rpx;"><text class="action-label-v2">{{ getPetById(getSelectedPetId()).displayName }} 帮你看看</text><text v-if="getAssessmentActionPlanPanel(getLinkedAssessment(item)).missing" class="trend-summary-v2">{{ getAssessmentActionPlanPanel(getLinkedAssessment(item)).text }}</text><view v-else><view v-for="s in getAssessmentActionPlanPanel(getLinkedAssessment(item)).sections" :key="s.label" class="action-item-v2"><text class="action-item-label-v2">{{ petLabel(s.label) }}</text><text class="action-item-text-v2">{{ s.text }}</text></view></view></view>
+                  <view v-if="getAssessmentSideRead(getLinkedAssessment(item))" class="side-inline-v2" style="margin-top:10rpx;">
+                    <text class="focus-label-v2">{{ getAssessmentSideRead(getLinkedAssessment(item)).title }}</text>
+                    <text class="weekly-desc-v2">{{ getAssessmentSideRead(getLinkedAssessment(item)).summary }}</text>
+                    <view v-if="getAssessmentSideRead(getLinkedAssessment(item)).sections && getAssessmentSideRead(getLinkedAssessment(item)).sections.length" class="side-body-v2" style="margin-top:10rpx;">
+                      <view v-for="sec in getAssessmentSideRead(getLinkedAssessment(item)).sections" :key="sec.label" class="side-item-v2">
+                        <text class="side-label-v2">{{ sec.label }}</text>
+                        <text class="side-text-v2">{{ sec.text }}</text>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
         </view>
         <view v-if="activeTimelineView === 'monthlyReviews'">
           <view class="card-v2 anim-card" style="animation-delay:0.25s">
@@ -521,6 +545,24 @@ function getAssessmentTrendForItem(event: any) {
   const idx = assessmentTimeline.value.findIndex((item: any) => getAssessmentKey(item) === getAssessmentKey(a))
   return getAssessmentTrend(idx)
 }
+function getLinkedAssessmentKey(item: any) {
+  const a = getLinkedAssessment(item)
+  return a ? getAssessmentKey(a) : ''
+}
+function getAssessmentLinkedStatusTags(event: any) {
+  const a = getLinkedAssessment(event)
+  if (!a) return []
+  const tags = [mapTimelineTypeLabel(getAssessmentType(a))]
+  const idx = assessmentTimeline.value.findIndex((entry: any) => getAssessmentKey(entry) === getAssessmentKey(a))
+  const status = assessmentStatusSnapshots.value[idx]
+  if (status?.tags?.length) tags.push(...status.tags)
+  return [...new Set(tags.filter(Boolean))].slice(0, 5)
+}
+const expandedAnalyses = ref<Record<string, boolean>>({})
+function isAnalysisExpanded(key: string) { return !!expandedAnalyses.value[key] }
+function toggleExpandedAnalysis(key: string) {
+  expandedAnalyses.value = { ...expandedAnalyses.value, [key]: !expandedAnalyses.value[key] }
+}
 
 function getAssessmentTimestamp(item: any) {
   const raw = item?.createdAt
@@ -885,21 +927,24 @@ function toggleAssessmentStatFilter(key: string) {
   assessmentVisibleMax.value = 7
 }
 
-const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
-
 function formatAxisWeekRange(record: any) {
-  const ws = record?.monthStart || record?.weekStart
-  const we = record?.monthEnd || record?.weekEnd
-  if (!ws || !we) return { start: formatAxisDate(record), end: '' }
-  // If it's a natural month range (start ~1st, end ~28th-31st), show month name
-  const parseDate = (v: string) => { const p = v.split('-'); return p.length >= 2 ? { y: Number(p[0]), m: Number(p[1]) - 1, d: Number(p[2] || 1) } : null }
-  const sd = parseDate(String(ws)), ed = parseDate(String(we))
-  if (sd && ed && sd.y === ed.y && sd.m === ed.m && sd.d <= 3 && ed.d >= 27) {
-    return { start: MONTH_NAMES[sd.m] || '', end: '' }
+  // 锚点：优先 monthStart（新数据），否则用 monthEnd/weekEnd（复盘结束日代表归属月份）
+  const anchor = record?.monthStart || record?.monthEnd || record?.weekEnd || record?.weekStart
+    || record?.occurrenceAt || record?.createdAt
+  if (!anchor) return { start: formatAxisDate(record), end: '' }
+  // 解析出年/月
+  let year: number, monthIdx: number
+  const parts = String(anchor).split('-')
+  if (parts.length >= 2 && /^\d{4}$/.test(parts[0])) {
+    year = Number(parts[0]); monthIdx = Number(parts[1]) - 1
+  } else {
+    const d = new Date(anchor)
+    if (Number.isNaN(d.getTime())) return { start: formatAxisDate(record), end: '' }
+    year = d.getFullYear(); monthIdx = d.getMonth()
   }
-  const s = new Date(ws), e = new Date(we)
-  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return { start: formatAxisDate(record), end: '' }
-  return { start: `${s.getMonth()+1}/${s.getDate()}`, end: `${e.getMonth()+1}/${e.getDate()}` }
+  // 强制归一化到该月的自然起止日：1 日 → 月末
+  const lastDay = new Date(year, monthIdx + 1, 0).getDate()
+  return { start: `${monthIdx + 1}月1日`, end: `${monthIdx + 1}月${lastDay}日` }
 }
 
 function formatAxisDate(record: any) {
@@ -1333,12 +1378,12 @@ async function syncSemanticTags() {
 
 /* === Analysis summary bar (merged events+assessments) === */
 .v2-mode .analysis-summary-v2 {
-  margin-top: 10rpx; padding: 12rpx 16rpx;
-  border: 2rpx solid #111; background: #fff;
-  display: flex; align-items: center; gap: 12rpx; flex-wrap: wrap;
-  cursor: pointer;
+  margin-top: 8rpx; padding: 6rpx 12rpx;
+  border: 2rpx solid #111; background: #FFFBEB;
+  display: inline-flex; align-items: center; gap: 8rpx;
+  cursor: pointer; max-width: 100%; flex-wrap: wrap;
 }
-.v2-mode .analysis-summary-v2:active { background: #f5f5f5; }
+.v2-mode .analysis-summary-v2:active { background: #eee8d5; }
 .v2-mode .summary-score-v2 { font-size: 20rpx; font-weight: 700; color: #666; }
 .v2-mode .summary-score-num-v2 { font-size: 22rpx; font-weight: 900; color: #111; margin-left: 4rpx; }
 .v2-mode .summary-score-num-v2.risk { color: #FF5252; }
@@ -1348,5 +1393,10 @@ async function syncSemanticTags() {
 .v2-mode .summary-delta-v2.down { color: #FF5252; }
 .v2-mode .summary-delta-v2.flat { color: #999; }
 .v2-mode .summary-label-v2 { font-size: 18rpx; font-weight: 700; color: #666; }
-.v2-mode .summary-expand-v2 { font-size: 18rpx; font-weight: 700; color: #999; margin-left: auto; }
+.v2-mode .summary-expand-v2 { font-size: 16rpx; font-weight: 700; color: #999; margin-left: 2rpx; }
+.v2-mode .summary-split-v2 { color: #ddd; font-size: 18rpx; }
+.v2-mode .expanded-analysis-v2 {
+  margin-top: 10rpx; padding: 14rpx;
+  border: 2rpx dashed #111; background: #f9f9f9;
+}
 </style>

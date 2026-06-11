@@ -160,8 +160,8 @@ function formatSeconds(ms: number) {
 function mapFeature(feature: string) {
   const map: Record<string, string> = {
     eventAssessment: '即时反馈',
-    weeklyReview: '近14天复盘',
-    weeklySideRead: '近14天星象速写',
+    weeklyReview: '月度复盘',
+    weeklySideRead: '星象速写',
     sideRead: '星象速写',
     attachmentAnalysis: '附件识别',
     petReply: '宠物帮说'

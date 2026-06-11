@@ -61,11 +61,11 @@ const explainSections = computed(() => [
     key: 'trend' as const,
     label: '趋势变化',
     groups: [
-      { label: '14天意向', items: trend14IntentItems },
-      { label: '14天风险', items: trend14RiskItems },
+      { label: '月度意向', items: trend14IntentItems },
+      { label: '月度风险', items: trend14RiskItems },
       { label: '波动', items: trend14VolatilityItems },
       { label: '样本', items: trend14SampleItems },
-      { label: '近14天复盘', items: weeklyTrendItems }
+      { label: '本月复盘', items: weeklyTrendItems }
     ]
   },
   {
@@ -119,15 +119,15 @@ const profileFunItems = [
 ]
 
 const trend14IntentItems = [
-  { label: '14天意向上行', description: '近 14 天内，最新意向分相比区间起点明显上升。它是数据变化，不等于关系阶段。' },
-  { label: '14天意向回落', description: '近 14 天内，最新意向分相比区间起点明显下降。' },
-  { label: '14天意向平稳', description: '近 14 天内，意向分没有出现明显净变化。' },
+  { label: '月度意向上行', description: '本窗口内，最新意向分相比区间起点明显上升。它是数据变化，不等于关系阶段。' },
+  { label: '月度意向回落', description: '本窗口内，最新意向分相比区间起点明显下降。' },
+  { label: '月度意向平稳', description: '本窗口内，意向分没有出现明显净变化。' },
 ]
 
 const trend14RiskItems = [
-  { label: '14天风险回落', description: '近 14 天内，风险分相比区间起点下降。' },
-  { label: '14天风险抬头', description: '近 14 天内，风险分相比区间起点上升，需要优先回看风险事件。' },
-  { label: '14天风险平稳', description: '近 14 天内，风险分没有明显净变化。' },
+  { label: '月度风险回落', description: '本窗口内，风险分相比区间起点下降。' },
+  { label: '月度风险抬头', description: '本窗口内，风险分相比区间起点上升，需要优先回看风险事件。' },
+  { label: '月度风险平稳', description: '本窗口内，风险分没有明显净变化。' },
 ]
 
 const trend14VolatilityItems = [
@@ -179,12 +179,12 @@ const vibeItems = [
 ]
 
 const weeklyTrendItems = [
-  { label: '近14天回暖', description: '近14天整体更偏正向，意向净变化较好，且风险没有同步明显抬头。' },
-  { label: '近14天转弱', description: '近14天意向明显回落，关系热度或推进感在下降。' },
-  { label: '近14天承压', description: '近14天更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
-  { label: '近14天波动', description: '近14天分数变化较明显，但暂时还不适合下单向结论。' },
-  { label: '近14天平稳', description: '近14天整体没有出现足够强的新变化，先继续记录。' },
-  { label: 'AI 复盘', description: '表示这块内容是按近14天窗口汇总生成，不等同于单次 AI 分析。' }
+  { label: '本月回暖', description: '本月整体更偏正向，意向净变化较好，且风险没有同步明显抬头。' },
+  { label: '本月转弱', description: '本月意向明显回落，关系热度或推进感在下降。' },
+  { label: '本月承压', description: '本月更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
+  { label: '本月波动', description: '本月分数变化较明显，但暂时还不适合下单向结论。' },
+  { label: '本月平稳', description: '本月整体没有出现足够强的新变化，先继续记录。' },
+  { label: 'AI 复盘', description: '表示这块内容是按本月窗口汇总生成，不等同于单次 AI 分析。' }
 ]
 
 const nextActionItems = [

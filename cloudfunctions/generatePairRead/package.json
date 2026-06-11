@@ -1,5 +1,9 @@
 {
   "name": "generatePairRead",
   "version": "1.0.0",
-  "description": "AI-enhanced pair reading based on zodiac/sign matching + timeline context"
+  "description": "AI-enhanced pair reading based on zodiac/sign matching + timeline context",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.4.0"
+  }
 }
