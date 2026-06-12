@@ -5,7 +5,7 @@
         <text class="hero-tag-v2">CRUSHES</text>
         <text class="hero-title-v2">Crushes <text class="hl-v2">列表</text></text>
         <text class="hero-copy-v2">先切换，再进入当前 Crush。共 <text class="strong">{{ cases.length }}</text> 个 Crushes。</text>
-        <button class="btn-v2-hero anim-pulse" @click="goNew">+ 开个新的</button>
+        <button class="btn btn-primary btn-md btn-full anim-pulse" @click="goNew">+ 开个新的</button>
       </view>
 
       <!-- Deleted notice -->
@@ -65,16 +65,16 @@
 
             <!-- Actions -->
             <view class="case-actions-v2">
-              <button class="btn-v2-action sm" @click="goEditCase(item.caseId)">编辑</button>
+              <button class="btn btn-secondary btn-sm btn-auto" @click="goEditCase(item.caseId)">编辑</button>
               <button
-                :class="['btn-v2-action sm danger', deletingCaseId === item.caseId ? 'disabled' : '']"
+                :class="['btn btn-danger btn-sm btn-auto', deletingCaseId === item.caseId ? 'disabled' : '']"
                 :disabled="!!deletingCaseId"
                 @click="confirmDeleteCase(item)"
               >
                 {{ deletingCaseId === item.caseId ? '删除中' : '删除' }}
               </button>
               <button
-                :class="['btn-v2-action', isActiveCase(item.caseId) ? 'disabled' : '']"
+                :class="['btn btn-primary btn-sm btn-auto', isActiveCase(item.caseId) ? 'disabled' : '']"
                 :disabled="isActiveCase(item.caseId) || !!deletingCaseId"
                 @click="switchActiveCase(item.caseId)"
               >
@@ -322,7 +322,7 @@ async function confirmDeleteCase(item: any) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
   min-height: 100vh;
   background:
@@ -339,29 +339,23 @@ async function confirmDeleteCase(item: any) {
   box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx;
   transform: rotate(-0.5deg);
 }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
-.v2-mode .hero-copy-v2 .strong { color: #111; font-weight: 900; }
-.v2-mode .btn-v2-hero {
-  margin-top: 20rpx; width: 100%; height: 72rpx; line-height: 72rpx;
-  text-align: center; background: #fff; border: 3rpx solid #111;
-  font-size: 26rpx; font-weight: 800; color: #111;
-  box-shadow: 4rpx 4rpx 0 #111;
-}
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-copy-v2 .strong { color: #111; font-weight: $fw-hero; }
 
 .v2-mode .notice-v2 { padding: 20rpx; border: 3rpx solid #111; margin-bottom: 18rpx; }
 .v2-mode .notice-v2.ok { background: #E0FFF0; border-left: 12rpx solid #4ECDC4; }
 .v2-mode .notice-v2.warn { background: #FFEEEC; border-left: 12rpx solid #FF6B6B; }
-.v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
-.v2-mode .notice-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; }
+.v2-mode .notice-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; margin-bottom: 6rpx; }
+.v2-mode .notice-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; }
 
-.v2-mode .loading-v2 { text-align: center; padding: 80rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading-v2 { text-align: center; padding: 80rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 
 .v2-mode .empty-v2 { padding: 40rpx; border: 3rpx solid #111; background: #fff; text-align: center; }
-.v2-mode .empty-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
-.v2-mode .empty-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.5; }
+.v2-mode .empty-title-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; margin-bottom: 8rpx; }
+.v2-mode .empty-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: #666; line-height: 1.5; }
 
 .v2-mode .case-list-v2 { display: flex; flex-direction: column; gap: 18rpx; }
 
@@ -380,36 +374,26 @@ async function confirmDeleteCase(item: any) {
   display: flex; align-items: center; justify-content: center;
 }
 .v2-mode .avatar-v2 image { width: 100%; height: 100%; }
-.v2-mode .avatar-placeholder-v2 { font-size: 28rpx; font-weight: 900; color: #111; }
-.v2-mode .case-name-v2 { display: block; font-size: 30rpx; font-weight: 900; color: #111; }
-.v2-mode .case-id-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
-.v2-mode .case-updated-v2 { font-size: 20rpx; font-weight: 600; color: #999; white-space: nowrap; }
+.v2-mode .avatar-placeholder-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
+.v2-mode .case-name-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
+.v2-mode .case-id-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
+.v2-mode .case-updated-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; white-space: nowrap; }
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
 .v2-mode .tag-v2 {
   display: inline-flex; align-items: center; min-height: 36rpx;
   padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D;
-  font-size: 20rpx; font-weight: 800; color: #111;
+  font-size: $fs-caption; font-weight: $fw-hero; color: #111;
 }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
 
 .v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: 3rpx solid #111; background: #f9f9f9; }
 .v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 18rpx 8rpx; border-right: 3rpx solid #111; }
 .v2-mode .kpi-cell-v2:last-child { border-right: none; }
-.v2-mode .kpi-num-v2 { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1; }
+.v2-mode .kpi-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: #111; line-height: 1; }
 .v2-mode .kpi-num-v2.risk { color: #FF5252; }
-.v2-mode .kpi-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 4rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .kpi-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 4rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
-.v2-mode .btn-v2-action {
-  width: 100%; height: 68rpx; line-height: 68rpx; text-align: center;
-  background: #4ECDC4; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111;
-  font-size: 26rpx; font-weight: 800; color: #111;
-}
-.v2-mode .btn-v2-action.disabled,
-.v2-mode .btn-v2-action[disabled] { opacity: 0.5; box-shadow: none; }
 
 .v2-mode .case-actions-v2 { display: flex; gap: 12rpx; margin-top: 16rpx; }
-.v2-mode .case-actions-v2 .btn-v2-action { flex: 1; width: auto; }
-.v2-mode .case-actions-v2 .btn-v2-action.sm { flex: 0 0 auto; min-width: 120rpx; background: #fff; box-shadow: none; }
-.v2-mode .case-actions-v2 .btn-v2-action.danger { background: #FFEEEC; color: #C62828; }
 </style>

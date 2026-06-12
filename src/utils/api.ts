@@ -812,6 +812,28 @@ export async function adminManualRecharge(targetUserId: string, amountTokens: nu
   return res.result
 }
 
+export async function adminGetOrders(params: { status?: string; page?: number; pageSize?: number } = {}) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: {
+      action: 'listOrders',
+      status: params.status || '',
+      page: params.page || 1,
+      pageSize: params.pageSize || 20,
+      ...getBusinessAuthPayload()
+    }
+  })
+  return res.result
+}
+
+export async function adminRefundOrder(orderId: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'refundOrder', orderId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 export async function adminGetTokenLedger(userId: string, limit = 50) {
   const res = await callFunction({
     name: 'adminManage',
@@ -859,10 +881,10 @@ export async function generatePairRead(caseId: string) {
 }
 
 /** 获取平台 Token 消费明细（已乘倍率） */
-export async function queryTaohua(zodiac: string, sign: string) {
+export async function queryTaohua(zodiac: string, sign: string, gender?: string) {
   const res = await callFunction({
     name: 'queryTaohua',
-    data: { zodiac, sign, ...getBusinessAuthPayload() }
+    data: { zodiac, sign, gender, ...getBusinessAuthPayload() }
   })
   return res.result
 }

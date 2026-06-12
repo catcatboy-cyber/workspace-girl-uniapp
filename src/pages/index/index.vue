@@ -11,7 +11,7 @@
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
         <!-- 命理 · 今日（桃花 + 星象速写） -->
-        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;">
+        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 fortune-card anim-card" style="animation-delay:0.1s;">
           <view class="taohua-teaser-head">
             <text class="taohua-teaser-head-title">🧭 今日桃花</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
@@ -22,6 +22,11 @@
                 <text class="taohua-teaser-dir-emoji">🌸</text>
                 <text class="taohua-teaser-dir-label">桃花</text>
                 <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.direction }}（{{ taohuaTeaserData.directionZhi }}位）</text>
+              </view>
+              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-teaser-dir">
+                <text class="taohua-teaser-dir-emoji">🔴</text>
+                <text class="taohua-teaser-dir-label">红鸾</text>
+                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.hongluanDir }}方</text>
               </view>
               <view class="taohua-teaser-dir">
                 <text class="taohua-teaser-dir-emoji">🕊️</text>
@@ -55,16 +60,18 @@
               </view>
               <view v-else>
                 <text class="side-text">一眼看穿你们之间的星象气场</text>
-                <button class="btn-v2 sm" :disabled="sideReadLoading" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
+                <button class="btn-fortune-secondary btn-fortune-md btn-fortune-full" hover-class="none" :disabled="sideReadLoading" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
               </view>
               <view v-if="sideReadError" class="action-box" style="background:#FFEEEC;">
                 <text class="action-label">生成失败</text>
                 <text class="action-text">{{ sideReadError }}</text>
-                <button class="btn-v2 sm" style="margin-top:8rpx;" @click="generateLatestSideRead">重试</button>
+                <button class="btn-fortune-ghost btn-fortune-md btn-fortune-full" hover-class="none" style="margin-top:8rpx;" @click="generateLatestSideRead">重试</button>
               </view>
             </view>
           </template>
-          <button class="btn-v2-me primary taohua-teaser-btn" @click="goTaohua">查看完整命理分析 →</button>
+          <view style="padding:12rpx 24rpx 12rpx;">
+            <button class="btn-fortune-primary btn-fortune-md btn-fortune-full" hover-class="none" @click="goTaohua">查看完整命理分析 →</button>
+          </view>
           <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
         </view>
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
@@ -124,6 +131,11 @@
                 <text class="taohua-teaser-dir-label">桃花</text>
                 <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.direction }}（{{ taohuaTeaserData.directionZhi }}位）</text>
               </view>
+              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-teaser-dir">
+                <text class="taohua-teaser-dir-emoji">🔴</text>
+                <text class="taohua-teaser-dir-label">红鸾</text>
+                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.hongluanDir }}方</text>
+              </view>
               <view class="taohua-teaser-dir">
                 <text class="taohua-teaser-dir-emoji">🕊️</text>
                 <text class="taohua-teaser-dir-label">天喜</text>
@@ -156,16 +168,18 @@
               </view>
               <view v-else>
                 <text class="side-text">一眼看穿你们之间的星象气场</text>
-                <button class="btn-v2 sm" :disabled="sideReadLoading" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
+                <button class="btn-fortune-secondary btn-fortune-md btn-fortune-full" hover-class="none" :disabled="sideReadLoading" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
               </view>
               <view v-if="sideReadError" class="action-box" style="background:#FFEEEC;">
                 <text class="action-label">生成失败</text>
                 <text class="action-text">{{ sideReadError }}</text>
-                <button class="btn-v2 sm" style="margin-top:8rpx;" @click="generateLatestSideRead">重试</button>
+                <button class="btn-fortune-ghost btn-fortune-md btn-fortune-full" hover-class="none" style="margin-top:8rpx;" @click="generateLatestSideRead">重试</button>
               </view>
             </view>
           </template>
-          <button class="btn-v2-me primary taohua-teaser-btn" @click="goTaohua">查看完整命理分析 →</button>
+          <view style="padding:12rpx 24rpx 12rpx;">
+            <button class="btn-fortune-primary btn-fortune-md btn-fortune-full" hover-class="none" @click="goTaohua">查看完整命理分析 →</button>
+          </view>
           <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
         </view>
 
@@ -190,9 +204,9 @@
             <picker mode="time" :value="quickTime" @change="onQuickTimeChange"><view class="picker-v2">{{ quickTime }}</view></picker>
           </view>
           <view class="attach-row">
-            <button class="btn-v2" :disabled="quickUploading" @click="chooseQuickImages">{{ quickUploading ? '上传中...' : '甩张图' }}</button>
-            <button v-if="!recording" :class="['btn-v2', recording ? 'recording' : '']" :disabled="voiceUploading" @click="toggleVoiceRecord">{{ voiceButtonText }}</button>
-            <view v-if="recording" class="btn-v2 voice-recording-btn" @click="toggleVoiceRecord">
+            <button class="btn btn-secondary btn-md" :disabled="quickUploading" @click="chooseQuickImages">{{ quickUploading ? '上传中...' : '甩张图' }}</button>
+            <button v-if="!recording" :class="['btn btn-secondary btn-md', recording ? 'recording' : '']" :disabled="voiceUploading" @click="toggleVoiceRecord">{{ voiceButtonText }}</button>
+            <view v-if="recording" class="voice-recording-btn" @click="toggleVoiceRecord">
               <view class="voice-btn-content">
                 <text class="voice-btn-icon">⏹</text>
                 <view class="voice-wave-inline">
@@ -208,7 +222,7 @@
               <text class="img-del-v2" @click.stop="removeQuickAttachment(index)">x</text>
             </view>
           </view>
-          <button class="btn-v2 primary anim-pulse" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记上！' }}</button>
+          <button class="btn btn-primary btn-md btn-full anim-pulse" style="margin-top:16rpx;" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记上！' }}</button>
         </view>
 
         <!-- Feedback -->
@@ -239,7 +253,7 @@
               </view>
             </view>
             <view v-if="quickFeedbackSignal" class="tag-row-v2" style="margin-top:12px;">
-              <text class="tag-v2 black" style="font-size:22rpx;">{{ quickFeedbackSignal.emoji }} {{ quickFeedbackSignal.label }}</text>
+              <text class="tag-v2 black" style="font-size: $fs-body;">{{ quickFeedbackSignal.emoji }} {{ quickFeedbackSignal.label }}</text>
             </view>
             <view v-if="quickReasonBullets.length > 0" class="reason-box">
               <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
@@ -293,6 +307,31 @@
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
   <view v-else :class="['page v2-mode', fontSizeMode === 'large' ? 'font-large' : '']" />
+  <!-- 桃花算法说明弹窗 -->
+  <view v-if="showTaohuaInfo" class="taohua-info-overlay" @click="showTaohuaInfo = false">
+    <view class="taohua-info-sheet" @click.stop>
+      <view class="taohua-info-head">
+        <text class="taohua-info-title">方位怎么来的</text>
+        <text class="taohua-info-close" @click="showTaohuaInfo = false">×</text>
+      </view>
+      <view class="taohua-info-body">
+        <view class="taohua-info-item">
+          <text class="taohua-info-q">🪷 桃花（每日变）</text>
+          <text class="taohua-info-a">日支 → 三合局 → 沐浴位。仅落正东/南/西/北四正位，每天不同。管邂逅、暧昧、日常约会气场。</text>
+        </view>
+        <view class="taohua-info-item">
+          <text class="taohua-info-q">🔴 红鸾（终身不变）</text>
+          <text class="taohua-info-a">年支（生肖）起红鸾。管姻缘开端、确定关系、见家长。生肖不变，红鸾位终身不变。</text>
+        </view>
+        <view class="taohua-info-item">
+          <text class="taohua-info-q">🕊️ 天喜（终身不变）</text>
+          <text class="taohua-info-a">红鸾的对冲位即天喜。管婚庆落地、订婚结婚、备孕添丁。</text>
+        </view>
+        <view class="taohua-info-divider"></view>
+        <text class="taohua-info-note">📖 出处：《三命通会》咸池桃花、红鸾天喜篇。算法基于寿星天文历（lunar-javascript / MIT）。</text>
+      </view>
+    </view>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -1583,7 +1622,8 @@ function goSelfProfile() {
 
 // Taohua teaser
 const showTaohuaTeaser = ref(false)
-const taohuaTeaserData = ref<{ score: number; direction: string; directionZhi: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
+const showTaohuaInfo = ref(false)
+const taohuaTeaserData = ref<{ score: number; direction: string; directionZhi: string; hongluanDir: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
 
 /** 精确日支计算：1900-01-01=甲戌（index 10），据此推算任意日期的日支 */
 function getApproxDayZhi(date: Date) {
@@ -1622,7 +1662,17 @@ async function loadTaohuaTeaser() {
   } else {
     guidance = `今近日往${taohua.direction}方向约会有利，${tianxiDir}可作后备。`
   }
-  taohuaTeaserData.value = { score, direction: taohua.direction, directionZhi: taohua.taohua_zhi, tianxiDir, jianchu, summary, guidance }
+  // 红鸾：年支起红鸾（本命位，终身不变）
+  const ZODIAC = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
+  const BRANCH = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
+  const HONGLUAN_MAP: Record<string,string> = {'子':'卯','丑':'寅','寅':'丑','卯':'子','辰':'亥','巳':'戌','午':'酉','未':'申','申':'未','酉':'午','戌':'巳','亥':'辰'}
+  const userZ = selfProfile.value?.zodiac || ''
+  const hongluanDir = (() => {
+    const idx = ZODIAC.indexOf(userZ); if (idx < 0) return ''
+    const yz = BRANCH[idx]; const hl = HONGLUAN_MAP[yz]
+    return DIR[hl] || ''
+  })()
+  taohuaTeaserData.value = { score, direction: taohua.direction, directionZhi: taohua.taohua_zhi, hongluanDir, tianxiDir, jianchu, summary, guidance }
 }
 
 function goTaohua() {
@@ -1630,56 +1680,56 @@ function goTaohua() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ===== CAMPUS POP V2 Styles ===== */
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; }
-.v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 
 .v2-mode .hero-block {
   background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111;
   padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg);
 }
-.v2-mode .hero-tag { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-tag { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hero-title .hl { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .hero-identity { display: flex; align-items: center; gap: 16rpx; margin-bottom: 14rpx; }
 .v2-mode .profile-avatar-v2 { border-radius: 50%; overflow: hidden; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .v2-mode .profile-avatar-v2.sm { width: 68rpx; height: 68rpx; }
 .v2-mode .profile-avatar-v2 image { width: 100%; height: 100%; }
-.v2-mode .avatar-placeholder-v2 { font-size: 28rpx; font-weight: 900; color: #111; }
-.v2-mode .hero-identity-name { font-size: 32rpx; font-weight: 900; color: #111; }
-.v2-mode .role-hint-v2 { display: block; margin-top: 8rpx; font-size: 20rpx; font-weight: 600; color: #999; }
+.v2-mode .avatar-placeholder-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
+.v2-mode .hero-identity-name { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
+.v2-mode .role-hint-v2 { display: block; margin-top: 8rpx; font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 
-.v2-mode .hero-copy { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
-.v2-mode .hero-copy .strong { color: #111; font-weight: 900; }
+.v2-mode .hero-copy { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-copy .strong { color: #111; font-weight: $fw-hero; }
 
 .v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: 3rpx solid #111; background: #f9f9f9; }
 .v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 20rpx 8rpx; border-right: 3rpx solid #111; }
 .v2-mode .kpi-cell-v2:last-child { border-right: none; }
-.v2-mode .kpi-num-v2 { display: block; font-size: 40rpx; font-weight: 900; color: #111; line-height: 1; }
-.v2-mode .kpi-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 6rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .kpi-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: #111; line-height: 1; }
+.v2-mode .kpi-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 6rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-row-v2.compact { margin-top: 0; margin-bottom: 12rpx; }
-.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
 
 .v2-mode .record-block { background: #f9f9f9; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
-.v2-mode .block-title { font-size: 32rpx; font-weight: 900; color: #111; text-transform: uppercase; }
-.v2-mode .block-badge { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 900; color: #111; letter-spacing: 2rpx; }
+.v2-mode .block-title { font-size: $fs-heading; font-weight: $fw-hero; color: #111; text-transform: uppercase; }
+.v2-mode .block-badge { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; letter-spacing: 2rpx; }
 .v2-mode .block-badge.black { background: #111; color: #fff; }
 
-.v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; font-family: inherit; }
+.v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; font-family: inherit; }
 
 .v2-mode .role-row { display: flex; align-items: center; gap: 12rpx; margin-top: 16rpx; }
-.v2-mode .role-label { font-size: 22rpx; font-weight: 700; color: #666; }
+.v2-mode .role-label { font-size: $fs-body; font-weight: $fw-label; color: #666; }
 .v2-mode .role-options { display: flex; gap: 8rpx; }
-.v2-mode .role-chip { padding: 8rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: 22rpx; font-weight: 700; color: #666; }
+.v2-mode .role-chip { padding: 8rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-body; font-weight: $fw-label; color: #666; }
 .v2-mode .role-chip.active { background: #111; color: #FFD93D; }
 
 .v2-mode .datetime-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .picker-v2 { height: 56rpx; line-height: 56rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
+.v2-mode .picker-v2 { height: 56rpx; line-height: 56rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
 
 /* Image thumbnail grid */
 .v2-mode .attach-row { display: flex; gap: 10rpx; margin-top: 16rpx; }
@@ -1687,18 +1737,13 @@ function goTaohua() {
 .v2-mode .img-box-v2 { width: 160rpx; height: 160rpx; position: relative; }
 .v2-mode .img-preview-v2 { width: 100%; height: 100%; border-radius: 4rpx; }
 .v2-mode .img-preview-v2 { width: 100%; height: 100%; }
-.v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: #FF5252; color: #fff; font-size: 24rpx; font-weight: 900; text-align: center; line-height: 44rpx; border: 2rpx solid #111; }
+.v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: #FF5252; color: #fff; font-size: $fs-body-lg; font-weight: $fw-hero; text-align: center; line-height: 44rpx; border: 2rpx solid #111; }
 
-.v2-mode .btn-v2 { flex: 1; height: 72rpx; line-height: 72rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-sizing: border-box; padding: 0 24rpx; }
-.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; margin-top: 16rpx; width: 100%; }
-.v2-mode .btn-v2.outline { margin-top: 20rpx; width: 100%; }
-.v2-mode .btn-v2.sm { width: 100%; margin-top: 14rpx; height: 60rpx; line-height: 60rpx; font-size: 24rpx; }
-.v2-mode .btn-v2[disabled] { opacity: 0.6; }
 
 .v2-mode .ai-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 14rpx; margin-top: 16rpx; padding: 16rpx; border: 2rpx solid #111; background: #fff; }
 .v2-mode .ai-row { display: flex; align-items: center; gap: 14rpx; }
 .v2-mode .ai-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; display: inline-block; animation: blink-dot 1s ease-in-out infinite; }
-.v2-mode .ai-text { font-size: 24rpx; font-weight: 700; color: #111; }
+.v2-mode .ai-text { font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
 @keyframes blink-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.3; transform: scale(0.75); }
@@ -1707,35 +1752,35 @@ function goTaohua() {
 .v2-mode .feedback-block { background: #fff; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .feedback-block.ok { border-left: 12rpx solid #4ECDC4; }
 .v2-mode .feedback-block.warn { border-left: 12rpx solid #FF6B6B; }
-.v2-mode .feedback-desc { display: block; font-size: 26rpx; font-weight: 700; color: #111; line-height: 1.5; margin-bottom: 16rpx; }
+.v2-mode .feedback-desc { display: block; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; line-height: 1.5; margin-bottom: 16rpx; }
 
 .v2-mode .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 14rpx; }
 .v2-mode .score-item { padding: 20rpx; border: 2rpx solid #111; background: #f9f9f9; }
-.v2-mode .score-label-v2 { display: block; font-size: 18rpx; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 2rpx; }
-.v2-mode .score-num-v2 { display: block; font-size: 56rpx; font-weight: 900; color: #111; line-height: 1; margin-top: 6rpx; }
+.v2-mode .score-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: #666; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .score-num-v2 { display: block; font-size: $fs-display; font-weight: $fw-hero; color: #111; line-height: 1; margin-top: 6rpx; }
 .v2-mode .score-num-v2.risk { color: #FF5252; }
-.v2-mode .score-bucket-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #999; margin-top: 4rpx; }
+.v2-mode .score-bucket-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #999; margin-top: 4rpx; }
 .v2-mode .bar-track-v2 { height: 12rpx; background: #111; margin-top: 12rpx; border: 2rpx solid #111; }
 .v2-mode .bar-fill-v2 { height: 12rpx; background: #111; }
 .v2-mode .bar-fill-v2.risk { background: #FF5252; }
 
-.v2-mode .score-delta-v2 { display: block; margin-top: 8rpx; font-size: 18rpx; }
-.v2-mode .score-delta-label { font-weight: 700; color: #999; margin-right: 4rpx; }
-.v2-mode .score-delta-val { font-weight: 800; color: #111; }
+.v2-mode .score-delta-v2 { display: block; margin-top: 8rpx; font-size: $fs-caption; }
+.v2-mode .score-delta-label { font-weight: $fw-label; color: #999; margin-right: 4rpx; }
+.v2-mode .score-delta-val { font-weight: $fw-hero; color: #111; }
 .v2-mode .score-delta-val.up { color: #4ECDC4; }
 .v2-mode .score-delta-val.down { color: #FF5252; }
 .v2-mode .score-delta-val.flat { color: #999; }
 
 .v2-mode .reason-box { margin-top: 16rpx; padding: 18rpx; border: 2rpx solid #111; background: #FFFBEB; }
-.v2-mode .reason-line { display: block; font-size: 24rpx; font-weight: 600; color: #111; line-height: 1.6; }
+.v2-mode .reason-line { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; line-height: $lh-loose; }
 
 .v2-mode .action-box { margin-top: 16rpx; padding: 18rpx; border: 2rpx solid #111; background: #f5f5ff; }
-.v2-mode .action-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 12rpx; }
-.v2-mode .action-text { font-size: 24rpx; color: #666; line-height: 1.5; }
+.v2-mode .action-label { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 12rpx; }
+.v2-mode .action-text { font-size: $fs-body-lg; color: #666; line-height: 1.5; }
 .v2-mode .action-text.muted { color: #999; }
 .v2-mode .action-item { padding: 14rpx; border: 2rpx solid #111; background: #fff; margin-top: 10rpx; }
-.v2-mode .action-item-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; }
-.v2-mode .action-item-text { display: block; font-size: 22rpx; color: #555; margin-top: 6rpx; line-height: 1.5; }
+.v2-mode .action-item-label { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; }
+.v2-mode .action-item-text { display: block; font-size: $fs-body; color: #555; margin-top: 6rpx; line-height: 1.5; }
 
 .v2-mode .ai-badge { display: flex; align-items: center; gap: 8rpx; margin-top: 14rpx; padding: 10rpx 14rpx; border: 2rpx solid #111; }
 .v2-mode .ai-badge.ai { background: #e8f5e9; }
@@ -1743,33 +1788,33 @@ function goTaohua() {
 .v2-mode .ai-badge-dot { width: 12rpx; height: 12rpx; border-radius: 50%; border: 2rpx solid #111; flex-shrink: 0; }
 .v2-mode .ai-badge.ai .ai-badge-dot { background: #4caf50; }
 .v2-mode .ai-badge.fallback .ai-badge-dot { background: #ff9800; }
-.v2-mode .ai-badge-text { font-size: 20rpx; font-weight: 700; color: #111; }
+.v2-mode .ai-badge-text { font-size: $fs-caption; font-weight: $fw-label; color: #111; }
 
 .v2-mode .side-box { margin-top: 20rpx; padding: 18rpx; border: 2rpx dashed #111; background: #FFFBEB; }
-.v2-mode .side-title { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
-.v2-mode .side-text { display: block; font-size: 22rpx; color: #555; line-height: 1.5; }
+.v2-mode .side-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .side-text { display: block; font-size: $fs-body; color: #555; line-height: 1.5; }
 .v2-mode .side-grid { display: flex; flex-direction: column; gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .side-item { padding: 14rpx; border: 2rpx solid #111; background: #fff; }
-.v2-mode .side-item-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 4rpx; }
-.v2-mode .side-item-text { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
+.v2-mode .side-item-label { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; margin-bottom: 4rpx; }
+.v2-mode .side-item-text { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; }
 
 .v2-mode .info-mask { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }
 .v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: #fff; border: 3rpx solid #111; box-shadow: 10rpx 10rpx 0 #111; }
 .v2-mode .info-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 24rpx; border-bottom: 3rpx solid #111; }
-.v2-mode .info-title-v2 { font-size: 32rpx; font-weight: 900; color: #111; }
-.v2-mode .info-close { width: 48rpx; height: 48rpx; line-height: 46rpx; text-align: center; border: 2rpx solid #111; font-size: 28rpx; font-weight: 900; color: #111; }
+.v2-mode .info-title-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
+.v2-mode .info-close { width: 48rpx; height: 48rpx; line-height: 46rpx; text-align: center; border: 2rpx solid #111; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
 .v2-mode .info-body-v2 { max-height: 60vh; padding: 20rpx 24rpx 24rpx; box-sizing: border-box; }
 .v2-mode .info-section-v2 { padding: 20rpx; border: 2rpx solid #111; margin-top: 16rpx; }
 .v2-mode .info-section-v2.ylw { background: #FFFBEB; }
-.v2-mode .info-sec-title { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
-.v2-mode .info-sec-copy { display: block; font-size: 22rpx; color: #555; line-height: 1.6; margin-top: 6rpx; }
-.v2-mode .info-sec-copy.strong { font-weight: 700; color: #111; }
+.v2-mode .info-sec-title { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; }
+.v2-mode .info-sec-copy { display: block; font-size: $fs-body; color: #555; line-height: $lh-loose; margin-top: 6rpx; }
+.v2-mode .info-sec-copy.strong { font-weight: $fw-label; color: #111; }
 .v2-mode .info-tag-row { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid #111; }
-.v2-mode .info-chip { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .info-chip { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
 .v2-mode .info-chip.muted { background: #111; }
 .v2-mode .info-chip-copy { flex: 1; }
-.v2-mode .info-chip-title { display: block; font-size: 22rpx; font-weight: 800; color: #111; }
-.v2-mode .info-chip-desc { display: block; font-size: 20rpx; color: #666; line-height: 1.5; margin-top: 4rpx; }
+.v2-mode .info-chip-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; }
+.v2-mode .info-chip-desc { display: block; font-size: $fs-caption; color: #666; line-height: 1.5; margin-top: 4rpx; }
 
 .page {
   min-height: 100vh;
@@ -1822,7 +1867,7 @@ function goTaohua() {
   border: 9rpx solid transparent;
   border-right-color: #fff; border-left: 0;
 }
-.v2-mode .pet-bubble-text { font-size: 24rpx; font-weight: 700; color: #111; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.v2-mode .pet-bubble-text { font-size: $fs-body-lg; font-weight: $fw-label; color: #111; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
 .v2-mode .voice-recording-btn {
   background: #FF6B6B !important; color: #fff !important;
@@ -1830,7 +1875,7 @@ function goTaohua() {
   height: auto; min-height: 72rpx; padding: 12rpx 16rpx; flex: 1;
 }
 .v2-mode .voice-btn-content { display: flex; align-items: center; gap: 10rpx; }
-.v2-mode .voice-btn-icon { font-size: 28rpx; font-weight: 900; }
+.v2-mode .voice-btn-icon { font-size: $fs-heading; font-weight: $fw-hero; }
 .v2-mode .voice-wave-inline { display: flex; align-items: center; gap: 4rpx; height: 32rpx; }
 .v2-mode .wave-bar-item-sm {
   width: 6rpx; height: 14rpx; background: #fff;
@@ -1841,7 +1886,7 @@ function goTaohua() {
 .v2-mode .wave-bar-item-sm:nth-child(3) { animation-delay: 0.2s; }
 .v2-mode .wave-bar-item-sm:nth-child(4) { animation-delay: 0.3s; }
 .v2-mode .wave-bar-item-sm:nth-child(5) { animation-delay: 0.4s; }
-.v2-mode .voice-countdown { font-size: 24rpx; font-weight: 900; font-variant-numeric: tabular-nums; }
+.v2-mode .voice-countdown { font-size: $fs-body-lg; font-weight: $fw-hero; font-variant-numeric: tabular-nums; }
 
 @keyframes wave-bounce-sm {
   0% { height: 8rpx; }
@@ -1849,39 +1894,51 @@ function goTaohua() {
 }
 
 .v2-mode .remind-card-v2 { background: #fff; border: 3rpx solid #111; padding: 20rpx 24rpx; margin-bottom: 16rpx; }
-.v2-mode .remind-card-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 6rpx; }
-.v2-mode .remind-card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; }
+.v2-mode .remind-card-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 6rpx; }
+.v2-mode .remind-card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.5; }
 
 .v2-mode .onboard-options-v2 { display: flex; gap: 14rpx; margin: 12rpx 0; }
 .v2-mode .onboard-card-v2 { flex: 1; padding: 20rpx 16rpx; background: #fff; border: 2rpx solid #111; cursor: pointer; }
 .v2-mode .onboard-card-v2.primary { border-color: #4ECDC4; background: #f6fffd; }
-.v2-mode .onboard-card-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
-.v2-mode .onboard-card-desc-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.4; }
-.v2-mode .back-link-v2 { display: inline-block; text-align: left; padding: 12rpx 0; margin-bottom: 16rpx; font-size: 28rpx; font-weight: 600; color: #111; }
+.v2-mode .onboard-card-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; margin-bottom: 6rpx; }
+.v2-mode .onboard-card-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #666; line-height: 1.4; }
+.v2-mode .back-link-v2 { display: inline-block; text-align: left; padding: 12rpx 0; margin-bottom: 16rpx; font-size: $fs-heading; font-weight: $fw-body; color: #111; }
 
 
 /* taohua teaser card */
-.v2-mode .taohua-teaser-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; cursor: pointer; margin-bottom: 24rpx; overflow: hidden; }
-.v2-mode .taohua-teaser-head { padding: 20rpx 24rpx; display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2rpx solid #f0f0f0; }
-.v2-mode .taohua-teaser-head-title { font-size: 24rpx; font-weight: 900; color: #111; }
-.v2-mode .taohua-teaser-head-score { font-size: 48rpx; font-weight: 900; color: #111; line-height: 1; }
-.v2-mode .taohua-teaser-head-unit { font-size: 22rpx; font-weight: 700; color: #999; margin-left: 4rpx; }
+.v2-mode .taohua-teaser-v2 { background: #FFFBEB; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; margin-bottom: 24rpx; overflow: hidden; }
+.v2-mode .taohua-teaser-head { padding: 20rpx 24rpx; display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2rpx solid #C4A86C; }
+.v2-mode .taohua-teaser-head-title { font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
+.v2-mode .taohua-teaser-head-score { font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1; }
+.v2-mode .taohua-teaser-head-unit { font-size: $fs-body; font-weight: $fw-label; color: #999; margin-left: 4rpx; }
 .v2-mode .taohua-teaser-body { padding: 18rpx 24rpx; }
 .v2-mode .taohua-teaser-dirs { display: flex; gap: 10rpx; margin-bottom: 10rpx; }
 .v2-mode .taohua-teaser-dir { flex: 1; padding: 12rpx 10rpx; border: 2rpx solid #111; background: #FFFBEB; display: flex; align-items: center; gap: 6rpx; }
-.v2-mode .taohua-teaser-dir-emoji { font-size: 24rpx; flex-shrink: 0; }
-.v2-mode .taohua-teaser-dir-label { font-size: 18rpx; font-weight: 700; color: #666; }
-.v2-mode .taohua-teaser-dir-val { font-size: 20rpx; font-weight: 900; color: #111; margin-left: auto; }
-.v2-mode .taohua-teaser-guide { display: block; font-size: 22rpx; font-weight: 800; color: #111; line-height: 1.45; margin-bottom: 4rpx; }
-.v2-mode .taohua-teaser-meta { display: block; font-size: 20rpx; font-weight: 600; color: #999; }
-.v2-mode .taohua-teaser-btn { width: 100%; margin: 12rpx 0 0; }
-.v2-mode .taohua-teaser-cite { padding: 10rpx 24rpx; border-top: 1rpx solid #eee; font-size: 18rpx; font-weight: 600; color: #bbb; text-align: center; }
+.v2-mode .taohua-teaser-dir-emoji { font-size: $fs-body-lg; flex-shrink: 0; }
+.v2-mode .taohua-teaser-dir-label { font-size: $fs-caption; font-weight: $fw-label; color: #666; }
+.v2-mode .taohua-teaser-dir-val { font-size: $fs-caption; font-weight: $fw-hero; color: #111; margin-left: auto; }
+.v2-mode .taohua-teaser-guide { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; line-height: 1.45; margin-bottom: 4rpx; }
+.v2-mode .taohua-teaser-meta { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; }
+.v2-mode .taohua-teaser-cite { padding: 10rpx 24rpx; border-top: 1rpx solid #C4A86C; font-size: $fs-caption; font-weight: $fw-body; color: #bbb; text-align: center; }
+.taohua-info-dot { display: inline-flex; align-items: center; justify-content: center; width: 34rpx; height: 34rpx; border: 2rpx solid #111; font-size: 18rpx; font-weight: $fw-hero; color: #111; margin-left: 6rpx; cursor: pointer; vertical-align: middle; }
+.taohua-info-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); }
+.taohua-info-sheet { width: 100%; max-width: 500px; max-height: 65vh; background: #FFFDF5; border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; display: flex; flex-direction: column; overflow: hidden; }
+.taohua-info-head { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 28rpx; border-bottom: 2rpx solid #111; flex-shrink: 0; }
+.taohua-info-title { font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
+.taohua-info-close { font-size: 36rpx; font-weight: $fw-hero; color: #111; padding: 0 8rpx; line-height: 1; }
+.taohua-info-body { padding: 24rpx 28rpx; overflow-y: auto; flex: 1; }
+.taohua-info-item { padding: 14rpx 0; border-bottom: 1rpx dashed #ccc; }
+.taohua-info-item:last-child { border-bottom: none; }
+.taohua-info-q { display: block; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; margin-bottom: 4rpx; }
+.taohua-info-a { display: block; font-size: $fs-body; font-weight: $fw-body; color: #666; line-height: 1.5; }
+.taohua-info-divider { height: 12rpx; }
+.taohua-info-note { display: block; font-size: $fs-caption; color: #999; line-height: 1.5; }
 
 /* Merged card: separator between 桃花 and 星象速写 */
-.v2-mode .taohua-teaser-sep { margin: 0 24rpx; height: 2rpx; border-top: 2rpx dashed #111; }
+.v2-mode .taohua-teaser-sep { margin: 0 24rpx; height: 2rpx; border-top: 2rpx dashed #C4A86C; }
 
 /* Merged card: side read section */
 .v2-mode .taohua-teaser-side-read { padding: 18rpx 24rpx; }
-.v2-mode .taohua-teaser-side-title { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
-.v2-mode .taohua-teaser-side-summary { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
+.v2-mode .taohua-teaser-side-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .taohua-teaser-side-summary { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; }
 </style>

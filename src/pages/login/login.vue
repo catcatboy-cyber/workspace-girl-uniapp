@@ -5,17 +5,17 @@
 <view class="container">
               <view class="header-v2"><text class="title-v2 en-title">Crush Master</text><text class="subtitle-v2">read the signals, not your mind.</text></view>
         <view v-if="isWechatMiniProgram" class="card-v2">
-          <button class="btn-v2-l primary" :disabled="wechatLoading" @click="handleWechatLogin">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
+          <button class="btn btn-primary btn-lg btn-full" :disabled="wechatLoading" @click="handleWechatLogin">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
           <text class="privacy-v2" @click="goAbout">{{ privacyCopy }}</text>
           <text v-if="wechatErrorMessage" class="error-v2">{{ wechatErrorMessage }}</text>
-          <button class="btn-v2-l" @click="showEmailLogin = !showEmailLogin">{{ showEmailLogin ? hideEmailCopy : useEmailCopy }}</button>
+          <button class="btn btn-secondary btn-lg btn-full" @click="showEmailLogin = !showEmailLogin">{{ showEmailLogin ? hideEmailCopy : useEmailCopy }}</button>
         </view>
         <view v-if="showEmailLogin" class="card-v2">
           <input v-model="email" type="text" placeholder="请输入邮箱" class="input-v2" @input="clearError" />
           <input v-model="password" type="password" placeholder="请输入密码" class="input-v2" @input="clearError" style="margin-top:20rpx;" />
           <view class="remember-v2" @click="toggleRemember"><view :class="['check-v2', rememberLogin ? 'checked' : '']"><text v-if="rememberLogin">✓</text></view><text class="remember-text-v2">记住邮箱</text><text class="remember-note-v2">仅保存在当前设备，不保存密码。</text></view>
           <view v-if="errorMessage" class="error-v2">{{ errorMessage }}</view>
-          <button class="btn-v2-l primary" :disabled="loading" @click="handleLogin">{{ loading ? '登录中...' : '登录' }}</button>
+          <button class="btn btn-primary btn-lg btn-full" :disabled="loading" @click="handleLogin">{{ loading ? '登录中...' : '登录' }}</button>
           <text class="footer-v2" @click="goRegister">还没有账号？立即注册 →</text>
         </view>
     </view>
@@ -239,7 +239,7 @@ const goAbout = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .login-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f4ede2 0%, #fbf6ee 100%);
@@ -249,29 +249,25 @@ const goAbout = () => {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 
 .v2-mode .header-v2 { text-align: left; padding: 40rpx 0 32rpx; }
-.v2-mode .title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
-.v2-mode .title-v2.en-title { font-size: 48rpx; font-weight: 900; font-style: italic; letter-spacing: 2rpx; background: #FFD93D; display: inline-block; padding: 6rpx 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
+.v2-mode .title-v2.en-title { font-size: $fs-hero-title; font-weight: $fw-hero; font-style: italic; letter-spacing: 2rpx; background: #FFD93D; display: inline-block; padding: 6rpx 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .subtitle-v2 { display: block; font-size: 28rpx; font-weight: 600; color: #666; margin-top: 10rpx; }
+.v2-mode .subtitle-v2 { display: block; font-size: $fs-heading; font-weight: $fw-body; color: #666; margin-top: 10rpx; }
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 
-.v2-mode .btn-v2-l { width: 100%; height: 80rpx; line-height: 80rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 28rpx; font-weight: 800; color: #111; margin-top: 14rpx; }
-.v2-mode .btn-v2-l:first-child { margin-top: 0; }
-.v2-mode .btn-v2-l.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .btn-v2-l[disabled] { opacity: 0.6; }
 
-.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: 22rpx; font-weight: 600; color: #666; text-align: center; line-height: 1.5; text-decoration: underline; }
-.v2-mode .error-v2 { display: block; margin: 0 0 18rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 22rpx; font-weight: 600; color: #FF5252; }
+.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: $fs-body; font-weight: $fw-body; color: #666; text-align: center; line-height: 1.5; text-decoration: underline; }
+.v2-mode .error-v2 { display: block; margin: 0 0 18rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: $fs-body; font-weight: $fw-body; color: #FF5252; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; background: #fff; box-sizing: border-box; }
 .v2-mode .input-v2::placeholder { color: #999; }
 
 .v2-mode .remember-v2 { display: flex; align-items: center; gap: 10rpx; margin: 20rpx 0; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
-.v2-mode .check-v2 { width: 34rpx; height: 34rpx; line-height: 32rpx; border: 2rpx solid #111; text-align: center; font-size: 22rpx; font-weight: 900; color: #fff; }
+.v2-mode .check-v2 { width: 34rpx; height: 34rpx; line-height: 32rpx; border: 2rpx solid #111; text-align: center; font-size: $fs-body; font-weight: $fw-hero; color: #fff; }
 .v2-mode .check-v2.checked { background: #111; }
-.v2-mode .remember-text-v2 { font-size: 24rpx; font-weight: 800; color: #111; }
-.v2-mode .remember-note-v2 { font-size: 18rpx; font-weight: 600; color: #999; margin-left: auto; }
+.v2-mode .remember-text-v2 { font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
+.v2-mode .remember-note-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-left: auto; }
 
-.v2-mode .footer-v2 { display: block; margin-top: 24rpx; text-align: center; font-size: 26rpx; font-weight: 700; color: #111; text-decoration: underline; }
+.v2-mode .footer-v2 { display: block; margin-top: 24rpx; text-align: center; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; text-decoration: underline; }
 </style>

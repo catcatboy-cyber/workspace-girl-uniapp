@@ -17,19 +17,19 @@
       <view v-else class="card-v2" v-for="plan in plans" :key="plan.id">
         <view class="card-head-v2">
           <text class="section-title-v2">{{ plan.name }}</text>
-          <button class="btn-v2-t" :disabled="orderingId === plan.id" @click="createOrder(plan.id)">
+          <button class="btn btn-primary btn-md btn-full" :disabled="orderingId === plan.id" @click="createOrder(plan.id)">
             {{ orderingId === plan.id ? '处理中' : '¥' + plan.amountYuan }}
           </button>
         </view>
-        <text class="card-text-v2" style="font-size:32rpx;font-weight:900;">+{{ totalTokens(plan).toLocaleString() }} Token</text>
+        <text class="card-text-v2" style="font-size: $fs-heading;font-weight: $fw-hero;">+{{ totalTokens(plan).toLocaleString() }} Token</text>
         <text v-if="plan.bonusTokens > 0" class="card-text-v2" style="color:#e67e22;">含赠送 {{ plan.bonusTokens.toLocaleString() }} Token</text>
-        <text v-if="plan.tagline" class="card-text-v2" style="color:#999;font-size:22rpx;">{{ plan.tagline }}</text>
+        <text v-if="plan.tagline" class="card-text-v2" style="color:#999;font-size: $fs-body;">{{ plan.tagline }}</text>
       </view>
 
       <view v-if="orderMessage" class="card-v2">
         <text :class="['card-text-v2', orderOk ? '' : '']" :style="orderOk ? '' : 'color: #e74c3c;'">{{ orderMessage }}</text>
         <view v-if="orderOk && createdOrderId" style="margin-top: 12rpx;">
-          <button class="btn-v2-t sm" @click="orderMessage = ''; createdOrderId = ''; orderOk = false">关闭</button>
+          <button class="btn btn-secondary btn-sm btn-auto" @click="orderMessage = ''; createdOrderId = ''; orderOk = false">关闭</button>
         </view>
       </view>  </view>
 </template>
@@ -115,21 +115,18 @@ async function createOrder(planId: string) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page { min-height: 100vh; padding: 18rpx; box-sizing: border-box; }
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; }
 
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; text-transform: uppercase; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; text-transform: uppercase; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
-.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; }
-.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; margin-bottom: 6rpx; }
-.v2-mode .btn-v2-t { height: 52rpx; line-height: 52rpx; padding: 0 24rpx; background: #fff; border: 3rpx solid #111; font-size: 22rpx; font-weight: 800; color: #111; }
-.v2-mode .btn-v2-t.sm { height: 44rpx; line-height: 44rpx; padding: 0 16rpx; font-size: 20rpx; }
-.v2-mode .btn-v2-t[disabled] { opacity: 0.6; }
+.v2-mode .section-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; margin-bottom: 6rpx; }
 </style>

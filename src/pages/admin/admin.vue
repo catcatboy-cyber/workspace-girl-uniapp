@@ -45,6 +45,7 @@
         <button :class="['tab-btn', activeTab === 'feedback' ? 'active' : '']" @click="switchToFeedback">反馈管理</button>
         <button :class="['tab-btn', activeTab === 'tokenUsers' ? 'active' : '']" @click="switchToTokenUsers">Token 消耗</button>
         <button :class="['tab-btn', activeTab === 'customPet' ? 'active' : '']" @click="switchToCustomPet">宠物需求</button>
+        <button :class="['tab-btn', activeTab === 'orders' ? 'active' : '']" @click="switchToOrders">订单管理</button>
       </view>
 
       <view v-if="activeTab === 'users'" class="content-grid">
@@ -913,6 +914,68 @@
             </view>
           </view>
         </view>
+
+        <!-- 订单管理 -->
+        <view v-if="activeTab === 'orders'" class="panel">
+          <view class="panel-head">
+            <view>
+              <text class="panel-title">订单管理</text>
+              <text class="panel-meta">{{ orderTotal }} 条订单</text>
+            </view>
+            <button class="ghost-btn wide-btn" :disabled="ordersLoading" @click="loadOrders">{{ ordersLoading ? '加载中' : '刷新' }}</button>
+          </view>
+          <!-- 状态筛选 -->
+          <view style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <button v-for="s in orderStatusOptions" :key="s.value"
+              :class="['small-btn', orderStatusFilter === s.value ? 'active' : '']"
+              @click="orderStatusFilter = s.value; loadOrders()">{{ s.label }}</button>
+          </view>
+          <!-- 订单列表 -->
+          <view v-if="orders.length === 0 && !ordersLoading" class="empty">暂无订单。</view>
+          <view v-else class="table" style="max-height:600px;overflow-y:auto;">
+            <view class="table-row table-header">
+              <text style="flex:1.5;">用户ID</text>
+              <text style="flex:1;">档位</text>
+              <text style="flex:0.6;">金额</text>
+              <text style="flex:0.5;">类型</text>
+              <text style="flex:0.6;">状态</text>
+              <text style="flex:1.2;">时间</text>
+            </view>
+            <view v-for="row in orders" :key="row._id"
+              :class="['table-row', expandedOrderId === row._id ? 'selected' : '']"
+              style="cursor:pointer;" @click="expandedOrderId = expandedOrderId === row._id ? '' : row._id">
+              <text style="flex:1.5;font-size:20rpx;">{{ row.userId }}</text>
+              <text style="flex:1;font-weight:800;">{{ row.planName }}</text>
+              <text style="flex:0.6;font-weight:800;">¥{{ row.amountYuan }}</text>
+              <text style="flex:0.5;">{{ row.type === 'subscription_upgrade' ? '套餐' : '充值' }}</text>
+              <text style="flex:0.6;font-weight:800;" :style="{ color: orderStatusColor(row.status) }">{{ orderStatusLabel(row.status) }}</text>
+              <text style="flex:1.2;font-size:20rpx;">{{ formatDate(row.createdAt) }}</text>
+            </view>
+            <!-- 展开详情 -->
+            <view v-if="expandedOrderId" class="order-detail">
+              <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <text style="font-weight:800;">订单详情</text>
+                <text style="font-size:20rpx;color:#999;">{{ expandedOrderId }}</text>
+              </view>
+              <view class="order-detail-grid">
+                <text>订单ID：{{ expandedOrderId }}</text>
+                <text v-if="expandedOrder?.paidAt">支付时间：{{ formatDate(expandedOrder.paidAt) }}</text>
+                <text v-if="expandedOrder?.remark">备注：{{ expandedOrder.remark }}</text>
+              </view>
+              <view v-if="expandedOrder?.status === 'paid'" style="margin-top:12px;">
+                <button class="small-btn danger" :disabled="refundingOrderId === expandedOrderId" @click="doRefundOrder(expandedOrderId)">
+                  {{ refundingOrderId === expandedOrderId ? '退款中...' : '退款' }}
+                </button>
+              </view>
+            </view>
+          </view>
+          <!-- 分页 -->
+          <view v-if="orderTotal > orderPageSize" style="display:flex;justify-content:center;gap:8px;margin-top:16px;">
+            <button class="small-btn" :disabled="orderPage <= 1" @click="orderPage--; loadOrders()">上一页</button>
+            <text style="line-height:34px;font-size:22rpx;color:#666;">{{ orderPage }} / {{ Math.ceil(orderTotal / orderPageSize) }}</text>
+            <button class="small-btn" :disabled="orderPage >= Math.ceil(orderTotal / orderPageSize)" @click="orderPage++; loadOrders()">下一页</button>
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -937,6 +1000,8 @@ import {
   adminResolveFeedback,
   adminListCustomPetRequests,
   adminUpdateCustomPetRequest,
+  adminGetOrders,
+  adminRefundOrder,
   adminGetUsersTokenConsumption,
   adminGetUserTokenDetails,
   getCurrentUserId,
@@ -1169,7 +1234,7 @@ const runtimeFields = [
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
 
-const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'tokenUsers' | 'feedback' | 'customPet'>('users')
+const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'tokenUsers' | 'feedback' | 'customPet' | 'orders'>('users')
 const users = ref<AdminUser[]>([])
 const selectedUserId = ref('')
 const currentUserId = ref('')
@@ -2411,6 +2476,84 @@ async function deliverPetRequest(requestId: string) {
   }
 }
 
+/* ---- Orders ---- */
+
+const orders = ref<any[]>([])
+const ordersLoading = ref(false)
+const orderTotal = ref(0)
+const orderPage = ref(1)
+const orderPageSize = 20
+const orderStatusFilter = ref('all')
+const expandedOrderId = ref('')
+const refundingOrderId = ref('')
+
+const orderStatusOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'pending', label: '待支付' },
+  { value: 'paid', label: '已支付' },
+  { value: 'refunded', label: '已退款' }
+]
+
+const expandedOrder = computed(() => {
+  if (!expandedOrderId.value) return null
+  return orders.value.find((o: any) => o._id === expandedOrderId.value) || null
+})
+
+function orderStatusLabel(status: string) {
+  const map: Record<string, string> = { pending: '待支付', paid: '已支付', refunded: '已退款' }
+  return map[status] || status
+}
+
+function orderStatusColor(status: string) {
+  const map: Record<string, string> = { pending: '#F59E0B', paid: '#10B981', refunded: '#999' }
+  return map[status] || '#666'
+}
+
+function switchToOrders() {
+  activeTab.value = 'orders'
+  if (orders.value.length === 0) loadOrders()
+}
+
+async function loadOrders() {
+  if (ordersLoading.value) return
+  ordersLoading.value = true
+  try {
+    const result = await adminGetOrders({
+      status: orderStatusFilter.value,
+      page: orderPage.value,
+      pageSize: orderPageSize
+    })
+    if (result?.success) {
+      orders.value = result.orders || []
+      orderTotal.value = result.total || 0
+    }
+  } catch (e: any) {
+    errorMessage.value = e?.message || '加载订单失败'
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
+async function doRefundOrder(orderId: string) {
+  if (!orderId || refundingOrderId.value) return
+  refundingOrderId.value = orderId
+  try {
+    const result = await adminRefundOrder(orderId)
+    if (result?.success) {
+      const order = orders.value.find((o: any) => o._id === orderId)
+      if (order) order.status = 'refunded'
+      expandedOrderId.value = ''
+      errorMessage.value = ''
+    } else {
+      errorMessage.value = result?.message || '退款失败'
+    }
+  } catch (e: any) {
+    errorMessage.value = e?.message || '退款失败'
+  } finally {
+    refundingOrderId.value = ''
+  }
+}
+
 function planTagClass(user: any) {
   if (user.planLabel === '试用期') return 'plan-trial'
   if (user.planLabel === 'Pro') return 'plan-pro'
@@ -3179,6 +3322,10 @@ input {
 .pet-request-img { width: 100px; height: 100px; border-radius: 6px; border: 1px solid rgba(23,35,31,0.12); }
 .pet-request-note { margin-top: 6px; font-size: 13px; color: #68766f; }
 .pet-request-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(23,35,31,0.08); }
+
+/* Order detail */
+.order-detail { padding: 16px; margin-top: 8px; background: #fbfdfb; border-radius: 8px; border: 1px solid rgba(23,35,31,0.08); }
+.order-detail-grid { display: flex; flex-direction: column; gap: 6px; font-size: 22rpx; color: #555; }
 .pet-request-petid-input { width: 200px; height: 34px; padding: 0 10px; border: 1px solid rgba(23,35,31,0.18); border-radius: 6px; font-size: 13px; }
 .plan-tag { font-size: 18rpx; font-weight: 800; padding: 4rpx 12rpx; display: inline-block; }
 .plan-tag.plan-trial { background: #4ECDC4; color: #fff; }

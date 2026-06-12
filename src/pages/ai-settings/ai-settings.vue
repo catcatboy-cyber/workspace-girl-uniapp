@@ -56,7 +56,7 @@
               <text class="model-label-v2">{{ model.name || '未命名模型' }}</text>
             </view>
             <view v-if="models.length > 1" class="model-actions-v2">
-              <text class="delete-btn-v2" @click="removeModel(index)">删除</text>
+              <text class="btn btn-danger btn-sm" style="display:inline-flex;padding:4rpx 12rpx;" @click="removeModel(index)">删除</text>
             </view>
           </view>
 
@@ -87,7 +87,7 @@
           </view>
 
           <view class="actions-v2">
-            <button class="btn-v2 sm" :disabled="testingId === model.id" @click="runModelTest(model)">
+            <button class="btn btn-secondary btn-sm btn-auto" :disabled="testingId === model.id" @click="runModelTest(model)">
               {{ testingId === model.id ? '测试中...' : '测试连接' }}
             </button>
             <text v-if="model._lastTestResult !== undefined" class="test-result-v2" :class="model._lastTestResult ? 'pass' : 'fail'">
@@ -97,17 +97,17 @@
         </view>
 
         <view class="actions-v2" style="margin-top: 20rpx;">
-          <button class="btn-v2 sm" @click="addModel">+ 添加模型</button>
+          <button class="btn btn-secondary btn-sm btn-auto" @click="addModel">+ 添加模型</button>
         </view>
       </view>
 
       <!-- 操作按钮 -->
       <view class="card-v2">
         <view class="actions-v2 vertical">
-          <button class="btn-v2-l" :disabled="submitting" @click="onSave">
+          <button class="btn btn-primary btn-lg btn-full" :disabled="submitting" @click="onSave">
             {{ submitting ? '保存中...' : '保存所有设置' }}
           </button>
-          <button class="btn-v2-outline" @click="goBack">返回</button>
+          <button class="btn btn-secondary btn-lg btn-full" @click="goBack">返回</button>
         </view>
       </view>
     </template>
@@ -379,12 +379,12 @@ function goBack() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
 
 /* V2 Mode */
 .v2-mode { background: var(--app-bg, #FFFDF5); }
-.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 
 .v2-mode .hero-block-v2 {
   background: var(--hero-bg, #FF6B6B);
@@ -399,26 +399,26 @@ function goBack() {
   background: #111;
   color: #FFD93D;
   padding: 6rpx 16rpx;
-  font-size: 20rpx;
-  font-weight: 900;
+  font-size: $fs-caption;
+  font-weight: $fw-hero;
   letter-spacing: 4rpx;
   margin-bottom: 16rpx;
 }
 .v2-mode .hero-title-v2 {
   display: block;
-  font-size: 48rpx;
-  font-weight: 900;
+  font-size: $fs-hero-title;
+  font-weight: $fw-hero;
   color: #111;
-  line-height: 1.15;
+  line-height: $lh-hero;
   letter-spacing: -2rpx;
   text-transform: uppercase;
 }
 .v2-mode .hero-copy-v2 {
   display: block;
-  font-size: 26rpx;
-  font-weight: 600;
+  font-size: $fs-body-lg;
+  font-weight: $fw-body;
   color: rgba(0,0,0,0.7);
-  line-height: 1.6;
+  line-height: $lh-loose;
   margin-top: 8rpx;
 }
 
@@ -431,8 +431,8 @@ function goBack() {
 }
 .v2-mode .section-title-v2 {
   display: block;
-  font-size: 22rpx;
-  font-weight: 900;
+  font-size: $fs-body;
+  font-weight: $fw-hero;
   color: #111;
   text-transform: uppercase;
   letter-spacing: 2rpx;
@@ -440,10 +440,10 @@ function goBack() {
 }
 .v2-mode .card-text-v2 {
   display: block;
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: $fs-body-lg;
+  font-weight: $fw-body;
   color: #666;
-  line-height: 1.6;
+  line-height: $lh-loose;
   margin: 6rpx 0;
 }
 .v2-mode .section-head-v2 { margin-bottom: 20rpx; }
@@ -476,8 +476,8 @@ function goBack() {
 .v2-mode .switch-row-v2:last-child { border-bottom: 0; }
 .v2-mode .switch-label-v2 {
   flex: 1;
-  font-size: 26rpx;
-  font-weight: 700;
+  font-size: $fs-body-lg;
+  font-weight: $fw-label;
   color: #111;
   line-height: 1.5;
 }
@@ -505,8 +505,8 @@ function goBack() {
 }
 .v2-mode .default-badge-v2 {
   padding: 4rpx 14rpx;
-  font-size: 22rpx;
-  font-weight: 800;
+  font-size: $fs-body;
+  font-weight: $fw-hero;
   border: 2rpx solid #111;
   color: #666;
   cursor: pointer;
@@ -516,27 +516,21 @@ function goBack() {
   color: #FFD93D;
 }
 .v2-mode .model-label-v2 {
-  font-size: 28rpx;
-  font-weight: 800;
+  font-size: $fs-heading;
+  font-weight: $fw-hero;
   color: #111;
 }
 .v2-mode .model-actions-v2 {
   display: flex;
   gap: 8rpx;
 }
-.v2-mode .delete-btn-v2 {
-  color: #FF5252;
-  font-size: 24rpx;
-  font-weight: 700;
-  padding: 4rpx 12rpx;
-}
 
 /* Form fields */
 .v2-mode .field-v2 { margin: 16rpx 0; }
 .v2-mode .field-label-v2 {
   display: block;
-  font-size: 24rpx;
-  font-weight: 700;
+  font-size: $fs-body-lg;
+  font-weight: $fw-label;
   color: #111;
   margin-bottom: 8rpx;
 }
@@ -546,8 +540,8 @@ function goBack() {
   padding: 0 22rpx;
   background: #fff;
   border: 2rpx solid #111;
-  font-size: 26rpx;
-  font-weight: 600;
+  font-size: $fs-body-lg;
+  font-weight: $fw-body;
   color: #111;
   box-sizing: border-box;
 }
@@ -559,50 +553,9 @@ function goBack() {
 .v2-mode .actions-v2.vertical { flex-direction: column; }
 
 /* Buttons */
-.v2-mode .btn-v2-l {
-  width: 100%;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: #4ECDC4;
-  color: #111;
-  border: 3rpx solid #111;
-  font-size: 28rpx;
-  font-weight: 800;
-  box-shadow: 4rpx 4rpx 0 #111;
-}
-.v2-mode .btn-v2-l[disabled] { opacity: 0.5; }
-.v2-mode .btn-v2 {
-  height: 56rpx;
-  line-height: 56rpx;
-  padding: 0 24rpx;
-  background: #fff;
-  color: #111;
-  border: 3rpx solid #111;
-  font-size: 26rpx;
-  font-weight: 800;
-}
-.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .btn-v2.sm {
-  height: 56rpx;
-  line-height: 56rpx;
-  font-size: 24rpx;
-  padding: 0 20rpx;
-}
-.v2-mode .btn-v2[disabled] { opacity: 0.5; }
-.v2-mode .btn-v2-outline {
-  width: 100%;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: #fff;
-  color: #111;
-  border: 3rpx solid #111;
-  font-size: 28rpx;
-  font-weight: 800;
-  box-shadow: 4rpx 4rpx 0 #111;
-}
 
 /* Test result */
-.v2-mode .test-result-v2 { font-size: 24rpx; font-weight: 700; }
+.v2-mode .test-result-v2 { font-size: $fs-body-lg; font-weight: $fw-label; }
 .v2-mode .test-result-v2.pass { color: #4ECDC4; }
 .v2-mode .test-result-v2.fail { color: #FF5252; }
 </style>

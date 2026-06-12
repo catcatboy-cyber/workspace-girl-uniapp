@@ -84,11 +84,11 @@ function buildDailyData() {
 // ── 行动指南映射表 ──
 
 const WUXING_WEAR = {
-  '金': { colors: ['白色', '银色', '金色'], tip: '戴条银色项链或白水晶手串', material: '金属饰品、银饰' },
-  '木': { colors: ['绿色', '青色'], tip: '戴个木质手串或绿色发饰', material: '木质饰品、绿松石' },
-  '水': { colors: ['黑色', '深蓝', '藏青'], tip: '戴黑曜石或珍珠耳钉', material: '黑曜石、珍珠' },
-  '火': { colors: ['红色', '紫色', '橙色'], tip: '涂个红唇或戴红绳手链', material: '红玛瑙、紫水晶' },
-  '土': { colors: ['黄色', '棕色', '卡其色'], tip: '搭个棕色包包或黄水晶吊坠', material: '黄水晶、陶瓷、琥珀' },
+  '金': { colors: ['白色', '银色', '金色'], material: '金属饰品、银饰', neutral: '戴银色项链/手链或白水晶', male: '戴银色手表或白水晶手串', female: '戴条银色项链或白水晶手串' },
+  '木': { colors: ['绿色', '青色'], material: '木质饰品、绿松石', neutral: '戴木质手串或绿色配饰', male: '穿绿色T恤/卫衣，戴木质手串', female: '戴木质手串或绿色发饰' },
+  '水': { colors: ['黑色', '深蓝', '藏青'], material: '黑曜石、珍珠', neutral: '穿黑色/深蓝色，戴黑曜石', male: '穿黑色/深蓝色上衣，戴黑曜石手串', female: '穿黑色/深蓝色，戴黑曜石或珍珠耳钉' },
+  '火': { colors: ['红色', '紫色', '橙色'], material: '红玛瑙、紫水晶', neutral: '穿红色系，戴红绳手链', male: '穿红色内搭或红绳手链', female: '涂个红唇或戴红绳手链' },
+  '土': { colors: ['黄色', '棕色', '卡其色'], material: '黄水晶、陶瓷、琥珀', neutral: '穿卡其色/棕色系，搭配黄色配饰', male: '穿卡其色外套/棕色鞋，戴黄水晶手串', female: '搭个棕色包包或黄水晶吊坠' },
 }
 
 const DIRECTION_VENUES = {
@@ -153,8 +153,10 @@ function calcTaohuaScore(jianchu, taohuaDir, xishenDir, isTianxiDay, yiji) {
   return { 分数: score, 评级: level, 加分项: reasons, 一句话: `桃花指数 ${score}/100，${level}` + (reasons.length ? `——${reasons[0]}` : '') }
 }
 
-function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu, score, isTianxiDay, tianxiDir) {
+function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu, score, isTianxiDay, tianxiDir, gender) {
   const wear = WUXING_WEAR[wuxing] || WUXING_WEAR['火']
+  const genderKey = (gender === 'male' || gender === 'female') ? gender : 'neutral'
+  const wearTip = wear[genderKey]
   const vibe = getDayVibe(yiji.jianchu)
 
   // 本命五行
@@ -166,42 +168,42 @@ function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu
     桃花五行: wuxing,
     桃花颜色: wear.colors,
     桃花材质: wear.material,
-    桃花点睛: wear.tip,
+    桃花点睛: wearTip,
   }
   if (benmingWx) {
     wearInfo.本命五行 = benmingWx
     const WX_REL = {
       '木,火':['木生火',`穿绿色为主，搭一点${wear.colors[0]}，把你的能量导向桃花位`],
-      '木,土':['木克土',`穿绿色+${wear.colors[0]}，${wear.tip}，主动平衡`],
-      '木,金':['金克木',`穿${wear.colors[0]}+绿色，${wear.tip}，金银饰和木质手串叠戴`],
+      '木,土':['木克土',`穿绿色+${wear.colors[0]}，${wearTip}，主动平衡`],
+      '木,金':['金克木',`穿${wear.colors[0]}+绿色，${wearTip}，金银饰和木质手串叠戴`],
       '木,水':['水生木',`桃花位在滋养你，穿${wear.colors[0]}即可——今天气场对你好`],
-      '木,木':['双木成林',`穿绿色+${wear.colors[0]}层叠，${wear.tip}，天生契合`],
+      '木,木':['双木成林',`穿绿色+${wear.colors[0]}层叠，${wearTip}，天生契合`],
       '火,土':['火生土',`穿红色为主，搭一点${wear.colors[0]}，把你的能量导向桃花位`],
-      '火,金':['火克金',`穿红色+${wear.colors[0]}，${wear.tip}，主动平衡`],
-      '火,水':['水克火',`穿${wear.colors[0]}+红色，${wear.tip}，桃花位在克制你，叠戴化解`],
+      '火,金':['火克金',`穿红色+${wear.colors[0]}，${wearTip}，主动平衡`],
+      '火,水':['水克火',`穿${wear.colors[0]}+红色，${wearTip}，桃花位在克制你，叠戴化解`],
       '火,木':['木生火',`桃花位在滋养你，穿${wear.colors[0]}即可`],
-      '火,火':['双火同辉',`穿红色+${wear.colors[0]}，${wear.tip}，能量共振`],
+      '火,火':['双火同辉',`穿红色+${wear.colors[0]}，${wearTip}，能量共振`],
       '土,金':['土生金',`穿黄色为主，搭一点${wear.colors[0]}，把你的能量导向桃花位`],
-      '土,水':['土克水',`穿黄色+${wear.colors[0]}，${wear.tip}，主动平衡`],
-      '土,木':['木克土',`穿${wear.colors[0]}+黄色，${wear.tip}，桃花位在克制你，叠戴化解`],
+      '土,水':['土克水',`穿黄色+${wear.colors[0]}，${wearTip}，主动平衡`],
+      '土,木':['木克土',`穿${wear.colors[0]}+黄色，${wearTip}，桃花位在克制你，叠戴化解`],
       '土,火':['火生土',`桃花位在滋养你，穿${wear.colors[0]}即可`],
-      '土,土':['双土厚重',`穿黄色+${wear.colors[0]}层叠，${wear.tip}，稳健搭配`],
+      '土,土':['双土厚重',`穿黄色+${wear.colors[0]}层叠，${wearTip}，稳健搭配`],
       '金,水':['金生水',`穿白色为主，搭一点${wear.colors[0]}，把你的能量导向桃花位`],
-      '金,木':['金克木',`穿白色+${wear.colors[0]}，${wear.tip}，主动平衡`],
-      '金,火':['火克金',`穿${wear.colors[0]}+白色，${wear.tip}，桃花位在克制你，叠戴化解`],
+      '金,木':['金克木',`穿白色+${wear.colors[0]}，${wearTip}，主动平衡`],
+      '金,火':['火克金',`穿${wear.colors[0]}+白色，${wearTip}，桃花位在克制你，叠戴化解`],
       '金,土':['土生金',`桃花位在滋养你，穿${wear.colors[0]}即可`],
-      '金,金':['双金铿锵',`穿白色+${wear.colors[0]}，${wear.tip}，能量共振`],
+      '金,金':['双金铿锵',`穿白色+${wear.colors[0]}，${wearTip}，能量共振`],
       '水,木':['水生木',`穿黑色为主，搭一点${wear.colors[0]}，把你的能量导向桃花位`],
-      '水,火':['水克火',`穿黑色+${wear.colors[0]}，${wear.tip}，主动平衡`],
-      '水,土':['土克水',`穿${wear.colors[0]}+黑色，${wear.tip}，桃花位在克制你，叠戴化解`],
+      '水,火':['水克火',`穿黑色+${wear.colors[0]}，${wearTip}，主动平衡`],
+      '水,土':['土克水',`穿${wear.colors[0]}+黑色，${wearTip}，桃花位在克制你，叠戴化解`],
       '水,金':['金生水',`桃花位在滋养你，穿${wear.colors[0]}即可`],
-      '水,水':['双水共流',`穿黑色+${wear.colors[0]}层叠，${wear.tip}，能量共振`],
+      '水,水':['双水共流',`穿黑色+${wear.colors[0]}层叠，${wearTip}，能量共振`],
     }
     const key = `${benmingWx},${wuxing}`
     const rel = WX_REL[key]
     if (rel) { wearInfo.五行关系 = rel[0]; wearInfo.一句话 = rel[1] }
   } else {
-    wearInfo.一句话 = `今天穿${wear.colors[0]}或${wear.colors[1]}，${wear.tip}，桃花运加成。`
+    wearInfo.一句话 = `今天穿${wear.colors[0]}或${wear.colors[1]}，${wearTip}，桃花运加成。`
   }
 
   // 约会建议根据指数自适应
@@ -212,11 +214,20 @@ function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu
   const oneliner = isLow ? `桃花能量偏弱，不建议线下约会；线上互动更稳妥，改天再约。` : (isTianxiDay ? `今日咸池桃花在${taohuaDir}，天喜同至${tianxiDir || taohuaDir}——两个吉位重叠，约会往这方向走错不了。` : `今日咸池桃花在${taohuaDir}，约会往这个方向走——有合适的场所就约。`)
 
   return {
-    约会方位: {
-      桃花方位: { 方位: taohuaDir, 场所建议: venue, 说明: dateMsg },
+    约会指南: {
+      方位: taohuaDir,
+      天喜方位: isTianxiDay ? (tianxiDir || taohuaDir) : '',
+      天喜日: isTianxiDay,
+      场所建议: venue,
+      今日气场: vibe.vibe,
+      建除: yiji.jianchu,
+      解读: vibe.summary,
+      建议活动: vibe.activities,
+      宜做: vibe.dos,
+      避开: vibe.donts,
       一句话: oneliner,
+      isLow: sc < 40,
     },
-    活动建议: { 今日气场: vibe.vibe, 建除: yiji.jianchu, 解读: vibe.summary, 建议活动: vibe.activities, 宜做: vibe.dos, 避开: vibe.donts, 一句话: vibe.oneliner },
     穿戴建议: wearInfo,
   }
 }
@@ -226,7 +237,7 @@ function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu
  * @param {object} event — { zodiac: string, sign: string }
  */
 exports.main = async (event) => {
-  let { zodiac, sign } = event || {}
+  let { zodiac, sign, gender } = event || {}
 
   try {
     const userId = await requireAuthenticatedUserId(app, event)
@@ -282,7 +293,7 @@ exports.main = async (event) => {
     const tianxiDir = tianxiZhi ? DIR_MAP[tianxiZhi] || '' : ''
 
     const score = calcTaohuaScore(daily.yiji.jianchu, taohuaDir, xishenDir, isTianxiDay, daily.yiji)
-    const practical = buildPracticalGuide(wuxing, taohuaDir, daily.yiji, xishenDir, zodiac, daily.yiji.jianchu, score, isTianxiDay, tianxiDir)
+    const practical = buildPracticalGuide(wuxing, taohuaDir, daily.yiji, xishenDir, zodiac, daily.yiji.jianchu, score, isTianxiDay, tianxiDir, gender)
 
     return {
       success: true,

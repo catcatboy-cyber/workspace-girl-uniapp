@@ -169,27 +169,27 @@ function formatRecordedAt(record: any) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: var(--spacing-page, 24rpx); box-sizing: border-box; }
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
-.v2-mode .loading-v2 { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .loading-v2 { text-align: center; padding: 120rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 .v2-mode .empty-v2 { padding: 40rpx; border: 3rpx solid #111; background: #fff; margin-bottom: 18rpx; text-align: center; }
-.v2-mode .empty-title-v2 { display: block; font-size: 28rpx; font-weight: 900; color: #111; margin-bottom: 8rpx; }
-.v2-mode .empty-sub-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.5; }
+.v2-mode .empty-title-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; margin-bottom: 8rpx; }
+.v2-mode .empty-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: #666; line-height: 1.5; }
 .v2-mode .case-tabs-v2 { display: flex; gap: 8rpx; margin-bottom: 18rpx; flex-wrap: wrap; }
-.v2-mode .case-tab-v2 { padding: 12rpx 20rpx; border: 2rpx solid #111; background: #fff; font-size: 22rpx; font-weight: 700; color: #666; }
+.v2-mode .case-tab-v2 { padding: 12rpx 20rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-body; font-weight: $fw-label; color: #666; }
 .v2-mode .case-tab-v2.active { background: #111; color: #FFD93D; }
 .v2-mode .event-list-v2 { display: flex; flex-direction: column; gap: 14rpx; }
 .v2-mode .event-row-v2 { display: flex; gap: 14rpx; padding: 18rpx; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .event-row-v2.system { background: #fff; border-style: dashed; }
 .v2-mode .event-time-v2 { display: flex; flex-direction: column; align-items: center; width: 80rpx; flex-shrink: 0; }
-.v2-mode .event-date-v2 { font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .event-clock-v2 { font-size: 18rpx; font-weight: 600; color: #999; }
+.v2-mode .event-date-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
+.v2-mode .event-clock-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 .v2-mode .event-dot-v2 { width: 14rpx; height: 14rpx; border-radius: 50%; margin-top: 6rpx; border: 2rpx solid #111; }
 .v2-mode .event-dot-v2.positive { background: #4ECDC4; }
 .v2-mode .event-dot-v2.risk { background: #FF5252; }
@@ -199,9 +199,9 @@ function formatRecordedAt(record: any) {
 .v2-mode .event-dot-v2.note { background: #111; }
 .v2-mode .event-body-v2 { flex: 1; min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-bottom: 6rpx; }
-.v2-mode .event-meta-v2 text { font-size: 18rpx; font-weight: 600; color: #999; }
-.v2-mode .event-title-v2 { display: block; font-size: 26rpx; font-weight: 800; color: #111; line-height: 1.4; }
-.v2-mode .event-desc-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; margin-top: 4rpx; }
+.v2-mode .event-meta-v2 text { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
+.v2-mode .event-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; line-height: 1.4; }
+.v2-mode .event-desc-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; margin-top: 4rpx; }
 .v2-mode .expand-row-v2 { text-align: center; margin-top: 12rpx; }
-.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
+.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
 </style>

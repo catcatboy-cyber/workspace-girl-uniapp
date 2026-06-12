@@ -51,11 +51,11 @@
           </view>
           <button
             v-if="plan.key !== currentPlan.plan"
-            :class="['plan-btn', plan.key === 'pro' ? 'primary' : '']"
+            :class="['btn btn-md btn-full', plan.key === 'pro' ? 'btn-primary' : 'btn-secondary']"
             :disabled="upgradingPlan === plan.key"
             @click="onUpgrade(plan.key)"
           >{{ upgradingPlan === plan.key ? '处理中...' : (plan.key === 'free' ? '切换至免费版' : '升级 ' + plan.name) }}</button>
-          <button v-else class="plan-btn current" disabled>当前套餐</button>
+          <button v-else class="btn btn-md btn-full" disabled style="background:#f9f9f9;color:#999;border-color:rgba(18,60,54,0.1);">当前套餐</button>
         </view>
       </view>
     </view>
@@ -76,7 +76,7 @@
         <text class="discount-label">{{ d.label }}</text>
         <text class="discount-value">{{ d.value }}</text>
       </view>
-      <button class="btn-v2-me sm outline" style="margin-top:16rpx;" @click="goRecharge">只需临时补 Token？买加油包 →</button>
+      <button class="btn btn-ghost btn-sm" style="margin-top:16rpx;" @click="goRecharge">只需临时补 Token？买加油包 →</button>
     </view>
   </view>
 </template>
@@ -281,48 +281,48 @@ function goRecharge() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .v2-mode .page { min-height: 100vh; background: var(--app-bg, #FFFDF5); padding: 18rpx 18rpx calc(80rpx + env(safe-area-inset-bottom)) 18rpx; }
 
 /* Hero — 和其他页面完全一致 */
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { background: var(--accent, #FFD93D); padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 
 /* Card */
 .v2-mode .card-v2 { border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; background: #fff; padding: 32rpx; margin-bottom: 16rpx; }
-.v2-mode .section-title-v2 { font-size: 22rpx; font-weight: 900; text-transform: uppercase; letter-spacing: 4rpx; color: #999; display: block; margin-bottom: 16rpx; }
+.v2-mode .section-title-v2 { font-size: $fs-body; font-weight: $fw-hero; text-transform: uppercase; letter-spacing: 4rpx; color: #999; display: block; margin-bottom: 16rpx; }
 
 /* 当前套餐 */
 .v2-mode .current-plan-row { display: flex; align-items: center; gap: 12rpx; }
-.v2-mode .current-plan-name { font-size: 32rpx; font-weight: 900; }
-.v2-mode .trial-badge { background: #4ECDC4; color: #111; padding: 4rpx 12rpx; font-size: 22rpx; font-weight: 800; border-radius: var(--radius-sm, 12rpx); border: 2rpx solid #111; }
+.v2-mode .current-plan-name { font-size: $fs-heading; font-weight: $fw-hero; }
+.v2-mode .trial-badge { background: #4ECDC4; color: #111; padding: 4rpx 12rpx; font-size: $fs-body; font-weight: $fw-hero; border-radius: var(--radius-sm, 12rpx); border: 2rpx solid #111; }
 
 /* Stats grid */
 .v2-mode .stats-grid-v2 { display: flex; gap: 8rpx; }
 .v2-mode .stat-box-v2 { flex: 1; text-align: center; padding: 16rpx 8rpx; border: 2rpx solid rgba(18,60,54,0.1); }
-.v2-mode .stat-num-v2 { font-size: 28rpx; font-weight: 900; display: block; }
-.v2-mode .stat-lbl-v2 { font-size: 18rpx; color: #999; display: block; margin-top: 4rpx; }
+.v2-mode .stat-num-v2 { font-size: $fs-heading; font-weight: $fw-hero; display: block; }
+.v2-mode .stat-lbl-v2 { font-size: $fs-caption; color: #999; display: block; margin-top: 4rpx; }
 
 /* 套餐卡片 */
 .v2-mode .plan-grid { display: flex; flex-direction: column; gap: 16rpx; }
 .v2-mode .plan-card-v2 { border: 3rpx solid #111; background: #fff; padding: 0; position: relative; }
 .v2-mode .plan-card-v2.current { border-color: #4ECDC4; border-width: 4rpx; }
 .v2-mode .plan-card-v2.recommended { border-color: #111; }
-.v2-mode .plan-recommend-badge { position: absolute; top: -12rpx; right: 16rpx; background: #FFD93D; border: 2rpx solid #111; padding: 4rpx 16rpx; font-size: 20rpx; font-weight: 900; }
+.v2-mode .plan-recommend-badge { position: absolute; top: -12rpx; right: 16rpx; background: #FFD93D; border: 2rpx solid #111; padding: 4rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; }
 .v2-mode .plan-card-header { padding: 24rpx; border-bottom: 2rpx solid rgba(18,60,54,0.1); }
-.v2-mode .plan-name { font-size: 28rpx; font-weight: 900; }
+.v2-mode .plan-name { font-size: $fs-heading; font-weight: $fw-hero; }
 .v2-mode .plan-price-row { display: flex; align-items: baseline; gap: 8rpx; margin-top: 8rpx; }
-.v2-mode .plan-price { font-size: 48rpx; font-weight: 900; }
-.v2-mode .plan-price-sub { font-size: 22rpx; color: #999; }
+.v2-mode .plan-price { font-size: $fs-hero-title; font-weight: $fw-hero; }
+.v2-mode .plan-price-sub { font-size: $fs-body; color: #999; }
 .v2-mode .plan-card-body { padding: 24rpx; }
 .v2-mode .plan-highlight { text-align: center; margin-bottom: 20rpx; }
-.v2-mode .plan-calls { font-size: 28rpx; font-weight: 900; background: #111; color: #FFD93D; padding: 8rpx 24rpx; }
+.v2-mode .plan-calls { font-size: $fs-heading; font-weight: $fw-hero; background: #111; color: #FFD93D; padding: 8rpx 24rpx; }
 .v2-mode .plan-features { margin-bottom: 20rpx; }
-.v2-mode .plan-feature-row { display: flex; align-items: center; gap: 10rpx; padding: 8rpx 0; font-size: 24rpx; }
-.v2-mode .plan-feature-icon { font-weight: 900; font-size: 26rpx; width: 36rpx; text-align: center; }
+.v2-mode .plan-feature-row { display: flex; align-items: center; gap: 10rpx; padding: 8rpx 0; font-size: $fs-body-lg; }
+.v2-mode .plan-feature-icon { font-weight: $fw-hero; font-size: $fs-body-lg; width: 36rpx; text-align: center; }
 .v2-mode .plan-feature-icon.yes { color: #27ae60; }
 .v2-mode .plan-feature-icon.no { color: #999; }
 .v2-mode .dim { color: #999; }
@@ -331,39 +331,29 @@ function goRecharge() {
 .v2-mode .price-choice-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-bottom: 18rpx; }
 .v2-mode .price-choice { border: 3rpx solid rgba(18,60,54,0.1); padding: 12rpx; background: #fff; }
 .v2-mode .price-choice.active { border-color: #111; background: #FFD93D; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .price-choice-label { display: block; font-size: 22rpx; font-weight: 900; }
-.v2-mode .price-choice-value { display: block; margin-top: 4rpx; font-size: 22rpx; color: #666; }
+.v2-mode .price-choice-label { display: block; font-size: $fs-body; font-weight: $fw-hero; }
+.v2-mode .price-choice-value { display: block; margin-top: 4rpx; font-size: $fs-body; color: #666; }
 
 /* 升级按钮 — 遵循 btn-v2 规范 */
-.v2-mode .plan-btn { width: 100%; height: 72rpx; line-height: 72rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 800; color: #111; padding: 0 24rpx; }
-.v2-mode .plan-btn.primary { background: #4ECDC4; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .plan-btn.current { background: #f9f9f9; color: #999; border-color: rgba(18,60,54,0.1); }
-.v2-mode .plan-btn[disabled] { opacity: 0.6; }
 
 /* 优惠方案 */
 .v2-mode .discount-row { display: flex; justify-content: space-between; padding: 12rpx 0; border-bottom: 2rpx solid rgba(18,60,54,0.1); }
-.v2-mode .discount-label { font-size: 24rpx; font-weight: 800; }
-.v2-mode .discount-value { font-size: 24rpx; color: #666; }
+.v2-mode .discount-label { font-size: $fs-body-lg; font-weight: $fw-hero; }
+.v2-mode .discount-value { font-size: $fs-body-lg; color: #666; }
 
 /* 加油包入口 */
-.v2-mode .btn-v2-me { height: 72rpx; line-height: 72rpx; border: 3rpx solid #111; background: #fff; font-size: 26rpx; font-weight: 800; color: #111; padding: 0 24rpx; }
-.v2-mode .btn-v2-me.sm { height: 56rpx; line-height: 56rpx; font-size: 22rpx; padding: 0 20rpx; }
-.v2-mode .btn-v2-me.outline { border-style: dashed; }
-
-/* 间距工具 */
-.v2-mode .section-gap { margin-top: 24rpx; }
 .v2-mode .stats-gap { margin-top: 16rpx; }
 
 /* 升级结果提示 */
 .v2-mode .upgrade-msg { margin-top: 24rpx; }
 .v2-mode .upgrade-ok { border-color: #27ae60; }
 .v2-mode .upgrade-err { border-color: #FF5252; }
-.v2-mode .upgrade-msg-icon { font-weight: 900; font-size: 26rpx; }
+.v2-mode .upgrade-msg-icon { font-weight: $fw-hero; font-size: $fs-body-lg; }
 .v2-mode .upgrade-ok .upgrade-msg-icon { color: #27ae60; }
 .v2-mode .upgrade-err .upgrade-msg-icon { color: #FF5252; }
-.v2-mode .upgrade-msg-text { font-size: 26rpx; font-weight: 700; margin-left: 12rpx; }
+.v2-mode .upgrade-msg-text { font-size: $fs-body-lg; font-weight: $fw-label; margin-left: 12rpx; }
 .v2-mode .upgrade-ok .upgrade-msg-text { color: #27ae60; }
 .v2-mode .upgrade-err .upgrade-msg-text { color: #FF5252; }
 .v2-mode .upgrade-msg-hint { margin-top: 12rpx; }
-.v2-mode .upgrade-msg-note { font-size: 22rpx; color: #999; }
+.v2-mode .upgrade-msg-note { font-size: $fs-body; color: #999; }
 </style>

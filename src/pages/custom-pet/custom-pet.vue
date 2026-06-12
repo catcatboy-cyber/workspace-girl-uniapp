@@ -32,7 +32,7 @@
       </view>
     </view>
 
-    <button class="submit-btn-v2" :disabled="!canSubmit || submitting" @click="submit">
+    <button class="btn btn-primary btn-lg btn-full" style="margin-bottom:40rpx;" :disabled="!canSubmit || submitting" @click="submit">
       {{ submitting ? '提交中...' : '提交定制需求' }}
     </button>
   </view>
@@ -123,7 +123,7 @@ async function submit() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
   min-height: 100vh;
   padding: 18rpx;
@@ -132,26 +132,24 @@ async function submit() {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; }
 
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
-.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
-.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.4; margin-bottom: 10rpx; }
+.v2-mode .section-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.4; margin-bottom: 10rpx; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; border: 2rpx solid #111; padding: 0 20rpx; font-size: 26rpx; font-weight: 700; color: #111; box-sizing: border-box; background: #fff; }
-.v2-mode .textarea-v2 { width: 100%; height: 240rpx; border: 2rpx solid #111; padding: 16rpx 20rpx; font-size: 26rpx; font-weight: 600; color: #111; box-sizing: border-box; background: #fff; line-height: 1.6; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; border: 2rpx solid #111; padding: 0 20rpx; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; box-sizing: border-box; background: #fff; }
+.v2-mode .textarea-v2 { width: 100%; height: 240rpx; border: 2rpx solid #111; padding: 16rpx 20rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; background: #fff; line-height: 1.6; }
 
 .v2-mode .img-grid-v2 { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 12rpx; }
 .v2-mode .img-box-v2 { width: 180rpx; height: 180rpx; border: 2rpx solid #111; position: relative; }
 .v2-mode .img-preview-v2 { width: 100%; height: 100%; }
-.v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: #FF5252; color: #fff; font-size: 24rpx; font-weight: 900; text-align: center; line-height: 44rpx; border: 2rpx solid #111; }
+.v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: #FF5252; color: #fff; font-size: $fs-body-lg; font-weight: $fw-hero; text-align: center; line-height: 44rpx; border: 2rpx solid #111; }
 .v2-mode .img-add-v2 { width: 180rpx; height: 180rpx; border: 2rpx dashed #111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; background: #f9f9f9; }
-.v2-mode .img-add-icon-v2 { font-size: 48rpx; font-weight: 900; color: #111; line-height: 1; }
-.v2-mode .img-add-label-v2 { font-size: 20rpx; font-weight: 700; color: #999; }
+.v2-mode .img-add-icon-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1; }
+.v2-mode .img-add-label-v2 { font-size: $fs-caption; font-weight: $fw-label; color: #999; }
 
-.v2-mode .submit-btn-v2 { width: 100%; height: 88rpx; line-height: 88rpx; text-align: center; background: #4ECDC4; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; font-size: 26rpx; font-weight: 800; color: #111; margin-bottom: 40rpx; }
-.v2-mode .submit-btn-v2[disabled] { opacity: 0.5; }
 </style>

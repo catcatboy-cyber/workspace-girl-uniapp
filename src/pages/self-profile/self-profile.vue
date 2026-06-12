@@ -4,7 +4,7 @@
     <template v-if="isOnboarding">
       <view class="chat-head">
         <text class="chat-head-title">小咪认识你</text>
-        <button class="chat-head-skip" :disabled="saving" @click="onSkip">先跳过</button>
+        <button class="btn btn-ghost btn-sm" :disabled="saving" @click="onSkip">先跳过</button>
       </view>
 
       <scroll-view class="chat-area" scroll-y :scroll-into-view="scrollTarget" :scroll-with-animation="true">
@@ -29,9 +29,9 @@
 
       <view class="chat-foot">
         <view class="chat-progress">
-          <view v-for="i in 3" :key="i" :class="['progress-dot', step >= i ? 'done' : '']"></view>
+          <view v-for="i in 5" :key="i" :class="['progress-dot', step >= i ? 'done' : '']"></view>
         </view>
-        <text class="chat-step-text">{{ step >= 3 ? '全部完成' : step + ' / 3' }}</text>
+        <text class="chat-step-text">{{ step >= 5 ? '全部完成' : step + ' / 5' }}</text>
       </view>
     </template>
 
@@ -81,7 +81,7 @@
         </view>
       </view>
       <view class="card-v2" style="display:flex;flex-direction:column;gap:14rpx;">
-        <button class="btn-v2-sp primary" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button>
+        <button class="btn btn-primary btn-lg btn-full" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button>
       </view>
     </template>
   </view>
@@ -152,6 +152,9 @@ const identityMap: Record<string, string> = {
   '其他': 'other'
 }
 
+const zodiacChips = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+const constellationChips = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座']
+
 // ====== State ======
 const themeVars = ref(getThemeStyle())
 const saving = ref(false)
@@ -218,6 +221,22 @@ const questions = [
     chips: identityChips,
     key: 'identity' as const,
     map: identityMap
+  },
+  {
+    pet: [
+      { text: '再来两个轻松的问题～你的属相是什么？' },
+      { text: '（属相只作为轻娱乐标签，不参与核心判断）', style: 'muted' }
+    ],
+    chips: zodiacChips,
+    key: 'zodiac' as const
+  },
+  {
+    pet: [
+      { text: '最后一个！你的星座是什么？' },
+      { text: '（星座和属相一样，只是轻娱乐标签）', style: 'muted' }
+    ],
+    chips: constellationChips,
+    key: 'constellation' as const
   }
 ]
 
@@ -300,7 +319,7 @@ function pickChip(msg: Msg & { type: 'chips' }, chip: string) {
     ;(profile as any)[q.key] = value
     step.value++
 
-    if (step.value < 3) {
+    if (step.value < 5) {
       showQuestion(step.value)
     } else {
       setTimeout(() => {
@@ -371,52 +390,43 @@ function onSkip() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page { min-height: 100vh; background: var(--app-bg, #FFFDF5); display: flex; flex-direction: column; }
 
 /* ====== Hero / Form（编辑模式） ====== */
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
-.v2-mode .section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 14rpx; }
-.v2-mode .card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 10rpx; }
+.v2-mode .section-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 14rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.5; margin-bottom: 10rpx; }
 .v2-mode .field-v2 { padding: 20rpx 0; border-bottom: 3rpx solid #111; }
 .v2-mode .field-v2:last-child { border-bottom: 0; }
-.v2-mode .field-label-v2 { display: block; font-size: 24rpx; font-weight: 800; color: #111; margin-bottom: 10rpx; }
+.v2-mode .field-label-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; }
 .v2-mode .segmented-v2 { display: flex; gap: 10rpx; }
-.v2-mode .segment-v2 { flex: 1; height: 68rpx; line-height: 68rpx; text-align: center; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
+.v2-mode .segment-v2 { flex: 1; height: 68rpx; line-height: 68rpx; text-align: center; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
 .v2-mode .segment-v2.active { background: #111; color: #FFD93D; }
-.v2-mode .picker-v2 { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 700; color: #111; }
-.v2-mode .minor-note-v2 { display: block; margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #FFFBEB; font-size: 20rpx; font-weight: 600; color: #111; line-height: 1.5; }
-.v2-mode .btn-v2-sp { width: 100%; height: 80rpx; line-height: 80rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 28rpx; font-weight: 800; color: #111; }
-.v2-mode .btn-v2-sp.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .btn-v2-sp[disabled] { opacity: 0.6; }
-
-/* ====== Onboarding Chat ====== */
-.chat-head { display: flex; justify-content: space-between; align-items: center; padding: 18rpx 24rpx; border-bottom: 2rpx solid #111; background: #111; flex-shrink: 0; }
-.chat-head-title { font-size: 28rpx; font-weight: 900; color: #FFD93D; }
-.chat-head-skip { padding: 8rpx 20rpx; background: transparent; border: 2rpx solid #FFD93D; color: #FFD93D; font-size: 22rpx; font-weight: 800; }
-
-.chat-area { flex: 1; padding: 20rpx 20rpx 0; overflow-y: auto; display: flex; flex-direction: column; gap: 28rpx; }
+.v2-mode .picker-v2 { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
+.v2-mode .minor-note-v2 { display: block; margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #FFFBEB; font-size: $fs-caption; font-weight: $fw-body; color: #111; line-height: 1.5; }
+.chat-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: #FFD93D; }
 
 .msg { display: flex; gap: 10rpx; align-items: flex-end; max-width: 92%; }
 .msg-pet { align-self: flex-start; }
 .msg-user { align-self: flex-end; justify-content: flex-end; }
 
-.msg-avatar { width: 44rpx; height: 44rpx; background: #FFD93D; border: 2rpx solid #111; display: flex; align-items: center; justify-content: center; font-size: 22rpx; flex-shrink: 0; }
+.msg-avatar { width: 44rpx; height: 44rpx; background: #FFD93D; border: 2rpx solid #111; display: flex; align-items: center; justify-content: center; font-size: $fs-body; flex-shrink: 0; }
 
-.msg-bubble { max-width: 100%; padding: 16rpx 20rpx; background: #fff; border: 2rpx solid #111; font-size: 26rpx; font-weight: 700; color: #111; line-height: 1.6; }
+.msg-bubble { max-width: 100%; padding: 16rpx 20rpx; background: #fff; border: 2rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; line-height: $lh-loose; }
 .msg-line { display: block; }
-.msg-line.muted { font-size: 22rpx; font-weight: 600; color: #666; margin-top: 4rpx; }
+.msg-line.muted { font-size: $fs-body; font-weight: $fw-body; color: #666; margin-top: 4rpx; }
 
-.msg-answer { padding: 12rpx 22rpx; background: #111; border: 2rpx solid #111; font-size: 26rpx; font-weight: 700; color: #FFD93D; }
+.msg-answer { padding: 12rpx 22rpx; background: #111; border: 2rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-label; color: #FFD93D; }
 
 .msg-chips { display: flex; flex-wrap: wrap; gap: 10rpx; justify-content: flex-end; }
-.msg-chip { padding: 12rpx 22rpx; background: #fff; border: 2rpx solid #111; font-size: 24rpx; font-weight: 800; color: #111; }
+.msg-chip { padding: 12rpx 22rpx; background: #fff; border: 2rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
 .msg-chip.picked { background: #111; color: #FFD93D; }
 
 .msg-typing { display: flex; gap: 6rpx; padding: 14rpx 20rpx; background: #fff; border: 2rpx solid #111; }
@@ -429,5 +439,5 @@ function onSkip() {
 .chat-progress { display: flex; gap: 12rpx; }
 .progress-dot { width: 16rpx; height: 16rpx; border: 2rpx solid #111; background: #fff; }
 .progress-dot.done { background: #FFD93D; }
-.chat-step-text { font-size: 22rpx; font-weight: 700; color: #666; }
+.chat-step-text { font-size: $fs-body; font-weight: $fw-label; color: #666; }
 </style>

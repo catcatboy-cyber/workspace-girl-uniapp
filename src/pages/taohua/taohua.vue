@@ -10,7 +10,7 @@
         {{ computedReport.今日方位?.['公历日期']?.split(' ')?.[0] || '--' }}
         · {{ computedReport.今日方位?.['农历'] || '--' }}
       </text>
-      <text class="hero-copy-v2" style="font-size:20rpx;margin-top:4rpx;">
+      <text class="hero-copy-v2" style="font-size: 22rpx;margin-top:4rpx;">
         日柱 {{ computedReport.今日方位?.['日柱'] || '--' }}
         · 建除 {{ computedReport.今日宜忌?.['建除'] || '--' }}
         · 星宿 {{ (computedReport.今日方位?.['二十八宿'] || '').split('（')[0] }}
@@ -32,7 +32,7 @@
       <text class="card-text-v2 muted">
         {{ computedReport.流日桃花?.['principle'] || '' }}
       </text>
-      <text class="card-text-v2 muted" style="font-size:18rpx;margin-top:4rpx;">方位以你当前位置为中心</text>
+      <text class="card-text-v2 muted" style="font-size: 22rpx;margin-top:4rpx;">方位以你当前位置为中心</text>
 
       <!-- 4 列方位条 -->
       <view class="dir-strip-v2">
@@ -71,6 +71,24 @@
         <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(30)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
         <text v-else class="taohua-icon-emoji">🎯</text>
         <text class="section-title-v2 no-margin">今日行动指南</text>
+        <text class="info-dot-v2" @click="showGuideInfo = true">ⓘ</text>
+      </view>
+      <view v-if="showGuideInfo" class="info-overlay" @click="showGuideInfo = false">
+        <view class="info-sheet" @click.stop>
+          <view class="info-sheet-head">
+            <text class="info-sheet-title">方位决策指南</text>
+            <text class="info-sheet-close" @click="showGuideInfo = false">×</text>
+          </view>
+          <view class="info-sheet-body">
+            <view class="info-tree-item"><text class="info-tree-q">只是想约TA、制造暧昧、日常碰面？</text><text class="info-tree-a">→ 看 🪷 桃花位（当日气场，管邂逅）</text></view>
+            <view class="info-tree-item"><text class="info-tree-q">准备告白 / 确定关系 / 见家长？</text><text class="info-tree-a">→ 看 🔴 红鸾位（本命位，管姻缘开端）</text></view>
+            <view class="info-tree-item"><text class="info-tree-q">求婚 / 订婚 / 结婚 / 备孕？</text><text class="info-tree-a">→ 看 🕊️ 天喜位（本命位，管婚庆落地）</text></view>
+            <view class="info-tree-divider"></view>
+            <view class="info-tree-item"><text class="info-tree-q">三个方向重叠（天喜日 🔥）？</text><text class="info-tree-a">→ 能量加乘，做什么都对，重要节点首选</text></view>
+            <view class="info-tree-divider"></view>
+            <text class="info-tree-note">💡 核心：按你要的结果选对应的煞。日常暧昧不需要天喜，求婚不需要桃花。各管各的，不互相替代。</text>
+          </view>
+        </view>
       </view>
 
       <!-- 桃花指数条 -->
@@ -93,44 +111,31 @@
         </view>
       </view>
 
-      <!-- 去哪 -->
+      <!-- 今日约会指南（方位+气场+活动合并） -->
       <view class="guide-section-v2">
         <view class="guide-icon-v2">
           <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(40)" :src="taohuaIcon('compass')" mode="aspectFit" />
           <text v-else class="taohua-icon-emoji">🧭</text>
         </view>
         <view class="guide-content-v2">
-          <text class="guide-label-v2">去哪约会 <text class="cite-inline-v2">《三命通会》</text></text>
-          <text class="guide-text-v2">{{ dateAdviceText }}</text>
-          <text class="guide-text-v2 muted">{{ dateAdviceDetailLabel }}：{{ dateAdviceDetailText }}</text>
-        </view>
-      </view>
-
-      <!-- 做啥 -->
-      <view class="guide-section-v2">
-        <view class="guide-icon-v2">
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(40)" :src="taohuaIcon('target')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">🎯</text>
-        </view>
-        <view class="guide-content-v2">
-          <text class="guide-label-v2">{{ computedReport.今日行动指南?.活动建议?.今日气场 || '今日感情运势' }} <text class="cite-inline-v2">《协纪辨方书》</text></text>
-          <text class="guide-text-v2">{{ computedReport.今日行动指南?.活动建议?.一句话 || '' }}</text>
-          <view v-if="(computedReport.今日行动指南?.活动建议?.建议活动 || []).length > 0" style="margin-top:6rpx;">
-            <view v-for="(a, i) in computedReport.今日行动指南?.活动建议?.建议活动 || []" :key="'act-'+i" class="tag-v2 green tag-with-icon-v2">
+          <text class="guide-label-v2">🪷 桃花<text class="guide-dir-hl">{{ guideDirection }}</text> · 🔴 红鸾<text class="guide-dir-hl hongluan">{{ natalHongluanDir || '--' }}</text> · 🕊️ 天喜<text class="guide-dir-hl tianxi">{{ natalTianxiDir || '--' }}</text><text v-if="guideTianxiDir"> 🔥</text> · {{ guideVibeLabel }} <text class="cite-inline-v2">《协纪辨方书》《三命通会》</text></text>
+          <text class="guide-text-v2">{{ guideOneliner }}</text>
+          <view v-if="(guideActivities || []).length > 0" style="margin-top:6rpx;">
+            <view v-for="(a, i) in guideActivities" :key="'act-'+i" class="tag-v2 green tag-with-icon-v2">
               <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('target')" mode="aspectFit" />
               <text v-else class="taohua-icon-emoji">🎯</text>
               <text>{{ a }}</text>
             </view>
           </view>
-          <view v-if="(computedReport.今日行动指南?.活动建议?.宜做 || []).length > 0" style="margin-top:6rpx;">
-            <view v-for="(a, i) in computedReport.今日行动指南?.活动建议?.宜做 || []" :key="'do-'+i" class="guide-line-v2 good">
+          <view v-if="(guideDos || []).length > 0" style="margin-top:6rpx;">
+            <view v-for="(a, i) in guideDos" :key="'do-'+i" class="guide-line-v2 good">
               <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('checkCircle')" mode="aspectFit" />
               <text v-else class="taohua-icon-emoji">✅</text>
               <text class="guide-text-v2 good">{{ a }}</text>
             </view>
           </view>
-          <view v-if="(computedReport.今日行动指南?.活动建议?.避开 || []).length > 0" style="margin-top:4rpx;">
-            <view v-for="(a, i) in computedReport.今日行动指南?.活动建议?.避开 || []" :key="'dont-'+i" class="guide-line-v2">
+          <view v-if="(guideDonts || []).length > 0" style="margin-top:4rpx;">
+            <view v-for="(a, i) in guideDonts" :key="'dont-'+i" class="guide-line-v2">
               <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
               <text v-else class="taohua-icon-emoji">⚠️</text>
               <text class="guide-text-v2 muted">{{ a }}</text>
@@ -174,7 +179,7 @@
             <text v-else class="taohua-icon-emoji">✅</text>
             <text class="split-label-v2 yi">宜</text>
           </view>
-          <text v-for="y in loveYi" :key="y" class="split-item-v2">{{ y }}</text>
+          <text class="split-item-flow-v2"><text v-for="(y, i) in loveYi" :key="y">{{ i > 0 ? ' · ' : '' }}{{ y }}</text></text>
         </view>
         <view class="split-half-v2 ji">
           <view class="split-label-row-v2">
@@ -182,7 +187,7 @@
             <text v-else class="taohua-icon-emoji">⚠️</text>
             <text class="split-label-v2 ji">忌</text>
           </view>
-          <text v-for="j in loveJi" :key="j" class="split-item-v2">{{ j }}</text>
+          <text class="split-item-flow-v2"><text v-for="(j, i) in loveJi" :key="j">{{ i > 0 ? ' · ' : '' }}{{ j }}</text></text>
         </view>
       </view>
 
@@ -194,7 +199,7 @@
 
     <!-- ④ 桃花人设（依赖画像） -->
     <view v-if="hasProfile" class="card-v2">
-      <text class="section-title-v2">你的桃花人设 <text style="font-size:18rpx;color:#999;">可分享</text></text>
+      <text class="section-title-v2">你的桃花人设 <text style="font-size: 22rpx;color:#999;">可分享</text></text>
 
       <view class="persona-card-v2">
         <view class="persona-head-v2">
@@ -235,7 +240,7 @@
             <text v-else class="taohua-icon-emoji">❤️</text>
             <text>{{ m }}</text>
           </view>
-          <text class="card-text-v2 muted" style="display:inline;font-size:18rpx;margin-left:6rpx;">{{ crossData.western.bestMatchReason }}</text>
+          <text class="card-text-v2 muted" style="display:inline;font-size: 22rpx;margin-left:6rpx;">{{ crossData.western.bestMatchReason }}</text>
         </view>
       </view>
 
@@ -592,6 +597,7 @@ async function loadData() {
       return
     }
 
+    // 仅开发环境降级：云函数未部署时使用 mock 日历数据
     if (!dailyData.value && allowMockTaohuaFallback) {
       dailyData.value = {
         solarDate: MOCK_REPORT.今日方位?.['公历日期'] || '',
@@ -775,18 +781,56 @@ const dailyTaohuaZhi = computed(() => computedReport.value.流日桃花?.taohua_
 const dailyTaohuaWuxing = computed(() => computedReport.value.流日桃花?.wuxing || '火')
 const taohuaScore = computed(() => Number(computedReport.value.桃花指数?.分数 ?? 50))
 const isLowTaohuaScore = computed(() => taohuaScore.value < 40)
-const dateAdviceText = computed(() => {
-  if (isLowTaohuaScore.value) {
-    return `今天桃花指数 ${taohuaScore.value}/100，不建议按方位安排线下约会；线上互动更稳妥，改天再约。`
+const showGuideInfo = ref(false)
+const guide = computed(() => {
+  const ag = computedReport.value.今日行动指南
+  if (!ag) return {}
+  if (ag.约会指南) return ag.约会指南
+  const oldDate = ag.约会方位
+  const oldActivity = ag.活动建议
+  if (!oldActivity) return {}
+  return {
+    方位: oldDate?.桃花方位?.方位 || '',
+    场所建议: oldDate?.桃花方位?.场所建议 || '',
+    今日气场: oldActivity.今日气场 || '',
+    解读: oldActivity.解读 || '',
+    建议活动: oldActivity.建议活动 || [],
+    宜做: oldActivity.宜做 || [],
+    避开: oldActivity.避开 || [],
+    一句话: oldDate?.一句话 || oldActivity.一句话 || '',
+    isLow: (oldDate?.一句话 || '').includes('偏低') || (oldDate?.一句话 || '').includes('不建议'),
   }
-  return computedReport.value.今日行动指南?.约会方位?.一句话 || ''
 })
-const dateAdviceDetailLabel = computed(() => isLowTaohuaScore.value ? '低分建议' : '桃花方位')
-const dateAdviceDetailText = computed(() => {
-  if (isLowTaohuaScore.value) {
-    return '线上聊聊、语音或一起打游戏即可；如果一定要见面，选熟悉、低压力的地方。'
-  }
-  return computedReport.value.今日行动指南?.约会方位?.桃花方位?.场所建议 || ''
+const guideVibeLabel = computed(() => guide.value.今日气场 || guide.value.解读 || '今日感情运势')
+const guideOneliner = computed(() => guide.value.一句话 || '')
+const guideActivities = computed(() => guide.value.建议活动 || [])
+const guideDos = computed(() => guide.value.宜做 || [])
+const guideDonts = computed(() => guide.value.避开 || [])
+const guideDirection = computed(() => guide.value.方位 || '--')
+const guideTianxiDir = computed(() => guide.value.天喜方位 || '')
+const ZODIAC_LIST = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
+const YEAR_BRANCH = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
+const HONGLUAN_FROM_YEAR: Record<string,string> = {'子':'卯','丑':'寅','寅':'丑','卯':'子','辰':'亥','巳':'戌','午':'酉','未':'申','申':'未','酉':'午','戌':'巳','亥':'辰'}
+const LIUCHONG: Record<string,string> = {'子':'午','丑':'未','寅':'申','卯':'酉','辰':'戌','巳':'亥','午':'子','未':'丑','申':'寅','酉':'卯','戌':'辰','亥':'巳'}
+const DIR_FROM_ZHI: Record<string,string> = {'子':'正北','丑':'东北','寅':'东北','卯':'正东','辰':'东南','巳':'东南','午':'正南','未':'西南','申':'西南','酉':'正西','戌':'西北','亥':'西北'}
+const natalHongluanDir = computed(() => {
+  const z = userZodiac.value
+  if (!z) return ''
+  const idx = ZODIAC_LIST.indexOf(z)
+  if (idx < 0) return ''
+  const yz = YEAR_BRANCH[idx]
+  const hl = HONGLUAN_FROM_YEAR[yz]
+  return DIR_FROM_ZHI[hl] || ''
+})
+const natalTianxiDir = computed(() => {
+  const z = userZodiac.value
+  if (!z) return ''
+  const idx = ZODIAC_LIST.indexOf(z)
+  if (idx < 0) return ''
+  const yz = YEAR_BRANCH[idx]
+  const hl = HONGLUAN_FROM_YEAR[yz]
+  const tx = LIUCHONG[hl]
+  return DIR_FROM_ZHI[tx] || ''
 })
 
 const zodiacEmoji = computed(() => {
@@ -1184,13 +1228,13 @@ function saveShareImage() {
 
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* ============================================================
    页面级 v2 样式（复用全站 Campus Pop 设计系统）
    ============================================================ */
 
 /* Loading */
-.v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: 40rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
 
 /* Hero */
 .hero-block-v2 {
@@ -1198,20 +1242,20 @@ function saveShareImage() {
   border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111;
   transform: rotate(-0.5deg); margin: 0 20rpx 24rpx;
 }
-.hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: 18rpx; font-weight: 900; padding: 4rpx 14rpx; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: 22rpx; font-weight: 900; padding: 4rpx 14rpx; letter-spacing: 2rpx; margin-bottom: 10rpx; }
 .hero-title-v2 { font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.1; letter-spacing: -2rpx; }
 .hl-v2 { background: #FFD93D; padding: 0 6rpx; }
-.hero-copy-v2 { display: block; font-size: 22rpx; font-weight: 600; color: rgba(0,0,0,0.7); margin-top: 8rpx; line-height: 1.4; }
+.hero-copy-v2 { display: block; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); margin-top: 8rpx; line-height: 1.4; }
 
 /* Card */
 .card-v2 {
   background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111;
   padding: 28rpx; margin: 0 20rpx 24rpx;
 }
-.section-title-v2 { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 12rpx; }
+.section-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 12rpx; }
 .section-title-v2.no-margin { margin-bottom: 0; }
-.card-text-v2 { display: block; font-size: 24rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 4rpx; }
-.card-text-v2.muted { color: #999; font-size: 20rpx; }
+.card-text-v2 { display: block; font-size: 26rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 4rpx; }
+.card-text-v2.muted { color: #999; font-size: 22rpx; }
 .card-text-v2.strong { color: #111; font-weight: 800; }
 .card-text-v2.no-margin { margin-bottom: 0; }
 .inline-title-v2,
@@ -1264,24 +1308,47 @@ function saveShareImage() {
 /* 方位条 */
 .dir-strip-v2 { display: flex; gap: 8rpx; margin-top: 16rpx; }
 .dir-cell-v2 { flex: 1; text-align: center; border: 2rpx solid #111; background: #f9f9f9; padding: 10rpx 4rpx; }
-.dir-lbl-v2 { font-size: 18rpx; font-weight: 700; color: #666; display: block; }
-.dir-val-v2 { font-size: 22rpx; font-weight: 900; color: #111; display: block; margin-top: 2rpx; }
+.dir-lbl-v2 { font-size: 22rpx; font-weight: 700; color: #666; display: block; }
+.dir-val-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; margin-top: 2rpx; }
 
 /* 宜忌分裂卡片 */
 .split-row-v2 { display: flex; gap: 12rpx; margin-top: 12rpx; }
 .split-half-v2 { flex: 1; padding: 16rpx; border: 2rpx solid #111; }
 .split-half-v2.yi { background: #f0fdfa; }
 .split-half-v2.ji { background: #fff5f5; }
-.split-label-v2 { font-size: 22rpx; font-weight: 900; display: block; margin-bottom: 8rpx; }
+.split-label-v2 { font-size: 26rpx; font-weight: 900; display: block; margin-bottom: 8rpx; }
 .split-label-row-v2 { margin-bottom: 8rpx; }
 .split-label-row-v2 .split-label-v2 { margin-bottom: 0; }
 .split-label-v2.yi { color: #4ECDC4; }
 .split-label-v2.ji { color: #FF5252; }
-.split-item-v2 { font-size: 20rpx; font-weight: 600; color: #111; padding: 3rpx 0; display: block; }
+
+/* info popup */
+.info-dot-v2 { display: inline-flex; align-items: center; justify-content: center; width: 36rpx; height: 36rpx; border: 2rpx solid #111; font-size: 22rpx; font-weight: 900; color: #111; margin-left: auto; cursor: pointer; }
+.info-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); }
+.info-sheet { width: 100%; max-width: 500px; max-height: 70vh; background: #FFFDF5; border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; display: flex; flex-direction: column; overflow: hidden; }
+.info-sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 28rpx; border-bottom: 2rpx solid #111; flex-shrink: 0; }
+.info-sheet-title { font-size: 26rpx; font-weight: 900; color: #111; }
+.info-sheet-close { font-size: 36rpx; font-weight: 900; color: #111; padding: 0 8rpx; line-height: 1; }
+.info-sheet-body { padding: 24rpx 28rpx; overflow-y: auto; flex: 1; }
+.info-tree-item { padding: 14rpx 0; border-bottom: 1rpx dashed #ccc; }
+.info-tree-item:last-child { border-bottom: none; }
+.info-tree-q { display: block; font-size: 26rpx; font-weight: 700; color: #111; margin-bottom: 4rpx; }
+.info-tree-a { display: block; font-size: 22rpx; font-weight: 600; color: #666; }
+.info-tree-divider { height: 12rpx; }
+.info-tree-note { display: block; font-size: 20rpx; color: #999; line-height: 1.5; padding-top: 8rpx; }
+
+/* direction highlights */
+.guide-dir-hl { display: inline-block; background: #FFD93D; padding: 2rpx 10rpx; font-weight: 900; }
+.guide-dir-hl.hongluan { background: #FF6B6B; color: #fff; }
+.guide-dir-hl.tianxi { background: #4ECDC4; color: #fff; }
+
+/* yi-ji inline flow */
+.split-item-flow-v2 { font-size: 22rpx; font-weight: 700; color: #111; line-height: 1.8; }
+
 
 /* 标签 */
 .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 6rpx; }
-.tag-v2 { display: inline-block; border: 2rpx solid #111; padding: 4rpx 14rpx; font-size: 20rpx; font-weight: 800; background: #FFD93D; color: #111; }
+.tag-v2 { display: inline-block; border: 2rpx solid #111; padding: 4rpx 14rpx; font-size: 22rpx; font-weight: 800; background: #FFD93D; color: #111; }
 .tag-v2.black { background: #111; color: #FFD93D; }
 .tag-v2.green { background: #4ECDC4; color: #111; }
 .tag-v2.red { background: #FF5252; color: #fff; }
@@ -1290,20 +1357,20 @@ function saveShareImage() {
 .persona-card-v2 { border: 3rpx solid #111; padding: 24rpx; background: #fff; box-shadow: 4rpx 4rpx 0 #111; margin-top: 12rpx; }
 .persona-head-v2 { display: flex; align-items: center; gap: 12rpx; margin-bottom: 16rpx; }
 .persona-avatar-v2 { width: 64rpx; height: 64rpx; border-radius: 50%; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; font-size: 36rpx; flex-shrink: 0; }
-.persona-name-v2 { font-size: 24rpx; font-weight: 900; color: #111; display: block; }
-.persona-sub-v2 { font-size: 18rpx; color: #666; display: block; }
+.persona-name-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; }
+.persona-sub-v2 { font-size: 22rpx; color: #666; display: block; }
 .persona-dim-v2 { margin-bottom: 14rpx; }
-.persona-dim-label-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: 16rpx; font-weight: 900; padding: 2rpx 10rpx; margin-bottom: 4rpx; }
-.persona-dim-text-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.4; }
-.persona-dim-text-v2.strong { color: #111; font-weight: 800; font-size: 22rpx; }
-.persona-dim-src-v2 { font-size: 16rpx; color: #999; margin-top: 2rpx; display: block; }
+.persona-dim-label-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: 20rpx; font-weight: 900; padding: 2rpx 10rpx; margin-bottom: 4rpx; }
+.persona-dim-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.4; }
+.persona-dim-text-v2.strong { color: #111; font-weight: 800; font-size: 26rpx; }
+.persona-dim-src-v2 { font-size: 20rpx; color: #999; margin-top: 2rpx; display: block; }
 
 /* 引导卡 */
 .guide-card-v2 { border-style: dashed; border-color: #999; cursor: pointer; }
 
 /* 匹配徽章 */
 .match-badge-wrap { text-align: center; padding: 20rpx 0; }
-.match-badge-v2 { display: inline-block; padding: 12rpx 28rpx; border: 3rpx solid #111; box-shadow: 3rpx 3rpx 0 #111; font-size: 28rpx; font-weight: 900; }
+.match-badge-v2 { display: inline-block; padding: 12rpx 28rpx; border: 3rpx solid #111; box-shadow: 3rpx 3rpx 0 #111; font-size: 40rpx; font-weight: 900; }
 .match-badge-v2.great { background: #4ECDC4; color: #111; }
 .match-badge-v2.good { background: #FFD93D; color: #111; }
 .match-badge-v2.caution { background: #FF5252; color: #fff; }
@@ -1314,12 +1381,12 @@ function saveShareImage() {
 .ov-row-v2 { display: flex; align-items: center; padding: 10rpx 0; border-bottom: 1rpx dashed #ccc; }
 .ov-row-v2:last-child { border-bottom: none; }
 .ov-row-v2.current { background: #FFFBEB; margin: 0 -8rpx; padding: 12rpx 8rpx; border-radius: 4rpx; }
-.ov-label-v2 { width: 130rpx; font-size: 20rpx; font-weight: 900; color: #111; flex-shrink: 0; }
-.ov-dir-v2 { font-size: 18rpx; font-weight: 600; color: #666; padding: 4rpx 12rpx; border: 2rpx solid #111; background: #f9f9f9; margin: 0 4rpx; }
+.ov-label-v2 { width: 130rpx; font-size: 22rpx; font-weight: 900; color: #111; flex-shrink: 0; }
+.ov-dir-v2 { font-size: 22rpx; font-weight: 600; color: #666; padding: 4rpx 12rpx; border: 2rpx solid #111; background: #f9f9f9; margin: 0 4rpx; }
 .ov-dir-v2.current { background: #FFD93D; color: #111; font-weight: 800; }
 
 /* 按钮 */
-.btn-v2-me { display: flex; align-items: center; justify-content: center; height: 64rpx; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; background: #fff; color: #111; border-radius: 0; }
+.btn-v2-me { display: flex; align-items: center; justify-content: center; height: 64rpx; border: 3rpx solid #111; font-size: 32rpx; font-weight: 800; background: #fff; color: #111; border-radius: 0; }
 .btn-v2-me.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
 .btn-v2-me.outline { background: #fff; }
 
@@ -1327,14 +1394,14 @@ function saveShareImage() {
 .sheet-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: flex-end; justify-content: center; }
 .sheet-panel { width: 100%; max-width: 500rpx; background: #FFFDF5; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; border-radius: 16rpx 16rpx 0 0; padding: 28rpx 24rpx 60rpx; max-height: 70vh; overflow-y: auto; }
 .sheet-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24rpx; }
-.sheet-title-v2 { font-size: 24rpx; font-weight: 900; color: #111; }
+.sheet-title-v2 { font-size: 26rpx; font-weight: 900; color: #111; }
 .sheet-close-v2 { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; color: #999; }
 
 /* Picker */
 .picker-row-v2 { display: flex; gap: 12rpx; margin-bottom: 16rpx; }
 .picker-box-v2 { flex: 1; }
-.picker-label-v2 { font-size: 18rpx; font-weight: 700; color: #666; margin-bottom: 6rpx; display: block; }
-.picker-display-v2 { width: 100%; height: 52rpx; border: 3rpx solid #111; display: flex; align-items: center; padding: 0 16rpx; font-size: 22rpx; font-weight: 700; background: #fff; }
+.picker-label-v2 { font-size: 22rpx; font-weight: 700; color: #666; margin-bottom: 6rpx; display: block; }
+.picker-display-v2 { width: 100%; height: 52rpx; border: 3rpx solid #111; display: flex; align-items: center; padding: 0 16rpx; font-size: 26rpx; font-weight: 700; background: #fff; }
 
 /* 配对结果 */
 .match-result-v2 { margin-top: 20rpx; padding: 16rpx; border: 3rpx solid #111; background: #fff; }
@@ -1343,19 +1410,19 @@ function saveShareImage() {
 /* 双人解读 */
 .pair-insight-v2 { margin-top: 16rpx; }
 .pair-section-v2 { margin-bottom: 12rpx; }
-.pair-label-v2 { font-size: 22rpx; font-weight: 900; color: #111; display: block; margin-bottom: 4rpx; }
+.pair-label-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; margin-bottom: 4rpx; }
 .pair-label-row-v2 { margin-bottom: 4rpx; }
 .pair-label-row-v2 .pair-label-v2 { margin-bottom: 0; }
-.pair-text-v2 { font-size: 22rpx; font-weight: 600; color: #666; display: block; line-height: 1.5; }
-.pair-text-v2.muted { color: #999; font-size: 20rpx; }
-.pair-classical-v2 { font-size: 18rpx; color: #999; display: block; line-height: 1.45; }
+.pair-text-v2 { font-size: 26rpx; font-weight: 600; color: #666; display: block; line-height: 1.5; }
+.pair-text-v2.muted { color: #999; font-size: 22rpx; }
+.pair-classical-v2 { font-size: 22rpx; color: #999; display: block; line-height: 1.45; }
 
 /* 桃花指数条 */
 .score-bar-v2 { margin-bottom: 16rpx; }
 .score-head-v2 { display: flex; align-items: baseline; gap: 8rpx; margin-bottom: 8rpx; }
 .score-num-v2 { font-size: 56rpx; font-weight: 900; color: #111; line-height: 1; }
-.score-unit-v2 { font-size: 22rpx; font-weight: 700; color: #999; }
-.score-level-v2 { font-size: 28rpx; font-weight: 900; color: #111; margin-left: 8rpx; }
+.score-unit-v2 { font-size: 26rpx; font-weight: 700; color: #999; }
+.score-level-v2 { font-size: 40rpx; font-weight: 900; color: #111; margin-left: 8rpx; }
 .score-track-v2 { height: 14rpx; background: #e8e8e8; border: 2rpx solid #111; }
 .score-fill-v2 { height: 100%; background: #FFD93D; transition: width 0.6s ease; }
 
@@ -1364,15 +1431,15 @@ function saveShareImage() {
 .guide-section-v2:last-child { border-bottom: none; }
 .guide-icon-v2 { flex-shrink: 0; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; }
 .guide-content-v2 { flex: 1; }
-.guide-label-v2 { font-size: 22rpx; font-weight: 900; color: #111; display: block; margin-bottom: 4rpx; }
-.guide-text-v2 { font-size: 22rpx; font-weight: 600; color: #666; display: block; line-height: 1.4; }
+.guide-label-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; margin-bottom: 4rpx; }
+.guide-text-v2 { font-size: 26rpx; font-weight: 600; color: #666; display: block; line-height: 1.4; }
 .guide-text-v2.strong { color: #111; font-weight: 800; }
 
 /* 古籍出处 */
 .cite-block-v2 { margin-top: 14rpx; padding: 10rpx 14rpx; background: #FFFBEB; border-left: 4rpx solid #FFD93D; }
-.cite-title-v2 { font-size: 20rpx; font-weight: 900; color: #111; display: block; }
-.cite-desc-v2 { font-size: 18rpx; color: #999; display: block; line-height: 1.5; margin-top: 2rpx; }
-.cite-inline-v2 { font-size: 18rpx; font-weight: 700; color: #bbb; margin-left: 4rpx; }
+.cite-title-v2 { font-size: 22rpx; font-weight: 900; color: #111; display: block; }
+.cite-desc-v2 { font-size: 22rpx; color: #999; display: block; line-height: 1.5; margin-top: 2rpx; }
+.cite-inline-v2 { font-size: 22rpx; font-weight: 700; color: #bbb; margin-left: 4rpx; }
 
 /* 免责声明 */
 .disclaimer-card-v2 { border-style: dashed; background: #FFFBEB; }
@@ -1390,5 +1457,5 @@ function saveShareImage() {
   gap: 8rpx;
 }
 .ai-disclaimer { text-align: center; padding: 20rpx 20rpx 40rpx; }
-.ai-disclaimer-text { font-size: 20rpx; color: #999; }
+.ai-disclaimer-text { font-size: 22rpx; color: #999; }
 </style>

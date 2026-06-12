@@ -21,6 +21,88 @@ button::after {
   border: none;
 }
 
+/* ===== Unified Button System ===== */
+.btn {
+  box-sizing: border-box;
+  text-align: center;
+  font-weight: 800;
+  color: #111;
+  border: 3rpx solid #111;
+  background: #fff;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sizes */
+.btn-md  { height: 64rpx; line-height: 64rpx; font-size: 26rpx; padding: 0 24rpx; }
+.btn-sm  { height: 48rpx; line-height: 48rpx; font-size: 22rpx; padding: 0 16rpx; }
+.btn-lg  { height: 80rpx; line-height: 80rpx; font-size: 28rpx; padding: 0 32rpx; }
+
+/* Levels */
+.btn-primary   { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
+.btn-secondary { background: #fff; }
+.btn-ghost     { background: transparent; border-style: dashed; }
+
+/* Layout */
+.btn-full { width: 100%; flex: none; }
+.btn-auto { flex: none; }
+
+/* Danger */
+.btn-danger { color: #FF5252; border-color: #FF5252; }
+.btn-danger.btn-primary { background: #FF5252; color: #fff; }
+
+/* Disabled */
+.btn[disabled] { opacity: 0.5; box-shadow: none; }
+
+/* ===== Fortune / Mystical button system（命理卡片专用）===== */
+.fortune-card {
+  background: #FFFDF5 !important;
+  border: 2rpx solid #C4A86C !important;
+  box-shadow: 0 4rpx 16rpx rgba(196, 168, 108, 0.15) !important;
+}
+
+.btn-fortune {
+  box-sizing: border-box;
+  text-align: center;
+  font-weight: 800;
+  border-radius: 4rpx;
+  border: 2rpx solid #C4A86C;
+  background: #FFFDF5;
+  color: #5C1F1F;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-fortune-primary {
+  background: #C41E3A;
+  color: #FFD700;
+  border-color: #C4A86C;
+  box-shadow: 0 2rpx 8rpx rgba(196, 30, 58, 0.25);
+}
+
+.btn-fortune-secondary {
+  background: #FFFDF5;
+  color: #8B4513;
+  border: 2rpx solid #C4A86C;
+}
+
+.btn-fortune-ghost {
+  background: transparent;
+  border-style: dashed;
+  border-color: #C4A86C;
+  color: #8B6914;
+}
+
+.btn-fortune-sm  { height: 48rpx; line-height: 48rpx; font-size: 22rpx; padding: 0 20rpx; }
+.btn-fortune-md  { height: 64rpx; line-height: 64rpx; font-size: 26rpx; padding: 0 24rpx; }
+.btn-fortune-full { width: 100%; flex: none; }
+
+.btn-fortune[disabled] { opacity: 0.5; box-shadow: none; }
+
 /* ===== Shared card styles (applied by global .page class) ===== */
 .page .card {
   background:
@@ -163,7 +245,6 @@ button::after {
 .font-large .block-title,
 .font-large .info-title-v2,
 .font-large .info-title,
-.font-large .btn-v2-l,
 .font-large .pet-custom-icon-v2 { font-size: 36rpx !important; }
 /* 30rpx → 34rpx */
 .font-large .case-name-v2,
@@ -181,10 +262,8 @@ button::after {
 .font-large .info-close-v2,
 .font-large .info-close,
 .font-large .stat-pair-num-v2,
-.font-large .btn-v2-r,
-.font-large .btn-v2-sp,
+.font-large .btn-lg,
 .font-large .model-label-v2,
-.font-large .btn-v2-outline,
 .font-large .pet-row-name-v2,
 .font-large .pet-custom-arrow-v2,
 .font-large .chat-head-title,
@@ -193,17 +272,8 @@ button::after {
 .font-large .hero-copy-v2,
 .font-large .hero-copy,
 .font-large .hero-copy-v2-sub,
-.font-large .btn-v2,
-.font-large .btn-v2-me,
-.font-large .btn-v2-n,
-.font-large .btn-v2-wr,
-.font-large .btn-v2.primary,
-.font-large .btn-v2-wr.full,
-.font-large .btn-v2-hero,
-.font-large .btn-v2-action,
-.font-large .btn-v2-bottom,
-.font-large .btn-v2-submit,
-.font-large .submit-btn-v2,
+.font-large .btn-fortune-md,
+.font-large .btn-md,
 .font-large .event-title-v2,
 .font-large .event-title,
 .font-large .evidence-main,
@@ -224,10 +294,8 @@ button::after {
 .font-large .card-text-v2,
 .font-large .info-label-v2,
 .font-large .info-value-v2,
-.font-large .btn-v2.sm,
-.font-large .btn-v2-me.sm,
-.font-large .btn-v2-wr,
-.font-large .btn-v2-n,
+.font-large .btn-fortune-sm,
+.font-large .btn-sm,
 .font-large .review-summary-v2,
 .font-large .remember-text-v2,
 .font-large .tab-btn-v2,
@@ -245,15 +313,12 @@ button::after {
 .font-large .result-text-v2,
 .font-large .pet-option-name-v2,
 .font-large .pet-custom-text-v2,
-.font-large .delete-btn-v2,
 .font-large .test-result-v2,
 .font-large .trace-value,
 .font-large .status-summary,
 .font-large .trend-summary,
 .font-large .pet-bubble-text,
-.font-large .weekly-desc-v2,
-.font-large .btn-v2-wr,
-.font-large .btn-v2-n { font-size: 27rpx !important; }
+.font-large .weekly-desc-v2 { font-size: 27rpx !important; }
 /* 22rpx → 25rpx */
 .font-large .section-title-v2,
 .font-large .empty-sub-v2,
@@ -263,7 +328,6 @@ button::after {
 .font-large .privacy-v2,
 .font-large .error-v2,
 .font-large .check-v2,
-.font-large .btn-v2-t,
 .font-large .notice-sub-v2,
 .font-large .trend-warn-v2,
 .font-large .action-item-text-v2,

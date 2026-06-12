@@ -1867,6 +1867,81 @@ async function updateCustomPetRequest(event) {
   }
 }
 
+async function listOrders(event = {}) {
+  const status = typeof event.status === 'string' ? event.status.trim() : ''
+  const page = Math.max(1, parseInt(event.page, 10) || 1)
+  const pageSize = Math.min(100, Math.max(1, parseInt(event.pageSize, 10) || 20))
+
+  let query = db.collection('recharge_orders')
+  if (status && status !== 'all') {
+    query = query.where({ status })
+  }
+  const countRes = await query.count()
+  const total = countRes.total || 0
+
+  const { data } = await query
+    .orderBy('createdAt', 'desc')
+    .skip((page - 1) * pageSize)
+    .limit(pageSize)
+    .get()
+
+  return {
+    success: true,
+    orders: (data || []).map((item) => ({
+      _id: item._id,
+      userId: item.userId || '',
+      planName: item.planName || '',
+      amount: item.amount || 0,
+      amountYuan: ((item.amount || 0) / 100).toFixed(2),
+      status: item.status || 'pending',
+      type: item.type || 'recharge',
+      createdAt: item.createdAt,
+      paidAt: item.paidAt || null,
+      remark: item.remark || ''
+    })),
+    total,
+    page,
+    pageSize
+  }
+}
+
+async function refundOrder(event = {}) {
+  const orderId = typeof event.orderId === 'string' ? event.orderId.trim() : ''
+  if (!orderId) return { success: false, message: '缺少订单ID' }
+
+  const orderRes = await db.collection('recharge_orders').doc(orderId).get()
+  const order = (orderRes.data && orderRes.data.length > 0) ? orderRes.data[0] : null
+  if (!order) return { success: false, message: '订单不存在' }
+  if (order.status !== 'paid') return { success: false, message: '仅已支付订单可退款' }
+
+  await db.collection('recharge_orders').doc(orderId).update({
+    status: 'refunded',
+    refundedAt: new Date()
+  })
+
+  // 扣回已充值的 token
+  if (order.grantedTokens && order.grantedTokens > 0) {
+    const accountRes = await db.collection('token_accounts').where({ userId: order.userId }).limit(1).get()
+    const account = (accountRes.data && accountRes.data.length > 0) ? accountRes.data[0] : null
+    if (account) {
+      await db.collection('token_accounts').doc(account._id).update({
+        balance: Math.max(0, (account.balance || 0) - order.grantedTokens),
+        updatedAt: new Date()
+      })
+    }
+    await db.collection('token_ledger_records').add({
+      userId: order.userId,
+      type: 'refund',
+      amount: -order.grantedTokens,
+      orderId,
+      remark: `退款扣回：${order.planName}`,
+      createdAt: new Date()
+    })
+  }
+
+  return { success: true, orderId }
+}
+
 exports.main = async (event = {}) => {
   try {
     const { userId, user } = await requireAdminUser(event)
@@ -1890,6 +1965,8 @@ exports.main = async (event = {}) => {
     if (action === 'resolveFeedback') return await resolveFeedback(event)
     if (action === 'listCustomPetRequests') return await listCustomPetRequests()
     if (action === 'updateCustomPetRequest') return await updateCustomPetRequest(event)
+    if (action === 'listOrders') return await listOrders(event)
+    if (action === 'refundOrder') return await refundOrder(event)
 
     return { success: false, message: '未知后台操作' }
   } catch (error) {

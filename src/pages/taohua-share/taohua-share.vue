@@ -113,7 +113,7 @@ function goHome() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page {
   min-height: 100vh;
   padding: 24rpx;
@@ -130,8 +130,8 @@ function goHome() {
   padding: 8rpx 18rpx;
   background: #111;
   color: #ffd93d;
-  font-size: 20rpx;
-  font-weight: 900;
+  font-size: $fs-caption;
+  font-weight: $fw-hero;
   box-shadow: 4rpx 4rpx 0 #c84a3d;
 }
 
@@ -139,17 +139,17 @@ function goHome() {
   display: block;
   margin-top: 28rpx;
   color: #111;
-  font-size: 56rpx;
-  line-height: 1.1;
-  font-weight: 900;
+  font-size: $fs-display;
+  line-height: $lh-hero;
+  font-weight: $fw-hero;
 }
 
 .subtitle {
   display: block;
   margin-top: 12rpx;
   color: #7f2b1d;
-  font-size: 26rpx;
-  font-weight: 800;
+  font-size: $fs-body-lg;
+  font-weight: $fw-hero;
 }
 
 .poster {
@@ -184,8 +184,8 @@ function goHome() {
 }
 
 .seal-text {
-  font-size: 58rpx;
-  font-weight: 900;
+  font-size: $fs-display;
+  font-weight: $fw-hero;
   color: #111;
 }
 
@@ -199,26 +199,26 @@ function goHome() {
 .match-label {
   display: block;
   color: #8a3a28;
-  font-size: 22rpx;
-  font-weight: 900;
+  font-size: $fs-body;
+  font-weight: $fw-hero;
 }
 
 .persona-title {
   display: block;
   margin-top: 10rpx;
   color: #111;
-  font-size: 48rpx;
-  line-height: 1.15;
-  font-weight: 900;
+  font-size: $fs-hero-title;
+  line-height: $lh-hero;
+  font-weight: $fw-hero;
 }
 
 .persona-desc {
   display: block;
   margin-top: 16rpx;
   color: #5f5148;
-  font-size: 27rpx;
-  line-height: 1.55;
-  font-weight: 700;
+  font-size: $fs-body-lg;
+  line-height: $lh-loose;
+  font-weight: $fw-label;
 }
 
 .tag-row,
@@ -235,8 +235,8 @@ function goHome() {
   border: 3rpx solid #111;
   background: #f5f0e8;
   color: #111;
-  font-size: 22rpx;
-  font-weight: 900;
+  font-size: $fs-body;
+  font-weight: $fw-hero;
 }
 
 .tag.black {
@@ -261,9 +261,9 @@ function goHome() {
   display: block;
   margin-top: 16rpx;
   color: #111;
-  font-size: 27rpx;
-  line-height: 1.55;
-  font-weight: 800;
+  font-size: $fs-body-lg;
+  line-height: $lh-loose;
+  font-weight: $fw-hero;
 }
 
 .split {
@@ -288,17 +288,17 @@ function goHome() {
   display: block;
   margin-top: 14rpx;
   color: #111;
-  font-size: 28rpx;
-  font-weight: 900;
+  font-size: $fs-heading;
+  font-weight: $fw-hero;
 }
 
 .mini-sub {
   display: block;
   margin-top: 10rpx;
   color: #5f5148;
-  font-size: 21rpx;
+  font-size: $fs-body;
   line-height: 1.45;
-  font-weight: 700;
+  font-weight: $fw-label;
 }
 
 .cta-card {
@@ -313,17 +313,17 @@ function goHome() {
 .cta-title {
   display: block;
   color: #ffd93d;
-  font-size: 32rpx;
-  font-weight: 900;
+  font-size: $fs-heading;
+  font-weight: $fw-hero;
 }
 
 .cta-copy {
   display: block;
   margin-top: 12rpx;
   color: rgba(255,255,255,0.78);
-  font-size: 24rpx;
+  font-size: $fs-body-lg;
   line-height: 1.45;
-  font-weight: 700;
+  font-weight: $fw-label;
 }
 
 .primary-btn,
@@ -333,8 +333,8 @@ function goHome() {
   height: 82rpx;
   line-height: 82rpx;
   border: 3rpx solid #111;
-  font-size: 28rpx;
-  font-weight: 900;
+  font-size: $fs-heading;
+  font-weight: $fw-hero;
 }
 
 .primary-btn {
@@ -352,7 +352,7 @@ function goHome() {
   padding: 30rpx 0 10rpx;
   text-align: center;
   color: #8e8177;
-  font-size: 20rpx;
-  font-weight: 700;
+  font-size: $fs-caption;
+  font-weight: $fw-label;
 }
 </style>

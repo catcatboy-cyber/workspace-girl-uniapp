@@ -1,0 +1,38 @@
+// ============================================================
+// 统一字体 Token & Mixin — Crush Master v2 设计系统
+// 所有页面的 scoped CSS 通过 @import 使用，消除裸 font-size
+// ============================================================
+
+// ── 字号层级 (8-tier) ──────────────────────────────────────
+$fs-display:    56rpx;  // 核心大数字 .score-num-v2
+$fs-hero-title: 48rpx;  // 页面主标题 .hero-title-v2 .title-v2 .balance-num-v2
+$fs-kpi:        40rpx;  // KPI 数值   .kpi-num-v2 .trend-num-v2 .sheet-close
+$fs-heading:    32rpx;  // 区块标题   .block-title .info-title-v2 .sheet-title
+$fs-body-lg:    26rpx;  // 正文/输入  .hero-copy-v2 .card-text-v2
+$fs-body:       22rpx;  // 标签/副文  .section-title-v2 .action-label .bullet-v2
+$fs-caption:    20rpx;  // 小标签     .hero-tag-v2 .tag-v2 .kpi-lbl-v2 .muted
+$fs-micro:      16rpx;  // 微型注释   .minor-note-v2 (极少用)
+
+// ── 字重 token ─────────────────────────────────────────────
+$fw-hero:    900;  // display / hero-title / kpi 数字
+$fw-heading: 900;  // heading 标题
+$fw-label:   700;  // section-title / caption 标签
+$fw-body:    600;  // body-lg / body 正文
+
+// ── 行高 token ─────────────────────────────────────────────
+$lh-tight:  1;      // 数字/score 紧凑
+$lh-hero:   1.15;   // hero title
+$lh-heading: 1.2;   // heading
+$lh-label:  1.3;    // caption / label
+$lh-body:   1.5;    // body / body-lg 正文
+$lh-loose:  1.6;    // 宽松段落
+
+// ── 排版 mixin（推荐页面 CSS 中使用） ──────────────────────
+@mixin text-display    { font-size: $fs-display;    font-weight: $fw-hero;    line-height: $lh-tight; }
+@mixin text-hero-title { font-size: $fs-hero-title; font-weight: $fw-hero;    line-height: $lh-hero; }
+@mixin text-kpi        { font-size: $fs-kpi;        font-weight: $fw-hero;    line-height: $lh-tight; }
+@mixin text-heading    { font-size: $fs-heading;    font-weight: $fw-heading; line-height: $lh-heading; }
+@mixin text-body-lg    { font-size: $fs-body-lg;    font-weight: $fw-body;    line-height: $lh-body; }
+@mixin text-body       { font-size: $fs-body;       font-weight: $fw-body;    line-height: $lh-body; }
+@mixin text-caption    { font-size: $fs-caption;    font-weight: $fw-label;   line-height: $lh-label; }
+@mixin text-micro      { font-size: $fs-micro;      font-weight: $fw-label;   line-height: $lh-label; }

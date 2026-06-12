@@ -9,7 +9,7 @@
           <input v-model="password" type="password" placeholder="请输入密码（至少8位）" class="input-v2" style="margin-top:20rpx;" @input="clearError" />
           <input v-model="confirmPassword" type="password" placeholder="请再次输入密码" class="input-v2" style="margin-top:20rpx;" @input="clearError" />
           <view v-if="errorMessage" class="error-v2" style="margin-top:18rpx;">{{ errorMessage }}</view>
-          <button class="btn-v2-r primary" :disabled="loading" @click="handleRegister">{{ loading ? '注册中...' : '注册' }}</button>
+          <button class="btn btn-primary btn-lg btn-full" :disabled="loading" @click="handleRegister">{{ loading ? '注册中...' : '注册' }}</button>
           <text class="footer-v2" @click="goLogin">已有账号？立即登录 →</text>
         </view>
     </view>
@@ -108,7 +108,7 @@ const goLogin = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .register-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f4ede2 0%, #fbf6ee 100%);
@@ -118,20 +118,15 @@ const goLogin = () => {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 
 .v2-mode .header-v2 { text-align: left; padding: 40rpx 0 32rpx; }
-.v2-mode .title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
+.v2-mode .title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .subtitle-v2 { display: block; font-size: 28rpx; font-weight: 600; color: #666; margin-top: 10rpx; }
+.v2-mode .subtitle-v2 { display: block; font-size: $fs-heading; font-weight: $fw-body; color: #666; margin-top: 10rpx; }
 
 .v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: 26rpx; font-weight: 600; color: #111; background: #fff; box-sizing: border-box; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; background: #fff; box-sizing: border-box; }
 .v2-mode .input-v2::placeholder { color: #999; }
 
-.v2-mode .error-v2 { padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 22rpx; font-weight: 600; color: #FF5252; }
+.v2-mode .error-v2 { padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: $fs-body; font-weight: $fw-body; color: #FF5252; }
 
-.v2-mode .btn-v2-r { width: 100%; height: 80rpx; line-height: 80rpx; text-align: center; background: #fff; border: 3rpx solid #111; font-size: 28rpx; font-weight: 800; color: #111; margin-top: 20rpx; }
-.v2-mode .btn-v2-r.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .btn-v2-r[disabled] { opacity: 0.6; }
-
-.v2-mode .footer-v2 { display: block; margin-top: 24rpx; text-align: center; font-size: 26rpx; font-weight: 700; color: #111; text-decoration: underline; }
 </style>

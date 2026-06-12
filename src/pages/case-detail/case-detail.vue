@@ -90,7 +90,7 @@
         </view>
         <!-- Monthly review -->
         <view v-if="aiWeeklyPreview" class="card-v2 anim-card" style="animation-delay:0.25s">
-          <text class="section-title-v2">{{ aiWeeklyPreview.weekStart }} - {{ aiWeeklyPreview.weekEnd }}</text>
+          <text class="section-title-v2">{{ aiWeeklyPreview.monthStart }} - {{ aiWeeklyPreview.monthEnd }}</text>
           <text class="weekly-title-v2">{{ aiWeeklyPreview.title }}</text>
           <view class="tag-row-v2" style="margin:10rpx 0;"><text class="tag-v2 black">{{ mapWeeklyTrendLabel(aiWeeklyPreview.trendLabel) }}</text><text class="tag-v2 black">AI 复盘</text></view>
           <view class="tag-row-v2" style="margin-bottom:10rpx;"><text class="tag-v2">事件 {{ aiWeeklyPreview.eventCount }}</text><text class="tag-v2">分析 {{ aiWeeklyPreview.assessmentCount }}</text><text class="tag-v2">意向 {{ formatDelta(aiWeeklyPreview.intentDelta) }}</text><text class="tag-v2">风险 {{ formatDelta(aiWeeklyPreview.riskDelta) }}</text></view>

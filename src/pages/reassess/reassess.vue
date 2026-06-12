@@ -14,8 +14,8 @@
         <text class="hero-copy-v2">提交后不会覆盖历史，会追加成新的 assessment 记录。</text>
         <text class="card-text-v2" style="color: rgba(0,0,0,0.5)">Crush 名称、关系类型和画像不在这里修改，避免你改了但本次提交并不会保存。</text>
         <view class="hero-actions-v2">
-          <button class="btn-v2 sm" @click="goCaseDetail">返回我们</button>
-          <button class="btn-v2 sm" @click="goTimeline">打开往事</button>
+          <button class="btn btn-secondary btn-sm" @click="goCaseDetail">返回我们</button>
+          <button class="btn btn-secondary btn-sm" @click="goTimeline">打开往事</button>
         </view>
       </view>
 
@@ -130,11 +130,11 @@ function goTimeline() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5); }
-.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: 28rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 
 .v2-mode .hero-block-v2 {
   background: var(--hero-bg, #FF6B6B);
@@ -149,15 +149,15 @@ function goTimeline() {
   background: #111;
   color: #FFD93D;
   padding: 6rpx 16rpx;
-  font-size: 20rpx;
-  font-weight: 900;
+  font-size: $fs-caption;
+  font-weight: $fw-hero;
   letter-spacing: 4rpx;
   margin-bottom: 16rpx;
 }
 .v2-mode .hero-title-v2 {
   display: block;
-  font-size: 48rpx;
-  font-weight: 900;
+  font-size: $fs-hero-title;
+  font-weight: $fw-hero;
   color: #111;
   line-height: 1.15;
   letter-spacing: -2rpx;
@@ -165,8 +165,8 @@ function goTimeline() {
 }
 .v2-mode .hero-copy-v2 {
   display: block;
-  font-size: 26rpx;
-  font-weight: 600;
+  font-size: $fs-body-lg;
+  font-weight: $fw-body;
   color: rgba(0,0,0,0.7);
   line-height: 1.6;
   margin-top: 8rpx;
@@ -182,8 +182,8 @@ function goTimeline() {
 }
 .v2-mode .section-title-v2 {
   display: block;
-  font-size: 22rpx;
-  font-weight: 900;
+  font-size: $fs-body;
+  font-weight: $fw-hero;
   color: #111;
   text-transform: uppercase;
   letter-spacing: 2rpx;
@@ -191,23 +191,11 @@ function goTimeline() {
 }
 .v2-mode .card-text-v2 {
   display: block;
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: $fs-body-lg;
+  font-weight: $fw-body;
   color: #666;
   line-height: 1.6;
   margin: 6rpx 0;
 }
 
-.v2-mode .btn-v2 {
-  height: 56rpx;
-  line-height: 56rpx;
-  padding: 0 24rpx;
-  background: #fff;
-  color: #111;
-  border: 3rpx solid #111;
-  font-size: 26rpx;
-  font-weight: 800;
-}
-.v2-mode .btn-v2.primary { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .btn-v2.sm { height: 56rpx; line-height: 56rpx; padding: 0 24rpx; font-size: 24rpx; }
 </style>
