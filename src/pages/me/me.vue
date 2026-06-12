@@ -18,9 +18,7 @@
             <text v-else class="plan-badge-text">{{ planBadgeLabel }}</text>
           </view>
         </view>
-        <view v-if="subLoading" class="card-text-v2" style="text-align:center;padding:20rpx 0;">加载中…</view>
-        <template v-else>
-          <view class="balance-hero-v2">
+        <view class="balance-hero-v2">
             <text class="balance-num-v2">{{ totalAvailableDisplay }}</text>
             <text class="balance-unit-v2">Token 可用</text>
           </view>
@@ -52,7 +50,6 @@
             <button class="btn-v2-me sm" open-type="share">邀请好友 +{{ referralRewardTokens }}</button>
             <button class="btn-v2-me outline sm" @click="goTokenUsage">消费明细</button>
           </view>
-        </template>
       </view>
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
@@ -121,7 +118,6 @@ const tokenUsageSummary = ref({
 const voiceUsageSummary = ref({ totalCount: 0, totalDurationMs: 0 })
 const voiceUsageLoading = ref(false)
 // 次数（订阅体系）
-const subLoading = ref(false)
 const subPlan = ref('free')
 const subPlanName = ref('免费版')
 const subIsTrial = ref(false)
@@ -300,7 +296,6 @@ async function loadData() {
 }
 
 async function loadSubscriptionStatus() {
-  subLoading.value = true
   try {
     const result = await getSubscriptionStatus()
     if (!result?.success || !result?.subscription) return
@@ -316,8 +311,6 @@ async function loadSubscriptionStatus() {
     subReferralCount.value = s.referralCount || 0
   } catch {
     // ignore
-  } finally {
-    subLoading.value = false
   }
   try {
     const cfg = await getSubscriptionConfig()
@@ -347,7 +340,6 @@ async function loadVoiceUsage() {
     voiceUsageLoading.value = false
   }
 }
-
 function formatSeconds(ms: number) {
   const seconds = Math.round(Number(ms || 0) / 1000)
   if (seconds < 60) return `${seconds} 秒`

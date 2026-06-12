@@ -52,7 +52,7 @@ function getCurrentMonthRange(now = new Date()) {
 }
 
 function getMonthRange(monthStartValue) {
-  const start = parseRangeStart(monthStartValue) || getLastMonthRange().start
+  const start = parseRangeStart(monthStartValue) || getCurrentMonthRange().start
   const end = new Date(start.getFullYear(), start.getMonth() + 1, 1, 0, 0, 0, -1)
   return {
     start,
@@ -703,8 +703,66 @@ async function generateMonthlySideRead(params) {
   return { review: nextReview, reviews }
 }
 
+async function autoGenerateForAllCases() {
+  await ensureReviewCollection()
+  const range = getLastMonthRange()
+  console.log(`[weeklyReview:autoGenerate] Processing month ${range.monthStart} - ${range.monthEnd}`)
+
+  const { data: allCases } = await db.collection('cases').limit(1000).get()
+  console.log(`[weeklyReview:autoGenerate] Found ${allCases.length} total cases`)
+
+  const results = { total: allCases.length, generated: 0, skippedNoEvents: 0, failed: 0, details: [] }
+
+  for (const caseDoc of allCases) {
+    const caseId = caseDoc._id
+    const userId = caseDoc.userId
+    try {
+      // Check if this case has any events in the target month
+      const timelineRes = await db.collection('timeline_records')
+        .where({ caseId })
+        .orderBy('occurrenceAt', 'desc')
+        .get()
+      const monthEvents = (timelineRes.data || [])
+        .filter((item) => !['assessment', 'trend'].includes(item.type))
+        .filter((item) => inRange(item, 'occurrenceAt', range.start, range.end))
+
+      if (monthEvents.length === 0) {
+        results.skippedNoEvents++
+        continue
+      }
+
+      // Generate review using the standard pipeline (AI → fallback, with token checks)
+      await generateReview({ caseDoc, caseId, userId, monthStart: range.monthStart })
+
+      results.generated++
+      console.log(`[weeklyReview:autoGenerate] case ${caseId}: generated (${monthEvents.length} events)`)
+      results.details.push({ caseId, generated: true, eventCount: monthEvents.length })
+    } catch (error) {
+      results.failed++
+      results.details.push({ caseId, error: error?.message || 'unknown error' })
+      console.error(`[weeklyReview:autoGenerate] case ${caseId} FAILED:`, error?.message || error)
+    }
+  }
+
+  console.log(`[weeklyReview:autoGenerate] Done: ${results.generated} generated, ${results.skippedNoEvents} skipped (no events), ${results.failed} failed`)
+  return { success: true, range: range.monthStart, ...results }
+}
+
 exports.main = async (event = {}) => {
   const { caseId, action = 'list', monthStart } = event
+  const isTimer = process.env.TRIGGER_SRC === 'timer'
+
+  // Timer-triggered or manual autoGenerate: process all cases without auth
+  if (isTimer || action === 'autoGenerate') {
+    try {
+      return await autoGenerateForAllCases()
+    } catch (error) {
+      console.error('[weeklyReview:autoGenerate] Fatal error:', error)
+      return { success: false, message: error?.message || 'unknown error' }
+    }
+  }
+
+  // Normal flow: requires user authentication
   try {
     const userId = await requireAuthenticatedUserId(app, event)
     if (!caseId) return { success: false, message: '缺少 caseId' }

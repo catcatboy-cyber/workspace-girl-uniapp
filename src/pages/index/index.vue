@@ -10,8 +10,8 @@
           <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
           <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
-        <!-- 命理桃花 teaser -->
-        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;" @click="goTaohua">
+        <!-- 命理 · 今日（桃花 + 星象速写） -->
+        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;">
           <view class="taohua-teaser-head">
             <text class="taohua-teaser-head-title">🧭 今日桃花</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
@@ -35,10 +35,36 @@
           <view v-else class="taohua-teaser-body">
             <text class="taohua-teaser-meta">加载中...</text>
           </view>
-          <view class="taohua-teaser-cta">
-            <text>查看完整命理分析</text>
-            <text class="taohua-teaser-cta-arrow">→</text>
-          </view>
+          <!-- 星象速写（仅当有 zodiac 数据且有案例时） -->
+          <template v-if="hasProfileZodiacData">
+            <view class="taohua-teaser-sep"></view>
+            <view class="taohua-teaser-side-read">
+              <text class="taohua-teaser-side-title">{{ profileSideRead?.title || '星象速写' }}</text>
+              <template v-if="profileSideRead">
+                <text class="taohua-teaser-side-summary">{{ profileSideRead.summary }}</text>
+                <view v-if="profileSideRead.sections?.length" class="side-grid">
+                  <view v-for="item in profileSideRead.sections" :key="item.label" class="side-item">
+                    <text class="side-item-label">{{ item.label }}</text>
+                    <text class="side-item-text">{{ item.text }}</text>
+                  </view>
+                </view>
+              </template>
+              <view v-else-if="sideReadLoading" class="action-box">
+                <text class="action-label">星象速写中...</text>
+                <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台生成中，已用时 {{ sideReadSeconds }} 秒</text></view>
+              </view>
+              <view v-else>
+                <text class="side-text">一眼看穿你们之间的星象气场</text>
+                <button class="btn-v2 sm" :disabled="sideReadLoading" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
+              </view>
+              <view v-if="sideReadError" class="action-box" style="background:#FFEEEC;">
+                <text class="action-label">生成失败</text>
+                <text class="action-text">{{ sideReadError }}</text>
+                <button class="btn-v2 sm" style="margin-top:8rpx;" @click="generateLatestSideRead">重试</button>
+              </view>
+            </view>
+          </template>
+          <button class="btn-v2-me primary taohua-teaser-btn" @click="goTaohua">查看完整命理分析 →</button>
           <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
         </view>
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
@@ -85,8 +111,8 @@
           </view>
         </view>
 
-        <!-- 命理桃花 teaser -->
-        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.05s;" @click="goTaohua">
+        <!-- 命理 · 今日（桃花 + 星象速写） -->
+        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.05s;">
           <view class="taohua-teaser-head">
             <text class="taohua-teaser-head-title">🧭 今日桃花</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
@@ -110,10 +136,36 @@
           <view v-else class="taohua-teaser-body">
             <text class="taohua-teaser-meta">加载中...</text>
           </view>
-          <view class="taohua-teaser-cta">
-            <text>查看完整命理分析</text>
-            <text class="taohua-teaser-cta-arrow">→</text>
-          </view>
+          <!-- 星象速写（仅当有 zodiac 数据且有案例时） -->
+          <template v-if="hasProfileZodiacData">
+            <view class="taohua-teaser-sep"></view>
+            <view class="taohua-teaser-side-read">
+              <text class="taohua-teaser-side-title">{{ profileSideRead?.title || '星象速写' }}</text>
+              <template v-if="profileSideRead">
+                <text class="taohua-teaser-side-summary">{{ profileSideRead.summary }}</text>
+                <view v-if="profileSideRead.sections?.length" class="side-grid">
+                  <view v-for="item in profileSideRead.sections" :key="item.label" class="side-item">
+                    <text class="side-item-label">{{ item.label }}</text>
+                    <text class="side-item-text">{{ item.text }}</text>
+                  </view>
+                </view>
+              </template>
+              <view v-else-if="sideReadLoading" class="action-box">
+                <text class="action-label">星象速写中...</text>
+                <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台生成中，已用时 {{ sideReadSeconds }} 秒</text></view>
+              </view>
+              <view v-else>
+                <text class="side-text">一眼看穿你们之间的星象气场</text>
+                <button class="btn-v2 sm" :disabled="sideReadLoading" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
+              </view>
+              <view v-if="sideReadError" class="action-box" style="background:#FFEEEC;">
+                <text class="action-label">生成失败</text>
+                <text class="action-text">{{ sideReadError }}</text>
+                <button class="btn-v2 sm" style="margin-top:8rpx;" @click="generateLatestSideRead">重试</button>
+              </view>
+            </view>
+          </template>
+          <button class="btn-v2-me primary taohua-teaser-btn" @click="goTaohua">查看完整命理分析 →</button>
           <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
         </view>
 
@@ -202,22 +254,6 @@
               </view>
             </view>
           </template>
-          <view v-if="showSideReadEntry" class="side-box">
-            <text class="side-title">{{ profileSideRead?.title || '星象速写' }}</text>
-            <text v-if="profileSideRead" class="side-text">{{ profileSideRead.summary }}</text>
-            <view v-if="profileSideRead?.sections?.length" class="side-grid">
-              <view v-for="item in profileSideRead.sections" :key="item.label" class="side-item">
-                <text class="side-item-label">{{ item.label }}</text>
-                <text class="side-item-text">{{ item.text }}</text>
-              </view>
-            </view>
-            <view v-if="sideReadLoading" class="action-box">
-              <text class="action-label">星象速写中...</text>
-              <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台生成中，已用时 {{ sideReadSeconds }} 秒</text></view>
-            </view>
-            <text v-else-if="!profileSideRead" class="side-text">{{ sideReadEntryHint }}</text>
-            <button v-if="!profileSideRead" class="btn-v2 sm" :disabled="sideReadButtonDisabled" @click="generateLatestSideRead">{{ sideReadLoading ? '生成中...' : '一眼看穿' }}</button>
-          </view>
         </view>
       </template>
 
@@ -339,6 +375,7 @@ const voiceUploading = ref(false)
 const recording = ref(false)
 const voiceStatus = ref('')
 const sideReadLoading = ref(false)
+const sideReadError = ref('')
 const showFullAssessment = ref(false)
 const showQuickCreate = ref(false)
 const aiFeedbackLoading = ref(false)
@@ -581,16 +618,8 @@ const statusInfoProblemItems = computed(() => {
   return problemTypeTags.value.map((tag) => explainProblemLabel(tag))
 })
 
-const profileSideRead = computed(() => {
-  if (generatedSideRead.value) return generatedSideRead.value
-  const aiSideRead = latestCase.value?.latestResult?.sideReadAdvice
-  if (aiSideRead?.summary || aiSideRead?.sections?.length) return aiSideRead
-  return null
-})
-
-const showSideReadEntry = computed(() => {
-  if (!latestCase.value?.latestResult) return false
-  if (profileSideRead.value) return true
+const hasProfileZodiacData = computed(() => {
+  if (!latestCase.value?.caseId) return false
   return Boolean(
     latestCase.value?.profile?.zodiac
     || latestCase.value?.profile?.constellation
@@ -599,29 +628,18 @@ const showSideReadEntry = computed(() => {
   )
 })
 
+const profileSideRead = computed(() => {
+  if (generatedSideRead.value) return generatedSideRead.value
+  const aiSideRead = latestCase.value?.latestResult?.sideReadAdvice
+  if (aiSideRead?.summary || aiSideRead?.sections?.length) return aiSideRead
+  const caseSideRead = latestCase.value?.profileSideRead
+  if (caseSideRead?.summary || caseSideRead?.sections?.length) return caseSideRead
+  return null
+})
+
 const showProfileReminder = computed(() =>
   !hasUsableSelfProfile(selfProfile.value)
 )
-
-const hasInstantFeedbackRecord = computed(() => {
-  const result = latestCase.value?.latestResult
-  if (!result) return false
-  return Boolean(
-    latestTriggerEvent.value
-    || result.triggerEventId
-    || result.triggerEventTitle
-    || result.source === 'event_recalculation'
-  )
-})
-
-const sideReadButtonDisabled = computed(() => {
-  return sideReadLoading.value || !hasInstantFeedbackRecord.value
-})
-
-const sideReadEntryHint = computed(() => {
-  if (!hasInstantFeedbackRecord.value) return '请先记录一次事件并生成即时反馈，再来一眼看穿。'
-  return '星象速写不再跟随记录自动生成，避免拖慢即时反馈。'
-})
 
 const quickSubjectRoleHint = computed(() => {
   const label = mapSubjectRoleLabel(quickSubjectRole.value)
@@ -659,6 +677,7 @@ watch(quickDesc, (value) => {
 
 watch(latestResultKey, () => {
   generatedSideRead.value = null
+  sideReadError.value = ''
 })
 
 function mapIntentLabel(bucket?: string) {
@@ -1429,6 +1448,7 @@ async function submitQuickRecord() {
       quickSubjectRoleConfidence.value = 'auto'
       quickAttachments.value = []
       generatedSideRead.value = null
+      sideReadError.value = ''
       quickDate.value = getDateInputValue()
       quickTime.value = getTimeInputValue()
       quickFeedback.value = {
@@ -1517,10 +1537,10 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
 
 async function generateLatestSideRead() {
   if (sideReadLoading.value) return
-  if (!hasInstantFeedbackRecord.value) return
   const caseId = latestCase.value?.caseId
   if (!caseId) return
   sideReadLoading.value = true
+  sideReadError.value = ''
   applyPetScene('side_read_loading')
   startSideReadTimer()
   try {
@@ -1532,17 +1552,20 @@ async function generateLatestSideRead() {
     }
     if (!res?.success) {
       applyPetScene('ai_error', 3000)
-      showError(res?.message || '星象速写生成失败')
+      sideReadError.value = res?.message || '星象速写生成失败'
       return
     }
     generatedSideRead.value = res.sideReadAdvice
     if (latestCase.value?.latestResult) {
       latestCase.value.latestResult.sideReadAdvice = res.sideReadAdvice
     }
+    if (latestCase.value) {
+      latestCase.value.profileSideRead = res.sideReadAdvice
+    }
     applyPetScene('side_read_success', 3000)
     showSuccess('星象速写已生成')
   } catch (error: any) {
-    showError(error?.message || '星象速写生成失败')
+    sideReadError.value = error?.message || '星象速写生成失败'
   } finally {
     sideReadLoading.value = false
     stopSideReadTimer()
@@ -1851,7 +1874,14 @@ function goTaohua() {
 .v2-mode .taohua-teaser-dir-val { font-size: 20rpx; font-weight: 900; color: #111; margin-left: auto; }
 .v2-mode .taohua-teaser-guide { display: block; font-size: 22rpx; font-weight: 800; color: #111; line-height: 1.45; margin-bottom: 4rpx; }
 .v2-mode .taohua-teaser-meta { display: block; font-size: 20rpx; font-weight: 600; color: #999; }
-.v2-mode .taohua-teaser-cta { margin: 0 24rpx 12rpx; padding: 12rpx 0; border-top: 2rpx dashed #999; text-align: center; font-size: 22rpx; font-weight: 800; color: #FF6B6B; display: flex; align-items: center; justify-content: center; gap: 4rpx; }
-.v2-mode .taohua-teaser-cta-arrow { font-size: 26rpx; font-weight: 900; }
+.v2-mode .taohua-teaser-btn { width: 100%; margin: 12rpx 0 0; }
 .v2-mode .taohua-teaser-cite { padding: 10rpx 24rpx; border-top: 1rpx solid #eee; font-size: 18rpx; font-weight: 600; color: #bbb; text-align: center; }
+
+/* Merged card: separator between 桃花 and 星象速写 */
+.v2-mode .taohua-teaser-sep { margin: 0 24rpx; height: 2rpx; border-top: 2rpx dashed #111; }
+
+/* Merged card: side read section */
+.v2-mode .taohua-teaser-side-read { padding: 18rpx 24rpx; }
+.v2-mode .taohua-teaser-side-title { display: block; font-size: 22rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .taohua-teaser-side-summary { display: block; font-size: 22rpx; font-weight: 600; color: #555; line-height: 1.5; }
 </style>

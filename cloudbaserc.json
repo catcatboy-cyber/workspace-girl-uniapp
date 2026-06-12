@@ -167,12 +167,19 @@
     },
     {
       "name": "weeklyReview",
-      "timeout": 60,
+      "timeout": 120,
       "envVariables": {},
       "runtime": "Nodejs16.13",
-      "memorySize": 128,
+      "memorySize": 256,
       "handler": "index.main",
-      "installDependency": true
+      "installDependency": true,
+      "triggers": [
+        {
+          "name": "monthlyTimer",
+          "type": "timer",
+          "config": "0 0 0 1 * * *"
+        }
+      ]
     },
     {
       "name": "generateSideRead",

@@ -369,10 +369,13 @@ exports.main = async (event = {}) => {
     const caseDoc = normalizeDoc(await db.collection('cases').doc(caseId).get())
     if (!caseDoc) return { success: false, message: '档案不存在' }
     if (caseDoc.userId !== userId) return { success: false, message: '无权访问' }
-    if (!caseDoc.latestResultId) return { success: false, message: '缺少最新评估' }
-
-    const latest = normalizeDoc(await db.collection('assessments').doc(caseDoc.latestResultId).get())
-    if (!latest) return { success: false, message: '最新评估不存在' }
+    // Fetch latest assessment if available (optional — supports profile-only side read)
+    let latest = null
+    let latestResultId = null
+    if (caseDoc.latestResultId) {
+      latest = normalizeDoc(await db.collection('assessments').doc(caseDoc.latestResultId).get())
+      if (latest) latestResultId = caseDoc.latestResultId
+    }
 
     const user = normalizeDoc(await db.collection('users').doc(userId).get().catch(() => null))
     const aiSettings = normalizeSettings(await getAISettings(userId))
@@ -380,26 +383,43 @@ exports.main = async (event = {}) => {
       return { success: false, message: 'AI 未启用' }
     }
 
-    const eventTitle = latest.triggerEventTitle || ''
-    const eventInsight = latest.eventInsight || {}
+    // Fetch original event text (not assessment analysis) for side read context
+    let eventContext = null
+    if (latest?.triggerEventId) {
+      const eventDoc = normalizeDoc(await db.collection('timeline_records').doc(latest.triggerEventId).get().catch(() => null))
+      if (eventDoc) {
+        eventContext = {
+          title: clean(eventDoc.title || '', 80),
+          description: clean(eventDoc.description || '', 400)
+        }
+      }
+    }
+    // Fallback: use triggerEventTitle from assessment if timeline record not found
+    if (!eventContext && latest?.triggerEventTitle) {
+      eventContext = { title: clean(latest.triggerEventTitle, 80), description: '' }
+    }
+
     const personaPrompt = buildPersonaPrompt(aiSettings, user?.selfProfile)
+    const contextLines = [
+      personaPrompt.userPrompt,
+      'Output JSON only. title <= 20 Chinese chars, summary <= 200 chars, each section.text <= 280 chars. Do not use markdown fences.',
+      `Self profile: ${serializeProfile(user?.selfProfile)}`,
+      `Target profile: ${serializeProfile(caseDoc.profile)}`
+    ]
+    if (eventContext) {
+      contextLines.push(
+        'Below is the original event record. Generate a zodiac/constellation side read based on this raw event, NOT on any prior assessment analysis. Focus on what the event reveals about personality dynamics and cosmic style.',
+        `Event title: ${eventContext.title}`,
+        ...(eventContext.description ? [`Event description: ${eventContext.description}`] : [])
+      )
+    } else {
+      contextLines.push('No event context available. Generate a profile-only zodiac/constellation side read based on the self and target profile data.')
+    }
     const messages = buildPromptMessages({
       moduleKey: 'sideRead',
       settings: aiSettings,
       systemExtra: personaPrompt.systemPrompt,
-      contextLines: [
-        personaPrompt.userPrompt,
-        'Output JSON only. title <= 20 Chinese chars, summary <= 200 chars, each section.text <= 280 chars. Do not use markdown fences.',
-        `Self profile: ${serializeProfile(user?.selfProfile)}`,
-        `Target profile: ${serializeProfile(caseDoc.profile)}`,
-        `Current event: ${eventTitle}`,
-        `Current assessment: ${JSON.stringify({
-          headline: latest.explanation?.headline,
-          bullets: latest.explanation?.bullets,
-          actionAdvice: latest.actionAdvice,
-          eventInsight
-        })}`
-      ]
+      contextLines
     })
     if (!messages) {
       return { success: false, message: '后台未配置星象速写提示词' }
@@ -425,7 +445,7 @@ exports.main = async (event = {}) => {
     await recordTokenUsage(db, {
       userId,
       caseId,
-      assessmentId: caseDoc.latestResultId,
+      assessmentId: latestResultId,
       feature: 'sideRead',
       provider: aiSettings.provider,
       model: aiSettings.model,
@@ -436,13 +456,21 @@ exports.main = async (event = {}) => {
       sideReadAdvice = normalizeSideRead(parseJSONContent(raw))
     } catch (parseError) {
       console.error('[generateSideRead parse fallback]', parseError?.message, String(raw || '').slice(0, 500))
-      sideReadAdvice = fallbackSideRead(caseDoc.profile, latest)
+      sideReadAdvice = fallbackSideRead(caseDoc.profile, latest || {})
     }
 
-    await db.collection('assessments').doc(caseDoc.latestResultId).update({
-      sideReadAdvice: _.set(sideReadAdvice),
-      sideReadGeneratedAt: _.set(new Date())
-    })
+    // Store on assessment if available, otherwise on case document
+    if (latestResultId) {
+      await db.collection('assessments').doc(latestResultId).update({
+        sideReadAdvice: _.set(sideReadAdvice),
+        sideReadGeneratedAt: _.set(new Date())
+      })
+    } else {
+      await db.collection('cases').doc(caseId).update({
+        profileSideRead: _.set(sideReadAdvice),
+        profileSideReadGeneratedAt: _.set(new Date())
+      })
+    }
 
     await db.collection('timeline_records').add({
       caseId,

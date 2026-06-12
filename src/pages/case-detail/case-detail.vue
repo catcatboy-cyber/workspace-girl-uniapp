@@ -37,7 +37,7 @@
             <text class="bullet-v2">💫 {{ pairInsight.styleClash }}</text>
             <view class="tag-row-v2" style="margin-top:4rpx;"><text v-for="(a, i) in (pairInsight.activities || []).slice(0, 2)" :key="i" class="tag-v2">{{ a }}</text></view>
           </view>
-          <button class="btn-v2-me outline" style="margin-top:12rpx;width:100%;" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
+          <button class="btn-v2-me primary pair-read-btn" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
           <view v-if="pairReadLoading" class="action-box" style="margin-top:10rpx;">
             <text class="action-label">AI 深度解读中...</text>
             <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，结合今日气场...</text></view>
@@ -101,23 +101,11 @@
           <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2"><text class="focus-label-v2">后续验证重点 · 最该看</text><text class="focus-question-v2">{{ primaryWeeklyFocus }}</text><view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view></view>
         </view>
         <view v-else class="empty-v2" style="text-align:left;"><text class="empty-sub-v2">本月还没有复盘。有新事件后可生成。</text></view>
-        <!-- Side read -->
-        <view class="card-v2 anim-card" style="animation-delay:0.3s">
-          <text class="section-title-v2">月度星象速写</text>
-          <view v-if="currentWeeklySideRead">
-            <text v-if="currentWeeklySideRead.summary" class="weekly-desc-v2">{{ currentWeeklySideRead.summary }}</text>
-            <view v-if="currentWeeklySideRead.sections?.length" class="side-grid-v2"><view v-for="item in currentWeeklySideRead.sections" :key="item.label" class="side-item-v2"><text class="side-label-v2">{{ item.label }}</text><text class="side-text-v2">• {{ item.text }}</text></view></view>
-          </view>
-          <text v-else class="empty-sub-v2">本月星象速写还没有生成，先生成复盘后可生成。</text>
-        </view>
         <!-- Bottom action -->
         <view class="bottom-action-v2">
-          <view style="display:flex;gap:12rpx;">
-            <button class="btn-v2-bottom" style="flex:1;" :disabled="reviewGenerating || !hasNewEventsSinceReview" @click="generateThisMonthReview">{{ reviewGenerating ? '生成中...' : (aiWeeklyPreview ? '重新生成本月复盘' : '生成本月复盘') }}</button>
-            <button class="btn-v2-bottom" style="flex:1;" :disabled="sideReadGenerating || !hasNewEventsSinceReview || !aiWeeklyPreview" @click="generateThisMonthSideRead">{{ sideReadGenerating ? '生成中...' : (!aiWeeklyPreview ? '需先生成复盘' : (currentWeeklySideRead ? '重新生成星象速写' : '生成星象速写')) }}</button>
-          </view>
-          <view v-if="reviewGenerating || sideReadGenerating" class="action-box" style="margin-top:12rpx;">
-            <text class="action-label">{{ reviewGenerating ? '月度复盘' : '星象速写' }} 生成中...</text>
+          <button class="btn-v2-bottom" style="width:100%;" :disabled="reviewGenerating || (aiWeeklyPreview && !hasNewEventsSinceReview)" @click="generateThisMonthReview">{{ reviewGenerating ? '生成中...' : (aiWeeklyPreview ? '重新生成本月复盘' : '生成本月复盘') }}</button>
+          <view v-if="reviewGenerating" class="action-box" style="margin-top:12rpx;">
+            <text class="action-label">月度复盘 生成中...</text>
             <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，完成后将自动刷新</text></view>
           </view>
         </view>
@@ -129,7 +117,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, checkFeatureAccess, getCachedSelfProfile, generateMonthlyReview, generateMonthlySideRead, handleInsufficientBalance, generatePairRead } from '@/utils/api'
+import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, checkFeatureAccess, getCachedSelfProfile, generateMonthlyReview, handleInsufficientBalance, generatePairRead } from '@/utils/api'
 import { zodiacSignMatch, generatePairInsight } from '@/utils/taohua'
 import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments } from '@/utils/insights'
@@ -342,17 +330,13 @@ const hasNewEventsSinceReview = computed(() => {
 
 const weeklyButtonLabel = computed(() => {
   const review = weeklyPreview.value
-  if (!review) return '本月复盘'
+  if (!review) return '生成本月复盘'
   if (!hasNewEventsSinceReview.value) return '还没新事件'
   return '重新生成本月复盘'
 })
 
 const hasFallbackWeeklyPreview = computed(() => {
   return false
-})
-
-const currentWeeklySideRead = computed(() => {
-  return weeklyPreview.value?.weeklySideRead || null
 })
 
 const weeklyFocusItems = computed(() => {
@@ -787,9 +771,8 @@ async function doPairAIDeepRead() {
   } finally { pairReadLoading.value = false }
 }
 
-// Inline review + side read generation
+// Inline review generation
 const reviewGenerating = ref(false)
-const sideReadGenerating = ref(false)
 
 async function generateThisMonthReview() {
   if (reviewGenerating.value) return
@@ -804,20 +787,6 @@ async function generateThisMonthReview() {
     if (handleInsufficientBalance(error)) return
     showError(error?.message || '生成失败')
   } finally { reviewGenerating.value = false }
-}
-
-async function generateThisMonthSideRead() {
-  if (sideReadGenerating.value || !aiWeeklyPreview.value) return
-  sideReadGenerating.value = true
-  try {
-    const res = await generateMonthlySideRead(userId.value, caseId.value)
-    if (res.reviews) weeklyReviews.value = res.reviews
-    bumpDataVersion()
-    showSuccess('星象速写已生成')
-  } catch (error: any) {
-    if (handleInsufficientBalance(error)) return
-    showError(error?.message || '生成失败')
-  } finally { sideReadGenerating.value = false }
 }
 </script>
 
@@ -941,6 +910,7 @@ async function generateThisMonthSideRead() {
 .v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; padding: 0 28rpx; }
 .v2-mode .btn-v2-bottom { display: block; width: 100%; height: 72rpx; line-height: 72rpx; background: #4ECDC4; border: 3rpx solid #111; font-size: 26rpx; font-weight: 800; color: #111; box-shadow: 4rpx 4rpx 0 #111; }
 .v2-mode .btn-v2-bottom[disabled] { opacity: 0.5; box-shadow: none; }
+.v2-mode .pair-read-btn { width: 100%; margin-top: 12rpx; }
 .sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: linear-gradient(90deg, transparent, #FF6B6B, transparent); animation: sync-slide 0.8s ease-in-out infinite; }
 @keyframes sync-slide {
   0% { width: 30%; left: -30%; }
