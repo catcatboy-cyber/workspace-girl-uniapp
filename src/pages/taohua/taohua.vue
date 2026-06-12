@@ -476,7 +476,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import {
-  zodiacSignMatch, zodiacToTaohua, hongluanTianxi, xianchiAlgorithm,
+  zodiacPairMatch, zodiacSignMatch, zodiacToTaohua, hongluanTianxi, xianchiAlgorithm,
   getTodayStr, ZODIAC_NAMES, SIGN_NAMES, ZODIAC_TO_ZHI,
   generatePairInsight
 } from '@/utils/taohua'
@@ -545,6 +545,7 @@ const dailyData = ref<any>(null)
 const practicalData = ref<any>(null)
 const scoreData = ref<any>(null)
 const reportData = ref<any>(null)
+const allowMockTaohuaFallback = import.meta.env.DEV
 
 function buildCacheKey() {
   const uid = getCurrentUserId() || 'anon'
@@ -570,57 +571,63 @@ function tryPreloadCache() {
 const hasPreloadCache = tryPreloadCache()
 
 async function loadData() {
-  const today = getTodayStr()
-
   try {
+    let queryError: any = null
     try {
-      const result = await queryTaohua(userZodiac.value, userSign.value)
-    if (result?.success) {
-      dailyData.value = result.data.daily
-      practicalData.value = result.data.practical || null
-      scoreData.value = result.data.score || null
+      const result = await queryTaohua(userZodiac.value, userSign.value, selfProfile.value?.gender)
+      if (result?.success) {
+        dailyData.value = result.data.daily
+        practicalData.value = result.data.practical || null
+        scoreData.value = result.data.score || null
+      } else {
+        queryError = result
+      }
+    } catch (error) {
+      queryError = error
     }
-  } catch (_) {
-    // 云函数未部署 → 降级到 mock
-  }
 
-  // 降级：使用 mock 日历数据
-  if (!dailyData.value) {
-    dailyData.value = {
-      solarDate: MOCK_REPORT.今日方位?.['公历日期'] || '',
-      lunarDate: MOCK_REPORT.今日方位?.['农历'] || '',
-      ganzhi: {
-        dayGanZhi: MOCK_REPORT.今日方位?.['日柱'] || '--',
-        dayGan: MOCK_REPORT.今日方位?.['日干'] || '--',
-        dayZhi: MOCK_REPORT.今日方位?.['日支'] || '--',
-        yearPillar: MOCK_REPORT.节气?.['年柱'] || '--',
-        monthPillar: MOCK_REPORT.节气?.['月柱'] || '--',
-      },
-      fangwei: {
-        xishen: MOCK_REPORT.今日方位?.['喜神'] || {},
-        caishen: MOCK_REPORT.今日方位?.['财神'] || {},
-        fushen: MOCK_REPORT.今日方位?.['福神'] || {},
-        yanggui: MOCK_REPORT.今日方位?.['阳贵'] || {},
-        yingui: MOCK_REPORT.今日方位?.['阴贵'] || {},
-      },
-      yiji: {
-        jianchu: MOCK_REPORT.今日宜忌?.['建除'] || '--',
-        yi: MOCK_REPORT.今日宜忌?.['宜'] || [],
-        ji: MOCK_REPORT.今日宜忌?.['忌'] || [],
-        jishen: MOCK_REPORT.今日宜忌?.['吉神'] || [],
-        xiongsha: MOCK_REPORT.今日宜忌?.['凶煞'] || [],
-      },
-      ershibaxiu: MOCK_REPORT.今日方位?.['二十八宿'] || '--',
-      pengzu: MOCK_REPORT.今日方位?.['彭祖百忌'] || '--',
-      chongsha: MOCK_REPORT.今日方位?.['生肖日冲'] || '--',
-      shafang: MOCK_REPORT.今日方位?.['煞方'] || '--',
-      jieqi: {
-        current: MOCK_REPORT.节气?.['当前节气'] || '',
-        next: MOCK_REPORT.节气?.['下一节气'] || '--',
-        lunarMonth: MOCK_REPORT.节气?.['农历月'] || '--',
-      },
+    if (!dailyData.value && queryError && !allowMockTaohuaFallback) {
+      const message = queryError?.message || '命理桃花数据加载失败，请稍后再试。'
+      uni.showToast({ title: message, icon: 'none' })
+      return
     }
-  }
+
+    if (!dailyData.value && allowMockTaohuaFallback) {
+      dailyData.value = {
+        solarDate: MOCK_REPORT.今日方位?.['公历日期'] || '',
+        lunarDate: MOCK_REPORT.今日方位?.['农历'] || '',
+        ganzhi: {
+          dayGanZhi: MOCK_REPORT.今日方位?.['日柱'] || '--',
+          dayGan: MOCK_REPORT.今日方位?.['日干'] || '--',
+          dayZhi: MOCK_REPORT.今日方位?.['日支'] || '--',
+          yearPillar: MOCK_REPORT.节气?.['年柱'] || '--',
+          monthPillar: MOCK_REPORT.节气?.['月柱'] || '--',
+        },
+        fangwei: {
+          xishen: MOCK_REPORT.今日方位?.['喜神'] || {},
+          caishen: MOCK_REPORT.今日方位?.['财神'] || {},
+          fushen: MOCK_REPORT.今日方位?.['福神'] || {},
+          yanggui: MOCK_REPORT.今日方位?.['阳贵'] || {},
+          yingui: MOCK_REPORT.今日方位?.['阴贵'] || {},
+        },
+        yiji: {
+          jianchu: MOCK_REPORT.今日宜忌?.['建除'] || '--',
+          yi: MOCK_REPORT.今日宜忌?.['宜'] || [],
+          ji: MOCK_REPORT.今日宜忌?.['忌'] || [],
+          jishen: MOCK_REPORT.今日宜忌?.['吉神'] || [],
+          xiongsha: MOCK_REPORT.今日宜忌?.['凶煞'] || [],
+        },
+        ershibaxiu: MOCK_REPORT.今日方位?.['二十八宿'] || '--',
+        pengzu: MOCK_REPORT.今日方位?.['彭祖百忌'] || '--',
+        chongsha: MOCK_REPORT.今日方位?.['生肖日冲'] || '--',
+        shafang: MOCK_REPORT.今日方位?.['煞方'] || '--',
+        jieqi: {
+          current: MOCK_REPORT.节气?.['当前节气'] || '',
+          next: MOCK_REPORT.节气?.['下一节气'] || '--',
+          lunarMonth: MOCK_REPORT.节气?.['农历月'] || '--',
+        },
+      }
+    }
 
   // 本地计算个人数据
   const dayZhi = dailyData.value.ganzhi.dayZhi
@@ -849,10 +856,11 @@ function doMatchCheck() {
     const partner = zodiacSignMatch(z, s)
     // 用当前用户数据和对方数据生成双人解读
     const selfMatch = zodiacSignMatch(userZodiac.value, userSign.value)
-    const insight = generatePairInsight(selfMatch, partner)
+    const pair = zodiacPairMatch(userZodiac.value, z, userSign.value, s)
+    const insight = generatePairInsight(selfMatch, partner, pair)
     matchResult.value = {
-      relation: partner.relation,
-      relationDesc: partner.relationDesc,
+      relation: pair.relation,
+      relationDesc: pair.relationDesc,
       partner,
       insight,
     }

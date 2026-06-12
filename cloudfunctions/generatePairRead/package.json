@@ -4,6 +4,7 @@
   "description": "AI-enhanced pair reading based on zodiac/sign matching + timeline context",
   "main": "index.js",
   "dependencies": {
-    "@cloudbase/node-sdk": "^2.4.0"
+    "@cloudbase/node-sdk": "^2.4.0",
+    "lunar-javascript": "^1.7.7"
   }
 }

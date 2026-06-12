@@ -8,6 +8,7 @@
  * 依赖：_shared/auth, _shared/subscription, _shared/ai-http, _shared/token-usage
  */
 const cloudbase = require('@cloudbase/node-sdk')
+const { Solar } = require('lunar-javascript')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
 const { postChatCompletions, parseJSONContent, AI_REQUEST_TIMEOUT_MS } = require('./_shared/ai-http')
@@ -26,26 +27,21 @@ const ZHI_DIR = { '子':'正北','丑':'东北','寅':'东北','卯':'正东','�
 const LIUHE = { '子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午' }
 const LIUCHONG = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' }
 const SANHE_TAOHUA = { '申':'酉','子':'酉','辰':'酉', '亥':'子','卯':'子','未':'子', '寅':'卯','午':'卯','戌':'卯', '巳':'午','酉':'午','丑':'午' }
-const MONTH_ZHI_LIST = ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑']
 
 function sanheMembers(zhi) {
   const m = { '申':['子','辰'],'子':['申','辰'],'辰':['申','子'],'亥':['卯','未'],'卯':['亥','未'],'未':['亥','卯'],'寅':['午','戌'],'午':['寅','戌'],'戌':['寅','午'],'巳':['酉','丑'],'酉':['巳','丑'],'丑':['巳','酉'] }
   return m[zhi] || []
 }
 
-// ── 日支计算（1900-01-01=甲戌，index10） ──
-function getTodayDayZhi() {
-  const ref = new Date(Date.UTC(1900, 0, 1))
-  const now = new Date()
-  const daysSince = Math.floor((now.getTime() - ref.getTime()) / 86400000)
-  const ganzhiIndex = ((daysSince % 60) + 10 + 60) % 60
-  return ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][ganzhiIndex % 12]
-}
-
-// ── 月支（农历近似：以节气为界，这里用公历月做近似）──
-function getMonthZhi() {
-  const m = new Date().getMonth() // 0=Jan
-  return MONTH_ZHI_LIST[m]
+function buildDailyGanzhi() {
+  const solar = Solar.fromDate(new Date())
+  const lunar = solar.getLunar()
+  return {
+    dayZhi: lunar.getDayZhi(),
+    monthZhi: lunar.getMonthZhi(),
+    dayGanZhi: lunar.getDayInGanZhi(),
+    monthPillar: lunar.getMonthInGanZhi(),
+  }
 }
 
 // ── 静态匹配 ──
@@ -65,8 +61,9 @@ function staticPairMatch(selfZodiac, selfSign, partnerZodiac, partnerSign) {
 
 // ── 当日/当月气场分析 ──
 function dailyContext(match) {
-  const dayZhi = getTodayDayZhi()
-  const monthZhi = getMonthZhi()
+  const dailyGanzhi = buildDailyGanzhi()
+  const dayZhi = dailyGanzhi.dayZhi
+  const monthZhi = dailyGanzhi.monthZhi
   const taohuaZhi = SANHE_TAOHUA[dayZhi] || '午'
   const taohuaDir = ZHI_DIR[taohuaZhi] || '正南'
   const taohuaWuxing = ZHI_WUXING[taohuaZhi] || '火'
@@ -80,6 +77,8 @@ function dailyContext(match) {
 
   return {
     dayZhi, monthZhi,
+    dayGanZhi: dailyGanzhi.dayGanZhi,
+    monthPillar: dailyGanzhi.monthPillar,
     taohuaZhi, taohuaDir, taohuaWuxing,
     tianxiZhi, tianxiDir,
     monthWuxing,

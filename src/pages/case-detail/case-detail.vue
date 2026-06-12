@@ -118,7 +118,7 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, checkFeatureAccess, getCachedSelfProfile, generateMonthlyReview, handleInsufficientBalance, generatePairRead } from '@/utils/api'
-import { zodiacSignMatch, generatePairInsight } from '@/utils/taohua'
+import { zodiacPairMatch, zodiacSignMatch, generatePairInsight } from '@/utils/taohua'
 import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
@@ -747,9 +747,10 @@ async function loadPairRead() {
       showPairReadGuide.value = !!(self?.zodiac || crush?.zodiac)
       return
     }
-    const match = zodiacSignMatch(crush.zodiac, crush.constellation)
+    const match = zodiacPairMatch(self.zodiac, crush.zodiac, self.constellation, crush.constellation)
+    const partner = zodiacSignMatch(crush.zodiac, crush.constellation)
     const selfMatch = zodiacSignMatch(self.zodiac, self.constellation)
-    const insight = generatePairInsight(selfMatch, match)
+    const insight = generatePairInsight(selfMatch, partner, match)
     pairMatch.value = match
     pairInsight.value = insight
     showPairReadGuide.value = false

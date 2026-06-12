@@ -200,6 +200,21 @@ export interface CrossMatchResult {
   directionSign: string
 }
 
+export interface PairZodiacMatchResult {
+  self: {
+    zodiac: string
+    zhi: string
+    sign?: string
+  }
+  partner: {
+    zodiac: string
+    zhi: string
+    sign?: string
+  }
+  relation: string
+  relationDesc: string
+}
+
 // ================================================================
 // 1. 咸池桃花算法
 // ================================================================
@@ -555,7 +570,46 @@ export function zodiacSignMatch(zodiac: string, sign: string): CrossMatchResult 
 }
 
 // ================================================================
-// 6. 工具函数
+// 6. 双方生肖地支匹配
+// ================================================================
+
+export function zodiacPairMatch(
+  selfZodiac: string,
+  partnerZodiac: string,
+  selfSign = '',
+  partnerSign = '',
+): PairZodiacMatchResult {
+  const selfZhi = ZODIAC_TO_ZHI[selfZodiac]
+  const partnerZhi = ZODIAC_TO_ZHI[partnerZodiac]
+  if (!selfZhi) throw new Error(`未知生肖: ${selfZodiac}`)
+  if (!partnerZhi) throw new Error(`未知生肖: ${partnerZodiac}`)
+
+  let relation = '平'
+  let relationDesc = '双方生肖地支无特殊合冲关系，能量独立运行，关系走向更取决于相处质量。'
+  if (partnerZhi === selfZhi) {
+    relation = '同宫'
+    relationDesc = '双方生肖地支相同，个性强烈纯粹，容易互相理解，也容易互相较劲。'
+  } else if (LIUHE[selfZhi] === partnerZhi) {
+    relation = '六合（大吉）'
+    relationDesc = '双方生肖地支六合，阴阳互补，能量容易融合，为较顺的组合。'
+  } else if (_sanheMembers(selfZhi).includes(partnerZhi)) {
+    relation = '三合（吉利）'
+    relationDesc = '双方生肖地支同属三合局，五行能量相互助力，天然默契较强。'
+  } else if (LIUCHONG[selfZhi] === partnerZhi) {
+    relation = '六冲（冲突）'
+    relationDesc = '双方生肖地支六冲，吸引力和波动性都更强，需要更主动地磨合节奏。'
+  }
+
+  return {
+    self: { zodiac: selfZodiac, zhi: selfZhi, sign: selfSign || undefined },
+    partner: { zodiac: partnerZodiac, zhi: partnerZhi, sign: partnerSign || undefined },
+    relation,
+    relationDesc,
+  }
+}
+
+// ================================================================
+// 7. 工具函数
 // ================================================================
 
 /** 获取当日简易日期字符串 */
@@ -571,7 +625,7 @@ export const ZODIAC_NAMES = Object.keys(ZODIAC_TO_ZHI)
 export const SIGN_NAMES = Object.keys(SIGN_DUAL)
 
 // ================================================================
-// 7. 双人解读生成器（Phase B）
+// 8. 双人解读生成器（Phase B）
 // ================================================================
 
 export interface PairInsight {
@@ -584,10 +638,9 @@ export interface PairInsight {
 export function generatePairInsight(
   selfMatch: CrossMatchResult,
   partnerMatch: CrossMatchResult,
+  pairMatch?: PairZodiacMatchResult,
 ): PairInsight {
-  const relation = selfMatch.relation
-  const selfPersonality = selfMatch.western.personality
-  const partnerPersonality = partnerMatch.western.personality
+  const relation = pairMatch?.relation || selfMatch.relation
   const selfElement = selfMatch.western.element
   const partnerElement = partnerMatch.western.element
 
