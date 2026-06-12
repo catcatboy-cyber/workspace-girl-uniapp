@@ -69,7 +69,7 @@ onShow(() => {
   loadRememberedLogin()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
-  resetCloudAuthState().catch(() => {})
+  resetCloudAuthState({ clearBusinessUser: false }).catch(() => {})
 })
 
 const clearError = () => {

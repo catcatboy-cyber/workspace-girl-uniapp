@@ -1,6 +1,7 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const cloud = require('wx-server-sdk')
 const crypto = require('crypto')
+const https = require('https')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -58,6 +59,77 @@ function extractOpenId(event) {
     console.warn('getWXContext failed:', error)
     return event?.openid || ''
   }
+}
+
+function requestJson(url) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, (res) => {
+      let body = ''
+      res.setEncoding('utf8')
+      res.on('data', (chunk) => { body += chunk })
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body || '{}')
+          if (res.statusCode && res.statusCode >= 400) {
+            const error = new Error(`HTTP_${res.statusCode}`)
+            error.response = parsed
+            reject(error)
+            return
+          }
+          resolve(parsed)
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
+    req.setTimeout(5000, () => {
+      req.destroy(new Error('JSCODE2SESSION_TIMEOUT'))
+    })
+    req.on('error', reject)
+  })
+}
+
+async function getOpenIdByLoginCode(loginCode) {
+  const code = String(loginCode || '').trim()
+  if (!code) return ''
+
+  const appid = String(
+    process.env.WECHAT_APPID ||
+    process.env.WX_APPID ||
+    process.env.MP_APPID ||
+    process.env.APPID ||
+    'wx0df17e80b6843702'
+  ).trim()
+  const secret = String(
+    process.env.WECHAT_APP_SECRET ||
+    process.env.WECHAT_SECRET ||
+    process.env.WX_APP_SECRET ||
+    process.env.WX_APPSECRET ||
+    process.env.WX_SECRET ||
+    process.env.MP_APP_SECRET ||
+    process.env.APPSECRET ||
+    ''
+  ).trim()
+
+  if (!appid || !secret) {
+    console.warn('wechatLogin missing appid/appsecret env for loginCode fallback')
+    const error = new Error('WECHAT_APP_SECRET_MISSING')
+    error.code = 'WECHAT_APP_SECRET_MISSING'
+    throw error
+  }
+
+  const params = new URLSearchParams({
+    appid,
+    secret,
+    js_code: code,
+    grant_type: 'authorization_code'
+  })
+  const result = await requestJson(`https://api.weixin.qq.com/sns/jscode2session?${params.toString()}`)
+  if (result?.errcode) {
+    console.warn('jscode2session failed:', JSON.stringify(result))
+    return ''
+  }
+  return String(result?.openid || '').trim()
 }
 
 function extractPhoneInfo(result) {
@@ -186,7 +258,7 @@ exports.main = async (event = {}) => {
   const profile = normalizeWechatProfile(event)
 
   try {
-    const openid = extractOpenId(event)
+    const openid = extractOpenId(event) || await getOpenIdByLoginCode(event?.loginCode)
     if (!openid) {
       return { success: false, message: '无法获取微信用户身份，请在微信小程序中重试' }
     }
@@ -256,6 +328,9 @@ exports.main = async (event = {}) => {
     }
     if (error?.code === 'PHONE_NOT_RETURNED') {
       return { success: false, message: '未能获取手机号，请重新授权' }
+    }
+    if (error?.code === 'WECHAT_APP_SECRET_MISSING') {
+      return { success: false, message: '微信登录配置缺少 AppSecret，请配置云函数环境变量 WECHAT_APP_SECRET' }
     }
     return { success: false, message: '微信登录失败，请稍后重试或使用邮箱登录' }
   }

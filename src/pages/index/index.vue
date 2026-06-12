@@ -1,5 +1,5 @@
 <template>
-  <view v-if="_uid" :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
+  <view v-if="currentUserId" :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
 
     <view v-if="loading" class="loading">LOADING...</view>
 
@@ -347,19 +347,6 @@ import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
 import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
-// 无登录态时立即跳转，避免挂载整个首页组件树
-const _uid = getCurrentUserId()
-if (!_uid) {
-  uni.reLaunch({ url: '/pages/login/login' })
-}
-
-import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
-import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
-import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
-import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
-import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
-
 type PetScene =
   | 'ai_loading'
   | 'ai_success'
@@ -401,6 +388,7 @@ const pageStyle = computed(() => {
 })
 const loading = ref(true)
 const fontSizeMode = ref(getFontSizeMode())
+const currentUserId = ref(getCurrentUserId() || '')
 const cases = ref<any[]>([])
 const userId = ref('')
 const activeCaseId = ref('')
@@ -1004,6 +992,7 @@ async function refreshSelfProfileInBackground() {
 onShow(() => {
   const _t0 = Date.now()
   console.log('[PERF] index onShow start')
+  currentUserId.value = getCurrentUserId() || ''
   fontSizeMode.value = getFontSizeMode()
   // Sync cached profile so showProfileReminder recomputes
   selfProfile.value = getCachedSelfProfile()
@@ -1055,9 +1044,11 @@ onUnload(() => {
 async function loadData() {
   const uid = getCurrentUserId()
   if (!uid) {
+    currentUserId.value = ''
     uni.reLaunch({ url: '/pages/login/login' })
     return
   }
+  currentUserId.value = uid
   userId.value = uid
   if (!dataReady.value) {
     const cachedCases = readHomeCasesCache(uid)
