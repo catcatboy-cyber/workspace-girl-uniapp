@@ -1,4 +1,4 @@
-export const ENV_ID = 'cloud1-d8gqh3f5g49993a5a'
+export const ENV_ID = 'cloud1-d0gvhqu2c8a2b61fd'
 
 const CLOUD_AUTH_STORAGE_KEYS = [
   `user_info_${ENV_ID}`

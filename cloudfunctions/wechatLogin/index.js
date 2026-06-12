@@ -98,7 +98,7 @@ async function getOpenIdByLoginCode(loginCode) {
     process.env.WX_APPID ||
     process.env.MP_APPID ||
     process.env.APPID ||
-    'wx0df17e80b6843702'
+    'wxb8bd1a6b518e931e'
   ).trim()
   const secret = String(
     process.env.WECHAT_APP_SECRET ||

@@ -10,19 +10,19 @@ const sharedPetStates = {
   'running-right': { frames: 8, fps: 8, loop: true }
 }
 
-const CLOUD_ENV_ID = 'cloud1-d8gqh3f5g49993a5a'
+const CLOUD_ENV_ID = 'cloud1-d0gvhqu2c8a2b61fd'
 let petCloudInitialized = false
 
 // CloudBase cloud storage file IDs.
 // Spritesheets are cached under wx.env.USER_DATA_PATH on first use.
 const CLOUD_PET_CONFIG = {
   xiaomi: {
-    spritesheetFileID: 'cloud://cloud1-d8gqh3f5g49993a5a.636c-cloud1-d8gqh3f5g49993a5a-1419212433/pets/xiaomi/spritesheet.webp',
-    manifestFileID: 'cloud://cloud1-d8gqh3f5g49993a5a.636c-cloud1-d8gqh3f5g49993a5a-1419212433/pets/xiaomi/manifest.json'
+    spritesheetFileID: '',
+    manifestFileID: ''
   },
   doggo: {
-    spritesheetFileID: 'cloud://cloud1-d8gqh3f5g49993a5a.636c-cloud1-d8gqh3f5g49993a5a-1419212433/pets/doggo/spritesheet.webp',
-    manifestFileID: 'cloud://cloud1-d8gqh3f5g49993a5a.636c-cloud1-d8gqh3f5g49993a5a-1419212433/pets/doggo/manifest.json'
+    spritesheetFileID: '',
+    manifestFileID: ''
   }
 }
 

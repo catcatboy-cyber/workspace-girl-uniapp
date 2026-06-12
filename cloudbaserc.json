@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
-  "envId": "cloud1-d8gqh3f5g49993a5a",
+  "envId": "cloud1-d0gvhqu2c8a2b61fd",
   "functionRoot": "./cloudfunctions",
   "functions": [
     {
