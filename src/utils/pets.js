@@ -108,8 +108,13 @@ function getCloudConfig(petId) {
   return null
 }
 
+function hasConfiguredCloudFiles(petId) {
+  const cfg = getCloudConfig(petId)
+  return Boolean(cfg?.spritesheetFileID && cfg?.manifestFileID)
+}
+
 export function isCloudPet(petId) {
-  return !!getCloudConfig(petId)
+  return hasConfiguredCloudFiles(petId)
 }
 
 export function getLocalPetDir(petId) {
@@ -121,8 +126,7 @@ export function getLocalPetDir(petId) {
 }
 
 export function isPetCachedLocally(petId) {
-  const cloudCfg = getCloudConfig(petId)
-  if (!cloudCfg) return true // non-cloud pets are always "cached" (bundled)
+  if (!hasConfiguredCloudFiles(petId)) return true // non-cloud pets are always "cached" (bundled)
   try {
     const fs = wx.getFileSystemManager()
     const dir = getLocalPetDir(petId)
@@ -135,7 +139,7 @@ export function isPetCachedLocally(petId) {
 }
 
 export function getCachedSpritesheetPath(petId) {
-  if (!getCloudConfig(petId)) return getPetById(petId).spritesheetPath
+  if (!hasConfiguredCloudFiles(petId)) return getPetById(petId).spritesheetPath
   if (isPetCachedLocally(petId)) {
     return `${getLocalPetDir(petId)}/spritesheet.webp`
   }
@@ -185,11 +189,7 @@ function ensurePetCloudReady() {
 
 export async function downloadPetAssets(petId) {
   const cloudCfg = getCloudConfig(petId)
-  if (!cloudCfg) return true
-  if (!cloudCfg.spritesheetFileID || !cloudCfg.manifestFileID) {
-    console.warn('[pets] Cloud file IDs not configured for', petId)
-    return false
-  }
+  if (!cloudCfg || !hasConfiguredCloudFiles(petId)) return false
 
   const fs = wx.getFileSystemManager()
   ensurePetCloudReady()
