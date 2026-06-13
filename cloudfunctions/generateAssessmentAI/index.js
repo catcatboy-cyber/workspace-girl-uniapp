@@ -36,6 +36,37 @@ function normalizeSubjectRoleConfidence(value) {
   return ['user_selected', 'confirmed'].includes(value) ? value : 'user_selected'
 }
 
+function buildBaselineAssessment() {
+  return {
+    assessmentId: '',
+    source: 'baseline_profile_only',
+    version: 'v0.1',
+    intentScore: 50,
+    intentBucket: 'medium',
+    consistencyRiskScore: 50,
+    riskBucket: 'medium',
+    evidenceLevel: 'E1',
+    confidenceLevel: 'low',
+    primaryLabels: ['证据不足'],
+    nextAction: 'observe',
+    signalSummary: {
+      initiative: 0,
+      investment: 0,
+      progression: 0,
+      consistency: 0,
+      avoidance: 0,
+      verifiability: 0,
+      instability: 0,
+      evidence_strength: 0
+    },
+    explanation: {
+      headline: '先从第一条真实互动开始判断。',
+      bullets: [],
+      cautions: ['当前档案还没有初评结果，本次记录会作为第一条分析依据。']
+    }
+  }
+}
+
 function toISOStringOrUndefined(value) {
   if (!value) return undefined
   const parsed = new Date(value)
@@ -275,7 +306,9 @@ exports.main = async (event = {}) => {
         .filter((item) => (item._id || item.assessmentId) !== assessmentId && toTime(item.createdAt) < toTime(assessment.createdAt))
         .sort((a, b) => toTime(a.createdAt) - toTime(b.createdAt))
         .pop()
-    if (!previous) throw new Error('PREVIOUS_ASSESSMENT_NOT_FOUND')
+    if (!previous) {
+      previous = buildBaselineAssessment()
+    }
 
     const recentTimeline = (timelineItems || [])
       .filter((item) => item.type !== 'assessment' && item.type !== 'trend')

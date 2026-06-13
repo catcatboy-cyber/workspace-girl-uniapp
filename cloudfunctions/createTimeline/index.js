@@ -63,6 +63,37 @@ function normalizeSubjectRoleConfidence(value) {
   return ['user_selected', 'confirmed'].includes(value) ? value : 'user_selected'
 }
 
+function buildBaselineAssessment() {
+  return {
+    assessmentId: '',
+    source: 'baseline_profile_only',
+    version: 'v0.1',
+    intentScore: 50,
+    intentBucket: 'medium',
+    consistencyRiskScore: 50,
+    riskBucket: 'medium',
+    evidenceLevel: 'E1',
+    confidenceLevel: 'low',
+    primaryLabels: ['证据不足'],
+    nextAction: 'observe',
+    signalSummary: {
+      initiative: 0,
+      investment: 0,
+      progression: 0,
+      consistency: 0,
+      avoidance: 0,
+      verifiability: 0,
+      instability: 0,
+      evidence_strength: 0
+    },
+    explanation: {
+      headline: '先从第一条真实互动开始判断。',
+      bullets: [],
+      cautions: ['当前档案还没有初评结果，本次记录会作为第一条分析依据。']
+    }
+  }
+}
+
 function sanitizeAttachment(item) {
   if (!item || typeof item !== 'object') return null
   const type = ['image', 'audio'].includes(item.type) ? item.type : ''
@@ -149,10 +180,6 @@ exports.main = async (event) => {
     const caseDoc = ownedCase.caseDoc
     markPerf('case_loaded')
 
-    if (!caseDoc.latestResultId) {
-      return { success: false, message: '当前档案缺少有效评估结果，请先重新评估后再记录时间线' }
-    }
-
     const recordId = `timeline_${Date.now()}_${randomHex(4)}`
     const assessmentId = `assessment_${Date.now()}_${randomHex(4)}`
     const now = new Date()
@@ -175,8 +202,11 @@ exports.main = async (event) => {
       createdAt: now
     }
 
-    const latestResultRes = await db.collection('assessments').doc(caseDoc.latestResultId).get()
-    let previous = latestResultRes.data && latestResultRes.data.length > 0 ? latestResultRes.data[0] : null
+    let previous = null
+    if (caseDoc.latestResultId) {
+      const latestResultRes = await db.collection('assessments').doc(caseDoc.latestResultId).get()
+      previous = latestResultRes.data && latestResultRes.data.length > 0 ? latestResultRes.data[0] : null
+    }
     if (!previous) {
       const fallbackRes = await db.collection('assessments')
         .where({ caseId })
@@ -189,7 +219,7 @@ exports.main = async (event) => {
       }
     }
     if (!previous) {
-      throw new Error('LATEST_RESULT_NOT_FOUND')
+      previous = buildBaselineAssessment()
     }
     markPerf('previous_assessment_loaded')
 
