@@ -289,6 +289,83 @@ function normalizeSideRead(value) {
   return { title, summary, sections }
 }
 
+function sectionText(section) {
+  return `${section?.label || ''} ${section?.text || ''}`
+}
+
+function isZodiacSection(section, zodiacValues) {
+  const text = sectionText(section)
+  const zodiacs = Array.isArray(zodiacValues) ? zodiacValues.filter(Boolean) : [zodiacValues].filter(Boolean)
+  return text.includes('生肖') ||
+    text.includes('属相') ||
+    zodiacs.some((zodiac) => text.includes(`属${zodiac}`)) ||
+    zodiacs.some((zodiac) => text.includes(zodiac) && !text.includes('星座'))
+}
+
+function isConstellationSection(section, constellationValues) {
+  const text = sectionText(section)
+  const constellations = Array.isArray(constellationValues) ? constellationValues.filter(Boolean) : [constellationValues].filter(Boolean)
+  return text.includes('星座') || constellations.some((constellation) => text.includes(constellation))
+}
+
+function labelPair(selfValue, targetValue, prefix = '') {
+  if (selfValue && targetValue && selfValue !== targetValue) return `${prefix}${selfValue} / ${prefix}${targetValue}`
+  if (targetValue) return `${prefix}${targetValue}`
+  if (selfValue) return `${prefix}${selfValue}`
+  return ''
+}
+
+function buildZodiacSection(zodiacLabel, latest) {
+  const eventTitle = clean(latest?.triggerEventTitle || latest?.explanation?.headline, 28)
+  return {
+    label: '生肖角度',
+    text: eventTitle
+      ? `参考${zodiacLabel}的相处倾向，这次更适合把「${eventTitle}」当成连续行动里的一个信号看，不要只凭单次热度定结论。`
+      : `参考${zodiacLabel}的相处倾向，先看对方是否持续给出实际行动，不要只凭单次热度定结论。`
+  }
+}
+
+function buildConstellationSection(constellation, latest) {
+  const eventTitle = clean(latest?.triggerEventTitle || latest?.explanation?.headline, 28)
+  return {
+    label: '星座角度',
+    text: eventTitle
+      ? `参考${constellation}的表达习惯，这次「${eventTitle}」更适合看细节回应、稳定度和后续补动作，不要把星象速写当成确定事实。`
+      : `参考${constellation}的表达习惯，更适合看细节回应、稳定度和后续补动作，不要把星象速写当成确定事实。`
+  }
+}
+
+function ensureSideReadDimensions(sideRead, caseProfile, selfProfile, latest) {
+  const targetZodiac = clean(caseProfile?.zodiac, 12)
+  const selfZodiac = clean(selfProfile?.zodiac, 12)
+  const targetConstellation = clean(caseProfile?.constellation, 12)
+  const selfConstellation = clean(selfProfile?.constellation, 12)
+  const zodiacLabel = labelPair(selfZodiac, targetZodiac, '属')
+  const constellationLabel = labelPair(selfConstellation, targetConstellation)
+  const sections = Array.isArray(sideRead?.sections) ? [...sideRead.sections] : []
+  const additions = []
+
+  if (zodiacLabel && !sections.some((item) => isZodiacSection(item, [selfZodiac, targetZodiac]))) {
+    additions.push(buildZodiacSection(zodiacLabel, latest || {}))
+  }
+  if (constellationLabel && !sections.some((item) => isConstellationSection(item, [selfConstellation, targetConstellation]))) {
+    additions.push(buildConstellationSection(constellationLabel, latest || {}))
+  }
+
+  if (additions.length === 0) return sideRead
+
+  const merged = [...sections, ...additions]
+  const required = merged.filter((item) => isZodiacSection(item, [selfZodiac, targetZodiac]) || isConstellationSection(item, [selfConstellation, targetConstellation]))
+  const optional = merged.filter((item) => !required.includes(item))
+  const nextSections = [...required, ...optional].slice(0, 3)
+  return {
+    ...sideRead,
+    title: sideRead?.title || '星象速写',
+    summary: sideRead?.summary || '结合已知画像和本次事件做轻量星象速写，只作为观察参考。',
+    sections: nextSections
+  }
+}
+
 function sanitizeSideReadText(value) {
   return String(value || '')
     .replace(/属相星座侧写/g, '星象速写')
@@ -400,11 +477,15 @@ exports.main = async (event = {}) => {
     }
 
     const personaPrompt = buildPersonaPrompt(aiSettings, user?.selfProfile)
+    const targetZodiac = clean(caseDoc.profile?.zodiac, 12)
+    const targetConstellation = clean(caseDoc.profile?.constellation, 12)
     const contextLines = [
       personaPrompt.userPrompt,
       'Output JSON only. title <= 20 Chinese chars, summary <= 200 chars, each section.text <= 280 chars. Do not use markdown fences.',
+      'Output structure requirement: if Target profile has zodiac, include one section about 生肖/属相; if Target profile has constellation, include one separate section about 星座. When both exist, both dimensions must appear.',
       `Self profile: ${serializeProfile(user?.selfProfile)}`,
-      `Target profile: ${serializeProfile(caseDoc.profile)}`
+      `Target profile: ${serializeProfile(caseDoc.profile)}`,
+      `Required dimensions: zodiac=${targetZodiac || 'missing'}, constellation=${targetConstellation || 'missing'}`
     ]
     if (eventContext) {
       contextLines.push(
@@ -458,6 +539,7 @@ exports.main = async (event = {}) => {
       console.error('[generateSideRead parse fallback]', parseError?.message, String(raw || '').slice(0, 500))
       sideReadAdvice = fallbackSideRead(caseDoc.profile, latest || {})
     }
+    sideReadAdvice = ensureSideReadDimensions(sideReadAdvice, caseDoc.profile, user?.selfProfile, latest || {})
 
     // Store on assessment if available, otherwise on case document
     if (latestResultId) {
