@@ -7,9 +7,9 @@ function normalizePrivateKey(value) {
 }
 
 function getCustomLoginCredentials() {
-  const envId = String(process.env.TCB_CUSTOM_LOGIN_ENV_ID || '').trim()
-  const privateKeyId = String(process.env.TCB_CUSTOM_LOGIN_PRIVATE_KEY_ID || '').trim()
-  const privateKey = normalizePrivateKey(process.env.TCB_CUSTOM_LOGIN_PRIVATE_KEY)
+  const envId = String(process.env.TCB_CUSTOM_LOGIN_ENV_ID || process.env.env_id || '').trim()
+  const privateKeyId = String(process.env.TCB_CUSTOM_LOGIN_PRIVATE_KEY_ID || process.env.private_key_id || '').trim()
+  const privateKey = normalizePrivateKey(process.env.TCB_CUSTOM_LOGIN_PRIVATE_KEY || process.env.private_key)
 
   if (!envId || !privateKeyId || !privateKey) {
     return null
