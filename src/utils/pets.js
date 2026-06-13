@@ -17,12 +17,12 @@ let petCloudInitialized = false
 // Spritesheets are cached under wx.env.USER_DATA_PATH on first use.
 const CLOUD_PET_CONFIG = {
   xiaomi: {
-    spritesheetFileID: '',
-    manifestFileID: ''
+    spritesheetFileID: 'cloud://cloud1-d0gvhqu2c8a2b61fd.636c-cloud1-d0gvhqu2c8a2b61fd-1442786291/pets/xiaomi/spritesheet.webp',
+    manifestFileID: 'cloud://cloud1-d0gvhqu2c8a2b61fd.636c-cloud1-d0gvhqu2c8a2b61fd-1442786291/pets/xiaomi/manifest.json'
   },
   doggo: {
-    spritesheetFileID: '',
-    manifestFileID: ''
+    spritesheetFileID: 'cloud://cloud1-d0gvhqu2c8a2b61fd.636c-cloud1-d0gvhqu2c8a2b61fd-1442786291/pets/doggo/spritesheet.webp',
+    manifestFileID: 'cloud://cloud1-d0gvhqu2c8a2b61fd.636c-cloud1-d0gvhqu2c8a2b61fd-1442786291/pets/doggo/manifest.json'
   }
 }
 
