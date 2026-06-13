@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, login, shouldCompleteSelfProfile, wechatLogin } from '@/utils/api'
+import { formatLoginError, getCurrentUserId, login, shouldCompleteSelfProfile, wechatLogin } from '@/utils/api'
 import { resetCloudAuthState } from '@/utils/cloudbase'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
@@ -197,7 +197,7 @@ const handleLogin = async () => {
     }
   } catch (error: any) {
     console.error('登录错误:', error)
-    errorMessage.value = '网络错误，请稍后重试'
+    errorMessage.value = formatLoginError(error)
   } finally {
     loading.value = false
   }

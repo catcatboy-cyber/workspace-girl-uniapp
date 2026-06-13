@@ -82,6 +82,29 @@ async function clearLocalAuthState() {
   await resetCloudAuthState()
 }
 
+function getReadableErrorMessage(error: any, fallback = '网络错误，请稍后重试') {
+  const candidates = [
+    error?.error_description,
+    error?.message,
+    error?.msg,
+    error?.code,
+    error?.error,
+    error?.errMsg
+  ]
+
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim()
+    }
+  }
+
+  return fallback
+}
+
+export function formatLoginError(error: any) {
+  return getReadableErrorMessage(error)
+}
+
 function safeSetStorage(key: string, value: string) {
   try {
     uni.setStorageSync(key, value)
@@ -193,20 +216,6 @@ export function handleInsufficientBalance(result: any): boolean {
     return true
   }
   return false
-}
-
-async function ensureAnonymousAuth() {
-  try {
-    const loginState = await auth.getLoginState()
-    if (loginState) return
-  } catch {
-    // ignore
-  }
-  try {
-    await (auth as any).anonymousAuthProvider().signIn()
-  } catch (error) {
-    console.warn('anonymous sign-in failed:', error)
-  }
 }
 
 async function signInWithCustomTicketCompat(ticket: string) {
@@ -341,7 +350,6 @@ export async function wechatLogin(code = '', profile: { nickName?: string; nickn
 
 export async function register(email: string, password: string, inviteCode?: string) {
   await clearLocalAuthState()
-  await ensureAnonymousAuth()
 
   const data: Record<string, any> = { email, password }
   if (inviteCode) data.inviteCode = inviteCode
