@@ -188,9 +188,11 @@ export async function resetCloudAuthState(options: { clearBusinessUser?: boolean
     removeLocalStorageKey('currentUser')
   }
 
-  await withTimeout(auth.signOut(), 1500, 'CloudBase signOut').catch((error) => {
+  try {
+    await withTimeout(Promise.resolve(auth.signOut()), 1500, 'CloudBase signOut')
+  } catch (error) {
     console.warn('CloudBase signOut failed:', error)
-  })
+  }
 }
 
 function getStoredUserId(): string {
@@ -228,6 +230,17 @@ async function waitForUserLoginState(retries = 8, intervalMs = 200) {
   }
   console.warn('waitForUserLoginState timeout after', retries * intervalMs, 'ms, loginState:', loginState)
   return loginState
+}
+
+async function signInAnonymouslyCompat() {
+  const authAny = auth as any
+
+  if (typeof authAny.signInAnonymously === 'function') {
+    await authAny.signInAnonymously({})
+    return
+  }
+
+  await authAny.anonymousAuthProvider().signIn()
 }
 
 let _authReady: Promise<void> | null = null
@@ -269,7 +282,7 @@ export function ensureCloudAuthReady(): Promise<void> {
       }
 
       if (!loginState) {
-        await auth.anonymousAuthProvider().signIn()
+        await signInAnonymouslyCompat()
       }
     })().finally(() => {
       _authReady = null

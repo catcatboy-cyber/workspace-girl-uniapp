@@ -2,7 +2,7 @@
  * API 灏佽灞?
  * 灏佽鎵€鏈変簯鍑芥暟璋冪敤
  */
-import app, { callFunction, auth, storage } from './cloudbase'
+import app, { callFunction, auth, storage, ensureCloudAuthReady } from './cloudbase'
 import { resetCloudAuthState } from './cloudbase'
 import { normalizeAvatarValue, resolveAvatarSrc } from './avatar'
 
@@ -280,6 +280,9 @@ async function verifyTicketLogin(expectedUserId: string, maxRetries = 10): Promi
  */
 export async function login(email: string, password: string) {
   await clearLocalAuthState()
+  // #ifndef MP-WEIXIN
+  await ensureCloudAuthReady()
+  // #endif
 
   const res = await app.callFunction({
     name: 'login',
@@ -350,6 +353,9 @@ export async function wechatLogin(code = '', profile: { nickName?: string; nickn
 
 export async function register(email: string, password: string, inviteCode?: string) {
   await clearLocalAuthState()
+  // #ifndef MP-WEIXIN
+  await ensureCloudAuthReady()
+  // #endif
 
   const data: Record<string, any> = { email, password }
   if (inviteCode) data.inviteCode = inviteCode
