@@ -271,7 +271,6 @@ async function verifyTicketLogin(expectedUserId: string, maxRetries = 10): Promi
  */
 export async function login(email: string, password: string) {
   await clearLocalAuthState()
-  await ensureAnonymousAuth()
 
   const res = await app.callFunction({
     name: 'login',

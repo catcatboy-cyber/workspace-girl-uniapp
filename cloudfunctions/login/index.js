@@ -104,9 +104,18 @@ async function ensureTestAdminUser(existingUser) {
  * 用户登录云函数
  */
 exports.main = async (event) => {
-  const { email, password } = event
+  const input = event && typeof event === 'object' ? event : {}
+  const email = typeof input.email === 'string' ? input.email.trim() : ''
+  const password = typeof input.password === 'string' ? input.password : ''
 
   try {
+    if (!email) {
+      return { success: false, message: '请输入邮箱' }
+    }
+    if (!password) {
+      return { success: false, message: '请输入密码' }
+    }
+
     // 规范化邮箱
     const normalizedEmail = email.toLowerCase().trim()
 
