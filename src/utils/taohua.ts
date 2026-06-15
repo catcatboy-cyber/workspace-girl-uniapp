@@ -27,6 +27,10 @@ const ZHI_TO_DIRECTION: Record<string, string> = {
   '酉': '正西', '戌': '西北偏西', '亥': '西北偏北',
 }
 
+export function getZhiDirection(zhi: string): string {
+  return ZHI_TO_DIRECTION[zhi] || ''
+}
+
 const DIRECTION_DESC: Record<string, string> = {
   '正北': '子位属水，适合摆放水元素（如鱼缸、黑色饰品）催旺桃花。',
   '正东': '卯位属木，适合摆放绿植、木质饰品催旺桃花。',
@@ -237,7 +241,7 @@ export function xianchiAlgorithm(zhi: string): TaohuaResult {
     taohua_zodiac: ZHI_TO_ZODIAC[taohuaZhi] || taohuaZhi,
     direction,
     direction_desc: directionDesc,
-    taohua_type: '本命桃花（咸池）',
+    taohua_type: '咸池桃花位',
     taohua_quality:
       `年支桃花为"墙内桃花"（《三命通会》），主天性浪漫、夫妻恩爱。` +
       '若大运或流年行至桃花位，感情机缘增强，需注意把握分寸。',

@@ -25,12 +25,12 @@
               </view>
               <view v-if="taohuaTeaserData.hongluanDir" class="taohua-teaser-dir">
                 <text class="taohua-teaser-dir-emoji">🔴</text>
-                <text class="taohua-teaser-dir-label">红鸾</text>
+                <text class="taohua-teaser-dir-label">本命红鸾</text>
                 <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.hongluanDir }}方</text>
               </view>
-              <view class="taohua-teaser-dir">
+              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-teaser-dir">
                 <text class="taohua-teaser-dir-emoji">🕊️</text>
-                <text class="taohua-teaser-dir-label">天喜</text>
+                <text class="taohua-teaser-dir-label">本命天喜</text>
                 <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.tianxiDir }}方</text>
               </view>
             </view>
@@ -133,12 +133,12 @@
               </view>
               <view v-if="taohuaTeaserData.hongluanDir" class="taohua-teaser-dir">
                 <text class="taohua-teaser-dir-emoji">🔴</text>
-                <text class="taohua-teaser-dir-label">红鸾</text>
+                <text class="taohua-teaser-dir-label">本命红鸾</text>
                 <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.hongluanDir }}方</text>
               </view>
-              <view class="taohua-teaser-dir">
+              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-teaser-dir">
                 <text class="taohua-teaser-dir-emoji">🕊️</text>
-                <text class="taohua-teaser-dir-label">天喜</text>
+                <text class="taohua-teaser-dir-label">本命天喜</text>
                 <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.tianxiDir }}方</text>
               </view>
             </view>
@@ -339,7 +339,7 @@ import { ref, computed, watch } from 'vue'
 import { onHide, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
-import { getCases, createCase, createTimeline, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile } from '@/utils/api'
+import { getCases, createCase, createTimeline, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
@@ -1616,54 +1616,42 @@ const showTaohuaTeaser = ref(false)
 const showTaohuaInfo = ref(false)
 const taohuaTeaserData = ref<{ score: number; direction: string; directionZhi: string; hongluanDir: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
 
-/** 精确日支计算：1900-01-01=甲戌（index 10），据此推算任意日期的日支 */
-function getApproxDayZhi(date: Date) {
-  const ref = new Date(Date.UTC(1900, 0, 1))
-  const daysSince = Math.floor((date.getTime() - ref.getTime()) / 86400000)
-  const ganzhiIndex = ((daysSince % 60) + 10 + 60) % 60 // 从甲戌(10)起算
-  return ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][ganzhiIndex % 12]
-}
-
 async function loadTaohuaTeaser() {
-  const today = new Date()
   try { const access = await checkFeatureAccess('命理桃花'); showTaohuaTeaser.value = access?.allowed !== false }
   catch { showTaohuaTeaser.value = true }
   if (!showTaohuaTeaser.value) return
-  // 精确日支计算（无需云函数）
-  const dayZhi = getApproxDayZhi(today)
-  const taohua = xianchiAlgorithm(dayZhi)
-  // 天喜：日支六合 = 天喜
-  const LIUHE: Record<string,string> = { '子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午' }
-  const tianxiZhi = LIUHE[dayZhi] || ''
-  const DIR: Record<string,string> = { '子':'正北','丑':'东北','寅':'东北','卯':'正东','辰':'东南','巳':'东南','午':'正南','未':'西南','申':'西南','酉':'正西','戌':'西北','亥':'西北' }
-  const tianxiDir = tianxiZhi ? DIR[tianxiZhi] || '' : ''
-  // 建除估值
-  const jianchuList = ['建','除','满','平','定','执','破','危','成','收','开','闭']
-  const jianchuIdx = (Math.floor(today.getTime() / 86400000 + 267) % 12 + 12) % 12 // 近似：以冬至为建
-  const jianchu = jianchuList[jianchuIdx]
-  const scoreBase: Record<string, number> = { '成': 80, '开': 80, '满': 70, '定': 65, '除': 65, '建': 60, '平': 50, '收': 45, '执': 40, '危': 35, '破': 20, '闭': 20 }
-  const score = scoreBase[jianchu] || 50
-  const summary = score >= 70 ? '气场佳，适合行动' : score >= 50 ? '平常心，顺其自然' : '宜观望，改天再约'
-  // 行动指导（桃花方位为主，天喜作参考）
-  let guidance = ''
-  if (score < 40) {
-    guidance = '今日气场偏弱，线上互动为主，改天再约'
-  } else if (taohua.direction === tianxiDir) {
-    guidance = `桃花天喜同聚${taohua.direction}——难得的双吉日，约会表白都合适`
-  } else {
-    guidance = `今近日往${taohua.direction}方向约会有利，${tianxiDir}可作后备。`
+  try {
+    const profile = selfProfile.value || {}
+    const result = await queryTaohua(profile.zodiac || '', profile.constellation || '', profile.gender || '')
+    if (!result?.success || !result?.data?.daily?.ganzhi?.dayZhi) {
+      taohuaTeaserData.value = null
+      return
+    }
+
+    const daily = result.data.daily
+    const dayZhi = daily.ganzhi.dayZhi
+    const taohua = xianchiAlgorithm(dayZhi)
+    const hongluan = profile.zodiac ? hongluanTianxi(profile.zodiac) : null
+    const scoreData = result.data.score || {}
+    const guide = result.data.practical?.约会指南 || {}
+    const score = Number(scoreData.分数 ?? 50)
+    const jianchu = daily.yiji?.jianchu || guide.建除 || '--'
+    const summary = scoreData.评级 || (score >= 70 ? '气场佳，适合行动' : score >= 50 ? '平常心，顺其自然' : '宜观望，改天再约')
+    const guidance = guide.一句话 || `今日往${taohua.direction}方向约会有利。`
+
+    taohuaTeaserData.value = {
+      score,
+      direction: taohua.direction,
+      directionZhi: taohua.taohua_zhi,
+      hongluanDir: hongluan?.hongluan?.direction || '',
+      tianxiDir: hongluan?.tianxi?.direction || '',
+      jianchu,
+      summary,
+      guidance,
+    }
+  } catch (_) {
+    taohuaTeaserData.value = null
   }
-  // 红鸾：年支起红鸾（本命位，终身不变）
-  const ZODIAC = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
-  const BRANCH = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
-  const HONGLUAN_MAP: Record<string,string> = {'子':'卯','丑':'寅','寅':'丑','卯':'子','辰':'亥','巳':'戌','午':'酉','未':'申','申':'未','酉':'午','戌':'巳','亥':'辰'}
-  const userZ = selfProfile.value?.zodiac || ''
-  const hongluanDir = (() => {
-    const idx = ZODIAC.indexOf(userZ); if (idx < 0) return ''
-    const yz = BRANCH[idx]; const hl = HONGLUAN_MAP[yz]
-    return DIR[hl] || ''
-  })()
-  taohuaTeaserData.value = { score, direction: taohua.direction, directionZhi: taohua.taohua_zhi, hongluanDir, tianxiDir, jianchu, summary, guidance }
 }
 
 function goTaohua() {

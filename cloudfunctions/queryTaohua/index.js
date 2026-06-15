@@ -102,6 +102,10 @@ const DIRECTION_VENUES = {
   '西北': '西北方向的艺术馆、咖啡厅',
 }
 
+function coarseDirection(direction) {
+  return String(direction || '').replace(/偏.*/, '')
+}
+
 // ── 建除十二神 → 每日感情 vibe（日常交往指导） ──
 const DAY_VIBE = {
   '成': { vibe: '🌤️ 好日子', summary: '成日万事圆满，是感情上最好的日子。', dos: ['主动发消息聊天，TA回复的概率比平时高','约TA出来见面，今天的气场适合深度交流','表达好感，成日的能量会让真诚被看见'], donts: ['别宅在家，好日子不出门就浪费了'], activities: ['看电影','吃顿好的','看展览/逛博物馆','散步聊天'], oneliner: '成日大吉——主动一点，真诚一点。适合约TA看电影、吃饭、散步，做什么都顺。' },
@@ -122,7 +126,7 @@ function getDayVibe(jianchu) {
   return DAY_VIBE[jianchu] || DAY_VIBE['平']
 }
 
-function calcTaohuaScore(jianchu, taohuaDir, xishenDir, isTianxiDay, yiji) {
+function calcTaohuaScore(jianchu, taohuaDir, xishenDir, isLiuheDay, yiji) {
   let score = 50
   const reasons = []
   const weights = {
@@ -139,7 +143,7 @@ function calcTaohuaScore(jianchu, taohuaDir, xishenDir, isTianxiDay, yiji) {
     score += 20; reasons.push('桃花与喜神同方位')
   }
 
-  if (isTianxiDay) { score += 15; reasons.push('今日为天喜日') }
+  if (isLiuheDay) { score += 15; reasons.push('今日六合助缘') }
 
   const loveGood = ['嫁娶','纳采','订婚','出行','会友','安床']
   const yiLove = (yiji.yi||[]).filter(y => loveGood.includes(y))
@@ -153,7 +157,7 @@ function calcTaohuaScore(jianchu, taohuaDir, xishenDir, isTianxiDay, yiji) {
   return { 分数: score, 评级: level, 加分项: reasons, 一句话: `桃花指数 ${score}/100，${level}` + (reasons.length ? `——${reasons[0]}` : '') }
 }
 
-function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu, score, isTianxiDay, tianxiDir, gender) {
+function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu, score, isLiuheDay, liuheDir, gender) {
   const wear = WUXING_WEAR[wuxing] || WUXING_WEAR['火']
   const genderKey = (gender === 'male' || gender === 'female') ? gender : 'neutral'
   const wearTip = wear[genderKey]
@@ -210,14 +214,16 @@ function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu
   const sc = score?.分数 || score || 50
   const isLow = sc < 40
   const dateMsg = isLow ? `今日桃花指数仅${sc}分，不建议安排重要约会` : sc >= 70 ? `今日桃花在${taohuaDir}，指数${sc}分，大胆约！` : `今日桃花在${taohuaDir}，指数${sc}分，适合轻松约会`
-  const venue = isLow ? '今天不适合线下约会，线上聊聊就好' : (DIRECTION_VENUES[taohuaDir] || '城市公共空间')
-  const oneliner = isLow ? `桃花能量偏弱，不建议线下约会；线上互动更稳妥，改天再约。` : (isTianxiDay ? `今日咸池桃花在${taohuaDir}，天喜同至${tianxiDir || taohuaDir}——两个吉位重叠，约会往这方向走错不了。` : `今日咸池桃花在${taohuaDir}，约会往这个方向走——有合适的场所就约。`)
+  const venue = isLow ? '今天不适合线下约会，线上聊聊就好' : (DIRECTION_VENUES[taohuaDir] || DIRECTION_VENUES[coarseDirection(taohuaDir)] || '城市公共空间')
+  const oneliner = isLow ? `桃花能量偏弱，不建议线下约会；线上互动更稳妥，改天再约。` : (isLiuheDay ? `今日咸池桃花在${taohuaDir}，六合助缘同至${liuheDir || taohuaDir}——两个吉位重叠，约会往这方向走错不了。` : `今日咸池桃花在${taohuaDir}，约会往这个方向走——有合适的场所就约。`)
 
   return {
     约会指南: {
       方位: taohuaDir,
-      天喜方位: isTianxiDay ? (tianxiDir || taohuaDir) : '',
-      天喜日: isTianxiDay,
+      六合方位: isLiuheDay ? (liuheDir || taohuaDir) : '',
+      六合助缘: isLiuheDay,
+      天喜方位: '',
+      天喜日: false,
       场所建议: venue,
       今日气场: vibe.vibe,
       建除: yiji.jianchu,
@@ -279,21 +285,21 @@ exports.main = async (event) => {
     // 咸池桃花：日支→三合局→沐浴位（《三命通会》三合沐浴算法）
     const SANHE_BATHING = { '申':'酉','子':'酉','辰':'酉', '亥':'子','卯':'子','未':'子', '寅':'卯','午':'卯','戌':'卯', '巳':'午','酉':'午','丑':'午' }
     const taohuaZhi = SANHE_BATHING[dayZhi] || '午'
-    const DIR_MAP = { '子':'正北','丑':'东北','寅':'东北','卯':'正东','辰':'东南','巳':'东南','午':'正南','未':'西南','申':'西南','酉':'正西','戌':'西北','亥':'西北' }
+    const DIR_MAP = { '子':'正北','丑':'东北偏北','寅':'东北偏东','卯':'正东','辰':'东南偏东','巳':'东南偏南','午':'正南','未':'西南偏南','申':'西南偏西','酉':'正西','戌':'西北偏西','亥':'西北偏北' }
     const taohuaDir = DIR_MAP[taohuaZhi] || '正南'
     const wuxing = zhiWuxing[taohuaZhi] || zhiWuxing[dayZhi] || '火'
     const xishenDir = daily.fangwei.xishen.fangwei
 
-    // 天喜日判断（日支与月建六合）
+    // 六合助缘判断（日支与月建六合）。这是地支六合，不等同于红鸾天喜体系的“天喜”。
     const LIUHE = { '子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午' }
     const monthZhi = (daily.ganzhi.monthPillar || '').slice(-1)
-    const isTianxiDay = LIUHE[dayZhi] === monthZhi
+    const isLiuheDay = LIUHE[dayZhi] === monthZhi
 
-    const tianxiZhi = LIUHE[dayZhi] || ''
-    const tianxiDir = tianxiZhi ? DIR_MAP[tianxiZhi] || '' : ''
+    const liuheZhi = LIUHE[dayZhi] || ''
+    const liuheDir = liuheZhi ? DIR_MAP[liuheZhi] || '' : ''
 
-    const score = calcTaohuaScore(daily.yiji.jianchu, taohuaDir, xishenDir, isTianxiDay, daily.yiji)
-    const practical = buildPracticalGuide(wuxing, taohuaDir, daily.yiji, xishenDir, zodiac, daily.yiji.jianchu, score, isTianxiDay, tianxiDir, gender)
+    const score = calcTaohuaScore(daily.yiji.jianchu, taohuaDir, xishenDir, isLiuheDay, daily.yiji)
+    const practical = buildPracticalGuide(wuxing, taohuaDir, daily.yiji, xishenDir, zodiac, daily.yiji.jianchu, score, isLiuheDay, liuheDir, gender)
 
     return {
       success: true,

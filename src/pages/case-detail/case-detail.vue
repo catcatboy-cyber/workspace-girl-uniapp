@@ -28,31 +28,10 @@
           </view>
           <view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view>
         </view>
-        <!-- Pair reading (taohua) -->
-        <view v-if="pairMatch" class="card-v2 anim-card" style="animation-delay:0.22s;background:#FFFBEB;">
+        <!-- 桃花匹配度入口（详情已搬至「命理桃花」页） -->
+        <view class="card-v2 anim-card" style="animation-delay:0.22s;background:#FFFBEB;" @click="goTaohuaMatch">
           <text class="section-title-v2">桃花匹配度</text>
-          <view class="tag-row-v2" style="margin-bottom:6rpx;"><text :class="['tag-v2', pairMatchBadgeClass]">{{ pairMatch.relation }}</text></view>
-          <text class="weekly-desc-v2">{{ pairMatch.relationDesc }}</text>
-          <view v-if="pairInsight" class="bullet-list-v2" style="margin-top:6rpx;">
-            <text class="bullet-v2">💫 {{ pairInsight.styleClash }}</text>
-            <view class="tag-row-v2" style="margin-top:4rpx;"><text v-for="(a, i) in (pairInsight.activities || []).slice(0, 2)" :key="i" class="tag-v2">{{ a }}</text></view>
-          </view>
-          <button class="btn-v2-me primary pair-read-btn" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
-          <view v-if="pairReadLoading" class="action-box" style="margin-top:10rpx;">
-            <text class="action-label">AI 深度解读中...</text>
-            <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，结合今日气场...</text></view>
-          </view>
-          <view v-if="pairAIResult" class="action-box" style="margin-top:10rpx;">
-            <text class="action-label">深度解读（{{ pairAIResult.day || '今日' }}日）</text>
-            <text v-if="pairAIResult.dayEnergy" class="action-text" user-select>{{ pairAIResult.dayEnergy }}</text>
-            <text v-if="pairAIResult.monthTrend" class="action-text" user-select style="margin-top:6rpx;">{{ pairAIResult.monthTrend }}</text>
-            <text v-if="pairAIResult.relationshipDynamics" class="action-text" user-select style="margin-top:6rpx;">{{ pairAIResult.relationshipDynamics }}</text>
-            <text v-if="pairAIResult.advice" class="action-text" user-select style="margin-top:6rpx;font-weight:800;color:#111;">💡 {{ pairAIResult.advice }}</text>
-          </view>
-        </view>
-        <view v-else-if="showPairReadGuide" class="card-v2 anim-card" style="animation-delay:0.22s;border-style:dashed;background:#FFFBEB;" @click="goSelfProfile">
-          <text class="section-title-v2">桃花匹配度</text>
-          <text class="weekly-desc-v2">完善你和 Crush 的生肖星座，解锁桃花匹配解读 →</text>
+          <text class="weekly-desc-v2">查看你和 TA 的生肖星座匹配 + AI 深度解读 →</text>
         </view>
         <!-- Stats + Trends -->
         <view class="card-v2 anim-card" style="animation-delay:0.24s">
@@ -117,8 +96,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, checkFeatureAccess, getCachedSelfProfile, generateMonthlyReview, handleInsufficientBalance, generatePairRead } from '@/utils/api'
-import { zodiacPairMatch, zodiacSignMatch, generatePairInsight } from '@/utils/taohua'
+import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, generateMonthlyReview, handleInsufficientBalance } from '@/utils/api'
 import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
@@ -501,7 +479,6 @@ async function loadData(options: { silent?: boolean } = {}) {
     writeCaseDetailCache(uid, caseId.value, detail)
     lastDataVersion.value = Number(uni.getStorageSync('dataVersion') || 0)
     loadWeeklyReviewsInBackground(uid)
-    loadPairRead()
   } catch (e: any) {
     showError(e?.message || '加载失败')
   } finally {
@@ -722,54 +699,10 @@ function formatDelta(value: any) {
   return '持平'
 }
 
-// Pair reading (taohua)
-const showPairReadGuide = ref(false)
-const pairMatch = ref<any>(null)
-const pairInsight = ref<any>(null)
-const pairReadLoading = ref(false)
-const pairAIResult = ref<any>(null)
-
-const pairMatchBadgeClass = computed(() => {
-  const r = pairMatch.value?.relation || ''
-  if (r.includes('六合')) return 'green'
-  if (r.includes('三合')) return 'ylw'
-  if (r.includes('冲')) return 'red'
-  return ''
-})
-
-async function loadPairRead() {
-  try {
-    const access = await checkFeatureAccess('命理桃花')
-    if (!access?.allowed) { showPairReadGuide.value = false; return }
-    const self = getCachedSelfProfile()
-    const crush = caseFile.value?.profile
-    if (!self?.zodiac || !self?.constellation || !crush?.zodiac || !crush?.constellation) {
-      showPairReadGuide.value = !!(self?.zodiac || crush?.zodiac)
-      return
-    }
-    const match = zodiacPairMatch(self.zodiac, crush.zodiac, self.constellation, crush.constellation)
-    const partner = zodiacSignMatch(crush.zodiac, crush.constellation)
-    const selfMatch = zodiacSignMatch(self.zodiac, self.constellation)
-    const insight = generatePairInsight(selfMatch, partner, match)
-    pairMatch.value = match
-    pairInsight.value = insight
-    showPairReadGuide.value = false
-  } catch { showPairReadGuide.value = false }
-}
-
-async function doPairAIDeepRead() {
-  if (pairReadLoading.value || !caseId.value) return
-  pairReadLoading.value = true
-  try {
-    const res = await generatePairRead(caseId.value)
-    if (res?.success) {
-      pairAIResult.value = res.aiEnhanced || { message: '暂无深度解读内容' }
-    } else {
-      pairAIResult.value = { fallback: true, message: res?.message || '解读暂不可用' }
-    }
-  } catch (error: any) {
-    pairAIResult.value = { fallback: true, message: error?.message || '解读请求失败，请稍后再试' }
-  } finally { pairReadLoading.value = false }
+// 桃花匹配度入口 → 跳转「命理桃花」页（带 caseId）
+function goTaohuaMatch() {
+  if (caseId.value) setActiveCaseId(caseId.value)
+  uni.navigateTo({ url: '/pages/taohua/taohua?caseId=' + caseId.value })
 }
 
 // Inline review generation

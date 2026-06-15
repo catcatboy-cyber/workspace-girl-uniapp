@@ -84,7 +84,7 @@
             <view class="info-tree-item"><text class="info-tree-q">准备告白 / 确定关系 / 见家长？</text><text class="info-tree-a">→ 看 🔴 红鸾位（本命位，管姻缘开端）</text></view>
             <view class="info-tree-item"><text class="info-tree-q">求婚 / 订婚 / 结婚 / 备孕？</text><text class="info-tree-a">→ 看 🕊️ 天喜位（本命位，管婚庆落地）</text></view>
             <view class="info-tree-divider"></view>
-            <view class="info-tree-item"><text class="info-tree-q">三个方向重叠（天喜日 🔥）？</text><text class="info-tree-a">→ 能量加乘，做什么都对，重要节点首选</text></view>
+            <view class="info-tree-item"><text class="info-tree-q">今日桃花与六合助缘重叠 🔥？</text><text class="info-tree-a">→ 能量加乘，适合安排轻量约会和推进互动</text></view>
             <view class="info-tree-divider"></view>
             <text class="info-tree-note">💡 核心：按你要的结果选对应的煞。日常暧昧不需要天喜，求婚不需要桃花。各管各的，不互相替代。</text>
           </view>
@@ -103,10 +103,10 @@
         </view>
         <view style="display:flex;align-items:center;gap:8rpx;margin-top:4rpx;">
           <text class="guide-text-v2 muted">{{ computedReport.桃花指数?.一句话 || '' }}</text>
-          <view v-if="(computedReport.桃花指数?.加分项 || []).some((r:string)=>r.includes('天喜'))" class="tag-v2 tag-with-icon-v2" style="background:#FF5252;color:#fff;">
+          <view v-if="(computedReport.桃花指数?.加分项 || []).some((r:string)=>r.includes('六合') || r.includes('天喜'))" class="tag-v2 tag-with-icon-v2" style="background:#FF5252;color:#fff;">
             <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
             <text v-else class="taohua-icon-emoji">🔥</text>
-            <text>天喜日</text>
+            <text>六合助缘</text>
           </view>
         </view>
       </view>
@@ -118,7 +118,7 @@
           <text v-else class="taohua-icon-emoji">🧭</text>
         </view>
         <view class="guide-content-v2">
-          <text class="guide-label-v2">🪷 桃花<text class="guide-dir-hl">{{ guideDirection }}</text> · 🔴 红鸾<text class="guide-dir-hl hongluan">{{ natalHongluanDir || '--' }}</text> · 🕊️ 天喜<text class="guide-dir-hl tianxi">{{ natalTianxiDir || '--' }}</text><text v-if="guideTianxiDir"> 🔥</text> · {{ guideVibeLabel }} <text class="cite-inline-v2">《协纪辨方书》《三命通会》</text></text>
+          <text class="guide-label-v2">🪷 今日桃花<text class="guide-dir-hl">{{ guideDirection }}</text> · 🔴 本命红鸾<text class="guide-dir-hl hongluan">{{ natalHongluanDir || '--' }}</text> · 🕊️ 本命天喜<text class="guide-dir-hl tianxi">{{ natalTianxiDir || '--' }}</text><text v-if="guideLiuheDir"> 🔥六合</text> · {{ guideVibeLabel }} <text class="cite-inline-v2">《协纪辨方书》《三命通会》</text></text>
           <text class="guide-text-v2">{{ guideOneliner }}</text>
           <view v-if="(guideActivities || []).length > 0" style="margin-top:6rpx;">
             <view v-for="(a, i) in guideActivities" :key="'act-'+i" class="tag-v2 green tag-with-icon-v2">
@@ -294,6 +294,63 @@
       </button>
     </view>
 
+    <!-- 桃花匹配度（绑定 Crush：从「我们」页进入，含 AI 深度解读） -->
+    <view v-if="pairMatch" class="card-v2">
+      <text class="section-title-v2">桃花匹配度</text>
+      <view class="match-badge-wrap">
+        <view :class="['match-badge-v2', pairMatchBadge, 'match-badge-line-v2']">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">💚</text>
+          <text>{{ pairMatch.relation }}</text>
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">💚</text>
+        </view>
+      </view>
+      <text class="card-text-v2 strong" style="text-align:center;display:block;">{{ pairMatch.relationDesc }}</text>
+
+      <view v-if="pairInsight" class="pair-insight-v2">
+        <view class="pair-section-v2">
+          <view class="pair-label-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('stars')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">💫</text>
+            <text class="pair-label-v2">风格碰撞</text>
+          </view>
+          <text class="pair-text-v2">{{ pairInsight.styleClash }}</text>
+        </view>
+        <view v-if="(pairInsight.activities || []).length" class="pair-section-v2">
+          <view class="pair-label-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('target')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">🎯</text>
+            <text class="pair-label-v2">适合一起</text>
+          </view>
+          <view v-for="(a, i) in pairInsight.activities.slice(0, 2)" :key="'pa-' + i" class="guide-line-v2 good">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('checkCircle')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">✅</text>
+            <text class="pair-text-v2 good">{{ a }}</text>
+          </view>
+        </view>
+      </view>
+
+      <button class="btn-v2-me primary" style="width:100%;margin-top:16rpx;" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
+
+      <view v-if="pairReadLoading" class="action-box">
+        <text class="action-label">AI 深度解读中...</text>
+        <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，结合今日气场...</text></view>
+      </view>
+      <view v-if="pairAIResult" class="action-box">
+        <text class="action-label">深度解读（{{ pairAIResult.day || '今日' }}日）</text>
+        <text v-if="pairAIResult.dayEnergy" class="action-text" user-select>{{ pairAIResult.dayEnergy }}</text>
+        <text v-if="pairAIResult.monthTrend" class="action-text" user-select style="margin-top:6rpx;">{{ pairAIResult.monthTrend }}</text>
+        <text v-if="pairAIResult.relationshipDynamics" class="action-text" user-select style="margin-top:6rpx;">{{ pairAIResult.relationshipDynamics }}</text>
+        <text v-if="pairAIResult.advice" class="action-text" user-select style="margin-top:6rpx;font-weight:800;color:#111;">💡 {{ pairAIResult.advice }}</text>
+        <text v-if="pairAIResult.message && !pairAIResult.dayEnergy && !pairAIResult.advice" class="action-text muted" user-select>{{ pairAIResult.message }}</text>
+      </view>
+    </view>
+    <view v-else-if="showPairReadGuide" class="card-v2" style="border-style:dashed;" @click="goSelfProfile">
+      <text class="section-title-v2">桃花匹配度</text>
+      <text class="card-text-v2">完善你和 Crush 的生肖星座，解锁桃花匹配解读 →</text>
+    </view>
+
     <!-- ⑥ 桃花方位全览 -->
     <view class="card-v2">
       <text class="section-title-v2">桃花方位全览</text>
@@ -326,7 +383,7 @@
       </view>
 
       <text class="card-text-v2 muted" style="margin-top:12rpx;display:block;">
-        本命桃花终身不变 · 流年/流月/流日动态变动 · 今日行动以流日为准
+        本命位终身不变 · 流年/流月/流日为动态推演 · 今日约会优先看今日桃花位
       </text>
     </view>
 
@@ -479,7 +536,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { onShareAppMessage, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import {
   zodiacPairMatch, zodiacSignMatch, zodiacToTaohua, hongluanTianxi, xianchiAlgorithm,
   getTodayStr, ZODIAC_NAMES, SIGN_NAMES, ZODIAC_TO_ZHI,
@@ -487,9 +544,9 @@ import {
 } from '@/utils/taohua'
 import type { CrossMatchResult, PairInsight } from '@/utils/taohua'
 import TaohuaCompass from '@/components/TaohuaCompass.vue'
-import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId } from '@/utils/api'
+import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId, getCaseDetail, generatePairRead } from '@/utils/api'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { bumpDataVersion } from '@/utils/helpers'
+import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
 
 // ============================================================
 // Mock 降级数据（Phase 2：云函数不可用时降级）
@@ -682,6 +739,7 @@ onMounted(async () => {
     }
   } catch (_) { /* ignore */ }
   await loadData()
+  await loadPairMatch()
 })
 
 onShow(() => {
@@ -807,7 +865,7 @@ const guideActivities = computed(() => guide.value.建议活动 || [])
 const guideDos = computed(() => guide.value.宜做 || [])
 const guideDonts = computed(() => guide.value.避开 || [])
 const guideDirection = computed(() => guide.value.方位 || '--')
-const guideTianxiDir = computed(() => guide.value.天喜方位 || '')
+const guideLiuheDir = computed(() => guide.value.六合方位 || guide.value.天喜方位 || '')
 const ZODIAC_LIST = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
 const YEAR_BRANCH = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
 const HONGLUAN_FROM_YEAR: Record<string,string> = {'子':'卯','丑':'寅','寅':'丑','卯':'子','辰':'亥','巳':'戌','午':'酉','未':'申','申':'未','酉':'午','戌':'巳','亥':'辰'}
@@ -912,6 +970,68 @@ function doMatchCheck() {
     uni.showToast({ title: e.message || '配对失败', icon: 'none' })
   }
 }
+
+// ============================================================
+// 桃花匹配度（绑定 Crush：从"我们"页带 caseId 进入，含 AI 深度解读）
+// ============================================================
+const boundCaseId = ref('')
+const pairMatch = ref<{ relation: string; relationDesc: string } | null>(null)
+const pairInsight = ref<PairInsight | null>(null)
+const pairReadLoading = ref(false)
+const pairAIResult = ref<any>(null)
+const showPairReadGuide = ref(false)
+
+const pairMatchBadge = computed(() => {
+  const r = pairMatch.value?.relation || ''
+  if (r.includes('六合')) return 'great'
+  if (r.includes('三合')) return 'good'
+  if (r.includes('冲')) return 'caution'
+  return 'neutral'
+})
+
+async function loadPairMatch() {
+  if (!boundCaseId.value) return
+  try {
+    const uid = getCurrentUserId()
+    if (!uid) return
+    const detail = await getCaseDetail(uid, boundCaseId.value)
+    const crush = detail?.profile
+    const self = getCachedSelfProfile()
+    if (!self?.zodiac || !self?.constellation || !crush?.zodiac || !crush?.constellation) {
+      showPairReadGuide.value = !!(self?.zodiac || crush?.zodiac)
+      return
+    }
+    const match = zodiacPairMatch(self.zodiac, crush.zodiac, self.constellation, crush.constellation)
+    const partner = zodiacSignMatch(crush.zodiac, crush.constellation)
+    const selfMatch = zodiacSignMatch(self.zodiac, self.constellation)
+    pairMatch.value = { relation: match.relation, relationDesc: match.relationDesc }
+    pairInsight.value = generatePairInsight(selfMatch, partner, match)
+    showPairReadGuide.value = false
+  } catch {
+    showPairReadGuide.value = false
+  }
+}
+
+async function doPairAIDeepRead() {
+  if (pairReadLoading.value || !boundCaseId.value) return
+  pairReadLoading.value = true
+  try {
+    const res = await generatePairRead(boundCaseId.value)
+    if (res?.success) {
+      pairAIResult.value = res.aiEnhanced || { message: '暂无深度解读内容' }
+    } else {
+      pairAIResult.value = { fallback: true, message: res?.message || '解读暂不可用' }
+    }
+  } catch (error: any) {
+    pairAIResult.value = { fallback: true, message: error?.message || '解读请求失败，请稍后再试' }
+  } finally {
+    pairReadLoading.value = false
+  }
+}
+
+onLoad((options: any) => {
+  boundCaseId.value = options?.caseId || getActiveCaseId() || ''
+})
 
 // ============================================================
 // 导航
@@ -1458,4 +1578,16 @@ function saveShareImage() {
 }
 .ai-disclaimer { text-align: center; padding: 20rpx 20rpx 40rpx; }
 .ai-disclaimer-text { font-size: 22rpx; color: #999; }
+
+/* 桃花匹配度 AI 深度解读盒（自 case-detail 移植） */
+.action-box { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #f5f5ff; }
+.action-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
+.action-text { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.5; }
+.action-text.muted { color: #999; }
+.ai-row { display: flex; align-items: center; gap: 14rpx; }
+.ai-dot { width: 20rpx; height: 20rpx; border: 2rpx solid #111; background: #FFD93D; display: inline-block; animation: blink-dot 1s ease-in-out infinite; }
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.75); }
+}
 </style>
