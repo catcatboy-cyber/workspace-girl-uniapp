@@ -866,29 +866,16 @@ const guideDos = computed(() => guide.value.宜做 || [])
 const guideDonts = computed(() => guide.value.避开 || [])
 const guideDirection = computed(() => guide.value.方位 || '--')
 const guideLiuheDir = computed(() => guide.value.六合方位 || guide.value.天喜方位 || '')
-const ZODIAC_LIST = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
-const YEAR_BRANCH = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
-const HONGLUAN_FROM_YEAR: Record<string,string> = {'子':'卯','丑':'寅','寅':'丑','卯':'子','辰':'亥','巳':'戌','午':'酉','未':'申','申':'未','酉':'午','戌':'巳','亥':'辰'}
-const LIUCHONG: Record<string,string> = {'子':'午','丑':'未','寅':'申','卯':'酉','辰':'戌','巳':'亥','午':'子','未':'丑','申':'寅','酉':'卯','戌':'辰','亥':'巳'}
-const DIR_FROM_ZHI: Record<string,string> = {'子':'正北','丑':'东北','寅':'东北','卯':'正东','辰':'东南','巳':'东南','午':'正南','未':'西南','申':'西南','酉':'正西','戌':'西北','亥':'西北'}
+// 本命红鸾/天喜方位 —— 统一走共享 hongluanTianxi（细粒度 ZHI_TO_DIRECTION），与「今日桃花」teaser、桃花方位全览表保持一致
 const natalHongluanDir = computed(() => {
   const z = userZodiac.value
   if (!z) return ''
-  const idx = ZODIAC_LIST.indexOf(z)
-  if (idx < 0) return ''
-  const yz = YEAR_BRANCH[idx]
-  const hl = HONGLUAN_FROM_YEAR[yz]
-  return DIR_FROM_ZHI[hl] || ''
+  try { return hongluanTianxi(z).hongluan.direction || '' } catch { return '' }
 })
 const natalTianxiDir = computed(() => {
   const z = userZodiac.value
   if (!z) return ''
-  const idx = ZODIAC_LIST.indexOf(z)
-  if (idx < 0) return ''
-  const yz = YEAR_BRANCH[idx]
-  const hl = HONGLUAN_FROM_YEAR[yz]
-  const tx = LIUCHONG[hl]
-  return DIR_FROM_ZHI[tx] || ''
+  try { return hongluanTianxi(z).tianxi.direction || '' } catch { return '' }
 })
 
 const zodiacEmoji = computed(() => {
