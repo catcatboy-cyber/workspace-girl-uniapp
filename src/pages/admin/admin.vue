@@ -1,6 +1,33 @@
 ﻿<template>
   <view class="admin-page v2-mode">
-    <view class="admin-shell">
+    <view class="admin-layout">
+      <view class="admin-sidebar">
+        <text class="sidebar-brand">后台管理</text>
+        <view class="sidebar-group">
+          <text class="sidebar-group-title">核心管理</text>
+          <view :class="['sidebar-item', activeTab === 'users' ? 'active' : '']" @click="activeTab = 'users'">👤 用户管理</view>
+        </view>
+        <view class="sidebar-group">
+          <text class="sidebar-group-title">AI 配置</text>
+          <view :class="['sidebar-item', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'">🤖 AI 设置</view>
+        </view>
+        <view class="sidebar-group">
+          <text class="sidebar-group-title">计费管理</text>
+          <view :class="['sidebar-item', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">🪙 Token 额度</view>
+          <view :class="['sidebar-item', activeTab === 'subscription' ? 'active' : '']" @click="activeTab = 'subscription'">📦 订阅配置</view>
+        </view>
+        <view class="sidebar-group">
+          <text class="sidebar-group-title">数据中心</text>
+          <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Token 消耗</view>
+          <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'">📋 订单管理</view>
+        </view>
+        <view class="sidebar-group">
+          <text class="sidebar-group-title">运营工具</text>
+          <view :class="['sidebar-item', activeTab === 'feedback' ? 'active' : '']" @click="activeTab = 'feedback'">💬 反馈管理</view>
+          <view :class="['sidebar-item', activeTab === 'customPet' ? 'active' : '']" @click="activeTab = 'customPet'">🐾 宠物需求</view>
+        </view>
+      </view>
+      <view class="admin-main">
       <view class="topbar">
         <view>
           <text class="eyebrow">Admin Console</text>
@@ -35,17 +62,6 @@
           <text class="stat-label">AI 状态</text>
           <text class="stat-value">{{ stats.aiEnabled ? '已启用' : '未启用' }}</text>
         </view>
-      </view>
-
-      <view class="tabs">
-        <button :class="['tab-btn', activeTab === 'users' ? 'active' : '']" @click="activeTab = 'users'">用户管理</button>
-        <button :class="['tab-btn', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'">AI 设置</button>
-        <button :class="['tab-btn', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">Token 额度</button>
-        <button :class="['tab-btn', activeTab === 'subscription' ? 'active' : '']" @click="switchToSubscription">订阅配置</button>
-        <button :class="['tab-btn', activeTab === 'feedback' ? 'active' : '']" @click="switchToFeedback">反馈管理</button>
-        <button :class="['tab-btn', activeTab === 'tokenUsers' ? 'active' : '']" @click="switchToTokenUsers">Token 消耗</button>
-        <button :class="['tab-btn', activeTab === 'customPet' ? 'active' : '']" @click="switchToCustomPet">宠物需求</button>
-        <button :class="['tab-btn', activeTab === 'orders' ? 'active' : '']" @click="switchToOrders">订单管理</button>
       </view>
 
       <view v-if="activeTab === 'users'" class="content-grid">
@@ -504,478 +520,19 @@
         </button>
       </view>
 
-      <view v-if="activeTab === 'billing'" class="panel">
-        <view class="panel-head">
-          <view>
-            <text class="panel-title">Token 额度配置</text>
-            <text class="panel-meta">管理首次赠送、充值档位、模型扣费倍率等计费规则。</text>
-          </view>
-        </view>
-
-        <view class="switch-row">
-          <view>
-            <text class="field-title">首次赠送额度</text>
-            <text class="field-desc">新用户注册后自动赠送。关闭则不再赠送。</text>
-          </view>
-          <switch :checked="billingForm.firstGiftEnabled" @change="onFirstGiftEnabledChange" />
-        </view>
-        <view v-if="billingForm.firstGiftEnabled" class="field">
-          <text>赠送额度 (token)</text>
-          <input v-model.number="billingForm.welcomeTokens" type="number" placeholder="1000000" />
-        </view>
-
-        <view class="field">
-          <text>1 元兑换额度 (token)</text>
-          <input v-model.number="billingForm.tokensPerYuan" type="number" placeholder="100000" />
-        </view>
-
-        <view class="settings-section">
-          <view class="section-head">
-            <text class="section-title">充值档位</text>
-            <button class="small-btn" @click="addRechargeTier">添加档位</button>
-          </view>
-          <view v-for="(tier, index) in rechargeTiers" :key="tier.id" class="model-card">
-            <view class="model-head">
-              <text class="model-title">{{ tier.name || '未命名档位' }}</text>
-              <button class="small-btn danger" @click="removeRechargeTier(index)">删除</button>
-            </view>
-            <view class="form-grid">
-              <view class="field">
-                <text>档位 ID</text>
-                <input v-model="tier.id" placeholder="p9_9" />
-              </view>
-              <view class="field">
-                <text>名称</text>
-                <input v-model="tier.name" placeholder="基础包" />
-              </view>
-              <view class="field">
-                <text>价格 (分)</text>
-                <input v-model.number="tier.priceFen" type="number" placeholder="990" />
-              </view>
-              <view class="field">
-                <text>赠送额度</text>
-                <input v-model.number="tier.bonusTokens" type="number" placeholder="0" />
-              </view>
-              <view class="field">
-                <text>启用</text>
-                <switch :checked="tier.enabled" @change="onTierEnabledChange(index, $event)" />
-              </view>
-            </view>
-          </view>
-          <view v-if="rechargeTiers.length === 0" class="empty">暂无充值档位，点击"添加档位"创建。</view>
-        </view>
-
-        <view class="settings-section">
-          <view class="section-head">
-            <text class="section-title">模型扣费倍率</text>
-            <button class="small-btn" @click="addModelPricing">添加模型</button>
-          </view>
-          <view v-for="(mp, index) in modelPricing" :key="'mp-' + index" class="model-card">
-            <view class="model-head">
-              <text class="model-title">{{ mp.modelId || '新模型' }}</text>
-              <button class="small-btn danger" @click="removeModelPricing(index)">删除</button>
-            </view>
-            <view class="form-grid">
-              <view class="field">
-                <text>模型 ID ( * 表示通配)</text>
-                <input v-model="mp.modelId" placeholder="* 或 deepseek-chat" />
-              </view>
-              <view class="field">
-                <text>扣费倍率</text>
-                <input v-model.number="mp.costMultiplier" type="number" placeholder="1" step="0.01" />
-              </view>
-              <view class="field">
-                <text>启用</text>
-                <switch :checked="mp.enabled" @change="onModelPricingEnabledChange(index, $event)" />
-              </view>
-            </view>
-          </view>
-          <view v-if="modelPricing.length === 0" class="empty">暂无模型倍率配置，点击"添加模型"创建。</view>
-        </view>
-
-        <view class="settings-section">
-          <view class="section-head">
-            <text class="section-title">扣费策略</text>
-          </view>
-          <view class="form-grid">
-            <view class="field">
-              <text>Usage 缺失时的扣费策略</text>
-              <view class="mode-toggles">
-                <button
-                  v-for="opt in noUsageFallbackOptions"
-                  :key="opt.value"
-                  :class="['small-btn', billingForm.noUsageFallback === opt.value ? 'active' : '']"
-                  @click="billingForm.noUsageFallback = opt.value"
-                >{{ opt.label }}</button>
-              </view>
-            </view>
-            <view class="field">
-              <text>余额不足时</text>
-              <view class="mode-toggles">
-                <button
-                  v-for="opt in insufficientModeOptions"
-                  :key="opt.value"
-                  :class="['small-btn', billingForm.insufficientBalanceMode === opt.value ? 'active' : '']"
-                  @click="billingForm.insufficientBalanceMode = opt.value"
-                >{{ opt.label }}</button>
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <view v-if="saveMessage" class="save-message">{{ saveMessage }}</view>
-        <button class="primary-btn" :disabled="billingSaving" @click="saveBillingSettings">
-          {{ billingSaving ? '保存中...' : '保存额度配置' }}
-        </button>
-
-        <view class="settings-section" style="margin-top: 24px;">
-          <view class="section-head">
-            <text class="section-title">手动充值</text>
-            <text class="section-desc">管理员直接给指定用户增减额度。正数充值，负数扣减（测试用）。</text>
-          </view>
-          <view class="form-grid">
-            <view class="field">
-              <text>目标用户 ID</text>
-              <input v-model="manualRechargeUserId" placeholder="填写用户的 _id" />
-            </view>
-            <view class="field">
-              <text>充值额度 (token)</text>
-              <input v-model.number="manualRechargeAmount" type="number" placeholder="例如 500000" />
-            </view>
-            <view class="field wide">
-              <text>备注</text>
-              <input v-model="manualRechargeRemark" placeholder="管理员手动充值" />
-            </view>
-          </view>
-          <button class="primary-btn" :disabled="manualRecharging" @click="doManualRecharge" style="margin-top: 12px;">
-            {{ manualRecharging ? '充值中...' : '确认充值' }}
-          </button>
-          <text v-if="manualRechargeMsg" class="save-message" style="margin-top: 8px;">{{ manualRechargeMsg }}</text>
-        </view>
-      </view>
+      <BillingPanel v-if="activeTab === 'billing'" @error="errorMessage = $event" />
 
       <!-- 订阅配置 -->
-      <view v-if="activeTab === 'subscription'" class="panel">
-        <view class="panel-head">
-          <view>
-            <text class="panel-title">订阅配置</text>
-            <text class="panel-meta">管理试用期、三档套餐、分享奖励。修改即时生效，无需发版。</text>
-          </view>
-        </view>
+      <SubscriptionPanel v-if="activeTab === 'subscription'" />
 
-        <!-- 试用期 -->
-        <view class="switch-row">
-          <view>
-            <text class="field-title">免费试用期</text>
-            <text class="field-desc">新用户注册后享有全功能不限次体验。关闭后新用户直接进入免费版。</text>
-          </view>
-          <switch :checked="subForm.trialEnabled" @change="subForm.trialEnabled = $event.detail.value" />
-        </view>
-        <view v-if="subForm.trialEnabled" class="form-grid">
-          <view class="field">
-            <text>试用天数</text>
-            <input v-model.number="subForm.trialDurationDays" type="number" placeholder="7" />
-          </view>
-          <view class="field">
-            <text>邀请延长天数</text>
-            <input v-model.number="subForm.trialExtendOnReferral" type="number" placeholder="3" />
-          </view>
-        </view>
-        <view v-if="subForm.trialEnabled" style="margin-top:12rpx;">
-          <text style="font-size:22rpx;color:#999;font-weight:700;display:block;margin-bottom:8rpx;">试用期可用功能（点击切换）</text>
-          <view style="display:flex;flex-wrap:wrap;gap:8rpx;">
-            <view
-              v-for="f in ALL_FEATURES"
-              :key="'trial_' + f"
-              :class="['chip-v2', hasTrialFeature(f) ? 'active' : '']"
-              style="padding:6rpx 16rpx;font-size:20rpx;"
-              @click="toggleTrialFeature(f)"
-            >{{ hasTrialFeature(f) ? '✓' : '✗' }} {{ f }}</view>
-          </view>
-        </view>
-
-        <view class="note-text" style="padding:12rpx 0;color:#999;font-size:22rpx;">
-          倍率 → 「Token 额度」tab 的模型扣费倍率 · 新用户赠送 → 「Token 额度」tab 的首次赠送额度 · 加油包 → 「Token 额度」tab 的充值档位
-        </view>
-
-        <!-- 三档套餐 -->
-        <view class="settings-section">
-          <view class="section-head">
-            <text class="section-title">套餐方案</text>
-          </view>
-          <view v-for="planKey in ['free', 'pro', 'ultra']" :key="planKey" class="model-card">
-            <view class="model-head">
-              <text class="model-title">{{ subForm.plans[planKey].name || planKey }}</text>
-            </view>
-            <view class="form-grid">
-              <view class="field">
-                <text>名称</text>
-                <input v-model="subForm.plans[planKey].name" />
-              </view>
-              <view class="field">
-                <text>月度Token（-1=不限）</text>
-                <input v-model.number="subForm.plans[planKey].monthlyTokens" type="number" placeholder="30000" />
-              </view>
-              <view class="field">
-                <text>Crush 上限（-1=不限）</text>
-                <input v-model.number="subForm.plans[planKey].maxCrushes" type="number" placeholder="1" />
-              </view>
-              <view class="field" v-if="planKey !== 'free'">
-                <text>月费 (¥)</text>
-                <input v-model.number="subForm.plans[planKey].priceYuan" type="number" placeholder="19" />
-              </view>
-              <view class="field" v-if="planKey !== 'free'">
-                <text>年费 (¥)</text>
-                <input v-model.number="subForm.plans[planKey].priceYuanAnnual" type="number" placeholder="168" />
-              </view>
-              <view class="field" v-if="planKey !== 'free'">
-                <text>学生价 (¥/月)</text>
-                <input v-model.number="subForm.plans[planKey].priceYuanStudent" type="number" placeholder="12" />
-              </view>
-              <view class="field" v-if="planKey !== 'free'">
-                <text>学生年费 (¥)</text>
-                <input v-model.number="subForm.plans[planKey].priceYuanStudentAnnual" type="number" placeholder="99" />
-              </view>
-            </view>
-            <view style="margin-top:12rpx;">
-              <text style="font-size:22rpx;color:#999;font-weight:700;">可用功能（点击切换）</text>
-              <view style="display:flex;flex-wrap:wrap;gap:8rpx;margin-top:8rpx;">
-                <view
-                  v-for="f in ALL_FEATURES"
-                  :key="f"
-                  :class="['chip-v2', hasFeature(planKey, f) ? 'active' : '']"
-                  style="padding:6rpx 16rpx;font-size:20rpx;"
-                  @click="toggleFeature(planKey, f)"
-                >{{ hasFeature(planKey, f) ? '✓' : '✗' }} {{ f }}</view>
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <!-- 分享奖励 -->
-        <view class="settings-section">
-          <view class="section-head">
-            <text class="section-title">分享奖励</text>
-          </view>
-          <view class="switch-row">
-            <view>
-              <text class="field-title">启用邀请奖励</text>
-              <text class="field-desc">双方均获得额外 Token。被邀请人需创建 Crush 并记录事件后才发放。</text>
-            </view>
-            <switch :checked="subForm.referralEnabled" @change="subForm.referralEnabled = $event.detail.value" />
-          </view>
-          <view v-if="subForm.referralEnabled" class="form-grid" style="margin-top:16rpx;">
-            <view class="field">
-              <text>邀请人奖励（Token）</text>
-              <input v-model.number="subForm.inviterRewardTokens" type="number" placeholder="3000" />
-            </view>
-            <view class="field">
-              <text>被邀请人奖励（Token）</text>
-              <input v-model.number="subForm.inviteeRewardTokens" type="number" placeholder="5000" />
-            </view>
-            <view class="field">
-              <text>单周邀请上限</text>
-              <input v-model.number="subForm.weeklyInviteCap" type="number" placeholder="5" />
-            </view>
-          </view>
-        </view>
-
-        <view v-if="subSaveMsg" class="save-message">{{ subSaveMsg }}</view>
-        <button class="primary-btn" :disabled="subSaving" @click="saveSubscriptionConfig">
-          {{ subSaving ? '保存中...' : '保存订阅配置' }}
-        </button>
-      </view>
-
-      <view v-if="activeTab === 'feedback'" class="panel">
-        <view class="panel-head">
-          <view>
-            <text class="panel-title">用户反馈</text>
-            <text class="panel-meta">{{ feedbacks.length }} 条反馈</text>
-          </view>
-          <button class="ghost-btn wide-btn" :disabled="feedbackLoading" @click="loadFeedbacks">{{ feedbackLoading ? '加载中' : '刷新' }}</button>
-        </view>
-        <view v-if="feedbacks.length === 0 && !feedbackLoading" class="empty">暂无用户反馈。</view>
-        <view v-else class="feedback-list">
-          <view v-for="(fb, index) in feedbacks" :key="fb._id || index" class="feedback-item" :class="{ resolved: fb.resolved }">
-            <view class="feedback-head">
-              <view>
-                <text class="feedback-time">{{ formatDate(fb.createdAt) }}</text>
-                <text class="feedback-user">用户：{{ fb.userId || fb.openid || '未知' }}</text>
-              </view>
-              <text v-if="fb.contact" class="feedback-contact">{{ fb.contact }}</text>
-            </view>
-            <text class="feedback-content">{{ fb.content }}</text>
-            <view v-if="fb.resolved" class="feedback-resolved-badge">已采纳 · 奖励 {{ fb.rewardTokens || 0 }} token</view>
-            <view v-else class="feedback-actions">
-              <input v-if="!fb.userId" :value="targetUserIds[fb._id] || ''" class="reward-input" placeholder="用户ID" @input="onTargetUserInput(fb._id, $event)" />
-              <input :value="rewardInputs[fb._id] || ''" type="number" class="reward-input" placeholder="奖励 token" @input="onRewardInput(fb._id, $event)" />
-              <button class="small-btn" :disabled="resolvingId === fb._id" @click="resolveFeedback(fb._id)">{{ resolvingId === fb._id ? '处理中' : '采纳' }}</button>
-            </view>
-          </view>
-        </view>
-      </view>
+      <FeedbackPanel v-if="activeTab === 'feedback'" @error="errorMessage = $event" />
 
       <!-- 各用户 Token 消耗 -->
-      <view v-if="activeTab === 'tokenUsers'" class="panel">
-        <view class="panel-head">
-          <view>
-            <text class="panel-title">各用户 Token 消耗</text>
-            <text class="panel-meta">{{ tokenUserRows.length }} 个用户 · 点击展开明细</text>
-          </view>
-          <button class="ghost-btn wide-btn" :disabled="tokenUsersLoading" @click="loadTokenUsers">{{ tokenUsersLoading ? '加载中' : '刷新' }}</button>
-        </view>
-        <view v-if="tokenUserRows.length === 0 && !tokenUsersLoading" class="empty">暂无数据。</view>
-        <view v-else>
-          <view class="table" style="max-height:500px;overflow-y:auto;margin-bottom:16px;">
-            <view class="table-row table-header">
-              <text style="width:40rpx;"></text>
-              <text style="flex:1;">用户</text>
-              <text style="width:130rpx;text-align:right;">平台 Token</text>
-              <text style="width:130rpx;text-align:right;">模型 Token</text>
-              <text style="width:80rpx;text-align:right;">次数</text>
-              <text style="width:140rpx;text-align:right;">最近使用</text>
-            </view>
-            <view v-for="row in tokenUserRows" :key="row.userId" :class="['table-row', tokenDetailUserId === row.userId ? 'selected' : '']" @click="toggleTokenUserDetail(row.userId)" style="cursor:pointer;">
-              <text style="width:40rpx;font-weight:900;">{{ tokenDetailUserId === row.userId ? '▼' : '▶' }}</text>
-              <text style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ row.email || row.phone || row.userId }}</text>
-              <text style="width:130rpx;text-align:right;font-weight:800;color:#111;">{{ row.platformTokens.toLocaleString() }}</text>
-              <text style="width:130rpx;text-align:right;color:#999;">{{ row.modelTokens.toLocaleString() }}</text>
-              <text style="width:80rpx;text-align:right;color:#999;">{{ row.callCount }}</text>
-              <text style="width:140rpx;text-align:right;color:#999;font-size:18rpx;">{{ formatShortDate(row.lastUsed) }}</text>
-            </view>
-          </view>
+      <TokenUsersPanel v-if="activeTab === 'tokenUsers'" />
 
-          <!-- 明细展开 -->
-          <view v-if="tokenDetailUserId && tokenDetailRecords.length > 0" class="token-detail-panel">
-            <view class="token-detail-head">
-              <text class="token-detail-title">{{ tokenDetailUserLabel }} · 最近 {{ tokenDetailRecords.length }} 次调用</text>
-              <button class="small-btn" @click="tokenDetailUserId = ''">收起</button>
-            </view>
-            <view class="table" style="max-height:400px;overflow-y:auto;">
-              <view class="table-row table-header" style="font-size:18rpx;">
-                <text style="flex:1.5;">功能</text>
-                <text style="width:110rpx;text-align:right;">平台 Token</text>
-                <text style="width:110rpx;text-align:right;">模型 Token</text>
-                <text style="width:60rpx;text-align:right;">倍率</text>
-                <text style="width:140rpx;text-align:right;">时间</text>
-              </view>
-              <view v-for="rec in tokenDetailRecords" :key="rec._id" class="table-row" style="font-size:20rpx;">
-                <text style="flex:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ formatTokenFeature(rec.feature) }}</text>
-                <text style="width:110rpx;text-align:right;font-weight:700;color:#111;">{{ rec.platformTokens.toLocaleString() }}</text>
-                <text style="width:110rpx;text-align:right;color:#999;">{{ rec.modelTokens.toLocaleString() }}</text>
-                <text style="width:60rpx;text-align:right;color:#999;">{{ rec.rate }}x</text>
-                <text style="width:140rpx;text-align:right;color:#999;font-size:16rpx;">{{ formatShortDate(rec.createdAt) }}</text>
-              </view>
-            </view>
-          </view>
-          <view v-if="tokenDetailUserId && tokenDetailLoading" class="empty">加载中…</view>
-          <view v-if="tokenDetailUserId && !tokenDetailLoading && tokenDetailRecords.length === 0" class="empty">暂无明细。</view>
-        </view>
-      </view>
+      <CustomPetPanel v-if="activeTab === 'customPet'" @error="errorMessage = $event" />
 
-      <view v-if="activeTab === 'customPet'" class="panel">
-        <view class="panel-head">
-          <view>
-            <text class="panel-title">宠物定制需求</text>
-            <text class="panel-meta">{{ petRequests.length }} 条需求</text>
-          </view>
-          <button class="ghost-btn wide-btn" :disabled="petRequestsLoading" @click="loadPetRequests">{{ petRequestsLoading ? '加载中' : '刷新' }}</button>
-        </view>
-        <view v-if="petRequests.length === 0 && !petRequestsLoading" class="empty">暂无宠物定制需求。</view>
-        <view v-else class="pet-request-list">
-          <view v-for="(req, index) in petRequests" :key="req._id || index" class="pet-request-item" :class="req.status">
-            <view class="pet-request-head">
-              <view>
-                <text class="pet-request-nickname">{{ req.nickname }}</text>
-                <text class="pet-request-user">用户：{{ req.userId || '未知' }}</text>
-                <text class="pet-request-time">{{ formatDate(req.createdAt) }}</text>
-              </view>
-              <view class="pet-request-status-row">
-                <text :class="['pet-request-status', req.status]">{{ statusLabel(req.status) }}</text>
-              </view>
-            </view>
-            <text class="pet-request-desc">{{ req.description }}</text>
-            <view v-if="req.referenceImages && req.referenceImages.length" class="pet-request-images">
-              <image v-for="(img, i) in req.referenceImages" :key="i" :src="img" class="pet-request-img" mode="aspectFill" />
-            </view>
-            <view v-if="req.adminNote" class="pet-request-note">
-              <text>后台备注：{{ req.adminNote }}</text>
-            </view>
-            <view v-if="req.deliveredPetId" class="pet-request-note">
-              <text>已交付 Pet ID：{{ req.deliveredPetId }}</text>
-            </view>
-            <view v-if="req.status === 'pending'" class="pet-request-actions">
-              <button class="small-btn" @click="updatePetRequest(req._id, 'in_progress')">标记制作中</button>
-              <button class="small-btn danger" @click="updatePetRequest(req._id, 'rejected')">拒绝</button>
-            </view>
-            <view v-if="req.status === 'in_progress'" class="pet-request-actions">
-              <input v-if="!deliveredPetIds[req._id]" :value="tempDeliveredPetIds[req._id] || ''" class="pet-request-petid-input" placeholder="输入交付的 Pet ID" @input="onDeliveredPetIdInput(req._id, $event)" />
-              <button class="small-btn" @click="deliverPetRequest(req._id)">标记已交付</button>
-            </view>
-          </view>
-        </view>
-
-        <!-- 订单管理 -->
-        <view v-if="activeTab === 'orders'" class="panel">
-          <view class="panel-head">
-            <view>
-              <text class="panel-title">订单管理</text>
-              <text class="panel-meta">{{ orderTotal }} 条订单</text>
-            </view>
-            <button class="ghost-btn wide-btn" :disabled="ordersLoading" @click="loadOrders">{{ ordersLoading ? '加载中' : '刷新' }}</button>
-          </view>
-          <!-- 状态筛选 -->
-          <view style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-            <button v-for="s in orderStatusOptions" :key="s.value"
-              :class="['small-btn', orderStatusFilter === s.value ? 'active' : '']"
-              @click="orderStatusFilter = s.value; loadOrders()">{{ s.label }}</button>
-          </view>
-          <!-- 订单列表 -->
-          <view v-if="orders.length === 0 && !ordersLoading" class="empty">暂无订单。</view>
-          <view v-else class="table" style="max-height:600px;overflow-y:auto;">
-            <view class="table-row table-header">
-              <text style="flex:1.5;">用户ID</text>
-              <text style="flex:1;">档位</text>
-              <text style="flex:0.6;">金额</text>
-              <text style="flex:0.5;">类型</text>
-              <text style="flex:0.6;">状态</text>
-              <text style="flex:1.2;">时间</text>
-            </view>
-            <view v-for="row in orders" :key="row._id"
-              :class="['table-row', expandedOrderId === row._id ? 'selected' : '']"
-              style="cursor:pointer;" @click="expandedOrderId = expandedOrderId === row._id ? '' : row._id">
-              <text style="flex:1.5;font-size:20rpx;">{{ row.userId }}</text>
-              <text style="flex:1;font-weight:800;">{{ row.planName }}</text>
-              <text style="flex:0.6;font-weight:800;">¥{{ row.amountYuan }}</text>
-              <text style="flex:0.5;">{{ row.type === 'subscription_upgrade' ? '套餐' : '充值' }}</text>
-              <text style="flex:0.6;font-weight:800;" :style="{ color: orderStatusColor(row.status) }">{{ orderStatusLabel(row.status) }}</text>
-              <text style="flex:1.2;font-size:20rpx;">{{ formatDate(row.createdAt) }}</text>
-            </view>
-            <!-- 展开详情 -->
-            <view v-if="expandedOrderId" class="order-detail">
-              <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <text style="font-weight:800;">订单详情</text>
-                <text style="font-size:20rpx;color:#999;">{{ expandedOrderId }}</text>
-              </view>
-              <view class="order-detail-grid">
-                <text>订单ID：{{ expandedOrderId }}</text>
-                <text v-if="expandedOrder?.paidAt">支付时间：{{ formatDate(expandedOrder.paidAt) }}</text>
-                <text v-if="expandedOrder?.remark">备注：{{ expandedOrder.remark }}</text>
-              </view>
-              <view v-if="expandedOrder?.status === 'paid'" style="margin-top:12px;">
-                <button class="small-btn danger" :disabled="refundingOrderId === expandedOrderId" @click="doRefundOrder(expandedOrderId)">
-                  {{ refundingOrderId === expandedOrderId ? '退款中...' : '退款' }}
-                </button>
-              </view>
-            </view>
-          </view>
-          <!-- 分页 -->
-          <view v-if="orderTotal > orderPageSize" style="display:flex;justify-content:center;gap:8px;margin-top:16px;">
-            <button class="small-btn" :disabled="orderPage <= 1" @click="orderPage--; loadOrders()">上一页</button>
-            <text style="line-height:34px;font-size:22rpx;color:#666;">{{ orderPage }} / {{ Math.ceil(orderTotal / orderPageSize) }}</text>
-            <button class="small-btn" :disabled="orderPage >= Math.ceil(orderTotal / orderPageSize)" @click="orderPage++; loadOrders()">下一页</button>
-          </view>
-        </view>
+      <OrdersPanel v-if="activeTab === 'orders'" @error="errorMessage = $event" />
       </view>
     </view>
   </view>
@@ -989,25 +546,18 @@ import {
   adminGetUserDetail,
   adminPreviewPrompt,
   adminUpdateAISettings,
-  adminGetBillingSettings,
-  adminUpdateBillingSettings,
-  adminGetSubscriptionConfig,
-  adminUpdateSubscriptionConfig,
-  adminManualRecharge,
   adminGetTokenLedger,
   adminUpdateUser,
-  adminListFeedbacks,
-  adminResolveFeedback,
-  adminListCustomPetRequests,
-  adminUpdateCustomPetRequest,
-  adminGetOrders,
-  adminRefundOrder,
-  adminGetUsersTokenConsumption,
-  adminGetUserTokenDetails,
   getCurrentUserId,
   logout,
   testAIConnection
 } from '@/utils/api'
+import TokenUsersPanel from './components/panels/TokenUsersPanel.vue'
+import OrdersPanel from './components/panels/OrdersPanel.vue'
+import FeedbackPanel from './components/panels/FeedbackPanel.vue'
+import CustomPetPanel from './components/panels/CustomPetPanel.vue'
+import SubscriptionPanel from './components/panels/SubscriptionPanel.vue'
+import BillingPanel from './components/panels/BillingPanel.vue'
 
 type AdminUser = {
   id: string
@@ -1261,84 +811,7 @@ const promptPreviewMeta = ref({ provider: '', model: '', baseUrl: '' })
 const promptPreviewRecentTimeline = ref<Array<any>>([])
 const runtimeConfig = reactive<Record<string, number>>({})
 const personaConfig = reactive<PersonaConfig>(createEmptyPersonaConfig())
-const billingLoading = ref(false)
-const billingSaving = ref(false)
-const billingForm = reactive({
-  firstGiftEnabled: true,
-  welcomeTokens: 1000000,
-  tokensPerYuan: 100000,
-  insufficientBalanceMode: 'block',
-  noUsageFallback: 'zero'
-})
-const rechargeTiers = ref<Array<{ id: string; name: string; priceFen: number; bonusTokens: number; enabled: boolean }>>([])
-const modelPricing = ref<Array<{ modelId: string; costMultiplier: number; enabled: boolean }>>([])
-const noUsageFallbackOptions = [
-  { value: 'zero', label: '不扣费' },
-  { value: 'fallback', label: '按 maxTokens 估算' },
-  { value: 'fixed', label: '按固定额度' }
-]
-const insufficientModeOptions = [
-  { value: 'block', label: '阻断调用' },
-  { value: 'allow', label: '允许欠费' }
-]
-
-// 订阅配置
-const subForm = reactive({
-  trialEnabled: true,
-  trialDurationDays: 7,
-  trialExtendOnReferral: 3,
-  trialFeatures: [] as string[],
-  trialExcludedFeatures: [] as string[],
-  plans: {
-    free: { name: '免费版', monthlyTokens: 30000, maxCrushes: 1, priceYuan: 0, priceYuanAnnual: 0, priceYuanStudent: 0, features: [] as string[], excludedFeatures: [] as string[] },
-    pro: { name: 'Pro', monthlyTokens: 300000, maxCrushes: 3, priceYuan: 19, priceYuanAnnual: 168, priceYuanStudent: 12, priceYuanStudentAnnual: 99, features: [] as string[], excludedFeatures: [] as string[] },
-    ultra: { name: 'Ultra', monthlyTokens: -1, maxCrushes: -1, priceYuan: 39, priceYuanAnnual: 298, priceYuanStudent: 25, priceYuanStudentAnnual: 199, features: [] as string[], excludedFeatures: [] as string[] }
-  },
-  referralEnabled: true,
-  inviterRewardTokens: 3000,
-  inviteeRewardTokens: 5000,
-  weeklyInviteCap: 5
-})
-const ALL_FEATURES = [
-  '记录', '时间轴', '规则分析', '即时反馈', '事件理解',
-  '周复盘', '附件识别', '星象速写', '小咪帮你说（单轮）',
-  '小咪多轮策略', '自定义宠物', '自定义AI风格', '命理桃花'
-]
-const subSaving = ref(false)
-const subSaveMsg = ref('')
-
-function hasTrialFeature(f: string) {
-  return !subForm.trialExcludedFeatures.includes(f)
-}
-function toggleTrialFeature(f: string) {
-  if (hasTrialFeature(f)) {
-    subForm.trialFeatures = subForm.trialFeatures.filter((x: string) => x !== f)
-    if (!subForm.trialExcludedFeatures.includes(f)) subForm.trialExcludedFeatures.push(f)
-  } else {
-    subForm.trialExcludedFeatures = subForm.trialExcludedFeatures.filter((x: string) => x !== f)
-    if (!subForm.trialFeatures.includes(f)) subForm.trialFeatures.push(f)
-  }
-}
-function hasFeature(planKey: string, f: string) {
-  const plan = subForm.plans[planKey]
-  return !plan.excludedFeatures.includes(f)
-}
-function toggleFeature(planKey: string, f: string) {
-  const plan = subForm.plans[planKey]
-  if (hasFeature(planKey, f)) {
-    plan.features = plan.features.filter((x: string) => x !== f)
-    if (!plan.excludedFeatures.includes(f)) plan.excludedFeatures.push(f)
-  } else {
-    plan.excludedFeatures = plan.excludedFeatures.filter((x: string) => x !== f)
-    if (!plan.features.includes(f)) plan.features.push(f)
-  }
-}
-
-const manualRechargeUserId = ref('')
-const manualRechargeAmount = ref(0)
-const manualRechargeRemark = ref('')
-const manualRecharging = ref(false)
-const manualRechargeMsg = ref('')
+// Token 额度配置（state）已抽到 components/panels/BillingPanel.vue
 
 const stats = reactive({
   userCount: 0,
@@ -2050,509 +1523,17 @@ async function testModel(model: AdminAIModel) {
   }
 }
 
-function onFirstGiftEnabledChange(event: any) {
-  billingForm.firstGiftEnabled = Boolean(event.detail?.value)
-}
+// Token 额度配置（方法 + watch 懒加载）已抽到 components/panels/BillingPanel.vue（组件改为 onMounted 自加载）
 
-function onTierEnabledChange(index: number, event: any) {
-  const val = event?.detail?.value
-  if (rechargeTiers.value[index]) rechargeTiers.value[index].enabled = Boolean(val)
-}
+// 反馈管理（state + 方法）已抽到 components/panels/FeedbackPanel.vue
 
-function onModelPricingEnabledChange(index: number, event: any) {
-  const val = event?.detail?.value
-  if (modelPricing.value[index]) modelPricing.value[index].enabled = Boolean(val)
-}
+// 订阅配置（方法）已抽到 components/panels/SubscriptionPanel.vue
 
-async function loadBillingSettings() {
-  if (billingLoading.value) return
-  billingLoading.value = true
-  try {
-    const result = await adminGetBillingSettings()
-    if (!result?.success) return
-    const b = result.billing || {}
-    billingForm.firstGiftEnabled = b.firstGiftEnabled !== false
-    billingForm.welcomeTokens = Number(b.welcomeTokens ?? 1000000)
-    billingForm.tokensPerYuan = Number(b.tokensPerYuan ?? 100000)
-    billingForm.insufficientBalanceMode = b.insufficientBalanceMode || 'block'
-    billingForm.noUsageFallback = b.noUsageFallback || 'zero'
-    rechargeTiers.value = Array.isArray(b.rechargeTiers)
-      ? b.rechargeTiers.map((t: any) => ({
-          id: t.id || '',
-          name: t.name || '',
-          priceFen: Number(t.priceFen ?? 990),
-          bonusTokens: Number(t.bonusTokens ?? 0),
-          enabled: t.enabled !== false
-        }))
-      : []
-    modelPricing.value = Array.isArray(b.modelPricing)
-      ? b.modelPricing.map((m: any) => ({
-          modelId: m.modelId || '*',
-          costMultiplier: Number(m.costMultiplier ?? 1),
-          enabled: m.enabled !== false
-        }))
-      : []
-  } catch (e: any) {
-    // silently fail on load error
-  } finally {
-    billingLoading.value = false
-  }
-}
+// （反馈管理方法已移至 FeedbackPanel.vue）
 
-async function saveBillingSettings() {
-  billingSaving.value = true
-  saveMessage.value = ''
-  errorMessage.value = ''
-  try {
-    const result = await adminUpdateBillingSettings({
-      firstGiftEnabled: billingForm.firstGiftEnabled,
-      welcomeTokens: billingForm.welcomeTokens,
-      tokensPerYuan: billingForm.tokensPerYuan,
-      rechargeTiers: rechargeTiers.value,
-      modelPricing: modelPricing.value,
-      insufficientBalanceMode: billingForm.insufficientBalanceMode,
-      noUsageFallback: billingForm.noUsageFallback
-    })
-    if (!result?.success) {
-      errorMessage.value = result?.message || '额度配置保存失败'
-      return
-    }
-    saveMessage.value = '额度配置已保存'
-    await loadBillingSettings()
-  } catch (error: any) {
-    errorMessage.value = error?.message || '额度配置保存失败'
-  } finally {
-    billingSaving.value = false
-  }
-}
+// 宠物定制需求 → 已抽到 components/panels/CustomPetPanel.vue（并修复了交付输入框 v-if 用未定义变量导致 in_progress 项渲染崩溃的 bug）
 
-function addRechargeTier() {
-  const nextId = 'p_' + Date.now()
-  rechargeTiers.value.push({
-    id: nextId,
-    name: '',
-    priceFen: 990,
-    bonusTokens: 0,
-    enabled: true
-  })
-}
-
-function removeRechargeTier(index: number) {
-  rechargeTiers.value.splice(index, 1)
-}
-
-function addModelPricing() {
-  modelPricing.value.push({
-    modelId: '',
-    costMultiplier: 1,
-    enabled: true
-  })
-}
-
-function removeModelPricing(index: number) {
-  modelPricing.value.splice(index, 1)
-}
-
-watch(activeTab, (tab) => {
-  if (tab === 'billing' && rechargeTiers.value.length === 0 && modelPricing.value.length === 0) {
-    loadBillingSettings()
-  }
-})
-
-async function doManualRecharge() {
-  const uid = manualRechargeUserId.value.trim()
-  if (!uid) { manualRechargeMsg.value = '请输入目标用户 ID'; return }
-  if (!manualRechargeAmount.value || manualRechargeAmount.value === 0) { manualRechargeMsg.value = '请输入有效额度（正数充值，负数扣减）'; return }
-  manualRecharging.value = true
-  manualRechargeMsg.value = ''
-  try {
-    const result = await adminManualRecharge(uid, manualRechargeAmount.value, manualRechargeRemark.value || undefined)
-    if (!result?.success) { manualRechargeMsg.value = result?.message || '充值失败'; return }
-    const label = manualRechargeAmount.value > 0 ? '充值成功' : '扣减成功'
-    manualRechargeMsg.value = `${label}：${manualRechargeAmount.value.toLocaleString()} token → ${uid}`
-    manualRechargeAmount.value = 0
-    manualRechargeRemark.value = ''
-  } catch (e: any) {
-    manualRechargeMsg.value = e?.message || '充值失败'
-  } finally {
-    manualRecharging.value = false
-  }
-}
-
-const feedbacks = ref<any[]>([])
-const feedbackLoading = ref(false)
-const rewardInputs = reactive<Record<string, number>>({})
-const targetUserIds = reactive<Record<string, string>>({})
-const resolvingId = ref('')
-
-async function switchToSubscription() {
-  activeTab.value = 'subscription'
-  await loadSubscriptionConfig()
-}
-
-async function loadSubscriptionConfig() {
-  subSaving.value = true
-  try {
-    const result = await adminGetSubscriptionConfig()
-    if (!result?.success || !result?.config) return
-    const c = result.config
-    subForm.trialEnabled = c.trial?.enabled !== false
-    subForm.trialDurationDays = Number(c.trial?.durationDays ?? 7)
-    subForm.trialExtendOnReferral = Number(c.trial?.extendOnReferral ?? 3)
-    if (Array.isArray(c.trial?.features)) subForm.trialFeatures = [...c.trial.features]
-    if (Array.isArray(c.trial?.excludedFeatures)) subForm.trialExcludedFeatures = [...c.trial.excludedFeatures]
-    subForm.welcomeCalls = Number(c.welcomeCalls ?? 10)
-    if (c.plans) {
-      for (const key of ['free', 'pro', 'ultra']) {
-        if (c.plans[key]) {
-          subForm.plans[key].name = c.plans[key].name || subForm.plans[key].name
-          subForm.plans[key].monthlyTokens = Number(c.plans[key].monthlyTokens ?? subForm.plans[key].monthlyTokens)
-          subForm.plans[key].maxCrushes = Number(c.plans[key].maxCrushes ?? subForm.plans[key].maxCrushes)
-          if (Array.isArray(c.plans[key].features)) subForm.plans[key].features = [...c.plans[key].features]
-          if (Array.isArray(c.plans[key].excludedFeatures)) subForm.plans[key].excludedFeatures = [...c.plans[key].excludedFeatures]
-          if (key !== 'free') {
-            subForm.plans[key].priceYuan = Number(c.plans[key].priceYuan ?? subForm.plans[key].priceYuan)
-            subForm.plans[key].priceYuanAnnual = Number(c.plans[key].priceYuanAnnual ?? subForm.plans[key].priceYuanAnnual)
-            subForm.plans[key].priceYuanStudent = Number(c.plans[key].priceYuanStudent ?? subForm.plans[key].priceYuanStudent)
-            subForm.plans[key].priceYuanStudentAnnual = Number(c.plans[key].priceYuanStudentAnnual ?? subForm.plans[key].priceYuanStudentAnnual)
-          }
-        }
-      }
-    }
-    if (c.referral) {
-      subForm.referralEnabled = c.referral.enabled !== false
-      subForm.trialExtendOnReferral = Number(c.referral.inviterTrialExtendDays ?? subForm.trialExtendOnReferral)
-      subForm.inviterRewardTokens = Number(c.referral.inviterRewardTokens ?? subForm.inviterRewardTokens)
-      subForm.inviteeRewardTokens = Number(c.referral.inviteeRewardTokens ?? subForm.inviteeRewardTokens)
-      subForm.weeklyInviteCap = Number(c.referral.weeklyInviteCap ?? 5)
-    }
-  } catch { /* ignore */ }
-  finally { subSaving.value = false }
-}
-
-function numberOr(value: any, fallback: number) {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : fallback
-}
-
-async function saveSubscriptionConfig() {
-  subSaving.value = true
-  subSaveMsg.value = ''
-  try {
-    const result = await adminUpdateSubscriptionConfig({
-      trial: {
-        enabled: subForm.trialEnabled,
-        durationDays: subForm.trialDurationDays,
-        extendOnReferral: subForm.trialExtendOnReferral,
-        features: [...subForm.trialFeatures],
-        excludedFeatures: [...subForm.trialExcludedFeatures]
-      },
-      plans: {
-        free: { name: subForm.plans.free.name, monthlyTokens: numberOr(subForm.plans.free.monthlyTokens, 30000), maxCrushes: numberOr(subForm.plans.free.maxCrushes, 1), features: [...subForm.plans.free.features], excludedFeatures: [...subForm.plans.free.excludedFeatures] },
-        pro: { name: subForm.plans.pro.name, monthlyTokens: numberOr(subForm.plans.pro.monthlyTokens, 300000), maxCrushes: numberOr(subForm.plans.pro.maxCrushes, 3), priceYuan: numberOr(subForm.plans.pro.priceYuan, 19), priceYuanAnnual: numberOr(subForm.plans.pro.priceYuanAnnual, 168), priceYuanStudent: numberOr(subForm.plans.pro.priceYuanStudent, 12), priceYuanStudentAnnual: numberOr(subForm.plans.pro.priceYuanStudentAnnual, 99), features: [...subForm.plans.pro.features], excludedFeatures: [...subForm.plans.pro.excludedFeatures] },
-        ultra: { name: subForm.plans.ultra.name, monthlyTokens: numberOr(subForm.plans.ultra.monthlyTokens, -1), maxCrushes: numberOr(subForm.plans.ultra.maxCrushes, -1), priceYuan: numberOr(subForm.plans.ultra.priceYuan, 39), priceYuanAnnual: numberOr(subForm.plans.ultra.priceYuanAnnual, 298), priceYuanStudent: numberOr(subForm.plans.ultra.priceYuanStudent, 25), priceYuanStudentAnnual: numberOr(subForm.plans.ultra.priceYuanStudentAnnual, 199), features: [...subForm.plans.ultra.features], excludedFeatures: [...subForm.plans.ultra.excludedFeatures] }
-      },
-      referral: {
-        enabled: subForm.referralEnabled,
-        inviterTrialExtendDays: numberOr(subForm.trialExtendOnReferral, 0),
-        inviterRewardTokens: numberOr(subForm.inviterRewardTokens, 3000),
-        inviteeRewardTokens: numberOr(subForm.inviteeRewardTokens, 5000),
-        weeklyInviteCap: numberOr(subForm.weeklyInviteCap, 5)
-      }
-    })
-    if (!result?.success) {
-      subSaveMsg.value = result?.message || '保存失败'
-      return
-    }
-    subSaveMsg.value = '订阅配置已保存'
-    setTimeout(() => { subSaveMsg.value = '' }, 3000)
-  } catch (e: any) {
-    subSaveMsg.value = e?.message || '保存失败'
-  } finally {
-    subSaving.value = false
-  }
-}
-
-async function switchToFeedback() {
-  activeTab.value = 'feedback'
-  if (feedbacks.value.length === 0) await loadFeedbacks()
-}
-
-async function loadFeedbacks() {
-  feedbackLoading.value = true
-  try {
-    const result = await adminListFeedbacks()
-    if (result?.success) feedbacks.value = result.feedbacks || []
-  } catch { /* ignore */ }
-  finally { feedbackLoading.value = false }
-}
-
-function onRewardInput(feedbackId: string, e: any) {
-  rewardInputs[feedbackId] = Number(e?.detail?.value) || 0
-}
-
-function onTargetUserInput(feedbackId: string, e: any) {
-  targetUserIds[feedbackId] = String(e?.detail?.value || '').trim()
-}
-
-async function resolveFeedback(feedbackId: string) {
-  if (!feedbackId || resolvingId.value) return
-  const tokens = Number(rewardInputs[feedbackId]) || 0
-  if (tokens <= 0) { errorMessage.value = '奖励 token 必须大于 0'; return }
-  errorMessage.value = ''
-  resolvingId.value = feedbackId
-  try {
-    const result = await adminResolveFeedback(feedbackId, tokens, targetUserIds[feedbackId] || undefined)
-    if (result?.success) {
-      const fb = feedbacks.value.find((f: any) => f._id === feedbackId)
-      if (fb) { fb.resolved = true; fb.rewardTokens = tokens }
-    } else {
-      errorMessage.value = result?.message || '处理失败'
-    }
-  } catch (e: any) {
-    errorMessage.value = e?.message || '处理失败'
-  }
-  finally { resolvingId.value = '' }
-}
-
-/* ---- Custom Pet Requests ---- */
-
-const petRequests = ref<any[]>([])
-const petRequestsLoading = ref(false)
-const tempDeliveredPetIds = reactive<Record<string, string>>({})
-
-// ── 各用户 Token 消耗 ──
-const tokenUsersLoading = ref(false)
-const tokenUserRows = ref<Array<{ userId: string; email: string; phone: string; platformTokens: number; modelTokens: number; callCount: number; lastUsed: string }>>([])
-const tokenDetailUserId = ref('')
-const tokenDetailRecords = ref<Array<any>>([])
-const tokenDetailLoading = ref(false)
-
-const tokenDetailUserLabel = computed(() => {
-  const row = tokenUserRows.value.find(r => r.userId === tokenDetailUserId.value)
-  return row ? (row.email || row.phone || row.userId) : ''
-})
-
-function switchToTokenUsers() {
-  activeTab.value = 'tokenUsers'
-  if (tokenUserRows.value.length === 0) loadTokenUsers()
-}
-
-async function loadTokenUsers() {
-  if (tokenUsersLoading.value) return
-  tokenUsersLoading.value = true
-  try {
-    const result = await adminGetUsersTokenConsumption(500)
-    if (result?.success) {
-      tokenUserRows.value = result.rows || []
-    }
-  } catch { /* ignore */ }
-  finally { tokenUsersLoading.value = false }
-}
-
-async function toggleTokenUserDetail(userId: string) {
-  if (tokenDetailUserId.value === userId) {
-    tokenDetailUserId.value = ''
-    return
-  }
-  tokenDetailUserId.value = userId
-  tokenDetailRecords.value = []
-  tokenDetailLoading.value = true
-  try {
-    const result = await adminGetUserTokenDetails(userId, 200)
-    if (result?.success) {
-      tokenDetailRecords.value = result.records || []
-    }
-  } catch { /* ignore */ }
-  finally { tokenDetailLoading.value = false }
-}
-
-function formatTokenFeature(feature: string) {
-  const map: Record<string, string> = {
-    eventAssessment: '即时反馈',
-    eventUnderstanding: '事件理解',
-    weeklyReview: '近月度复盘',
-    sideRead: '星象速写',
-    attachmentAnalysis: '附件识别',
-    petReply: '宠物帮说',
-    batchTag: '批量标签',
-    unknown: '未知调用'
-  }
-  // 也处理 remark 中的 feature 关键字
-  const clean = (feature || '').split(' · ')[0].trim()
-  return map[clean] || clean || 'AI 调用'
-}
-
-function formatShortDate(value: string) {
-  if (!value) return '-'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return '-'
-  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
-function switchToCustomPet() {
-  activeTab.value = 'customPet'
-  if (petRequests.value.length === 0) loadPetRequests()
-}
-
-async function loadPetRequests() {
-  petRequestsLoading.value = true
-  try {
-    const result = await adminListCustomPetRequests()
-    if (result?.success) {
-      const requests = result.requests || []
-      // Resolve cloud:// file IDs to temp URLs for H5 display
-      const allFileIds: string[] = []
-      for (const req of requests) {
-        if (req.referenceImages && req.referenceImages.length) {
-          for (const img of req.referenceImages) {
-            if (img && img.startsWith('cloud://')) allFileIds.push(img)
-          }
-        }
-      }
-      if (allFileIds.length) {
-        try {
-          const urlRes: any = await uni.cloud.getTempFileURL({ fileList: allFileIds })
-          const fileMap: Record<string, string> = {}
-          const files = urlRes?.fileList || []
-          for (const f of files) {
-            if (f.fileID && f.tempFileURL) fileMap[f.fileID] = f.tempFileURL
-          }
-          for (const req of requests) {
-            if (req.referenceImages && req.referenceImages.length) {
-              req.referenceImages = req.referenceImages.map((img: string) => fileMap[img] || img)
-            }
-          }
-        } catch { /* ignore resolution errors */ }
-      }
-      petRequests.value = requests
-    }
-  } catch { /* ignore */ }
-  finally { petRequestsLoading.value = false }
-}
-
-function statusLabel(status: string) {
-  const map: Record<string, string> = { pending: '待处理', in_progress: '制作中', delivered: '已交付', rejected: '已拒绝' }
-  return map[status] || status
-}
-
-function onDeliveredPetIdInput(requestId: string, e: any) {
-  tempDeliveredPetIds[requestId] = String(e?.detail?.value || '').trim()
-}
-
-async function updatePetRequest(requestId: string, status: string) {
-  if (!requestId) return
-  errorMessage.value = ''
-  try {
-    const result = await adminUpdateCustomPetRequest(requestId, { status })
-    if (result?.success) {
-      const req = petRequests.value.find((r: any) => r._id === requestId)
-      if (req) req.status = status
-    } else {
-      errorMessage.value = result?.message || '更新失败'
-    }
-  } catch (e: any) {
-    errorMessage.value = e?.message || '更新失败'
-  }
-}
-
-async function deliverPetRequest(requestId: string) {
-  if (!requestId) return
-  const deliveredPetId = tempDeliveredPetIds[requestId] || ''
-  if (!deliveredPetId) { errorMessage.value = '请填写交付的 Pet ID'; return }
-
-  errorMessage.value = ''
-  try {
-    const result = await adminUpdateCustomPetRequest(requestId, { status: 'delivered', deliveredPetId })
-    if (result?.success) {
-      const req = petRequests.value.find((r: any) => r._id === requestId)
-      if (req) { req.status = 'delivered'; req.deliveredPetId = deliveredPetId }
-      delete tempDeliveredPetIds[requestId]
-    } else {
-      errorMessage.value = result?.message || '交付失败'
-    }
-  } catch (e: any) {
-    errorMessage.value = e?.message || '交付失败'
-  }
-}
-
-/* ---- Orders ---- */
-
-const orders = ref<any[]>([])
-const ordersLoading = ref(false)
-const orderTotal = ref(0)
-const orderPage = ref(1)
-const orderPageSize = 20
-const orderStatusFilter = ref('all')
-const expandedOrderId = ref('')
-const refundingOrderId = ref('')
-
-const orderStatusOptions = [
-  { value: 'all', label: '全部' },
-  { value: 'pending', label: '待支付' },
-  { value: 'paid', label: '已支付' },
-  { value: 'refunded', label: '已退款' }
-]
-
-const expandedOrder = computed(() => {
-  if (!expandedOrderId.value) return null
-  return orders.value.find((o: any) => o._id === expandedOrderId.value) || null
-})
-
-function orderStatusLabel(status: string) {
-  const map: Record<string, string> = { pending: '待支付', paid: '已支付', refunded: '已退款' }
-  return map[status] || status
-}
-
-function orderStatusColor(status: string) {
-  const map: Record<string, string> = { pending: '#F59E0B', paid: '#10B981', refunded: '#999' }
-  return map[status] || '#666'
-}
-
-function switchToOrders() {
-  activeTab.value = 'orders'
-  if (orders.value.length === 0) loadOrders()
-}
-
-async function loadOrders() {
-  if (ordersLoading.value) return
-  ordersLoading.value = true
-  try {
-    const result = await adminGetOrders({
-      status: orderStatusFilter.value,
-      page: orderPage.value,
-      pageSize: orderPageSize
-    })
-    if (result?.success) {
-      orders.value = result.orders || []
-      orderTotal.value = result.total || 0
-    }
-  } catch (e: any) {
-    errorMessage.value = e?.message || '加载订单失败'
-  } finally {
-    ordersLoading.value = false
-  }
-}
-
-async function doRefundOrder(orderId: string) {
-  if (!orderId || refundingOrderId.value) return
-  refundingOrderId.value = orderId
-  try {
-    const result = await adminRefundOrder(orderId)
-    if (result?.success) {
-      const order = orders.value.find((o: any) => o._id === orderId)
-      if (order) order.status = 'refunded'
-      expandedOrderId.value = ''
-      errorMessage.value = ''
-    } else {
-      errorMessage.value = result?.message || '退款失败'
-    }
-  } catch (e: any) {
-    errorMessage.value = e?.message || '退款失败'
-  } finally {
-    refundingOrderId.value = ''
-  }
-}
+// 订单管理 → 已抽到 components/panels/OrdersPanel.vue（并修复了原来误嵌在 customPet 内、整 tab 不渲染的 bug）
 
 function planTagClass(user: any) {
   if (user.planLabel === '试用期') return 'plan-trial'
@@ -2581,6 +1562,84 @@ function formatDate(value: string) {
 .admin-shell {
   max-width: 1180px;
   margin: 0 auto;
+}
+
+/* 侧边栏布局（Phase 4：Tab → 左侧分组菜单 + 右内容） */
+.admin-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: start;
+}
+.admin-sidebar {
+  position: sticky;
+  top: 24px;
+  background: #123c36;
+  border-radius: 10px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sidebar-brand {
+  display: block;
+  padding: 6px 12px 14px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.sidebar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+.sidebar-group-title {
+  display: block;
+  padding: 8px 12px 4px;
+  color: #7fa99d;
+  font-size: 12px;
+  font-weight: 700;
+}
+.sidebar-item {
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #cfe3dc;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.sidebar-item.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-left-color: #FFD93D;
+}
+.admin-main {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .admin-layout {
+    grid-template-columns: 1fr;
+  }
+  .admin-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sidebar-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 0;
+  }
 }
 
 .topbar,

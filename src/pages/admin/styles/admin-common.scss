@@ -1,0 +1,50 @@
+// 后台面板共享基础样式 —— 从 admin.vue scoped 提取，供 components/panels/*.vue @import。
+// 过渡期 admin.vue 仍保留自身内联副本（外壳化后清理），故此文件与 admin.vue 当前有重复，属预期。
+
+.panel { background: #fbfdfb; border: 1px solid rgba(23, 35, 31, 0.08); border-radius: 8px; box-shadow: 0 12px 28px rgba(23, 35, 31, 0.06); padding: 20px; }
+.panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
+.panel-title { display: block; font-size: 20px; font-weight: 700; }
+.panel-meta { display: block; color: #68766f; font-size: 13px; line-height: 1.5; }
+
+button { margin: 0; }
+.ghost-btn, .primary-btn, .small-btn { border-radius: 6px; font-size: 15px; }
+.ghost-btn { width: 88px; height: 38px; line-height: 38px; color: #123c36; background: #eef6f2; border: 1px solid rgba(18, 60, 54, 0.18); }
+.wide-btn { width: 104px; }
+.danger-btn { width: 104px; color: #9c2f22; background: #fff6f4; border-color: rgba(156, 47, 34, 0.25); }
+.primary-btn { color: #fff; background: #123c36; }
+.small-btn { width: auto; min-width: 74px; height: 34px; line-height: 34px; padding: 0 12px; color: #123c36; background: #fbfdfb; border: 1px solid rgba(18, 60, 54, 0.18); font-size: 13px; }
+.small-btn.active { color: #fff; background: #123c36; }
+.small-btn.danger { color: #9c2f22; border-color: rgba(156, 47, 34, 0.25); background: #fff6f4; }
+
+.table { border: 1px solid rgba(23, 35, 31, 0.08); border-radius: 8px; overflow: hidden; }
+.table-row { display: grid; grid-template-columns: minmax(220px, 1.7fr) minmax(90px, 0.7fr) 70px 80px; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid rgba(23, 35, 31, 0.08); font-size: 14px; }
+.table-row:first-child { border-top: 0; }
+.table-header { color: #68766f; background: #f3f7f4; font-weight: 700; }
+.table-row.selected { background: #edf7f2; }
+
+.empty { padding: 22px; color: #68766f; background: #f4f7f4; border-radius: 8px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+
+input { height: 40px; padding: 0 12px; border: 1px solid rgba(23, 35, 31, 0.14); border-radius: 6px; background: #fff; color: #17231f; font-size: 14px; }
+
+/* 表单 / 区块 / 模型卡 / 消息（subscription、billing、AI 共用） */
+.switch-row { display: flex; justify-content: space-between; gap: 20px; padding: 16px 0; border-top: 1px solid rgba(23, 35, 31, 0.08); }
+.switch-row:first-of-type { border-top: 0; }
+.field-title { display: block; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.field-desc { display: block; color: #68766f; font-size: 13px; line-height: 1.5; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; color: #42524b; font-size: 13px; }
+.field.wide { grid-column: span 2; }
+.settings-section { padding-top: 18px; margin-top: 18px; border-top: 1px solid rgba(23, 35, 31, 0.08); }
+.section-head { margin-bottom: 14px; }
+.section-title { display: block; font-size: 17px; font-weight: 700; color: #17231f; }
+.section-desc { display: block; margin-top: 4px; color: #68766f; font-size: 13px; line-height: 1.5; }
+.model-card { padding: 18px; margin-top: 12px; background: #f7faf7; border: 1px solid rgba(23, 35, 31, 0.08); border-radius: 8px; }
+.model-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.model-title { display: block; font-size: 17px; font-weight: 700; }
+.model-subtitle { display: block; margin-top: 4px; color: #68766f; font-size: 13px; }
+.model-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.model-foot { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.alert, .save-message { padding: 12px 14px; margin-bottom: 16px; border-radius: 8px; font-size: 14px; }
+.alert { color: #9c2f22; background: #fff0ed; border: 1px solid rgba(156, 47, 34, 0.18); }
+.save-message { color: #123c36; background: #edf7f2; border: 1px solid rgba(18, 60, 54, 0.14); }
