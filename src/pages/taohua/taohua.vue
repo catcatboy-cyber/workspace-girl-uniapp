@@ -545,6 +545,7 @@ import {
 import type { CrossMatchResult, PairInsight } from '@/utils/taohua'
 import TaohuaCompass from '@/components/TaohuaCompass.vue'
 import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId, getCaseDetail, generatePairRead } from '@/utils/api'
+import { TAOHUA_SHARE_IMAGE } from '@/utils/share'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
 
@@ -1039,7 +1040,7 @@ const SHARE_CARD_H = 512
 onShareAppMessage(() => ({
   title: `${userZodiac.value || '我'} · ${userSign.value || '星座'} 的桃花人格卡`,
   path: buildTaohuaSharePath(),
-  imageUrl: shareImagePath.value || '/static/share-taohua-persona.png',
+  imageUrl: shareImagePath.value || TAOHUA_SHARE_IMAGE,
 }))
 
 function sharePersona() {

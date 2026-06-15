@@ -116,10 +116,12 @@ function toggleRemember() {
 }
 
 function goAfterLogin(result: any) {
+  // #ifdef H5
   if (result?.isAdmin || result?.role === 'admin') {
     uni.redirectTo({ url: '/pages/admin/admin' })
     return
   }
+  // #endif
   if (shouldCompleteSelfProfile(result)) {
     const redirect = pendingRedirect.value ? `&redirect=${encodeURIComponent(pendingRedirect.value)}` : ''
     uni.redirectTo({ url: `/pages/self-profile/self-profile?mode=onboarding${redirect}` })

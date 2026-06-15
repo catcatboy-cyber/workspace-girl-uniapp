@@ -104,6 +104,7 @@
         "navigationBarTitleText": "AI 设置"
       }
     },
+    // #ifdef H5
     {
       "path": "pages/admin/admin",
       "style": {
@@ -111,6 +112,7 @@
         "navigationStyle": "default"
       }
     },
+    // #endif
     {
       "path": "pages/explain/explain",
       "style": {

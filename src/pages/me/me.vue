@@ -57,7 +57,9 @@
       <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2" style="font-size: $fs-heading;">Crush Master</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2" style="font-size: $fs-heading;">Crush Master</text></view></view></view>
       <!-- AI analysis style -->
       <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">AI 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><text class="sub-title-v2">陪伴风格</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn btn-primary btn-md btn-full" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
+      <!-- #ifdef H5 -->
       <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、AI、Token 和反馈管理 →</text></view>
+      <!-- #endif -->
       <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的分析和趋势记录 →</text></view>
       <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
       <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
@@ -484,7 +486,9 @@ function goFeedback() {
 }
 
 function goAdmin() {
+  // #ifdef H5
   uni.navigateTo({ url: '/pages/admin/admin' })
+  // #endif
 }
 
 async function goCustomPet() {

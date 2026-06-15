@@ -62,6 +62,7 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { getCurrentUserId } from '@/utils/api'
+import { TAOHUA_SHARE_IMAGE } from '@/utils/share'
 import { SIGN_NAMES, ZODIAC_NAMES, zodiacSignMatch } from '@/utils/taohua'
 
 const zodiac = ref('兔')
@@ -92,7 +93,7 @@ onLoad((options: any) => {
 onShareAppMessage(() => ({
   title: `${zodiac.value} · ${sign.value} 的桃花人格卡`,
   path: `/pages/taohua-share/taohua-share?zodiac=${encodeURIComponent(zodiac.value)}&sign=${encodeURIComponent(sign.value)}&from=reshare`,
-  imageUrl: '/static/share-taohua-persona.png',
+  imageUrl: TAOHUA_SHARE_IMAGE,
 }))
 
 function startMine() {
