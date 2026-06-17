@@ -51,12 +51,6 @@
       }
     },
     {
-      "path": "pages/weekly-review/weekly-review",
-      "style": {
-        "navigationBarTitleText": "月度复盘"
-      }
-    },
-    {
       "path": "pages/reassess/reassess",
       "style": {
         "navigationBarTitleText": "重新分析"

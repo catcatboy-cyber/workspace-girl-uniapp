@@ -1,0 +1,158 @@
+// ============================================================
+// Campus Pop 共享样式 Token & 组件类
+// 所有用户端页面通过 @import 使用，避免 scoped 内重复定义
+// ============================================================
+
+// ── 颜色 Token ────────────────────────────────────────────
+$c-ink:       #111111;
+$c-hero:      #FF6B6B;
+$c-accent:    #FFD93D;
+$c-mint:      #4ECDC4;
+$c-risk:      #FF5252;
+$c-bg:        #FFFDF5;
+$c-card:      #FFFFFF;
+$c-card-soft: #F9F9F9;
+$c-soft-warm: #FFFBEB;
+$c-soft-risk: #FFEEEC;
+$c-soft-mint: #E0FFF0;
+$c-muted:     #666666;
+$c-soft:      #999999;
+
+// ── 间距 Token ────────────────────────────────────────────
+$sp-card-pad:   28rpx;
+$sp-card-gap:   24rpx;
+$sp-section-gap: 16rpx;
+
+// ── 边框/阴影 Token ───────────────────────────────────────
+@mixin border-hard  { border: 3rpx solid $c-ink; }
+@mixin border-soft  { border: 2rpx solid $c-ink; }
+@mixin shadow-card  { box-shadow: 6rpx 6rpx 0 $c-ink; }
+@mixin shadow-hero  { box-shadow: 8rpx 8rpx 0 $c-ink; }
+
+// ═══════════════════════════════════════════════════════════
+// 卡片 3 种
+// ═══════════════════════════════════════════════════════════
+
+// 1. 基础卡片
+@mixin card-v2 {
+  background: $c-card;
+  @include border-hard;
+  @include shadow-card;
+  padding: $sp-card-pad;
+  margin-bottom: $sp-card-gap;
+}
+
+// 2. 轻量内嵌卡片（无阴影）
+@mixin card-light-v2 {
+  background: $c-card;
+  @include border-soft;
+  padding: 20rpx;
+}
+
+// 3. 提示卡片（左侧语义色条）
+@mixin card-hint-v2($accent-color) {
+  background: $c-card;
+  @include border-soft;
+  border-left: 10rpx solid $accent-color;
+  padding: $sp-card-pad;
+}
+
+// ═══════════════════════════════════════════════════════════
+// Hero
+// ═══════════════════════════════════════════════════════════
+
+@mixin hero-block-v2 {
+  background: $c-hero;
+  @include border-hard;
+  @include shadow-hero;
+  padding: 32rpx;
+  margin-bottom: $sp-card-gap;
+  transform: rotate(-0.5deg);
+}
+
+// ═══════════════════════════════════════════════════════════
+// 排版组件类
+// ═══════════════════════════════════════════════════════════
+
+@mixin section-title-v2 {
+  display: block;
+  font-size: $fs-heading;           // 32rpx from typography.scss
+  font-weight: $fw-hero;
+  color: $c-ink;
+  line-height: $lh-heading;
+}
+
+@mixin section-sub-v2 {
+  display: block;
+  margin-top: 4rpx;
+  font-size: $fs-caption;           // 20rpx
+  font-weight: $fw-label;
+  color: $c-muted;
+  line-height: $lh-label;
+}
+
+@mixin tag-v2 {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36rpx;
+  padding: 4rpx 14rpx;
+  @include border-soft;
+  background: $c-accent;
+  font-size: $fs-caption;
+  font-weight: $fw-heading;
+  color: $c-ink;
+}
+
+@mixin tag-v2-black {
+  background: $c-ink;
+  color: $c-card;
+}
+
+@mixin tag-row-v2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 按钮
+// ═══════════════════════════════════════════════════════════
+
+@mixin btn-v2 {
+  box-sizing: border-box;
+  text-align: center;
+  font-weight: $fw-heading;
+  @include border-hard;
+}
+
+@mixin btn-v2-primary {
+  background: $c-mint;
+  @include shadow-card;
+}
+
+@mixin btn-v2-secondary {
+  background: $c-card;
+}
+
+@mixin btn-v2-md { height: 64rpx; line-height: 64rpx; font-size: $fs-body-lg; padding: 0 24rpx; }
+@mixin btn-v2-sm { height: 48rpx; line-height: 48rpx; font-size: $fs-caption; padding: 0 16rpx; }
+@mixin btn-v2-lg { height: 80rpx; line-height: 80rpx; font-size: $fs-heading; padding: 0 32rpx; }
+
+// ═══════════════════════════════════════════════════════════
+// 图表容器
+// ═══════════════════════════════════════════════════════════
+
+@mixin chart-panel-v2 {
+  @include border-soft;
+  background: $c-card;
+  padding: 20rpx;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 颜色背景变体（直接用于 .card-v2 等元素）
+// ═══════════════════════════════════════════════════════════
+
+@mixin bg-hero   { background: $c-hero; }
+@mixin bg-accent { background: $c-soft-warm; }
+@mixin bg-risk   { background: $c-soft-risk; }
+@mixin bg-mint   { background: $c-soft-mint; }

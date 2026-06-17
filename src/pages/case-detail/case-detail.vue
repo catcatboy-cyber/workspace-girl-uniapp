@@ -1253,7 +1253,10 @@ async function generateThisMonthReview() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import '@/styles/typography.scss';
+@import '@/styles/campus-pop.scss';
+
 .page {
   min-height: 100vh;
   background: linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 380rpx), var(--app-bg, #f6f1e8);
@@ -1274,13 +1277,13 @@ async function generateThisMonthReview() {
 .v2-mode .notice-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .notice-sub-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #555; }
 
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
-.v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; }
-.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: 20rpx; font-weight: 800; color: #111; }
-.v2-mode .tag-v2.black { background: #111; color: #fff; }
+.v2-mode .tag-row-v2 { @include tag-row-v2; }
+.v2-mode .tag-v2 { @include tag-v2; }
+.v2-mode .tag-v2.black { @include tag-v2-black; }
 
 .v2-mode .profile-block-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
 .v2-mode .profile-head-v2 { display: flex; align-items: center; gap: 16rpx; margin-bottom: 14rpx; padding-bottom: 16rpx; border-bottom: 3rpx solid #111; }
@@ -1298,7 +1301,7 @@ async function generateThisMonthReview() {
 .v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: #666; margin-top: 2rpx; }
 .v2-mode .stat-hint-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
 
-.v2-mode .section-title-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.v2-mode .section-title-v2 { @include section-title-v2; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
 .v2-mode .remind-text-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.5; }
 .v2-mode .trend-block-v2 { margin-top: 18rpx; }
 .v2-mode .trend-grid-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8rpx; }
@@ -1324,7 +1327,7 @@ async function generateThisMonthReview() {
 
 .v2-mode .side-block-v2 { padding: 20rpx; border: 2rpx dashed #111; background: #FFFBEB; margin-bottom: 24rpx; }
 
-.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .card-v2 { @include card-v2; }
 .v2-mode .card-head-v2 { display: flex; align-items: center; gap: 16rpx; padding-bottom: 16rpx; border-bottom: 3rpx solid #111; margin-bottom: 14rpx; }
 
 .v2-mode .bullet-list-v2 { margin-top: 10rpx; }
@@ -1406,7 +1409,7 @@ async function generateThisMonthReview() {
 /* ===== 新增板块样式 ===== */
 
 /* Section subtitle */
-.v2-mode .section-sub-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #999; margin-top: 2rpx; margin-bottom: 16rpx; }
+.v2-mode .section-sub-v2 { @include section-sub-v2; margin-bottom: 16rpx; }
 
 /* Radar 关系雷达 */
 .v2-mode .radar-row-v2 { display: flex; align-items: center; gap: 14rpx; margin-top: 16rpx; }
