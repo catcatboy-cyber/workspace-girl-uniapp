@@ -87,10 +87,9 @@ exports.main = async (event) => {
     }
 
     const planConfig = config.plans[user.plan || 'free'] || config.plans.free
-    const monthlyLimit = planConfig.monthlyTokens
-    const extraTokens = user.extraTokens || 0
+    let extraTokens = user.extraTokens || 0
 
-    // 如果试用期内，不限次数
+    // 试用期（day 计数仍保留，但不再无限；token 走正常扣费）
     let isTrial = false
     let trialDaysLeft = 0
     if (user.trialEndsAt) {
@@ -101,8 +100,25 @@ exports.main = async (event) => {
       }
     }
 
+    // 试用期不叠加 free 月额 —— 只靠 welcomeTokens 赠送额度
+    const monthlyLimit = isTrial ? 0 : planConfig.monthlyTokens
+
+    // 老试用用户迁移：extraTokens 为 0 → 补上 welcomeTokens
+    if (isTrial && extraTokens === 0) {
+      try {
+        const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => null)
+        const billing = billingRes?.data?.[0] || {}
+        if (billing.firstGiftEnabled !== false) {
+          extraTokens = billing.welcomeTokens ?? 100000
+        }
+      } catch (_) {}
+      if (extraTokens > 0) {
+        await db.collection('users').doc(userId).update({ extraTokens })
+      }
+    }
+
     let totalAvailable
-    if (isTrial || user.plan === 'ultra' || monthlyLimit === -1) {
+    if (monthlyLimit === -1) {
       totalAvailable = -1
     } else {
       totalAvailable = Math.max(0, monthlyLimit - monthlyTokensUsed) + extraTokens
@@ -119,7 +135,7 @@ exports.main = async (event) => {
         planExpiresAt: user.planExpiresAt || null,
         monthlyTokensUsed,
         monthlyTokensLimit: monthlyLimit,
-        monthlyRemaining: isTrial ? -1 : (monthlyLimit === -1 ? -1 : Math.max(0, monthlyLimit - monthlyTokensUsed)),
+        monthlyRemaining: (monthlyLimit === -1) ? -1 : Math.max(0, monthlyLimit - monthlyTokensUsed),
         extraTokens,
         totalAvailable,
         maxCrushes: planConfig.maxCrushes,

@@ -8,8 +8,10 @@
           <input v-model="email" type="text" placeholder="请输入邮箱" class="input-v2" @input="clearError" />
           <input v-model="password" type="password" placeholder="请输入密码（至少8位）" class="input-v2" style="margin-top:20rpx;" @input="clearError" />
           <input v-model="confirmPassword" type="password" placeholder="请再次输入密码" class="input-v2" style="margin-top:20rpx;" @input="clearError" />
+          <input v-model="inviteCode" type="text" placeholder="邀请码（选填）" class="input-v2" style="margin-top:20rpx;" @input="clearError" />
           <view v-if="errorMessage" class="error-v2" style="margin-top:18rpx;">{{ errorMessage }}</view>
           <button class="btn btn-primary btn-lg btn-full" :disabled="loading" @click="handleRegister">{{ loading ? '注册中...' : '注册' }}</button>
+          <text class="privacy-v2" @click="goAbout">{{ privacyCopy }}</text>
           <text class="footer-v2" @click="goLogin">已有账号？立即登录 →</text>
         </view>
     </view>
@@ -23,6 +25,7 @@ import { register, shouldCompleteSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const INVITE_CODE_KEY = 'pendingInviteCode'
+const privacyCopy = '登录即表示同意《隐私政策》和《服务条款》，查看请前往“关于”页。'
 
 const email = ref('')
 const password = ref('')
@@ -87,6 +90,11 @@ const handleRegister = async () => {
     const result = await register(email.value, password.value, inviteCode.value || undefined)
 
     if (result.success) {
+      // 受邀奖励通知
+      if (result?.referral?.inviteeReward > 0) {
+        uni.setStorageSync('showInviteeNotice', true)
+        uni.setStorageSync('inviteeNoticeAmount', result.referral.inviteeReward)
+      }
       if (shouldCompleteSelfProfile(result)) {
         uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
       } else {
@@ -105,6 +113,10 @@ const handleRegister = async () => {
 
 const goLogin = () => {
   uni.navigateBack()
+}
+
+const goAbout = () => {
+  uni.navigateTo({ url: '/pages/about/about' })
 }
 </script>
 
@@ -128,5 +140,7 @@ const goLogin = () => {
 .v2-mode .input-v2::placeholder { color: #999; }
 
 .v2-mode .error-v2 { padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: $fs-body; font-weight: $fw-body; color: #FF5252; }
+
+.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: $fs-body; font-weight: $fw-body; color: #666; text-align: center; line-height: 1.5; text-decoration: underline; }
 
 </style>

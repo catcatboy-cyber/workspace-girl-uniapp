@@ -206,7 +206,15 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
   subFields.trialEndsAt = trialDurationDays > 0
     ? new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000)
     : null
-  subFields.extraTokens = 0
+
+  // 注册赠送Token → 读 billing 的 welcomeTokens
+  try {
+    const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => null)
+    const billing = billingRes?.data?.[0] || {}
+    if (billing.firstGiftEnabled !== false) {
+      subFields.extraTokens = billing.welcomeTokens ?? 1000000
+    }
+  } catch (_) {}
 
   await db.collection('users').add({
     _id: userId,
@@ -297,18 +305,24 @@ exports.main = async (event = {}) => {
         user = { ...user, ...patch }
       } else {
         user = await createWechatUser({ openid, phone, profile, inviteCodeParam })
-        // 新用户首次赠送额度
-        try {
-          const { grantFirstGift } = require('./_shared/billing')
-          await grantFirstGift(db, user._id)
-        } catch (err) {
-          console.warn('grant first gift failed (non-fatal):', err.message)
-        }
       }
     }
 
     const effectivePhone = phone || user.phone || ''
     const phoneMasked = effectivePhone ? maskPhone(effectivePhone) : ''
+
+    // 异步记录登录日志（不阻塞登录流程）
+    db.collection('login_logs').add({
+      userId: user._id,
+      email: user.email || '',
+      phone: phoneMasked,
+      loginType: 'wechat',
+      platform: 'miniprogram',
+      createdAt: new Date(),
+    }).catch((err) => {
+      console.error('[wechatLogin] 记录登录日志失败:', err)
+    })
+
     return {
       success: true,
       userId: user._id,

@@ -803,6 +803,37 @@ export async function createSubscriptionPayment(
   return res.result
 }
 
+export async function createPaymentOrder(params: {
+  productType: 'recharge' | 'subscription'
+  productId?: string
+  planKey?: string
+  billingCycle?: 'monthly' | 'annual'
+  priceVariant?: 'standard' | 'student'
+  openid?: string
+}) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'createPaymentOrder', ...params, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function queryPaymentOrder(options: { orderNo?: string; orderId?: string }) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'queryPaymentOrder', ...options, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function paymentCallback(orderNo: string) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'paymentCallback', outTradeNo: orderNo, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 export async function adminConfirmRecharge(orderId: string) {
   const res = await callFunction({
     name: 'recharge',
@@ -1182,6 +1213,18 @@ export async function adminPreviewPrompt(data: {
     }
   })
   return res.result
+}
+
+export async function getLoginLogs(params?: {
+  userId?: string
+  email?: string
+  loginType?: string
+  startDate?: string
+  endDate?: string
+  page?: number
+  pageSize?: number
+}) {
+  return callFunction({ name: 'getLoginLogs', data: params || {} }).then((res: any) => res.result)
 }
 
 export async function testAIConnection(data: {

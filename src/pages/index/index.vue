@@ -3,6 +3,14 @@
 
     <view v-if="loading" class="loading">LOADING...</view>
 
+    <!-- 邀请到账通知 -->
+      <view v-if="showIndexReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissIndexReferralNotice">
+        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ indexReferralNoticeAmount }} Token →</text>
+      </view>
+      <!-- 受邀奖励通知 -->
+      <view v-if="showIndexInviteeNotice" class="referral-notice" @click="dismissIndexInviteeNotice">
+        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ indexInviteeNoticeAmount }} Token →</text>
+      </view>
     <block v-else>
       <template v-if="cases.length === 0">
         <view class="hero-block anim-hero">
@@ -336,7 +344,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { onHide, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
+import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, generateAssessmentAI, generateSideRead, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua } from '@/utils/api'
@@ -388,6 +396,23 @@ const pageStyle = computed(() => {
 })
 const loading = ref(true)
 const fontSizeMode = ref(getFontSizeMode())
+// 邀请到账通知
+const showIndexReferralNotice = ref(false)
+const indexReferralNoticeAmount = ref(0)
+function dismissIndexReferralNotice() {
+  showIndexReferralNotice.value = false
+  uni.removeStorageSync('showReferralNotice')
+  uni.navigateTo({ url: '/pages/token-usage/token-usage' })
+}
+// 受邀奖励通知
+const showIndexInviteeNotice = ref(false)
+const indexInviteeNoticeAmount = ref(0)
+function dismissIndexInviteeNotice() {
+  showIndexInviteeNotice.value = false
+  uni.removeStorageSync('showInviteeNotice')
+  uni.navigateTo({ url: '/pages/token-usage/token-usage' })
+}
+
 const currentUserId = ref(getCurrentUserId() || '')
 const cases = ref<any[]>([])
 const userId = ref('')
@@ -989,7 +1014,24 @@ async function refreshSelfProfileInBackground() {
   } catch {}
 }
 
+onLoad((options: any) => {
+  if (options?.inviteCode) {
+    uni.setStorageSync('pendingInviteCode', options.inviteCode)
+  }
+})
+
 onShow(() => {
+  // 检查邀请到账通知
+  if (uni.getStorageSync('showReferralNotice')) {
+    showIndexReferralNotice.value = true
+    indexReferralNoticeAmount.value = Number(uni.getStorageSync('referralNoticeAmount') || 0)
+  }
+  // 检查受邀奖励通知
+  if (uni.getStorageSync('showInviteeNotice')) {
+    showIndexInviteeNotice.value = true
+    indexInviteeNoticeAmount.value = Number(uni.getStorageSync('inviteeNoticeAmount') || 0)
+  }
+
   const _t0 = Date.now()
   console.log('[PERF] index onShow start')
   currentUserId.value = getCurrentUserId() || ''
@@ -1204,30 +1246,43 @@ function formatRecorderError(message?: string) {
 
 function requestRecordPermission() {
   return new Promise<void>((resolve, reject) => {
-    uni.authorize({
-      scope: 'scope.record',
-      success: () => resolve(),
-      fail: () => {
-        uni.showModal({
-          title: '需要麦克风权限',
-          content: '语音录入需要使用麦克风，请在设置中允许录音权限。',
-          confirmText: '去设置',
-          success: (modalRes: any = {}) => {
-            if (!modalRes?.confirm) {
-              reject(new Error('未授权录音权限'))
-              return
+    // 先确保隐私协议已同意（微信 2023.09 起要求）
+    const doAuthorize = () => {
+      uni.authorize({
+        scope: 'scope.record',
+        success: () => resolve(),
+        fail: () => {
+          uni.showModal({
+            title: '需要麦克风权限',
+            content: '语音录入需要使用麦克风，请在设置中允许录音权限。',
+            confirmText: '去设置',
+            success: (modalRes: any = {}) => {
+              if (!modalRes?.confirm) {
+                reject(new Error('未授权录音权限'))
+                return
+              }
+              uni.openSetting({
+                success: (settingRes: any = {}) => {
+                  if (settingRes?.authSetting?.['scope.record']) resolve()
+                  else reject(new Error('未授权录音权限'))
+                },
+                fail: () => reject(new Error('无法打开权限设置'))
+              })
             }
-            uni.openSetting({
-              success: (settingRes: any = {}) => {
-                if (settingRes?.authSetting?.['scope.record']) resolve()
-                else reject(new Error('未授权录音权限'))
-              },
-              fail: () => reject(new Error('无法打开权限设置'))
-            })
-          }
-        })
-      }
-    })
+          })
+        }
+      })
+    }
+
+    const wxApi = (globalThis as any)?.wx
+    if (wxApi?.requirePrivacyAuthorize) {
+      wxApi.requirePrivacyAuthorize({
+        success: () => doAuthorize(),
+        fail: () => reject(new Error('需要同意隐私政策后才能使用录音功能'))
+      })
+    } else {
+      doAuthorize()
+    }
   })
 }
 
@@ -1920,4 +1975,6 @@ function goTaohua() {
 .v2-mode .taohua-teaser-side-read { padding: 18rpx 24rpx; }
 .v2-mode .taohua-teaser-side-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 .v2-mode .taohua-teaser-side-summary { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; }
+.referral-notice { margin: 0 20rpx 20rpx; padding: 22rpx 24rpx; background: #FFD93D; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; }
+.referral-notice-text { display: block; font-size: 26rpx; font-weight: 800; color: #111; text-align: center; }
 </style>

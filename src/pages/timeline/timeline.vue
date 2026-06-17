@@ -401,6 +401,7 @@ function toneClass(type: string) {
     case 'positive': return 'positive'
     case 'risk': return 'risk'
     case 'verification': return 'verification'
+    case 'monthly_review':
     case 'weekly_review': return 'weekly'
     case 'assessment': return 'assessment'
     case 'trend': return 'trend'
@@ -417,7 +418,8 @@ function isEventSideReadRecord(record: any) {
 }
 
 function isWeeklyReviewTimelineRecord(record: any) {
-  if (String(record?.type || '') === 'weekly_review') return true
+  const type = String(record?.type || '')
+  if (type === 'weekly_review' || type === 'monthly_review') return true
   if (isWeeklySideReadRecord(record)) return true
   return false
 }

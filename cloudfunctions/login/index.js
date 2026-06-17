@@ -42,6 +42,18 @@ function buildCustomLoginErrorResponse(error) {
 }
 
 function buildUserLoginPayload(user, ticket) {
+  // 异步记录登录日志（不阻塞登录流程）
+  const logData = {
+    userId: user._id,
+    email: user.email || '',
+    loginType: 'email',
+    platform: 'h5', // email 登录仅限 H5/后台
+    createdAt: new Date(),
+  }
+  db.collection('login_logs').add(logData).catch((err) => {
+    console.error('[login] 记录登录日志失败:', err)
+  })
+
   return {
     success: true,
     ticket,

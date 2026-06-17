@@ -20,6 +20,7 @@
           <text class="sidebar-group-title">数据中心</text>
           <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Token 消耗</view>
           <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'">📋 订单管理</view>
+          <view :class="['sidebar-item', activeTab === 'loginLogs' ? 'active' : '']" @click="activeTab = 'loginLogs'">🔐 登录日志</view>
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">运营工具</text>
@@ -219,19 +220,19 @@
           <view class="form-grid">
             <view class="field">
               <text>显示名称</text>
-              <input v-model="model.name" placeholder="例如：GPT-4o" />
+              <input v-model="model.name" placeholder="例如：DeepSeek" />
             </view>
             <view class="field">
               <text>供应商</text>
-              <input v-model="model.provider" placeholder="openai-compatible" />
+              <input v-model="model.provider" placeholder="deepseek" />
             </view>
             <view class="field wide">
               <text>Base URL</text>
-              <input v-model="model.baseUrl" placeholder="https://api.openai.com/v1" />
+              <input v-model="model.baseUrl" placeholder="https://api.deepseek.com/v1" />
             </view>
             <view class="field">
               <text>模型名</text>
-              <input v-model="model.model" placeholder="gpt-4o-mini" />
+              <input v-model="model.model" placeholder="deepseek-chat" />
             </view>
             <view class="field">
               <text>API Key</text>
@@ -533,6 +534,8 @@
       <CustomPetPanel v-if="activeTab === 'customPet'" @error="errorMessage = $event" />
 
       <OrdersPanel v-if="activeTab === 'orders'" @error="errorMessage = $event" />
+
+      <LoginLogsPanel v-if="activeTab === 'loginLogs'" @error="errorMessage = $event" />
       </view>
     </view>
   </view>
@@ -558,6 +561,7 @@ import FeedbackPanel from './components/panels/FeedbackPanel.vue'
 import CustomPetPanel from './components/panels/CustomPetPanel.vue'
 import SubscriptionPanel from './components/panels/SubscriptionPanel.vue'
 import BillingPanel from './components/panels/BillingPanel.vue'
+import LoginLogsPanel from './components/panels/LoginLogsPanel.vue'
 
 type AdminUser = {
   id: string
@@ -784,7 +788,7 @@ const runtimeFields = [
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
 
-const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'tokenUsers' | 'feedback' | 'customPet' | 'orders'>('users')
+const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'tokenUsers' | 'feedback' | 'customPet' | 'orders' | 'loginLogs'>('users')
 const users = ref<AdminUser[]>([])
 const selectedUserId = ref('')
 const currentUserId = ref('')
@@ -874,9 +878,9 @@ function createEmptyModel(id = generateModelId()): AdminAIModel {
   return {
     id,
     name: id === 'default' ? '默认模型' : '',
-    provider: 'openai-compatible',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
+    provider: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    model: 'deepseek-chat',
     apiKey: '',
     hasApiKey: false,
     quota: 0,
@@ -1153,9 +1157,9 @@ function normalizeModel(raw: any, index: number): AdminAIModel {
   return {
     id: raw?.id || (index === 0 ? 'default' : generateModelId()),
     name: raw?.name || '',
-    provider: raw?.provider || 'openai-compatible',
-    baseUrl: raw?.baseUrl || 'https://api.openai.com/v1',
-    model: raw?.model || 'gpt-4o-mini',
+    provider: raw?.provider || 'deepseek',
+    baseUrl: raw?.baseUrl || 'https://api.deepseek.com/v1',
+    model: raw?.model || 'deepseek-chat',
     apiKey: '',
     hasApiKey: Boolean(raw?.hasApiKey || raw?.apiKey),
     quota: Number(raw?.quota || 0),
@@ -1450,9 +1454,9 @@ function collectModels() {
   return models.value.map((model, index) => ({
     id: model.id || (index === 0 ? 'default' : generateModelId()),
     name: model.name || '未命名模型',
-    provider: model.provider || 'openai-compatible',
-    baseUrl: model.baseUrl || 'https://api.openai.com/v1',
-    model: model.model || 'gpt-4o-mini',
+    provider: model.provider || 'deepseek',
+    baseUrl: model.baseUrl || 'https://api.deepseek.com/v1',
+    model: model.model || 'deepseek-chat',
     apiKey: model.apiKey || '',
     quota: Number(model.quota || 0)
   }))

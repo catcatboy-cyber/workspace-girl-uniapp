@@ -18,7 +18,7 @@
     </view>
     <view class="card-v2">
       <text class="section-title-v2">技术说明</text>
-      <text class="card-text-v2">基于 uni-app (Vue 3) + 微信云开发构建。AI 能力由 Claude 模型驱动，通过 CloudBase 云函数代理调用。</text>
+      <text class="card-text-v2">基于微信云开发构建。AI 能力由 DeepSeek / 腾讯混元等国内大模型驱动，通过 CloudBase 云函数代理调用。</text>
       <text class="card-text-v2" style="margin-top:14rpx">Token 额度用于 AI 调用计费，每次生成分析、星象速写、月度复盘等均会消耗对应 token。</text>
       <text class="card-text-v2" style="margin-top:14rpx">语音识别由腾讯云 ASR 单独计费，不消耗 Token 能量。</text>
     </view>

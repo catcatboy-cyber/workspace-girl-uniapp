@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getSubscriptionConfig, getSubscriptionStatus, createSubscriptionPayment } from '@/utils/api'
+import { getSubscriptionConfig, getSubscriptionStatus, createPaymentOrder, queryPaymentOrder, paymentCallback } from '@/utils/api'
 import { getCurrentThemeId, getFontSizeMode, getThemeStyle, applyThemeChrome } from '@/utils/theme'
 import { bumpDataVersion } from '@/utils/helpers'
 
@@ -255,19 +255,98 @@ async function onUpgrade(planKey: string) {
   upgradeOk.value = false
 
   try {
-    const res = await createSubscriptionPayment(planKey, getSelectedPriceOption(planKey))
-    if (res?.success) {
-      upgradeOk.value = true
-      upgradeMessage.value = res.message || `已创建 ${res.order?.planName || planKey} 升级订单`
-      bumpDataVersion()
-      // 后续接入微信支付：res.order.paymentParams → wx.requestPayment
-      if (res.order?.paymentParams) {
-        // #ifdef MP-WEIXIN
-        // wx.requestPayment({ ...res.order.paymentParams, success: () => ..., fail: () => ... })
-        // #endif
+    // 1. 服务端创建订单（查配置算价，写 recharge_orders）
+    const priceOpt = getSelectedPriceOption(planKey)
+    const res = await createPaymentOrder({
+      productType: 'subscription',
+      planKey,
+      billingCycle: priceOpt.billingCycle,
+      priceVariant: priceOpt.priceVariant
+    })
+    if (!res?.success) {
+      upgradeMessage.value = res?.message || '创建订单失败'
+      return
+    }
+
+    // 2. 调用集成中心 HTTP 云函数统一下单
+    // #ifdef MP-WEIXIN
+    let prepayData: any = {}
+    let payRes: any
+    try {
+      payRes = await new Promise((resolve, reject) => {
+        wx.cloud.callHTTPFunction({
+          name: 'CrushRadar-uty6nxqu-demo-scfweb',
+          config: { env: 'cloud1-d0gvhqu2c8a2b61fd' },
+          method: 'POST',
+          header: { 'Content-Type': 'application/json' },
+          path: '/wx-pay/wxpay_order',
+          data: {
+            description: res.order.productName,
+            out_trade_no: res.order.orderNo,
+            amount: { total: res.order.amountFen, currency: 'CNY' }
+          },
+          success: resolve,
+          fail: reject
+        })
+      })
+
+      // callHTTPFunction 自动解析 JSON → { code:0, data:{ status:200, data:{ timeStamp... } } }
+      // 穿透两层 data 取支付参数
+      const body = payRes?.data
+      prepayData = body?.data?.data || body?.data || body
+    } catch (payCreateErr: any) {
+      upgradeMessage.value = '统一下单: ' + (payCreateErr?.errMsg || payCreateErr?.message || '')
+      return
+    }
+
+    if (!prepayData?.timeStamp) {
+      upgradeMessage.value = 'timeStamp缺失:' + JSON.stringify(payRes?.data).slice(0, 300)
+      return
+    }
+
+    // 3. 调起微信支付
+    try {
+      await new Promise((resolve, reject) => {
+        wx.requestPayment({
+          timeStamp: String(prepayData.timeStamp || ''),
+          nonceStr: String(prepayData.nonceStr || ''),
+          package: prepayData.packageVal || prepayData.package || '',
+          signType: prepayData.signType || 'RSA',
+          paySign: String(prepayData.paySign || ''),
+          success: resolve,
+          fail: reject
+        })
+      })
+    } catch (payErr: any) {
+      if (payErr?.errMsg?.includes('cancel')) {
+        upgradeMessage.value = '已取消支付'
+      } else {
+        upgradeMessage.value = '支付失败: ' + (payErr?.errMsg || '')
       }
+      return
+    }
+    // #endif
+
+    // #ifdef H5
+    upgradeMessage.value = '请在小程序中完成支付'
+    return
+    // #endif
+
+    // 4. 支付成功 → 触发发货 → 查单确认
+    try {
+      const cbRes = await paymentCallback(res.order.orderNo)
+      console.log('paymentCallback result:', JSON.stringify(cbRes))
+    } catch (e: any) {
+      console.error('paymentCallback error:', e?.message || e)
+    }
+    const confirm = await queryPaymentOrder({ orderNo: res.order?.orderNo })
+    if (confirm?.order?.status === 'paid') {
+      upgradeOk.value = true
+      upgradeMessage.value = `支付成功！已升级至 ${res.order?.planName || planKey}`
+      bumpDataVersion()
+      await loadSubscriptionData()
     } else {
-      upgradeMessage.value = res?.message || '创建订单失败，请稍后重试'
+      upgradeMessage.value = '支付处理中，稍后自动生效'
     }
   } catch (e: any) {
     upgradeMessage.value = e?.message || '网络错误，请稍后重试'

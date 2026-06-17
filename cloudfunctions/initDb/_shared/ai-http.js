@@ -9,7 +9,7 @@ function trimTrailingSlash(value) {
 }
 
 function normalizeProvider(provider) {
-  return String(provider || 'openai-compatible').trim().toLowerCase() || 'openai-compatible'
+  return String(provider || '').trim().toLowerCase()
 }
 
 function normalizeModelName(model) {
@@ -29,15 +29,11 @@ function shouldSendResponseFormat(params, provider) {
   return true
 }
 
-function getDefaultBaseUrl(provider) {
-  return normalizeProvider(provider) === 'anthropic'
-    ? 'https://api.anthropic.com'
-    : 'https://api.openai.com/v1'
-}
-
 function buildChatCompletionUrls(baseUrl, provider) {
   const normalizedProvider = normalizeProvider(provider)
-  const normalized = trimTrailingSlash(baseUrl || getDefaultBaseUrl(normalizedProvider))
+  const normalized = trimTrailingSlash(baseUrl || '')
+  if (!normalized) return []
+
   const pathname = new URL(normalized).pathname.toLowerCase()
 
   if (normalizedProvider === 'anthropic') {
@@ -199,7 +195,11 @@ function requestText(urlString, body, timeoutMs, headers, responseNormalizer) {
 
 async function postChatCompletions(params) {
   const provider = normalizeProvider(params.provider)
-  const urls = buildChatCompletionUrls(params.baseUrl, provider)
+  const baseUrl = String(params.baseUrl || '').trim()
+  if (!provider || !baseUrl) {
+    throw new Error('未配置 AI 模型（provider/baseUrl 为空），请在后台管理设置 AI 模型。')
+  }
+  const urls = buildChatCompletionUrls(baseUrl, provider)
   let lastResponse = null
 
   const isAnthropic = provider === 'anthropic'
@@ -285,7 +285,6 @@ function getAIErrorMessage(error, timeoutMs) {
 module.exports = {
   AI_REQUEST_TIMEOUT_MS: DEFAULT_TIMEOUT_MS,
   buildChatCompletionUrls,
-  getDefaultBaseUrl,
   normalizeOpenAICompatibleResponse,
   postChatCompletions,
   parseJSONContent,

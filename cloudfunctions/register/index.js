@@ -116,8 +116,6 @@ exports.main = async (event) => {
       }
     } catch (_) {}
 
-    subFields.extraTokens = 0
-
     await db.collection('users').add({
       _id: userId,
       email: normalizedEmail,
@@ -138,13 +136,8 @@ exports.main = async (event) => {
       referralWeekCount: subFields.referralWeekCount
     })
 
-    // 首次赠送额度（旧 token 体系保留，作为后备）
-    try {
-      const { grantFirstGift } = require('./_shared/billing')
-      await grantFirstGift(db, userId)
-    } catch (err) {
-      console.warn('grant first gift failed (non-fatal):', err.message)
-    }
+    // grantFirstGift 已不再需要 —— extraTokens 已由 welcomeTokens 直接设定
+    // 旧体系 token_accounts 的首次赠送保留为后备，但不再对 users.extraTokens 做 inc
 
     let referralResult = null
     if (event.inviteCode && typeof event.inviteCode === 'string') {

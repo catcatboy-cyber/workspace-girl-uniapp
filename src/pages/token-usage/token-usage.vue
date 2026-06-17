@@ -172,6 +172,7 @@ function mapFeature(feature: string) {
 function mapLedgerType(type: string) {
   const map: Record<string, string> = {
     gift: '赠送',
+    grant: '邀请获赠',
     recharge: '充值',
     consume: '消费',
     refund: '退款',

@@ -221,14 +221,202 @@ async function createSubscriptionUpgrade(event) {
   }
 }
 
+// ============================================================
+// 微信支付正式版（替换 pending → adminConfirm 过渡流程）
+// ============================================================
+
+// action: createPaymentOrder — 创建正式支付订单
+// 输入: productType, productId/planKey, billingCycle?, priceVariant?, openid
+// 服务端查配置算价格，不信任前端传价
+async function createPaymentOrder(event) {
+  const userId = await requireAuthenticatedUserId(app, event)
+  const productType = String(event.productType || '').trim()
+  const openid = String(event.openid || '').trim()
+  if (!productType) return { success: false, message: '缺少 productType' }
+
+  let order
+
+  if (productType === 'recharge') {
+    const billing = await ensureBillingSettings(db)
+    const planId = String(event.productId || '').trim()
+    if (!planId) return { success: false, message: '缺少 productId' }
+    const tier = (billing.rechargeTiers || []).find(t => t.id === planId)
+    if (!tier) return { success: false, message: '档位不存在' }
+    if (tier.enabled === false) return { success: false, message: '该档位已下架' }
+
+    const amountFen = Number(tier.priceFen) || 0
+    const grantTokens = Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0)
+    console.log('[createPaymentOrder-recharge] tier.priceFen:', tier.priceFen, 'amountFen:', amountFen, 'tokensPerYuan:', billing.tokensPerYuan, 'bonusTokens:', tier.bonusTokens, '=> grantTokens:', grantTokens)
+    const now = new Date()
+    order = {
+      userId, openid,
+      productType: 'recharge',
+      planId: tier.id,
+      planName: tier.name,
+      productName: tier.name,
+      amountFen,
+      amountYuan: (amountFen / 100).toFixed(2),
+      grantTokens,
+      bonusTokens: tier.bonusTokens || 0,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now
+    }
+  } else if (productType === 'subscription') {
+    const { getSubscriptionConfig } = require('./_shared/subscription')
+    const config = await getSubscriptionConfig(db)
+    const planKey = String(event.planKey || '').trim()
+    const billingCycle = String(event.billingCycle || 'monthly').trim()
+    const priceVariant = String(event.priceVariant || 'standard').trim()
+    if (!planKey) return { success: false, message: '缺少 planKey' }
+    if (!['pro', 'ultra'].includes(planKey)) return { success: false, message: '不支持的套餐类型' }
+    if (!['monthly', 'annual'].includes(billingCycle)) return { success: false, message: '不支持的计费周期' }
+    if (!['standard', 'student'].includes(priceVariant)) return { success: false, message: '不支持的价格类型' }
+
+    const planConfig = config.plans[planKey]
+    if (!planConfig) return { success: false, message: '套餐配置不存在' }
+
+    const toAmount = (value, fallback) => {
+      const n = Number(value); if (Number.isFinite(n) && n > 0) return n
+      const f = Number(fallback); return Number.isFinite(f) && f > 0 ? f : 0
+    }
+    const standardMonthly = toAmount(planConfig.priceYuan, 19)
+    const standardAnnual = toAmount(planConfig.priceYuanAnnual, 168)
+    const studentMonthly = toAmount(planConfig.priceYuanStudent, 12)
+    const studentAnnual = toAmount(planConfig.priceYuanStudentAnnual, 99)
+    const amountYuan = priceVariant === 'student'
+      ? (billingCycle === 'annual' ? studentAnnual : studentMonthly)
+      : (billingCycle === 'annual' ? standardAnnual : standardMonthly)
+
+    console.log('[createPaymentOrder] planConfig keys:', JSON.stringify(Object.keys(planConfig)))
+    console.log('[createPaymentOrder] priceYuan:', planConfig.priceYuan, 'priceYuanAnnual:', planConfig.priceYuanAnnual)
+    console.log('[createPaymentOrder] calculated amountYuan:', amountYuan, 'amountFen:', Math.round(amountYuan * 100))
+
+    if (!amountYuan || amountYuan <= 0) {
+      return { success: false, message: `套餐 ${planConfig.name} 的价格未配置，请在后台设置价格后重试` }
+    }
+
+    const amountFen = Math.round(amountYuan * 100)
+    const now = new Date()
+    order = {
+      userId, openid,
+      productType: 'subscription',
+      type: 'subscription_upgrade',           // 兼容旧字段
+      planKey,
+      planName: planConfig.name,
+      productName: `${planConfig.name} · ${priceVariant === 'student' ? '学生' : '标准'} · ${billingCycle === 'annual' ? '年付' : '月付'}`,
+      billingCycle,
+      priceVariant,
+      priceLabel: `${priceVariant === 'student' ? '学生价' : '标准价'} · ${billingCycle === 'annual' ? '年付' : '月付'}`,
+      fromPlan: '',
+      amountFen,
+      amountYuan: amountYuan.toFixed(2),
+      grantPlan: planKey,
+      grantDurationDays: billingCycle === 'annual' ? 365 : 30,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now
+    }
+
+    // 查当前套餐
+    try {
+      const { data: userData } = await db.collection('users').doc(userId).get()
+      const user = (userData && userData.length > 0) ? userData[0] : null
+      if (user) order.fromPlan = user.plan || 'free'
+    } catch (_) { /* non-fatal */ }
+  } else {
+    return { success: false, message: '不支持的商品类型' }
+  }
+
+  // 生成订单号
+  const orderNo = `PAY${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+  order.orderNo = orderNo
+
+  // 写 recharge_orders
+  const result = await db.collection(RECHARGE_ORDERS).add(order)
+  order._id = result.id || result._id
+
+  return { success: true, order }
+}
+
+// action: queryPaymentOrder — 查单
+async function queryPaymentOrder(event) {
+  const userId = await requireAuthenticatedUserId(app, event)
+  const orderNo = String(event.orderNo || '').trim()
+  const orderId = String(event.orderId || '').trim()
+
+  let order = null
+  if (orderNo) {
+    const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
+    order = (data && data.length > 0) ? data[0] : null
+  } else if (orderId) {
+    const { data } = await db.collection(RECHARGE_ORDERS).doc(orderId).get()
+    order = (data && data.length > 0) ? data[0] : null
+  }
+  if (!order) return { success: false, message: '订单不存在' }
+
+  return { success: true, order }
+}
+
+// action: paymentCallback — 微信支付回调（由集成中心模板触发）
+// 回调格式参考: https://docs.cloudbase.net/integration/wechat-pay-miniprogram
+// event 结构: { event_type: 'TRANSACTION.SUCCESS', resource: { out_trade_no, transaction_id, amount: { total, currency } } }
+// 也可以被管理员手动调用（传 outTradeNo + transactionId）
+async function paymentCallback(event) {
+  let outTradeNo, transactionId, totalFee
+
+  // 兼容两种调用方式:
+  // 1. 集成中心回调: event.event_type + event.resource.out_trade_no
+  // 2. 手动补单/前端触发: event.outTradeNo + event.transactionId
+  if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
+    outTradeNo = String(event.resource.out_trade_no || '').trim()
+    transactionId = String(event.resource.transaction_id || '').trim()
+    totalFee = Number(event.resource.amount?.total || 0)
+  } else {
+    outTradeNo = String(event.outTradeNo || event.out_trade_no || '').trim()
+    transactionId = String(event.transactionId || event.transaction_id || '').trim()
+    totalFee = Number(event.totalFee || event.total_fee || 0)
+  }
+
+  if (!outTradeNo) return { success: false, message: '缺少 outTradeNo' }
+
+  const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo: outTradeNo }).limit(1).get()
+  const order = (data && data.length > 0) ? data[0] : null
+  if (!order) return { success: false, message: '订单不存在' }
+
+  // 金额校验
+  if (totalFee && totalFee !== order.amountFen) {
+    console.warn(`paymentCallback: amount mismatch expected=${order.amountFen} got=${totalFee} outTradeNo=${outTradeNo}`)
+    await db.collection(RECHARGE_ORDERS).doc(order._id).update({
+      status: 'failed',
+      updatedAt: new Date()
+    })
+    return { success: false, message: '金额不匹配' }
+  }
+
+  // 发货
+  const { fulfillPayment } = require('./_shared/payment-fulfillment')
+  const fulfilled = await fulfillPayment(db, order, transactionId)
+
+  return { success: true, order: fulfilled }
+}
+
 exports.main = async (event = {}) => {
   try {
+    // 集成中心微信支付回调自动识别（event_type 而非 action）
+    if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
+      return await paymentCallback(event)
+    }
+
     const action = String(event.action || '').trim()
 
     if (action === 'getRechargePlans') return await getRechargePlans(event)
     if (action === 'createRechargeOrder') return await createRechargeOrder(event)
     if (action === 'createSubscriptionUpgrade') return await createSubscriptionUpgrade(event)
     if (action === 'adminConfirmRecharge') return await adminConfirmRecharge(event)
+    if (action === 'createPaymentOrder') return await createPaymentOrder(event)
+    if (action === 'queryPaymentOrder') return await queryPaymentOrder(event)
+    if (action === 'paymentCallback') return await paymentCallback(event)
 
     return { success: false, message: '未知操作' }
   } catch (error) {

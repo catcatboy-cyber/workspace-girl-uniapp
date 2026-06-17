@@ -1,7 +1,31 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
-onLaunch(() => {})
+onLaunch(() => {
+  // 微信隐私协议授权（2023.09 起要求）
+  // __usePrivacyCheck__: true 开启后，调用隐私 API 时平台会自动触发此回调
+  try {
+    const wxApi = (globalThis as any)?.wx
+    if (wxApi?.onNeedPrivacyAuthorization) {
+      wxApi.onNeedPrivacyAuthorization((resolve: any) => {
+        uni.showModal({
+          title: '隐私政策提示',
+          content: '在使用语音识别等功能前，需要你阅读并同意《隐私政策》和《服务条款》。点击"确定"即表示同意。\n\n你可在"关于"页面随时查看完整政策。',
+          confirmText: '同意并继续',
+          cancelText: '暂不同意',
+          success: (modalRes: any) => {
+            if (modalRes.confirm) {
+              resolve({ event: 'agree', buttonId: 'agree' })
+            } else {
+              resolve({ event: 'disagree', buttonId: 'disagree' })
+            }
+          }
+        })
+      })
+    }
+  } catch (_) { /* H5 等非微信环境忽略 */ }
+})
+
 onShow(() => {})
 onHide(() => {})
 </script>

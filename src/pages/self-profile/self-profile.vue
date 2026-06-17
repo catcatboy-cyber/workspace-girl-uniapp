@@ -413,7 +413,7 @@ function onSkip() {
 .v2-mode .minor-note-v2 { display: block; margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #FFFBEB; font-size: $fs-caption; font-weight: $fw-body; color: #111; line-height: 1.5; }
 .chat-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: #FFD93D; }
 
-.msg { display: flex; gap: 10rpx; align-items: flex-end; max-width: 92%; }
+.msg { display: flex; gap: 10rpx; align-items: flex-end; max-width: 92%; margin-bottom: 24rpx; }
 .msg-pet { align-self: flex-start; }
 .msg-user { align-self: flex-end; justify-content: flex-end; }
 

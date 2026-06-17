@@ -62,21 +62,21 @@
 
           <view class="field-v2">
             <text class="field-label-v2">名称</text>
-            <input v-model="model.name" class="input-v2" placeholder="例如：GPT-4o、Claude" />
+            <input v-model="model.name" class="input-v2" placeholder="例如：DeepSeek、混元" />
           </view>
           <view class="grid-two-v2">
             <view class="field-v2">
               <text class="field-label-v2">Provider</text>
-              <input v-model="model.provider" class="input-v2" placeholder="openai-compatible" />
+              <input v-model="model.provider" class="input-v2" placeholder="如: deepseek / hunyuan" />
             </view>
             <view class="field-v2">
               <text class="field-label-v2">Model</text>
-              <input v-model="model.model" class="input-v2" placeholder="gpt-4o-mini" />
+              <input v-model="model.model" class="input-v2" placeholder="deepseek-chat" />
             </view>
           </view>
           <view class="field-v2">
             <text class="field-label-v2">Base URL</text>
-            <input v-model="model.baseUrl" class="input-v2" placeholder="https://api.openai.com/v1" />
+            <input v-model="model.baseUrl" class="input-v2" placeholder="https://api.deepseek.com/v1" />
           </view>
           <view class="field-v2">
             <text class="field-label-v2">API Key</text>
@@ -143,8 +143,8 @@ function createEmptyModel(): EditableModel {
   return {
     id: generateModelId(),
     name: '',
-    provider: 'openai-compatible',
-    baseUrl: 'https://api.openai.com/v1',
+    provider: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
     model: '',
     apiKey: '',
     _hasStoredKey: false,
@@ -199,8 +199,8 @@ function applySettings(settings: any) {
     models.value = settings.aiModels.map((m: any) => ({
       id: m.id || generateModelId(),
       name: m.name || '',
-      provider: m.provider || 'openai-compatible',
-      baseUrl: m.baseUrl || 'https://api.openai.com/v1',
+      provider: m.provider || 'deepseek',
+      baseUrl: m.baseUrl || 'https://api.deepseek.com/v1',
       model: m.model || '',
       apiKey: '',
       _hasStoredKey: Boolean(m.apiKey),
@@ -211,9 +211,9 @@ function applySettings(settings: any) {
     // 旧版格式兼容
     const m = createEmptyModel()
     m.name = '默认模型'
-    m.provider = settings.aiProvider || 'openai-compatible'
-    m.baseUrl = settings.aiBaseUrl || 'https://api.openai.com/v1'
-    m.model = settings.aiModel || 'gpt-4o-mini'
+    m.provider = settings.aiProvider || 'deepseek'
+    m.baseUrl = settings.aiBaseUrl || 'https://api.deepseek.com/v1'
+    m.model = settings.aiModel || 'deepseek-chat'
     m._hasStoredKey = Boolean(settings.aiApiKey)
     m._maskedKey = settings.aiApiKey ? redactKey(settings.aiApiKey) : ''
     models.value = [m]
@@ -273,9 +273,9 @@ function collectNonEmptyModels() {
   return models.value.map((m) => ({
     id: m.id,
     name: m.name || '未命名模型',
-    provider: m.provider || 'openai-compatible',
-    baseUrl: m.baseUrl || 'https://api.openai.com/v1',
-    model: m.model || 'gpt-4o-mini',
+    provider: m.provider || 'deepseek',
+    baseUrl: m.baseUrl || 'https://api.deepseek.com/v1',
+    model: m.model || 'deepseek-chat',
     apiKey: m.apiKey || ''
   }))
 }

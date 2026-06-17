@@ -308,17 +308,13 @@ async function checkTokenBalance(db, userId, estTokens) {
 
   await ensureUserSubscriptionFields(db, user, userId)
 
-  // 试用期 → 不限制
-  if (user.trialEndsAt && new Date() < new Date(user.trialEndsAt)) {
-    return { ok: true, source: 'trial' }
-  }
-  // Ultra → 不限制
-  if (user.plan === 'ultra') {
-    return { ok: true, source: 'ultra' }
-  }
-
   const config = await getSubscriptionConfig(db)
   const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+
+  // 套餐配置为无限（monthlyTokens = -1）→ 不限制
+  if (planConfig && planConfig.monthlyTokens === -1) {
+    return { ok: true, source: 'unlimited' }
+  }
   const monthlyLimit = planConfig.monthlyTokens
   if (monthlyLimit === -1) return { ok: true, source: 'monthly_unlimited' }
 
@@ -380,13 +376,12 @@ async function consumeTokens(db, userId, actualModelTokens, feature, model) {
     return { deducted: 0 }
   }
 
-  // 试用期或 Ultra → 不扣
-  if (user.trialEndsAt && new Date() < new Date(user.trialEndsAt)) return { deducted: 0, source: 'trial' }
-  if (user.plan === 'ultra') return { deducted: 0, source: 'ultra' }
-
-  // 读取订阅配置（获取 plans 信息）
+  // 读取订阅配置
   const config = await getSubscriptionConfig(db)
   const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+
+  // 套餐配置为无限（monthlyTokens = -1）→ 不扣
+  if (planConfig && planConfig.monthlyTokens === -1) return { deducted: 0, source: user.plan === 'ultra' ? 'ultra' : 'unlimited' }
 
   // 从 billing 读取模型倍率（按 modelId 匹配，fallback 到通配 *）
   let rate = 1
@@ -590,14 +585,17 @@ async function getCallUsageHistory(db, userId, limit = 100, types = null) {
  * @returns {object} { success: boolean }
  */
 async function redeemInviteCode(db, inviteCode, inviteeUserId) {
+  console.log('[redeemInviteCode] start inviteCode:', inviteCode, 'inviteeUserId:', inviteeUserId)
   if (!inviteCode || !inviteeUserId) {
     return { success: false, message: '参数无效' }
   }
 
   const config = await getSubscriptionConfig(db)
   const referral = config.referral || {}
+  console.log('[redeemInviteCode] referral.enabled:', referral.enabled)
 
   if (!referral.enabled) {
+    console.log('[redeemInviteCode] referral disabled, aborting')
     return { success: false, message: '邀请活动已结束' }
   }
 
@@ -636,45 +634,23 @@ async function redeemInviteCode(db, inviteCode, inviteeUserId) {
     return { success: false, message: `本周邀请已达上限（${weeklyCap}人）` }
   }
 
-  // 检查有效邀请条件：被邀请人需创建 Crush 并记录 ≥1 条事件
-  if (referral.requireFirstEvent) {
-    // 注册时调用，此时还未创建 crush，先记录邀请关系，奖励在首次事件后发放
-    await db.collection(USERS).doc(inviteeUserId).update({
-      invitedBy: inviter._id,
-      invitedByCode: inviteCode.toUpperCase().trim(),
-      referralPendingAt: now
-    })
-    return {
-      success: true,
-      pending: true,
-      message: '邀请关系已记录，完成首次记录后双方获得奖励',
-      inviterId: inviter._id
-    }
-  }
-
-  // 发放奖励
+  // 注册即送 —— 直接发放双方奖励
   const inviterReward = Number(referral.inviterRewardTokens ?? 3000)
   const inviteeReward = Number(referral.inviteeRewardTokens ?? 5000)
-  const trialExtend = Number(referral.inviterTrialExtendDays ?? 3)
 
   // 邀请人奖励
-  if (inviterReward > 0) await addExtraTokens(db, inviter._id, inviterReward, 'referral_inviter')
+  if (inviterReward > 0) {
+    console.log('[redeemInviteCode] rewarding inviter:', inviter._id, 'amount:', inviterReward)
+    const addRes = await addExtraTokens(db, inviter._id, inviterReward, 'referral_inviter')
+    console.log('[redeemInviteCode] addExtraTokens result:', JSON.stringify(addRes))
+  }
   await db.collection(USERS).doc(inviter._id).update({
     referralCount: db.command.inc(1),
     referralWeekStart: weekStart,
     referralWeekCount: weeklyCount + 1
   })
 
-  if (inviter.plan === 'free' && trialExtend > 0) {
-    const currentTrialEnd = inviter.trialEndsAt ? new Date(inviter.trialEndsAt) : now
-    const baseTime = currentTrialEnd > now ? currentTrialEnd : now
-    const newTrialEnd = new Date(baseTime.getTime() + trialExtend * 24 * 60 * 60 * 1000)
-    await db.collection(USERS).doc(inviter._id).update({
-      trialEndsAt: newTrialEnd
-    })
-  }
-
-  // 被邀请人奖励
+  // 被邀请人奖励（标记邀请关系）
   await db.collection(USERS).doc(inviteeUserId).update({
     invitedBy: inviter._id,
     invitedByCode: inviteCode.toUpperCase().trim()
@@ -684,8 +660,7 @@ async function redeemInviteCode(db, inviteCode, inviteeUserId) {
   return {
     success: true,
     inviterReward,
-    inviteeReward,
-    trialExtended: trialExtend > 0 && inviter.plan === 'free'
+    inviteeReward
   }
 }
 

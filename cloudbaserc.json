@@ -342,6 +342,15 @@
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
+    },
+    {
+      "name": "getLoginLogs",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
     }
   ]
 }

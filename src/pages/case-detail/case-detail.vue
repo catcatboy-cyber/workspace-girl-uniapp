@@ -296,7 +296,7 @@ const hasNewEventsSinceReview = computed(() => {
   const latestEventTime = Math.max(0, ...timeline
     .filter((item: any) => {
       if (!item.occurrenceAt) return false
-      if (['assessment', 'trend', 'weekly_review'].includes(item.type)) return false
+      if (['assessment', 'trend', 'weekly_review', 'monthly_review'].includes(item.type)) return false
       if (item.type === 'note' && item.feature === 'weeklySideRead') return false
       return true
     })

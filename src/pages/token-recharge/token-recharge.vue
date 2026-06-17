@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getRechargePlans, createRechargeOrder, getSubscriptionStatus } from '@/utils/api'
+import { getCurrentUserId, getRechargePlans, createPaymentOrder, queryPaymentOrder, paymentCallback, getSubscriptionStatus } from '@/utils/api'
 import { bumpDataVersion } from '@/utils/helpers'
 
 const extraTokens = ref(0)
@@ -96,17 +96,91 @@ async function createOrder(planId: string) {
   orderOk.value = false
   createdOrderId.value = ''
   try {
-    const result = await createRechargeOrder(planId)
+    // 1. 服务端创建订单（查配置算价，写 recharge_orders）
+    const result = await createPaymentOrder({ productType: 'recharge', productId: planId })
     if (!result?.success) {
       orderMessage.value = result?.message || '创建订单失败'
       return
     }
     createdOrderId.value = result.order?._id || ''
-    // 创建订单成功，等待支付（后续接微信支付）
-    orderOk.value = true
-    orderMessage.value = `订单已创建（¥${result.order?.amountYuan || '?'}），请联系管理员确认充值。`
-    bumpDataVersion()
-    await loadStatus()
+
+    // 2. 调用集成中心 HTTP 云函数统一下单
+    // #ifdef MP-WEIXIN
+    let prepayData: any = {}
+    let payRes: any
+    try {
+      payRes = await new Promise((resolve, reject) => {
+        wx.cloud.callHTTPFunction({
+          name: 'CrushRadar-uty6nxqu-demo-scfweb',
+          config: { env: 'cloud1-d0gvhqu2c8a2b61fd' },
+          method: 'POST',
+          header: { 'Content-Type': 'application/json' },
+          path: '/wx-pay/wxpay_order',
+          data: {
+            description: result.order.productName,
+            out_trade_no: result.order.orderNo,
+            amount: { total: result.order.amountFen, currency: 'CNY' }
+          },
+          success: resolve,
+          fail: reject
+        })
+      })
+
+      // callHTTPFunction 自动解析 JSON → { code:0, data:{ status:200, data:{ timeStamp... } } }
+      // 穿透两层 data 取支付参数
+      const body = payRes?.data
+      prepayData = body?.data?.data || body?.data || body
+    } catch (payCreateErr: any) {
+      orderMessage.value = '统一下单: ' + (payCreateErr?.errMsg || payCreateErr?.message || '')
+      return
+    }
+
+    if (!prepayData?.timeStamp) {
+      orderMessage.value = 'timeStamp缺失:' + JSON.stringify(payRes?.data).slice(0, 300)
+      return
+    }
+
+    // 3. 调起微信支付
+    try {
+      await new Promise((resolve, reject) => {
+        wx.requestPayment({
+          timeStamp: String(prepayData.timeStamp || ''),
+          nonceStr: String(prepayData.nonceStr || ''),
+          package: prepayData.packageVal || prepayData.package || '',
+          signType: prepayData.signType || 'RSA',
+          paySign: String(prepayData.paySign || ''),
+          success: resolve,
+          fail: reject
+        })
+      })
+    } catch (payErr: any) {
+      if (payErr?.errMsg?.includes('cancel')) {
+        orderMessage.value = '已取消支付'
+      } else {
+        orderMessage.value = '支付失败: ' + (payErr?.errMsg || '')
+      }
+      return
+    }
+    // #endif
+
+    // #ifdef H5
+    orderMessage.value = '请在小程序中完成支付'
+    return
+    // #endif
+
+    // 4. 支付成功 → 触发发货 → 查单确认
+    try {
+      await paymentCallback(result.order.orderNo)
+    } catch (_) { /* 回调可能已经自动触发了，忽略 */ }
+    const confirm = await queryPaymentOrder({ orderNo: result.order?.orderNo })
+    if (confirm?.order?.status === 'paid') {
+      orderOk.value = true
+      orderMessage.value = `支付成功！已充值 ${((result.order?.grantTokens || 0)).toLocaleString()} Token`
+      bumpDataVersion()
+      await loadStatus()
+    } else {
+      orderMessage.value = '支付处理中，稍后自动到账'
+    }
   } catch (error: any) {
     orderMessage.value = error?.message || '操作失败'
   } finally {

@@ -116,6 +116,11 @@ function toggleRemember() {
 }
 
 function goAfterLogin(result: any) {
+  // 受邀奖励通知 — 在跳转前存入 storage，让"今日"和"我"页都能读到
+  if (result?.referral?.inviteeReward > 0) {
+    uni.setStorageSync('showInviteeNotice', true)
+    uni.setStorageSync('inviteeNoticeAmount', result.referral.inviteeReward)
+  }
   // #ifdef H5
   if (result?.isAdmin || result?.role === 'admin') {
     uni.redirectTo({ url: '/pages/admin/admin' })

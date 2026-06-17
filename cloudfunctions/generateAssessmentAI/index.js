@@ -77,7 +77,7 @@ function isSemanticTaggableTimelineRecord(record) {
   if (!record) return false
   const type = String(record.type || '')
   const feature = String(record.feature || '')
-  if (type === 'assessment' || type === 'trend' || type === 'weekly_review') return false
+  if (type === 'assessment' || type === 'trend' || type === 'weekly_review' || type === 'monthly_review') return false
   if (feature === 'sideRead' || feature === 'weeklySideRead') return false
   return true
 }

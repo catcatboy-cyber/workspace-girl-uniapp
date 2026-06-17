@@ -1888,15 +1888,18 @@ async function listOrders(event = {}) {
   return {
     success: true,
     orders: (data || []).map((item) => ({
-      _id: item._id,
+      _id: item._id || '',
       userId: item.userId || '',
-      planName: item.planName || '',
-      amount: item.amount || 0,
-      amountYuan: ((item.amount || 0) / 100).toFixed(2),
+      planName: item.planName || item.productName || '',
+      amountFen: item.amountFen || item.amount || 0,
+      amountYuan: item.amountYuan || ((item.amountFen || item.amount || 0) / 100).toFixed(2),
       status: item.status || 'pending',
-      type: item.type || 'recharge',
+      productType: item.productType || (item.type === 'subscription_upgrade' ? 'subscription' : 'recharge'),
+      orderNo: item.orderNo || '',
+      grantTokens: item.grantTokens || 0,
       createdAt: item.createdAt,
       paidAt: item.paidAt || null,
+      transactionId: item.transactionId || '',
       remark: item.remark || ''
     })),
     total,

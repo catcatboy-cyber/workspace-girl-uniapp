@@ -9,6 +9,14 @@
       <view class="card-v2 anim-card" style="animation-delay:0.25s"><text class="section-title-v2">陪伴形象</text><view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn btn-secondary btn-sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view></view>
       <!-- Pet select sheet -->
       <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
+      <!-- 邀请到账通知 -->
+      <view v-if="showReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissReferralNotice">
+        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Token →</text>
+      </view>
+      <!-- 受邀奖励通知 -->
+      <view v-if="showInviteeNotice" class="referral-notice" @click="dismissInviteeNotice">
+        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Token →</text>
+      </view>
       <!-- Token（订阅体系 v3.2） -->
       <view class="card-v2 anim-card" style="animation-delay:0.3s">
         <view style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16rpx;">
@@ -32,7 +40,7 @@
               <text class="stat-lbl-v2">加油包</text>
             </view>
             <view class="stat-box-v2">
-              <text class="stat-num-v2">{{ subMonthlyUsed }}/{{ subMonthlyLimit }}</text>
+              <text class="stat-num-v2">{{ subMonthlyUsed }}/{{ totalLimit }}</text>
               <text class="stat-lbl-v2">已用/上限</text>
             </view>
             <view class="stat-box-v2">
@@ -47,9 +55,17 @@
           <view class="btn-row-v2" style="margin-top:14rpx;">
             <button class="btn btn-secondary btn-sm" @click="goSubscriptionPlan">升级套餐</button>
             <button class="btn btn-secondary btn-sm" @click="goRecharge">买加油包</button>
-            <button class="btn btn-secondary btn-sm" open-type="share">邀请好友 +{{ referralRewardTokens }}</button>
+            <button class="btn btn-secondary btn-sm" open-type="share">分享 +{{ referralRewardTokens }}</button>
             <button class="btn btn-ghost btn-sm" @click="goTokenUsage">消费明细</button>
           </view>
+      </view>
+      <!-- 低 Token 提示 -->
+      <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:#FFFBEB;border-style:dashed;" @click="() => {}" >
+        <view open-type="share" style="width:100%;">
+          <text class="section-title-v2" style="color:#e67e22;">Token 快不够了</text>
+          <text class="card-text-v2">邀请好友注册，双方各得 Token →</text>
+          <button class="btn btn-secondary btn-sm" open-type="share" style="margin-top:12rpx;">分享 +{{ referralRewardTokens }}</button>
+        </view>
       </view>
       <!-- Theme picker -->
       <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
@@ -135,17 +151,39 @@ const canSaveAIPersona = computed(() => hasUsableSelfProfile(currentSelfProfile.
 
 // 次数显示用 computed
 const monthlyRemainingDisplay = computed(() => {
-  if (subIsTrial.value || subPlan.value === 'ultra' || subMonthlyLimit.value === -1) return '∞'
+  if (subMonthlyLimit.value === -1) return '∞'
   return Math.max(0, subMonthlyLimit.value - subMonthlyUsed.value)
 })
 const extraTokens = computed(() => subExtraTokens.value)
+const showLowTokenNudge = computed(() => {
+  if (subIsTrial.value || subPlan.value === 'ultra' || subMonthlyLimit.value === -1) return false
+  const remaining = Math.max(0, subMonthlyLimit.value - subMonthlyUsed.value) + subExtraTokens.value
+  return remaining < (subReferralRewardTokens.value || 3000) * 2
+})
+const showReferralNotice = ref(false)
+const referralNoticeAmount = ref(0)
+function dismissReferralNotice() {
+  showReferralNotice.value = false
+  goTokenUsage()
+}
+const showInviteeNotice = ref(uni.getStorageSync('showInviteeNotice') || false)
+const inviteeNoticeAmount = ref(Number(uni.getStorageSync('inviteeNoticeAmount') || 0))
+function dismissInviteeNotice() {
+  showInviteeNotice.value = false
+  uni.removeStorageSync('showInviteeNotice')
+  goTokenUsage()
+}
+const totalLimit = computed(() => {
+  if (subMonthlyLimit.value === -1) return '∞'
+  return (subMonthlyLimit.value + subExtraTokens.value).toLocaleString()
+})
 const planName = computed(() => subPlanName.value)
 const isTrial = computed(() => subIsTrial.value)
 const trialDaysLeft = computed(() => subTrialDaysLeft.value)
 const referralCount = computed(() => subReferralCount.value)
 const referralRewardTokens = computed(() => subReferralRewardTokens.value)
 const totalAvailableDisplay = computed(() => {
-  if (subIsTrial.value || subPlan.value === 'ultra' || subMonthlyLimit.value === -1) return '∞'
+  if (subMonthlyLimit.value === -1) return '∞'
   return (Math.max(0, subMonthlyLimit.value - subMonthlyUsed.value) + subExtraTokens.value).toLocaleString()
 })
 const planBadgeLabel = computed(() => {
@@ -160,9 +198,13 @@ const planBadgeClass = computed(() => {
   return 'badge-free'
 })
 
-onShareAppMessage(() => buildSafeShareMessage())
+onShareAppMessage(() => buildSafeShareMessage({
+  path: subInviteCode.value ? `/pages/index/index?inviteCode=${subInviteCode.value}` : '/pages/index/index'
+}))
 
-onShareTimeline(() => buildSafeTimelineShare())
+onShareTimeline(() => buildSafeTimelineShare({
+  query: subInviteCode.value ? `inviteCode=${subInviteCode.value}` : ''
+}))
 
 const aiStyleOptions: Array<{
   value: AIStyleValue
@@ -301,6 +343,7 @@ async function loadSubscriptionStatus() {
   try {
     const result = await getSubscriptionStatus()
     if (!result?.success || !result?.subscription) return
+    console.log('[me] subscription status:', JSON.stringify(result.subscription))
     const s = result.subscription
     subPlan.value = s.plan || 'free'
     subPlanName.value = s.planName || '免费版'
@@ -314,12 +357,24 @@ async function loadSubscriptionStatus() {
   } catch {
     // ignore
   }
+  // 先加载奖励配置，确保通知用到的额度正确
   try {
     const cfg = await getSubscriptionConfig()
     if (cfg?.success && cfg?.config?.referral) {
       subReferralRewardTokens.value = cfg.config.referral.inviterRewardTokens || 3000
     }
   } catch { /* ignore */ }
+  // 检测新邀请，计算获赠数量
+  const lastCount = Number(uni.getStorageSync('lastReferralCount') || 0)
+  if (subReferralCount.value > lastCount) {
+    const newCount = subReferralCount.value - lastCount
+    referralNoticeAmount.value = newCount * subReferralRewardTokens.value
+    showReferralNotice.value = true
+    uni.setStorageSync('lastReferralCount', subReferralCount.value)
+    // 同步到 storage，供"今日"页也显示
+    uni.setStorageSync('referralNoticeAmount', referralNoticeAmount.value)
+    uni.setStorageSync('showReferralNotice', true)
+  }
 }
 
 async function refreshSubStatus() {
@@ -652,4 +707,6 @@ async function onLogout() {
 .v2-mode .explain-item-v2:last-child { border-bottom: none; }
 .v2-mode .explain-item-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; }
 .v2-mode .explain-item-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; line-height: 1.4; }
+.referral-notice { margin-bottom: 20rpx; padding: 22rpx 24rpx; background: #FFD93D; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; }
+.referral-notice-text { display: block; font-size: 26rpx; font-weight: 800; color: #111; text-align: center; }
 </style>

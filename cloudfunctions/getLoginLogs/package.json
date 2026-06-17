@@ -1,0 +1,9 @@
+{
+  "name": "getLoginLogs",
+  "version": "1.0.0",
+  "description": "查询登录日志",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.4.0"
+  }
+}

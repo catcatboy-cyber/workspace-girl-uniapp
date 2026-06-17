@@ -39,10 +39,10 @@ function normalizeSettings(settings) {
     const model = settings.aiModels.find((item) => item.id === defaultId) || settings.aiModels[0] || {}
     return {
       enabled: Boolean(settings.aiEnabled),
-      provider: String(model.provider || 'openai-compatible').trim(),
+      provider: String(model.provider || '').trim(),
       apiKey: String(model.apiKey || '').trim(),
-      baseUrl: String(model.baseUrl || 'https://api.openai.com/v1').trim(),
-      model: String(model.model || 'gpt-4o-mini').trim(),
+      baseUrl: String(model.baseUrl || '').trim(),
+      model: String(model.model || '').trim(),
       runtimeConfig: settings.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {},
       promptConfig: settings.promptConfig && typeof settings.promptConfig === 'object' ? settings.promptConfig : {},
       promptModules: settings.promptModules && typeof settings.promptModules === 'object' ? settings.promptModules : {}
@@ -50,10 +50,10 @@ function normalizeSettings(settings) {
   }
   return {
     enabled: Boolean(settings?.aiEnabled),
-    provider: String(settings?.aiProvider || 'openai-compatible').trim(),
+    provider: String(settings?.aiProvider || '').trim(),
     apiKey: String(settings?.aiApiKey || '').trim(),
-    baseUrl: String(settings?.aiBaseUrl || 'https://api.openai.com/v1').trim(),
-    model: String(settings?.aiModel || 'gpt-4o-mini').trim(),
+    baseUrl: String(settings?.aiBaseUrl || '').trim(),
+    model: String(settings?.aiModel || '').trim(),
     runtimeConfig: settings?.runtimeConfig && typeof settings.runtimeConfig === 'object' ? settings.runtimeConfig : {},
     promptConfig: settings?.promptConfig && typeof settings.promptConfig === 'object' ? settings.promptConfig : {},
     promptModules: settings?.promptModules && typeof settings.promptModules === 'object' ? settings.promptModules : {}

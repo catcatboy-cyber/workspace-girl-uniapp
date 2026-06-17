@@ -17,22 +17,26 @@
     <view v-if="orders.length === 0 && !ordersLoading" class="empty">暂无订单。</view>
     <view v-else class="table" style="max-height:600px;overflow-y:auto;">
       <view class="table-row table-header">
-        <text style="flex:1.5;">用户ID</text>
-        <text style="flex:1;">档位</text>
-        <text style="flex:0.6;">金额</text>
-        <text style="flex:0.5;">类型</text>
-        <text style="flex:0.6;">状态</text>
-        <text style="flex:1.2;">时间</text>
+        <text style="width:130rpx;">订单号</text>
+        <text style="flex:1.2;">商品</text>
+        <text style="width:90rpx;">金额</text>
+        <text style="width:70rpx;">类型</text>
+        <text style="width:70rpx;">状态</text>
+        <text style="width:100rpx;">Token</text>
+        <text style="flex:0.8;">用户ID</text>
+        <text style="flex:1;">创建时间</text>
       </view>
       <view v-for="row in orders" :key="row._id"
         :class="['table-row', expandedOrderId === row._id ? 'selected' : '']"
-        style="cursor:pointer;" @click="expandedOrderId = expandedOrderId === row._id ? '' : row._id">
-        <text style="flex:1.5;font-size:20rpx;">{{ row.userId }}</text>
-        <text style="flex:1;font-weight:800;">{{ row.planName }}</text>
-        <text style="flex:0.6;font-weight:800;">¥{{ row.amountYuan }}</text>
-        <text style="flex:0.5;">{{ row.type === 'subscription_upgrade' ? '套餐' : '充值' }}</text>
-        <text style="flex:0.6;font-weight:800;" :style="{ color: orderStatusColor(row.status) }">{{ orderStatusLabel(row.status) }}</text>
-        <text style="flex:1.2;font-size:20rpx;">{{ formatDate(row.createdAt) }}</text>
+        style="cursor:pointer;font-size:20rpx;" @click="expandedOrderId = expandedOrderId === row._id ? '' : row._id">
+        <text style="width:130rpx;font-family:monospace;font-size:18rpx;overflow:hidden;text-overflow:ellipsis;">{{ (row.orderNo || '').slice(-8) }}</text>
+        <text style="flex:1.2;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ row.planName }}</text>
+        <text style="width:90rpx;font-weight:800;">¥{{ row.amountYuan }}</text>
+        <text style="width:70rpx;">{{ row.productType === 'subscription' ? '会员' : '充值' }}</text>
+        <text style="width:70rpx;font-weight:800;" :style="{ color: orderStatusColor(row.status) }">{{ orderStatusLabel(row.status) }}</text>
+        <text style="width:100rpx;">{{ (row.grantTokens || 0).toLocaleString() }}</text>
+        <text style="flex:0.8;font-size:18rpx;overflow:hidden;text-overflow:ellipsis;">{{ row.userId }}</text>
+        <text style="flex:1;font-size:18rpx;">{{ formatDateTime(row.createdAt) }}</text>
       </view>
       <!-- 展开详情 -->
       <view v-if="expandedOrderId" class="order-detail">
@@ -41,8 +45,16 @@
           <text style="font-size:20rpx;color:#999;">{{ expandedOrderId }}</text>
         </view>
         <view class="order-detail-grid">
-          <text>订单ID：{{ expandedOrderId }}</text>
-          <text v-if="expandedOrder?.paidAt">支付时间：{{ formatDate(expandedOrder.paidAt) }}</text>
+          <text>订单号：{{ expandedOrder?.orderNo || '-' }}</text>
+          <text>用户ID：{{ expandedOrder?.userId }}</text>
+          <text>商品：{{ expandedOrder?.planName }}</text>
+          <text>类型：{{ expandedOrder?.productType === 'subscription' ? '会员升级' : '加油包充值' }}</text>
+          <text>金额：¥{{ expandedOrder?.amountYuan }}（{{ expandedOrder?.amountFen || 0 }}分）</text>
+          <text>Token：{{ (expandedOrder?.grantTokens || 0).toLocaleString() }}</text>
+          <text>状态：{{ orderStatusLabel(expandedOrder?.status) }}</text>
+          <text>创建时间：{{ formatDateTime(expandedOrder?.createdAt) }}</text>
+          <text v-if="expandedOrder?.paidAt">支付时间：{{ formatDateTime(expandedOrder.paidAt) }}</text>
+          <text v-if="expandedOrder?.transactionId">微信流水：{{ expandedOrder.transactionId }}</text>
           <text v-if="expandedOrder?.remark">备注：{{ expandedOrder.remark }}</text>
         </view>
         <view v-if="expandedOrder?.status === 'paid'" style="margin-top:12px;">
@@ -139,6 +151,13 @@ async function doRefundOrder(orderId: string) {
   } finally {
     refundingOrderId.value = ''
   }
+}
+
+function formatDateTime(value: string) {
+  if (!value) return '-'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
 }
 
 function formatDate(value: string) {

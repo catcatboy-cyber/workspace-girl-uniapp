@@ -72,7 +72,7 @@ function normalizeSettings(settings) {
     const defaultModel = settings.aiModels.find((m) => m.id === defaultId) || settings.aiModels[0] || {}
     const provider = typeof defaultModel.provider === 'string' && defaultModel.provider.trim()
       ? defaultModel.provider.trim()
-      : 'openai-compatible'
+      : ''
     return {
       enabled: Boolean(settings.aiEnabled),
       provider,
@@ -81,12 +81,12 @@ function normalizeSettings(settings) {
         ? defaultModel.baseUrl.trim()
         : provider.toLowerCase() === 'anthropic'
           ? 'https://api.anthropic.com'
-          : 'https://api.openai.com/v1',
+          : '',
       model: typeof defaultModel.model === 'string' && defaultModel.model.trim()
         ? defaultModel.model.trim()
         : provider.toLowerCase() === 'anthropic'
           ? 'claude-3-5-sonnet-20241022'
-          : 'gpt-4o-mini',
+          : '',
       fallbackToRules: settings.aiFallbackToRules !== false,
       maxTokens: Number.isFinite(Number(settings.runtimeConfig?.eventUnderstandingMaxTokens))
         ? Math.round(Number(settings.runtimeConfig.eventUnderstandingMaxTokens))
@@ -100,7 +100,7 @@ function normalizeSettings(settings) {
   // 旧版单模型格式（兼容）
   const provider = typeof settings?.aiProvider === 'string' && settings.aiProvider.trim()
     ? settings.aiProvider.trim()
-    : 'openai-compatible'
+    : ''
   return {
     enabled: Boolean(settings?.aiEnabled),
     provider,
@@ -109,12 +109,12 @@ function normalizeSettings(settings) {
       ? settings.aiBaseUrl.trim()
       : provider.toLowerCase() === 'anthropic'
         ? 'https://api.anthropic.com'
-        : 'https://api.openai.com/v1',
+        : '',
     model: typeof settings?.aiModel === 'string' && settings.aiModel.trim()
       ? settings.aiModel.trim()
       : provider.toLowerCase() === 'anthropic'
         ? 'claude-3-5-sonnet-20241022'
-        : 'gpt-4o-mini',
+        : '',
     fallbackToRules: settings?.aiFallbackToRules !== false,
     maxTokens: Number.isFinite(Number(settings?.runtimeConfig?.eventUnderstandingMaxTokens))
       ? Math.round(Number(settings.runtimeConfig.eventUnderstandingMaxTokens))
