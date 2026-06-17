@@ -10,7 +10,7 @@
         {{ computedReport.今日方位?.['公历日期']?.split(' ')?.[0] || '--' }}
         · {{ computedReport.今日方位?.['农历'] || '--' }}
       </text>
-      <text class="hero-copy-v2" style="font-size: 22rpx;margin-top:4rpx;">
+      <text class="hero-copy-v2" style="font-size: $fs-caption;margin-top:4rpx;">
         日柱 {{ computedReport.今日方位?.['日柱'] || '--' }}
         · 建除 {{ computedReport.今日宜忌?.['建除'] || '--' }}
         · 星宿 {{ (computedReport.今日方位?.['二十八宿'] || '').split('（')[0] }}
@@ -32,7 +32,7 @@
       <text class="card-text-v2 muted">
         {{ computedReport.流日桃花?.['principle'] || '' }}
       </text>
-      <text class="card-text-v2 muted" style="font-size: 22rpx;margin-top:4rpx;">方位以你当前位置为中心</text>
+      <text class="card-text-v2 muted" style="font-size: $fs-caption;margin-top:4rpx;">方位以你当前位置为中心</text>
 
       <!-- 4 列方位条 -->
       <view class="dir-strip-v2">
@@ -199,7 +199,7 @@
 
     <!-- ④ 桃花人设（依赖画像） -->
     <view v-if="hasProfile" class="card-v2">
-      <text class="section-title-v2">你的桃花人设 <text style="font-size: 22rpx;color:#999;">可分享</text></text>
+      <text class="section-title-v2">你的桃花人设 <text style="font-size: $fs-caption;color:#999;">可分享</text></text>
 
       <view class="persona-card-v2">
         <view class="persona-head-v2">
@@ -240,7 +240,7 @@
             <text v-else class="taohua-icon-emoji">❤️</text>
             <text>{{ m }}</text>
           </view>
-          <text class="card-text-v2 muted" style="display:inline;font-size: 22rpx;margin-left:6rpx;">{{ crossData.western.bestMatchReason }}</text>
+          <text class="card-text-v2 muted" style="display:inline;font-size: $fs-caption;margin-left:6rpx;">{{ crossData.western.bestMatchReason }}</text>
         </view>
       </view>
 
@@ -1343,29 +1343,22 @@ function saveShareImage() {
    ============================================================ */
 
 /* Loading */
-.v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: 40rpx; font-weight: 800; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: $fs-kpi; font-weight: $fw-heading; color: #111; letter-spacing: 4rpx; }
 
 /* Hero */
-.hero-block-v2 {
-  background: var(--hero-bg, #FF6B6B); padding: 32rpx 28rpx;
-  border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111;
-  transform: rotate(-0.5deg); margin: 0 20rpx 24rpx;
-}
-.hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: 22rpx; font-weight: 900; padding: 4rpx 14rpx; letter-spacing: 2rpx; margin-bottom: 10rpx; }
-.hero-title-v2 { font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.1; letter-spacing: -2rpx; }
+.hero-block-v2 { @include hero-block-v2; margin: 0 20rpx 24rpx; }
+.hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; padding: 4rpx 14rpx; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.hero-title-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.1; letter-spacing: -2rpx; }
 .hl-v2 { background: #FFD93D; padding: 0 6rpx; }
-.hero-copy-v2 { display: block; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); margin-top: 8rpx; line-height: 1.4; }
+.hero-copy-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); margin-top: 8rpx; line-height: 1.4; }
 
 /* Card */
-.card-v2 {
-  background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111;
-  padding: 28rpx; margin: 0 20rpx 24rpx;
-}
-.section-title-v2 { display: block; font-size: 26rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 12rpx; }
+.card-v2 { @include card-v2; margin: 0 20rpx 24rpx; }
+.section-title-v2 { @include section-title-v2; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 12rpx; }
 .section-title-v2.no-margin { margin-bottom: 0; }
-.card-text-v2 { display: block; font-size: 26rpx; font-weight: 600; color: #666; line-height: 1.5; margin-bottom: 4rpx; }
-.card-text-v2.muted { color: #999; font-size: 22rpx; }
-.card-text-v2.strong { color: #111; font-weight: 800; }
+.card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.5; margin-bottom: 4rpx; }
+.card-text-v2.muted { color: #999; font-size: $fs-caption; }
+.card-text-v2.strong { color: #111; font-weight: $fw-heading; }
 .card-text-v2.no-margin { margin-bottom: 0; }
 .inline-title-v2,
 .section-title-row-v2,
@@ -1417,7 +1410,7 @@ function saveShareImage() {
 /* 方位条 */
 .dir-strip-v2 { display: flex; gap: 8rpx; margin-top: 16rpx; }
 .dir-cell-v2 { flex: 1; text-align: center; border: 2rpx solid #111; background: #f9f9f9; padding: 10rpx 4rpx; }
-.dir-lbl-v2 { font-size: 22rpx; font-weight: 700; color: #666; display: block; }
+.dir-lbl-v2 { font-size: $fs-caption; font-weight: 700; color: #666; display: block; }
 .dir-val-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; margin-top: 2rpx; }
 
 /* 宜忌分裂卡片 */
@@ -1432,17 +1425,17 @@ function saveShareImage() {
 .split-label-v2.ji { color: #FF5252; }
 
 /* info popup */
-.info-dot-v2 { display: inline-flex; align-items: center; justify-content: center; width: 36rpx; height: 36rpx; border: 2rpx solid #111; font-size: 22rpx; font-weight: 900; color: #111; margin-left: auto; cursor: pointer; }
+.info-dot-v2 { display: inline-flex; align-items: center; justify-content: center; width: 36rpx; height: 36rpx; border: 2rpx solid #111; font-size: $fs-caption; font-weight: 900; color: #111; margin-left: auto; cursor: pointer; }
 .info-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); }
 .info-sheet { width: 100%; max-width: 500px; max-height: 70vh; background: #FFFDF5; border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; display: flex; flex-direction: column; overflow: hidden; }
 .info-sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 28rpx; border-bottom: 2rpx solid #111; flex-shrink: 0; }
 .info-sheet-title { font-size: 26rpx; font-weight: 900; color: #111; }
-.info-sheet-close { font-size: 36rpx; font-weight: 900; color: #111; padding: 0 8rpx; line-height: 1; }
+.info-sheet-close { font-size: $fs-heading; font-weight: 900; color: #111; padding: 0 8rpx; line-height: 1; }
 .info-sheet-body { padding: 24rpx 28rpx; overflow-y: auto; flex: 1; }
 .info-tree-item { padding: 14rpx 0; border-bottom: 1rpx dashed #ccc; }
 .info-tree-item:last-child { border-bottom: none; }
 .info-tree-q { display: block; font-size: 26rpx; font-weight: 700; color: #111; margin-bottom: 4rpx; }
-.info-tree-a { display: block; font-size: 22rpx; font-weight: 600; color: #666; }
+.info-tree-a { display: block; font-size: $fs-caption; font-weight: 600; color: #666; }
 .info-tree-divider { height: 12rpx; }
 .info-tree-note { display: block; font-size: 20rpx; color: #999; line-height: 1.5; padding-top: 8rpx; }
 
@@ -1452,7 +1445,7 @@ function saveShareImage() {
 .guide-dir-hl.tianxi { background: #4ECDC4; color: #fff; }
 
 /* yi-ji inline flow */
-.split-item-flow-v2 { font-size: 22rpx; font-weight: 700; color: #111; line-height: 1.8; }
+.split-item-flow-v2 { font-size: $fs-caption; font-weight: 700; color: #111; line-height: 1.8; }
 
 
 /* 标签 */
@@ -1465,12 +1458,12 @@ function saveShareImage() {
 /* 人格卡 */
 .persona-card-v2 { border: 3rpx solid #111; padding: 24rpx; background: #fff; box-shadow: 4rpx 4rpx 0 #111; margin-top: 12rpx; }
 .persona-head-v2 { display: flex; align-items: center; gap: 12rpx; margin-bottom: 16rpx; }
-.persona-avatar-v2 { width: 64rpx; height: 64rpx; border-radius: 50%; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; font-size: 36rpx; flex-shrink: 0; }
+.persona-avatar-v2 { width: 64rpx; height: 64rpx; border-radius: 50%; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; font-size: $fs-heading; flex-shrink: 0; }
 .persona-name-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; }
-.persona-sub-v2 { font-size: 22rpx; color: #666; display: block; }
+.persona-sub-v2 { font-size: $fs-caption; color: #666; display: block; }
 .persona-dim-v2 { margin-bottom: 14rpx; }
 .persona-dim-label-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: 20rpx; font-weight: 900; padding: 2rpx 10rpx; margin-bottom: 4rpx; }
-.persona-dim-text-v2 { display: block; font-size: 22rpx; font-weight: 600; color: #666; line-height: 1.4; }
+.persona-dim-text-v2 { display: block; font-size: $fs-caption; font-weight: 600; color: #666; line-height: 1.4; }
 .persona-dim-text-v2.strong { color: #111; font-weight: 800; font-size: 26rpx; }
 .persona-dim-src-v2 { font-size: 20rpx; color: #999; margin-top: 2rpx; display: block; }
 
@@ -1479,7 +1472,7 @@ function saveShareImage() {
 
 /* 匹配徽章 */
 .match-badge-wrap { text-align: center; padding: 20rpx 0; }
-.match-badge-v2 { display: inline-block; padding: 12rpx 28rpx; border: 3rpx solid #111; box-shadow: 3rpx 3rpx 0 #111; font-size: 40rpx; font-weight: 900; }
+.match-badge-v2 { display: inline-block; padding: 12rpx 28rpx; border: 3rpx solid #111; box-shadow: 3rpx 3rpx 0 #111; font-size: $fs-kpi; font-weight: 900; }
 .match-badge-v2.great { background: #4ECDC4; color: #111; }
 .match-badge-v2.good { background: #FFD93D; color: #111; }
 .match-badge-v2.caution { background: #FF5252; color: #fff; }
@@ -1490,8 +1483,8 @@ function saveShareImage() {
 .ov-row-v2 { display: flex; align-items: center; padding: 10rpx 0; border-bottom: 1rpx dashed #ccc; }
 .ov-row-v2:last-child { border-bottom: none; }
 .ov-row-v2.current { background: #FFFBEB; margin: 0 -8rpx; padding: 12rpx 8rpx; border-radius: 4rpx; }
-.ov-label-v2 { width: 130rpx; font-size: 22rpx; font-weight: 900; color: #111; flex-shrink: 0; }
-.ov-dir-v2 { font-size: 22rpx; font-weight: 600; color: #666; padding: 4rpx 12rpx; border: 2rpx solid #111; background: #f9f9f9; margin: 0 4rpx; }
+.ov-label-v2 { width: 130rpx; font-size: $fs-caption; font-weight: 900; color: #111; flex-shrink: 0; }
+.ov-dir-v2 { font-size: $fs-caption; font-weight: 600; color: #666; padding: 4rpx 12rpx; border: 2rpx solid #111; background: #f9f9f9; margin: 0 4rpx; }
 .ov-dir-v2.current { background: #FFD93D; color: #111; font-weight: 800; }
 
 /* 按钮 */
@@ -1509,7 +1502,7 @@ function saveShareImage() {
 /* Picker */
 .picker-row-v2 { display: flex; gap: 12rpx; margin-bottom: 16rpx; }
 .picker-box-v2 { flex: 1; }
-.picker-label-v2 { font-size: 22rpx; font-weight: 700; color: #666; margin-bottom: 6rpx; display: block; }
+.picker-label-v2 { font-size: $fs-caption; font-weight: 700; color: #666; margin-bottom: 6rpx; display: block; }
 .picker-display-v2 { width: 100%; height: 52rpx; border: 3rpx solid #111; display: flex; align-items: center; padding: 0 16rpx; font-size: 26rpx; font-weight: 700; background: #fff; }
 
 /* 配对结果 */
@@ -1523,15 +1516,15 @@ function saveShareImage() {
 .pair-label-row-v2 { margin-bottom: 4rpx; }
 .pair-label-row-v2 .pair-label-v2 { margin-bottom: 0; }
 .pair-text-v2 { font-size: 26rpx; font-weight: 600; color: #666; display: block; line-height: 1.5; }
-.pair-text-v2.muted { color: #999; font-size: 22rpx; }
-.pair-classical-v2 { font-size: 22rpx; color: #999; display: block; line-height: 1.45; }
+.pair-text-v2.muted { color: #999; font-size: $fs-caption; }
+.pair-classical-v2 { font-size: $fs-caption; color: #999; display: block; line-height: 1.45; }
 
 /* 桃花指数条 */
 .score-bar-v2 { margin-bottom: 16rpx; }
 .score-head-v2 { display: flex; align-items: baseline; gap: 8rpx; margin-bottom: 8rpx; }
 .score-num-v2 { font-size: 56rpx; font-weight: 900; color: #111; line-height: 1; }
 .score-unit-v2 { font-size: 26rpx; font-weight: 700; color: #999; }
-.score-level-v2 { font-size: 40rpx; font-weight: 900; color: #111; margin-left: 8rpx; }
+.score-level-v2 { font-size: $fs-kpi; font-weight: 900; color: #111; margin-left: 8rpx; }
 .score-track-v2 { height: 14rpx; background: #e8e8e8; border: 2rpx solid #111; }
 .score-fill-v2 { height: 100%; background: #FFD93D; transition: width 0.6s ease; }
 
@@ -1546,9 +1539,9 @@ function saveShareImage() {
 
 /* 古籍出处 */
 .cite-block-v2 { margin-top: 14rpx; padding: 10rpx 14rpx; background: #FFFBEB; border-left: 4rpx solid #FFD93D; }
-.cite-title-v2 { font-size: 22rpx; font-weight: 900; color: #111; display: block; }
-.cite-desc-v2 { font-size: 22rpx; color: #999; display: block; line-height: 1.5; margin-top: 2rpx; }
-.cite-inline-v2 { font-size: 22rpx; font-weight: 700; color: #bbb; margin-left: 4rpx; }
+.cite-title-v2 { font-size: $fs-caption; font-weight: 900; color: #111; display: block; }
+.cite-desc-v2 { font-size: $fs-caption; color: #999; display: block; line-height: 1.5; margin-top: 2rpx; }
+.cite-inline-v2 { font-size: $fs-caption; font-weight: 700; color: #bbb; margin-left: 4rpx; }
 
 /* 免责声明 */
 .disclaimer-card-v2 { border-style: dashed; background: #FFFBEB; }
@@ -1566,11 +1559,11 @@ function saveShareImage() {
   gap: 8rpx;
 }
 .ai-disclaimer { text-align: center; padding: 20rpx 20rpx 40rpx; }
-.ai-disclaimer-text { font-size: 22rpx; color: #999; }
+.ai-disclaimer-text { font-size: $fs-caption; color: #999; }
 
 /* 桃花匹配度 AI 深度解读盒（自 case-detail 移植） */
 .action-box { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #f5f5ff; }
-.action-label { display: block; font-size: 22rpx; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
+.action-label { display: block; font-size: $fs-caption; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
 .action-text { display: block; font-size: 24rpx; font-weight: 600; color: #555; line-height: 1.5; }
 .action-text.muted { color: #999; }
 .ai-row { display: flex; align-items: center; gap: 14rpx; }
