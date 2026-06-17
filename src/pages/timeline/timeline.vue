@@ -8,24 +8,9 @@
         <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
         <view v-if="activeTimelineView === 'events'">
           <view class="card-v2 anim-card" style="animation-delay:0.15s;border-color:#4ECDC4;">
-  <view class="stat-pair-grid-v2">
-    <view :class="['stat-pair-box-v2', activeTimelineFilter === 'target_initiated' ? 'active' : '', activeTimelineFilter === 'self_initiated' ? 'active' : '']" @click="toggleStatFilter('target_initiated', 'self_initiated')">
-      <text class="section-title-v2" style="margin-bottom:8rpx;">谁更主动</text>
-      <view class="stat-pair-row-v2">
-        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'target_initiated' ? 'hl' : '']"><text class="stat-pair-num-v2">{{ timelineStats.targetInitiatedCount }}</text><text class="stat-pair-lbl-v2">对方主动</text></view>
-        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'self_initiated' ? 'hl' : '']"><text class="stat-pair-num-v2">{{ timelineStats.selfInitiatedCount }}</text><text class="stat-pair-lbl-v2">我方主动</text></view>
-      </view>
-    </view>
-    <view :class="['stat-pair-box-v2', ['target_committed','fulfilled','cancelled_delayed'].includes(activeTimelineFilter) ? 'active' : '']">
-      <text class="section-title-v2" style="margin-bottom:8rpx;">承诺与兑现</text>
-      <view class="stat-pair-row-v2">
-        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'target_committed' ? 'hl' : '']" @click="setTimelineFilter('target_committed')"><text class="stat-pair-num-v2">{{ timelineStats.targetCommittedCount }}</text><text class="stat-pair-lbl-v2">对方承诺</text></view>
-        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'fulfilled' ? 'hl' : '']" @click="setTimelineFilter('fulfilled')"><text class="stat-pair-num-v2">{{ timelineStats.fulfilledCount }}</text><text class="stat-pair-lbl-v2">已兑现</text></view>
-        <view :class="['stat-pair-item-v2', activeTimelineFilter === 'cancelled_delayed' ? 'hl' : '']" @click="setTimelineFilter('cancelled_delayed')"><text class="stat-pair-num-v2">{{ timelineStats.cancelledDelayedCount + timelineStats.rejectedCount }}</text><text class="stat-pair-lbl-v2">取消/拒绝</text></view>
-      </view>
-    </view>
-  </view>
-  <scroll-view scroll-x class="filter-scroll-v2"><view class="filter-row-v2"><view v-for="item in timelineFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view></scroll-view>
+  <view class="search-row-v2"><input class="search-input-v2" v-model="searchQuery" placeholder="搜索事件标题或描述..." confirm-type="search" /><view v-if="searchQuery" class="search-clear-v2" @click="searchQuery = ''">✕</view></view>
+  <view v-if="topFilterOptions.length > 0" class="filter-row-v2" style="flex-wrap:wrap;"><view v-for="item in topFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view><view v-if="timelineFilterOptions.length > topFilterOptions.length" :class="['filter-chip-v2', showAllFilters ? 'active' : '']" @click="showAllFilters = !showAllFilters">更多 ▽</view></view>
+  <view v-if="showAllFilters" class="filter-row-v2" style="flex-wrap:wrap;margin-top:4rpx;"><view v-for="item in remainingFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view>
 </view>
           <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view><view v-else class="img-analysis-label">图片 · AI 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
                 <view v-if="getLinkedAssessment(item)" class="analysis-summary-v2" @click="toggleExpandedAnalysis(getLinkedAssessmentKey(item))">
@@ -134,6 +119,8 @@ const manualTimelineExpanded = ref(false)
 const activeTimelineView = ref<'events' | 'monthlyReviews' | 'assessments'>('events')
 const activeTimelineFilter = ref('all')
 const activeAssessmentFilter = ref('all')
+const searchQuery = ref('')
+const showAllFilters = ref(false)
 const initialized = ref(false)
 const skipNextShowRefresh = ref(false)
 const imageUrlMap = ref<Record<string, string>>({})
@@ -198,9 +185,21 @@ const activeTimelineFilterLabel = computed(() => {
   return item && item.key !== 'all' ? `当前只看：${item.label}` : '当前查看全部事件'
 })
 
+const topFilterOptions = computed(() => timelineFilterOptions.value.slice(0, 6))
+const remainingFilterOptions = computed(() => timelineFilterOptions.value.slice(6))
 const filteredManualTimeline = computed(() => {
-  if (activeTimelineFilter.value === 'all') return manualTimeline.value
-  return manualTimeline.value.filter((item: any) => getTimelineRecordTags(item).all.includes(activeTimelineFilter.value))
+  let items = manualTimeline.value
+  if (activeTimelineFilter.value !== 'all') {
+    items = items.filter((item: any) => getTimelineRecordTags(item).all.includes(activeTimelineFilter.value))
+  }
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.trim().toLowerCase()
+    items = items.filter((item: any) =>
+      (item.title || '').toLowerCase().includes(q) ||
+      (item.description || '').toLowerCase().includes(q)
+    )
+  }
+  return items
 })
 
 const visibleManualTimeline = computed(() => {
@@ -902,7 +901,9 @@ function setTimelineView(key: 'events' | 'monthlyReviews' | 'assessments') {
 function setTimelineFilter(key: string) {
   activeTimelineFilter.value = key
   manualTimelineExpanded.value = false
+  showAllFilters.value = false
 }
+function applySearch() { /* v-model already reactive, no-op */ }
 
 function toggleStatFilter(key1: string, key2: string) {
   if (activeTimelineFilter.value === key1) {
@@ -1246,8 +1247,11 @@ async function syncSemanticTags() {
 .v2-mode .stat-num-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; line-height: 1; }
 .v2-mode .stat-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 2rpx; }
 
+.v2-mode .search-row-v2 { display: flex; align-items: center; gap: 12rpx; margin-top: 12rpx; }
+.v2-mode .search-input-v2 { flex: 1; height: 64rpx; padding: 0 20rpx; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 600; color: #111; }
+.v2-mode .search-clear-v2 { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 900; color: #999; }
 .v2-mode .filter-scroll-v2 { width: 100%; margin-top: 8rpx; white-space: nowrap; }
-.v2-mode .filter-row-v2 { display: inline-flex; gap: 8rpx; }
+.v2-mode .filter-row-v2 { display: flex; gap: 8rpx; margin-top: 12rpx; }
 .v2-mode .filter-chip-v2 { display: inline-flex; align-items: center; min-height: 48rpx; padding: 0 16rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-caption; font-weight: $fw-label; color: #111; }
 .v2-mode .filter-chip-v2.active { background: #111; color: #FFD93D; }
 

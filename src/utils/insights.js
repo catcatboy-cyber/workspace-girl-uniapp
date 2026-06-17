@@ -123,8 +123,8 @@ function normalizeStoredSemanticTags(record) {
     if (index >= 0) behavior.splice(index, 1)
   }
 
-  if (semantic.initiator === 'target' && !selfInitiatedText) pushUnique(behavior, 'target_initiated')
-  if (semantic.initiator === 'self' && selfInitiatedText) pushUnique(behavior, 'self_initiated')
+  if (targetInitiatedText) pushUnique(behavior, 'target_initiated')
+  if (selfInitiatedText) pushUnique(behavior, 'self_initiated')
   if (semantic.response === 'rejected') pushUnique(risk, 'rejected')
   if (semantic.response === 'pending') pushUnique(outcome, 'pending')
   if (semantic.commitment?.fulfilled) pushUnique(outcome, 'fulfilled')

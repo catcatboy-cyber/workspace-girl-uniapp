@@ -5,7 +5,7 @@
   "functions": [
     {
       "name": "register",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -14,7 +14,7 @@
     },
     {
       "name": "login",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -23,7 +23,7 @@
     },
     {
       "name": "wechatLogin",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -32,7 +32,7 @@
     },
     {
       "name": "adminManage",
-      "timeout": 20,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -41,7 +41,7 @@
     },
     {
       "name": "userProfile",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -50,7 +50,7 @@
     },
     {
       "name": "initDb",
-      "timeout": 30,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -59,7 +59,7 @@
     },
     {
       "name": "createCase",
-      "timeout": 30,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -68,7 +68,7 @@
     },
     {
       "name": "getCases",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -77,7 +77,7 @@
     },
     {
       "name": "getCaseDetail",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -86,7 +86,7 @@
     },
     {
       "name": "deleteCase",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -95,7 +95,7 @@
     },
     {
       "name": "updateCaseProfile",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -104,7 +104,7 @@
     },
     {
       "name": "getTimeline",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -122,7 +122,7 @@
     },
     {
       "name": "deleteTimeline",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -131,7 +131,7 @@
     },
     {
       "name": "reassess",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -140,7 +140,7 @@
     },
     {
       "name": "getAISettings",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -149,7 +149,7 @@
     },
     {
       "name": "updateAISettings",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -210,7 +210,7 @@
     },
     {
       "name": "speechToText",
-      "timeout": 20,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -219,7 +219,7 @@
     },
     {
       "name": "getTokenUsage",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -228,7 +228,7 @@
     },
     {
       "name": "getVoiceUsage",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -237,7 +237,7 @@
     },
     {
       "name": "getTokenAccount",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -246,7 +246,7 @@
     },
     {
       "name": "recharge",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -264,7 +264,7 @@
     },
     {
       "name": "submitFeedback",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -273,7 +273,7 @@
     },
     {
       "name": "customPet",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -300,7 +300,7 @@
     },
     {
       "name": "redeemInviteCode",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memorySize": 128,
@@ -318,7 +318,7 @@
     },
     {
       "name": "queryTaohua",
-      "timeout": 30,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 256,
@@ -327,7 +327,7 @@
     },
     {
       "name": "generatePairRead",
-      "timeout": 30,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 256,
@@ -336,7 +336,7 @@
     },
     {
       "name": "tmpUpdateUser",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
@@ -345,7 +345,7 @@
     },
     {
       "name": "getLoginLogs",
-      "timeout": 15,
+      "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 128,
