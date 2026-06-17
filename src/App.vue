@@ -244,33 +244,31 @@ button::after {
   line-height: 1.5;
 }
 
-/* ===== 大字体模式 — 按字号层级全覆盖 ===== */
-/* 56rpx → 63rpx */
-.font-large .score-num-v2 { font-size: 63rpx !important; }
-/* 48rpx → 54rpx */
+/* ===== 大字体模式 — 所有字号 × 1.2 ===== */
+.font-large .v2-mode { --font-scale: 1.2; }
+/* 56rpx → 67rpx */
+.font-large .score-num-v2 { font-size: 67rpx !important; }
+/* 48rpx → 58rpx */
 .font-large .hero-title-v2,
 .font-large .hero-title,
 .font-large .title-v2,
 .font-large .title-v2.en-title,
-.font-large .img-add-icon-v2 { font-size: 54rpx !important; }
-/* 44rpx → 49rpx */
-.font-large .balance-num-v2 { font-size: 49rpx !important; }
-/* 40rpx → 45rpx */
+.font-large .img-add-icon-v2,
+.font-large .balance-num-v2 { font-size: 58rpx !important; }
+/* 40rpx → 48rpx */
 .font-large .kpi-num-v2,
-.font-large .trend-num-v2 { font-size: 45rpx !important; }
-/* 36rpx → 40rpx */
+.font-large .trend-num-v2,
 .font-large .sheet-close,
 .font-large .score-value,
-.font-large .avatar-placeholder-v2 { font-size: 40rpx !important; }
-/* 34rpx → 38rpx */
-.font-large .profile-name-v2 { font-size: 38rpx !important; }
-/* 32rpx → 36rpx */
+.font-large .avatar-placeholder-v2 { font-size: 48rpx !important; }
+/* 34-36rpx → 40rpx */
+.font-large .profile-name-v2,
 .font-large .hero-identity-name,
 .font-large .block-title,
 .font-large .info-title-v2,
 .font-large .info-title,
-.font-large .pet-custom-icon-v2 { font-size: 36rpx !important; }
-/* 30rpx → 34rpx */
+.font-large .pet-custom-icon-v2 { font-size: 40rpx !important; }
+/* 30rpx →  36rpx */
 .font-large .case-name-v2,
 .font-large .sheet-title,
 .font-large .a-title { font-size: 34rpx !important; }
@@ -291,7 +289,7 @@ button::after {
 .font-large .pet-row-name-v2,
 .font-large .pet-custom-arrow-v2,
 .font-large .chat-head-title,
-.font-large .feedback-title-v2 { font-size: 32rpx !important; }
+.font-large .feedback-title-v2 { font-size: 34rpx !important; }
 /* 26rpx → 29rpx */
 .font-large .hero-copy-v2,
 .font-large .hero-copy,
@@ -313,7 +311,7 @@ button::after {
 .font-large .info-sec-title,
 .font-large .msg-bubble,
 .font-large .msg-answer,
-.font-large .side-title { font-size: 29rpx !important; }
+.font-large .side-title { font-size: 32rpx !important; }
 /* 24rpx → 27rpx */
 .font-large .card-text-v2,
 .font-large .info-label-v2,
@@ -342,7 +340,7 @@ button::after {
 .font-large .status-summary,
 .font-large .trend-summary,
 .font-large .pet-bubble-text,
-.font-large .weekly-desc-v2 { font-size: 27rpx !important; }
+.font-large .weekly-desc-v2 { font-size: 29rpx !important; }
 /* 22rpx → 25rpx */
 .font-large .section-title-v2,
 .font-large .empty-sub-v2,
@@ -384,7 +382,7 @@ button::after {
 .font-large .event-label,
 .font-large .evidence-sub,
 .font-large .trace-label,
-.font-large .side-label { font-size: 25rpx !important; }
+.font-large .side-label { font-size: 26rpx !important; }
 /* 20rpx → 22rpx */
 .font-large .hero-tag-v2,
 .font-large .hero-tag,
@@ -425,7 +423,7 @@ button::after {
 .font-large .week-range-end,
 .font-large .theme-name-v2,
 .font-large .info-chip-v2,
-.font-large .info-chip-desc-v2 { font-size: 22rpx !important; }
+.font-large .info-chip-desc-v2 { font-size: 24rpx !important; }
 .font-large .hero-tag-v2,
 .font-large .hero-tag { padding: 8rpx 18rpx !important; }
 /* 18rpx → 20rpx */
@@ -462,6 +460,6 @@ button::after {
 .font-large .pet-option-desc-v2,
 .font-large .pet-option-badge-v2,
 .font-large .chip-desc-v2,
-.font-large .week-range-connector { font-size: 20rpx !important; }
+.font-large .week-range-connector { font-size: 22rpx !important; }
 /* 特殊: padding-only 覆盖已在上方 20rpx→22rpx 合并了 */
 </style>
