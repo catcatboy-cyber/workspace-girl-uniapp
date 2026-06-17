@@ -113,6 +113,7 @@ function goBack() { uni.navigateBack() }
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 .nav-bar-v2 { display:flex; align-items:center; justify-content:space-between; padding:20rpx 28rpx; border-bottom:3rpx solid #111; background:#FFFDF5; margin-bottom:20rpx; }
 .nav-back-v2 { font-size: $fs-body-lg; font-weight: $fw-hero; color:#111; }
 .nav-title-v2 { font-size: $fs-heading; font-weight: $fw-hero; color:#111; }

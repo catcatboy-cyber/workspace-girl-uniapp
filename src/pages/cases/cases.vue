@@ -323,6 +323,7 @@ async function confirmDeleteCase(item: any) {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 .page {
   min-height: 100vh;
   background:
@@ -334,11 +335,7 @@ async function confirmDeleteCase(item: any) {
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; }
 
-.v2-mode .hero-block-v2 {
-  background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111;
-  box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx;
-  transform: rotate(-0.5deg);
-}
+.v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
@@ -380,11 +377,7 @@ async function confirmDeleteCase(item: any) {
 .v2-mode .case-updated-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; white-space: nowrap; }
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
-.v2-mode .tag-v2 {
-  display: inline-flex; align-items: center; min-height: 36rpx;
-  padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D;
-  font-size: $fs-caption; font-weight: $fw-hero; color: #111;
-}
+.v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
 
 .v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: 3rpx solid #111; background: #f9f9f9; }

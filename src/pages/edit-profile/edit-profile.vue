@@ -264,20 +264,14 @@ function goTimeline() {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 .page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
 
 /* V2 Mode */
 .v2-mode { background: var(--app-bg, #FFFDF5); }
 .v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 
-.v2-mode .hero-block-v2 {
-  background: var(--hero-bg, #FF6B6B);
-  border: 3rpx solid #111;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 8rpx 8rpx 0 #111;
-  transform: rotate(-0.5deg);
-}
+.v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 {
   display: inline-block;
   background: #111;
@@ -323,22 +317,8 @@ function goTimeline() {
 .v2-mode .profile-avatar-v2 image { width: 100%; height: 100%; }
 .v2-mode .avatar-placeholder-v2 { font-size: $fs-kpi; font-weight: $fw-hero; color: #111; }
 
-.v2-mode .card-v2 {
-  background: #fff;
-  border: 3rpx solid #111;
-  padding: 28rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 6rpx 6rpx 0 #111;
-}
-.v2-mode .section-title-v2 {
-  display: block;
-  font-size: $fs-body;
-  font-weight: $fw-hero;
-  color: #111;
-  text-transform: uppercase;
-  letter-spacing: 2rpx;
-  margin-bottom: 10rpx;
-}
+.v2-mode .card-v2 { @include card-v2; }
+.v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .card-text-v2 {
   display: block;
   font-size: $fs-body-lg;
@@ -350,17 +330,7 @@ function goTimeline() {
 
 /* Tags */
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
-.v2-mode .tag-v2 {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36rpx;
-  padding: 4rpx 14rpx;
-  background: #FFD93D;
-  border: 2rpx solid #111;
-  font-size: $fs-caption;
-  font-weight: $fw-hero;
-  color: #111;
-}
+.v2-mode .tag-v2 { @include tag-v2; }
 
 /* Insight */
 .v2-mode .insight-summary { margin-bottom: 12rpx; }

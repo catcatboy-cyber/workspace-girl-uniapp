@@ -131,19 +131,13 @@ function goTimeline() {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 .page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5); }
 .v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 
-.v2-mode .hero-block-v2 {
-  background: var(--hero-bg, #FF6B6B);
-  border: 3rpx solid #111;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 8rpx 8rpx 0 #111;
-  transform: rotate(-0.5deg);
-}
+.v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 {
   display: inline-block;
   background: #111;
@@ -173,22 +167,8 @@ function goTimeline() {
 }
 .v2-mode .hero-actions-v2 { display: flex; gap: 12rpx; margin-top: 20rpx; flex-wrap: wrap; }
 
-.v2-mode .card-v2 {
-  background: #fff;
-  border: 3rpx solid #111;
-  padding: 28rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 6rpx 6rpx 0 #111;
-}
-.v2-mode .section-title-v2 {
-  display: block;
-  font-size: $fs-body;
-  font-weight: $fw-hero;
-  color: #111;
-  text-transform: uppercase;
-  letter-spacing: 2rpx;
-  margin-bottom: 10rpx;
-}
+.v2-mode .card-v2 { @include card-v2; }
+.v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .card-text-v2 {
   display: block;
   font-size: $fs-body-lg;

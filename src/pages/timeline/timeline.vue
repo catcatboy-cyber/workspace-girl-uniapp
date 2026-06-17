@@ -1181,6 +1181,7 @@ async function syncSemanticTags() {
 </script>
 
 <style scoped lang="scss">
+@import '@/styles/campus-pop.scss';
 .page {
   min-height: 100vh;
   box-sizing: border-box;
@@ -1209,11 +1210,11 @@ async function syncSemanticTags() {
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
-.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
+.v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
 .v2-mode .tag-v2.sm { min-height: 28rpx; padding: 2rpx 10rpx; font-size: $fs-caption; }
 
-.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .card-v2 { @include card-v2; }
 .v2-mode .section-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
 .v2-mode .section-hint-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-bottom: 14rpx; }
 

@@ -115,6 +115,7 @@ function goHome() {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 .page {
   min-height: 100vh;
   padding: 24rpx;

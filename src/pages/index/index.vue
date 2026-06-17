@@ -1576,6 +1576,7 @@ function goTaohua() {
 </script>
 
 <style scoped lang="scss">
+@import '@/styles/campus-pop.scss';
 /* ===== CAMPUS POP V2 Styles ===== */
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; }
 .v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
@@ -1606,7 +1607,7 @@ function goTaohua() {
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-row-v2.compact { margin-top: 0; margin-bottom: 12rpx; }
-.v2-mode .tag-v2 { display: inline-flex; align-items: center; min-height: 36rpx; padding: 4rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
+.v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
 
 .v2-mode .record-block { background: #f9f9f9; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
@@ -1810,12 +1811,12 @@ function goTaohua() {
 .v2-mode .taohua-teaser-guide { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; line-height: 1.45; margin-bottom: 4rpx; }
 .v2-mode .taohua-teaser-meta { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 .v2-mode .taohua-teaser-cite { padding: 10rpx 24rpx; border-top: 1rpx solid #C4A86C; font-size: $fs-caption; font-weight: $fw-body; color: #bbb; text-align: center; }
-.taohua-info-dot { display: inline-flex; align-items: center; justify-content: center; width: 34rpx; height: 34rpx; border: 2rpx solid #111; font-size: 18rpx; font-weight: $fw-hero; color: #111; margin-left: 6rpx; cursor: pointer; vertical-align: middle; }
+.taohua-info-dot { display: inline-flex; align-items: center; justify-content: center; width: 34rpx; height: 34rpx; border: 2rpx solid #111; font-size: $fs-micro; font-weight: $fw-hero; color: #111; margin-left: 6rpx; cursor: pointer; vertical-align: middle; }
 .taohua-info-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); }
 .taohua-info-sheet { width: 100%; max-width: 500px; max-height: 65vh; background: #FFFDF5; border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; display: flex; flex-direction: column; overflow: hidden; }
 .taohua-info-head { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 28rpx; border-bottom: 2rpx solid #111; flex-shrink: 0; }
 .taohua-info-title { font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
-.taohua-info-close { font-size: 36rpx; font-weight: $fw-hero; color: #111; padding: 0 8rpx; line-height: 1; }
+.taohua-info-close { font-size: $fs-heading; font-weight: $fw-hero; color: #111; padding: 0 8rpx; line-height: 1; }
 .taohua-info-body { padding: 24rpx 28rpx; overflow-y: auto; flex: 1; }
 .taohua-info-item { padding: 14rpx 0; border-bottom: 1rpx dashed #ccc; }
 .taohua-info-item:last-child { border-bottom: none; }
@@ -1827,5 +1828,5 @@ function goTaohua() {
 
 /* Merged card: side read section */
 .referral-notice { margin: 0 20rpx 20rpx; padding: 22rpx 24rpx; background: #FFD93D; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; }
-.referral-notice-text { display: block; font-size: 26rpx; font-weight: 800; color: #111; text-align: center; }
+.referral-notice-text { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: #111; text-align: center; }
 </style>

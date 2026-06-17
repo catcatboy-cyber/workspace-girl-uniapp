@@ -1337,6 +1337,7 @@ function saveShareImage() {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 /* ============================================================
    页面级 v2 样式（复用全站 Campus Pop 设计系统）
    ============================================================ */
@@ -1456,7 +1457,7 @@ function saveShareImage() {
 
 /* 标签 */
 .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 6rpx; }
-.tag-v2 { display: inline-block; border: 2rpx solid #111; padding: 4rpx 14rpx; font-size: 22rpx; font-weight: 800; background: #FFD93D; color: #111; }
+.tag-v2 { @include tag-v2; }
 .tag-v2.black { background: #111; color: #FFD93D; }
 .tag-v2.green { background: #4ECDC4; color: #111; }
 .tag-v2.red { background: #FF5252; color: #fff; }

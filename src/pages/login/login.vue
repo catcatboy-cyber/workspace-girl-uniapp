@@ -247,6 +247,7 @@ const goAbout = () => {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 .login-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f4ede2 0%, #fbf6ee 100%);
@@ -261,7 +262,7 @@ const goAbout = () => {
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .subtitle-v2 { display: block; font-size: $fs-heading; font-weight: $fw-body; color: #666; margin-top: 10rpx; }
 
-.v2-mode .card-v2 { background: #fff; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx; margin-bottom: 24rpx; }
+.v2-mode .card-v2 { @include card-v2; }
 
 
 .v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: $fs-body; font-weight: $fw-body; color: #666; text-align: center; line-height: 1.5; text-decoration: underline; }

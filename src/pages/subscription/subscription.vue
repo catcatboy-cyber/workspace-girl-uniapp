@@ -361,18 +361,19 @@ function goRecharge() {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 .v2-mode .page { min-height: 100vh; background: var(--app-bg, #FFFDF5); padding: 18rpx 18rpx calc(80rpx + env(safe-area-inset-bottom)) 18rpx; }
 
 /* Hero — 和其他页面完全一致 */
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
+.v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 
 /* Card */
-.v2-mode .card-v2 { border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; background: #fff; padding: 32rpx; margin-bottom: 16rpx; }
-.v2-mode .section-title-v2 { font-size: $fs-body; font-weight: $fw-hero; text-transform: uppercase; letter-spacing: 4rpx; color: #999; display: block; margin-bottom: 16rpx; }
+.v2-mode .card-v2 { @include card-v2; }
+.v2-mode .section-title-v2 { @include section-title-v2; }
 
 /* 当前套餐 */
 .v2-mode .current-plan-row { display: flex; align-items: center; gap: 12rpx; }
