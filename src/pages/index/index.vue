@@ -1795,9 +1795,9 @@ function goTaohua() {
 /* taohua teaser card */
 .v2-mode .taohua-teaser-v2 { background: #FFFBEB; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111; margin-bottom: 24rpx; overflow: hidden; }
 .v2-mode .taohua-teaser-head { padding: 20rpx 24rpx; display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2rpx solid #C4A86C; }
-.v2-mode .taohua-teaser-head-title { font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
+.v2-mode .taohua-teaser-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
 .v2-mode .taohua-teaser-head-score { font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1; }
-.v2-mode .taohua-teaser-head-unit { font-size: $fs-body; font-weight: $fw-label; color: #999; margin-left: 4rpx; }
+.v2-mode .taohua-teaser-head-unit { font-size: $fs-caption; font-weight: $fw-label; color: #999; margin-left: 4rpx; }
 .v2-mode .taohua-teaser-body { padding: 18rpx 24rpx; }
 .v2-mode .taohua-teaser-dirs { display: flex; gap: 10rpx; margin-bottom: 10rpx; }
 .v2-mode .taohua-teaser-dir { flex: 1; padding: 12rpx 10rpx; border: 2rpx solid #111; background: #FFFBEB; display: flex; align-items: center; gap: 6rpx; }
