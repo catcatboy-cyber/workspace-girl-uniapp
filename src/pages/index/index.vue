@@ -97,7 +97,7 @@
         </view>
 
         <!-- 命理 · 今日桃花 -->
-        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.05s;">
+        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 fortune-card anim-card" style="animation-delay:0.05s;" @click="goTaohua">
           <view class="taohua-teaser-head">
             <text class="taohua-teaser-head-title">🧭 今日桃花</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
@@ -126,9 +126,7 @@
           <view v-else class="taohua-teaser-body">
             <text class="taohua-teaser-meta">加载中...</text>
           </view>
-          <view style="padding:12rpx 24rpx 12rpx;">
-            <button class="btn-fortune-primary btn-fortune-md btn-fortune-full" hover-class="none" @click="goTaohua">查看完整命理分析 →</button>
-          </view>
+          <view class="taohua-teaser-cta">查看完整命理分析 →</view>
           <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
         </view>
 
@@ -1806,7 +1804,7 @@ function goTaohua() {
 .v2-mode .taohua-teaser-dir-emoji { font-size: $fs-body-lg; flex-shrink: 0; }
 .v2-mode .taohua-teaser-dir-label { font-size: $fs-caption; font-weight: $fw-label; color: #666; }
 .v2-mode .taohua-teaser-dir-val { font-size: $fs-caption; font-weight: $fw-hero; color: #111; margin-left: auto; }
-.v2-mode .taohua-teaser-guide { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; line-height: 1.45; margin-bottom: 4rpx; }
+.v2-mode .taohua-teaser-guide { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; line-height: 1.45; margin-bottom: 4rpx; }
 .v2-mode .taohua-teaser-meta { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 .v2-mode .taohua-teaser-cta { padding: 14rpx 24rpx; font-size: $fs-body-lg; font-weight: $fw-hero; color: #C41E3A; text-align: center; }
 .v2-mode .taohua-teaser-cite { padding: 10rpx 24rpx; border-top: 1rpx solid #C4A86C; font-size: $fs-caption; font-weight: $fw-body; color: #bbb; text-align: center; }
