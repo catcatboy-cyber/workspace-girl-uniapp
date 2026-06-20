@@ -353,6 +353,15 @@
       "installDependency": true
     },
     {
+      "name": "trackShareVisit",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "quickRead",
       "timeout": 30,
       "envVariables": {},

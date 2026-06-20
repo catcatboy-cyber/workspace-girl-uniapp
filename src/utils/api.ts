@@ -518,6 +518,20 @@ export async function updateSelfProfile(profile: SelfProfile) {
 /**
  * 鑾峰彇妗堜緥鍒楄〃
  */
+/** 分享访问记录：匿名 visit（fire-and-forget） */
+export async function trackAnonymousVisit(params: { shareId?: string; channel?: string; scene?: string; inviteCode?: string; path?: string }) {
+  try {
+    await callFunction({ name: 'trackShareVisit', data: { action: 'anonymous', ...params } })
+  } catch {}
+}
+
+/** 分享访问记录：登录后补写 */
+export async function trackLoginVisit(params: { shareId?: string; visitorUserId?: string; isNewUser?: boolean }) {
+  try {
+    await callFunction({ name: 'trackShareVisit', data: { action: 'login', ...params } })
+  } catch {}
+}
+
 /** 快速解读：免费，不依赖 caseId */
 export async function quickRead(text: string, scene?: string) {
   const res = await callFunction({
@@ -1002,6 +1016,15 @@ export async function adminGetUserTokenDetails(userId: string, limit = 200) {
   const res = await callFunction({
     name: 'adminManage',
     data: { action: 'getUserTokenDetails', targetUserId: userId, limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 邀请奖励列表 */
+export async function adminListReferralClaims() {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'listReferralClaims', ...getBusinessAuthPayload() }
   })
   return res.result
 }

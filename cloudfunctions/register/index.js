@@ -88,7 +88,7 @@ exports.main = async (event) => {
     const now = new Date()
 
     // 生成邀请码
-    const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig, redeemInviteCode } = require('./_shared/subscription')
+    const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig } = require('./_shared/subscription')
     const inviteCode = generateInviteCode(userId)
     const subFields = getDefaultUserSubscriptionFields()
 
@@ -139,12 +139,19 @@ exports.main = async (event) => {
     // grantFirstGift 已不再需要 —— extraTokens 已由 welcomeTokens 直接设定
     // 旧体系 token_accounts 的首次赠送保留为后备，但不再对 users.extraTokens 做 inc
 
-    let referralResult = null
-    if (event.inviteCode && typeof event.inviteCode === 'string') {
+    // 新用户邀请奖励结算
+    let settlement = null
+    const regInviteCode = String(event.inviteCode || '').trim()
+    if (regInviteCode) {
       try {
-        referralResult = await redeemInviteCode(db, event.inviteCode.trim(), userId)
+        const inviter = await db.collection('users')
+          .where({ inviteCode: regInviteCode }).limit(1).get()
+        if (inviter.data.length > 0 && inviter.data[0]._id !== userId) {
+          const { settleReward } = require('./_shared/referral-settlement')
+          settlement = await settleReward(db, userId, inviter.data[0]._id, regInviteCode, '', '')
+        }
       } catch (err) {
-        console.warn('register redeem invite failed (non-fatal):', err?.message || err)
+        console.warn('register settlement failed (non-fatal):', err?.message || err)
       }
     }
 

@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
-import { getCurrentUserId, wechatLogin } from '@/utils/api'
+import { getCurrentUserId, wechatLogin, trackAnonymousVisit, trackLoginVisit } from '@/utils/api'
 import { captureLandingContext, readLandingContext } from '@/utils/landing'
 
 const SILENT_LOGIN_TRIED_KEY = 'silentLoginTried'
 
 onLaunch(() => {
+  // 记录分享访问（匿名，fire-and-forget）
+  try {
+    const lo = uni.getLaunchOptionsSync?.() || ({} as any)
+    const q = lo?.query || {}
+    if (q.shareId || q.inviteCode) {
+      trackAnonymousVisit({ shareId: q.shareId, channel: q.channel, scene: q.scene, inviteCode: q.inviteCode, path: lo.path })
+    }
+  } catch (_) {}
+
   // 微信隐私协议授权（2023.09 起要求）
   try {
     const wxApi = (globalThis as any)?.wx
@@ -68,7 +77,10 @@ async function silentWechatLogin() {
     const ctx = readLandingContext()
     console.log('[App] landing ctx for login:', JSON.stringify(ctx))
     const result = await wechatLogin('', { loginCode, channel: ctx.channel, scene: ctx.scene, ref: ctx.ref, shareId: ctx.shareId, inviteCode: ctx.inviteCode })
-    console.log('[App] wechatLogin result:', JSON.stringify({ success: result?.success, userId: result?.userId?.slice(0,20), isNew: result?.isNew, landing: result?.landing }))
+    console.log('[App] wechatLogin result:', JSON.stringify({ success: result?.success, userId: result?.userId?.slice(0,20), isNew: result?.isNew }))
+    if (result?.success) {
+      trackLoginVisit({ shareId: ctx.shareId, visitorUserId: result.userId, isNewUser: result.isNewUser || false }).catch(() => {})
+    }
   } catch (e) {
     console.error('[App] silent login error:', e?.message || e)
   }

@@ -21,6 +21,7 @@
           <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Token 消耗</view>
           <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'">📋 订单管理</view>
           <view :class="['sidebar-item', activeTab === 'loginLogs' ? 'active' : '']" @click="activeTab = 'loginLogs'">🔐 登录日志</view>
+          <view :class="['sidebar-item', activeTab === 'referralClaims' ? 'active' : '']" @click="activeTab = 'referralClaims'">💎 邀请奖励</view>
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">运营工具</text>
@@ -549,6 +550,7 @@
       <OrdersPanel v-if="activeTab === 'orders'" @error="errorMessage = $event" />
 
       <LoginLogsPanel v-if="activeTab === 'loginLogs'" @error="errorMessage = $event" />
+      <ReferralClaimsPanel v-if="activeTab === 'referralClaims'" />
       </view>
     </view>
   </view>
@@ -576,6 +578,7 @@ import CustomPetPanel from './components/panels/CustomPetPanel.vue'
 import SubscriptionPanel from './components/panels/SubscriptionPanel.vue'
 import BillingPanel from './components/panels/BillingPanel.vue'
 import LoginLogsPanel from './components/panels/LoginLogsPanel.vue'
+import ReferralClaimsPanel from './components/panels/ReferralClaimsPanel.vue'
 
 type AdminUser = {
   id: string

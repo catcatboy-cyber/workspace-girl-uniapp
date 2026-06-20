@@ -245,14 +245,6 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
     referralWeekCount: subFields.referralWeekCount
   })
 
-  let referralResult = null
-  if (inviteCodeParam && typeof inviteCodeParam === 'string') {
-    try {
-      referralResult = await redeemInviteCode(db, inviteCodeParam.trim(), userId)
-    } catch (err) {
-      console.warn('wechatLogin redeem invite failed (non-fatal):', err?.message || err)
-    }
-  }
   return {
     _id: userId,
     openid,
@@ -260,8 +252,7 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
     email: '',
     ...profilePatch,
     selfProfile: null,
-    loginType: 'wechat_phone',
-    referral: referralResult
+    loginType: 'wechat_phone'
   }
 }
 
@@ -290,6 +281,7 @@ exports.main = async (event = {}) => {
     const now = new Date()
     const phonePatch = phone ? { phone } : {}
 
+    let isNewUser = false
     let user = await findUserByOpenId(openid)
     if (user) {
       const profilePatch = buildWechatProfilePatch(profile, user)
@@ -316,6 +308,7 @@ exports.main = async (event = {}) => {
         user = { ...user, ...patch }
       } else {
         user = await createWechatUser({ openid, phone, profile, inviteCodeParam, landingChannel, landingScene, landingRef, landingShareId, landingInviteCode })
+        isNewUser = true
       }
     }
 
@@ -334,6 +327,28 @@ exports.main = async (event = {}) => {
       console.error('[wechatLogin] 记录登录日志失败:', err)
     })
 
+    // 新用户邀请奖励结算
+    let settlement = null
+    console.log('[wechatLogin] settlement check', { isNewUser, inviteCodeParam: inviteCodeParam?.slice(0,8), landingShareId: landingShareId?.slice(0,12), landingChannel })
+    if (isNewUser && inviteCodeParam) {
+      try {
+        const inviter = await db.collection('users')
+          .where({ inviteCode: inviteCodeParam }).limit(1).get()
+        console.log('[wechatLogin] inviter lookup', { found: inviter.data.length, inviterId: inviter.data[0]?._id?.slice(0,20) })
+        if (inviter.data.length > 0 && inviter.data[0]._id !== user._id) {
+          const { settleReward } = require('./_shared/referral-settlement')
+          console.log('[wechatLogin] calling settleReward...')
+          settlement = await settleReward(db, user._id, inviter.data[0]._id,
+            inviteCodeParam, landingShareId, landingChannel)
+          console.log('[wechatLogin] settleReward result:', JSON.stringify(settlement))
+        } else {
+          console.log('[wechatLogin] skip settlement: inviter not found or self-invite')
+        }
+      } catch (err) {
+        console.error('[wechatLogin] settlement failed:', err?.message || err, err?.stack?.slice(0,200))
+      }
+    }
+
     return {
       success: true,
       userId: user._id,
@@ -345,7 +360,8 @@ exports.main = async (event = {}) => {
       displayName: resolveDisplayName(user, phoneMasked),
       loginType: user.loginType || 'wechat_phone',
       selfProfile: user.selfProfile || null,
-      inviteCode: user.inviteCode || ''
+      inviteCode: user.inviteCode || '',
+      isNewUser
     }
   } catch (error) {
     console.error('wechatLogin error:', error)

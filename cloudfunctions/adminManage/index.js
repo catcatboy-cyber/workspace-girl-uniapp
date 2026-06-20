@@ -1980,6 +1980,37 @@ async function deleteUser(event, currentUserId) {
   }
 }
 
+async function listReferralClaims() {
+  const { data: claims } = await db.collection('referral_claims')
+    .orderBy('createdAt', 'desc').limit(500).get()
+  const userIds = new Set()
+  ;(claims || []).forEach(c => { userIds.add(c.inviterUserId); userIds.add(c.inviteeUserId) })
+  const userMap = {}
+  if (userIds.size > 0) {
+    const batches = [...userIds]
+    for (let i = 0; i < batches.length; i += 100) {
+      const { data: users } = await db.collection('users')
+        .where({ _id: db.command.in(batches.slice(i, i + 100)) }).get()
+      ;(users || []).forEach(u => { userMap[u._id] = { email: u.email || '', phone: u.phone || '' } })
+    }
+  }
+  const rows = (claims || []).map(c => ({
+    id: c._id,
+    inviteeId: c.inviteeUserId,
+    inviteeLabel: userMap[c.inviteeUserId]?.email || userMap[c.inviteeUserId]?.phone || c.inviteeUserId?.slice(0, 20),
+    inviterId: c.inviterUserId,
+    inviterLabel: userMap[c.inviterUserId]?.email || userMap[c.inviterUserId]?.phone || c.inviterUserId?.slice(0, 20),
+    inviteCode: c.inviteCode || '',
+    channel: c.channel || '',
+    status: c.status || '',
+    inviterTokens: c.inviterTokens || 0,
+    inviteeTokens: c.inviteeTokens || 0,
+    createdAt: c.createdAt,
+    rewardedAt: c.rewardedAt
+  }))
+  return { success: true, rows, total: rows.length, totalInviterRewards: rows.reduce((s, r) => s + r.inviterTokens, 0), totalInviteeRewards: rows.reduce((s, r) => s + r.inviteeTokens, 0) }
+}
+
 exports.main = async (event = {}) => {
   try {
     const { userId, user } = await requireAdminUser(event)
@@ -2006,6 +2037,7 @@ exports.main = async (event = {}) => {
     if (action === 'listOrders') return await listOrders(event)
     if (action === 'refundOrder') return await refundOrder(event)
     if (action === 'deleteUser') return await deleteUser(event, userId)
+    if (action === 'listReferralClaims') return await listReferralClaims()
 
     return { success: false, message: '未知后台操作' }
   } catch (error) {
