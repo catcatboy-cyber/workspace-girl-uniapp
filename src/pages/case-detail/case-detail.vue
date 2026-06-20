@@ -15,6 +15,8 @@
           <text class="hero-copy-v2">AI 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
           <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">最新 · {{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">风险 · {{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 分析</text></view>
         </view>
+        <!-- 里程碑进度 -->
+        <ProgressMilestone :count="timelineCount" />
         <!-- 补初评入口 -->
         <view v-if="!isCurrentResultAIReviewed" class="card-v2 anim-card" style="animation-delay:0.15s" @click="goNewAssessment">
           <text class="section-title-v2">还没有进行初评</text>
@@ -272,7 +274,8 @@ import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, generateM
 import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments, buildTimelineStats, getTimelineRecordTags } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import ProgressMilestone from '@/components/ProgressMilestone.vue'
 
 const loading = ref(true)
 const syncing = ref(false)
@@ -284,7 +287,11 @@ const profileUpdated = ref(false)
 const showSignalInfo = ref(false)
 const themeVars = ref(getThemeStyle())
 
-onShareAppMessage(() => buildSafeShareMessage())
+onShareAppMessage(() => {
+  let path = caseId.value ? `/pages/case-detail/case-detail?caseId=${caseId.value}` : '/pages/case-detail/case-detail'
+  path = appendReferralParams(path, 'we_card')
+  return { title: `我和 ${caseFile.value?.name || 'TA'} 的关系分析`, path, imageUrl: SAFE_SHARE_IMAGE }
+})
 
 onShareTimeline(() => buildSafeTimelineShare())
 const weeklyReviews = ref<any[]>([])

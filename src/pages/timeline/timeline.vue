@@ -96,7 +96,7 @@ import { buildProfileItems, explainProblemLabel, explainStatusTag } from '@/util
 import { buildTimelineFromLatestResult, compareAssessments, sortTimelineRecordsDesc, isSystemTimelineRecord, getTimelineRecordTimestamp } from '@/utils/insights'
 import { buildTimelineStats, getTimelineRecordTags, buildObjectStatusCard } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 
 const loading = ref(true)
 const syncing = ref(false)
@@ -112,7 +112,7 @@ const recorded = ref(false)
 const targetEventId = ref('')
 const themeVars = ref(getThemeStyle())
 
-onShareAppMessage(() => buildSafeShareMessage())
+onShareAppMessage(() => ({ title: 'Crush Master｜关系时间线', path: appendReferralParams('/pages/index/index', 'timeline'), imageUrl: SAFE_SHARE_IMAGE }))
 
 onShareTimeline(() => buildSafeTimelineShare())
 const manualTimelineExpanded = ref(false)

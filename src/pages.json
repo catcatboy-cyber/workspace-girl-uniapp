@@ -144,6 +144,12 @@
       }
     },
     {
+      "path": "pages/quick-read/quick-read",
+      "style": {
+        "navigationBarTitleText": "一句话解读"
+      }
+    },
+    {
       "path": "pages/references/references",
       "style": {
         "navigationBarTitleText": "引用经典"

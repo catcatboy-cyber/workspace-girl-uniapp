@@ -47,7 +47,11 @@
       </view>
     </view>
 
-    <view class="cta-card">
+    <view v-if="!ready" class="cta-card">
+      <text class="cta-title">正在登录...</text>
+      <text class="cta-copy">请稍候</text>
+    </view>
+    <view v-else class="cta-card">
       <text class="cta-title">想看你的桃花人格和今日桃花位？</text>
       <text class="cta-copy">先测自己的生肖、星座和互动画像，再生成你的专属人格卡。</text>
       <button class="primary-btn" @click="startMine">我也测一下</button>
@@ -62,54 +66,60 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { getCurrentUserId } from '@/utils/api'
-import { TAOHUA_SHARE_IMAGE } from '@/utils/share'
+import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
+import { captureLandingContext } from '@/utils/landing'
 import { SIGN_NAMES, ZODIAC_NAMES, zodiacSignMatch } from '@/utils/taohua'
 
 const zodiac = ref('兔')
 const sign = ref('双鱼座')
+const ready = ref(false)
 const fallbackText = '自带吸引力，越真实越容易被看见。'
 
 const crossData = computed<any>(() => {
-  try {
-    return zodiacSignMatch(zodiac.value, sign.value)
-  } catch {
-    return null
-  }
+  try { return zodiacSignMatch(zodiac.value, sign.value) } catch { return null }
 })
-
 const personality = computed(() => crossData.value?.western?.personality || fallbackText)
 const personaTitle = computed(() => String(personality.value).split('——')[0] || '桃花吸引型')
 const personaDesc = computed(() => String(personality.value).split('——')[1] || personality.value)
 const westMode = computed(() => String(crossData.value?.western?.mode || '--').split('（')[0])
 const bestMatch = computed(() => Array.isArray(crossData.value?.western?.bestMatch) ? crossData.value.western.bestMatch.slice(0, 3) : [])
 
-onLoad((options: any) => {
+onLoad(async (options: any) => {
+  captureLandingContext(options || {})
   const z = decodeURIComponent(String(options?.zodiac || ''))
   const s = decodeURIComponent(String(options?.sign || ''))
   if (ZODIAC_NAMES.includes(z)) zodiac.value = z
   if (SIGN_NAMES.includes(s)) sign.value = s
+  await waitForSilentLogin()
+  ready.value = true
 })
 
-onShareAppMessage(() => ({
-  title: `${zodiac.value} · ${sign.value} 的桃花人格卡`,
-  path: `/pages/taohua-share/taohua-share?zodiac=${encodeURIComponent(zodiac.value)}&sign=${encodeURIComponent(sign.value)}&from=reshare`,
-  imageUrl: TAOHUA_SHARE_IMAGE,
-}))
+onShareAppMessage(() => {
+  let path = `/pages/taohua-share/taohua-share?zodiac=${encodeURIComponent(zodiac.value)}&sign=${encodeURIComponent(sign.value)}&from=reshare`
+  path = appendReferralParams(path, 'taohua_card')
+  return { title: `${zodiac.value} · ${sign.value} 的桃花人格卡`, path, imageUrl: TAOHUA_SHARE_IMAGE }
+})
+
+async function waitForSilentLogin() {
+  if (getCurrentUserId()) return
+  const maxWait = 3000; const start = Date.now()
+  while (Date.now() - start < maxWait) {
+    if (getCurrentUserId()) return
+    if (uni.getStorageSync('silentLoginDone')) { await new Promise(r => setTimeout(r, 300)); return }
+    await new Promise(r => setTimeout(r, 150))
+  }
+}
 
 function startMine() {
-  const redirect = encodeURIComponent('/pages/taohua/taohua')
-  if (getCurrentUserId()) {
-    uni.navigateTo({ url: '/pages/self-profile/self-profile?redirect=/pages/taohua/taohua' })
+  if (!getCurrentUserId()) {
+    uni.navigateTo({ url: '/pages/login/login?redirect=' + encodeURIComponent('/pages/taohua/taohua') })
     return
   }
-  uni.navigateTo({ url: `/pages/login/login?redirect=${redirect}` })
+  uni.navigateTo({ url: '/pages/self-profile/self-profile?redirect=/pages/taohua/taohua' })
 }
 
 function goHome() {
-  if (getCurrentUserId()) {
-    uni.switchTab({ url: '/pages/index/index' })
-    return
-  }
+  if (getCurrentUserId()) { uni.switchTab({ url: '/pages/index/index' }); return }
   uni.navigateTo({ url: '/pages/login/login' })
 }
 </script>

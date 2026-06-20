@@ -94,7 +94,7 @@ import { getCases, getCurrentUserId } from '@/utils/api'
 import { callFunction } from '@/utils/cloudbase'
 import { bumpDataVersion, clearActiveCaseId, formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 
 const loading = ref(true)
 const cases = ref<any[]>([])
@@ -104,7 +104,7 @@ const themeVars = ref(getThemeStyle())
 const fontSizeMode = ref(getFontSizeMode())
 const deletingCaseId = ref('')
 
-onShareAppMessage(() => buildSafeShareMessage())
+onShareAppMessage(() => ({ title: 'Crush Master｜Crushes', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE }))
 
 onShareTimeline(() => buildSafeTimelineShare())
 const activeCaseId = ref('')

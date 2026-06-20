@@ -150,7 +150,8 @@ function cacheLoginUser(result: any) {
     nickName,
     avatarUrl,
     role: result.role || (result.isAdmin ? 'admin' : 'user'),
-    isAdmin: Boolean(result.isAdmin || result.role === 'admin')
+    isAdmin: Boolean(result.isAdmin || result.role === 'admin'),
+    inviteCode: result.inviteCode || ''
   })
   cacheSelfProfile(result.selfProfile)
 }
@@ -319,13 +320,17 @@ export async function login(email: string, password: string) {
 /**
  * 鐢ㄦ埛娉ㄥ唽
  */
-export async function wechatLogin(code = '', profile: { nickName?: string; nickname?: string; avatarUrl?: string; loginCode?: string; inviteCode?: string } = {}) {
+export async function wechatLogin(code = '', profile: { nickName?: string; nickname?: string; avatarUrl?: string; loginCode?: string; inviteCode?: string; channel?: string; scene?: string; ref?: string; shareId?: string } = {}) {
   await clearLocalAuthState()
   const phoneCode = String(code || '').trim()
   const nickName = String(profile.nickName || profile.nickname || '').trim()
   const avatarUrl = String(profile.avatarUrl || '').trim()
   const loginCode = String(profile.loginCode || '').trim()
   const inviteCode = String(profile.inviteCode || '').trim()
+  const landingChannel = String(profile.channel || '').trim()
+  const landingScene = String(profile.scene || '').trim()
+  const landingRef = String(profile.ref || '').trim()
+  const landingShareId = String(profile.shareId || '').trim()
 
   const res = await app.callFunction({
     name: 'wechatLogin',
@@ -334,7 +339,11 @@ export async function wechatLogin(code = '', profile: { nickName?: string; nickn
       ...(loginCode ? { loginCode } : {}),
       ...(nickName ? { nickName } : {}),
       ...(avatarUrl ? { avatarUrl } : {}),
-      ...(inviteCode ? { inviteCode } : {})
+      ...(inviteCode ? { inviteCode } : {}),
+      ...(landingChannel ? { channel: landingChannel } : {}),
+      ...(landingScene ? { scene: landingScene } : {}),
+      ...(landingRef ? { ref: landingRef } : {}),
+      ...(landingShareId ? { shareId: landingShareId } : {})
     }
   })
 
@@ -509,6 +518,29 @@ export async function updateSelfProfile(profile: SelfProfile) {
 /**
  * 鑾峰彇妗堜緥鍒楄〃
  */
+/** 快速解读：免费，不依赖 caseId */
+export async function quickRead(text: string, scene?: string) {
+  const res = await callFunction({
+    name: 'quickRead',
+    data: { text, scene: scene || 'general' }
+  })
+  return res.result
+}
+
+/** 获取或创建默认 Crush（CTA 点击后才调用） */
+export async function getOrCreateDefaultCase() {
+  const cases = await getCases()
+  if (cases.length === 0) {
+    const result = await createCase({
+      name: 'TA', answers: [],
+      profile: { gender: null, age: null, zodiac: null, constellation: null, avatar: null }
+    })
+    if (result?.success) return result.case || result
+    return null
+  }
+  return cases[0]
+}
+
 export async function getCases(_userId?: string, options?: {
   mode?: 'full' | 'home' | 'list' | 'count'
   detailCaseId?: string
@@ -613,6 +645,12 @@ export async function createTimeline(data: {
     name: 'createTimeline',
     data: payload
   })
+  if (res.result?.success) {
+    try {
+      uni.setStorageSync('lastRecordDate', new Date().toISOString())
+      uni.setStorageSync('justRecorded', true)
+    } catch {}
+  }
   return res.result
 }
 
@@ -964,6 +1002,15 @@ export async function adminGetUserTokenDetails(userId: string, limit = 200) {
   const res = await callFunction({
     name: 'adminManage',
     data: { action: 'getUserTokenDetails', targetUserId: userId, limit, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 删除用户及其所有关联数据 */
+export async function adminDeleteUser(targetUserId: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'deleteUser', targetUserId, ...getBusinessAuthPayload() }
   })
   return res.result
 }

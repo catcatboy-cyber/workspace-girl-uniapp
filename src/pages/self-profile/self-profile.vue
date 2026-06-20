@@ -141,7 +141,7 @@ const ageMap: Record<string, string> = {
 }
 
 const genderChips = genderOptions.map(o => o.label)
-const genderMap: Record<string, string> = { '男生': 'male', '女生': 'female', '暂不说明': 'private' }
+const genderMap: Record<string, string> = { '男生': 'male', '女生': 'female', '暂不说': 'private' }
 
 const identityChips = ['高中/中专', '大学生', '研究生', '已工作', '其他']
 const identityMap: Record<string, string> = {
@@ -364,7 +364,7 @@ function normalizeRedirect(value: string) {
 }
 
 async function onSave() {
-  if (!profile.gender) { showError('请选择性别'); return }
+  if (!profile.gender || profile.gender === 'private') { /* 暂不说允许通过 */ }
   if (!profile.ageRange) { showError('请选择年龄阶段'); return }
   if (!profile.identity) { showError('请选择目前身份'); return }
 

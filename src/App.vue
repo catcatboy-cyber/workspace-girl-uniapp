@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { getCurrentUserId, wechatLogin } from '@/utils/api'
+import { captureLandingContext, readLandingContext } from '@/utils/landing'
+
+const SILENT_LOGIN_TRIED_KEY = 'silentLoginTried'
 
 onLaunch(() => {
   // 微信隐私协议授权（2023.09 起要求）
-  // __usePrivacyCheck__: true 开启后，调用隐私 API 时平台会自动触发此回调
   try {
     const wxApi = (globalThis as any)?.wx
     if (wxApi?.onNeedPrivacyAuthorization) {
@@ -24,10 +27,52 @@ onLaunch(() => {
       })
     }
   } catch (_) { /* H5 等非微信环境忽略 */ }
+
+  // 静默微信登录：已登录跳过，未登录自动注册
+  silentWechatLogin()
 })
 
-onShow(() => {})
+onShow((options: any) => {
+  // 温启动也捕获来源参数（分享链接打开时）
+  if (options && typeof options === 'object') {
+    captureLandingContext(options)
+  }
+})
+
 onHide(() => {})
+
+async function silentWechatLogin() {
+  console.log('[App] silentWechatLogin start', { hasTried: !!uni.getStorageSync(SILENT_LOGIN_TRIED_KEY), hasUserId: !!getCurrentUserId() })
+  if (uni.getStorageSync(SILENT_LOGIN_TRIED_KEY)) { console.log('[App] skip: already tried'); return }
+  uni.setStorageSync(SILENT_LOGIN_TRIED_KEY, true)
+  // 不跳过已登录用户，确保每次冷启动都走 wechatLogin 更新 landing 等字段
+
+  try {
+    const wxApi = (globalThis as any)?.wx
+    if (!wxApi?.login) { console.log('[App] skip: no wx.login'); return }
+
+    const launchOptions = uni.getLaunchOptionsSync?.() || ({} as any)
+    if (launchOptions?.query) {
+      captureLandingContext(launchOptions.query)
+      console.log('[App] launch query:', JSON.stringify({ path: launchOptions.path, query: launchOptions.query }))
+    }
+
+    const loginCode = await new Promise<string>((resolve) => {
+      wxApi.login({
+        success(res: any) { console.log('[App] wx.login success', res?.code?.slice(0,10)); resolve(res?.code || '') },
+        fail(err: any) { console.warn('[App] wx.login fail:', err); resolve('') }
+      })
+    })
+    if (!loginCode) { console.log('[App] skip: no loginCode'); return }
+
+    const ctx = readLandingContext()
+    console.log('[App] landing ctx for login:', JSON.stringify(ctx))
+    const result = await wechatLogin('', { loginCode, channel: ctx.channel, scene: ctx.scene, ref: ctx.ref, shareId: ctx.shareId, inviteCode: ctx.inviteCode })
+    console.log('[App] wechatLogin result:', JSON.stringify({ success: result?.success, userId: result?.userId?.slice(0,20), isNew: result?.isNew, landing: result?.landing }))
+  } catch (e) {
+    console.error('[App] silent login error:', e?.message || e)
+  }
+}
 </script>
 
 <style>

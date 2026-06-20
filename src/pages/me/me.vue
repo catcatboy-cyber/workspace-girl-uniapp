@@ -4,7 +4,7 @@
       <!-- Profile -->
       <view class="card-v2 anim-card" style="animation-delay:0.15s"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn btn-secondary btn-md" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Account -->
-      <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">Crushes 数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn btn-secondary btn-md" open-type="share">分享小程序</button><button class="btn btn-danger btn-md" @click="onLogout">退出登录</button></view></view>
+      <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">Crushes 数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn btn-danger btn-md" @click="onLogout">退出登录</button></view></view>
       <!-- Pet picker -->
       <view class="card-v2 anim-card" style="animation-delay:0.25s"><text class="section-title-v2">陪伴形象</text><view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn btn-secondary btn-sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view></view>
       <!-- Pet select sheet -->
@@ -105,7 +105,7 @@ import {
   type SelfProfile
 } from '@/utils/api'
 import { applyThemeChrome, getCurrentThemeId, getFontSizeMode, getThemeStyle, setCurrentTheme, setFontSizeMode, themeOptions, type ThemeId } from '@/utils/theme'
-import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { downloadPetAssets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, setSelectedPetId } from '@/utils/pets.js'
 
 type PetId = 'xiaomi' | 'doggo'
@@ -198,9 +198,7 @@ const planBadgeClass = computed(() => {
   return 'badge-free'
 })
 
-onShareAppMessage(() => buildSafeShareMessage({
-  path: subInviteCode.value ? `/pages/index/index?inviteCode=${subInviteCode.value}` : '/pages/index/index'
-}))
+onShareAppMessage(() => ({ title: 'Crush Master｜读懂关系信号', path: appendReferralParams('/pages/index/index', 'invite'), imageUrl: SAFE_SHARE_IMAGE }))
 
 onShareTimeline(() => buildSafeTimelineShare({
   query: subInviteCode.value ? `inviteCode=${subInviteCode.value}` : ''

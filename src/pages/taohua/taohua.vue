@@ -429,6 +429,7 @@
 
     <view class="ai-disclaimer">
       <text class="ai-disclaimer-text">AI 辅助分析 · 仅供辅助参考，不构成专业意见</text>
+      <text class="go-home-link" @click="goHome">回到首页</text>
     </view>
 
     <!-- 配对检查 Bottom Sheet -->
@@ -545,7 +546,7 @@ import {
 import type { CrossMatchResult, PairInsight } from '@/utils/taohua'
 import TaohuaCompass from '@/components/TaohuaCompass.vue'
 import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId, getCaseDetail, generatePairRead } from '@/utils/api'
-import { TAOHUA_SHARE_IMAGE } from '@/utils/share'
+import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
 
@@ -1039,9 +1040,13 @@ const SHARE_CARD_H = 512
 
 onShareAppMessage(() => ({
   title: `${userZodiac.value || '我'} · ${userSign.value || '星座'} 的桃花人格卡`,
-  path: buildTaohuaSharePath(),
+  path: appendReferralParams(buildTaohuaSharePath(), 'taohua_card'),
   imageUrl: shareImagePath.value || TAOHUA_SHARE_IMAGE,
 }))
+
+function goHome() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
 
 function sharePersona() {
   // 先尝试生成分享卡
@@ -1560,6 +1565,7 @@ function saveShareImage() {
 }
 .ai-disclaimer { text-align: center; padding: 20rpx 20rpx 40rpx; }
 .ai-disclaimer-text { font-size: $fs-caption; color: #999; }
+.go-home-link { display: block; margin-top: 12rpx; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-decoration: underline; text-align: center; }
 
 /* 桃花匹配度 AI 深度解读盒（自 case-detail 移植） */
 .action-box { margin-top: 12rpx; padding: 14rpx; border: 2rpx dashed #111; background: #f5f5ff; }

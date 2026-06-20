@@ -174,7 +174,7 @@
 
         <!-- Feedback -->
         <view v-if="showQuickFeedback && latestCase.latestResult && latestTrend" :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']">
-          <view class="block-head"><text class="block-title">本次分析</text></view>
+          <view class="block-head"><text class="block-title">本次分析</text><button class="btn-share-sm" open-type="share"><image src="/static/icons/taohua/share-2.svg" mode="aspectFit" style="width:28rpx;height:28rpx;" /></button></view>
           <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
           <view v-if="aiFeedbackLoading" class="action-box">
             <text class="action-label">AI 分析中...</text>
@@ -288,10 +288,10 @@ import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } 
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua } from '@/utils/api'
-import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeShareMessage, buildSafeTimelineShare } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams } from '@/utils/share'
 import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
@@ -561,6 +561,46 @@ const quickFeedbackSignal = computed(() => {
   const trend = latestTrend.value
   if (!insight && !trend) return null
   return mapEventSignal(insight, trend)
+})
+
+const shareTitle = computed(() => {
+  const r = latestCase.value?.latestResult
+  if (!r) return '他到底什么意思？让小咪帮你看看'
+  const ib = r.intentBucket || ''
+  const rb = r.riskBucket || ''
+  if (ib.startsWith('high')) {
+    if (rb.startsWith('low')) return '他是真心的，还是在钓鱼？'
+    if (rb.startsWith('medium')) return '他很主动，但别高兴太早'
+    return '他说得好听，做得到吗？'
+  }
+  if (ib.startsWith('medium')) {
+    if (rb.startsWith('low')) return '他是真慢热，还是在养鱼？'
+    if (rb.startsWith('high')) return '他是暧昧，还是在吊着你？'
+    return '他说的那句话，到底几个意思？'
+  }
+  if (ib.startsWith('low')) {
+    if (rb.startsWith('low')) return '他是真的没兴趣，还是不会表达？'
+    return '被拒绝后还该继续吗？'
+  }
+  return '他到底喜不喜欢你？让小咪帮你分析'
+})
+
+const sceneKey = computed(() => {
+  const r = latestCase.value?.latestResult
+  if (!r) return ''
+  const ib = r.intentBucket || ''
+  const rb = r.riskBucket || ''
+  if (ib.startsWith('high')) {
+    if (rb.startsWith('low')) return 'high_low'
+    return 'high_risk'
+  }
+  if (ib.startsWith('medium')) {
+    if (rb.startsWith('low')) return 'medium_low'
+    if (rb.startsWith('high')) return 'medium_high'
+    return 'medium'
+  }
+  if (ib.startsWith('low')) return 'low'
+  return 'general'
 })
 
 const statusStateTags = computed(() => {
@@ -941,7 +981,29 @@ onShow(() => {
   applyThemeChrome()
   syncPetBarPref()
   syncSelectedPet()
-  startPetAnim(petState.value || 'idle')
+  // 小咪情绪联动：根据 lastRecordDate 显示初始文案
+  const justRecorded = !!uni.getStorageSync('justRecorded')
+  if (!petMsg.value) {
+    if (justRecorded) {
+      petMsg.value = '记上了！小咪在帮你分析…'
+      petState.value = 'running'
+      startPetAnim('running')
+      uni.removeStorageSync('justRecorded')
+      // 2 秒后切回正常情绪
+      setTimeout(() => {
+        const mood = getPetMood()
+        petMsg.value = mood.message
+        startPetAnim(mood.sprite)
+      }, 2000)
+    } else {
+      const mood = getPetMood()
+      petMsg.value = mood.message
+      petState.value = mood.sprite
+      startPetAnim(mood.sprite)
+    }
+  } else {
+    startPetAnim(petState.value || 'idle')
+  }
   const previousActiveCaseId = activeCaseId.value
   const nextActiveCaseId = getActiveCaseId()
   activeCaseId.value = nextActiveCaseId
@@ -956,7 +1018,26 @@ onShow(() => {
   console.log('[PERF] index onShow end', Date.now() - _t0, 'ms')
 })
 
-onShareAppMessage(() => buildSafeShareMessage())
+onShareAppMessage(() => {
+  const r = latestCase.value?.latestResult
+  const params = [
+    `intent=${r?.intentScore ?? 50}`,
+    `risk=${r?.consistencyRiskScore ?? 35}`
+  ]
+  if (quickFeedbackSignal.value?.label) {
+    params.push(`signal=${encodeURIComponent(quickFeedbackSignal.value.emoji + ' ' + quickFeedbackSignal.value.label)}`)
+  }
+  const rawBullets = quickReasonBullets.value.slice(0, 2)
+  if (rawBullets.length > 0) {
+    params.push(`bullets=${encodeURIComponent(rawBullets.join('|'))}`)
+  }
+  if (latestActionPlanPanel.value?.show && latestActionPlanPanel.value?.text) {
+    params.push(`action=${encodeURIComponent(latestActionPlanPanel.value.text.slice(0, 150))}`)
+  }
+  let path = `/pages/quick-read/quick-read?${params.join('&')}`
+  path = appendReferralParams(path, 'analysis_share', sceneKey.value)
+  return { title: shareTitle.value, path }
+})
 
 onShareTimeline(() => buildSafeTimelineShare())
 
@@ -1611,6 +1692,7 @@ function goTaohua() {
 .v2-mode .block-title { font-size: $fs-heading; font-weight: $fw-hero; color: #111; text-transform: uppercase; }
 .v2-mode .block-badge { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; letter-spacing: 2rpx; }
 .v2-mode .block-badge.black { background: #111; color: #fff; }
+.v2-mode .btn-share-sm { flex: none; width: 48rpx; height: 48rpx; border: 2rpx solid #111; background: #fff; display: flex; align-items: center; justify-content: center; padding: 0; }
 
 .v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; font-family: inherit; }
 

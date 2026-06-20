@@ -183,7 +183,7 @@ async function updateUser(userId, patch) {
   })
 }
 
-async function createWechatUser({ openid, phone = '', profile, inviteCodeParam = '' }) {
+async function createWechatUser({ openid, phone = '', profile, inviteCodeParam = '', landingChannel = '', landingScene = '', landingRef = '', landingShareId = '', landingInviteCode = '' }) {
   const userId = `user_${Date.now()}_${randomHex(4)}`
   const now = new Date()
   const profilePatch = buildWechatProfilePatch(profile, {}, true)
@@ -227,6 +227,11 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
     createdAt: now,
     updatedAt: now,
     seedFromLegacy: false,
+    landingChannel: landingChannel || '',
+    landingScene: landingScene || '',
+    landingRef: landingRef || '',
+    landingShareId: landingShareId || '',
+    landingInviteCode: landingInviteCode || '',
     plan: subFields.plan,
     trialEndsAt: subFields.trialEndsAt,
     planExpiresAt: subFields.planExpiresAt,
@@ -263,6 +268,12 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
 exports.main = async (event = {}) => {
   const code = String(event.code || '').trim()
   const inviteCodeParam = String(event.inviteCode || event.invite_code || '').trim()
+  const landingChannel = String(event.channel || '').trim()
+  const landingScene = String(event.scene || '').trim()
+  const landingRef = String(event.ref || '').trim()
+  const landingShareId = String(event.shareId || '').trim()
+  const landingInviteCode = String(event.inviteCode || event.invite_code || '').trim().toUpperCase()
+  console.log('[wechatLogin] event landing:', JSON.stringify({ channel: landingChannel, scene: landingScene, ref: landingRef, shareId: landingShareId?.slice(0,20) }))
   const profile = normalizeWechatProfile(event)
 
   try {
@@ -304,7 +315,7 @@ exports.main = async (event = {}) => {
         await updateUser(user._id, patch)
         user = { ...user, ...patch }
       } else {
-        user = await createWechatUser({ openid, phone, profile, inviteCodeParam })
+        user = await createWechatUser({ openid, phone, profile, inviteCodeParam, landingChannel, landingScene, landingRef, landingShareId, landingInviteCode })
       }
     }
 
@@ -333,7 +344,8 @@ exports.main = async (event = {}) => {
       avatarUrl: user.avatarUrl || '',
       displayName: resolveDisplayName(user, phoneMasked),
       loginType: user.loginType || 'wechat_phone',
-      selfProfile: user.selfProfile || null
+      selfProfile: user.selfProfile || null,
+      inviteCode: user.inviteCode || ''
     }
   } catch (error) {
     console.error('wechatLogin error:', error)

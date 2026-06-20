@@ -1109,6 +1109,11 @@ async function getUserDetail(event) {
     monthlyTokensUsed: Number(user.monthlyTokensUsed || 0),
     inviteCode: String(user.inviteCode || ''),
     referralCount: Number(user.referralCount || 0),
+    landingChannel: String(user.landingChannel || ''),
+    landingScene: String(user.landingScene || ''),
+    landingRef: String(user.landingRef || ''),
+    landingShareId: String(user.landingShareId || ''),
+    landingInviteCode: String(user.landingInviteCode || ''),
     createdAt: toISO(user.createdAt),
     updatedAt: toISO(user.updatedAt),
     lastLoginAt: toISO(user.lastLoginAt)
@@ -1945,6 +1950,36 @@ async function refundOrder(event = {}) {
   return { success: true, orderId }
 }
 
+async function deleteUser(event, currentUserId) {
+  const targetUserId = String(event.targetUserId || '').trim()
+  if (!targetUserId) return { success: false, message: '缺少 targetUserId' }
+  if (targetUserId === currentUserId) return { success: false, message: '不能删除当前登录的管理员账号' }
+
+  try {
+    const casesRes = await db.collection('cases').where({ userId: targetUserId }).limit(500).get()
+    const caseIds = (casesRes.data || []).map(c => c._id)
+
+    if (caseIds.length > 0) {
+      await db.collection('assessments').where({ caseId: db.command.in(caseIds) }).remove().catch(() => {})
+      await db.collection('timeline_records').where({ caseId: db.command.in(caseIds) }).remove().catch(() => {})
+    }
+    await db.collection('cases').where({ userId: targetUserId }).remove().catch(() => {})
+    await db.collection('login_logs').where({ userId: targetUserId }).remove().catch(() => {})
+    await db.collection('call_usage_records').where({ userId: targetUserId }).remove().catch(() => {})
+    await db.collection('token_ledger_records').where({ userId: targetUserId }).remove().catch(() => {})
+    await db.collection('token_accounts').where({ userId: targetUserId }).remove().catch(() => {})
+    await db.collection('feedbacks').where({ userId: targetUserId }).remove().catch(() => {})
+    await db.collection('invite_rewards').where({ inviterId: targetUserId }).remove().catch(() => {})
+    await db.collection('invite_rewards').where({ inviteeId: targetUserId }).remove().catch(() => {})
+    await db.collection('users').doc(targetUserId).remove()
+
+    return { success: true, message: `已删除用户及其 ${caseIds.length} 个 Crush 和所有关联数据` }
+  } catch (error) {
+    console.error('[adminManage] deleteUser error:', error)
+    return { success: false, message: '删除失败: ' + (error.message || '未知错误') }
+  }
+}
+
 exports.main = async (event = {}) => {
   try {
     const { userId, user } = await requireAdminUser(event)
@@ -1970,6 +2005,7 @@ exports.main = async (event = {}) => {
     if (action === 'updateCustomPetRequest') return await updateCustomPetRequest(event)
     if (action === 'listOrders') return await listOrders(event)
     if (action === 'refundOrder') return await refundOrder(event)
+    if (action === 'deleteUser') return await deleteUser(event, userId)
 
     return { success: false, message: '未知后台操作' }
   } catch (error) {

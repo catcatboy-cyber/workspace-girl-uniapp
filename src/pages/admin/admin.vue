@@ -110,6 +110,18 @@
               <text class="detail-label">注册时间</text>
               <text class="detail-value">{{ formatDate(selectedDetail.user.createdAt) }}</text>
             </view>
+            <view v-if="selectedDetail.user.landingChannel || selectedDetail.user.landingScene" class="detail-line">
+              <text class="detail-label">来源</text>
+              <text class="detail-value">{{ [selectedDetail.user.landingChannel, selectedDetail.user.landingScene, selectedDetail.user.landingRef].filter(Boolean).join(' · ') || '-' }}</text>
+            </view>
+            <view v-if="selectedDetail.user.landingShareId" class="detail-line">
+              <text class="detail-label">分享ID</text>
+              <text class="detail-value mono" style="font-size:18rpx;">{{ selectedDetail.user.landingShareId }}</text>
+            </view>
+            <view v-if="selectedDetail.user.landingInviteCode" class="detail-line">
+              <text class="detail-label">邀请码</text>
+              <text class="detail-value">{{ selectedDetail.user.landingInviteCode }}</text>
+            </view>
 
             <view class="settings-section" style="margin-top:16px;">
               <view class="section-head" style="margin-bottom:12px;">
@@ -153,6 +165,7 @@
               </view>
               <button class="primary-btn" :disabled="userEditSaving" @click="saveUserEdit" style="margin-top:12px;width:100%;">{{ userEditSaving ? '保存中...' : '保存用户信息' }}</button>
               <text v-if="userEditMsg" :class="userEditOk ? 'save-message' : 'test-result fail'" style="margin-top:8px;display:block;">{{ userEditMsg }}</text>
+              <button class="danger-btn" :disabled="userEditSaving || deleteUserLoading" @click="confirmDeleteUser" style="margin-top:16px;width:100%;">{{ deleteUserLoading ? '删除中...' : '删除该用户及全部数据' }}</button>
             </view>
 
             <view class="case-list" style="margin-top:16px;">
@@ -545,6 +558,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import {
+  adminDeleteUser,
   adminGetOverview,
   adminGetUserDetail,
   adminPreviewPrompt,
@@ -1323,6 +1337,41 @@ async function saveUserEdit() {
     userEditMsg.value = e?.message || '保存失败'
   } finally {
     userEditSaving.value = false
+  }
+}
+
+const deleteUserLoading = ref(false)
+
+function confirmDeleteUser() {
+  const target = selectedDetail.value?.user
+  if (!target?.id) return
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除用户「${target.email || target.phone || target.id}」吗？\n此操作不可恢复，将同时删除该用户的所有 Crush、记录和分析数据。`,
+    confirmText: '确认删除',
+    cancelText: '取消',
+    success(res: any) {
+      if (res.confirm) executeDeleteUser(target.id)
+    }
+  })
+}
+
+async function executeDeleteUser(userId: string) {
+  deleteUserLoading.value = true
+  try {
+    const result = await adminDeleteUser(userId)
+    if (result?.success) {
+      uni.showToast({ title: result.message || '已删除', icon: 'success' })
+      selectedUserId.value = ''
+      selectedDetail.value = null
+      await refresh()
+    } else {
+      uni.showToast({ title: result?.message || '删除失败', icon: 'none' })
+    }
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '删除失败', icon: 'none' })
+  } finally {
+    deleteUserLoading.value = false
   }
 }
 

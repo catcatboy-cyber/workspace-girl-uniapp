@@ -326,3 +326,26 @@ export function consumePendingTimelineContext(): PendingTimelineContext | null {
     return null
   }
 }
+
+/* ====== 小咪情绪联动 ====== */
+
+export interface PetMood {
+  emoji: string; message: string; sprite: string
+}
+
+export function getPetMood(): PetMood {
+  const KEY = 'lastRecordDate'
+  let days = 999
+  try {
+    const v = uni.getStorageSync(KEY)
+    if (v) { const d = new Date(v); if (!isNaN(d.getTime())) days = Math.floor((Date.now() - d.getTime()) / 86400000) }
+  } catch {}
+  if (days === 0) return { emoji: '😄', message: '今天又看清了一点！', sprite: 'jumping' }
+  if (days === 1) return { emoji: '😐', message: '昨天没记哦，今天有新发现吗？', sprite: 'waving' }
+  if (days <= 3) return { emoji: '😞', message: '好几天没记录了，我还醒着呢…', sprite: 'waiting' }
+  return { emoji: '💀', message: '再不来记我就要消失了…', sprite: 'failed' }
+}
+
+export function markLastRecordDate() {
+  try { uni.setStorageSync('lastRecordDate', new Date().toISOString()) } catch {}
+}
