@@ -86,6 +86,12 @@ function describeSubjectRole(role) {
   return 'subjectRole=target：这条记录主要描述关系对象。请分析对方行为对关系意向、风险和证据强度的影响。'
 }
 
+function describeUserQuestion(userQuestion) {
+  const label = userQuestion && typeof userQuestion === 'object' ? cleanText(userQuestion.label, 40) : ''
+  if (!label) return ''
+  return `用户这次最想知道：“${label}”。请优先直接回答这个问题，不要只给泛泛三段建议。rawReply 第一段必须是“小咪先回答你的问题：”，用2-4句给出明确判断、边界和置信度。后面再补充“对方可能在想 / 可以这样 / 留个心眼”。`
+}
+
 function hasExplicitTargetReaction(event) {
   const content = `${event.title || ''} ${event.description || ''}`
   return ['他', '她', '对方', '回复', '答应', '拒绝', '主动', '约我', '说', '问我', '夸', '取消', '失约', '回避'].some((item) => content.includes(item))
@@ -404,7 +410,8 @@ async function analyzeTimelineEvent(params) {
       personaPrompt.userPrompt,
       'Output must be JSON only. Required fields: eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply,petLine,petMood. rationale is a single short string (max 10 Chinese characters) stating the core reason. Do not return labels, confidence, or actionAdvice.',
       'petLine is one short sentence (max 50 Chinese chars) in XiaoMi (小咪)\'s first-person voice — her key takeaway from this event. petMood is one enum only: cheerful|cautious|encouraging|neutral|warning.',
-      'currentStatus only needs tags,summary,caution. rawReply must use exactly three headings. IMPORTANT: each section MUST contain 2-4 specific, concrete, actionable sentences — DO NOT write just one short sentence. for example, 小咪觉得可以这样 should give 2-3 concrete next-step suggestions, not just one vague idea. Use Chinese colon：after each heading:\n小咪觉得对方可能在想：<content>\n小咪觉得可以这样：<content>\n小咪说留个心眼：<content>',
+      describeUserQuestion(params.event?.userQuestion),
+      'rawReply must use headings. If 用户这次最想知道 is provided, use exactly four headings in this order; otherwise use the last three headings only. IMPORTANT: each section MUST contain 2-4 specific, concrete, actionable sentences — DO NOT write just one short sentence. for example, 小咪觉得可以这样 should give 2-3 concrete next-step suggestions, not just one vague idea. Use Chinese colon：after each heading:\n小咪先回答你的问题：<content, only when userQuestion exists>\n小咪觉得对方可能在想：<content>\n小咪觉得可以这样：<content>\n小咪说留个心眼：<content>',
       'eventInsight must be enums only: actor=target|self|both|unknown, interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear, commitmentStatus=none|promised|fulfilled|broken|unclear, evidenceType=fact|feeling|mixed|unclear.',
       '主体宾语校验：“我主动问对方 / 我问他 / 我问她 / 我问对方”表示用户主动向关系对象提问；不要改写成“对方问我”或“对方主动问用户”。只有“对方问我 / 他问我 / 她问我 / 问我”才表示关系对象主动问用户。',
       describeSubjectRole(params.event?.subjectRole),

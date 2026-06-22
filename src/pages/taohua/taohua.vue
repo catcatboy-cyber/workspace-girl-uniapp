@@ -169,9 +169,7 @@
       <view class="section-title-row-v2 persona-title-row-v2">
         <text class="section-title-v2 no-margin">你的桃花人设</text>
         <view class="persona-share-action-v2" @click="sharePersona">
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('share2')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">📤</text>
-          <text>分享</text>
+          <image class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('share2')" mode="aspectFit" />
         </view>
       </view>
 
@@ -251,18 +249,63 @@
     <view v-if="pairMatch" class="card-v2">
       <view class="section-title-row-v2 persona-title-row-v2">
         <text class="section-title-v2 no-margin">桃花匹配度</text>
-        <view class="mini-action-v2" @click="openMatchSheet">更换 TA</view>
-      </view>
-      <view class="match-badge-wrap">
-        <view :class="['match-badge-v2', pairMatchBadge, 'match-badge-line-v2']">
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">💚</text>
-          <text>{{ pairMatch.relation }}</text>
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">💚</text>
+        <view class="pair-title-actions-v2">
+          <view v-if="isPairPreviewing && canRestoreCurrentPair" class="mini-action-v2" @click="restoreCurrentPair">恢复当前 TA</view>
+          <view class="persona-share-action-v2 pair-share-action-v2" @click="sharePersona">
+            <image class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('share2')" mode="aspectFit" />
+          </view>
         </view>
       </view>
-      <text class="card-text-v2 strong" style="text-align:center;display:block;">{{ pairMatch.relationDesc }}</text>
+      <view v-if="pairParticipants" class="pair-summary-v2">
+        <view class="pair-party-card-v2">
+          <text class="pair-role-v2">{{ pairParticipants.selfLabel }}</text>
+          <view class="pair-token-v2">
+            <text class="pair-token-symbol-v2">{{ getZodiacEmoji(pairParticipants.selfZodiac) }}</text>
+            <text class="pair-token-text-v2">{{ pairParticipants.selfZodiac }}</text>
+          </view>
+          <view class="pair-token-v2 alt">
+            <text class="pair-token-symbol-v2">{{ getSignEmoji(pairParticipants.selfSign) }}</text>
+            <text class="pair-token-text-v2">{{ pairParticipants.selfSign }}</text>
+          </view>
+        </view>
+
+        <view class="pair-relation-stack-v2">
+          <text class="pair-role-v2 pair-role-mid-v2">匹配</text>
+          <view :class="['pair-relation-cell-v2', relationToneClass(pairMatch.relation)]">
+          <text class="pair-relation-label-v2">生肖</text>
+          <text class="pair-relation-value-v2">{{ pairMatch.relation }}</text>
+          </view>
+          <view :class="['pair-relation-cell-v2', signRelationToneClass(pairMatch.signRelation)]">
+          <text class="pair-relation-label-v2">星座</text>
+          <text class="pair-relation-value-v2">{{ pairMatch.signRelation || '星座节奏平衡' }}</text>
+          </view>
+        </view>
+
+        <view class="pair-party-card-v2">
+          <text class="pair-role-v2">{{ pairParticipants.partnerLabel }}</text>
+          <picker class="pair-token-picker-v2" :range="zodiacNames" :value="currentPairPartnerZodiacIdx" @change="onPreviewPairZodiacChange">
+            <view class="pair-token-v2 clickable">
+              <text class="pair-token-symbol-v2">{{ getZodiacEmoji(pairParticipants.partnerZodiac) }}</text>
+              <text class="pair-token-text-v2">{{ pairParticipants.partnerZodiac }}</text>
+              <view class="pair-token-edit-v2">
+                <image class="taohua-icon-img" :style="iconStyle(16)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
+              </view>
+            </view>
+          </picker>
+          <picker class="pair-token-picker-v2" :range="signNames" :value="currentPairPartnerSignIdx" @change="onPreviewPairSignChange">
+            <view class="pair-token-v2 alt clickable">
+              <text class="pair-token-symbol-v2">{{ getSignEmoji(pairParticipants.partnerSign) }}</text>
+              <text class="pair-token-text-v2">{{ pairParticipants.partnerSign }}</text>
+              <view class="pair-token-edit-v2">
+                <image class="taohua-icon-img" :style="iconStyle(16)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
+              </view>
+            </view>
+          </picker>
+        </view>
+      </view>
+      <text v-if="pairParticipants" class="pair-basis-v2">匹配依据：生肖 + 星座</text>
+      <text v-if="isPairPreviewing" class="pair-preview-note-v2">当前是临时预览组合，仅在本页生效，不会修改 TA 档案。</text>
+      <text class="card-text-v2 strong" style="text-align:center;display:block;">{{ pairMatch.combinedRelationDesc || pairMatch.relationDesc }}</text>
 
       <view v-if="pairInsight" class="pair-insight-v2">
         <view class="pair-section-v2">
@@ -285,9 +328,30 @@
             <text class="pair-text-v2 good">{{ a }}</text>
           </view>
         </view>
+        <view v-if="(pairInsight.watchOut || []).length" class="pair-section-v2">
+          <view class="pair-label-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">⚠️</text>
+            <text class="pair-label-v2">当心</text>
+          </view>
+          <view v-for="(w, i) in pairInsight.watchOut.slice(0, 2)" :key="'pw-' + i" class="guide-line-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">!</text>
+            <text class="pair-text-v2 muted">{{ w }}</text>
+          </view>
+        </view>
+        <view v-if="pairPartnerStyle" class="pair-section-v2">
+          <view class="pair-label-row-v2">
+            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
+            <text v-else class="taohua-icon-emoji">✨</text>
+            <text class="pair-label-v2">TA 的桃花风格</text>
+          </view>
+          <text class="pair-text-v2">{{ pairPartnerStyle }}</text>
+        </view>
       </view>
 
-      <button class="btn-v2-me primary" style="width:100%;margin-top:16rpx;" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
+      <button v-if="!isPairPreviewing" class="btn-v2-me primary" style="width:100%;margin-top:16rpx;" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
+      <text v-else class="pair-preview-hint-v2">AI 深度解读仍绑定当前 TA。恢复当前 TA 后可继续查看。</text>
 
       <view v-if="pairReadLoading" class="action-box">
         <text class="action-label">AI 深度解读中...</text>
@@ -413,87 +477,37 @@
           </view>
         </view>
 
-        <view class="picker-row-v2">
-          <view class="picker-box-v2">
-            <text class="picker-label-v2">Ta的生肖</text>
-            <picker :range="zodiacNames" :value="matchZodiacIdx" @change="onMatchZodiacChange">
-              <view class="picker-display-v2">{{ zodiacNames[matchZodiacIdx] }}</view>
-            </picker>
-          </view>
-          <view class="picker-box-v2">
-            <text class="picker-label-v2">Ta的星座</text>
-            <picker :range="signNames" :value="matchSignIdx" @change="onMatchSignChange">
-              <view class="picker-display-v2">{{ signNames[matchSignIdx] }}</view>
-            </picker>
-          </view>
+        <view class="picker-stack-v2">
+          <picker :range="zodiacNames" :value="matchZodiacIdx" @change="onMatchZodiacChange">
+            <view class="picker-card-v2">
+              <view class="picker-card-main-v2">
+                <text class="picker-label-v2">TA 的生肖</text>
+                <text class="picker-value-v2">{{ zodiacNames[matchZodiacIdx] }}</text>
+              </view>
+              <view class="picker-action-v2">
+                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
+                <text v-else class="taohua-icon-emoji">≡</text>
+              </view>
+            </view>
+          </picker>
+          <picker :range="signNames" :value="matchSignIdx" @change="onMatchSignChange">
+            <view class="picker-card-v2">
+              <view class="picker-card-main-v2">
+                <text class="picker-label-v2">TA 的星座</text>
+                <text class="picker-value-v2">{{ signNames[matchSignIdx] }}</text>
+              </view>
+              <view class="picker-action-v2">
+                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
+                <text v-else class="taohua-icon-emoji">≡</text>
+              </view>
+            </view>
+          </picker>
         </view>
 
-        <button class="btn-v2-me primary" style="width:100%;" @click="doMatchCheck">查看配对</button>
-
-        <!-- 配对结果 -->
-        <view v-if="matchResult" class="match-result-v2">
-          <view class="match-badge-wrap">
-            <view :class="['match-badge-v2', matchResultBadge, 'match-badge-line-v2']">
-              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
-              <text v-else class="taohua-icon-emoji">💚</text>
-              <text>{{ matchResult.relation }}</text>
-              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
-              <text v-else class="taohua-icon-emoji">💚</text>
-            </view>
-          </view>
-
-          <!-- 双人深度解读 -->
-          <view v-if="matchResult.insight" class="pair-insight-v2">
-            <!-- 风格碰撞 -->
-            <view class="pair-section-v2">
-              <view class="pair-label-row-v2">
-                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('stars')" mode="aspectFit" />
-                <text v-else class="taohua-icon-emoji">💫</text>
-                <text class="pair-label-v2">风格碰撞</text>
-              </view>
-              <text class="pair-text-v2">{{ matchResult.insight.styleClash }}</text>
-            </view>
-
-            <!-- 适合一起 -->
-            <view class="pair-section-v2">
-              <view class="pair-label-row-v2">
-                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('target')" mode="aspectFit" />
-                <text v-else class="taohua-icon-emoji">🎯</text>
-                <text class="pair-label-v2">适合一起</text>
-              </view>
-              <view v-for="(a, i) in matchResult.insight.activities" :key="'act-'+i" class="guide-line-v2 good">
-                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('checkCircle')" mode="aspectFit" />
-                <text v-else class="taohua-icon-emoji">✅</text>
-                <text class="pair-text-v2 good">{{ a }}</text>
-              </view>
-            </view>
-
-            <!-- 当心 -->
-            <view class="pair-section-v2">
-              <view class="pair-label-row-v2">
-                <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
-                <text v-else class="taohua-icon-emoji">⚠️</text>
-                <text class="pair-label-v2">当心</text>
-              </view>
-              <text v-for="(w, i) in matchResult.insight.watchOut" :key="'wo-'+i" class="pair-text-v2 muted">· {{ w }}</text>
-            </view>
-
-            <!-- 古籍 -->
-            <view class="pair-classical-row-v2">
-              <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('bookOpen')" mode="aspectFit" />
-              <text v-else class="taohua-icon-emoji">📖</text>
-              <text class="pair-classical-v2">{{ matchResult.insight.classicalNote }}</text>
-            </view>
-          </view>
-
-          <!-- 对方信息 -->
-          <view class="match-detail-v2" v-if="matchResult.partner" style="margin-top:16rpx;">
-            <text class="card-text-v2 muted">Ta的桃花风格：</text>
-            <text class="card-text-v2">{{ matchResult.partner.western.personality }}</text>
-            <view class="tag-row-v2" style="margin-top:8rpx;">
-              <text v-for="m in matchResult.partner.western.bestMatch" :key="m" class="tag-v2">最佳配对：{{ m }}</text>
-            </view>
-          </view>
+        <text class="card-text-v2 muted" style="margin-top:12rpx;">仅在当前页面预览新的属相和星座组合，不会修改 TA 档案。</text>
+        <view class="sheet-actions-v2">
+          <button class="btn-v2-me primary" style="flex:1;" @click="doMatchCheck">按此组合查看</button>
+          <button v-if="canRestoreCurrentPair" class="btn-v2-me outline" style="flex:1;" @click="restoreCurrentPairFromSheet">恢复当前 TA</button>
         </view>
       </view>
     </view>
@@ -846,22 +860,38 @@ const natalTianxiDir = computed(() => {
   try { return hongluanTianxi(z).tianxi.direction || '' } catch { return '' }
 })
 
-const zodiacEmoji = computed(() => {
+function getZodiacEmoji(zodiac = '') {
   const map: Record<string, string> = {
     '鼠':'🐭','牛':'🐮','虎':'🐯','兔':'🐇','龙':'🐲','蛇':'🐍',
     '马':'🐴','羊':'🐑','猴':'🐵','鸡':'🐔','狗':'🐶','猪':'🐷',
   }
-  return map[userZodiac.value] || '🐇'
-})
+  return map[zodiac] || '✦'
+}
 
-const signEmoji = computed(() => {
+function getSignEmoji(sign = '') {
   const map: Record<string, string> = {
     '白羊座': '♈', '金牛座': '♉', '双子座': '♊', '巨蟹座': '♋',
     '狮子座': '♌', '处女座': '♍', '天秤座': '♎', '天蝎座': '♏',
     '射手座': '♐', '摩羯座': '♑', '水瓶座': '♒', '双鱼座': '♓',
   }
-  return map[userSign.value] || '✦'
-})
+  return map[sign] || '✦'
+}
+
+const zodiacEmoji = computed(() => getZodiacEmoji(userZodiac.value))
+const signEmoji = computed(() => getSignEmoji(userSign.value))
+
+function relationToneClass(relation = '') {
+  if (relation.includes('六合')) return 'great'
+  if (relation.includes('三合')) return 'good'
+  if (relation.includes('冲')) return 'caution'
+  return 'neutral'
+}
+
+function signRelationToneClass(relation = '') {
+  if (relation.includes('同频') || relation.includes('助燃') || relation.includes('滋养')) return 'good'
+  if (relation.includes('差') || relation.includes('磨合') || relation.includes('校准')) return 'caution'
+  return 'neutral'
+}
 
 // 属相×星座交叉（本地计算）
 const crossData = computed<CrossMatchResult>(() => {
@@ -889,20 +919,15 @@ const zodiacNames = ref(ZODIAC_NAMES)
 const signNames = ref(SIGN_NAMES)
 const matchZodiacIdx = ref(0)
 const matchSignIdx = ref(0)
-const matchResult = ref<{ relation: string; relationDesc: string; partner?: CrossMatchResult; insight?: PairInsight } | null>(null)
-
-const matchResultBadge = computed(() => {
-  const r = matchResult.value?.relation || ''
-  if (r.includes('六合')) return 'great'
-  if (r.includes('三合')) return 'good'
-  if (r.includes('冲')) return 'caution'
-  return 'neutral'
-})
 
 function onMatchZodiacChange(e: any) { matchZodiacIdx.value = e.detail.value }
 function onMatchSignChange(e: any) { matchSignIdx.value = e.detail.value }
 
 function openMatchSheet() {
+  const partnerZodiac = pairParticipants.value?.partnerZodiac || defaultPairState.value?.participants.partnerZodiac || ''
+  const partnerSign = pairParticipants.value?.partnerSign || defaultPairState.value?.participants.partnerSign || ''
+  matchZodiacIdx.value = Math.max(0, zodiacNames.value.indexOf(partnerZodiac))
+  matchSignIdx.value = Math.max(0, signNames.value.indexOf(partnerSign))
   showMatchSheet.value = true
 }
 
@@ -914,21 +939,46 @@ function handlePairGuideClick() {
   goSelfProfile()
 }
 
+function buildPairState(partnerZodiac: string, partnerSign: string, partnerLabel = '预览 TA') {
+  const partner = zodiacSignMatch(partnerZodiac, partnerSign)
+  const selfMatch = zodiacSignMatch(userZodiac.value, userSign.value)
+  const pair = zodiacPairMatch(userZodiac.value, partnerZodiac, userSign.value, partnerSign)
+  const insight = generatePairInsight(selfMatch, partner, pair)
+  return {
+    match: {
+      relation: pair.relation,
+      relationDesc: pair.relationDesc,
+      signRelation: pair.signRelation,
+      signRelationDesc: pair.signRelationDesc,
+      combinedRelation: pair.combinedRelation,
+      combinedRelationDesc: pair.combinedRelationDesc,
+    },
+    participants: {
+      selfLabel: '我',
+      selfZodiac: userZodiac.value,
+      selfSign: userSign.value,
+      partnerLabel,
+      partnerZodiac,
+      partnerSign
+    },
+    insight,
+    partnerStyle: partner.western.personality
+  }
+}
+
 function doMatchCheck() {
   const z = zodiacNames.value[matchZodiacIdx.value]
   const s = signNames.value[matchSignIdx.value]
   try {
-    const partner = zodiacSignMatch(z, s)
-    // 用当前用户数据和对方数据生成双人解读
-    const selfMatch = zodiacSignMatch(userZodiac.value, userSign.value)
-    const pair = zodiacPairMatch(userZodiac.value, z, userSign.value, s)
-    const insight = generatePairInsight(selfMatch, partner, pair)
-    matchResult.value = {
-      relation: pair.relation,
-      relationDesc: pair.relationDesc,
-      partner,
-      insight,
-    }
+    const label = defaultPairState.value?.participants.partnerLabel ? `${defaultPairState.value.participants.partnerLabel}（预览）` : '预览 TA'
+    previewPairState.value = buildPairState(z, s, label)
+    pairMatch.value = previewPairState.value.match
+    pairParticipants.value = previewPairState.value.participants
+    pairInsight.value = previewPairState.value.insight
+    pairPartnerStyle.value = previewPairState.value.partnerStyle || ''
+    pairAIResult.value = null
+    isPairPreviewing.value = true
+    showMatchSheet.value = false
   } catch (e: any) {
     uni.showToast({ title: e.message || '配对失败', icon: 'none' })
   }
@@ -938,18 +988,65 @@ function doMatchCheck() {
 // 桃花匹配度（绑定 Crush：从"我们"页带 caseId 进入，含 AI 深度解读）
 // ============================================================
 const boundCaseId = ref('')
-const pairMatch = ref<{ relation: string; relationDesc: string } | null>(null)
+const defaultPairState = ref<{
+  match: PairMatchView
+  participants: {
+    selfLabel: string
+    selfZodiac: string
+    selfSign: string
+    partnerLabel: string
+    partnerZodiac: string
+    partnerSign: string
+  }
+  insight: PairInsight
+  partnerStyle?: string
+} | null>(null)
+const previewPairState = ref<{
+  match: PairMatchView
+  participants: {
+    selfLabel: string
+    selfZodiac: string
+    selfSign: string
+    partnerLabel: string
+    partnerZodiac: string
+    partnerSign: string
+  }
+  insight: PairInsight
+  partnerStyle?: string
+} | null>(null)
+type PairMatchView = {
+  relation: string
+  relationDesc: string
+  signRelation?: string
+  signRelationDesc?: string
+  combinedRelation?: string
+  combinedRelationDesc?: string
+}
+const pairMatch = ref<PairMatchView | null>(null)
 const pairInsight = ref<PairInsight | null>(null)
+const pairParticipants = ref<{
+  selfLabel: string
+  selfZodiac: string
+  selfSign: string
+  partnerLabel: string
+  partnerZodiac: string
+  partnerSign: string
+} | null>(null)
 const pairReadLoading = ref(false)
 const pairAIResult = ref<any>(null)
+const pairPartnerStyle = ref('')
 const showPairReadGuide = ref(false)
-
-const pairMatchBadge = computed(() => {
-  const r = pairMatch.value?.relation || ''
-  if (r.includes('六合')) return 'great'
-  if (r.includes('三合')) return 'good'
-  if (r.includes('冲')) return 'caution'
-  return 'neutral'
+const isPairPreviewing = ref(false)
+const canRestoreCurrentPair = computed(() => !!defaultPairState.value)
+const currentPairPartnerZodiacIdx = computed(() => {
+  const zodiac = pairParticipants.value?.partnerZodiac || defaultPairState.value?.participants.partnerZodiac || ''
+  const idx = zodiacNames.value.indexOf(zodiac)
+  return idx >= 0 ? idx : 0
+})
+const currentPairPartnerSignIdx = computed(() => {
+  const sign = pairParticipants.value?.partnerSign || defaultPairState.value?.participants.partnerSign || ''
+  const idx = signNames.value.indexOf(sign)
+  return idx >= 0 ? idx : 0
 })
 
 async function loadPairMatch() {
@@ -962,17 +1059,85 @@ async function loadPairMatch() {
     const self = getCachedSelfProfile()
     if (!self?.zodiac || !self?.constellation || !crush?.zodiac || !crush?.constellation) {
       showPairReadGuide.value = !!(self?.zodiac || crush?.zodiac)
+      defaultPairState.value = null
+      previewPairState.value = null
+      pairMatch.value = null
+      pairInsight.value = null
+      pairParticipants.value = null
+      pairPartnerStyle.value = ''
+      isPairPreviewing.value = false
       return
     }
-    const match = zodiacPairMatch(self.zodiac, crush.zodiac, self.constellation, crush.constellation)
-    const partner = zodiacSignMatch(crush.zodiac, crush.constellation)
-    const selfMatch = zodiacSignMatch(self.zodiac, self.constellation)
-    pairMatch.value = { relation: match.relation, relationDesc: match.relationDesc }
-    pairInsight.value = generatePairInsight(selfMatch, partner, match)
+    defaultPairState.value = buildPairState(
+      crush.zodiac,
+      crush.constellation,
+      String(detail?.name || 'TA').trim() || 'TA'
+    )
+    previewPairState.value = null
+    pairMatch.value = defaultPairState.value.match
+    pairParticipants.value = defaultPairState.value.participants
+    pairInsight.value = defaultPairState.value.insight
+    pairPartnerStyle.value = defaultPairState.value.partnerStyle || ''
     showPairReadGuide.value = false
+    isPairPreviewing.value = false
   } catch {
+    defaultPairState.value = null
+    previewPairState.value = null
+    pairMatch.value = null
+    pairInsight.value = null
+    pairParticipants.value = null
+    pairPartnerStyle.value = ''
+    isPairPreviewing.value = false
     showPairReadGuide.value = false
   }
+}
+
+function restoreCurrentPair() {
+  if (!defaultPairState.value) return
+  previewPairState.value = null
+  pairMatch.value = defaultPairState.value.match
+  pairParticipants.value = defaultPairState.value.participants
+  pairInsight.value = defaultPairState.value.insight
+  pairPartnerStyle.value = defaultPairState.value.partnerStyle || ''
+  pairAIResult.value = null
+  isPairPreviewing.value = false
+}
+
+function restoreCurrentPairFromSheet() {
+  restoreCurrentPair()
+  showMatchSheet.value = false
+}
+
+function applyInlinePairPreview(partnerZodiac: string, partnerSign: string) {
+  if (!defaultPairState.value) return
+  const defaultZodiac = defaultPairState.value.participants.partnerZodiac
+  const defaultSign = defaultPairState.value.participants.partnerSign
+  if (partnerZodiac === defaultZodiac && partnerSign === defaultSign) {
+    restoreCurrentPair()
+    return
+  }
+  const label = `${defaultPairState.value.participants.partnerLabel}（预览）`
+  previewPairState.value = buildPairState(partnerZodiac, partnerSign, label)
+  pairMatch.value = previewPairState.value.match
+  pairParticipants.value = previewPairState.value.participants
+  pairInsight.value = previewPairState.value.insight
+  pairPartnerStyle.value = previewPairState.value.partnerStyle || ''
+  pairAIResult.value = null
+  isPairPreviewing.value = true
+}
+
+function onPreviewPairZodiacChange(e: any) {
+  const zodiac = zodiacNames.value[e?.detail?.value ?? 0]
+  const sign = pairParticipants.value?.partnerSign || defaultPairState.value?.participants.partnerSign || ''
+  if (!zodiac || !sign) return
+  applyInlinePairPreview(zodiac, sign)
+}
+
+function onPreviewPairSignChange(e: any) {
+  const sign = signNames.value[e?.detail?.value ?? 0]
+  const zodiac = pairParticipants.value?.partnerZodiac || defaultPairState.value?.participants.partnerZodiac || ''
+  if (!zodiac || !sign) return
+  applyInlinePairPreview(zodiac, sign)
 }
 
 async function doPairAIDeepRead() {
@@ -1424,8 +1589,10 @@ function saveShareImage() {
 
 /* 人格卡 */
 .persona-title-row-v2 { justify-content: space-between; }
-.persona-share-action-v2 { min-width: 112rpx; height: 48rpx; padding: 0 16rpx; border: 3rpx solid #111; background: #111; color: #FFD93D; display: flex; align-items: center; justify-content: center; gap: 6rpx; font-size: $fs-caption; font-weight: 900; box-sizing: border-box; }
+.persona-share-action-v2 { width: 56rpx; height: 56rpx; border: 3rpx solid #111; background: #FFFBEA; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
 .mini-action-v2 { min-width: 104rpx; height: 48rpx; padding: 0 16rpx; border: 3rpx solid #111; background: #fff; color: #111; display: flex; align-items: center; justify-content: center; font-size: $fs-caption; font-weight: 900; box-sizing: border-box; }
+.pair-title-actions-v2 { display: flex; align-items: center; justify-content: flex-end; gap: 8rpx; flex-shrink: 0; }
+.pair-share-action-v2 { width: 52rpx; height: 52rpx; border-width: 2rpx; }
 .persona-card-v2 { border: 3rpx solid #111; padding: 24rpx; background: #fff; box-shadow: 4rpx 4rpx 0 #111; margin-top: 12rpx; }
 .persona-head-v2 { display: flex; align-items: center; gap: 12rpx; margin-bottom: 16rpx; }
 .persona-avatar-v2 { width: 64rpx; height: 64rpx; border-radius: 50%; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; font-size: $fs-heading; flex-shrink: 0; }
@@ -1453,12 +1620,28 @@ function saveShareImage() {
 .guide-card-v2 { border-style: dashed; border-color: #999; cursor: pointer; }
 
 /* 匹配徽章 */
-.match-badge-wrap { text-align: center; padding: 20rpx 0; }
-.match-badge-v2 { display: inline-block; padding: 12rpx 28rpx; border: 3rpx solid #111; box-shadow: 3rpx 3rpx 0 #111; font-size: $fs-kpi; font-weight: 900; }
-.match-badge-v2.great { background: #4ECDC4; color: #111; }
-.match-badge-v2.good { background: #FFD93D; color: #111; }
-.match-badge-v2.caution { background: #FF5252; color: #fff; }
-.match-badge-v2.neutral { background: #fff; color: #111; }
+.pair-summary-v2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8rpx; align-items: stretch; margin-top: 12rpx; }
+.pair-role-v2 { display: block; min-width: 0; font-size: $fs-caption; font-weight: 900; color: #666; line-height: 1.2; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pair-role-mid-v2 { color: #111; }
+.pair-party-card-v2 { min-width: 0; border: 2rpx dashed #111; background: #FFFDF5; padding: 8rpx; display: flex; flex-direction: column; gap: 8rpx; box-sizing: border-box; }
+.pair-relation-stack-v2 { min-width: 0; display: flex; flex-direction: column; gap: 8rpx; }
+.pair-token-picker-v2 { width: 100%; min-width: 0; }
+.pair-token-v2 { min-width: 0; width: 100%; min-height: 66rpx; border: 2rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; gap: 6rpx; padding: 0 8rpx; box-sizing: border-box; }
+.pair-token-v2.alt { background: #EAF7FF; }
+.pair-token-v2.clickable { position: relative; padding-right: 32rpx; }
+.pair-token-symbol-v2 { font-size: 26rpx; font-weight: 900; color: #111; line-height: 1; flex-shrink: 0; }
+.pair-token-text-v2 { min-width: 0; font-size: 22rpx; font-weight: 900; color: #111; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pair-token-edit-v2 { position: absolute; right: 6rpx; top: 6rpx; width: 28rpx; height: 28rpx; border: 2rpx solid #111; background: #fff; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.pair-basis-v2 { display: block; margin-top: 10rpx; font-size: 20rpx; font-weight: 700; color: #888; text-align: center; }
+.pair-relation-cell-v2 { min-width: 0; min-height: 66rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rpx 2rpx; box-sizing: border-box; }
+.pair-relation-cell-v2.great { color: #0A8F86; }
+.pair-relation-cell-v2.good { color: #A87600; }
+.pair-relation-cell-v2.caution { color: #D33F49; }
+.pair-relation-cell-v2.neutral { color: #111; }
+.pair-relation-label-v2 { font-size: 18rpx; font-weight: 900; color: #777; line-height: 1.1; }
+.pair-relation-value-v2 { max-width: 100%; margin-top: 3rpx; font-size: 23rpx; font-weight: 900; color: inherit; line-height: 1.15; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pair-preview-note-v2 { display: block; margin-top: 10rpx; padding: 12rpx 14rpx; border: 2rpx dashed #111; background: #fff; font-size: 20rpx; font-weight: 700; color: #666; line-height: 1.45; }
+.pair-preview-hint-v2 { display: block; margin-top: 16rpx; font-size: 20rpx; font-weight: 700; color: #888; text-align: center; line-height: 1.45; }
 
 /* 全览表格 */
 .overview-table-v2 { margin-top: 12rpx; }
@@ -1482,14 +1665,13 @@ function saveShareImage() {
 .sheet-close-v2 { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; color: #999; }
 
 /* Picker */
-.picker-row-v2 { display: flex; gap: 12rpx; margin-bottom: 16rpx; }
-.picker-box-v2 { flex: 1; }
-.picker-label-v2 { font-size: $fs-caption; font-weight: 700; color: #666; margin-bottom: 6rpx; display: block; }
-.picker-display-v2 { width: 100%; height: 52rpx; border: 3rpx solid #111; display: flex; align-items: center; padding: 0 16rpx; font-size: 26rpx; font-weight: 700; background: #fff; }
-
-/* 配对结果 */
-.match-result-v2 { margin-top: 20rpx; padding: 16rpx; border: 3rpx solid #111; background: #fff; }
-.match-detail-v2 { margin-top: 12rpx; padding-top: 12rpx; border-top: 1rpx dashed #ccc; }
+.picker-stack-v2 { display: flex; flex-direction: column; gap: 12rpx; margin-bottom: 16rpx; }
+.picker-card-v2 { width: 100%; min-height: 92rpx; border: 3rpx solid #111; background: #fff; padding: 14rpx 16rpx; display: flex; align-items: center; justify-content: space-between; gap: 12rpx; box-sizing: border-box; }
+.picker-card-main-v2 { min-width: 0; flex: 1; }
+.picker-label-v2 { font-size: $fs-caption; font-weight: 700; color: #666; display: block; }
+.picker-value-v2 { display: block; margin-top: 6rpx; font-size: 28rpx; font-weight: 900; color: #111; line-height: 1.25; word-break: break-all; }
+.picker-action-v2 { flex-shrink: 0; width: 48rpx; height: 44rpx; border: 2rpx solid #111; background: #FFFBEA; display: flex; align-items: center; justify-content: center; padding: 0; color: #111; box-sizing: border-box; }
+.sheet-actions-v2 { display: flex; gap: 12rpx; margin-top: 18rpx; }
 
 /* 双人解读 */
 .pair-insight-v2 { margin-top: 16rpx; }

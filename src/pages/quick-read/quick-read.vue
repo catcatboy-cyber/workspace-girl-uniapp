@@ -73,17 +73,10 @@
       <view v-else-if="loggedIn && !quickResult" class="card-v2 anim-card" style="animation-delay:0.3s">
         <view class="qr-form-head">
           <text class="section-title-v2">测测我的 TA</text>
-          <text class="qr-step">{{ quickStep + 1 }} / 3</text>
+          <text class="qr-step">{{ quickStep + 1 }} / 2</text>
         </view>
 
         <template v-if="quickStep === 0">
-          <text class="qr-form-title">这次更像哪种情况？</text>
-          <view class="qr-chip-grid">
-            <view v-for="item in sceneOptions" :key="item.value" :class="['qr-chip', form.scene === item.value ? 'active' : '']" @click="form.scene = item.value">{{ item.label }}</view>
-          </view>
-        </template>
-
-        <template v-else-if="quickStep === 1">
           <text class="qr-form-title">TA 做了什么？原话是什么？</text>
           <textarea v-model="form.text" class="qr-textarea" maxlength="600" placeholder="比如：他昨天说下次约我，但一直没定时间..." />
         </template>
@@ -97,7 +90,7 @@
 
         <view class="qr-form-actions">
           <button v-if="quickStep > 0" class="btn btn-secondary btn-md btn-auto" :disabled="quickLoading" @click="quickStep--">上一步</button>
-          <button v-if="quickStep < 2" class="btn btn-primary btn-md btn-auto" @click="nextQuickStep">下一步</button>
+          <button v-if="quickStep < 1" class="btn btn-primary btn-md btn-auto" @click="nextQuickStep">下一步</button>
           <button v-else class="btn btn-primary btn-md btn-auto" :disabled="quickLoading" @click="submitQuickRead">{{ quickLoading ? '分析中...' : '看结果' }}</button>
         </view>
         <text class="qr-skip-link" @click="onCTA">{{ ctaLoading ? '进入中...' : '跳过，直接开始追踪' }}</text>
@@ -154,18 +147,10 @@ const quickStep = ref(0)
 const quickLoading = ref(false)
 const quickResult = ref<any>(null)
 const form = reactive({
-  scene: 'chat_reply',
   text: '',
   question: '他喜欢我吗'
 })
 
-const sceneOptions = [
-  { value: 'chat_reply', label: '聊天回复' },
-  { value: 'date_progress', label: '约见推进' },
-  { value: 'hot_cold', label: '忽冷忽热' },
-  { value: 'ex_contact', label: '前任暧昧' },
-  { value: 'after_meet', label: '见面后变化' }
-]
 const questionOptions = ['他喜欢我吗', '我该不该主动', '他是不是养鱼', '怎么回复']
 
 const quickIntentScore = computed(() => normalizeScore(
@@ -237,16 +222,16 @@ async function retryLogin() {
 }
 
 function nextQuickStep() {
-  if (quickStep.value === 0 && !form.scene) { uni.showToast({ title: '先选一个场景', icon: 'none' }); return }
-  if (quickStep.value === 1 && form.text.trim().length < 2) { uni.showToast({ title: '写一句真实互动', icon: 'none' }); return }
+  if (quickStep.value === 0 && form.text.trim().length < 2) { uni.showToast({ title: '写一句真实互动', icon: 'none' }); return }
   quickStep.value += 1
 }
 
 async function submitQuickRead() {
+  if (form.text.trim().length < 2) { uni.showToast({ title: '写一句真实互动', icon: 'none' }); return }
   if (!form.question) { uni.showToast({ title: '先选一个困惑', icon: 'none' }); return }
   quickLoading.value = true
   try {
-    const result = await quickRead(form.text, form.scene, { question: form.question })
+    const result = await quickRead(form.text, undefined, { question: form.question })
     if (!result?.success) {
       uni.showToast({ title: result?.message || '分析失败', icon: 'none' })
       return

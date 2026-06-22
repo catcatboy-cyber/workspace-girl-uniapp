@@ -217,6 +217,10 @@ export interface PairZodiacMatchResult {
   }
   relation: string
   relationDesc: string
+  signRelation?: string
+  signRelationDesc?: string
+  combinedRelation: string
+  combinedRelationDesc: string
 }
 
 // ================================================================
@@ -577,6 +581,80 @@ export function zodiacSignMatch(zodiac: string, sign: string): CrossMatchResult 
 // 6. 双方生肖地支匹配
 // ================================================================
 
+function getWesternElement(sign: string): string {
+  return getSignDualData(sign)?.western.element || ''
+}
+
+function getWesternMode(sign: string): string {
+  return getSignDualData(sign)?.western.mode || ''
+}
+
+function getSignPairRelation(selfSign = '', partnerSign = ''): { relation?: string; relationDesc?: string } {
+  if (!selfSign || !partnerSign) return {}
+  const selfElement = getWesternElement(selfSign)
+  const partnerElement = getWesternElement(partnerSign)
+  if (!selfElement || !partnerElement) return {}
+
+  const sameMode = getWesternMode(selfSign) && getWesternMode(selfSign) === getWesternMode(partnerSign)
+  if (selfSign === partnerSign) {
+    return {
+      relation: '星座同频',
+      relationDesc: '你们太阳星座相同，表达方式和情绪节奏更容易互相看懂，但也容易把同一种优缺点同时放大。',
+    }
+  }
+  if (selfElement === partnerElement) {
+    return {
+      relation: `${selfElement}象同频`,
+      relationDesc: `你们同属${selfElement}象，亲近方式、兴奋点和安全感来源更接近，天然话题和默契更容易形成。`,
+    }
+  }
+
+  const pairKey = [selfElement, partnerElement].sort().join('')
+  if (pairKey === '火风') {
+    return {
+      relation: '火风助燃',
+      relationDesc: '火象带行动和热度，风象带话题和新鲜感，容易越聊越有火花，但也要避免只升温不落地。',
+    }
+  }
+  if (pairKey === '土水') {
+    return {
+      relation: '土水滋养',
+      relationDesc: '水象给情绪流动，土象给稳定承接，适合慢慢建立信任，但推进速度不宜太急。',
+    }
+  }
+  if (pairKey === '水火') {
+    return {
+      relation: '水火节奏差',
+      relationDesc: '一方更看情绪安全，一方更看即时行动，吸引感不弱，但容易在快慢和表达方式上误会。',
+    }
+  }
+  if (pairKey === '土风') {
+    return {
+      relation: '风土磨合',
+      relationDesc: '风象重自由和变化，土象重确定和稳定，需要把期待说清楚，别让一个觉得被管、一个觉得不安。',
+    }
+  }
+  if (pairKey === '土火') {
+    return {
+      relation: '火土校准',
+      relationDesc: '火象想快速推进，土象更重现实判断，适合把热度变成具体行动，少用情绪催进度。',
+    }
+  }
+  if (pairKey === '水风') {
+    return {
+      relation: '风水互译',
+      relationDesc: '风象偏理性沟通，水象偏情绪感受，需要多确认对方真正的意思，避免一个讲逻辑、一个等共情。',
+    }
+  }
+
+  return {
+    relation: sameMode ? '星座节奏相近' : '星座节奏平衡',
+    relationDesc: sameMode
+      ? '你们做决定的节奏相近，容易理解彼此的反应模式，但相似节奏也可能让问题一起卡住。'
+      : '你们的星座互动没有明显冲突点，关系质量更取决于现实互动和沟通稳定度。',
+  }
+}
+
 export function zodiacPairMatch(
   selfZodiac: string,
   partnerZodiac: string,
@@ -603,12 +681,21 @@ export function zodiacPairMatch(
     relation = '六冲（冲突）'
     relationDesc = '双方生肖地支六冲，吸引力和波动性都更强，需要更主动地磨合节奏。'
   }
+  const signPair = getSignPairRelation(selfSign, partnerSign)
+  const combinedRelation = signPair.relation ? `${relation} · ${signPair.relation}` : relation
+  const combinedRelationDesc = signPair.relationDesc
+    ? `${relationDesc} 星座互动上，${signPair.relationDesc}`
+    : relationDesc
 
   return {
     self: { zodiac: selfZodiac, zhi: selfZhi, sign: selfSign || undefined },
     partner: { zodiac: partnerZodiac, zhi: partnerZhi, sign: partnerSign || undefined },
     relation,
     relationDesc,
+    signRelation: signPair.relation,
+    signRelationDesc: signPair.relationDesc,
+    combinedRelation,
+    combinedRelationDesc,
   }
 }
 
@@ -645,6 +732,7 @@ export function generatePairInsight(
   pairMatch?: PairZodiacMatchResult,
 ): PairInsight {
   const relation = pairMatch?.relation || selfMatch.relation
+  const signRelationDesc = pairMatch?.signRelationDesc || ''
   const selfElement = selfMatch.western.element
   const partnerElement = partnerMatch.western.element
 
@@ -656,8 +744,11 @@ export function generatePairInsight(
     '同宫': '你们太像了——个性强烈而纯粹，互相懂得但也容易互相较劲。像照镜子，优点放大，缺点也放大。需要学会给彼此空间。',
     '平': '你们是稳扎稳打的组合——没有天生的buff也没有天然的障碍，一切取决于你们的经营和用心。这种关系最真实，也最有成长空间。',
   }
-  const styleClash = styleClashMap[relation]
+  const baseStyleClash = styleClashMap[relation]
     || '你们的组合属于中规中矩——没有天生的buff也没有天然的障碍，一切都取决于彼此的用心经营。'
+  const styleClash = signRelationDesc
+    ? `${baseStyleClash} 星座层面，${signRelationDesc}`
+    : baseStyleClash
 
   // 适合一起做的事
   const activities: string[] = []

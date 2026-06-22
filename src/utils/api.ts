@@ -534,9 +534,11 @@ export async function trackLoginVisit(params: { shareId?: string; channel?: stri
 
 /** 快速解读：免费，不依赖 caseId */
 export async function quickRead(text: string, scene?: string, options?: { question?: string; ageRange?: string }) {
+  const data: Record<string, any> = { text, ...(options || {}) }
+  if (scene) data.scene = scene
   const res = await callFunction({
     name: 'quickRead',
-    data: { text, scene: scene || 'general', ...(options || {}) }
+    data
   })
   return res.result
 }
@@ -652,6 +654,7 @@ export async function createTimeline(data: {
   attachments?: any[]
   subjectRole?: 'target' | 'self' | 'both' | 'unknown' | string
   subjectRoleConfidence?: 'user_selected' | 'confirmed' | string
+  userQuestion?: { key: string; label: string } | null
   occurrenceAt: string
 }) {
   const { userId: _userId, ...payload } = data

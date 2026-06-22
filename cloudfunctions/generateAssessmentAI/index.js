@@ -36,6 +36,21 @@ function normalizeSubjectRoleConfidence(value) {
   return ['user_selected', 'confirmed'].includes(value) ? value : 'user_selected'
 }
 
+function sanitizeUserQuestion(value) {
+  const allowed = {
+    like: '他喜欢我吗',
+    initiative: '我该不该主动',
+    fishing: '他是不是在养鱼',
+    reply: '这句话怎么回',
+    advance: '现在怎么推进',
+    overthinking: '我是不是想多了'
+  }
+  const source = value && typeof value === 'object' ? value : {}
+  const key = typeof source.key === 'string' ? source.key.trim() : ''
+  if (allowed[key]) return { key, label: allowed[key] }
+  return null
+}
+
 function buildBaselineAssessment() {
   return {
     assessmentId: '',
@@ -133,6 +148,7 @@ function compactTimelineItem(item) {
     type: item.type,
     subjectRole: normalizeSubjectRole(item.subjectRole),
     subjectRoleConfidence: normalizeSubjectRoleConfidence(item.subjectRoleConfidence),
+    userQuestion: sanitizeUserQuestion(item.userQuestion),
     dateLabel: item.dateLabel || '',
     description: item.description || '',
     semanticTags: item.semanticTags,

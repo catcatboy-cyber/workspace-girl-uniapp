@@ -129,6 +129,21 @@ function sanitizeAttachments(value) {
     .filter(Boolean)
 }
 
+function sanitizeUserQuestion(value) {
+  const allowed = {
+    like: '他喜欢我吗',
+    initiative: '我该不该主动',
+    fishing: '他是不是在养鱼',
+    reply: '这句话怎么回',
+    advance: '现在怎么推进',
+    overthinking: '我是不是想多了'
+  }
+  const source = value && typeof value === 'object' ? value : {}
+  const key = typeof source.key === 'string' ? source.key.trim() : ''
+  if (allowed[key]) return { key, label: allowed[key] }
+  return { key: 'like', label: allowed.like }
+}
+
 function mapCreateTimelineError(error) {
   if (error?.message === 'LATEST_RESULT_REQUIRED' || error?.message === 'LATEST_RESULT_NOT_FOUND') {
     return '当前档案缺少有效评估结果，请先重新评估后再记录时间线'
@@ -187,6 +202,7 @@ exports.main = async (event) => {
     const occursAt = isValidDate(parsedOccurrenceAt) ? parsedOccurrenceAt : now
     const safeSubjectRole = normalizeSubjectRole(subjectRole)
     const safeSubjectRoleConfidence = normalizeSubjectRoleConfidence(subjectRoleConfidence)
+    const safeUserQuestion = sanitizeUserQuestion(event.userQuestion)
     const safeAttachments = sanitizeAttachments(event.attachments)
 
     const draftRecord = {
@@ -195,6 +211,7 @@ exports.main = async (event) => {
       type: classifyTimelineEvent(safeDescription),
       subjectRole: safeSubjectRole,
       subjectRoleConfidence: safeSubjectRoleConfidence,
+      userQuestion: safeUserQuestion,
       dateLabel: dateLabel || '',
       description: safeDescription,
       attachments: safeAttachments,
@@ -237,6 +254,7 @@ exports.main = async (event) => {
         type: item.type,
         subjectRole: normalizeSubjectRole(item.subjectRole),
         subjectRoleConfidence: normalizeSubjectRoleConfidence(item.subjectRoleConfidence),
+        userQuestion: sanitizeUserQuestion(item.userQuestion),
         dateLabel: item.dateLabel || '',
         description: item.description || '',
         occurrenceAt: toISOStringOrUndefined(item.occurrenceAt),
@@ -248,6 +266,7 @@ exports.main = async (event) => {
       type: draftRecord.type,
       subjectRole: draftRecord.subjectRole,
       subjectRoleConfidence: draftRecord.subjectRoleConfidence,
+      userQuestion: draftRecord.userQuestion,
       dateLabel: draftRecord.dateLabel,
       description: draftRecord.description,
       occurrenceAt: toISOStringOrUndefined(draftRecord.occurrenceAt),
@@ -310,6 +329,7 @@ exports.main = async (event) => {
       triggerEventId: recordId,
       triggerEventTitle: finalRecord.title,
       triggerEventType: finalRecord.type,
+      userQuestion: finalRecord.userQuestion,
       rawReply: '',
       actionAdvice: null,
       eventInsight: null,
@@ -345,6 +365,7 @@ exports.main = async (event) => {
       type: finalRecord.type,
       subjectRole: finalRecord.subjectRole,
       subjectRoleConfidence: finalRecord.subjectRoleConfidence,
+      userQuestion: finalRecord.userQuestion,
       dateLabel: finalRecord.dateLabel,
       description: finalRecord.description,
       attachments: finalRecord.attachments,
@@ -384,6 +405,7 @@ exports.main = async (event) => {
       aiPending: true,
       subjectRole: finalRecord.subjectRole,
       subjectRoleConfidence: finalRecord.subjectRoleConfidence,
+      userQuestion: finalRecord.userQuestion,
       eventType: finalRecord.type,
       eventTitle: finalRecord.title
     }

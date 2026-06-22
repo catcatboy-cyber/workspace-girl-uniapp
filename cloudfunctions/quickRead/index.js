@@ -134,13 +134,73 @@ function tailorFallbackToQuestion(fallback, question) {
   }
 }
 
+function inferSceneFromText(text, question) {
+  const source = `${String(text || '')}\n${String(question || '')}`.toLowerCase()
+  const normalized = source
+    .replace(/\s+/g, '')
+    .replace(/[，。！？、,.!?;；:："'`~()\[\]{}<>《》【】]/g, '')
+
+  if (
+    normalized.includes('前任') ||
+    normalized.includes('复合') ||
+    normalized.includes('回头') ||
+    normalized.includes('旧情') ||
+    normalized.includes('前女友') ||
+    normalized.includes('前男友')
+  ) return 'ex_contact'
+
+  if (
+    normalized.includes('忽冷忽热') ||
+    normalized.includes('时冷时热') ||
+    normalized.includes('一下热情一下冷淡') ||
+    normalized.includes('突然冷淡') ||
+    normalized.includes('突然热情') ||
+    normalized.includes('爱回不回') ||
+    normalized.includes('断联') ||
+    normalized.includes('消失')
+  ) return 'hot_cold'
+
+  if (
+    normalized.includes('见面后') ||
+    normalized.includes('约会后') ||
+    normalized.includes('吃饭后') ||
+    normalized.includes('看完电影') ||
+    normalized.includes('分别后') ||
+    normalized.includes('聊完以后') ||
+    normalized.includes('见过面')
+  ) return 'after_meet'
+
+  if (
+    normalized.includes('下次约') ||
+    normalized.includes('什么时候见') ||
+    normalized.includes('要不要见面') ||
+    normalized.includes('出来吗') ||
+    normalized.includes('改天约') ||
+    normalized.includes('周末约') ||
+    normalized.includes('定时间') ||
+    normalized.includes('订位') ||
+    normalized.includes('见面')
+  ) return 'date_progress'
+
+  if (
+    normalized.includes('回复') ||
+    normalized.includes('回我') ||
+    normalized.includes('怎么回') ||
+    normalized.includes('发消息') ||
+    normalized.includes('聊天')
+  ) return 'chat_reply'
+
+  return 'general'
+}
+
 // ========== 主函数 ==========
 
 exports.main = async (event = {}) => {
   const text = String(event.text || event.content || '').trim()
-  const scene = String(event.scene || 'general').trim()
   const question = String(event.question || '').trim()
   const ageRange = String(event.ageRange || '').trim()
+  const providedScene = String(event.scene || '').trim()
+  const scene = providedScene || inferSceneFromText(text, question)
 
   if (!text || text.length < 2) {
     return { success: false, message: '请至少输入 2 个字' }

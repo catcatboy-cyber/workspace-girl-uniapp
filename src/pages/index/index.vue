@@ -138,7 +138,7 @@
         <!-- Quick record -->
         <view class="record-block anim-card" style="animation-delay:0.15s">
           <view class="block-head"><text class="block-title">快速记录</text><text class="block-badge">别脑补</text></view>
-          <textarea v-model="quickDesc" class="text-area-v2" placeholder="他说下次一起去图书馆..." />
+          <textarea v-model="quickDesc" class="text-area-v2" placeholder="他做了什么？原话是什么？&#10;例如：他说下次一起去图书馆…" />
           <view class="role-row">
             <text class="role-label">这条主要在说</text>
             <view class="role-options">
@@ -146,6 +146,17 @@
             </view>
           </view>
           <text class="role-hint-v2">{{ quickSubjectRoleHint }}</text>
+          <view class="quick-question-block-v2">
+            <text class="role-label">你最想知道什么？</text>
+            <view class="quick-question-options-v2">
+              <view
+                v-for="item in quickQuestionOptions"
+                :key="item.value"
+                :class="['quick-question-chip-v2', quickQuestionKey === item.value ? 'active' : '']"
+                @click="quickQuestionKey = item.value"
+              >{{ item.label }}</view>
+            </view>
+          </view>
           <view class="datetime-row-v2">
             <picker mode="date" :value="quickDate" @change="onQuickDateChange"><view class="picker-v2">{{ quickDate }}</view></picker>
             <picker mode="time" :value="quickTime" @change="onQuickTimeChange"><view class="picker-v2">{{ quickTime }}</view></picker>
@@ -174,7 +185,11 @@
 
         <!-- Feedback -->
         <view v-if="showQuickFeedback && latestCase.latestResult && latestTrend" :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']">
-          <view class="block-head"><text class="block-title">本次分析</text><button class="btn-share-sm" open-type="share"><image src="/static/icons/taohua/share-2.svg" mode="aspectFit" style="width:28rpx;height:28rpx;" /></button></view>
+          <button class="btn-share-sm analysis-share-btn" open-type="share">
+            <image class="analysis-share-icon" src="/static/icons/taohua/share-2.svg" mode="aspectFit" />
+          </button>
+          <view class="block-head analysis-head"><text class="block-title">本次分析</text></view>
+          <text v-if="latestCase.latestResult?.userQuestion?.label" class="question-context-v2">你问：{{ latestCase.latestResult.userQuestion.label }}</text>
           <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
           <view v-if="aiFeedbackLoading" class="action-box">
             <text class="action-label">AI 分析中...</text>
@@ -357,6 +372,7 @@ const selfProfile = ref<any>(getCachedSelfProfile())
 const quickDesc = ref('')
 const quickDate = ref(getDateInputValue())
 const quickTime = ref(getTimeInputValue())
+const quickQuestionKey = ref('like')
 const quickSubmitting = ref(false)
 const quickUploading = ref(false)
 const voiceUploading = ref(false)
@@ -387,6 +403,20 @@ const subjectRoleOptions = [
   { value: 'self', label: '自己' },
   { value: 'both', label: '互动' }
 ] as const
+
+const quickQuestionOptions = [
+  { value: 'like', label: '他喜欢我吗' },
+  { value: 'initiative', label: '我该不该主动' },
+  { value: 'fishing', label: '他是不是在养鱼' },
+  { value: 'reply', label: '这句话怎么回' },
+  { value: 'advance', label: '现在怎么推进' },
+  { value: 'overthinking', label: '我是不是想多了' }
+] as const
+
+function getQuickQuestionPayload() {
+  const item = quickQuestionOptions.find((option) => option.value === quickQuestionKey.value) || quickQuestionOptions[0]
+  return { key: item.value, label: item.label }
+}
 
 const latestCase = computed(() => {
   const active = activeCaseId.value
@@ -482,16 +512,17 @@ const latestRawReply = computed(() => {
 function parseRawReplySections(text: string) {
   const source = String(text || '').trim()
   if (!source) return []
-  const labels = ['小咪觉得对方可能在想', '小咪觉得可以这样', '小咪说留个心眼']
+  const labels = ['小咪先回答你的问题', '小咪觉得对方可能在想', '小咪觉得可以这样', '小咪说留个心眼']
+  const labelPattern = '(小咪先回答你的问题|小咪觉得对方可能在想|小咪觉得可以这样|小咪说留个心眼)'
   // Step 1: normalize colon format
   let normalized = source
     .replace(/\r/g, '')
-    .replace(/(小咪觉得对方可能在想|小咪觉得可以这样|小咪说留个心眼)\s*[：:]/g, '\n$1：')
+    .replace(new RegExp(`${labelPattern}\\s*[：:]`, 'g'), '\n$1：')
   // Step 2: fallback — if no colon headings found, try slash-separated format
   if (!labels.some((l) => normalized.includes(`${l}：`))) {
     normalized = source
       .replace(/\r/g, '')
-      .replace(/(小咪觉得对方可能在想|小咪觉得可以这样|小咪说留个心眼)\s*\/\s*/g, '\n$1：')
+      .replace(new RegExp(`${labelPattern}\\s*\\/\\s*`, 'g'), '\n$1：')
   }
   normalized = normalized.trim()
   const sections = labels.map((label, index) => {
@@ -1418,6 +1449,7 @@ function applyPendingQuickFeedback(params: {
   description: string
   subjectRole: 'target' | 'self' | 'both'
   subjectRoleConfidence: string
+  userQuestion?: { key: string; label: string }
   attachments: any[]
   occurrenceAt: string
 }) {
@@ -1437,6 +1469,7 @@ function applyPendingQuickFeedback(params: {
     triggerEventTitle: params.eventTitle,
     triggerEventType: params.eventType,
     rawReply: '',
+    userQuestion: params.userQuestion || null,
     actionAdvice: null,
     eventInsight: null,
     currentStatus: null,
@@ -1457,6 +1490,7 @@ function applyPendingQuickFeedback(params: {
     type: params.eventType,
     subjectRole: params.subjectRole,
     subjectRoleConfidence: params.subjectRoleConfidence,
+    userQuestion: params.userQuestion || null,
     description: params.description,
     attachments: params.attachments,
     occurrenceAt: params.occurrenceAt,
@@ -1502,6 +1536,7 @@ async function submitQuickRecord() {
     const currentCaseId = latestCase.value.caseId
     const currentSubjectRole = quickSubjectRole.value
     const currentSubjectRoleConfidence = quickSubjectRoleConfidence.value === 'user_selected' ? 'user_selected' : 'confirmed'
+    const currentUserQuestion = getQuickQuestionPayload()
     const currentAttachments = quickAttachments.value.map(({ url: _url, ...item }: any) => item)
     const currentOccurrenceAt = combineDateAndTimeToISOString(quickDate.value, quickTime.value)
     const res = await createTimeline({
@@ -1510,12 +1545,14 @@ async function submitQuickRecord() {
       description: desc,
       subjectRole: currentSubjectRole,
       subjectRoleConfidence: currentSubjectRoleConfidence,
+      userQuestion: currentUserQuestion,
       attachments: currentAttachments,
       occurrenceAt: currentOccurrenceAt
     })
     if (res.success) {
       showSuccess('已记录，AI分析中')
       quickDesc.value = ''
+      quickQuestionKey.value = 'like'
       quickSubjectRole.value = 'target'
       quickSubjectRoleConfidence.value = 'auto'
       quickAttachments.value = []
@@ -1547,6 +1584,7 @@ async function submitQuickRecord() {
           description: desc,
           subjectRole: currentSubjectRole,
           subjectRoleConfidence: currentSubjectRoleConfidence,
+          userQuestion: currentUserQuestion,
           attachments: currentAttachments,
           occurrenceAt: currentOccurrenceAt
         })
@@ -1704,6 +1742,10 @@ function goTaohua() {
 .v2-mode .block-badge { padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; letter-spacing: 2rpx; }
 .v2-mode .block-badge.black { background: #111; color: #fff; }
 .v2-mode .btn-share-sm { flex: none; width: 48rpx; height: 48rpx; border: 2rpx solid #111; background: #fff; display: flex; align-items: center; justify-content: center; padding: 0; }
+.v2-mode .btn-share-sm::after { border: none; }
+.v2-mode .analysis-head { padding-right: 64rpx; box-sizing: border-box; }
+.v2-mode .analysis-share-btn { position: absolute; top: 24rpx; right: 24rpx; z-index: 2; background: #FFFBEA; }
+.v2-mode .analysis-share-icon { width: 28rpx; height: 28rpx; display: block; }
 
 .v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; font-family: inherit; }
 
@@ -1712,6 +1754,10 @@ function goTaohua() {
 .v2-mode .role-options { display: flex; gap: 8rpx; }
 .v2-mode .role-chip { padding: 8rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-body; font-weight: $fw-label; color: #666; }
 .v2-mode .role-chip.active { background: #111; color: #FFD93D; }
+.v2-mode .quick-question-block-v2 { margin-top: 16rpx; }
+.v2-mode .quick-question-options-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 10rpx; }
+.v2-mode .quick-question-chip-v2 { min-height: 48rpx; padding: 0 16rpx; border: 2rpx solid #111; background: #fff; display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-size: $fs-caption; font-weight: $fw-label; color: #555; }
+.v2-mode .quick-question-chip-v2.active { background: #FFD93D; color: #111; font-weight: $fw-hero; box-shadow: 2rpx 2rpx 0 #111; }
 
 .v2-mode .datetime-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
 .v2-mode .picker-v2 { height: 56rpx; line-height: 56rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
@@ -1734,9 +1780,10 @@ function goTaohua() {
   50% { opacity: 0.3; transform: scale(0.75); }
 }
 
-.v2-mode .feedback-block { background: #fff; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
+.v2-mode .feedback-block { position: relative; background: #fff; border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .feedback-block.ok { border-left: 12rpx solid #4ECDC4; }
 .v2-mode .feedback-block.warn { border-left: 12rpx solid #FF6B6B; }
+.v2-mode .question-context-v2 { display: inline-flex; max-width: 100%; min-height: 42rpx; align-items: center; padding: 0 14rpx; margin-bottom: 12rpx; border: 2rpx solid #111; background: #FFD93D; box-sizing: border-box; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
 .v2-mode .feedback-desc { display: block; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; line-height: 1.5; margin-bottom: 16rpx; }
 
 .v2-mode .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 14rpx; }
