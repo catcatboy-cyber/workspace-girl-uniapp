@@ -85,11 +85,11 @@
           <text class="hero-tag">Crush Master BOARD</text>
           <text class="hero-title">今天他<text class="hl">有戏</text>吗？</text>
           <view class="hero-identity"><view class="profile-avatar-v2 sm"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(latestCase.name) }}</text></view><text class="hero-identity-name">{{ latestCase.name || '--' }}</text></view>
-          <text class="hero-copy">别靠脑补，先把真实互动记下来。共 {{ cases.length }} 个 Crushes。</text>
-          <view class="kpi-strip-v2">
-            <view class="kpi-cell-v2"><text class="kpi-num-v2">{{ latestCase.latestResult?.intentScore ?? '--' }}</text><text class="kpi-lbl-v2">意向分</text></view>
-            <view class="kpi-cell-v2"><text class="kpi-num-v2">{{ latestCase.latestResult?.consistencyRiskScore ?? '--' }}</text><text class="kpi-lbl-v2">风险分</text></view>
-            <view class="kpi-cell-v2"><text class="kpi-num-v2">{{ latestCase.timeline?.length ?? 0 }}</text><text class="kpi-lbl-v2">事件</text></view>
+          <view class="crush-type-panel">
+            <text class="crush-type-kicker">TA 当前是</text>
+            <text class="crush-type-label">{{ latestCrushType.label }}</text>
+            <text class="crush-type-summary">{{ latestCrushType.summary }}</text>
+            <text class="crush-type-action">{{ latestCrushNextAction }}</text>
           </view>
           <view v-if="latestProfileItems.length > 0" class="tag-row-v2">
             <text v-for="item in latestProfileItems" :key="item" class="tag-v2">{{ item }}</text>
@@ -292,6 +292,7 @@ import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDat
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams } from '@/utils/share'
+import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
 import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 
@@ -407,6 +408,28 @@ const latestProfileItems = computed(() => {
   if (p.constellation) items.push(p.constellation)
   return items
 })
+
+const latestTimelineStats = computed(() => {
+  const timeline = Array.isArray(latestCase.value?.timeline) ? latestCase.value.timeline : []
+  const hasTag = (item: any, tag: string) => JSON.stringify(item?.semanticTags || {}).includes(tag)
+  const textOf = (item: any) => `${item?.title || ''} ${item?.description || ''}`
+  const count = (predicate: (item: any) => boolean) => timeline.filter(predicate).length
+  return {
+    totalCount: timeline.length,
+    fulfilledCount: count((item) => hasTag(item, 'fulfilled') || textOf(item).includes('兑现')),
+    targetCommittedCount: count((item) => hasTag(item, 'target_committed') || textOf(item).includes('约我')),
+    cancelledDelayedCount: count((item) => hasTag(item, 'cancelled_delayed') || hasTag(item, 'vague_delay')),
+    targetInitiatedCount: count((item) => hasTag(item, 'target_initiated')),
+    selfInitiatedCount: count((item) => hasTag(item, 'self_initiated'))
+  }
+})
+
+const latestCrushType = computed(() => deriveCrushType({
+  ...(latestCase.value?.latestResult || {}),
+  timelineStats: latestTimelineStats.value
+}))
+
+const latestCrushNextAction = computed(() => mapNextActionText(latestCase.value?.latestResult?.nextAction, latestCrushType.value))
 
 const latestTriggerEvent = computed(() => {
   const triggerEventId = latestCase.value?.latestResult?.triggerEventId
@@ -566,23 +589,7 @@ const quickFeedbackSignal = computed(() => {
 const shareTitle = computed(() => {
   const r = latestCase.value?.latestResult
   if (!r) return '他到底什么意思？让小咪帮你看看'
-  const ib = r.intentBucket || ''
-  const rb = r.riskBucket || ''
-  if (ib.startsWith('high')) {
-    if (rb.startsWith('low')) return '他是真心的，还是在钓鱼？'
-    if (rb.startsWith('medium')) return '他很主动，但别高兴太早'
-    return '他说得好听，做得到吗？'
-  }
-  if (ib.startsWith('medium')) {
-    if (rb.startsWith('low')) return '他是真慢热，还是在养鱼？'
-    if (rb.startsWith('high')) return '他是暧昧，还是在吊着你？'
-    return '他说的那句话，到底几个意思？'
-  }
-  if (ib.startsWith('low')) {
-    if (rb.startsWith('low')) return '他是真的没兴趣，还是不会表达？'
-    return '被拒绝后还该继续吗？'
-  }
-  return '他到底喜不喜欢你？让小咪帮你分析'
+  return latestCrushType.value.shareTitle
 })
 
 const sceneKey = computed(() => {
@@ -1024,6 +1031,11 @@ onShareAppMessage(() => {
     `intent=${r?.intentScore ?? 50}`,
     `risk=${r?.consistencyRiskScore ?? 35}`
   ]
+  if (r) {
+    params.push(`crushTypeKey=${encodeURIComponent(latestCrushType.value.key)}`)
+    params.push(`crushTypeLabel=${encodeURIComponent(latestCrushType.value.label)}`)
+    params.push(`crushTypeSummary=${encodeURIComponent(latestCrushType.value.summary)}`)
+  }
   if (quickFeedbackSignal.value?.label) {
     params.push(`signal=${encodeURIComponent(quickFeedbackSignal.value.emoji + ' ' + quickFeedbackSignal.value.label)}`)
   }
@@ -1675,12 +1687,11 @@ function goTaohua() {
 
 .v2-mode .hero-copy { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .hero-copy .strong { color: #111; font-weight: $fw-hero; }
-
-.v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: 3rpx solid #111; background: #f9f9f9; }
-.v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 20rpx 8rpx; border-right: 3rpx solid #111; }
-.v2-mode .kpi-cell-v2:last-child { border-right: none; }
-.v2-mode .kpi-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: #111; line-height: 1; }
-.v2-mode .kpi-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 6rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .crush-type-panel { margin: 16rpx 0; padding: 20rpx; border: 3rpx solid #111; background: #FFFBEB; box-shadow: 4rpx 4rpx 0 #111; }
+.v2-mode .crush-type-kicker { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: #666; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .crush-type-label { display: block; margin-top: 4rpx; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.05; }
+.v2-mode .crush-type-summary { display: block; margin-top: 8rpx; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; line-height: 1.45; }
+.v2-mode .crush-type-action { display: block; margin-top: 10rpx; padding-top: 10rpx; border-top: 2rpx solid #111; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; }
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-row-v2.compact { margin-top: 0; margin-bottom: 12rpx; }

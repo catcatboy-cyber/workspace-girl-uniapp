@@ -40,6 +40,10 @@
             </view>
 
             <!-- Tags -->
+            <view v-if="item.crushType" class="type-summary-v2">
+              <text class="type-label-v2">{{ item.crushType.label }}</text>
+              <text class="type-copy-v2">{{ item.crushType.summary }}</text>
+            </view>
             <view v-if="item.cardTypeLabel" class="tag-row-v2">
               <text v-if="item.cardTypeLabel" class="tag-v2 black">{{ item.cardTypeLabel }}</text>
             </view>
@@ -95,6 +99,7 @@ import { callFunction } from '@/utils/cloudbase'
 import { bumpDataVersion, clearActiveCaseId, formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { deriveCrushType } from '@/utils/crush-type.js'
 
 const loading = ref(true)
 const cases = ref<any[]>([])
@@ -104,7 +109,7 @@ const themeVars = ref(getThemeStyle())
 const fontSizeMode = ref(getFontSizeMode())
 const deletingCaseId = ref('')
 
-onShareAppMessage(() => ({ title: 'Crush Master｜Crushes', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE }))
+onShareAppMessage(() => ({ title: 'TA已经把你设置为Crush了。', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE }))
 
 onShareTimeline(() => buildSafeTimelineShare())
 const activeCaseId = ref('')
@@ -203,6 +208,7 @@ function applyCasesList(list: any[]) {
   cases.value = (list || []).map((c: any) => ({
       ...c,
       caseId: c.caseId || c._id,
+      crushType: deriveCrushType(c.latestResult || {}),
       cardTypeLabel: getRelationTypeLabel(c.profile),
       cardProfileItems: profileItems(c.profile),
     }))
@@ -379,6 +385,9 @@ async function confirmDeleteCase(item: any) {
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
+.v2-mode .type-summary-v2 { margin-bottom: 12rpx; padding: 16rpx; border: 2rpx solid #111; background: #FFFBEB; }
+.v2-mode .type-label-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; line-height: 1.25; }
+.v2-mode .type-copy-v2 { display: block; margin-top: 6rpx; font-size: $fs-body; font-weight: $fw-body; color: #666; line-height: 1.45; }
 
 .v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: 3rpx solid #111; background: #f9f9f9; }
 .v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 18rpx 8rpx; border-right: 3rpx solid #111; }

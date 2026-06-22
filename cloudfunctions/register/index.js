@@ -165,7 +165,7 @@ exports.main = async (event) => {
       ticket,
       userId,
       email: normalizedEmail,
-      referral: referralResult,
+      settlement,
       selfProfile: null
     }
   } catch (error) {

@@ -114,9 +114,16 @@ class FakeDocument {
       throw new Error(`Document not found: ${this.name}/${this.id}`)
     }
 
+    const cloned = clone(patch)
+    for (const [key, value] of Object.entries(cloned)) {
+      if (value && typeof value === 'object' && value.__op === 'inc') {
+        cloned[key] = (current[key] || 0) + value.amount
+      }
+    }
+
     map.set(this.id, {
       ...current,
-      ...clone(patch)
+      ...cloned
     })
 
     return { updated: 1 }
@@ -215,6 +222,9 @@ function createFakeCloudbase() {
       command: {
         in(values) {
           return { __op: 'in', values: [...values] }
+        },
+        inc(amount) {
+          return { __op: 'inc', amount }
         }
       },
       collection(name) {

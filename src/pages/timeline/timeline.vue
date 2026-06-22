@@ -5,7 +5,6 @@
       <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">往事不可用</text><text class="empty-sub-v2">当前 Crush 不存在或已被删除。</text></view>
       <template v-else>
         <view class="hero-block-v2 anim-hero"><text class="hero-tag-v2">MEMORIES / {{ caseFile.name }}</text><text class="hero-title-v2">往<text class="hl-v2">事</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
-        <view class="tab-switch-v2"><view v-for="item in timelineViewOptions" :key="item.key" :class="['tab-btn-v2', activeTimelineView === item.key ? 'active' : '']" @click="setTimelineView(item.key)">{{ item.label }} {{ item.count }}</view></view>
         <view v-if="activeTimelineView === 'events'">
           <view class="card-v2 anim-card" style="animation-delay:0.15s;border-color:#4ECDC4;">
   <view class="search-row-v2"><input class="search-input-v2" v-model="searchQuery" placeholder="搜索事件标题或描述..." confirm-type="search" /><view v-if="searchQuery" class="search-clear-v2" @click="searchQuery = ''">✕</view></view>
@@ -219,7 +218,6 @@ const supportTimeline = computed(() => {
 
 const timelineViewOptions = computed(() => [
   { key: 'events', label: '事件流', count: manualTimeline.value.length },
-  { key: 'monthlyReviews', label: '月度复盘', count: weeklyReviewTimeline.value.length },
 ])
 
 const latestResult = computed(() => caseFile.value?.latestResult)

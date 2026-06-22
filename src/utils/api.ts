@@ -526,17 +526,17 @@ export async function trackAnonymousVisit(params: { shareId?: string; channel?: 
 }
 
 /** 分享访问记录：登录后补写 */
-export async function trackLoginVisit(params: { shareId?: string; visitorUserId?: string; isNewUser?: boolean }) {
+export async function trackLoginVisit(params: { shareId?: string; channel?: string; scene?: string; inviteCode?: string; visitorUserId?: string; isNewUser?: boolean }) {
   try {
     await callFunction({ name: 'trackShareVisit', data: { action: 'login', ...params } })
   } catch {}
 }
 
 /** 快速解读：免费，不依赖 caseId */
-export async function quickRead(text: string, scene?: string) {
+export async function quickRead(text: string, scene?: string, options?: { question?: string; ageRange?: string }) {
   const res = await callFunction({
     name: 'quickRead',
-    data: { text, scene: scene || 'general' }
+    data: { text, scene: scene || 'general', ...(options || {}) }
   })
   return res.result
 }

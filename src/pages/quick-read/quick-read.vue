@@ -30,10 +30,12 @@
         </view>
 
         <!-- Signal Tag -->
-        <view v-if="signal" class="card-v2 anim-card" style="animation-delay:0.15s;padding:20rpx 28rpx;">
+        <view v-if="signal || snapshotCrushTypeLabel" class="card-v2 anim-card" style="animation-delay:0.15s;padding:20rpx 28rpx;">
           <view class="tag-row-v2">
+            <text v-if="snapshotCrushTypeLabel" class="tag-v2 black">{{ snapshotCrushTypeLabel }}</text>
             <text class="tag-v2 black">{{ signal }}</text>
           </view>
+          <text v-if="snapshotCrushTypeSummary" class="qr-action-text">{{ snapshotCrushTypeSummary }}</text>
         </view>
 
         <!-- Reason Bullets -->
@@ -67,11 +69,59 @@
         <button class="btn btn-primary btn-lg btn-full" @click="retryLogin">重新登录</button>
       </view>
 
-      <!-- CTA -->
-      <view v-else-if="loggedIn" class="cta-card anim-card" style="animation-delay:0.3s">
-        <text class="cta-title">想知道你的 TA 是什么信号？</text>
-        <text class="cta-desc">记录第一条事件，小咪就会帮你分析你和 TA 的关系走向。</text>
-        <button class="btn btn-primary btn-lg btn-full" @click="onCTA">{{ ctaLoading ? '进入中...' : '开始追踪 →' }}</button>
+      <!-- Try mine -->
+      <view v-else-if="loggedIn && !quickResult" class="card-v2 anim-card" style="animation-delay:0.3s">
+        <view class="qr-form-head">
+          <text class="section-title-v2">测测我的 TA</text>
+          <text class="qr-step">{{ quickStep + 1 }} / 3</text>
+        </view>
+
+        <template v-if="quickStep === 0">
+          <text class="qr-form-title">这次更像哪种情况？</text>
+          <view class="qr-chip-grid">
+            <view v-for="item in sceneOptions" :key="item.value" :class="['qr-chip', form.scene === item.value ? 'active' : '']" @click="form.scene = item.value">{{ item.label }}</view>
+          </view>
+        </template>
+
+        <template v-else-if="quickStep === 1">
+          <text class="qr-form-title">TA 做了什么？原话是什么？</text>
+          <textarea v-model="form.text" class="qr-textarea" maxlength="600" placeholder="比如：他昨天说下次约我，但一直没定时间..." />
+        </template>
+
+        <template v-else>
+          <text class="qr-form-title">你现在最想知道什么？</text>
+          <view class="qr-chip-grid">
+            <view v-for="item in questionOptions" :key="item" :class="['qr-chip', form.question === item ? 'active' : '']" @click="form.question = item">{{ item }}</view>
+          </view>
+        </template>
+
+        <view class="qr-form-actions">
+          <button v-if="quickStep > 0" class="btn btn-secondary btn-md btn-auto" :disabled="quickLoading" @click="quickStep--">上一步</button>
+          <button v-if="quickStep < 2" class="btn btn-primary btn-md btn-auto" @click="nextQuickStep">下一步</button>
+          <button v-else class="btn btn-primary btn-md btn-auto" :disabled="quickLoading" @click="submitQuickRead">{{ quickLoading ? '分析中...' : '看结果' }}</button>
+        </view>
+        <text class="qr-skip-link" @click="onCTA">{{ ctaLoading ? '进入中...' : '跳过，直接开始追踪' }}</text>
+      </view>
+
+      <view v-else-if="loggedIn && quickResult" class="card-v2 anim-card" style="animation-delay:0.3s;background:#FFFBEB;">
+        <text class="section-title-v2">小咪测出</text>
+        <text class="qr-type-label">{{ quickCrushType.label }}</text>
+        <text class="qr-type-summary">{{ quickCrushType.summary }}</text>
+        <view class="qr-kpi-row compact">
+          <view class="qr-kpi-item"><text class="qr-kpi-num">{{ quickIntentScore }}</text><text class="qr-kpi-lbl">意向</text></view>
+          <view class="qr-kpi-split"></view>
+          <view class="qr-kpi-item"><text class="qr-kpi-num risk">{{ quickRiskScore }}</text><text class="qr-kpi-lbl">风险</text></view>
+        </view>
+        <text v-if="quickResult.directAnswer" class="qr-direct-answer">{{ quickResult.directAnswer }}</text>
+        <text class="qr-action-text">{{ quickResult.analysis }}</text>
+        <view v-if="quickReasons.length > 0" class="tag-row-v2" style="margin-top:14rpx;">
+          <text v-for="item in quickReasons" :key="item" class="tag-v2 black">{{ item }}</text>
+        </view>
+        <view class="qr-result-actions">
+          <button class="btn btn-secondary btn-md btn-auto" @click="resetQuickRead">重新测</button>
+          <button class="btn btn-primary btn-md btn-auto" @click="onCTA">{{ ctaLoading ? '进入中...' : '保存并持续追踪' }}</button>
+        </view>
+        <text class="page-hint">保存后可以继续追踪 TA 会不会从「{{ quickCrushType.label.replace('型', '') }}」变成「认真推进」。</text>
       </view>
 
       <text class="page-disclaimer">小咪辅助分析 · 仅供参考，不构成专业意见</text>
@@ -80,9 +130,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getCurrentUserId, getOrCreateDefaultCase, getCachedSelfProfile, hasUsableSelfProfile, wechatLogin } from '@/utils/api'
+import { getCurrentUserId, getOrCreateDefaultCase, getCachedSelfProfile, hasUsableSelfProfile, quickRead, wechatLogin } from '@/utils/api'
+import { buildCrushTypeReasons, deriveCrushType } from '@/utils/crush-type.js'
 import { captureLandingContext, readLandingContext } from '@/utils/landing'
 
 const fontMode = ref(uni.getStorageSync('fontSizeMode') || '')
@@ -97,6 +148,42 @@ const signal = ref('')
 const bullets = ref<string[]>([])
 const actionText = ref('')
 const hasSnapshot = ref(false)
+const snapshotCrushTypeLabel = ref('')
+const snapshotCrushTypeSummary = ref('')
+const quickStep = ref(0)
+const quickLoading = ref(false)
+const quickResult = ref<any>(null)
+const form = reactive({
+  scene: 'chat_reply',
+  text: '',
+  question: '他喜欢我吗'
+})
+
+const sceneOptions = [
+  { value: 'chat_reply', label: '聊天回复' },
+  { value: 'date_progress', label: '约见推进' },
+  { value: 'hot_cold', label: '忽冷忽热' },
+  { value: 'ex_contact', label: '前任暧昧' },
+  { value: 'after_meet', label: '见面后变化' }
+]
+const questionOptions = ['他喜欢我吗', '我该不该主动', '他是不是养鱼', '怎么回复']
+
+const quickIntentScore = computed(() => normalizeScore(
+  quickResult.value?.intentScore ?? quickResult.value?.intent ?? quickResult.value?.intentNum,
+  50
+))
+const quickRiskScore = computed(() => normalizeScore(
+  quickResult.value?.riskScore ?? quickResult.value?.consistencyRiskScore ?? quickResult.value?.risk ?? quickResult.value?.riskNum,
+  35
+))
+const normalizedQuickResult = computed(() => ({
+  ...(quickResult.value || {}),
+  intentScore: quickIntentScore.value,
+  riskScore: quickRiskScore.value,
+  consistencyRiskScore: quickRiskScore.value
+}))
+const quickCrushType = computed(() => deriveCrushType(normalizedQuickResult.value))
+const quickReasons = computed(() => buildCrushTypeReasons(normalizedQuickResult.value, quickCrushType.value))
 
 onLoad(async (options: any) => {
   captureLandingContext(options || {})
@@ -112,6 +199,8 @@ onLoad(async (options: any) => {
   }
 
   signal.value = decodeURIComponent(String(options?.signal || ''))
+  snapshotCrushTypeLabel.value = decodeURIComponent(String(options?.crushTypeLabel || ''))
+  snapshotCrushTypeSummary.value = decodeURIComponent(String(options?.crushTypeSummary || ''))
   const rawBullets = decodeURIComponent(String(options?.bullets || ''))
   bullets.value = rawBullets ? rawBullets.split('|').filter(Boolean).slice(0, 3) : []
   actionText.value = decodeURIComponent(String(options?.action || ''))
@@ -147,6 +236,74 @@ async function retryLogin() {
   uni.navigateTo({ url: '/pages/login/login' })
 }
 
+function nextQuickStep() {
+  if (quickStep.value === 0 && !form.scene) { uni.showToast({ title: '先选一个场景', icon: 'none' }); return }
+  if (quickStep.value === 1 && form.text.trim().length < 2) { uni.showToast({ title: '写一句真实互动', icon: 'none' }); return }
+  quickStep.value += 1
+}
+
+async function submitQuickRead() {
+  if (!form.question) { uni.showToast({ title: '先选一个困惑', icon: 'none' }); return }
+  quickLoading.value = true
+  try {
+    const result = await quickRead(form.text, form.scene, { question: form.question })
+    if (!result?.success) {
+      uni.showToast({ title: result?.message || '分析失败', icon: 'none' })
+      return
+    }
+    quickResult.value = normalizeQuickReadResult(result)
+  } catch (error: any) {
+    uni.showToast({ title: error?.message || '分析失败', icon: 'none' })
+  } finally {
+    quickLoading.value = false
+  }
+}
+
+function normalizeScore(value: any, fallback: number) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return fallback
+  return Math.max(0, Math.min(100, Math.round(n)))
+}
+
+function normalizeQuickReadResult(result: any) {
+  const intentScore = normalizeScore(result?.intentScore ?? result?.intent ?? result?.intentNum, 50)
+  const riskScore = normalizeScore(result?.riskScore ?? result?.consistencyRiskScore ?? result?.risk ?? result?.riskNum, 35)
+  const directAnswer = String(result?.directAnswer || '').trim() || buildLocalDirectAnswer(form.question, intentScore, riskScore)
+  return {
+    ...result,
+    intentScore,
+    riskScore,
+    consistencyRiskScore: riskScore,
+    directAnswer
+  }
+}
+
+function buildLocalDirectAnswer(question: string, intentScore: number, riskScore: number) {
+  const q = String(question || '').trim()
+  if (q.includes('养鱼')) {
+    if (riskScore >= 60) return '有养鱼或低成本暧昧风险，但还需要继续看行动证据。'
+    if (intentScore >= 55) return '暂时不像明确养鱼，更像有兴趣但节奏还不稳定。'
+    return '目前证据不足，不能定性养鱼，但也不建议继续加码。'
+  }
+  if (q.includes('喜欢')) {
+    if (intentScore >= 65) return '有比较明显的好感信号，但还要看后续是否兑现。'
+    if (intentScore >= 45) return '有一点兴趣，但还没到能确认喜欢。'
+    return '目前喜欢信号偏弱，先不要替对方脑补。'
+  }
+  if (q.includes('主动')) {
+    return riskScore >= 60 ? '不建议继续强主动，先降一点投入观察。' : '可以低压力主动一次，但不要连续追问。'
+  }
+  if (q.includes('回复')) {
+    return '可以轻松接住话题，同时把问题抛回给 TA 看行动。'
+  }
+  return '这条信息只能先做初步判断，关键看后续行动是否跟上。'
+}
+
+function resetQuickRead() {
+  quickResult.value = null
+  quickStep.value = 0
+}
+
 async function onCTA() {
   ctaLoading.value = true
   try {
@@ -180,8 +337,10 @@ async function onCTA() {
 
 // KPI
 .qr-kpi-row { display: flex; align-items: center; padding: 8rpx 0; }
+.qr-kpi-row.compact { margin-top: 16rpx; padding: 16rpx 0; border: 2rpx solid #111; background: #fff; }
 .qr-kpi-item { flex: 1; text-align: center; }
 .qr-kpi-num { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; line-height: 1; }
+.qr-kpi-num.risk { color: #FF5252; }
 .qr-kpi-lbl { display: block; font-size: $fs-body; font-weight: $fw-label; color: #666; margin-top: 6rpx; }
 .qr-kpi-bar { height: 10rpx; background: #f0f0f0; border: 1rpx solid #ddd; margin-top: 10rpx; }
 .qr-kpi-fill { height: 100%; transition: width 0.5s ease; }
@@ -194,6 +353,19 @@ async function onCTA() {
 
 // Action
 .qr-action-text { display: block; margin-top: 10rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; line-height: 1.7; }
+.qr-direct-answer { display: block; margin-top: 16rpx; padding: 16rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; line-height: 1.55; }
+.qr-form-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
+.qr-step { padding: 4rpx 12rpx; border: 2rpx solid #111; background: #FFD93D; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
+.qr-form-title { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; line-height: 1.35; margin-bottom: 14rpx; }
+.qr-chip-grid { display: flex; flex-wrap: wrap; gap: 10rpx; }
+.qr-chip { padding: 14rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
+.qr-chip.active { background: #111; color: #FFD93D; }
+.qr-textarea { width: 100%; min-height: 180rpx; box-sizing: border-box; padding: 18rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; line-height: 1.55; }
+.qr-form-actions, .qr-result-actions { display: flex; gap: 12rpx; margin-top: 18rpx; }
+.qr-form-actions .btn, .qr-result-actions .btn { flex: 1; }
+.qr-skip-link { display: block; margin-top: 16rpx; text-align: center; font-size: $fs-body; font-weight: $fw-label; color: #666; text-decoration: underline; }
+.qr-type-label { display: block; margin-top: 6rpx; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.1; }
+.qr-type-summary { display: block; margin-top: 10rpx; font-size: $fs-body-lg; font-weight: $fw-label; color: #555; line-height: 1.5; }
 
 // Shared
 .page-hint { display: block; text-align: center; font-size: $fs-caption; color: #bbb; margin-bottom: 16rpx; }

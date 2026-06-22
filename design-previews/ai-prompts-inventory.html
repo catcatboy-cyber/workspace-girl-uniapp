@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crush Master — AI 提示词全量清单</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #FFFDF5; color: #111; padding: 40px 24px; max-width: 960px; margin: 0 auto;
+    font-family: -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height: 1.65;
+  }
+  h1 { font-size:36px; font-weight:900; border:3px solid #111; background:#FF6B6B; color:#fff; padding:20px 28px; box-shadow:8px 8px 0 #111; margin-bottom:32px; transform:rotate(-0.3deg); }
+  h2 { font-size:24px; font-weight:900; margin:48px 0 12px; padding:10px 16px; background:#111; color:#FFD93D; display:inline-block; }
+  h3 { font-size:20px; font-weight:800; margin:28px 0 8px; border-left:6px solid #FF6B6B; padding-left:14px; }
+  .meta { display:flex; gap:12px; flex-wrap:wrap; margin:8px 0 16px; }
+  .tag { display:inline-block; font-size:14px; font-weight:800; padding:4px 12px; border:2px solid #111; }
+  .tag-h { background:#FFEEEC; color:#FF5252; }
+  .tag-db { background:#E0FFF0; color:#2d8a6e; }
+  .tag-ro { background:#FFFBEB; color:#c79100; }
+  .tag-new { background:#4ECDC4; color:#fff; }
+  .badge { display:inline-block; font-size:12px; font-weight:800; padding:2px 10px; border:2px solid #111; background:#fff; margin-left:8px; }
+  .box {
+    background:#fff; border:3px solid #111; box-shadow:6px 6px 0 #111;
+    padding:20px 24px; margin:16px 0 24px; font-size:15px; white-space:pre-wrap;
+    word-break:break-word; max-height:600px; overflow-y:auto; line-height:1.55;
+  }
+  .box code { background:#f5f5f5; padding:1px 5px; border:1px solid #ddd; font-size:13px; }
+  .flow { background:#111; color:#FFD93D; font-size:13px; font-weight:800; padding:3px 10px; display:inline-block; margin-bottom:6px; }
+  .red { color:#FF5252; font-weight:800; }
+  .green { color:#4ECDC4; font-weight:800; }
+  .muted { color:#999; }
+  table { width:100%; border-collapse:collapse; margin:16px 0; font-size:14px; }
+  th, td { border:2px solid #111; padding:8px 12px; text-align:left; vertical-align:top; }
+  th { background:#111; color:#FFD93D; font-weight:800; }
+  .summary-box { background:#E0FFF0; border:3px solid #111; padding:20px 24px; margin:24px 0; }
+  .toc { margin:24px 0; } .toc li { margin:4px 0; }
+  hr { border:2px solid #111; margin:40px 0 24px; }
+</style>
+</head>
+<body>
+
+<h1>🤖 Crush Master — AI 提示词全量清单</h1>
+
+<div class="summary-box">
+<strong>统计：</strong>11 个 AI 调用点，5 个走后台配置 + 6 个全硬编码。<br>
+<strong>提示词总量：</strong>硬编码 ~2,800 字 + 后台可配 ~2,000 字 ≈ <strong>每次 400-1,200 tokens</strong><br>
+<span class="red">✅ 已精简：安全护栏 16→3 条（-75%）| 评估快照 5 字段→2 分数</span>
+</div>
+
+<div class="toc">
+<strong>目录：</strong>
+<ol>
+<li><a href="#s1">事件理解</a> — 创建事件时</li>
+<li><a href="#s2">事件评估</a> — 创建事件后自动</li>
+<li><a href="#s3">附件分析</a> — 上传截图</li>
+<li><a href="#s4">周复盘</a> — 14天复盘</li>
+<li><a href="#s5">星象速写</a> — 附带/独立侧读</li>
+<li><a href="#s6">命理桃花配对</a> — 生肖星座</li>
+<li><a href="#s7">批量标签</a> — 时间轴打标</li>
+<li><a href="#s8">QuickRead 快速解读</a> — 分享落地页</li>
+<li><a href="#s9">信号提取</a> — 初评问卷</li>
+<li><a href="#s10">小咪帮你说</a> — 6 子功能</li>
+<li><a href="#s11">公共层</a> — 护栏 + 提示词框架</li>
+</ol>
+</div>
+
+<hr>
+
+<!-- ==================== PUBLIC GUARDRAILS ==================== -->
+<div class="box" style="background:#FFFBEB; border-color:#FFD93D;">
+<strong class="red">🛡 公共安全护栏（全部 5 个模块共用，3 条）</strong><br><br>
+1. 输出必须是可解析 JSON；代码会校验枚举、数值范围和字段长度，失败时回退到规则结果。<br>
+2. 只根据用户提供的事实、事件上下文和画像字段判断；不要编造行为、承诺、情绪或关系状态。<br>
+3. 未成年人场景只允许友谊、边界、安全感和健康沟通建议；不要生成成人化、性暗示、饮酒、开房、操控或越界行为建议。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2 id="s1">1. 事件理解 (eventUnderstanding)</h2>
+<div class="flow">触发：用户新增时间轴事件 → createTimeline → inferTimelineRecord()</div>
+<div class="meta">
+  <span class="tag tag-h">公共护栏（3条）</span>
+  <span class="tag tag-db">业务提示词后台可配</span>
+  <span class="tag tag-h">上下文硬编码</span>
+  <span class="badge">当前走规则兜底，未用AI</span>
+</div>
+<h3>System 消息</h3>
+<div class="box"><span class="red">（公共护栏 3 条）</span></div>
+<h3>User 消息</h3>
+<div class="box">模块: <span class="muted">(后台可配)</span>
+角色: <span class="muted">(后台可配)</span>
+任务: <span class="muted">(后台可配)</span>
+业务规则: <span class="muted">(后台可配)</span>
+输出结构: <span class="muted">(后台可配)</span>
+输出要求: <span class="muted">(后台可配)</span>
+运行时上下文:
+- 所有输出简体中文
+- semanticTags 可选值：scene=[20个] behavior=[3个] outcome=[6个] risk=[3个]
+- subjectRole / targetProfile / 主体宾语校验
+- recentTimeline (最近3条) + newEvent JSON</div>
+
+<!-- ==================== 2 ==================== -->
+<h2 id="s2">2. 事件评估 (eventAssessment)</h2>
+<div class="flow">触发：generateAssessmentAI → recalculateAssessmentFromEvent() → analyzeTimelineEvent()</div>
+<div class="meta">
+  <span class="tag tag-h">公共护栏（3条）</span>
+  <span class="tag tag-db">业务提示词后台可配</span>
+  <span class="tag tag-h">rawReply三段式 + eventInsight枚举</span>
+</div>
+<h3>System 消息</h3>
+<div class="box"><span class="red">（公共护栏 3 条）</span>
+<span class="muted">+ 人格提示词 systemPrompt — 后台可配</span></div>
+<h3>User 消息</h3>
+<div class="box">模块: 即时反馈 <span class="muted">(后台可配)</span>
+...
+运行时上下文 <span class="red">(全部硬编码)</span>:
+- 人格 userPrompt
+- JSON only: eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply,petLine,petMood
+- rationale ≤10汉字 | petLine ≤50字 | petMood 枚举5个
+- rawReply 三段中文冒号标题，每段2-4句具体建议
+- eventInsight 枚举：actor/interaction/commitmentStatus/evidenceType
+- 主体宾语校验
+- <span class="green">基线分: intent=70 risk=35</span> <span class="muted">（仅2个数字，已精简）</span>
+- 用户画像 + 对象画像
+- 近期时间轴（可配条数）+ 当前事件 JSON</div>
+
+<!-- ==================== 3 ==================== -->
+<h2 id="s3">3. 附件分析 (attachmentAnalysis)</h2>
+<div class="flow">触发：用户上传截图/附件</div>
+<div class="meta">
+  <span class="tag tag-h">公共护栏（3条）</span>
+  <span class="tag tag-db">业务提示词后台可配</span>
+</div>
+<h3>System 消息</h3>
+<div class="box"><span class="red">（公共护栏 3 条）</span></div>
+<h3>User 消息</h3>
+<div class="box">模块: 附件识别 <span class="muted">(后台可配)</span> ...
++ 图片 image_url 内容</div>
+
+<!-- ==================== 4 ==================== -->
+<h2 id="s4">4. 周复盘 (weeklyReview)</h2>
+<div class="flow">触发：用户查看近14天复盘 → buildAIReview()</div>
+<div class="meta">
+  <span class="tag tag-h">公共护栏（3条）</span>
+  <span class="tag tag-db">业务提示词后台可配</span>
+  <span class="tag tag-h">fallback模板</span>
+</div>
+<h3>System 消息</h3>
+<div class="box"><span class="red">（公共护栏 3 条）</span> <span class="muted">+ 人格提示词</span></div>
+<h3>User 消息</h3>
+<div class="box">模块: 近14天复盘 <span class="muted">(后台可配)</span> ...
+运行时上下文: 用户画像 + 对象画像 + 月度范围统计 + 关键事件列表</div>
+<h3>AI 不可用时的规则兜底</h3>
+<div class="box">summary/keyChanges/nextWeekFocus/avoidMisread — 4组硬编码模板字符串</div>
+
+<!-- ==================== 5 ==================== -->
+<h2 id="s5">5. 星象速写 (sideRead)</h2>
+<div class="flow">触发：周复盘附带 / 用户单独点 Crush "侧读"</div>
+<div class="meta">
+  <span class="tag tag-h">公共护栏（3条）</span>
+  <span class="tag tag-db">业务提示词后台可配</span>
+</div>
+<h3>System 消息</h3>
+<div class="box"><span class="red">（公共护栏 3 条）</span> <span class="muted">+ 人格提示词</span></div>
+<h3>User 消息</h3>
+<div class="box">模块: 星象速写 <span class="muted">(后台可配)</span> ...
+运行时上下文: 月度范围 + 画像 + 复盘摘要 + 分数变化 + 关键事件</div>
+
+<!-- ==================== 6 ==================== -->
+<h2 id="s6">6. 命理桃花配对 (generatePairRead)</h2>
+<div class="flow">触发：用户查看 Crush 的桃花命理配对</div>
+<div class="meta"><span class="tag tag-h">全硬编码</span> <span class="badge">不走后台</span></div>
+<h3>System 消息</h3>
+<div class="box">你是命理桃花解读助手。结合生肖地支、星座元素、当日流日桃花气场，给出个性化动态双人关系解读。不要涉及具体互动记录，专注命理层面的分析。
+
+今日背景（每次解读都会变化）：
+- 日支/咸池桃花位/方向/五行 | 天喜 | 月令五行 | 日支与本人/对方关系
+
+输出JSON：{"dayEnergy":"50字","monthTrend":"50字","relationshipDynamics":"80字","advice":"60字"}</div>
+<h3>User 消息</h3>
+<div class="box">本人：属{zodiac}，{constellation} / 对方：属{zodiac}，{constellation}
+地支关系/日支/桃花方向...</div>
+
+<!-- ==================== 7 ==================== -->
+<h2 id="s7">7. 批量标签 (event-tagger)</h2>
+<div class="flow">触发：打开时间轴 → 懒加载批量打标 → batchTagEvents()</div>
+<div class="meta"><span class="tag tag-h">全硬编码</span> <span class="badge">不走后台</span></div>
+<h3>System 消息</h3>
+<div class="box">你是关系事件标签分类器。只输出 JSON，不输出解释文字。
+
+标签词表：
+- scene: offline_meet|movie|meal|coffee_tea|walk|chat|gift|phone_call|online_chat|shopping|activity|study|work|travel|game|sport|music|pet|food|group_social
+- behavior: target_initiated|self_initiated|both_interaction
+- outcome: planned|target_committed|fulfilled|cancelled_delayed|pending|rejected
+- risk: cold|vague_delay|risk_event
+
+规则：前有计划+后对应行为→fulfilled | 不强行标记 | target_committed精确判断 | self/target_initiated不混淆 | 不猜测 | 多维标签 | 同维多标签
+
+输出：{"results":[{"index":0,"scene":[],"behavior":[],"outcome":[],"risk":[]}]}</div>
+
+<!-- ==================== 8 ==================== -->
+<h2 id="s8">8. QuickRead 快速解读</h2>
+<div class="flow">触发：从分享链接进入落地页 → quickRead 云函数</div>
+<div class="meta"><span class="tag tag-h">全硬编码</span> <span class="badge">不走后台</span> <span class="badge">13组规则兜底</span></div>
+<h3>System 消息</h3>
+<div class="box">你是恋爱信号分析助手。只根据用户提供的事实判断关系信号。
+<span class="red">(未成年 → 追加安全规则)</span>
+
+输出 JSON：directAnswer(20-45字) | intentScore(0-100) | riskScore(0-100) | evidenceLevel(E1-E5) | primaryLabels(0-2个) | analysis(60-120字) | nextAction(20-60字) | replySuggestion(15-40字)
+
+场景：{13种之一} | 用户最想知道：{question}
+要求：directAnswer正面回答 | 养鱼问题必须定性 | 回复可直接发送 | analysis不重复directAnswer</div>
+<h3>13 种场景 + 规则兜底</h3>
+<div class="box">chat_reply/date_progress/hot_cold/ex_contact/after_meet/flirt/commit/slow/cold/ex/online/action/general
+每组含 intent/risk/evidence/labels/analysis/reply 硬值</div>
+
+<!-- ==================== 9 ==================== -->
+<h2 id="s9">9. 信号提取 (ai-text-analyzer)</h2>
+<div class="flow">触发：初评问卷填写 T1/T2 文字 → analyzeTextSignals()</div>
+<div class="meta"><span class="tag tag-h">全硬编码</span> <span class="badge">不走后台</span></div>
+<h3>System 消息</h3>
+<div class="box">你是关系信号提取器。从两段文字提取结构化关系信号。
+
+8类别：initiative|investment|progression|consistency|avoidance|verifiability|instability|evidence_strength
+规则：每道题≤3个信号 | weight/magnitude 1-3 | 模糊/空洞返回空数组 | direction: positive/negative/neutral/uncertain
+输出：{"signals":[{"category":"initiative","direction":"positive","weight":2,"magnitude":2}]}</div>
+<h3>User 消息</h3>
+<div class="box">T1（关系推进/好感迹象）：{用户文字 或 "（未填写）"}
+T2（不一致/回避/不舒服的互动）：{用户文字 或 "（未填写）"}</div>
+
+<!-- ==================== 10 ==================== -->
+<h2 id="s10">10. 小咪帮你说 (petLines) — 6 子功能</h2>
+<div class="flow">触发：用户点"小咪帮你说"</div>
+<div class="meta"><span class="tag tag-h">默认硬编码</span> <span class="tag tag-db">后台可覆盖</span></div>
+<table>
+<tr><th>子功能</th><th>默认 systemPrompt</th><th>量</th></tr>
+<tr><td>qaStrategy</td><td>撩人话术教练。5种策略库选2种，一问一答格式，| 分隔。JSON输出。</td><td>~500字</td></tr>
+<tr><td>reply</td><td>恋爱对话教练。对方说了话不知道怎么回。15-40字，自然尊重有边界。</td><td>1句</td></tr>
+<tr><td>replyActive</td><td>恋爱对话教练。用户想主动发一句话。15-40字，自然尊重有边界。</td><td>1句</td></tr>
+<tr><td>replyStrategy</td><td>多轮策略：策略1"先冷后甜"+策略2"投石问路/顺水推舟"。+安全规则注入。</td><td>~40行</td></tr>
+<tr><td>lineTagging</td><td>内容分类助手。给话术打2-4个场景标签。JSON输出。</td><td>1句</td></tr>
+<tr><td>qaMaintenance</td><td>(运行时构建)</td><td>—</td></tr>
+</table>
+<h3>安全规则（运行时注入）</h3>
+<div class="box">未成年：只允许友谊/边界/安全感，不生成暧昧/撩拨/越界。
+边界敏感：涉及亲密/边界/私密，优先尊重/节奏/安全，不替用户同意。</div>
+
+<!-- ==================== 11 ==================== -->
+<h2 id="s11">11. 公共层</h2>
+<div class="flow">cloudfunctions/_shared/ai-prompt-config.js</div>
+<div class="meta">
+  <span class="tag tag-h">护栏 3 条公共化</span>
+  <span class="tag tag-db">5 模块业务提示词从 DB</span>
+</div>
+<h3>架构</h3>
+<div class="box">buildPromptMessages({ moduleKey, settings, contextLines, systemExtra })
+  → [system] = "安全护栏:" + 公共 3 条 + systemExtra(人格)
+  → [user]  = 模块名 + 角色 + 任务 + 规则 + 输出结构 + 输出要求 + 运行时上下文
+
+5个模块: eventAssessment | eventUnderstanding | weeklyReview | sideRead | attachmentAnalysis
+
+业务提示词从 DB settings.promptModules[moduleKey].businessPrompt:
+roleZh / taskZh / rules[] / outputSchema / outputNotes[]</div>
+
+<hr>
+
+<h2>汇总</h2>
+<table>
+<tr><th>#</th><th>功能</th><th>硬编码占比</th><th>后台可配</th><th>规则兜底</th></tr>
+<tr><td>1</td><td>事件理解</td><td>公共护栏 + 上下文</td><td>✅</td><td>✅ 当前走规则</td></tr>
+<tr><td>2</td><td>事件评估</td><td>公共护栏 + rawReply三段式 + 枚举 + 基线分</td><td>✅</td><td>✅</td></tr>
+<tr><td>3</td><td>附件分析</td><td>公共护栏 + 上下文</td><td>✅</td><td>✅</td></tr>
+<tr><td>4</td><td>周复盘</td><td>公共护栏 + fallback模板</td><td>✅</td><td>✅</td></tr>
+<tr><td>5</td><td>星象速写</td><td>公共护栏 + 上下文</td><td>✅</td><td>✅</td></tr>
+<tr><td>6</td><td>命理桃花</td><td class="red">全部硬编码</td><td>—</td><td>✅</td></tr>
+<tr><td>7</td><td>批量标签</td><td class="red">全部硬编码</td><td>—</td><td>—</td></tr>
+<tr><td>8</td><td>QuickRead</td><td class="red">全部硬编码</td><td>—</td><td>✅ 13组</td></tr>
+<tr><td>9</td><td>信号提取</td><td class="red">全部硬编码</td><td>—</td><td>—</td></tr>
+<tr><td>10</td><td>小咪帮你说</td><td>默认硬编码</td><td>✅ 可覆盖</td><td>—</td></tr>
+<tr><td>11</td><td>公共层</td><td>公共护栏 3 条</td><td>✅ 5模块</td><td>—</td></tr>
+</table>
+
+</body>
+</html>

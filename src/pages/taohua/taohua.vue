@@ -164,42 +164,16 @@
       </view>
     </view>
 
-    <!-- ④ 今日宜忌 -->
-    <view class="card-v2">
-      <text class="section-title-v2">今日感情宜忌</text>
-      <text class="card-text-v2 muted">
-        建除：{{ computedReport.今日宜忌?.['建除'] || '--' }}
-        · 星宿：{{ (computedReport.今日方位?.['二十八宿'] || '').split('（')[0] }}
-      </text>
-
-      <view class="split-row-v2">
-        <view class="split-half-v2 yi">
-          <view class="split-label-row-v2">
-            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('checkCircle')" mode="aspectFit" />
-            <text v-else class="taohua-icon-emoji">✅</text>
-            <text class="split-label-v2 yi">宜</text>
-          </view>
-          <text class="split-item-flow-v2"><text v-for="(y, i) in loveYi" :key="y">{{ i > 0 ? ' · ' : '' }}{{ y }}</text></text>
-        </view>
-        <view class="split-half-v2 ji">
-          <view class="split-label-row-v2">
-            <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(26)" :src="taohuaIcon('alertTriangle')" mode="aspectFit" />
-            <text v-else class="taohua-icon-emoji">⚠️</text>
-            <text class="split-label-v2 ji">忌</text>
-          </view>
-          <text class="split-item-flow-v2"><text v-for="(j, i) in loveJi" :key="j">{{ i > 0 ? ' · ' : '' }}{{ j }}</text></text>
-        </view>
-      </view>
-
-      <view class="tag-row-v2" style="margin-top:14rpx;">
-        <text v-for="j in loveJi" :key="'ji-'+j" class="tag-v2 red">今日忌{{ j }}</text>
-        <text v-for="y in loveYi" :key="'yi-'+y" class="tag-v2 green">宜{{ y }}</text>
-      </view>
-    </view>
-
     <!-- ④ 桃花人设（依赖画像） -->
     <view v-if="hasProfile" class="card-v2">
-      <text class="section-title-v2">你的桃花人设 <text style="font-size: $fs-caption;color:#999;">可分享</text></text>
+      <view class="section-title-row-v2 persona-title-row-v2">
+        <text class="section-title-v2 no-margin">你的桃花人设</text>
+        <view class="persona-share-action-v2" @click="sharePersona">
+          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(22)" :src="taohuaIcon('share2')" mode="aspectFit" />
+          <text v-else class="taohua-icon-emoji">📤</text>
+          <text>分享</text>
+        </view>
+      </view>
 
       <view class="persona-card-v2">
         <view class="persona-head-v2">
@@ -207,6 +181,23 @@
           <view>
             <text class="persona-name-v2">{{ userZodiac }} · {{ userSign }}</text>
             <text class="persona-sub-v2">{{ crossData.chinese.name }}（{{ crossData.chinese.zhi }}·{{ crossData.chinese.wuxing }}·{{ crossData.chinese.yinyang }}）</text>
+          </view>
+        </view>
+
+        <view class="persona-match-strip-v2">
+          <view class="persona-mini-avatars-v2">
+            <view class="persona-mini-avatar-v2">
+              <text class="persona-mini-symbol-v2">{{ zodiacEmoji }}</text>
+              <text class="persona-mini-label-v2">属{{ userZodiac }}</text>
+            </view>
+            <view class="persona-mini-avatar-v2 sign">
+              <text class="persona-mini-symbol-v2">{{ signEmoji }}</text>
+              <text class="persona-mini-label-v2">{{ userSign }}</text>
+            </view>
+          </view>
+          <view class="persona-match-result-v2">
+            <view :class="['persona-match-badge-v2', matchBadgeClass]">{{ crossData.relation }}</view>
+            <text class="persona-match-desc-v2">{{ crossData.relationDesc }}</text>
           </view>
         </view>
 
@@ -243,14 +234,6 @@
           <text class="card-text-v2 muted" style="display:inline;font-size: $fs-caption;margin-left:6rpx;">{{ crossData.western.bestMatchReason }}</text>
         </view>
       </view>
-
-      <button class="btn-v2-me outline" style="margin-top:16rpx;width:100%;" @click="sharePersona">
-        <view class="button-label-v2">
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('share2')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">📤</text>
-          <text>分享我的桃花人格卡</text>
-        </view>
-      </button>
     </view>
 
     <!-- 画像引导卡（无画像时） -->
@@ -264,39 +247,12 @@
       <text class="card-text-v2 muted">填写你的生肖和星座，即可查看中国星次解读、西方星座桃花风格、最佳配对等专属内容。点击前往 →</text>
     </view>
 
-    <!-- ⑤ 属相×星座匹配 -->
-    <view v-if="hasProfile" class="card-v2">
-      <text class="section-title-v2">属相 × 星座 匹配</text>
-      <text class="card-text-v2 muted">
-        生肖地支：{{ crossData.zodiacZhi }}（{{ crossData.zodiac }}）
-        ↔ 星座地支：{{ crossData.chinese.zhi }}（{{ crossData.sign }}/{{ crossData.chinese.name }}）
-      </text>
-
-      <view class="match-badge-wrap">
-        <view :class="['match-badge-v2', matchBadgeClass, 'match-badge-line-v2']">
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">⚡</text>
-          <text>{{ crossData.relation }}</text>
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">⚡</text>
-        </view>
-      </view>
-      <text class="card-text-v2 strong" style="text-align:center;display:block;">
-        {{ crossData.relationDesc }}
-      </text>
-
-      <button class="btn-v2-me outline" style="margin-top:16rpx;width:100%;" @click="showMatchSheet = true">
-        <view class="button-label-v2">
-          <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('search')" mode="aspectFit" />
-          <text v-else class="taohua-icon-emoji">🔍</text>
-          <text>测测和TA的匹配度</text>
-        </view>
-      </button>
-    </view>
-
     <!-- 桃花匹配度（绑定 Crush：从「我们」页进入，含 AI 深度解读） -->
     <view v-if="pairMatch" class="card-v2">
-      <text class="section-title-v2">桃花匹配度</text>
+      <view class="section-title-row-v2 persona-title-row-v2">
+        <text class="section-title-v2 no-margin">桃花匹配度</text>
+        <view class="mini-action-v2" @click="openMatchSheet">更换 TA</view>
+      </view>
       <view class="match-badge-wrap">
         <view :class="['match-badge-v2', pairMatchBadge, 'match-badge-line-v2']">
           <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(28)" :src="taohuaIcon('heart')" mode="aspectFit" />
@@ -346,9 +302,19 @@
         <text v-if="pairAIResult.message && !pairAIResult.dayEnergy && !pairAIResult.advice" class="action-text muted" user-select>{{ pairAIResult.message }}</text>
       </view>
     </view>
-    <view v-else-if="showPairReadGuide" class="card-v2" style="border-style:dashed;" @click="goSelfProfile">
-      <text class="section-title-v2">桃花匹配度</text>
-      <text class="card-text-v2">完善你和 Crush 的生肖星座，解锁桃花匹配解读 →</text>
+    <view v-else-if="showPairReadGuide" class="card-v2" style="border-style:dashed;">
+      <view class="section-title-row-v2 persona-title-row-v2">
+        <text class="section-title-v2 no-margin">桃花匹配度</text>
+        <view v-if="hasProfile" class="mini-action-v2" @click="openMatchSheet">测 TA</view>
+      </view>
+      <text class="card-text-v2" @click="handlePairGuideClick">完善你和 Crush 的生肖星座，解锁桃花匹配解读 →</text>
+    </view>
+    <view v-else-if="hasProfile" class="card-v2">
+      <view class="section-title-row-v2 persona-title-row-v2">
+        <text class="section-title-v2 no-margin">桃花匹配度</text>
+        <view class="mini-action-v2" @click="openMatchSheet">测 TA</view>
+      </view>
+      <text class="card-text-v2 muted no-margin">选择 TA 的属相和星座，查看你们的命理匹配结果。</text>
     </view>
 
     <!-- ⑥ 桃花方位全览 -->
@@ -888,6 +854,15 @@ const zodiacEmoji = computed(() => {
   return map[userZodiac.value] || '🐇'
 })
 
+const signEmoji = computed(() => {
+  const map: Record<string, string> = {
+    '白羊座': '♈', '金牛座': '♉', '双子座': '♊', '巨蟹座': '♋',
+    '狮子座': '♌', '处女座': '♍', '天秤座': '♎', '天蝎座': '♏',
+    '射手座': '♐', '摩羯座': '♑', '水瓶座': '♒', '双鱼座': '♓',
+  }
+  return map[userSign.value] || '✦'
+})
+
 // 属相×星座交叉（本地计算）
 const crossData = computed<CrossMatchResult>(() => {
   try {
@@ -904,19 +879,6 @@ const matchBadgeClass = computed(() => {
   if (r.includes('三合')) return 'good'
   if (r.includes('冲')) return 'caution'
   return 'neutral'
-})
-
-// 感情相关关键词筛选今日宜忌
-const LOVE_KEYWORDS = ['嫁娶', '纳采', '订婚', '出行', '会友', '安床', '纳财', '入宅', '立约', '祭祀']
-
-const loveYi = computed(() => {
-  const yi = computedReport.value.今日宜忌?.宜 || []
-  return yi.filter((y: string) => LOVE_KEYWORDS.includes(y))
-})
-
-const loveJi = computed(() => {
-  const ji = computedReport.value.今日宜忌?.忌 || []
-  return ji.filter((j: string) => LOVE_KEYWORDS.includes(j))
 })
 
 // ============================================================
@@ -939,6 +901,18 @@ const matchResultBadge = computed(() => {
 
 function onMatchZodiacChange(e: any) { matchZodiacIdx.value = e.detail.value }
 function onMatchSignChange(e: any) { matchSignIdx.value = e.detail.value }
+
+function openMatchSheet() {
+  showMatchSheet.value = true
+}
+
+function handlePairGuideClick() {
+  if (hasProfile.value) {
+    openMatchSheet()
+    return
+  }
+  goSelfProfile()
+}
 
 function doMatchCheck() {
   const z = zodiacNames.value[matchZodiacIdx.value]
@@ -1368,7 +1342,6 @@ function saveShareImage() {
 .inline-title-v2,
 .section-title-row-v2,
 .sheet-title-row-v2,
-.split-label-row-v2,
 .pair-label-row-v2,
 .button-label-v2,
 .match-badge-line-v2,
@@ -1418,17 +1391,6 @@ function saveShareImage() {
 .dir-lbl-v2 { font-size: $fs-caption; font-weight: 700; color: #666; display: block; }
 .dir-val-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; margin-top: 2rpx; }
 
-/* 宜忌分裂卡片 */
-.split-row-v2 { display: flex; gap: 12rpx; margin-top: 12rpx; }
-.split-half-v2 { flex: 1; padding: 16rpx; border: 2rpx solid #111; }
-.split-half-v2.yi { background: #f0fdfa; }
-.split-half-v2.ji { background: #fff5f5; }
-.split-label-v2 { font-size: 26rpx; font-weight: 900; display: block; margin-bottom: 8rpx; }
-.split-label-row-v2 { margin-bottom: 8rpx; }
-.split-label-row-v2 .split-label-v2 { margin-bottom: 0; }
-.split-label-v2.yi { color: #4ECDC4; }
-.split-label-v2.ji { color: #FF5252; }
-
 /* info popup */
 .info-dot-v2 { display: inline-flex; align-items: center; justify-content: center; width: 36rpx; height: 36rpx; border: 2rpx solid #111; font-size: $fs-caption; font-weight: 900; color: #111; margin-left: auto; cursor: pointer; }
 .info-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); }
@@ -1461,11 +1423,26 @@ function saveShareImage() {
 .tag-v2.red { background: #FF5252; color: #fff; }
 
 /* 人格卡 */
+.persona-title-row-v2 { justify-content: space-between; }
+.persona-share-action-v2 { min-width: 112rpx; height: 48rpx; padding: 0 16rpx; border: 3rpx solid #111; background: #111; color: #FFD93D; display: flex; align-items: center; justify-content: center; gap: 6rpx; font-size: $fs-caption; font-weight: 900; box-sizing: border-box; }
+.mini-action-v2 { min-width: 104rpx; height: 48rpx; padding: 0 16rpx; border: 3rpx solid #111; background: #fff; color: #111; display: flex; align-items: center; justify-content: center; font-size: $fs-caption; font-weight: 900; box-sizing: border-box; }
 .persona-card-v2 { border: 3rpx solid #111; padding: 24rpx; background: #fff; box-shadow: 4rpx 4rpx 0 #111; margin-top: 12rpx; }
 .persona-head-v2 { display: flex; align-items: center; gap: 12rpx; margin-bottom: 16rpx; }
 .persona-avatar-v2 { width: 64rpx; height: 64rpx; border-radius: 50%; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; font-size: $fs-heading; flex-shrink: 0; }
 .persona-name-v2 { font-size: 26rpx; font-weight: 900; color: #111; display: block; }
 .persona-sub-v2 { font-size: $fs-caption; color: #666; display: block; }
+.persona-match-strip-v2 { display: flex; gap: 16rpx; align-items: center; border: 2rpx solid #111; background: #FFFBEA; padding: 14rpx; margin-bottom: 18rpx; }
+.persona-mini-avatars-v2 { display: flex; flex-shrink: 0; }
+.persona-mini-avatar-v2 { width: 86rpx; min-height: 96rpx; border: 2rpx solid #111; background: #FFD93D; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; }
+.persona-mini-avatar-v2.sign { margin-left: -2rpx; background: #EAF7FF; }
+.persona-mini-symbol-v2 { font-size: 34rpx; font-weight: 900; line-height: 1; color: #111; }
+.persona-mini-label-v2 { font-size: 18rpx; font-weight: 800; color: #111; margin-top: 6rpx; line-height: 1.15; text-align: center; }
+.persona-match-result-v2 { min-width: 0; flex: 1; }
+.persona-match-badge-v2 { display: inline-flex; align-items: center; min-height: 38rpx; padding: 2rpx 12rpx; border: 2rpx solid #111; font-size: 22rpx; font-weight: 900; color: #111; background: #fff; box-sizing: border-box; }
+.persona-match-badge-v2.great { background: #4ECDC4; }
+.persona-match-badge-v2.good { background: #FFD93D; }
+.persona-match-badge-v2.caution { background: #FF5252; color: #fff; }
+.persona-match-desc-v2 { display: block; margin-top: 8rpx; font-size: $fs-caption; font-weight: 700; color: #555; line-height: 1.45; }
 .persona-dim-v2 { margin-bottom: 14rpx; }
 .persona-dim-label-v2 { display: inline-block; background: #111; color: #FFD93D; font-size: 20rpx; font-weight: 900; padding: 2rpx 10rpx; margin-bottom: 4rpx; }
 .persona-dim-text-v2 { display: block; font-size: $fs-caption; font-weight: 600; color: #666; line-height: 1.4; }

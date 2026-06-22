@@ -13,7 +13,19 @@
           <text class="hero-tag-v2">WE / {{ caseFile.name }}</text>
           <text class="hero-title-v2">{{ result?.explanation?.petLine || result?.explanation?.bullets?.[0] || '暂无分析结果' }}</text>
           <text class="hero-copy-v2">AI 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
-          <view v-if="result" class="tag-row-v2" style="margin-top:16rpx;"><text class="tag-v2 black">最新 · {{ mapIntentLabel(result.intentBucket) }}</text><text class="tag-v2">风险 · {{ mapRiskLabel(result.riskBucket) }}</text><text class="tag-v2">证据 {{ result.evidenceLevel }}</text><text v-if="isCurrentResultAIReviewed" class="tag-v2 black">AI 分析</text></view>
+          <view class="hero-profile-v2">
+            <view class="avatar-v2 lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseFile.name) }}</text></view>
+            <view class="hero-profile-main-v2">
+              <view class="hero-profile-name-row-v2">
+                <text class="profile-name-v2">{{ caseFile.name }}</text>
+                <text v-if="objectTypeLabel" class="profile-type-v2">{{ objectTypeLabel }}</text>
+              </view>
+              <view class="tag-row-v2 hero-profile-tags-v2">
+                <text class="tag-v2 black">TA 当前：{{ caseCrushType.label }}</text>
+                <text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text>
+              </view>
+            </view>
+          </view>
         </view>
         <!-- 里程碑进度 -->
         <ProgressMilestone :count="timelineCount" />
@@ -21,14 +33,6 @@
         <view v-if="!isCurrentResultAIReviewed" class="card-v2 anim-card" style="animation-delay:0.15s" @click="goNewAssessment">
           <text class="section-title-v2">还没有进行初评</text>
           <text class="remind-text-v2">回答几个问题，让小咪帮你看看有没有戏。点击前往 →</text>
-        </view>
-        <!-- Profile -->
-        <view class="card-v2 anim-card" style="animation-delay:0.2s">
-          <view class="card-head-v2">
-            <view class="avatar-v2 lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseFile.name) }}</text></view>
-            <view><text class="profile-name-v2">{{ caseFile.name }}</text><text v-if="objectTypeLabel" class="profile-type-v2">{{ objectTypeLabel }}</text></view>
-          </view>
-          <view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view>
         </view>
         <!-- 桃花匹配度入口（详情已搬至「命理桃花」页） -->
         <view class="card-v2 anim-card" style="animation-delay:0.22s;background:#FFFBEB;" @click="goTaohuaMatch">
@@ -237,10 +241,13 @@
           </view>
         </view>
 
-        <!-- 6. 月度复盘全文 -->
+        <!-- 6. 月度复盘 -->
         <view v-if="aiWeeklyPreview" class="card-v2 anim-card" style="animation-delay:0.33s">
-          <text class="section-title-v2">月度复盘全文</text>
-          <text class="section-sub-v2">详细报告下沉，按需阅读</text>
+          <view class="section-head-v2">
+            <text class="section-title-v2">月度复盘</text>
+            <text class="section-more-v2" @click="goMonthlyReviews">查看全部</text>
+          </view>
+          <text class="section-sub-v2">最新复盘预览，完整记录按月归档</text>
           <view class="full-review-v2">
             <text class="full-review-p-v2"><text class="full-review-bold-v2">本月关系整体状况：</text>{{ aiWeeklyPreview.summary }}</text>
             <text v-if="aiWeeklyPreview.keyChanges?.length" class="full-review-p-v2"><text class="full-review-bold-v2">关键变化：</text>{{ aiWeeklyPreview.keyChanges.join('；') }}</text>
@@ -275,6 +282,7 @@ import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setA
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments, buildTimelineStats, getTimelineRecordTags } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { deriveCrushType } from '@/utils/crush-type.js'
 import ProgressMilestone from '@/components/ProgressMilestone.vue'
 
 const loading = ref(true)
@@ -306,6 +314,26 @@ const RELATION_CHART_GAP = 140
 const RELATION_CHART_VISIBLE = 5
 
 const result = computed(() => caseFile.value?.latestResult)
+
+const caseCrushTimelineStats = computed(() => {
+  const timeline = Array.isArray(caseFile.value?.timeline) ? caseFile.value.timeline : []
+  const hasTag = (item: any, tag: string) => JSON.stringify(item?.semanticTags || {}).includes(tag)
+  const textOf = (item: any) => `${item?.title || ''} ${item?.description || ''}`
+  const count = (predicate: (item: any) => boolean) => timeline.filter(predicate).length
+  return {
+    totalCount: timeline.length,
+    fulfilledCount: count((item) => hasTag(item, 'fulfilled') || textOf(item).includes('兑现')),
+    targetCommittedCount: count((item) => hasTag(item, 'target_committed') || textOf(item).includes('约我')),
+    cancelledDelayedCount: count((item) => hasTag(item, 'cancelled_delayed') || hasTag(item, 'vague_delay')),
+    targetInitiatedCount: count((item) => hasTag(item, 'target_initiated')),
+    selfInitiatedCount: count((item) => hasTag(item, 'self_initiated'))
+  }
+})
+
+const caseCrushType = computed(() => deriveCrushType({
+  ...(result.value || {}),
+  timelineStats: caseCrushTimelineStats.value
+}))
 
 const profileItems = computed(() => {
   const p = caseFile.value?.profile
@@ -1033,6 +1061,11 @@ function goTimeline() {
   uni.switchTab({ url: '/pages/timeline/timeline' })
 }
 
+function goMonthlyReviews() {
+  setActiveCaseId(caseId.value)
+  uni.navigateTo({ url: '/pages/monthly-review/monthly-review?caseId=' + caseId.value })
+}
+
 function goNewAssessment() {
   setActiveCaseId(caseId.value)
   uni.navigateTo({ url: '/pages/reassess/reassess?caseId=' + caseId.value })
@@ -1288,6 +1321,10 @@ async function generateThisMonthReview() {
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-profile-v2 { display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx; padding-top: 18rpx; border-top: 3rpx solid rgba(17,17,17,0.28); }
+.v2-mode .hero-profile-main-v2 { flex: 1; min-width: 0; }
+.v2-mode .hero-profile-name-row-v2 { display: flex; align-items: baseline; gap: 10rpx; flex-wrap: wrap; }
+.v2-mode .hero-profile-tags-v2 { margin-top: 10rpx; }
 .v2-mode .tag-row-v2 { @include tag-row-v2; }
 .v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { @include tag-v2-black; }
@@ -1467,6 +1504,7 @@ async function generateThisMonthReview() {
 .v2-mode .cream-card { background: #FFFBEB; }
 .v2-mode .mint-card { background: #E0FFF0; }
 .v2-mode .section-head-v2 { display: flex; justify-content: space-between; align-items: flex-start; gap: 12rpx; margin-bottom: 14rpx; }
+.v2-mode .section-more-v2 { flex-shrink: 0; padding: 6rpx 14rpx; border: 2rpx solid #111; background: #fff; font-size: 20rpx; font-weight: 900; color: #111; }
 
 /* Diverging Balance 互动天平 */
 .v2-mode .balance-summary-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8rpx; margin-bottom: 14rpx; }

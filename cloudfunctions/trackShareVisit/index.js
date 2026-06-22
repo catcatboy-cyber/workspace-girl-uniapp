@@ -29,6 +29,9 @@ exports.main = async (event = {}) => {
   if (action === 'login') {
     return await trackLoginVisit(db, {
       shareId: event.shareId,
+      channel: event.channel,
+      scene: event.scene,
+      inviteCode: event.inviteCode,
       visitorUserId: event.visitorUserId,
       isNewUser: event.isNewUser,
       openid

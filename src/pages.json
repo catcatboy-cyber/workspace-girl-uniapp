@@ -45,6 +45,12 @@
       }
     },
     {
+      "path": "pages/monthly-review/monthly-review",
+      "style": {
+        "navigationBarTitleText": "月度复盘"
+      }
+    },
+    {
       "path": "pages/assessments/assessments",
       "style": {
         "navigationBarTitleText": "分析记录"

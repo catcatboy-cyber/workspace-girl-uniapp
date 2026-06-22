@@ -38,6 +38,11 @@ function aiHttpRequest(urlStr, body, timeoutMs, apiKey) {
 // ========== 规则兜底 ==========
 
 const RULE_FALLBACKS = {
+  chat_reply: { intent: 48, risk: 42, evidence: 'E2', labels: ['证据不足'], analysis: '单条回复只能看出一部分信号。重点不是某句话甜不甜，而是对方有没有主动延续、追问和把聊天推进到更具体的安排。', reply: '可以轻松接住话题，再抛一个具体但低压力的问题，看对方会不会继续。' },
+  date_progress: { intent: 56, risk: 38, evidence: 'E3', labels: [], analysis: '涉及约见推进时，最关键的是具体时间、地点和对方是否主动协调。如果对方愿意把模糊想法变成安排，通常比单纯聊天更有参考价值。', reply: '可以顺势给一个具体时间选项，看看对方是否接得住。' },
+  hot_cold: { intent: 48, risk: 66, evidence: 'E3', labels: ['节奏明显不稳定'], analysis: '忽冷忽热说明关系热度还不稳定。热的时候不能直接当作确定喜欢，冷的时候也不一定立刻判死刑，重点看后续是否能连续稳定。', reply: '先别追问太满，放慢一点，看对方会不会主动补解释或补行动。' },
+  ex_contact: { intent: 35, risk: 70, evidence: 'E3', labels: ['关键问题难验证'], analysis: '前任重新出现时，动机比话术更重要。需要看对方是否带着清楚目的、实际变化和尊重边界，而不是只靠情绪回潮。', reply: '先礼貌但保持距离，问清楚对方这次联系的原因。' },
+  after_meet: { intent: 54, risk: 45, evidence: 'E3', labels: [], analysis: '见面后的变化比见面当天更能说明问题。重点看对方是否继续主动联系、是否提下一次，以及态度有没有比见面前更明确。', reply: '可以轻松提到见面里的一个细节，看对方是否愿意延续。' },
   flirt: { intent: 50, risk: 45, analysis: '暧昧期的信号往往模糊。主动聊天但回避当面互动，可能是养鱼，也可能是对方本身社交节奏不同。建议观察对方是否愿意付出实质性行动，而不是只看聊天频率。', reply: '可以先顺着话题聊下去，但同时留一个明确的邀约钩子，看看对方是否愿意接。' },
   commit: { intent: 40, risk: 60, analysis: '承诺后不兑现或含糊其辞，是关系中的重要风险信号。真正的承诺会伴随时间、地点、行动，不是口头应承。建议降低期待值，观察行动而非话语。', reply: '可以先轻松回应，但心里记一笔：下次再出现类似情况，就需要直接沟通了。' },
   slow: { intent: 45, risk: 35, analysis: '慢热和不够喜欢有时很难区分。关键看对方是否愿意为你调整节奏，以及是否主动创造相处机会。真慢热的人在重要时刻会给出明确信号。', reply: '给彼此一点时间，但设定一个心理期限。过了期限还是模糊，就需要直接问清楚。' },
@@ -65,11 +70,77 @@ function recordRateLimit(key) {
   rateLimitStore[key].push(Date.now())
 }
 
+function buildFallbackResult(fallback, scene, question, source) {
+  const tailored = tailorFallbackToQuestion(fallback, question)
+  return {
+    success: true,
+    intentScore: fallback.intent,
+    riskScore: fallback.risk,
+    consistencyRiskScore: fallback.risk,
+    evidenceLevel: fallback.evidence || 'E2',
+    primaryLabels: fallback.labels || [],
+    directAnswer: tailored.directAnswer,
+    analysis: tailored.analysis,
+    nextAction: tailored.nextAction,
+    replySuggestion: tailored.replySuggestion,
+    source,
+    scene,
+    question
+  }
+}
+
+function tailorFallbackToQuestion(fallback, question) {
+  const q = String(question || '').trim()
+  if (q.includes('养鱼')) {
+    const risk = Number(fallback.risk || 0)
+    const directAnswer = risk >= 60
+      ? '有养鱼或低成本暧昧风险，但还不能只凭这一条定性。'
+      : '暂时不像明确养鱼，更像信号还不够稳定。'
+    return {
+      directAnswer,
+      analysis: `${directAnswer}${fallback.analysis}`,
+      nextAction: risk >= 60 ? '先别继续加码，观察对方是否愿意给明确安排和兑现行动。' : fallback.reply,
+      replySuggestion: risk >= 60 ? '可以回得轻一点，把球抛给对方：那你定个具体时间？' : fallback.reply
+    }
+  }
+  if (q.includes('喜欢')) {
+    const intent = Number(fallback.intent || 0)
+    const directAnswer = intent >= 60 ? '有好感信号，但还要看能不能持续兑现。' : intent >= 45 ? '有一点兴趣，但还没到能确认喜欢。' : '目前喜欢信号偏弱。'
+    return { directAnswer, analysis: `${directAnswer}${fallback.analysis}`, nextAction: fallback.reply, replySuggestion: fallback.reply }
+  }
+  if (q.includes('主动')) {
+    const risk = Number(fallback.risk || 0)
+    const directAnswer = risk >= 60 ? '不建议继续强主动，先降一点投入。' : '可以低压力主动一次，但不要连续追。'
+    return {
+      directAnswer,
+      analysis: `${directAnswer}${fallback.analysis}`,
+      nextAction: risk >= 60 ? '暂停追问，等对方下一次主动或明确解释。' : fallback.reply,
+      replySuggestion: risk >= 60 ? '先不追问，保持轻松回应即可。' : fallback.reply
+    }
+  }
+  if (q.includes('回复')) {
+    return {
+      directAnswer: `可以这样回：${fallback.reply}`,
+      analysis: fallback.analysis,
+      nextAction: fallback.reply,
+      replySuggestion: fallback.reply
+    }
+  }
+  return {
+    directAnswer: '这条信息只能做初步判断，重点看后续行动是否跟上。',
+    analysis: fallback.analysis,
+    nextAction: fallback.reply,
+    replySuggestion: fallback.reply
+  }
+}
+
 // ========== 主函数 ==========
 
 exports.main = async (event = {}) => {
   const text = String(event.text || event.content || '').trim()
   const scene = String(event.scene || 'general').trim()
+  const question = String(event.question || '').trim()
+  const ageRange = String(event.ageRange || '').trim()
 
   if (!text || text.length < 2) {
     return { success: false, message: '请至少输入 2 个字' }
@@ -106,10 +177,15 @@ exports.main = async (event = {}) => {
 
   if (models.length === 0) {
     recordRateLimit(rateKey)
-    return { success: true, ...fallback, source: 'rules' }
+    return buildFallbackResult(fallback, scene, question, 'rules')
   }
 
   const scenePrompts = {
+    chat_reply: '聊天回复场景。判断对方回复是升温、敷衍、试探还是回避。',
+    date_progress: '约见推进场景。判断对方是否愿意把暧昧变成具体安排。',
+    hot_cold: '忽冷忽热场景。判断热度波动背后的风险和下一步观察重点。',
+    ex_contact: '前任暧昧/前任联系场景。判断动机、边界和风险。',
+    after_meet: '见面后变化场景。判断见面后是否升温、降温或观望。',
     flirt: '暧昧期，对方主动聊天但不约见面。判断是暧昧还是有其他意图。',
     commit: '对方做了承诺但未兑现或回避具体时间。判断承诺的真假。',
     slow: '判断对方是真慢热还是不够喜欢。',
@@ -125,17 +201,28 @@ exports.main = async (event = {}) => {
     try {
       const baseUrl = (model.baseUrl || '').replace(/\/+$/, '')
       const messages = [
-        { role: 'system', content: `你是恋爱信号分析助手。分析对方的一句话，给意向、风险、解读和建议回复。
+        { role: 'system', content: `你是恋爱信号分析助手。只根据用户提供的事实判断关系信号，不要编造对方情绪、身份或承诺。分析一条暧昧/恋爱初期事件，给意向、风险、证据、标签、解读和建议回复。
+${ageRange === 'under18' ? '用户未满18岁：只允许友谊、边界、安全感和健康沟通建议，不要生成暧昧升级或亲密试探建议。' : ''}
 
 回复 JSON（不包含 markdown 代码块）：
 {
+  "directAnswer": "必须先直接回答用户选择的问题，20-45字。不要绕开问题。",
   "intentScore": 数字0-100（主动意向程度）,
   "riskScore": 数字0-100（风险/回避程度）,
+  "evidenceLevel": "E1|E2|E3|E4|E5",
+  "primaryLabels": ["证据不足|口头热情，行动不足|节奏明显不稳定|关键问题难验证|单向投入"] 中的0-2个,
   "analysis": "解读分析（60-120字）",
+  "nextAction": "下一步建议（20-60字）",
   "replySuggestion": "建议回复（15-40字）"
 }
-场景：${scenePrompts[scene] || scenePrompts.general}` },
-        { role: 'user', content: `对方说：「${text.slice(0, 300)}」` }
+场景：${scenePrompts[scene] || scenePrompts.general}
+用户最想知道：${question || '想判断TA是什么意思'}
+要求：
+1. directAnswer 必须正面回答“${question || 'TA是什么意思'}”，不要写成通用恋爱建议。
+2. 如果用户问“他是不是养鱼”，必须明确说“有养鱼风险/暂时不像养鱼/证据不足不能定性”，并解释依据。
+3. 如果用户问“怎么回复”，replySuggestion 必须给可以直接发出去的一句话。
+4. analysis 第一段继续解释依据，但不要重复 directAnswer。` },
+        { role: 'user', content: `用户困惑：${question || '想判断TA是什么意思'}\n事实描述：「${text.slice(0, 500)}」` }
       ]
 
       const url = `${baseUrl}/v1/chat/completions`
@@ -159,10 +246,16 @@ exports.main = async (event = {}) => {
         success: true,
         intentScore: Math.max(0, Math.min(100, Math.round(Number(parsed.intentScore) || fallback.intent))),
         riskScore: Math.max(0, Math.min(100, Math.round(Number(parsed.riskScore) || fallback.risk))),
+        consistencyRiskScore: Math.max(0, Math.min(100, Math.round(Number(parsed.riskScore) || fallback.risk))),
+        evidenceLevel: ['E1', 'E2', 'E3', 'E4', 'E5'].includes(parsed.evidenceLevel) ? parsed.evidenceLevel : (fallback.evidence || 'E2'),
+        primaryLabels: Array.isArray(parsed.primaryLabels) ? parsed.primaryLabels.map(String).slice(0, 2) : (fallback.labels || []),
+        directAnswer: String(parsed.directAnswer || '').trim().slice(0, 120) || tailorFallbackToQuestion(fallback, question).directAnswer,
         analysis: String(parsed.analysis || '').trim().slice(0, 300) || fallback.analysis,
+        nextAction: String(parsed.nextAction || '').trim().slice(0, 120) || fallback.reply,
         replySuggestion: String(parsed.replySuggestion || '').trim().slice(0, 100) || fallback.reply,
         source: 'ai',
-        scene
+        scene,
+        question
       }
 
       recordRateLimit(rateKey)
@@ -174,5 +267,5 @@ exports.main = async (event = {}) => {
 
   // 全失败，规则兜底
   recordRateLimit(rateKey)
-  return { success: true, ...fallback, source: 'rules_fallback' }
+  return buildFallbackResult(fallback, scene, question, 'rules_fallback')
 }

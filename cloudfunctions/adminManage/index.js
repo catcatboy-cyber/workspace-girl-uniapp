@@ -64,37 +64,16 @@ function createEmptyPersonaConfig() {
     }, {})
   }
 }
+const COMMON_LOCKED_RULES = [
+  '输出必须是可解析 JSON；代码会校验枚举、数值范围和字段长度，失败时回退到规则结果。',
+  '只根据用户提供的事实、事件上下文和画像字段判断；不要编造行为、承诺、情绪或关系状态。',
+  '未成年人场景只允许友谊、边界、安全感和健康沟通建议；不要生成成人化、性暗示、饮酒、开房、操控或越界行为建议。'
+]
+
 const PROMPT_MODULE_META = {
   eventAssessment: {
     title: '即时反馈',
-    description: '首页即时反馈、评估历史快照、事件触发后的关系评分重算。'
-  },
-  eventUnderstanding: {
-    title: '事件理解',
-    description: '保存时间线前的事件类型、标题、语义标签自动识别。'
-  },
-  weeklyReview: {
-    title: '近14天复盘',
-    description: '关系页近14天复盘与复盘历史生成。'
-  },
-  sideRead: {
-    title: '星象速写',
-    description: '属相、星座等轻量星象速写，包括即时星象速写和14天星象速写。'
-  },
-  attachmentAnalysis: {
-    title: '附件识别',
-    description: '聊天截图和图片附件的文字提取、摘要与置信度识别。'
-  }
-}
-const PROMPT_FIXED_GUARDRAILS = {
-  eventAssessment: {
-    lockedRules: [
-      '只根据用户提供的事实、事件上下文和画像字段判断；不要编造行为、承诺、情绪或关系状态。',
-      'subjectRole 为 self/both/unknown 时，代码会自动降权或修正评分。',
-      '涉及亲密、边界、酒精或私密空间时，不替用户同意升级关系，优先尊重、节奏和安全。',
-      '未成年人只允许友谊、边界、安全感和健康沟通建议。',
-      'AI 返回后仍会校验枚举、数值范围、字段长度，并在失败时按规则兜底。'
-    ],
+    description: '首页即时反馈、评估历史快照、事件触发后的关系评分重算。',
     runtimeContext: [
       'currentAssessment={intentScore,riskScore,evidenceLevel,labels,nextAction}',
       'selfProfile={gender,ageRange,identity,zodiac,constellation,aiStyle,aiBoldness}',
@@ -108,17 +87,12 @@ const PROMPT_FIXED_GUARDRAILS = {
       'currentStatus 只返回 tags, summary, caution。',
       'rawReply 只允许三段标题：小咪觉得对方可能在想 / 小咪觉得可以这样 / 小咪说留个心眼。',
       'Do not return labels, confidence or actionAdvice for speed.',
-      'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.',
-      'JSON only; code validates and normalizes the result.'
+      'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.'
     ]
   },
   eventUnderstanding: {
-    lockedRules: [
-      '只根据当前事件描述和辅助上下文分类；不要推断未出现的回应或承诺。',
-      '必须区分用户动作、对象动作和双方互动；主体不清时降低置信度。',
-      '拒绝、回避、失约、冷淡、拖延等负向边界优先识别为风险。',
-      '输出必须是可解析 JSON，代码会校验 eventType、semanticTags 和 commitment 枚举。'
-    ],
+    title: '事件理解',
+    description: '保存时间线前的事件类型、标题、语义标签自动识别。',
     runtimeContext: [
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
       'recentTimeline latest records',
@@ -130,11 +104,8 @@ const PROMPT_FIXED_GUARDRAILS = {
     ]
   },
   weeklyReview: {
-    lockedRules: [
-      '只总结近14天提供的事件和评估变化，不编造长期趋势。',
-      '未成年人场景不生成成人化、越界或操控建议。',
-      'AI 返回后会校验 trendLabel、数组长度和空值兜底。'
-    ],
+    title: '近14天复盘',
+    description: '关系页近14天复盘与复盘历史生成。',
     runtimeContext: [
       'selfProfile and targetProfile',
       'weekStart/weekEnd',
@@ -147,11 +118,8 @@ const PROMPT_FIXED_GUARDRAILS = {
     ]
   },
   sideRead: {
-    lockedRules: [
-      '星象速写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。',
-      '不用属相星座鼓励操控、试探底线或越界行为。',
-      '未成年人场景使用保守、边界优先表达。'
-    ],
+    title: '星象速写',
+    description: '属相、星座等轻量星象速写，包括即时星象速写和14天星象速写。',
     runtimeContext: [
       'instant side read: selfProfile + targetProfile + currentEvent + currentAssessment',
       '14-day side read: 14-day range + review summary + scoreTrend + 14-day key events'
@@ -162,11 +130,8 @@ const PROMPT_FIXED_GUARDRAILS = {
     ]
   },
   attachmentAnalysis: {
-    lockedRules: [
-      '看不清的内容必须留空或标注不确定，不要编造截图文字。',
-      '不识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。',
-      '输出必须是可解析 JSON，代码会校验字段和置信度枚举。'
-    ],
+    title: '附件识别',
+    description: '聊天截图和图片附件的文字提取、摘要与置信度识别。',
     runtimeContext: [
       'one image attachment URL is sent as image_url content'
     ],
@@ -514,7 +479,7 @@ function buildPersonaPreview(settings, moduleKey) {
 
 function buildPromptPreview(moduleKey, moduleConfig, settings) {
   const meta = PROMPT_MODULE_META[moduleKey] || { title: moduleKey, description: '' }
-  const guardrails = PROMPT_FIXED_GUARDRAILS[moduleKey] || { outputContract: [] }
+  const guardrails = PROMPT_MODULE_META[moduleKey] || { outputContract: [] }
   const business = readBusinessPromptConfig(settings, moduleKey, moduleConfig)
   const lines = [
     '调用: ' + getCallNames(moduleKey).join(' | '),
@@ -728,7 +693,7 @@ function buildActualPromptMessages({ settings, recordContent, selfProfile, caseP
   const personaPrompt = buildPreviewPersonaPrompt(normalizedSettings, selfProfile, {
     boundarySensitive: isBoundarySensitivePromptEvent(previewEvent)
   })
-  const guardrails = PROMPT_FIXED_GUARDRAILS[moduleKey]?.lockedRules || []
+  const guardrails = COMMON_LOCKED_RULES
   const systemLines = [
     '安全护栏:',
     ...buildPromptMessageLines(guardrails),
@@ -783,7 +748,7 @@ function buildPromptAdminView(settings) {
 
   for (const key of PROMPT_MODULE_KEYS) {
     const moduleConfig = normalized.promptConfig[key]
-    const guardrails = PROMPT_FIXED_GUARDRAILS[key] || { lockedRules: [] }
+    const guardrails = { lockedRules: COMMON_LOCKED_RULES }
     const meta = PROMPT_MODULE_META[key] || { title: key, description: '' }
     modules[key] = {
       key,

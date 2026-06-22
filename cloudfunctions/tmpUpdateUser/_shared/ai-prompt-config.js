@@ -8,82 +8,20 @@ const BUSINESS_PROMPT_LIMITS = {
   outputNotes: { maxItems: 20, zh: 1200, en: 1400 }
 }
 
-const SAFETY_GUARDRAILS = {
-  eventAssessment: [
-    {
-      zh: '只根据用户提供的事实、事件上下文和画像字段判断；不要编造没有出现的行为、承诺、情绪或关系状态。',
-      en: 'Judge only from provided facts, event context, and profile fields; do not invent actions, promises, emotions, or relationship status.'
-    },
-    {
-      zh: '未成年人场景只允许友谊、边界、安全感和健康沟通建议；不要生成成人化、性暗示、饮酒、开房或操控建议。',
-      en: 'For minors, only allow friendship, boundaries, safety, and healthy communication advice; do not generate adult, sexual, alcohol, hotel, or manipulation advice.'
-    },
-    {
-      zh: '不能替用户同意任何亲密升级；涉及边界、身体亲密、酒精或私密空间时，优先提醒尊重、节奏和安全。',
-      en: 'Never consent to intimacy escalation on behalf of the user; when boundaries, physical intimacy, alcohol, or private spaces appear, prioritize respect, pacing, and safety.'
-    },
-    {
-      zh: '输出必须是可解析 JSON；代码会校验枚举、数值范围、字段长度，并在失败时回退到规则结果。',
-      en: 'Output must be parseable JSON; code validates enums, numeric ranges, and field lengths, and falls back to rule results on failure.'
-    }
-  ],
-  eventUnderstanding: [
-    {
-      zh: '只根据本次事件描述和辅助上下文分类；不要推断描述里没有出现的回应或承诺。',
-      en: 'Classify only from the current event description and supporting context; do not infer responses or promises that are not present.'
-    },
-    {
-      zh: '必须区分用户动作、对象动作和双方互动；主体不清时降低判断强度。',
-      en: 'Distinguish user actions, target actions, and mutual interactions; reduce confidence when the actor is unclear.'
-    },
-    {
-      zh: '输出必须是可解析 JSON；代码会校验 eventType、semanticTags 和 commitment 枚举。',
-      en: 'Output must be parseable JSON; code validates eventType, semanticTags, and commitment enums.'
-    }
-  ],
-  weeklyReview: [
-    {
-      zh: '只总结本月提供的事件和评估变化；不要编造没有提供的长期趋势。',
-      en: 'Summarize only the provided weekly events and assessment changes; do not invent long-term trends.'
-    },
-    {
-      zh: '未成年人场景不生成成人化、越界或操控建议。',
-      en: 'For minors, do not generate adult, boundary-crossing, or manipulative advice.'
-    },
-    {
-      zh: '输出必须是可解析 JSON；代码会校验数组长度和枚举。',
-      en: 'Output must be parseable JSON; code validates array lengths and enums.'
-    }
-  ],
-  sideRead: [
-    {
-      zh: '星象速写只能作为轻量参考，不得伪装成确定事实、医学诊断或心理诊断。',
-      en: 'Profile reading is only lightweight reference; it must not be presented as fact or medical/psychological diagnosis.'
-    },
-    {
-      zh: '不要用属相星座鼓励操控、试探底线或越界行为。',
-      en: 'Do not use zodiac or astrology to encourage manipulation, boundary testing, or boundary-crossing behavior.'
-    },
-    {
-      zh: '输出必须是可解析 JSON；代码会校验字段和长度。',
-      en: 'Output must be parseable JSON; code validates fields and lengths.'
-    }
-  ],
-  attachmentAnalysis: [
-    {
-      zh: '看不清的内容必须留空或标注不确定；不要编造截图文字。',
-      en: 'Unreadable content must be left empty or marked uncertain; do not fabricate screenshot text.'
-    },
-    {
-      zh: '不要识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。',
-      en: 'Do not identify or spread sensitive personal information unless it is necessary context from user-provided content.'
-    },
-    {
-      zh: '输出必须是可解析 JSON；代码会校验字段和置信度枚举。',
-      en: 'Output must be parseable JSON; code validates fields and confidence enums.'
-    }
-  ]
-}
+const SAFETY_GUARDRAILS = [
+  {
+    zh: '输出必须是可解析 JSON；代码会校验枚举、数值范围和字段长度，失败时回退到规则结果。',
+    en: 'Output must be parseable JSON; code validates enums, numeric ranges, and field lengths, and falls back to rule results on failure.'
+  },
+  {
+    zh: '只根据用户提供的事实、事件上下文和画像字段判断；不要编造没有出现的行为、承诺、情绪或关系状态。',
+    en: 'Judge only from provided facts, event context, and profile fields; do not invent actions, promises, emotions, or relationship status.'
+  },
+  {
+    zh: '未成年人场景只允许友谊、边界、安全感和健康沟通建议；不要生成成人化、性暗示、饮酒、开房、操控或越界行为建议。',
+    en: 'For minors, only allow friendship, boundaries, safety, and healthy communication advice; do not generate adult, sexual, alcohol, hotel, manipulation, or boundary-crossing advice.'
+  }
+]
 
 function cleanText(value, maxLength = 1200) {
   return typeof value === 'string'
@@ -172,7 +110,7 @@ function buildBilingualLines(items) {
 }
 
 function buildPromptMessages({ moduleKey, settings, contextLines = [], systemExtra = '' }) {
-  const safety = SAFETY_GUARDRAILS[moduleKey] || []
+  const safety = SAFETY_GUARDRAILS
   const business = normalizeBusinessPrompt(settings, moduleKey)
   if (!business || !business.enabled) return null
 

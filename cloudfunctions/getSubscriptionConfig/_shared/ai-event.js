@@ -408,13 +408,7 @@ async function analyzeTimelineEvent(params) {
       'eventInsight must be enums only: actor=target|self|both|unknown, interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear, commitmentStatus=none|promised|fulfilled|broken|unclear, evidenceType=fact|feeling|mixed|unclear.',
       '主体宾语校验：“我主动问对方 / 我问他 / 我问她 / 我问对方”表示用户主动向关系对象提问；不要改写成“对方问我”或“对方主动问用户”。只有“对方问我 / 他问我 / 她问我 / 问我”才表示关系对象主动问用户。',
       describeSubjectRole(params.event?.subjectRole),
-      `Current assessment: ${JSON.stringify({
-        intentScore: params.latestResult?.intentScore,
-        riskScore: params.latestResult?.consistencyRiskScore,
-        evidenceLevel: params.latestResult?.evidenceLevel,
-        labels: params.latestResult?.primaryLabels,
-        nextAction: params.latestResult?.nextAction
-      })}`,
+      `基线分: intent=${params.latestResult?.intentScore ?? '--'} risk=${params.latestResult?.consistencyRiskScore ?? '--'}`,
       `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
       `Target profile: ${serializeCaseProfile(params.caseProfile)}`,
       `Recent timeline: ${JSON.stringify(compactRecentTimeline(params.recentTimeline, params.event?.id, settings.eventContextLimit))}`,

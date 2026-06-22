@@ -13,12 +13,17 @@ async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareI
     return { success: false, message: '自邀请不发放奖励' }
   }
 
-  // 2. 幂等检查：一个被邀请人只能有一条 claim
-  const existing = await db.collection('referral_claims')
-    .where({ inviteeUserId }).limit(1).get()
-  if (existing.data.length > 0) {
-    console.log('[settleReward] invitee already has claim, skip')
-    return { success: false, message: '该用户已被邀请过' }
+  // 2. 幂等检查：一个被邀请人只能有一条 claim（集合不存在时直接放行）
+  try {
+    const existing = await db.collection('referral_claims')
+      .where({ inviteeUserId }).limit(1).get()
+    if (existing.data?.length > 0) {
+      console.log('[settleReward] invitee already has claim, skip')
+      return { success: false, message: '该用户已被邀请过' }
+    }
+  } catch (err) {
+    // 集合不存在 → 首次创建，继续
+    console.log('[settleReward] referral_claims collection not yet created, proceeding')
   }
 
   // 3. 读取奖励配置
@@ -38,11 +43,10 @@ async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareI
     console.warn('[settleReward] read config failed, using defaults:', err?.message || err)
   }
 
-  // 4. 创建 claim
-  const claimId = `claim_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  // 4. 创建 claim（_id = inviteeUserId，天然幂等：并发写入第二个会失败）
   const now = new Date()
   await db.collection('referral_claims').add({
-    _id: claimId,
+    _id: inviteeUserId,
     inviteeUserId,
     inviterUserId,
     inviteCode: inviteCode || '',
@@ -58,22 +62,22 @@ async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareI
 
   // 5. 给邀请人发 Token
   const inviterResult = await addExtraTokens(db, inviterUserId, inviterReward,
-    `referral_inviter:${claimId}`)
+    `referral_inviter:${inviteeUserId}`)
   if (!inviterResult.success) {
     console.warn('[settleReward] inviter addExtraTokens failed:', inviterResult.message)
   }
 
   // 6. 给被邀请人发 Token
   const inviteeResult = await addExtraTokens(db, inviteeUserId, inviteeReward,
-    `referral_invitee:${claimId}`)
+    `referral_invitee:${inviteeUserId}`)
   if (!inviteeResult.success) {
     console.warn('[settleReward] invitee addExtraTokens failed:', inviteeResult.message)
   }
 
-  console.log('[settleReward] done', { claimId, inviterReward, inviteeReward,
+  console.log('[settleReward] done', { inviteeUserId, inviterReward, inviteeReward,
     invitee: inviteeUserId?.slice(0, 20), inviter: inviterUserId?.slice(0, 20) })
 
-  return { success: true, claimId, inviterReward, inviteeReward }
+  return { success: true, inviteeUserId, inviterReward, inviteeReward }
 }
 
 async function blockClaim(db, inviteeUserId, reason) {

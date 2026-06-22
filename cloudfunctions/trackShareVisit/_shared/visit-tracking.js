@@ -32,13 +32,13 @@ async function trackAnonymousVisit(db, { shareId, channel, scene, inviteCode, pa
   }
 }
 
-async function trackLoginVisit(db, { shareId, visitorUserId, isNewUser, openid }) {
+async function trackLoginVisit(db, { shareId, channel, scene, inviteCode, visitorUserId, isNewUser, openid }) {
   try {
     await db.collection('share_visits').add({
       shareId: shareId || '',
-      channel: '',
-      scene: '',
-      inviteCode: '',
+      channel: channel || '',
+      scene: scene || '',
+      inviteCode: inviteCode || '',
       path: '',
       visitorUserId: visitorUserId || '',
       openidHash: hashOpenid(openid),
