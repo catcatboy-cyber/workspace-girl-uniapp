@@ -45,6 +45,11 @@ function randomHex(n) {
   return crypto.randomBytes(n).toString('hex')
 }
 
+function shortId(value) {
+  const text = String(value || '')
+  return text ? text.slice(-10) : ''
+}
+
 function isValidDate(date) {
   return date instanceof Date && !Number.isNaN(date.getTime())
 }
@@ -141,6 +146,10 @@ function sanitizeUserQuestion(value) {
   const source = value && typeof value === 'object' ? value : {}
   const key = typeof source.key === 'string' ? source.key.trim() : ''
   if (allowed[key]) return { key, label: allowed[key] }
+  if (key === 'custom') {
+    const label = String(source.label || '').replace(/\s+/g, ' ').trim().slice(0, 40)
+    if (label) return { key: 'custom', label }
+  }
   return { key: 'like', label: allowed.like }
 }
 
@@ -396,6 +405,18 @@ exports.main = async (event) => {
     } catch (err) {
       console.warn('finalizePendingReferral failed (non-fatal):', err?.message || err)
     }
+
+    console.log('[createTimeline trace]', JSON.stringify({
+      traceId,
+      stage: 'return_pending',
+      userIdTail: shortId(userId),
+      caseIdTail: shortId(caseId),
+      recordIdTail: shortId(recordId),
+      assessmentIdTail: shortId(assessmentId),
+      aiPending: true,
+      aiUsed,
+      eventType: finalRecord.type
+    }))
 
     return {
       success: true,

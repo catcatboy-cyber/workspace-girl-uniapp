@@ -28,6 +28,11 @@ function toTime(value) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function shortId(value) {
+  const text = String(value || '')
+  return text ? text.slice(-10) : ''
+}
+
 function normalizeSubjectRole(value) {
   return ['target', 'self', 'both', 'unknown'].includes(value) ? value : 'target'
 }
@@ -48,6 +53,10 @@ function sanitizeUserQuestion(value) {
   const source = value && typeof value === 'object' ? value : {}
   const key = typeof source.key === 'string' ? source.key.trim() : ''
   if (allowed[key]) return { key, label: allowed[key] }
+  if (key === 'custom') {
+    const label = String(source.label || '').replace(/\s+/g, ' ').trim().slice(0, 40)
+    if (label) return { key: 'custom', label }
+  }
   return null
 }
 
@@ -286,6 +295,16 @@ exports.main = async (event = {}) => {
     const caseId = typeof event.caseId === 'string' ? event.caseId.trim() : ''
     const assessmentId = typeof event.assessmentId === 'string' ? event.assessmentId.trim() : ''
     const recordId = typeof event.recordId === 'string' ? event.recordId.trim() : ''
+    console.log('[generateAssessmentAI trace]', JSON.stringify({
+      traceId,
+      stage: 'input',
+      userIdTail: shortId(userId),
+      caseIdTail: shortId(caseId),
+      assessmentIdTail: shortId(assessmentId),
+      recordIdTail: shortId(recordId),
+      hasCaseId: Boolean(caseId),
+      hasAssessmentId: Boolean(assessmentId)
+    }))
     if (!caseId || !assessmentId) return { success: false, message: '缺少档案或评估ID' }
 
     const ownedCase = await getOwnedCase(db, caseId, userId)
@@ -295,6 +314,14 @@ exports.main = async (event = {}) => {
 
     const assessment = normalizeDoc(await db.collection('assessments').doc(assessmentId).get())
     if (!assessment || assessment.caseId !== caseId) throw new Error('ASSESSMENT_NOT_FOUND')
+    console.log('[generateAssessmentAI trace]', JSON.stringify({
+      traceId,
+      stage: 'assessment_loaded',
+      assessmentIdTail: shortId(assessmentId),
+      aiPending: Boolean(assessment.aiPending),
+      triggerEventIdTail: shortId(assessment.triggerEventId),
+      previousAssessmentIdTail: shortId(assessment.previousAssessmentId)
+    }))
     markPerf('assessment_loaded')
 
     const triggerEventId = recordId || assessment.triggerEventId
@@ -316,7 +343,7 @@ exports.main = async (event = {}) => {
     })
 
     const assessments = Array.isArray(assessmentItems) ? assessmentItems : []
-    const previous = assessment.previousAssessmentId
+    let previous = assessment.previousAssessmentId
       ? assessments.find((item) => (item._id || item.assessmentId) === assessment.previousAssessmentId)
       : assessments
         .filter((item) => (item._id || item.assessmentId) !== assessmentId && toTime(item.createdAt) < toTime(assessment.createdAt))
@@ -339,9 +366,28 @@ exports.main = async (event = {}) => {
 
     // Token门控 - eventAssessment
     const accessEA = await checkFeatureAccess(db, userId, '即时反馈')
-    if (!accessEA.allowed) return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: accessEA.reason }
+    if (!accessEA.allowed) {
+      console.log('[generateAssessmentAI trace]', JSON.stringify({
+        traceId,
+        stage: 'feature_denied',
+        caseIdTail: shortId(caseId),
+        assessmentIdTail: shortId(assessmentId),
+        reason: accessEA.reason || ''
+      }))
+      return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: accessEA.reason }
+    }
     const tokEA = await checkTokenBalance(db, userId, 2000)
-    if (!tokEA.ok) return { success: false, code: tokEA.code, message: tokEA.message, ...tokEA }
+    if (!tokEA.ok) {
+      console.log('[generateAssessmentAI trace]', JSON.stringify({
+        traceId,
+        stage: 'token_denied',
+        caseIdTail: shortId(caseId),
+        assessmentIdTail: shortId(assessmentId),
+        code: tokEA.code,
+        message: tokEA.message
+      }))
+      return { success: false, code: tokEA.code, message: tokEA.message, ...tokEA }
+    }
 
     try {
       recalculated = await recalculateAssessmentFromEvent({
@@ -429,6 +475,17 @@ exports.main = async (event = {}) => {
       })
     }
     markPerf('updated', { intentDelta: trend.intentDelta, riskDelta: trend.riskDelta })
+    console.log('[generateAssessmentAI trace]', JSON.stringify({
+      traceId,
+      stage: 'updated',
+      caseIdTail: shortId(caseId),
+      assessmentIdTail: shortId(assessmentId),
+      recordIdTail: shortId(triggerEvent.id),
+      aiUsed: Boolean(recalculated.aiUsed),
+      aiFailed: Boolean(recalculated.aiFailed),
+      intentDelta: trend.intentDelta,
+      riskDelta: trend.riskDelta
+    }))
 
     return {
       success: true,
