@@ -11,20 +11,19 @@
   <view v-if="topFilterOptions.length > 0" class="filter-row-v2" style="flex-wrap:wrap;"><view v-for="item in topFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view><view v-if="timelineFilterOptions.length > topFilterOptions.length" :class="['filter-chip-v2', showAllFilters ? 'active' : '']" @click="showAllFilters = !showAllFilters">更多 ▽</view></view>
   <view v-if="showAllFilters" class="filter-row-v2" style="flex-wrap:wrap;margin-top:4rpx;"><view v-for="item in remainingFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view>
 </view>
-          <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-title-v2">{{ item.title }}</text><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-if="didAIReview(item)" class="tag-v2 black sm">AI</text><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view><view v-else class="img-analysis-label">图片 · AI 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
+          <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.subjectRole || getTimelineRecordTags(item).scene.length > 0" class="tag-row-v2" style="margin-top:4rpx;"><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-for="tag in getTimelineRecordTags(item).scene" :key="tag" class="tag-v2 sm">{{ sceneLabel(tag) }}</text></view><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view><view v-else class="img-analysis-label">图片 · AI 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
                 <view v-if="getLinkedAssessment(item)" class="analysis-summary-v2" @click="toggleExpandedAnalysis(getLinkedAssessmentKey(item))">
-                  <text class="summary-score-v2">意向<text class="summary-score-num-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text><text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).intentDelta)">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text></text>
+                  <view class="summary-mini-bar"><view class="summary-mini-fill" :style="{ width: clampScore(getLinkedAssessment(item).intentScore) + '%' }"></view></view>
+                  <text class="summary-score-v2">意向<text class="summary-score-num-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text></text>
+                  <text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).intentDelta)">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text>
                   <text class="summary-split-v2">|</text>
+                  <view class="summary-mini-bar risk"><view class="summary-mini-fill risk" :style="{ width: clampScore(getLinkedAssessment(item).consistencyRiskScore) + '%' }"></view></view>
                   <text class="summary-score-v2 risk">风险<text class="summary-score-num-v2 risk">{{ clampScore(getLinkedAssessment(item).consistencyRiskScore) }}</text></text>
-                  <text class="summary-expand-v2">{{ isAnalysisExpanded(getLinkedAssessmentKey(item)) ? '▲' : '▼' }}</text>
+                  <text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).riskDelta)">{{ formatDelta(getAssessmentTrendForItem(item).riskDelta) }}</text>
+                  <text class="summary-expand-v2">{{ isAnalysisExpanded(getLinkedAssessmentKey(item)) ? '收起' : '展开' }}</text>
                 </view>
                 <view v-if="isAnalysisExpanded(getLinkedAssessmentKey(item))" class="expanded-analysis-v2">
-                  <view class="score-block-v2" style="margin-top:0;">
-                    <view class="score-row-v2"><text class="score-lbl-v2">意向</text><text class="score-val-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text><text class="score-tag-v2">{{ mapIntentLabel(getLinkedAssessment(item).intentBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2" :style="'width:' + clampScore(getLinkedAssessment(item).intentScore) + '%'"></view></view></view>
-                    <view class="score-row-v2"><text class="score-lbl-v2">风险</text><text class="score-val-v2 risk">{{ clampScore(getLinkedAssessment(item).consistencyRiskScore) }}</text><text class="score-tag-v2">{{ mapRiskLabel(getLinkedAssessment(item).riskBucket) }}</text><view class="score-bar-v2"><view class="score-fill-v2 risk" :style="'width:' + clampScore(getLinkedAssessment(item).consistencyRiskScore) + '%'"></view></view></view>
-                    <view class="delta-row-v2"><text class="delta-lbl-v2">意向变化</text><text :class="['delta-val-v2', deltaClass(getAssessmentTrendForItem(item).intentDelta)]">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text><text class="delta-lbl-v2" style="margin-left:20rpx;">风险变化</text><text :class="['delta-val-v2', deltaClass(getAssessmentTrendForItem(item).riskDelta)]">{{ formatDelta(getAssessmentTrendForItem(item).riskDelta) }}</text></view>
-                  </view>
-                  <view v-if="getAssessmentReasonBullets(getLinkedAssessment(item)).length > 0" class="reason-box-v2" style="margin-top:10rpx;"><text class="section-title-v2">判断依据</text><text v-for="reason in getAssessmentReasonBullets(getLinkedAssessment(item))" :key="reason" class="reason-line-v2">• {{ reason }}</text></view>
+                  <view v-if="getAssessmentReasonBullets(getLinkedAssessment(item)).length > 0" class="reason-box-v2"><text class="section-title-v2">判断依据</text><text v-for="reason in getAssessmentReasonBullets(getLinkedAssessment(item))" :key="reason" class="reason-line-v2">• {{ reason }}</text></view>
                   <view v-if="getAssessmentLinkedStatusTags(item).length" class="status-box-v2" style="margin-top:10rpx;"><text class="section-title-v2">状态标签</text><view class="tag-row-v2"><text v-for="tag in getAssessmentLinkedStatusTags(item)" :key="tag" class="tag-v2 sm">{{ tag }}</text></view></view>
                   <view v-if="getAssessmentProblemTypeTags(getLinkedAssessment(item)).length && getAssessmentProblemTypeTags(getLinkedAssessment(item))[0] !== '暂无突出问题'" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="tag in getAssessmentProblemTypeTags(getLinkedAssessment(item))" :key="tag" class="tag-v2 sm" style="background:#111;color:#666;">{{ tag }}</text></view>
                   <view v-if="getAssessmentActionPlanPanel(getLinkedAssessment(item)).show" class="action-box-v2" style="margin-top:10rpx;"><text class="action-label-v2">{{ getPetById(getSelectedPetId()).displayName }} 帮你看看</text><text v-if="getAssessmentActionPlanPanel(getLinkedAssessment(item)).missing" class="trend-summary-v2">{{ getAssessmentActionPlanPanel(getLinkedAssessment(item)).text }}</text><view v-else><view v-for="s in getAssessmentActionPlanPanel(getLinkedAssessment(item)).sections" :key="s.label" class="action-item-v2"><text class="action-item-label-v2">{{ petLabel(s.label) }}</text><text class="action-item-text-v2">{{ s.text }}</text></view></view></view>
@@ -179,6 +178,15 @@ const timelineFilterOptions = computed(() => {
   ]
 })
 
+const SCENE_LABEL_MAP: Record<string, string> = {
+  offline_meet: '碰面', movie: '电影', meal: '吃饭', coffee_tea: '咖啡奶茶',
+  walk: '散步', walk_shop: '散步逛街', chat: '聊天', gift: '礼物',
+  phone_call: '电话', online_chat: '线上聊天', shopping: '逛街', activity: '活动',
+  study: '学习', work: '工作', travel: '出行', trip: '出行', game: '游戏',
+  sport: '运动', music: '音乐', pet: '宠物', food: '美食', group_social: '朋友聚会'
+}
+function sceneLabel(key: string): string { return SCENE_LABEL_MAP[key] || key }
+
 const activeTimelineFilterLabel = computed(() => {
   const item = timelineFilterOptions.value.find((option) => option.key === activeTimelineFilter.value)
   return item && item.key !== 'all' ? `当前只看：${item.label}` : '当前查看全部事件'
@@ -245,28 +253,44 @@ const profileSideRead = computed(() => {
 })
 
 const latestRawReply = computed(() => {
-  return String(latestResult.value?.rawReply || '').trim()
+  return normalizeRawReplyText(latestResult.value?.rawReply)
 })
 
 function parseRawReplySections(text: string) {
   const source = String(text || '').trim()
   if (!source) return []
-  const labels = ['小咪觉得对方可能在想', '小咪觉得可以这样', '小咪说留个心眼']
-  const normalized = source
-    .replace(/\r/g, '')
-    .replace(/(小咪觉得对方可能在想|小咪觉得可以这样|小咪说留个心眼)\s*[：:]/g, '\n$1：')
-    .trim()
-  const sections = labels.map((label, index) => {
+  const groups = [
+    { label: '小咪先回答你的问题', aliases: ['小咪先回答你的问题'] },
+    { label: '对方可能在想', aliases: ['对方可能在想', '小咪觉得对方可能在想'] },
+    { label: '下一步可以这样推进', aliases: ['下一步可以这样推进', '小咪觉得可以这样'] },
+    { label: '留个心眼', aliases: ['留个心眼', '小咪说留个心眼'] }
+  ]
+  let normalized = source.replace(/\r/g, '')
+  groups.forEach((group) => {
+    group.aliases.forEach((alias) => {
+      normalized = normalized.replace(new RegExp(`${alias}\\s*[：:]`, 'g'), `\n${group.label}：`)
+    })
+  })
+  if (!groups.some((group) => normalized.includes(`${group.label}：`))) {
+    normalized = source.replace(/\r/g, '')
+    groups.forEach((group) => {
+      group.aliases.forEach((alias) => {
+        normalized = normalized.replace(new RegExp(`${alias}\\s*\\/\\s*`, 'g'), `\n${group.label}：`)
+      })
+    })
+  }
+  normalized = normalized.trim()
+  const labels = groups.map((group) => group.label)
+  const sections = labels.map((label) => {
     const start = normalized.indexOf(`${label}：`)
     if (start < 0) return null
     const contentStart = start + label.length + 1
     const nextStarts = labels
-      .slice(index + 1)
       .map((nextLabel) => normalized.indexOf(`${nextLabel}：`, contentStart))
       .filter((pos) => pos >= 0)
     const end = nextStarts.length ? Math.min(...nextStarts) : normalized.length
-    const text = normalized.slice(contentStart, end).replace(/^\s+|\s+$/g, '')
-    return text ? { label, text } : null
+    const sectionText = normalized.slice(contentStart, end).replace(/^\s+|\s+$/g, '')
+    return sectionText ? { label, text: sectionText } : null
   }).filter(Boolean) as Array<{ label: string; text: string }>
   return sections.length ? sections : [{ label: '回复建议', text: source }]
 }
@@ -692,8 +716,35 @@ function getRecentTrendAssessments(item: any) {
     .slice(-4)
 }
 
+function normalizeRawReplyText(value: any): string {
+  if (typeof value === 'string') {
+    const source = value.trim()
+    if (!source) return ''
+    if ((source.startsWith('{') && source.endsWith('}')) || (source.startsWith('```') && source.includes('{'))) {
+      try {
+        const cleaned = source.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+        return normalizeRawReplyText(JSON.parse(cleaned))
+      } catch (_) {}
+    }
+    return source
+  }
+  if (!value || typeof value !== 'object') return ''
+  if (value.rawReply || value.reply || value.text || value.content) {
+    return normalizeRawReplyText(value.rawReply || value.reply || value.text || value.content)
+  }
+  const labels = ['小咪先回答你的问题', '对方可能在想', '下一步可以这样推进', '留个心眼']
+  return labels
+    .map((label) => {
+      const text = normalizeRawReplyText(value[label])
+      return text ? `${label}：${text}` : ''
+    })
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+}
+
 function getAssessmentRawReply(item: any) {
-  return String(item?.rawReply || '').trim()
+  return normalizeRawReplyText(item?.rawReply)
 }
 
 function getAssessmentActionPlanPanel(item: any) {
@@ -882,10 +933,6 @@ function mapDirectionCopy(direction: 'up' | 'down' | 'flat', positiveWhenUp: str
   if (direction === 'up') return positiveWhenUp
   if (direction === 'down') return positiveWhenDown
   return '基本持平'
-}
-
-function didAIReview(record: any) {
-  return Boolean(record?.aiUsed)
 }
 
 function toggleManualTimelineExpanded() {
@@ -1233,7 +1280,8 @@ async function syncSemanticTags() {
 
 .v2-mode .action-box-v2 { margin-top: 12rpx; padding: 14rpx; border-left: 3rpx solid #4ECDC4; background: #f5f5ff; border-radius: 0 4rpx 4rpx 0; }
 .v2-mode .action-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: #111; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
-.v2-mode .action-item-v2 { padding: 10rpx; background: #fff; margin-top: 8rpx; border-radius: 4rpx; }
+.v2-mode .action-item-v2 { padding: 12rpx 0; border-bottom: 2rpx solid rgba(0,0,0,0.08); background: transparent; margin-top: 0; }
+.v2-mode .action-item-v2:last-child { border-bottom: none; padding-bottom: 0; }
 .v2-mode .action-item-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
 .v2-mode .action-item-text-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; margin-top: 4rpx; }
 
@@ -1247,15 +1295,15 @@ async function syncSemanticTags() {
 .v2-mode .stat-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 2rpx; }
 
 .v2-mode .search-row-v2 { display: flex; align-items: center; gap: 12rpx; margin-top: 12rpx; }
-.v2-mode .search-input-v2 { flex: 1; height: 64rpx; padding: 0 20rpx; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 600; color: #111; }
-.v2-mode .search-clear-v2 { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; border: 2rpx solid #111; background: #fff; font-size: 24rpx; font-weight: 900; color: #999; }
+.v2-mode .search-input-v2 { flex: 1; height: 64rpx; padding: 0 20rpx; border: 2rpx solid #111; background: #fff; font-size: 34rpx; font-weight: 600; color: #111; }
+.v2-mode .search-clear-v2 { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; border: 2rpx solid #111; background: #fff; font-size: 34rpx; font-weight: 900; color: #999; }
 .v2-mode .filter-scroll-v2 { width: 100%; margin-top: 8rpx; white-space: nowrap; }
 .v2-mode .filter-row-v2 { display: flex; gap: 8rpx; margin-top: 12rpx; }
 .v2-mode .filter-chip-v2 { display: inline-flex; align-items: center; min-height: 48rpx; padding: 0 16rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-caption; font-weight: $fw-label; color: #111; }
 .v2-mode .filter-chip-v2.active { background: #111; color: #FFD93D; }
 
 .v2-mode .event-list-v2 { display: flex; flex-direction: column; gap: 14rpx; margin-top: 14rpx; }
-.v2-mode .event-row-v2 { display: flex; gap: 14rpx; padding: 18rpx; border: 2rpx dashed #111; background: #f9f9f9; }
+.v2-mode .event-row-v2 { display: flex; gap: 14rpx; padding: 18rpx; background: #f9f9f9; }
 .v2-mode .event-row-v2.system { background: #fff; border-style: dashed; }
 .v2-mode .event-time-v2 { display: flex; flex-direction: column; align-items: center; width: 80rpx; flex-shrink: 0; }
 .v2-mode .event-date-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
@@ -1300,8 +1348,8 @@ async function syncSemanticTags() {
 .v2-mode .score-val-v2 { width: 44rpx; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
 .v2-mode .score-val-v2.risk { color: #FF5252; }
 .v2-mode .score-tag-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-right: 6rpx; }
-.v2-mode .score-bar-v2 { flex: 1; height: 10rpx; border: 2rpx solid #111; background: #fff; }
-.v2-mode .score-fill-v2 { height: 10rpx; background: #111; }
+.v2-mode .score-bar-v2 { flex: 1; height: 10rpx; border: 2rpx solid #111; background: #fff; overflow: hidden; }
+.v2-mode .score-fill-v2 { height: 10rpx; background: #4ECDC4; }
 .v2-mode .score-fill-v2.risk { background: #FF5252; }
 
 .v2-mode .delta-row-v2 { display: flex; align-items: center; margin-top: 10rpx; padding-top: 10rpx; border-top: 1rpx solid rgba(0,0,0,0.08); }
@@ -1384,7 +1432,7 @@ async function syncSemanticTags() {
 /* === Analysis summary bar (merged events+assessments) === */
 .v2-mode .analysis-summary-v2 {
   margin-top: 8rpx; padding: 6rpx 12rpx;
-  border: 2rpx solid #111; background: #FFFBEB;
+  background: #FFFBEB;
   display: inline-flex; align-items: center; gap: 8rpx;
   cursor: pointer; max-width: 100%; flex-wrap: wrap;
 }
@@ -1398,10 +1446,13 @@ async function syncSemanticTags() {
 .v2-mode .summary-delta-v2.down { color: #FF5252; }
 .v2-mode .summary-delta-v2.flat { color: #999; }
 .v2-mode .summary-label-v2 { font-size: $fs-caption; font-weight: $fw-label; color: #666; }
-.v2-mode .summary-expand-v2 { font-size: $fs-micro; font-weight: $fw-label; color: #999; margin-left: 2rpx; }
+.v2-mode .summary-expand-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: #111; margin-left: 4rpx; }
+.v2-mode .summary-mini-bar { width: 56rpx; height: 8rpx; background: #fff; border: 2rpx solid #111; overflow: hidden; flex-shrink: 0; }
+.v2-mode .summary-mini-bar .summary-mini-fill { height: 100%; background: #4ECDC4; }
+.v2-mode .summary-mini-bar.risk .summary-mini-fill { background: #FF5252; }
 .v2-mode .summary-split-v2 { color: #ddd; font-size: $fs-caption; }
 .v2-mode .expanded-analysis-v2 {
   margin-top: 10rpx; padding: 14rpx;
-  border: 2rpx dashed #111; background: #f9f9f9;
+  background: #f9f9f9;
 }
 </style>

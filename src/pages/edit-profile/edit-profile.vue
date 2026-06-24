@@ -33,15 +33,6 @@
         </view>
       </view>
 
-      <view v-if="profileInsight" class="card-v2">
-        <text class="section-title-v2">{{ profileInsight.title }}</text>
-        <text class="card-text-v2 insight-summary">{{ profileInsight.summary }}</text>
-        <view class="insight-list-v2">
-          <text v-for="item in profileInsight.bullets" :key="item" class="insight-item-v2">{{ item }}</text>
-        </view>
-        <text class="card-text-v2">{{ profileInsight.disclaimer }}</text>
-      </view>
-
       <view class="card-v2">
         <text class="section-title-v2">Crush 基础信息</text>
         <view class="field-v2">
@@ -113,7 +104,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCaseDetail, updateCaseProfile, getCurrentUserId } from '@/utils/api'
 import { markActiveCaseProfileUpdated, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
-import { buildProfileInsight, buildProfileItems } from '@/utils/insights'
+import { buildProfileItems } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const loading = ref(true)
@@ -160,7 +151,6 @@ const previewProfile = computed(() => ({
   avatar: profile.avatar
 }))
 const profileItems = computed(() => buildProfileItems(previewProfile.value))
-const profileInsight = computed(() => buildProfileInsight(previewProfile.value))
 
 function onRelationTypeChange(e: any) { profile.relationType = relationTypeOptions[e.detail.value] }
 function onGenderChange(e: any) { profile.gender = genderOptions[e.detail.value] }
@@ -331,11 +321,6 @@ function goTimeline() {
 /* Tags */
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }
-
-/* Insight */
-.v2-mode .insight-summary { margin-bottom: 12rpx; }
-.v2-mode .insight-list-v2 { display: flex; flex-direction: column; gap: 8rpx; margin: 12rpx 0; }
-.v2-mode .insight-item-v2 { font-size: $fs-body-lg; font-weight: $fw-label; color: #111; line-height: $lh-loose; }
 
 /* Fields */
 .v2-mode .field-v2 { margin-top: 16rpx; padding: 18rpx 0; border-bottom: 2rpx solid #111; }
