@@ -4,20 +4,6 @@
 // ============================================================
 
 // ── 颜色 Token ────────────────────────────────────────────
-$c-ink:       #111111;
-$c-hero:      #FF6B6B;
-$c-accent:    #FFD93D;
-$c-mint:      #4ECDC4;
-$c-risk:      #FF5252;
-$c-bg:        #FFFDF5;
-$c-card:      #FFFFFF;
-$c-card-soft: #F9F9F9;
-$c-soft-warm: #FFFBEB;
-$c-soft-risk: #FFEEEC;
-$c-soft-mint: #E0FFF0;
-$c-muted:     #666666;
-$c-soft:      #999999;
-
 // ── 间距 Token ────────────────────────────────────────────
 $sp-card-pad:   28rpx;
 $sp-card-gap:   24rpx;
@@ -76,8 +62,8 @@ $sp-section-gap: 16rpx;
 
 @mixin section-title-v2 {
   display: block;
-  font-size: $fs-heading;           // 32rpx from typography.scss
-  font-weight: $fw-hero;
+  font-size: $fs-heading;
+  font-weight: $fw-heading;
   color: $c-ink;
   line-height: $lh-heading;
 }
@@ -85,7 +71,7 @@ $sp-section-gap: 16rpx;
 @mixin section-sub-v2 {
   display: block;
   margin-top: 4rpx;
-  font-size: $fs-caption;           // 20rpx
+  font-size: $fs-caption;
   font-weight: $fw-label;
   color: $c-muted;
   line-height: $lh-label;
@@ -99,7 +85,7 @@ $sp-section-gap: 16rpx;
   @include border-soft;
   background: $c-accent;
   font-size: $fs-caption;
-  font-weight: $fw-heading;
+  font-weight: $fw-label;
   color: $c-ink;
 }
 

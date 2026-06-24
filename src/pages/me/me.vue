@@ -43,19 +43,15 @@
               <text class="stat-num-v2">{{ subMonthlyUsed }}/{{ totalLimit }}</text>
               <text class="stat-lbl-v2">已用/上限</text>
             </view>
-            <view class="stat-box-v2">
-              <text class="stat-num-v2">{{ referralCount }}</text>
-              <text class="stat-lbl-v2">已邀请</text>
-            </view>
           </view>
-          <view class="voice-row-v2">
-            <text class="voice-row-lbl-v2">语音识别</text>
-            <text class="voice-row-val-v2">{{ voiceUsageSummary.totalCount }} 次 · 累计 {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text>
+          <view class="referral-voice-row-v2">
+            <text class="voice-row-lbl-v2">已邀请 <text class="voice-row-val-v2">{{ referralCount }} 人</text></text>
+            <text class="voice-row-val-v2">语音 {{ voiceUsageSummary.totalCount }} 次 · {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text>
           </view>
           <view class="btn-row-v2" style="margin-top:14rpx;">
             <button class="btn btn-secondary btn-sm" @click="goSubscriptionPlan">升级套餐</button>
             <button class="btn btn-secondary btn-sm" @click="goRecharge">买加油包</button>
-            <button class="btn btn-secondary btn-sm" open-type="share">分享 +{{ referralRewardTokens }}</button>
+            <button class="btn btn-secondary btn-sm" open-type="share">+{{ referralRewardTokens }}</button>
             <button class="btn btn-ghost btn-sm" @click="goTokenUsage">消费明细</button>
           </view>
       </view>
@@ -64,15 +60,15 @@
         <view open-type="share" style="width:100%;">
           <text class="section-title-v2" style="color:#e67e22;">Token 快不够了</text>
           <text class="card-text-v2">邀请好友注册，双方各得 Token →</text>
-          <button class="btn btn-secondary btn-sm" open-type="share" style="margin-top:12rpx;">分享 +{{ referralRewardTokens }}</button>
+          <button class="btn btn-secondary btn-sm" open-type="share" style="margin-top:12rpx;">+{{ referralRewardTokens }}</button>
         </view>
       </view>
       <!-- Theme picker -->
-      <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text><text class="theme-desc-v2">{{ theme.description }}</text></view></view></view>
+      <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text></view></view></view>
       <!-- Font size -->
-      <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2" style="font-size: $fs-heading;">Crush Master</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2" style="font-size: $fs-heading;">Crush Master</text></view></view></view>
+      <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2">Crush Master</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2">Crush Master</text></view></view></view>
       <!-- AI analysis style -->
-      <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">AI 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><text class="sub-title-v2">陪伴风格</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn btn-primary btn-md btn-full" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
+      <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">AI 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn btn-primary btn-md btn-full" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
       <!-- #ifdef H5 -->
       <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、AI、Token 和反馈管理 →</text></view>
       <!-- #endif -->
@@ -120,6 +116,8 @@ const fontSizeMode = ref(getFontSizeMode())
 function setFontSize(mode: 'default' | 'large') {
   fontSizeMode.value = mode
   setFontSizeMode(mode)
+  const tabBar = getCurrentPages().pop()?.getTabBar?.()
+  tabBar?.syncFontSizeMode?.()
 }
 const currentSelfProfile = ref<SelfProfile | null>(getCachedSelfProfile())
 const aiStyle = ref<AIStyleValue>('gentle_bestie')
@@ -601,8 +599,8 @@ async function onLogout() {
 .v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.5; margin-bottom: 6rpx; }
 .v2-mode .card-text-v2.muted { color: #999; font-size: $fs-caption; }
 .v2-mode .balance-hero-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; padding: 20rpx 24rpx; margin-bottom: 12rpx; display: flex; align-items: baseline; gap: 10rpx; }
-.v2-mode .balance-num-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; letter-spacing: -2rpx; }
-.v2-mode .balance-unit-v2 { font-size: $fs-body; font-weight: $fw-hero; color: rgba(0,0,0,0.6); }
+.v2-mode .balance-num-v2 { min-width: 0; font-size: $fs-kpi; font-weight: $fw-heading; color: #111; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v2-mode .balance-unit-v2 { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-label; color: rgba(0,0,0,0.6); }
 
 /* 套餐身份标签 */
 .plan-badge { padding: 8rpx 20rpx; border: 2rpx solid #111; font-size: $fs-body; font-weight: $fw-hero; letter-spacing: 2rpx; }
@@ -616,14 +614,14 @@ async function onLogout() {
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 14rpx; }
 .v2-mode .switch-row-v2 { display: flex; align-items: center; gap: 24rpx; padding: 12rpx 0; }
 
-.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; margin-top: 12rpx; }
-.v2-mode .stat-box-v2 { padding: 16rpx 8rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
-.v2-mode .stat-num-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; line-height: 1; }
-.v2-mode .stat-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 4rpx; }
+.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
+.v2-mode .stat-box-v2 { padding: 14rpx 16rpx; border: 2rpx solid #111; background: #f9f9f9; display: flex; flex-direction: column; align-items: center; }
+.v2-mode .stat-num-v2 { font-size: $fs-body-lg; font-weight: $fw-heading; color: #111; line-height: 1; white-space: nowrap; }
+.v2-mode .stat-lbl-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
 
-.v2-mode .voice-row-v2 { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; padding: 12rpx 16rpx; border: 2rpx solid #111; background: #fff; }
-.v2-mode .voice-row-lbl-v2 { font-size: $fs-body; font-weight: $fw-hero; color: #111; }
-.v2-mode .voice-row-val-v2 { font-size: $fs-body; font-weight: $fw-label; color: #111; }
+.v2-mode .referral-voice-row-v2 { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; padding: 10rpx 0; border-top: 1rpx solid rgba(0,0,0,0.08); }
+.v2-mode .voice-row-lbl-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
+.v2-mode .voice-row-val-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 
 .v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .theme-card-v2 { padding: 14rpx 10rpx; border: 2rpx solid #111; background: #fff; text-align: center; }
@@ -641,7 +639,7 @@ async function onLogout() {
 .v2-mode .font-size-option-v2.active { background: #111; }
 .v2-mode .font-size-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; }
 .v2-mode .font-size-option-v2.active .font-size-label-v2 { color: #FFD93D; }
-.v2-mode .font-size-sample-v2 { display: block; font-weight: $fw-hero; color: #111; }
+.v2-mode .font-size-sample-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
 .v2-mode .font-size-option-v2.active .font-size-sample-v2 { color: #FFD93D; }
 
 /* pet row layout: avatar + info + button */
@@ -707,5 +705,5 @@ async function onLogout() {
 .v2-mode .explain-item-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; }
 .v2-mode .explain-item-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; line-height: 1.4; }
 .referral-notice { margin-bottom: 20rpx; padding: 22rpx 24rpx; background: #FFD93D; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; }
-.referral-notice-text { display: block; font-size: 26rpx; font-weight: 800; color: #111; text-align: center; }
+.referral-notice-text { display: block; font-size: 36rpx; font-weight: 800; color: #111; text-align: center; }
 </style>

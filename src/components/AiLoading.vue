@@ -26,7 +26,7 @@ defineProps<{ label: string; seconds?: number }>()
 }
 
 .ai-loading-label {
-  font-size: 24rpx;
+  font-size: 34rpx;
   font-weight: 900;
   color: #111;
   text-transform: uppercase;
@@ -49,7 +49,7 @@ defineProps<{ label: string; seconds?: number }>()
 }
 
 .ai-loading-text {
-  font-size: 22rpx;
+  font-size: 34rpx;
   font-weight: 600;
   color: #999;
 }

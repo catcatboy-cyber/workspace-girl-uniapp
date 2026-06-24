@@ -2440,9 +2440,9 @@ input {
 
 /* Order detail */
 .order-detail { padding: 16px; margin-top: 8px; background: #fbfdfb; border-radius: 8px; border: 1px solid rgba(23,35,31,0.08); }
-.order-detail-grid { display: flex; flex-direction: column; gap: 6px; font-size: 22rpx; color: #555; }
+.order-detail-grid { display: flex; flex-direction: column; gap: 6px; font-size: 34rpx; color: #555; }
 .pet-request-petid-input { width: 200px; height: 34px; padding: 0 10px; border: 1px solid rgba(23,35,31,0.18); border-radius: 6px; font-size: 13px; }
-.plan-tag { font-size: 18rpx; font-weight: 800; padding: 4rpx 12rpx; display: inline-block; }
+.plan-tag { font-size: 24rpx; font-weight: 800; padding: 4rpx 12rpx; display: inline-block; }
 .plan-tag.plan-trial { background: #4ECDC4; color: #fff; }
 .plan-tag.plan-pro { background: #111; color: #FFD93D; }
 .plan-tag.plan-ultra { background: #111; color: #FFD93D; }

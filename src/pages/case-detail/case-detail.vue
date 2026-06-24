@@ -1294,7 +1294,6 @@ async function generateThisMonthReview() {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/typography.scss';
 @import '@/styles/campus-pop.scss';
 
 .page {
@@ -1456,11 +1455,11 @@ async function generateThisMonthReview() {
 .v2-mode .section-sub-v2 { @include section-sub-v2; margin-bottom: 16rpx; }
 
 /* Radar 关系雷达 */
-.v2-mode .radar-row-v2 { display: flex; align-items: center; gap: 14rpx; margin-top: 16rpx; }
+.v2-mode .radar-row-v2 { display: flex; align-items: center; flex-wrap: wrap; gap: 14rpx; margin-top: 16rpx; }
 .v2-mode .radar-label-v2 { width: 96rpx; font-size: 20rpx; font-weight: 900; color: #111; flex-shrink: 0; }
-.v2-mode .radar-bar-v2 { flex: 1; height: 22rpx; border: 2rpx solid #111; background: #f5f5f5; }
+.v2-mode .radar-bar-v2 { flex: 1; height: 22rpx; min-width: 120rpx; border: 2rpx solid #111; background: #f5f5f5; }
 .v2-mode .radar-bar-fill-v2 { height: 100%; min-width: 4rpx; }
-.v2-mode .radar-desc-v2 { width: 190rpx; font-size: 20rpx; font-weight: 600; color: #666; flex-shrink: 0; text-align: right; }
+.v2-mode .radar-desc-v2 { width: 100%; font-size: 20rpx; font-weight: 600; color: #999; margin-top: 2rpx; padding-left: 110rpx; text-align: left; }
 .v2-mode .radar-meta-v2 { margin-top: 20rpx; padding-top: 16rpx; border-top: 1rpx solid rgba(0,0,0,0.08); font-size: 20rpx; font-weight: 600; color: #999; }
 .v2-mode .radar-meta-warn-v2 { color: #FF6B6B; }
 
@@ -1574,4 +1573,113 @@ async function generateThisMonthReview() {
 .v2-mode .info-tree-item:last-child { border-bottom: none; }
 .v2-mode .info-tree-q { display: block; font-size: 20rpx; font-weight: 900; color: #111; margin-bottom: 6rpx; }
 .v2-mode .info-tree-a { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.6; }
+
+/* Global typography alignment: this page imports campus-pop but old local rules override tokens. */
+.v2-mode .hero-tag-v2,
+.v2-mode .tag-v2,
+.v2-mode .tag-v2.sm,
+.v2-mode .profile-type-v2,
+.v2-mode .stat-lbl-v2,
+.v2-mode .stat-hint-v2,
+.v2-mode .trend-chg-v2,
+.v2-mode .trend-unit-v2,
+.v2-mode .line-legend-tip-v2,
+.v2-mode .line-grid-v2 text,
+.v2-mode .line-point-v2 text,
+.v2-mode .line-x-label-v2 text,
+.v2-mode .delta-chip-v2,
+.v2-mode .matrix-cell-sub-v2,
+.v2-mode .signal-card-evidence-label-v2,
+.v2-mode .signal-card-evidence-text-v2,
+.v2-mode .balance-summary-lbl-v2,
+.v2-mode .score-bucket-v2,
+.v2-mode .risk-meter-lbl-v2 {
+  font-size: $fs-caption;
+}
+
+.v2-mode .loading-v2,
+.v2-mode .empty-title-v2,
+.v2-mode .notice-title-v2,
+.v2-mode .profile-name-v2,
+.v2-mode .weekly-title-v2,
+.v2-mode .focus-question-v2,
+.v2-mode .trend-num-v2,
+.v2-mode .info-sheet-title,
+.v2-mode .info-sheet-close {
+  font-size: $fs-heading;
+  font-weight: $fw-heading;
+  color: $c-ink;
+}
+
+.v2-mode .hero-title-v2 {
+  font-size: $fs-hero-title;
+  font-weight: $fw-hero;
+  color: $c-ink;
+  letter-spacing: 0;
+}
+
+.v2-mode .hero-copy-v2,
+.v2-mode .empty-sub-v2,
+.v2-mode .notice-sub-v2,
+.v2-mode .remind-text-v2,
+.v2-mode .weekly-desc-v2,
+.v2-mode .bullet-v2,
+.v2-mode .turning-name-v2,
+.v2-mode .side-text-v2,
+.v2-mode .card-text-v2,
+.v2-mode .action-text,
+.v2-mode .radar-desc-v2,
+.v2-mode .empty-section-text-v2,
+.v2-mode .risk-text-desc-v2,
+.v2-mode .signal-card-detail-v2,
+.v2-mode .full-review-p-v2,
+.v2-mode .info-tree-a {
+  font-size: $fs-body;
+  font-weight: $fw-body;
+  color: $c-muted;
+  line-height: $lh-body;
+}
+
+.v2-mode .focus-label-v2,
+.v2-mode .line-legend-item-v2,
+.v2-mode .trajectory-detail-label-v2,
+.v2-mode .trajectory-detail-title-v2,
+.v2-mode .side-label-v2,
+.v2-mode .action-label,
+.v2-mode .radar-label-v2,
+.v2-mode .risk-text-title-v2,
+.v2-mode .matrix-cell-label-v2,
+.v2-mode .signal-card-label-v2,
+.v2-mode .signal-card-title-v2,
+.v2-mode .section-more-v2,
+.v2-mode .diverging-label-v2,
+.v2-mode .diverging-axis-v2,
+.v2-mode .scene-bubble-name-v2,
+.v2-mode .scene-bubble-count-v2,
+.v2-mode .scene-chip-v2,
+.v2-mode .info-tree-q {
+  font-size: $fs-body;
+  font-weight: $fw-heading;
+  color: $c-ink;
+}
+
+.v2-mode .card-text-v2.muted,
+.v2-mode .radar-meta-v2,
+.v2-mode .trajectory-detail-close-v2,
+.v2-mode .diverging-num-v2,
+.v2-mode .scene-axis-label-v2 {
+  color: $c-soft;
+}
+
+.v2-mode .avatar-placeholder-v2,
+.v2-mode .stat-num-v2,
+.v2-mode .balance-summary-num-v2,
+.v2-mode .risk-meter-num-v2 {
+  font-size: $fs-kpi;
+}
+
+.v2-mode .btn-v2-bottom {
+  font-size: $fs-body-lg;
+  font-weight: $fw-heading;
+}
 </style>

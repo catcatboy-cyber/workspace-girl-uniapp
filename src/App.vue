@@ -4,6 +4,7 @@ import { getCurrentUserId, wechatLogin, trackAnonymousVisit, trackLoginVisit } f
 import { captureLandingContext, readLandingContext } from '@/utils/landing'
 
 const SILENT_LOGIN_TRIED_KEY = 'silentLoginTried'
+const SILENT_LOGIN_DONE_KEY = 'silentLoginDone'
 
 onLaunch(() => {
   // 记录分享访问（匿名，fire-and-forget）
@@ -51,8 +52,14 @@ onShow((options: any) => {
 onHide(() => {})
 
 async function silentWechatLogin() {
-  console.log('[App] silentWechatLogin start', { hasTried: !!uni.getStorageSync(SILENT_LOGIN_TRIED_KEY), hasUserId: !!getCurrentUserId() })
-  if (uni.getStorageSync(SILENT_LOGIN_TRIED_KEY)) { console.log('[App] skip: already tried'); return }
+  const hasTried = !!uni.getStorageSync(SILENT_LOGIN_TRIED_KEY)
+  const hasUserId = !!getCurrentUserId()
+  console.log('[App] silentWechatLogin start', { hasTried, hasUserId })
+  if (hasTried && hasUserId) {
+    uni.setStorageSync(SILENT_LOGIN_DONE_KEY, true)
+    console.log('[App] skip: already tried')
+    return
+  }
   uni.setStorageSync(SILENT_LOGIN_TRIED_KEY, true)
   // 不跳过已登录用户，确保每次冷启动都走 wechatLogin 更新 landing 等字段
 
@@ -83,11 +90,15 @@ async function silentWechatLogin() {
     }
   } catch (e) {
     console.error('[App] silent login error:', e?.message || e)
+  } finally {
+    uni.setStorageSync(SILENT_LOGIN_DONE_KEY, true)
   }
 }
 </script>
 
-<style>
+<style lang="scss">
+@import "@/uni.scss";
+
 page {
   background: var(--app-bg, #f6f1e8);
   color: var(--text-main, #201914);
@@ -106,10 +117,10 @@ button::after {
 .btn {
   box-sizing: border-box;
   text-align: center;
-  font-weight: 800;
-  color: #111;
-  border: 3rpx solid #111;
-  background: #fff;
+  font-weight: $fw-heading;
+  color: $c-ink;
+  border: 3rpx solid $c-ink;
+  background: $c-card;
   flex: 1;
   display: flex;
   align-items: center;
@@ -117,13 +128,13 @@ button::after {
 }
 
 /* Sizes */
-.btn-md  { height: 64rpx; line-height: 64rpx; font-size: 26rpx; padding: 0 24rpx; }
-.btn-sm  { height: 48rpx; line-height: 48rpx; font-size: 22rpx; padding: 0 16rpx; }
-.btn-lg  { height: 80rpx; line-height: 80rpx; font-size: 28rpx; padding: 0 32rpx; }
+.btn-md  { height: 64rpx; line-height: 64rpx; font-size: $fs-body-lg; padding: 0 24rpx; }
+.btn-sm  { height: 48rpx; line-height: 48rpx; font-size: $fs-caption; padding: 0 16rpx; }
+.btn-lg  { height: 80rpx; line-height: 80rpx; font-size: $fs-heading; padding: 0 32rpx; }
 
 /* Levels */
-.btn-primary   { background: #4ECDC4; box-shadow: 4rpx 4rpx 0 #111; }
-.btn-secondary { background: #fff; }
+.btn-primary   { background: $c-mint; box-shadow: 4rpx 4rpx 0 $c-ink; }
+.btn-secondary { background: $c-card; }
 .btn-ghost     { background: transparent; border-style: dashed; }
 
 /* Layout */
@@ -131,8 +142,8 @@ button::after {
 .btn-auto { flex: none; }
 
 /* Danger */
-.btn-danger { color: #FF5252; border-color: #FF5252; }
-.btn-danger.btn-primary { background: #FF5252; color: #fff; }
+.btn-danger { color: $c-risk; border-color: $c-risk; }
+.btn-danger.btn-primary { background: $c-risk; color: $c-card; }
 
 /* Disabled */
 .btn[disabled] { opacity: 0.5; box-shadow: none; }
@@ -147,7 +158,7 @@ button::after {
 .btn-fortune {
   box-sizing: border-box;
   text-align: center;
-  font-weight: 800;
+  font-weight: $fw-heading;
   border-radius: 4rpx;
   border: 2rpx solid #C4A86C;
   background: #FFFDF5;
@@ -178,8 +189,8 @@ button::after {
   color: #8B6914;
 }
 
-.btn-fortune-sm  { height: 48rpx; line-height: 48rpx; font-size: 22rpx; padding: 0 20rpx; }
-.btn-fortune-md  { height: 64rpx; line-height: 64rpx; font-size: 26rpx; padding: 0 24rpx; }
+.btn-fortune-sm  { height: 48rpx; line-height: 48rpx; font-size: $fs-caption; padding: 0 20rpx; }
+.btn-fortune-md  { height: 64rpx; line-height: 64rpx; font-size: $fs-body-lg; padding: 0 24rpx; }
 .btn-fortune-full { width: 100%; flex: none; }
 
 .btn-fortune[disabled] { opacity: 0.5; box-shadow: none; }
@@ -249,15 +260,15 @@ button::after {
 
 /* Typography helpers */
 .page .h1 {
-  font-weight: var(--font-weight-hero, 700);
-  line-height: var(--text-line-height-heading, 1.3);
+  font-weight: $fw-hero;
+  line-height: $lh-heading;
 }
 .page .h2, .page .h3 {
-  font-weight: var(--font-weight-strong, 600);
-  line-height: var(--text-line-height-heading, 1.35);
+  font-weight: $fw-heading;
+  line-height: $lh-heading;
 }
 .page .muted {
-  line-height: var(--text-line-height, 1.55);
+  line-height: $lh-body;
 }
 
 /* ===== Entrance Animations (shared across all tab pages) ===== */
@@ -296,40 +307,41 @@ button::after {
   text-align: center;
 }
 .ai-disclaimer-text {
-  font-size: 20rpx;
-  color: #999;
-  line-height: 1.5;
+  font-size: $fs-body;
+  color: $c-soft;
+  line-height: $lh-body;
 }
 
 /* ===== 大字体模式 — 所有字号 × 1.2 ===== */
 .font-large .v2-mode { --font-scale: 1.2; }
-/* 56rpx → 67rpx */
-.font-large .score-num-v2 { font-size: 67rpx !important; }
-/* 48rpx → 58rpx */
+/* 50rpx → 60rpx */
+.font-large .score-num-v2 { font-size: $fs-display * 1.2 !important; }
+/* 44rpx → 53rpx */
 .font-large .hero-title-v2,
 .font-large .hero-title,
 .font-large .title-v2,
 .font-large .title-v2.en-title,
 .font-large .img-add-icon-v2,
-.font-large .balance-num-v2 { font-size: 58rpx !important; }
-/* 40rpx → 48rpx */
+.font-large .balance-num-v2 { font-size: $fs-hero-title * 1.2 !important; }
+/* 38rpx → 46rpx */
 .font-large .kpi-num-v2,
 .font-large .trend-num-v2,
 .font-large .sheet-close,
 .font-large .score-value,
-.font-large .avatar-placeholder-v2 { font-size: 48rpx !important; }
-/* 34-36rpx → 40rpx */
+.font-large .avatar-placeholder-v2 { font-size: $fs-kpi * 1.2 !important; }
+
 .font-large .profile-name-v2,
 .font-large .hero-identity-name,
 .font-large .block-title,
 .font-large .info-title-v2,
 .font-large .info-title,
-.font-large .pet-custom-icon-v2 { font-size: 40rpx !important; }
-/* 30rpx →  36rpx */
+.font-large .pet-custom-icon-v2,
 .font-large .case-name-v2,
 .font-large .sheet-title,
-.font-large .a-title { font-size: 34rpx !important; }
-/* 28rpx → 32rpx */
+.font-large .a-title,
+.font-large .btn-lg,
+.font-large .section-title-v2 { font-size: $fs-heading * 1.2 !important; }
+/* 36rpx → 43rpx */
 .font-large .loading-v2,
 .font-large .loading,
 .font-large .empty-title-v2,
@@ -341,13 +353,11 @@ button::after {
 .font-large .info-close-v2,
 .font-large .info-close,
 .font-large .stat-pair-num-v2,
-.font-large .btn-lg,
 .font-large .model-label-v2,
 .font-large .pet-row-name-v2,
 .font-large .pet-custom-arrow-v2,
 .font-large .chat-head-title,
-.font-large .feedback-title-v2 { font-size: 34rpx !important; }
-/* 26rpx → 29rpx */
+.font-large .feedback-title-v2,
 .font-large .hero-copy-v2,
 .font-large .hero-copy,
 .font-large .hero-copy-v2-sub,
@@ -368,13 +378,11 @@ button::after {
 .font-large .info-sec-title,
 .font-large .msg-bubble,
 .font-large .msg-answer,
-.font-large .side-title { font-size: 32rpx !important; }
-/* 24rpx → 27rpx */
+.font-large .side-title { font-size: $fs-body-lg * 1.2 !important; }
+/* 34rpx → 41rpx */
 .font-large .card-text-v2,
 .font-large .info-label-v2,
 .font-large .info-value-v2,
-.font-large .btn-fortune-sm,
-.font-large .btn-sm,
 .font-large .review-summary-v2,
 .font-large .remember-text-v2,
 .font-large .tab-btn-v2,
@@ -397,9 +405,8 @@ button::after {
 .font-large .status-summary,
 .font-large .trend-summary,
 .font-large .pet-bubble-text,
-.font-large .weekly-desc-v2 { font-size: 29rpx !important; }
-/* 22rpx → 25rpx */
-.font-large .section-title-v2,
+.font-large .weekly-desc-v2 { font-size: $fs-body-lg * 1.2 !important; }
+/* 32rpx → 38rpx */
 .font-large .empty-sub-v2,
 .font-large .review-week-v2,
 .font-large .bullet-v2,
@@ -439,8 +446,7 @@ button::after {
 .font-large .event-label,
 .font-large .evidence-sub,
 .font-large .trace-label,
-.font-large .side-label { font-size: 26rpx !important; }
-/* 20rpx → 22rpx */
+.font-large .side-label,
 .font-large .hero-tag-v2,
 .font-large .hero-tag,
 .font-large .tag-v2,
@@ -480,10 +486,12 @@ button::after {
 .font-large .week-range-end,
 .font-large .theme-name-v2,
 .font-large .info-chip-v2,
-.font-large .info-chip-desc-v2 { font-size: 24rpx !important; }
+.font-large .info-chip-desc-v2 { font-size: $fs-body * 1.2 !important; }
 .font-large .hero-tag-v2,
 .font-large .hero-tag { padding: 8rpx 18rpx !important; }
-/* 18rpx → 20rpx */
+/* 24rpx → 29rpx */
+.font-large .btn-sm,
+.font-large .btn-fortune-sm,
 .font-large .tag-v2.sm,
 .font-large .remember-note-v2,
 .font-large .stat-lbl-v2,
@@ -517,6 +525,5 @@ button::after {
 .font-large .pet-option-desc-v2,
 .font-large .pet-option-badge-v2,
 .font-large .chip-desc-v2,
-.font-large .week-range-connector { font-size: 22rpx !important; }
-/* 特殊: padding-only 覆盖已在上方 20rpx→22rpx 合并了 */
+.font-large .week-range-connector { font-size: $fs-caption * 1.2 !important; }
 </style>

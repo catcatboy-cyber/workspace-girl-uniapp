@@ -8,20 +8,20 @@
 // ═══════════════════════════════════════════════════
 
 // 字号层级 (8-tier)
-$fs-display:    56rpx;
-$fs-hero-title: 48rpx;
+$fs-display:    50rpx;
+$fs-hero-title: 42rpx;
 $fs-kpi:        40rpx;
-$fs-heading:    32rpx;
-$fs-body-lg:    26rpx;
-$fs-body:       22rpx;
-$fs-caption:    20rpx;
-$fs-micro:      16rpx;
+$fs-heading:    38rpx;
+$fs-body-lg:    34rpx;
+$fs-body:       32rpx;
+$fs-caption:    24rpx;
+$fs-micro:      22rpx;
 
 // 字重
 $fw-hero:    900;
-$fw-heading: 900;
+$fw-heading: 800;
 $fw-label:   700;
-$fw-body:    600;
+$fw-body:    400;
 
 // 行高
 $lh-tight:   1;
@@ -30,6 +30,22 @@ $lh-heading: 1.2;
 $lh-label:   1.3;
 $lh-body:    1.5;
 $lh-loose:   1.6;
+
+// Campus Pop semantic colors
+$c-ink:       #111111;
+$c-text:      #333333;
+$c-muted:     #666666;
+$c-soft:      #999999;
+$c-hero:      #FF6B6B;
+$c-accent:    #FFD93D;
+$c-mint:      #4ECDC4;
+$c-risk:      #FF5252;
+$c-bg:        #FFFDF5;
+$c-card:      #FFFFFF;
+$c-card-soft: #F9F9F9;
+$c-soft-warm: #FFFBEB;
+$c-soft-risk: #FFEEEC;
+$c-soft-mint: #E0FFF0;
 
 // ═══════════════════════════════════════════════════
 

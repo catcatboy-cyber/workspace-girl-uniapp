@@ -149,7 +149,7 @@ watch(() => props.modelValue, (newVal) => {
 }
 
 .field-label {
-  font-size: 26rpx;
+  font-size: 36rpx;
   font-weight: 800;
   color: #111;
 }
@@ -159,7 +159,7 @@ watch(() => props.modelValue, (newVal) => {
   padding: 0 24rpx;
   background: #fff;
   border: 3rpx solid #111;
-  font-size: 28rpx;
+  font-size: 36rpx;
   font-weight: 600;
   color: #111;
   box-sizing: border-box;
@@ -171,7 +171,7 @@ watch(() => props.modelValue, (newVal) => {
   padding: 0 24rpx;
   background: #fff;
   border: 3rpx solid #111;
-  font-size: 28rpx;
+  font-size: 36rpx;
   font-weight: 600;
   color: #111;
 }

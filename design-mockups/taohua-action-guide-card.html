@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>命理桃花 - 今日行动指南卡片效果图</title>
+  <style>
+    :root {
+      --ink: #111;
+      --paper: #FFFDF5;
+      --card: #fff;
+      --soft: #FFFBEB;
+      --yellow: #FFD93D;
+      --mint: #4ECDC4;
+      --red: #FF6B6B;
+      --muted: #666;
+      --soft-text: #999;
+      --shadow: 8px 8px 0 var(--ink);
+      --fs-heading: 19px;
+      --fs-body: 16px;
+      --fs-caption: 12px;
+      --fw-hero: 900;
+      --fw-heading: 800;
+      --fw-body: 400;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f0eadf;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 28px 16px;
+    }
+
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 10px 10px 0 rgba(0,0,0,.18);
+      padding: 18px;
+    }
+
+    .card {
+      background: var(--soft);
+      border: 3px solid var(--ink);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 3px solid var(--ink);
+      padding-bottom: 12px;
+    }
+
+    .head-icon,
+    .info {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--ink);
+      background: var(--card);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: var(--fw-heading);
+      flex-shrink: 0;
+    }
+
+    .title {
+      flex: 1;
+      font-size: var(--fs-heading);
+      font-weight: var(--fw-heading);
+      line-height: 1.2;
+    }
+
+    .hero {
+      padding: 14px 0 12px;
+      border-bottom: 2px dashed var(--ink);
+    }
+
+    .hero-line {
+      display: block;
+      font-size: 18px;
+      line-height: 1.35;
+      font-weight: var(--fw-heading);
+    }
+
+    .score-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .score {
+      font-size: 32px;
+      font-weight: var(--fw-hero);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .unit,
+    .cite {
+      font-size: var(--fs-caption);
+      color: var(--soft-text);
+      font-weight: var(--fw-body);
+    }
+
+    .level {
+      padding: 3px 10px;
+      border: 2px solid var(--ink);
+      background: var(--yellow);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-heading);
+    }
+
+    .track {
+      height: 12px;
+      border: 2px solid var(--ink);
+      background: var(--card);
+      margin-top: 10px;
+    }
+
+    .fill {
+      width: 72%;
+      height: 100%;
+      background: var(--yellow);
+    }
+
+    .boost {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 4px 10px;
+      border: 2px solid var(--ink);
+      background: var(--red);
+      color: #fff;
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-heading);
+    }
+
+    .section {
+      padding: 14px 0;
+      border-bottom: 2px dashed rgba(17,17,17,.22);
+    }
+
+    .section:last-child { border-bottom: 0; padding-bottom: 0; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: var(--fs-body);
+      font-weight: var(--fw-heading);
+    }
+
+    .mark {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--ink);
+      background: var(--yellow);
+      flex-shrink: 0;
+    }
+
+    .dir-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .dir-card {
+      min-width: 0;
+      background: var(--card);
+      border: 2px solid var(--ink);
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .dir-name {
+      display: block;
+      font-size: var(--fs-caption);
+      color: var(--muted);
+      font-weight: var(--fw-heading);
+    }
+
+    .dir-value {
+      display: block;
+      margin-top: 4px;
+      font-size: 20px;
+      font-weight: var(--fw-heading);
+      line-height: 1;
+    }
+
+    .dir-use {
+      display: block;
+      margin-top: 7px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .vibe {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 10px;
+      border: 2px solid var(--ink);
+      background: #fff;
+    }
+
+    .vibe-label {
+      flex-shrink: 0;
+      padding: 3px 8px;
+      background: var(--mint);
+      border: 2px solid var(--ink);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-heading);
+    }
+
+    .vibe-text {
+      font-size: var(--fs-body);
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .action-line {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      background: var(--card);
+      border: 2px solid transparent;
+    }
+
+    .action-line.good {
+      border-color: var(--ink);
+      background: #f7fffd;
+    }
+
+    .action-line.warn {
+      border-color: var(--ink);
+      background: #fff5f2;
+    }
+
+    .pill {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--ink);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-heading);
+      background: var(--yellow);
+    }
+
+    .pill.warn {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .action-text {
+      font-size: var(--fs-body);
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .activity-row,
+    .wear-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 10px;
+      border: 2px solid var(--ink);
+      background: #fff;
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-heading);
+    }
+
+    .tag.green { background: var(--mint); }
+    .tag.black { background: var(--ink); color: var(--yellow); }
+
+    .wear-main {
+      display: block;
+      font-size: var(--fs-body);
+      font-weight: var(--fw-heading);
+      line-height: 1.45;
+      color: var(--ink);
+    }
+
+    .wear-note {
+      display: block;
+      margin-top: 8px;
+      font-size: var(--fs-caption);
+      line-height: 1.45;
+      color: var(--soft-text);
+    }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="card">
+      <header class="head">
+        <span class="head-icon">✓</span>
+        <span class="title">今日行动指南</span>
+        <span class="info">i</span>
+      </header>
+
+      <div class="hero">
+        <span class="hero-line">今天适合轻量靠近，先制造自然互动。</span>
+        <div class="score-row">
+          <span class="score">72</span>
+          <span class="unit">/100</span>
+          <span class="level">中高桃花</span>
+        </div>
+        <div class="track"><div class="fill"></div></div>
+        <span class="boost">六合助缘 · 今日可顺势安排轻互动</span>
+      </div>
+
+      <section class="section">
+        <div class="section-title"><span class="mark"></span><span>方位怎么用</span></div>
+        <div class="dir-grid">
+          <div class="dir-card">
+            <span class="dir-name">今日桃花</span>
+            <span class="dir-value">正南</span>
+            <span class="dir-use">日常暧昧 / 约见</span>
+          </div>
+          <div class="dir-card">
+            <span class="dir-name">本命红鸾</span>
+            <span class="dir-value">东北</span>
+            <span class="dir-use">告白 / 确认关系</span>
+          </div>
+          <div class="dir-card">
+            <span class="dir-name">本命天喜</span>
+            <span class="dir-value">西北</span>
+            <span class="dir-use">正式推进 / 落地</span>
+          </div>
+        </div>
+        <div class="vibe">
+          <span class="vibe-label">今日气场</span>
+          <span class="vibe-text">温和升温，适合低压力邀约，不适合逼问结果。</span>
+        </div>
+        <span class="cite">《协纪辨方书》《三命通会》</span>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span class="mark"></span><span>今天怎么做</span></div>
+        <div class="activity-row">
+          <span class="tag green">散步</span>
+          <span class="tag green">咖啡</span>
+          <span class="tag green">顺路见面</span>
+        </div>
+        <div class="actions">
+          <div class="action-line good">
+            <span class="pill">宜</span>
+            <span class="action-text">约一个低压力场景，比如散步、咖啡、顺路见面。</span>
+          </div>
+          <div class="action-line good">
+            <span class="pill">宜</span>
+            <span class="action-text">用轻松话题延续互动，不急着问关系定义。</span>
+          </div>
+          <div class="action-line warn">
+            <span class="pill warn">避开</span>
+            <span class="action-text">不要用情绪化问题逼对方立刻表态。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span class="mark"></span><span>穿什么戴什么</span></div>
+        <span class="wear-main">用柔和暖色提升亲和感，材质尽量温润。</span>
+        <div class="wear-row">
+          <span class="tag">粉色</span>
+          <span class="tag">红色</span>
+          <span class="tag black">木质 / 温润材质</span>
+        </div>
+        <span class="wear-note">桃花火 · 本命木 → 木生火，适合用柔和暖色提升亲和感。</span>
+        <span class="cite">《三命通会》</span>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

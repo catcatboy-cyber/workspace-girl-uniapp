@@ -294,7 +294,7 @@ const guaLabels = computed(() => GUAS.map(item => ({
 .mountain-text {
   display: block;
   min-width: 24rpx;
-  font-size: 20rpx;
+  font-size: 32rpx;
   line-height: 1;
   font-weight: 800;
   color: #4d2717;
@@ -313,7 +313,7 @@ const guaLabels = computed(() => GUAS.map(item => ({
   border-radius: 2rpx;
   background: rgba(255, 224, 128, 0.9);
   border: 2rpx solid rgba(99, 42, 18, 0.36);
-  font-size: 24rpx;
+  font-size: 34rpx;
   line-height: 1;
   font-weight: 900;
   color: #421f12;
@@ -334,7 +334,7 @@ const guaLabels = computed(() => GUAS.map(item => ({
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26rpx;
+  font-size: 36rpx;
   line-height: 1;
   font-weight: 900;
   color: #2f2117;
@@ -347,7 +347,7 @@ const guaLabels = computed(() => GUAS.map(item => ({
 }
 
 .gua-text {
-  font-size: 30rpx;
+  font-size: 38rpx;
   line-height: 1;
   font-weight: 900;
   color: #4a2314;
@@ -482,14 +482,14 @@ const guaLabels = computed(() => GUAS.map(item => ({
   border: 2rpx solid #111;
   background: #ffefaa;
   box-shadow: 3rpx 3rpx 0 #111;
-  font-size: 18rpx;
+  font-size: 24rpx;
   line-height: 1;
   font-weight: 900;
   color: #6f351b;
 }
 
 .caption-main {
-  font-size: 24rpx;
+  font-size: 34rpx;
   line-height: 1;
   font-weight: 900;
   color: #111;

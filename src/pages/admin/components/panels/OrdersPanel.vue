@@ -190,5 +190,5 @@ button { margin: 0; }
 .empty { padding: 22px; color: #68766f; background: #f4f7f4; border-radius: 8px; }
 /* 订单专属 */
 .order-detail { padding: 16px; margin-top: 8px; background: #fbfdfb; border-radius: 8px; border: 1px solid rgba(23, 35, 31, 0.08); }
-.order-detail-grid { display: flex; flex-direction: column; gap: 6px; font-size: 22rpx; color: #555; }
+.order-detail-grid { display: flex; flex-direction: column; gap: 6px; font-size: 34rpx; color: #555; }
 </style>

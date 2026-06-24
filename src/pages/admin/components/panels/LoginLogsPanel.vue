@@ -196,13 +196,13 @@ loadLogs(1)
   margin-bottom: 20rpx;
 }
 .panel-title {
-  font-size: 32rpx;
+  font-size: 38rpx;
   font-weight: 900;
   color: #111;
   display: block;
 }
 .panel-meta {
-  font-size: 20rpx;
+  font-size: 32rpx;
   color: #999;
   margin-top: 4rpx;
   display: block;
@@ -210,7 +210,7 @@ loadLogs(1)
 .empty {
   text-align: center;
   padding: 60rpx 0;
-  font-size: 24rpx;
+  font-size: 34rpx;
   color: #999;
 }
 
@@ -228,7 +228,7 @@ loadLogs(1)
 }
 .filter-label {
   width: 120rpx;
-  font-size: 22rpx;
+  font-size: 34rpx;
   font-weight: 700;
   color: #111;
   flex-shrink: 0;
@@ -238,7 +238,7 @@ loadLogs(1)
   height: 56rpx;
   padding: 0 16rpx;
   border: 2rpx solid #111;
-  font-size: 22rpx;
+  font-size: 34rpx;
   background: #fff;
 }
 .filter-picker {
@@ -247,7 +247,7 @@ loadLogs(1)
   line-height: 56rpx;
   padding: 0 16rpx;
   border: 2rpx solid #111;
-  font-size: 22rpx;
+  font-size: 34rpx;
   background: #fff;
   color: #111;
 }
@@ -265,7 +265,7 @@ loadLogs(1)
 }
 .stats-title {
   display: block;
-  font-size: 24rpx;
+  font-size: 34rpx;
   font-weight: 900;
   color: #111;
   margin-bottom: 12rpx;
@@ -291,7 +291,7 @@ loadLogs(1)
 }
 .stats-cell {
   flex: 1;
-  font-size: 20rpx;
+  font-size: 32rpx;
   color: #111;
   text-align: center;
 }
@@ -321,13 +321,13 @@ loadLogs(1)
   margin-bottom: 8rpx;
 }
 .log-time {
-  font-size: 20rpx;
+  font-size: 32rpx;
   color: #999;
 }
 .log-type {
   padding: 2rpx 12rpx;
   border: 2rpx solid #111;
-  font-size: 18rpx;
+  font-size: 24rpx;
   font-weight: 700;
 }
 .log-type.email {
@@ -339,14 +339,14 @@ loadLogs(1)
   color: #2e7d32;
 }
 .log-platform {
-  font-size: 20rpx;
+  font-size: 32rpx;
   color: #999;
 }
 .log-body {
   display: flex;
 }
 .log-uid {
-  font-size: 22rpx;
+  font-size: 34rpx;
   color: #111;
   font-weight: 600;
   text-decoration: underline;
@@ -362,7 +362,7 @@ loadLogs(1)
   padding: 16rpx 0;
 }
 .pager-text {
-  font-size: 24rpx;
+  font-size: 34rpx;
   font-weight: 700;
   color: #111;
 }
@@ -372,7 +372,7 @@ loadLogs(1)
   border: 2rpx solid #111;
   background: #fff;
   padding: 8rpx 20rpx;
-  font-size: 20rpx;
+  font-size: 32rpx;
   font-weight: 700;
   color: #111;
 }
@@ -386,7 +386,7 @@ loadLogs(1)
   padding: 8rpx 20rpx;
   border: 2rpx solid #111;
   background: #fff;
-  font-size: 20rpx;
+  font-size: 32rpx;
   font-weight: 700;
   color: #111;
 }

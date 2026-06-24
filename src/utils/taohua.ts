@@ -791,3 +791,36 @@ export function generatePairInsight(
 
   return { styleClash, activities, watchOut: watchOut.length ? watchOut : ['顺其自然，真诚相待最重要'], classicalNote }
 }
+
+export interface PairMatchPayload {
+  self: {
+    zodiac: string
+    sign: string
+  }
+  partner: {
+    zodiac: string
+    sign: string
+  }
+  match: PairZodiacMatchResult
+  insight: PairInsight
+  partnerStyle: string
+}
+
+export function buildPairMatchPayload(
+  selfZodiac: string,
+  selfSign: string,
+  partnerZodiac: string,
+  partnerSign: string,
+): PairMatchPayload {
+  const selfMatch = zodiacSignMatch(selfZodiac, selfSign)
+  const partnerMatch = zodiacSignMatch(partnerZodiac, partnerSign)
+  const match = zodiacPairMatch(selfZodiac, partnerZodiac, selfSign, partnerSign)
+  const insight = generatePairInsight(selfMatch, partnerMatch, match)
+  return {
+    self: { zodiac: selfZodiac, sign: selfSign },
+    partner: { zodiac: partnerZodiac, sign: partnerSign },
+    match,
+    insight,
+    partnerStyle: partnerMatch.western.personality,
+  }
+}

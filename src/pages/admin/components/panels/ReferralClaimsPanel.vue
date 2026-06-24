@@ -68,18 +68,18 @@ onMounted(() => load())
 <style scoped>
 .panel { padding: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; }
-.panel-title { font-size: 32rpx; font-weight: 900; color: #111; display: block; }
-.panel-meta { font-size: 20rpx; color: #999; margin-top: 4rpx; display: block; }
-.empty { text-align: center; padding: 60rpx 0; font-size: 24rpx; color: #999; }
+.panel-title { font-size: 38rpx; font-weight: 900; color: #111; display: block; }
+.panel-meta { font-size: 32rpx; color: #999; margin-top: 4rpx; display: block; }
+.empty { text-align: center; padding: 60rpx 0; font-size: 34rpx; color: #999; }
 .table { border: 2rpx solid #111; }
-.table-row { display: flex; padding: 12rpx 16rpx; border-bottom: 1rpx solid #ddd; align-items: center; font-size: 20rpx; gap: 8rpx; }
+.table-row { display: flex; padding: 12rpx 16rpx; border-bottom: 1rpx solid #ddd; align-items: center; font-size: 32rpx; gap: 8rpx; }
 .table-row:last-child { border-bottom: none; }
 .table-header { background: #111; }
 .table-header text { color: #FFD93D; font-weight: 900; }
 .cell { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tag-ok { color: #4ECDC4; font-weight: 800; }
 .tag-blocked { color: #FF5252; font-weight: 800; }
-.ghost-btn { border: 2rpx solid #111; background: #fff; padding: 8rpx 20rpx; font-size: 20rpx; font-weight: 700; color: #111; }
+.ghost-btn { border: 2rpx solid #111; background: #fff; padding: 8rpx 20rpx; font-size: 32rpx; font-weight: 700; color: #111; }
 .ghost-btn:disabled { opacity: 0.5; }
 .wide-btn { min-width: 100rpx; }
 </style>

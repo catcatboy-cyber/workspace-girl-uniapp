@@ -41,3 +41,11 @@
 ## 五、下一步讨论待办
 - 提示词上下文继续瘦身（eventInsight 枚举、petMood 枚举、rationale 长度等）
 - 清除 sideRead 死链
+
+## 六、搁置计划
+
+### 桃花匹配度独立分享（待启动）
+- 设计专属双人匹配分享图（双方生肖+星座+匹配关系+分数）
+- 新建 `taohua-pair-share` 落地页（参考 taohua-share.vue 模式，展示匹配详情 + CTA）
+- 改 taohua.vue 配对分享按钮指向新落地页
+- 详细计划见 `design-previews/plans/taohua-pair-share-plan.md`

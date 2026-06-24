@@ -321,7 +321,7 @@ import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsuf
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeTimelineShare, appendReferralParams } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
 import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
@@ -1149,7 +1149,7 @@ onShareAppMessage(() => {
   }
   let path = `/pages/quick-read/quick-read?${params.join('&')}`
   path = appendReferralParams(path, 'analysis_share', sceneKey.value)
-  return { title: shareTitle.value, path }
+  return { title: shareTitle.value, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
 onShareTimeline(() => buildSafeTimelineShare())

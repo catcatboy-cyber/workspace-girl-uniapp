@@ -197,8 +197,8 @@ const constellationLabel = computed(() => profile.constellation || '不选择')
 const questions = [
   {
     pet: [
-      { text: '嗨～我是小咪！在开始之前，想先简单认识你一下。' },
-      { text: '' },
+      { text: '这条我可以帮你看，但要先知道一点你的状态。' },
+      { text: '同一句话，在不同年龄和关系阶段里，含义会不一样。', style: 'muted' },
       { text: '你多大了？' }
     ],
     chips: ageChips,

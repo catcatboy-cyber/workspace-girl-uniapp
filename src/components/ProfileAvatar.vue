@@ -63,25 +63,25 @@ const initial = computed(() => {
 }
 
 .avatar-placeholder {
-  font-size: 28rpx;
+  font-size: 36rpx;
   font-weight: 900;
   color: #111;
   text-transform: uppercase;
 }
 
 .profile-avatar.xs .avatar-placeholder {
-  font-size: 20rpx;
-}
-
-.profile-avatar.sm .avatar-placeholder {
-  font-size: 24rpx;
-}
-
-.profile-avatar.md .avatar-placeholder {
   font-size: 32rpx;
 }
 
+.profile-avatar.sm .avatar-placeholder {
+  font-size: 34rpx;
+}
+
+.profile-avatar.md .avatar-placeholder {
+  font-size: 38rpx;
+}
+
 .profile-avatar.lg .avatar-placeholder {
-  font-size: 40rpx;
+  font-size: 38rpx;
 }
 </style>

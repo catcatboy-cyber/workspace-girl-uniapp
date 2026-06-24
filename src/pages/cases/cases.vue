@@ -370,7 +370,7 @@ async function confirmDeleteCase(item: any) {
   display: flex; justify-content: space-between; align-items: flex-start;
   padding-bottom: 16rpx; border-bottom: 3rpx solid #111; margin-bottom: 14rpx;
 }
-.v2-mode .case-identity-v2 { display: flex; align-items: center; gap: 14rpx; }
+.v2-mode .case-identity-v2 { display: flex; align-items: center; gap: 14rpx; flex: 1; min-width: 0; }
 .v2-mode .avatar-v2 {
   width: 68rpx; height: 68rpx; border-radius: 50%; overflow: hidden;
   border: 3rpx solid #111; background: #FFD93D;
@@ -380,7 +380,7 @@ async function confirmDeleteCase(item: any) {
 .v2-mode .avatar-placeholder-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
 .v2-mode .case-name-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
 .v2-mode .case-id-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
-.v2-mode .case-updated-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; white-space: nowrap; }
+.v2-mode .case-updated-v2 { font-size: $fs-micro; font-weight: $fw-body; color: #999; text-align: right; }
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }

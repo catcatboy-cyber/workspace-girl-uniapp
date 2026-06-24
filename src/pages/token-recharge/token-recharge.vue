@@ -21,9 +21,9 @@
             {{ orderingId === plan.id ? '处理中' : '¥' + plan.amountYuan }}
           </button>
         </view>
-        <text class="card-text-v2" style="font-size: $fs-heading;font-weight: $fw-hero;">+{{ totalTokens(plan).toLocaleString() }} Token</text>
+        <text class="card-text-v2 recharge-token-amount-v2">+{{ totalTokens(plan).toLocaleString() }} Token</text>
         <text v-if="plan.bonusTokens > 0" class="card-text-v2" style="color:#e67e22;">含赠送 {{ plan.bonusTokens.toLocaleString() }} Token</text>
-        <text v-if="plan.tagline" class="card-text-v2" style="color:#999;font-size: $fs-body;">{{ plan.tagline }}</text>
+        <text v-if="plan.tagline" class="card-text-v2 recharge-tagline-v2">{{ plan.tagline }}</text>
       </view>
 
       <view v-if="orderMessage" class="card-v2">
@@ -204,4 +204,6 @@ async function createOrder(planId: string) {
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; margin-bottom: 6rpx; }
+.v2-mode .recharge-token-amount-v2 { font-size: $fs-heading; font-weight: $fw-hero; }
+.v2-mode .recharge-tagline-v2 { font-size: $fs-body; color: $c-soft; }
 </style>

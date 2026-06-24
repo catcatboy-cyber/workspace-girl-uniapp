@@ -85,7 +85,7 @@ const PROMPT_MODULE_META = {
       'eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply',
       'eventType: positive | risk | verification | note',
       'currentStatus 只返回 tags, summary, caution。',
-      'rawReply 只允许三段标题：小咪觉得对方可能在想 / 小咪觉得可以这样 / 小咪说留个心眼。',
+      'rawReply 四段标题：小咪先回答你的问题 / 对方可能在想 / 下一步可以这样推进 / 留个心眼（每段2-3句）。第一段必须先正面回答 userQuestion.label。',
       'Do not return labels, confidence or actionAdvice for speed.',
       'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.'
     ]
@@ -711,7 +711,7 @@ function buildActualPromptMessages({ settings, recordContent, selfProfile, caseP
     '运行时上下文:',
     personaPrompt.userPrompt,
     '只返回 JSON。必需字段：eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply。不要返回 labels、confidence 或 actionAdvice。',
-    'currentStatus 只需要 tags,summary,caution。rawReply 只允许三段标题：小咪觉得对方可能在想 / 小咪觉得可以这样 / 小咪说留个心眼。',
+    'currentStatus 只需要 tags,summary,caution。rawReply 四段标题：小咪先回答你的问题 / 对方可能在想 / 下一步可以这样推进 / 留个心眼（每段2-3句）。第一段必须先正面回答 userQuestion.label。',
     'eventInsight 只能使用枚举：actor=target|self|both|unknown；interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear；commitmentStatus=none|promised|fulfilled|broken|unclear；evidenceType=fact|feeling|mixed|unclear。',
     describeSubjectRoleForPrompt(previewEvent.subjectRole),
     `当前评估快照: ${JSON.stringify(currentAssessment)}`,

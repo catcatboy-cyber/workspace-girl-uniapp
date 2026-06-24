@@ -1,4 +1,4 @@
-<view class="tab-bar {{hidden ? 'is-hidden' : ''}}">
+<view class="tab-bar {{hidden ? 'is-hidden' : ''}} {{fontSizeMode === 'large' ? 'font-large' : ''}}">
   <view class="tab-inner">
     <view wx:for="{{sideItems}}" wx:key="pagePath"
       class="tab-item {{selected === (index < 2 ? index : index + 1) ? 'active' : ''}}"

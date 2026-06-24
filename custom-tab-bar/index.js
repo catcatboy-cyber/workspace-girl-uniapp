@@ -2,6 +2,7 @@ Component({
   data: {
     hidden: false,
     selected: 0,
+    fontSizeMode: 'default',
     list: [
       { pagePath: 'pages/index/index', text: '今日' },
       { pagePath: 'pages/case-detail/case-detail', text: '我们' },
@@ -16,7 +17,26 @@ Component({
       { pagePath: 'pages/me/me', text: '我' }
     ]
   },
+  lifetimes: {
+    attached() {
+      this.syncFontSizeMode()
+    }
+  },
+  pageLifetimes: {
+    show() {
+      this.syncFontSizeMode()
+    }
+  },
   methods: {
+    syncFontSizeMode() {
+      var mode = 'default'
+      try {
+        mode = wx.getStorageSync('fontSizeMode') === 'large' ? 'large' : 'default'
+      } catch (e) {}
+      if (this.data.fontSizeMode !== mode) {
+        this.setData({ fontSizeMode: mode })
+      }
+    },
     switchTab(e) {
       var idx = e.currentTarget.dataset.idx
       var item = this.data.list[idx]
@@ -31,6 +51,7 @@ Component({
       }
     },
     updateSelected() {
+      this.syncFontSizeMode()
       var pages = getCurrentPages()
       var current = pages[pages.length - 1]
       if (current) {

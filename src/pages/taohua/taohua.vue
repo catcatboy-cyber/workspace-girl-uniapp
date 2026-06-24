@@ -478,7 +478,7 @@
         </view>
         <image v-if="shareImagePath" :src="shareImagePath" mode="widthFix" style="width:100%;border:3rpx solid #111;" />
         <view style="display:flex;gap:12rpx;margin-top:20rpx;">
-          <button class="btn-v2-me primary" style="flex:1;" @click="saveShareImage">保存到相册</button>
+          <button v-if="canSaveShareImage" class="btn-v2-me primary" style="flex:1;" @click="saveShareImage">保存到相册</button>
           <button class="btn-v2-me outline" style="flex:1;" open-type="share">转发给好友</button>
         </view>
       </view>
@@ -1227,6 +1227,7 @@ const SHARE_CARD_W = 640
 const SHARE_CARD_H = 512
 
 const sharePreviewTitle = computed(() => shareMode.value === 'pair' ? '我和 TA 的桃花匹配' : '我的桃花人格卡')
+const canSaveShareImage = computed(() => !!shareImagePath.value && !String(shareImagePath.value).startsWith('cloud://'))
 
 onShareAppMessage(() => {
   if (shareMode.value === 'pair' && pairParticipants.value && pairMatch.value) {
@@ -1239,7 +1240,7 @@ onShareAppMessage(() => {
   return {
     title: `${userZodiac.value || '我'} · ${userSign.value || '星座'} 的桃花人格卡`,
     path: appendReferralParams(buildTaohuaSharePath(), 'taohua_card'),
-    imageUrl: shareImagePath.value || TAOHUA_SHARE_IMAGE,
+    imageUrl: TAOHUA_SHARE_IMAGE,
   }
 })
 
@@ -1249,8 +1250,8 @@ function goHome() {
 
 function sharePersona() {
   shareMode.value = 'persona'
-  shareImagePath.value = ''
-  generateShareCard()
+  shareImagePath.value = TAOHUA_SHARE_IMAGE
+  showSharePreview.value = true
 }
 
 function sharePairMatch() {

@@ -150,6 +150,30 @@
       }
     },
     {
+      "path": "pages/taohua-pair-share/taohua-pair-share",
+      "style": {
+        "navigationBarTitleText": "桃花匹配"
+      }
+    },
+    {
+      "path": "pages/pair-onboarding/pair-onboarding",
+      "style": {
+        "navigationBarTitleText": "测配对"
+      }
+    },
+    {
+      "path": "pages/taohua-pair-result/taohua-pair-result",
+      "style": {
+        "navigationBarTitleText": "桃花匹配结果"
+      }
+    },
+    {
+      "path": "pages/taohua-persona-result/taohua-persona-result",
+      "style": {
+        "navigationBarTitleText": "桃花人设"
+      }
+    },
+    {
       "path": "pages/quick-read/quick-read",
       "style": {
         "navigationBarTitleText": "一句话解读"

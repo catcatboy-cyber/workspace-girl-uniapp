@@ -47,6 +47,6 @@ const pct = computed(() => Math.min(100, Math.round((countNum.value / 30) * 100)
 .pm-tick { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2rpx; min-width: 0; }
 .pm-dot { width: 10rpx; height: 10rpx; border-radius: 50%; border: 2rpx solid #999; background: #fff; }
 .pm-tick.done .pm-dot { background: #4ECDC4; border-color: #111; }
-.pm-label { font-size: 18rpx; font-weight: $fw-label; color: #999; text-align: center; white-space: nowrap; }
+.pm-label { font-size: 24rpx; font-weight: $fw-label; color: #999; text-align: center; white-space: nowrap; }
 .pm-tick.done .pm-label { color: #111; }
 </style>

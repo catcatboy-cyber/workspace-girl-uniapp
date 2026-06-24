@@ -20,6 +20,56 @@ function cleanText(value, maxLength = 600) {
     : ''
 }
 
+function normalizeRawReply(value) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    try {
+      const parsed = parseJSONContent(trimmed)
+      if (parsed && typeof parsed === 'object' && parsed !== value) {
+        return normalizeRawReply(parsed.rawReply || parsed.reply || parsed.text || parsed.content || parsed)
+      }
+    } catch (_) {}
+    return cleanText(trimmed, 900)
+  }
+
+  if (!value || typeof value !== 'object') return ''
+
+  if (typeof value.rawReply === 'string') return normalizeRawReply(value.rawReply)
+  if (typeof value.reply === 'string') return normalizeRawReply(value.reply)
+  if (typeof value.text === 'string') return normalizeRawReply(value.text)
+  if (typeof value.content === 'string') return normalizeRawReply(value.content)
+
+  const labels = ['小咪先回答你的问题', '对方可能在想', '下一步可以这样推进', '留个心眼']
+  const lines = []
+  for (const label of labels) {
+    const section = cleanText(value[label], 300)
+    if (section) lines.push(`${label}：${section}`)
+  }
+  return cleanText(lines.join('\n'), 900)
+}
+
+function buildDirectQuestionAnswer(questionLabel, event) {
+  const question = cleanText(questionLabel, 40)
+  const desc = cleanText(event?.description, 120)
+  if (!question) return ''
+  if (question.includes('喜欢')) return '从这条线索看，只能说有好感迹象，但还不能直接判定喜欢。关键要看 TA 后面会不会主动延续话题、兑现行动，而不是只看这一句话。'
+  if (question.includes('主动')) return '可以主动，但建议轻一点，不要一下子把压力推满。先用一个低成本问题或轻松邀约测试 TA 是否愿意接住。'
+  if (question.includes('养鱼')) return '这条线索还不足以直接定性为养鱼，但需要观察 TA 是否只给情绪价值、不推进具体行动。如果 TA 长期暧昧、回避确认、同时保持多个模糊对象，就要提高警惕。'
+  if (question.includes('怎么回')) return desc ? `可以回得轻松一点，先接住情绪，再顺手把话题往下一步带。不要急着解释太多，重点是让 TA 愿意继续接话。` : '可以回得轻松一点，先接住情绪，再顺手把话题往下一步带。不要急着解释太多，重点是让 TA 愿意继续接话。'
+  if (question.includes('推进')) return '现在适合小步推进，不适合直接摊牌。先制造一次具体互动或轻量邀约，看 TA 是否愿意给时间和行动。'
+  if (question.includes('想多')) return '你不是完全想多了，这条线索确实值得看一眼。只是目前还需要更多连续行为来确认，不要只凭单点反应下结论。'
+  return `先回答你问的「${question}」：这条线索可以作为参考，但不能单独定性。更稳的判断要看 TA 后续有没有主动、兑现和持续投入。`
+}
+
+function ensureDirectRawReplySection(rawReply, event) {
+  const text = cleanText(rawReply, 900)
+  if (!event?.userQuestion?.label || !text) return text
+  if (text.includes('小咪先回答你的问题：')) return text
+  const direct = buildDirectQuestionAnswer(event.userQuestion.label, event)
+  return cleanText(`小咪先回答你的问题：${direct}\n${text}`, 900)
+}
+
 function normalizeStringList(value, maxItems = 6, maxLength = 60) {
   return Array.isArray(value)
     ? value.map((item) => cleanText(item, maxLength)).filter(Boolean).slice(0, maxItems)
@@ -84,12 +134,6 @@ function describeSubjectRole(role) {
     return 'subjectRole=unknown：行为主体不确定。请弱化权重；除非文本明确写出对方回应、承诺、兑现、回避或失约，否则不要提高或降低对方意向/风险。'
   }
   return 'subjectRole=target：这条记录主要描述关系对象。请分析对方行为对关系意向、风险和证据强度的影响。'
-}
-
-function describeUserQuestion(userQuestion) {
-  const label = userQuestion && typeof userQuestion === 'object' ? cleanText(userQuestion.label, 40) : ''
-  if (!label) return ''
-  return `用户这次最想知道：“${label}”。请优先直接回答这个问题，不要只给泛泛三段建议。rawReply 第一段必须是“小咪先回答你的问题：”，用2-4句给出明确判断、边界和置信度。后面再补充“对方可能在想 / 可以这样 / 留个心眼”。`
 }
 
 function hasExplicitTargetReaction(event) {
@@ -410,8 +454,8 @@ async function analyzeTimelineEvent(params) {
       personaPrompt.userPrompt,
       'Output must be JSON only. Required fields: eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply,petLine,petMood. rationale is a single short string (max 10 Chinese characters) stating the core reason. Do not return labels, confidence, or actionAdvice.',
       'petLine is one short sentence (max 50 Chinese chars) in XiaoMi (小咪)\'s first-person voice — her key takeaway from this event. petMood is one enum only: cheerful|cautious|encouraging|neutral|warning.',
-      describeUserQuestion(params.event?.userQuestion),
-      'rawReply must use headings. If 用户这次最想知道 is provided, use exactly four headings in this order; otherwise use the last three headings only. IMPORTANT: each section MUST contain 2-4 specific, concrete, actionable sentences — DO NOT write just one short sentence. for example, 小咪觉得可以这样 should give 2-3 concrete next-step suggestions, not just one vague idea. Use Chinese colon：after each heading:\n小咪先回答你的问题：<content, only when userQuestion exists>\n小咪觉得对方可能在想：<content>\n小咪觉得可以这样：<content>\n小咪说留个心眼：<content>',
+      'rawReply must use exactly four headings. each section must contain 2-3 concrete Chinese sentences. Use Chinese colon：after each heading:\n小咪先回答你的问题：<directly answer userQuestion.label if provided; if no userQuestion, directly answer the most likely concern from the event>\n对方可能在想：<content>\n下一步可以这样推进：<content>\n留个心眼：<content>',
+      params.event?.userQuestion?.label ? `User wants to know first: ${params.event.userQuestion.label}. The first rawReply section must answer this question directly before any analysis.` : '',
       'eventInsight must be enums only: actor=target|self|both|unknown, interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear, commitmentStatus=none|promised|fulfilled|broken|unclear, evidenceType=fact|feeling|mixed|unclear.',
       '主体宾语校验：“我主动问对方 / 我问他 / 我问她 / 我问对方”表示用户主动向关系对象提问；不要改写成“对方问我”或“对方主动问用户”。只有“对方问我 / 他问我 / 她问我 / 问我”才表示关系对象主动问用户。',
       describeSubjectRole(params.event?.subjectRole),
@@ -479,7 +523,7 @@ async function analyzeTimelineEvent(params) {
       currentStatus: normalizeCurrentStatus(parsed.currentStatus),
       petLine: typeof parsed.petLine === 'string' ? cleanText(parsed.petLine, 200) : '',
       petMood: ['cheerful', 'cautious', 'encouraging', 'neutral', 'warning'].includes(parsed.petMood) ? parsed.petMood : 'neutral',
-      rawReply: cleanText(parsed.rawReply, 900),
+      rawReply: ensureDirectRawReplySection(normalizeRawReply(parsed.rawReply), params.event),
       aiProvider: settings.provider,
       aiModel: data?.model || settings.model,
       tokenUsage: data?.usage || null,

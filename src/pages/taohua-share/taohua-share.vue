@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view :class="['page', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
     <view class="hero">
       <text class="brand">Crush Master · 命理桃花</text>
       <text class="title">TA 的桃花人格卡</text>
@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
-import { getCurrentUserId } from '@/utils/api'
+import { getCachedSelfProfile, getCurrentUserId, hasUsableSelfProfile } from '@/utils/api'
 import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { captureLandingContext } from '@/utils/landing'
 import { SIGN_NAMES, ZODIAC_NAMES, zodiacSignMatch } from '@/utils/taohua'
@@ -111,11 +111,17 @@ async function waitForSilentLogin() {
 }
 
 function startMine() {
+  const target = '/pages/taohua-persona-result/taohua-persona-result'
   if (!getCurrentUserId()) {
-    uni.navigateTo({ url: '/pages/login/login?redirect=' + encodeURIComponent('/pages/taohua/taohua') })
+    uni.navigateTo({ url: '/pages/login/login?redirect=' + encodeURIComponent(target) })
     return
   }
-  uni.navigateTo({ url: '/pages/self-profile/self-profile?redirect=/pages/taohua/taohua' })
+  const profile = getCachedSelfProfile()
+  if (hasUsableSelfProfile(profile) && profile?.zodiac && profile?.constellation) {
+    uni.navigateTo({ url: target })
+    return
+  }
+  uni.navigateTo({ url: `/pages/self-profile/self-profile?mode=onboarding&redirect=${encodeURIComponent(target)}` })
 }
 
 function goHome() {
@@ -129,12 +135,14 @@ function goHome() {
 .page {
   min-height: 100vh;
   padding: 24rpx;
-  background: linear-gradient(160deg, #fff6e4 0%, #ffe2d8 46%, #fffdf5 100%);
+  background:
+    linear-gradient(135deg, rgba(78,205,196,0.22) 0%, rgba(255,255,255,0) 34%),
+    linear-gradient(160deg, #fff6e4 0%, #ffe2d8 44%, #fffdf5 100%);
   box-sizing: border-box;
 }
 
 .hero {
-  padding: 26rpx 10rpx 20rpx;
+  padding: 30rpx 10rpx 22rpx;
 }
 
 .brand {
@@ -144,7 +152,7 @@ function goHome() {
   color: #ffd93d;
   font-size: $fs-caption;
   font-weight: $fw-hero;
-  box-shadow: 4rpx 4rpx 0 #c84a3d;
+  box-shadow: 5rpx 5rpx 0 #4ecdc4;
 }
 
 .title {
@@ -159,50 +167,54 @@ function goHome() {
 .subtitle {
   display: block;
   margin-top: 12rpx;
-  color: #7f2b1d;
+  color: #0a6f69;
   font-size: $fs-body-lg;
   font-weight: $fw-hero;
 }
 
 .poster {
   position: relative;
-  padding: 38rpx 34rpx;
-  background: #fff;
+  overflow: hidden;
+  padding: 42rpx 34rpx 36rpx;
+  background: linear-gradient(180deg, #fffdf5 0%, #ffffff 58%, #fff8ec 100%);
   border: 4rpx solid #111;
   box-shadow: 10rpx 10rpx 0 #111;
 }
 
-.poster::after {
+.poster::before {
   content: '';
   position: absolute;
-  right: 28rpx;
-  top: 28rpx;
-  width: 160rpx;
-  height: 160rpx;
-  border: 3rpx solid rgba(127, 43, 29, 0.2);
-  border-radius: 50%;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 16rpx;
+  background: linear-gradient(90deg, #FFD93D 0 28%, #FF6B6B 28% 58%, #4ECDC4 58% 100%);
   pointer-events: none;
 }
 
 .seal {
-  width: 132rpx;
-  height: 132rpx;
-  border-radius: 50%;
-  border: 5rpx solid #111;
-  background: linear-gradient(135deg, #ffd93d, #ff8e7d);
+  width: 120rpx;
+  height: 120rpx;
+  border: 4rpx solid #111;
+  background: #FFD93D;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 7rpx 7rpx 0 #FF6B6B;
+  transform: rotate(-4deg);
 }
 
 .seal-text {
   font-size: $fs-display;
   font-weight: $fw-hero;
   color: #111;
+  transform: rotate(4deg);
 }
 
 .persona {
   margin-top: 30rpx;
+  padding-top: 24rpx;
+  border-top: 3rpx solid #111;
 }
 
 .kicker,
@@ -222,6 +234,7 @@ function goHome() {
   font-size: $fs-hero-title;
   line-height: $lh-hero;
   font-weight: $fw-hero;
+  letter-spacing: 0;
 }
 
 .persona-desc {
@@ -245,10 +258,11 @@ function goHome() {
 .match-pill {
   padding: 10rpx 18rpx;
   border: 3rpx solid #111;
-  background: #f5f0e8;
+  background: #fff;
   color: #111;
   font-size: $fs-body;
   font-weight: $fw-hero;
+  box-shadow: 4rpx 4rpx 0 rgba(17,17,17,0.18);
 }
 
 .tag.black {
@@ -265,8 +279,9 @@ function goHome() {
 .section {
   margin-top: 34rpx;
   padding: 28rpx;
-  background: #ffe7e1;
+  background: #F7FFF7;
   border: 3rpx solid #111;
+  box-shadow: 6rpx 6rpx 0 #4ECDC4;
 }
 
 .section-text {
@@ -290,10 +305,11 @@ function goHome() {
   padding: 24rpx;
   background: #fff4c7;
   border: 3rpx solid #111;
+  box-shadow: 5rpx 5rpx 0 rgba(17,17,17,0.16);
 }
 
 .mini-card:nth-child(2) {
-  background: #f2f0ea;
+  background: #EAF7FF;
 }
 
 .mini-main {
@@ -319,7 +335,7 @@ function goHome() {
   background: #111;
   color: #fff;
   border: 4rpx solid #111;
-  box-shadow: 8rpx 8rpx 0 #c84a3d;
+  box-shadow: 8rpx 8rpx 0 #4ECDC4;
 }
 
 .cta-title {
@@ -352,11 +368,13 @@ function goHome() {
 .primary-btn {
   background: #ffd93d;
   color: #111;
+  box-shadow: 5rpx 5rpx 0 #FF6B6B;
 }
 
 .ghost-btn {
   background: #fff;
   color: #111;
+  box-shadow: 5rpx 5rpx 0 #4ECDC4;
 }
 
 .disclaimer {
@@ -366,5 +384,42 @@ function goHome() {
   color: #8e8177;
   font-size: $fs-caption;
   font-weight: $fw-label;
+}
+
+.font-large .brand,
+.font-large .kicker,
+.font-large .section-title,
+.font-large .mini-title,
+.font-large .match-label {
+  font-size: $fs-body;
+}
+
+.font-large .title,
+.font-large .seal-text {
+  font-size: 56rpx;
+}
+
+.font-large .persona-title {
+  font-size: 47rpx;
+}
+
+.font-large .subtitle,
+.font-large .persona-desc,
+.font-large .section-text,
+.font-large .cta-copy {
+  font-size: 38rpx;
+}
+
+.font-large .tag,
+.font-large .match-pill,
+.font-large .mini-sub {
+  font-size: 36rpx;
+}
+
+.font-large .mini-main,
+.font-large .cta-title,
+.font-large .primary-btn,
+.font-large .ghost-btn {
+  font-size: 43rpx;
 }
 </style>

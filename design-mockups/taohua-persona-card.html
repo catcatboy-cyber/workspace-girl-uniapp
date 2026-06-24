@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>你的桃花人设卡片方案</title>
+  <style>
+    :root {
+      --ink: #111;
+      --text: #333;
+      --muted: #666;
+      --soft: #999;
+      --bg: #fffdf5;
+      --card: #fff;
+      --accent: #ffd93d;
+      --mint: #4ecdc4;
+      --risk: #ff5252;
+      --blue-soft: #eaf7ff;
+      --warm-soft: #fffbea;
+      --fs-heading: 38rpx;
+      --fs-body-lg: 34rpx;
+      --fs-body: 32rpx;
+      --fs-caption: 24rpx;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      background:
+        linear-gradient(90deg, rgba(17,17,17,.04) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(17,17,17,.04) 1px, transparent 1px),
+        var(--bg);
+      background-size: 24px 24px;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 28px 14px;
+    }
+
+    .phone {
+      width: min(390px, 100%);
+      padding: 18px 14px 28px;
+      border: 3px solid var(--ink);
+      background: var(--bg);
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.2;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .share-btn {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 2px solid var(--ink);
+      background: var(--warm-soft);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+
+    .share-btn img {
+      width: 17px;
+      height: 17px;
+      display: block;
+    }
+
+    .card {
+      border: 3px solid var(--ink);
+      background: var(--card);
+      padding: 14px;
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+
+    .persona-hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 2px dashed var(--ink);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      min-height: 22px;
+      padding: 0 8px;
+      border: 2px solid var(--ink);
+      background: var(--accent);
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .persona-title {
+      display: block;
+      margin-top: 8px;
+      font-size: 18px;
+      line-height: 1.25;
+      font-weight: 900;
+    }
+
+    .persona-desc {
+      display: block;
+      margin-top: 5px;
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 650;
+      color: var(--muted);
+    }
+
+    .avatar-stack {
+      display: flex;
+      align-items: center;
+      min-width: 92px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--accent);
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .avatar.sign {
+      margin-left: -7px;
+      background: var(--blue-soft);
+    }
+
+    .identity-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .identity-item {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 7px 8px;
+      border: 2px solid var(--ink);
+      background: var(--warm-soft);
+    }
+
+    .identity-item.alt { background: var(--blue-soft); }
+
+    .identity-symbol {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: #fff;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .identity-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .identity-label {
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 850;
+      color: var(--muted);
+    }
+
+    .identity-value {
+      font-size: 16px;
+      line-height: 1.15;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .relation-box {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+      padding: 10px;
+      border: 2px dashed var(--ink);
+      background: #fff;
+    }
+
+    .relation-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 0 9px;
+      background: var(--mint);
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .relation-copy {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 650;
+      color: var(--muted);
+    }
+
+    .dim-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .dim-card {
+      padding: 11px 10px;
+      border: 2px solid var(--ink);
+      background: #fff;
+    }
+
+    .dim-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 7px;
+    }
+
+    .dim-head img {
+      width: 17px;
+      height: 17px;
+    }
+
+    .dim-label {
+      display: inline-flex;
+      min-height: 23px;
+      align-items: center;
+      padding: 0 8px;
+      background: var(--ink);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .dim-main {
+      display: block;
+      font-size: 15px;
+      line-height: 1.42;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .dim-sub {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.42;
+      font-weight: 650;
+      color: var(--muted);
+    }
+
+    .match-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .match-label {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 26px;
+      padding: 0 9px;
+      background: var(--ink);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .pill img {
+      width: 13px;
+      height: 13px;
+      filter: invert(81%) sepia(86%) saturate(598%) hue-rotate(355deg) brightness(101%) contrast(102%);
+    }
+
+    .note {
+      margin: 14px 0 0;
+      padding: 10px 12px;
+      border: 2px dashed var(--soft);
+      background: rgba(255, 255, 255, .72);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      font-weight: 650;
+    }
+
+    @media (min-width: 430px) {
+      body { padding-top: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <div class="section-head">
+      <h1 class="section-title">你的桃花人设</h1>
+      <button class="share-btn" aria-label="分享桃花人设">
+        <img src="../static/icons/taohua/share-2.svg" alt="" />
+      </button>
+    </div>
+
+    <section class="card" aria-label="你的桃花人设卡片">
+      <div class="persona-hero">
+        <div>
+          <span class="eyebrow">慢热感受型</span>
+          <span class="persona-title">越熟越有吸引力，适合从轻松互动里升温</span>
+          <span class="persona-desc">这里不再重复写“兔 · 巨蟹座”，先给用户一个能看懂的人设结论。</span>
+        </div>
+        <div class="avatar-stack" aria-hidden="true">
+          <span class="avatar">兔</span>
+          <span class="avatar sign">♋</span>
+        </div>
+      </div>
+
+      <div class="identity-strip">
+        <div class="identity-item">
+          <span class="identity-symbol">兔</span>
+          <span class="identity-copy">
+            <span class="identity-label">我的生肖</span>
+            <span class="identity-value">卯兔</span>
+          </span>
+        </div>
+        <div class="identity-item alt">
+          <span class="identity-symbol">♋</span>
+          <span class="identity-copy">
+            <span class="identity-label">我的星座</span>
+            <span class="identity-value">巨蟹座</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="relation-box">
+        <span class="relation-badge">六合大吉</span>
+        <p class="relation-copy">生肖关系放在身份条下面，只作为“属相 + 星座交叉”的结果，不再单独重复展示。</p>
+      </div>
+
+      <div class="dim-grid">
+        <article class="dim-card">
+          <div class="dim-head">
+            <img src="../static/icons/taohua/landmark.svg" alt="" />
+            <span class="dim-label">中国星次</span>
+          </div>
+          <span class="dim-main">卯 · 木 · 阴：细腻、谨慎，容易被稳定回应打动。</span>
+          <span class="dim-sub">保留原来的星次、地支、五行、阴阳与出处，但合成两行以内。</span>
+        </article>
+
+        <article class="dim-card">
+          <div class="dim-head">
+            <img src="../static/icons/taohua/stars.svg" alt="" />
+            <span class="dim-label">西方星座</span>
+          </div>
+          <span class="dim-main">月亮守护 · 水象 · 本位：重感受，也会反复确认安全感。</span>
+          <span class="dim-sub">桃花风格继续显示，但不再用过大的强标题抢层级。</span>
+        </article>
+      </div>
+
+      <div class="match-row">
+        <span class="match-label">最佳配对</span>
+        <span class="pill"><img src="../static/icons/taohua/heart.svg" alt="" />天蝎座</span>
+        <span class="pill"><img src="../static/icons/taohua/heart.svg" alt="" />双鱼座</span>
+      </div>
+    </section>
+
+    <p class="note">
+      去重规则：生肖和星座只在“身份条”出现一次；卡片头部负责讲人设结论；下面两个维度负责解释依据。
+    </p>
+  </main>
+</body>
+</html>

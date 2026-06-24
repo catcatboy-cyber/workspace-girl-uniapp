@@ -29,13 +29,14 @@
 .tab-item:nth-child(2) { margin-right: 50rpx; }
 .tab-item:nth-child(3) { margin-left: 50rpx; }
 .tab-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 700;
   color: #999;
+  line-height: 1.2;
 }
 .tab-item.active .tab-text {
   color: #111;
-  font-weight: 900;
+  font-weight: 800;
 }
 
 .crush-btn-wrap {
@@ -62,10 +63,15 @@
   transform: translateY(-4rpx);
 }
 .crush-text {
-  font-size: 22rpx;
-  font-weight: 900;
+  font-size: 24rpx;
+  font-weight: 800;
   color: #FFD93D;
+  line-height: 1.1;
 }
 .crush-btn.active .crush-text {
   color: #111;
+}
+.tab-bar.font-large .tab-text,
+.tab-bar.font-large .crush-text {
+  font-size: 29rpx;
 }
