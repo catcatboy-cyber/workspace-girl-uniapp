@@ -18,7 +18,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<undefined>((resolve) => {
     timer = setTimeout(() => {
-      console.warn(`${label} timeout after ${ms}ms`)
+      void label
       resolve(undefined)
     }, ms)
   })
@@ -66,7 +66,6 @@ export const app = {
     }).then((result: any) => {
       return result
     }).catch((error: any) => {
-      console.error(`[cloudbase] callFunction ${options.name} failed:`, error)
       throw error
     })
   },
@@ -79,7 +78,6 @@ export const app = {
         env: ENV_ID
       }
     }).catch((error: any) => {
-      console.error('[cloudbase] uploadFile failed:', error)
       throw error
     })
   },
@@ -92,7 +90,6 @@ export const app = {
         env: ENV_ID
       }
     }).catch((error: any) => {
-      console.error('[cloudbase] getTempFileURL failed:', error)
       throw error
     })
   },
@@ -191,7 +188,7 @@ export async function resetCloudAuthState(options: { clearBusinessUser?: boolean
   try {
     await withTimeout(Promise.resolve(auth.signOut()), 1500, 'CloudBase signOut')
   } catch (error) {
-    console.warn('CloudBase signOut failed:', error)
+    void error
   }
 }
 
@@ -228,7 +225,6 @@ async function waitForUserLoginState(retries = 8, intervalMs = 200) {
     await delay(intervalMs)
     loginState = await auth.getLoginState()
   }
-  console.warn('waitForUserLoginState timeout after', retries * intervalMs, 'ms, loginState:', loginState)
   return loginState
 }
 
@@ -256,29 +252,20 @@ export function ensureCloudAuthReady(): Promise<void> {
           ? await waitForUserLoginState()
           : await auth.getLoginState()
       } catch (err) {
-        console.error('ensureCloudAuthReady: getLoginState failed', err)
+        void err
         await resetCloudAuthState({ clearBusinessUser: false })
       }
 
       const customUserId = extractCustomUserId(loginState)
       if (customUserId) {
         return
-        /*
       }
 
       if (hasStoredUser) {
-        console.warn('ensureCloudAuthReady: stored business user exists but no CloudBase custom login state, using business auth payload')
-        await resetCloudAuthState({ clearBusinessUser: false })
-        if (!loginState) {
-          await auth.anonymousAuthProvider().signIn()
-        }
-        return
-        console.warn('ensureCloudAuthReady: stored userId exists but no CloudBase login state, clearing auth')
         await resetCloudAuthState()
         const error = new Error('登录状态已失效，请重新登录')
         ;(error as any).code = 'AUTH_SESSION_REQUIRED'
         throw error
-        */
       }
 
       if (!loginState) {

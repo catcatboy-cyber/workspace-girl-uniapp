@@ -3,15 +3,26 @@ const http = require('http')
 const https = require('https')
 const { URL } = require('url')
 
-const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
+const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
+const { recordTokenUsage } = require('./_shared/token-usage')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
 const COLLECTION = 'pet_lines'
 const REPLY_TIMEOUT_MS = 30000
-const REPLY_PAIR_EST_COST = 500
-const QA_GEN_EST_COST = 300
+const REPLY_PAIR_EST_TOKENS = 700
+const QA_GEN_EST_TOKENS = 300
+const REPLY_STRATEGY_EST_TOKENS = 1200
+const LINE_TAGGING_EST_TOKENS = 2000
+const PET_REPLY_ACCESS_FEATURE = '小咪帮你说（单轮）'
+const PET_STRATEGY_ACCESS_FEATURE = '小咪多轮策略'
+const PET_REPLY_USAGE_FEATURE = 'petReply'
+const PET_QA_USAGE_FEATURE = 'petQaStrategy'
+const PET_STRATEGY_USAGE_FEATURE = 'petReplyStrategy'
+const PET_TAGGING_USAGE_FEATURE = 'petLineTagging'
+const PET_QA_TAGGING_USAGE_FEATURE = 'petQaStrategyTagging'
 const QA_HISTORY_COLLECTION = 'user_qa_history'
 const QA_MAX_HISTORY = 80
 const QA_AI_TRIGGER_COUNT = 20
@@ -23,6 +34,28 @@ function getUsageTotalTokens(usage, fallback = 0) {
   const totalTokens = Number(usage?.total_tokens ?? (promptTokens + completionTokens))
   if (Number.isFinite(totalTokens) && totalTokens > 0) return Math.round(totalTokens)
   return Math.max(0, Math.round(Number(fallback) || 0))
+}
+
+function buildUsageWithFallback(usage, fallback = 0) {
+  const totalTokens = getUsageTotalTokens(usage, fallback)
+  const promptTokens = Number(usage?.prompt_tokens ?? usage?.input_tokens ?? 0)
+  const completionTokens = Number(usage?.completion_tokens ?? usage?.output_tokens ?? 0)
+  if (promptTokens > 0 || completionTokens > 0) {
+    return {
+      prompt_tokens: Math.max(0, Math.round(promptTokens)),
+      completion_tokens: Math.max(0, Math.round(completionTokens)),
+      total_tokens: totalTokens
+    }
+  }
+  return {
+    prompt_tokens: Math.round(totalTokens * 0.6),
+    completion_tokens: totalTokens - Math.round(totalTokens * 0.6),
+    total_tokens: totalTokens
+  }
+}
+
+async function requirePetUserId(event) {
+  return requireAuthenticatedUserId(app, event)
 }
 
 // ========== 小咪帮你说可配置提示词 ==========
@@ -389,7 +422,7 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
   }
   const data = await response.json()
   const reply = (data?.choices?.[0]?.message?.content || '').trim().replace(/^["'「『"']+|["'」』"']+$/g, '').replace(/^回复[：:]\s*/i, '')
-  if (userId) await recordReplyTokenUsage(userId, getUsageTotalTokens(data?.usage, REPLY_PAIR_EST_COST), ai.model, data?.usage)
+  if (userId) await recordReplyTokenUsage(userId, getUsageTotalTokens(data?.usage, REPLY_PAIR_EST_TOKENS), ai.model, data?.usage)
   return { success: true, reply: reply || '（AI 未生成有效回复）', inspirations: inspirations.map(l => ({ category: l.category, text: l.text })) }
 }
 
@@ -403,54 +436,46 @@ function ensureTokenAccount(userId) {
   })
 }
 
-async function checkReplyBalance(userId) {
+async function checkPetTokenBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, accessFeature = PET_REPLY_ACCESS_FEATURE) {
   try {
     // 功能 + Token 门控（v3.2）
-    const access = await checkFeatureAccess(db, userId, '小咪帮你说（单轮）')
+    const access = await checkFeatureAccess(db, userId, accessFeature)
     if (!access.allowed) return { ok: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason, balance: 0, required: 0 }
-    const tokCheck = await checkTokenBalance(db, userId, 700)
+    const tokCheck = await checkTokenBalance(db, userId, estTokens)
     if (!tokCheck.ok) return { ok: false, code: tokCheck.code, message: tokCheck.message, balance: 0, required: 0 }
 
     const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => ({ data: [] }))
     const billing = billingRes.data?.[0] || { insufficientBalanceMode: 'block' }
     const account = await ensureTokenAccount(userId)
     const balance = account.balanceTokens || 0
-    if (billing.insufficientBalanceMode === 'block' && balance < REPLY_PAIR_EST_COST) {
-      return { ok: false, balance, required: REPLY_PAIR_EST_COST }
+    if (billing.insufficientBalanceMode === 'block' && balance < estTokens) {
+      return { ok: false, balance, required: estTokens }
     }
-    return { ok: true, balance, required: REPLY_PAIR_EST_COST }
-  } catch { return { ok: true } }
+    return { ok: true, balance, required: estTokens }
+  } catch (e) {
+    console.error('checkPetTokenBalance error:', e)
+    return { ok: false, code: 'TOKEN_CHECK_FAILED', message: 'Token 校验失败，请稍后重试', balance: 0, required: estTokens }
+  }
+}
+
+async function checkReplyBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS) {
+  return checkPetTokenBalance(userId, estTokens, PET_REPLY_ACCESS_FEATURE)
+}
+
+async function recordPetTokenUsage(userId, realTokens, model, usage, feature = PET_REPLY_USAGE_FEATURE) {
+  try {
+    await recordTokenUsage(db, {
+      userId,
+      feature,
+      provider: 'openai-compatible',
+      model: model || '',
+      usage: buildUsageWithFallback(usage, realTokens || REPLY_PAIR_EST_TOKENS)
+    })
+  } catch (e) { console.error('recordReplyTokenUsage error:', e) }
 }
 
 async function recordReplyTokenUsage(userId, realTokens, model, usage) {
-  try {
-    const promptTokens = usage?.prompt_tokens || Math.round((realTokens || REPLY_PAIR_EST_COST) * 0.6)
-    const completionTokens = usage?.completion_tokens || Math.round((realTokens || REPLY_PAIR_EST_COST) * 0.4)
-    const totalTokens = realTokens || (promptTokens + completionTokens)
-
-    // 1. 写入 token_usage_records（标准消费明细集合）
-    const now = new Date()
-    const usageDoc = {
-      userId, feature: 'petReply', provider: 'openai-compatible', model: model || '',
-      promptTokens, completionTokens, totalTokens, usageAvailable: totalTokens > 0,
-      caseId: '', assessmentId: '', recordId: '', createdAt: now, updatedAt: now
-    }
-    const usageRes = await db.collection('token_usage_records').add(usageDoc).catch(() => null)
-    const usageId = usageRes?.id || usageRes?._id || ''
-
-    // 2. 余额扣减
-    const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => ({ data: [] }))
-    const billing = billingRes.data?.[0] || {}
-    const multiplier = (billing.modelPricing || []).find(p => p.modelId === model || p.modelId === '*')?.costMultiplier || 1
-    const deducted = Math.ceil(totalTokens * multiplier)
-    const account = await ensureTokenAccount(userId)
-    const balanceAfter = Math.max(0, (account.balanceTokens || 0) - deducted)
-    await db.collection('token_accounts').doc(account._id).update({ balanceTokens: balanceAfter, consumedTokens: (account.consumedTokens || 0) + deducted, updatedAt: now })
-
-    // 3. 写入 token_ledger_records（账本流水）
-    await db.collection('token_ledger_records').add({ userId, type: 'consume', amountTokens: -deducted, balanceAfter, relatedUsageId: usageId, feature: 'petReply', provider: 'openai-compatible', model: model || '', realTokens: totalTokens, chargeMultiplier: multiplier, remark: `宠物帮说 · ${model || 'ai'} · 真实${totalTokens}t × ${multiplier}倍率`, createdAt: now }).catch(() => {})
-    await consumeTokens(db, userId, totalTokens, 'petReply', model)
-  } catch (e) { console.error('recordReplyTokenUsage error:', e) }
+  return recordPetTokenUsage(userId, realTokens, model, usage, PET_REPLY_USAGE_FEATURE)
 }
 
 const REPLY_TONES = {
@@ -573,7 +598,7 @@ async function generateReplyPair(scene, content, userId, tone, safetyContext) {
     var fallbackText = Object.values(variants).find(Boolean) || '（AI 暂未生成有效回复）'
     var reply = (targetTone && variants[targetTone]) || variants.sincere || variants.humor || fallbackText
     var alternative = variants.literary || fallbackText
-    var realTokens = data?.usage?.total_tokens || REPLY_PAIR_EST_COST
+    var realTokens = getUsageTotalTokens(data?.usage, REPLY_PAIR_EST_TOKENS)
 
     if (userId) await recordReplyTokenUsage(userId, realTokens, model.model, data?.usage)
     await recordModelTokenUsage(model.id, realTokens, data?.usage)
@@ -627,7 +652,7 @@ async function tagOneBatch(ai, items, startIndex, cfg) {
   for (let i = 0; i < items.length; i++) {
     if (!tagged.find(t => t.index === startIndex + i)) tagged.push({ index: startIndex + i, tags: [] })
   }
-  return tagged
+  return { tagged, usage: data?.usage }
 }
 
 async function tagLinesLoop(startIndex, count, userId) {
@@ -643,13 +668,13 @@ async function tagLinesLoop(startIndex, count, userId) {
   let current = startIndex
   while (current < endTarget) {
     if (userId) {
-      const bal = await checkReplyBalance(userId)
+      const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS)
       if (!bal.ok) return { success: false, message: '余额不足，请先充值', code: 'INSUFFICIENT_BALANCE' }
     }
     const batch = SEED_DATA.slice(current, Math.min(current + BATCH_SIZE, endTarget))
-    const tagged = await tagOneBatch(ai, batch, current, cfg)
+    const { tagged, usage } = await tagOneBatch(ai, batch, current, cfg)
     allTagged.push(...tagged)
-    if (userId) await recordReplyTokenUsage(userId, REPLY_PAIR_EST_COST, ai.model, null)
+    if (userId) await recordPetTokenUsage(userId, getUsageTotalTokens(usage, LINE_TAGGING_EST_TOKENS), ai.model, usage, PET_TAGGING_USAGE_FEATURE)
     current += batch.length
   }
   return { success: true, tagged: allTagged, startIndex, endIndex: endTarget, total: SEED_DATA.length }
@@ -700,7 +725,7 @@ async function generateQAByAI(content, userId) {
     const cfg = getPetSpeakConfig(settings || {}, 'qaStrategy')
 
     if (userId) {
-      const bal = await checkReplyBalance(userId)
+      const bal = await checkReplyBalance(userId, QA_GEN_EST_TOKENS)
       if (!bal.ok) return null
     }
 
@@ -730,7 +755,7 @@ async function generateQAByAI(content, userId) {
         if (!match) continue
 
         const text = match[0].trim()
-        if (userId) await recordReplyTokenUsage(userId, data?.usage?.total_tokens || QA_GEN_EST_COST, ai.model, data?.usage)
+        if (userId) await recordPetTokenUsage(userId, getUsageTotalTokens(data?.usage, QA_GEN_EST_TOKENS), ai.model, data?.usage, PET_QA_USAGE_FEATURE)
         return { text, aiGenerated: true }
       } catch (e) {
         lastError = e
@@ -905,7 +930,7 @@ async function normalizeQASelfReply() {
 
 async function generateQAByAIV3(content, userId) {
   if (userId) {
-    const bal = await checkReplyBalance(userId)
+    const bal = await checkReplyBalance(userId, QA_GEN_EST_TOKENS * 2)
     if (!bal.ok) return null
   }
 
@@ -943,8 +968,9 @@ async function generateQAByAIV3(content, userId) {
             l.type && l.label && l.text && l.text.includes('|') && l.text.split('|').filter(Boolean).length >= 2
           )
           if (valid.length > 0) {
-            if (userId) await recordReplyTokenUsage(userId, data?.usage?.total_tokens || QA_GEN_EST_COST * 2, model.model, data?.usage)
-            await recordModelTokenUsage(model.id, QA_GEN_EST_COST * 2, data?.usage)
+            const realTokens = getUsageTotalTokens(data?.usage, QA_GEN_EST_TOKENS * 2)
+            if (userId) await recordPetTokenUsage(userId, realTokens, model.model, data?.usage, PET_QA_USAGE_FEATURE)
+            await recordModelTokenUsage(model.id, realTokens, data?.usage)
             const texts = valid.map(l => l.text)
             await updateUserQAHistory(userId, texts, 'ai')
             return { success: true, lines: valid }
@@ -1004,7 +1030,9 @@ function _strategyLabel(s) {
 
 // ========== 批量策略打标 ==========
 
-async function tagQAStrategies() {
+async function tagQAStrategies(userId) {
+  if (!userId) return { success: false, code: 'NO_USER', message: '请先登录' }
+
   const allQA = SEED_DATA.filter(d => d.category === 'qa')
   if (allQA.length === 0) return { tagged: 0 }
 
@@ -1028,6 +1056,11 @@ async function tagQAStrategies() {
   const allTagged = []
 
   for (let start = 0; start < allQA.length; start += BATCH_SIZE) {
+    if (userId) {
+      const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS)
+      if (!bal.ok) return { success: false, message: '余额不足，请先充值', code: 'INSUFFICIENT_BALANCE', done, tagged: allTagged.length }
+    }
+
     const batch = allQA.slice(start, start + BATCH_SIZE)
     const items = batch.map((d, i) => `${start + i}: ${d.text}`).join('\n')
 
@@ -1060,6 +1093,7 @@ async function tagQAStrategies() {
             allTagged.push({ index: item.index, strategy: item.strategy })
           }
         })
+        if (userId) await recordPetTokenUsage(userId, getUsageTotalTokens(data?.usage, LINE_TAGGING_EST_TOKENS), ai.model, data?.usage, PET_QA_TAGGING_USAGE_FEATURE)
         done += batch.length
         batchDone = true
       } catch (e) {
@@ -1094,7 +1128,7 @@ async function generateReplyStrategy(content, userId, scene = 'reply', safetyCon
   if (!ai.enabled || !ai.apiKey) return { success: false, message: 'AI 配置未启用或缺少 API Key' }
 
   if (userId) {
-    const strategyAccess = await checkFeatureAccess(db, userId, '小咪多轮策略')
+    const strategyAccess = await checkFeatureAccess(db, userId, PET_STRATEGY_ACCESS_FEATURE)
     if (!strategyAccess.allowed) {
       return {
         success: false,
@@ -1102,7 +1136,7 @@ async function generateReplyStrategy(content, userId, scene = 'reply', safetyCon
         message: strategyAccess.reason || '当前套餐不支持小咪多轮策略'
       }
     }
-    const bal = await checkReplyBalance(userId)
+    const bal = await checkPetTokenBalance(userId, REPLY_STRATEGY_EST_TOKENS, PET_STRATEGY_ACCESS_FEATURE)
     if (!bal.ok) return { success: false, code: 'INSUFFICIENT_BALANCE', balance: bal.balance, required: bal.required, message: '余额不足，请充值' }
   }
 
@@ -1182,7 +1216,7 @@ JSON 格式：
           s.type && s.label && Array.isArray(s.turns) && s.turns.length >= 2
         )
         if (valid.length > 0) {
-          if (userId) await recordReplyTokenUsage(userId, data?.usage?.total_tokens || REPLY_PAIR_EST_COST, ai.model, data?.usage)
+          if (userId) await recordPetTokenUsage(userId, getUsageTotalTokens(data?.usage, REPLY_STRATEGY_EST_TOKENS), ai.model, data?.usage, PET_STRATEGY_USAGE_FEATURE)
           return { success: true, strategies: valid }
         }
       }
@@ -1214,8 +1248,14 @@ exports.main = async (event = {}) => {
         const eventDesc = String(event.eventDescription || event.desc || '').trim()
         if (!eventDesc || eventDesc.length < 4) return { success: false, message: '请提供事件描述（至少4个字）' }
         const eventType = ['positive', 'risk', 'verification', 'note'].includes(event.eventType) ? event.eventType : 'note'
-        let userId = event.userId || event.authUserId || ''
-        if (!userId) { try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {} }
+        let userId
+        try {
+          userId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
+        }
         let isMinor = false
         if (userId) { const profile = await fetchUserSelfProfile(userId); isMinor = profile?.ageRange === 'under18' }
         return await generateReply(eventDesc, eventType, userId, isMinor)
@@ -1224,8 +1264,14 @@ exports.main = async (event = {}) => {
         const strategyContent = String(event.content || '').trim()
         const strategyScene = event.scene === 'active' ? 'active' : 'reply'
         if (!strategyContent || strategyContent.length < 1) return { success: false, message: strategyScene === 'active' ? '请输入想表达的内容' : '请输入对方说的话' }
-        let sUserId = event.userId || event.authUserId || ''
-        if (!sUserId) { try { const info = await app.auth().getUserInfo(); sUserId = info?.customUserId || info?.uid || '' } catch {} }
+        let sUserId
+        try {
+          sUserId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
+        }
         let safetyContext = { isMinor: false, boundarySensitive: false }
         if (sUserId) {
           const profile = await fetchUserSelfProfile(sUserId)
@@ -1239,9 +1285,13 @@ exports.main = async (event = {}) => {
         const content = String(event.content || '').trim()
         const tone = String(event.tone || '').trim()
         if (!content || content.length < 1) return { success: false, message: '请输入内容' }
-        let userId = event.userId || event.authUserId || ''
-        if (!userId) {
-          try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {}
+        let userId
+        try {
+          userId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
         }
         let safetyContext = { isMinor: false, boundarySensitive: false }
         if (userId) {
@@ -1255,9 +1305,13 @@ exports.main = async (event = {}) => {
         const scene = event.scene === 'active' ? 'active' : 'reply'
         const content = String(event.content || '').trim()
         if (!content || content.length < 1) return { success: false, message: '请输入内容' }
-        let userId = event.userId || event.authUserId || ''
-        if (!userId) {
-          try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {}
+        let userId
+        try {
+          userId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
         }
         let safetyContext = { isMinor: false, boundarySensitive: false }
         if (userId) {
@@ -1289,8 +1343,14 @@ exports.main = async (event = {}) => {
         const content = String(event.content || '').trim()
         if (!content) return { success: false, message: '请输入内容' }
         const keywords = extractKeywords(content)
-        let userId = event.userId || event.authUserId || ''
-        if (!userId) { try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {} }
+        let userId
+        try {
+          userId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
+        }
         let isMinor = false
         if (userId) { const profile = await fetchUserSelfProfile(userId); isMinor = profile?.ageRange === 'under18' }
         const lines = pickRandomLines(2, 'qa', keywords, isMinor)
@@ -1299,8 +1359,14 @@ exports.main = async (event = {}) => {
       case 'pickQA_v3': {
         const v3Content = String(event.content || '').trim()
         if (!v3Content) return { success: false, message: '请输入内容' }
-        let v3UserId = event.userId || event.authUserId || ''
-        if (!v3UserId) { try { const info = await app.auth().getUserInfo(); v3UserId = info?.customUserId || info?.uid || '' } catch {} }
+        let v3UserId
+        try {
+          v3UserId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
+        }
         let isMinor = false
         if (v3UserId) { const profile = await fetchUserSelfProfile(v3UserId); isMinor = profile?.ageRange === 'under18' }
 
@@ -1333,20 +1399,40 @@ exports.main = async (event = {}) => {
       case 'pickQA_v2': {
         const content = String(event.content || '').trim()
         if (!content) return { success: false, message: '请输入内容' }
-        let userId = event.userId || event.authUserId || ''
-        if (!userId) { try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {} }
+        let userId
+        try {
+          userId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
+        }
         const result = await pickQAWithDedup(content, userId)
         return { success: true, ...result }
       }
       case 'tagQAStrategies': {
-        const tagResult = await tagQAStrategies()
+        let userId
+        try {
+          userId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
+        }
+        const tagResult = await tagQAStrategies(userId)
         return { success: true, ...tagResult }
       }
       case 'tagLines': {
         const startIndex = Number(event.startIndex) || 0
         const count = Math.min(Number(event.count) || 200, 300)
-        let userId = event.userId || event.authUserId || ''
-        if (!userId) { try { const info = await app.auth().getUserInfo(); userId = info?.customUserId || info?.uid || '' } catch {} }
+        let userId
+        try {
+          userId = await requirePetUserId(event)
+        } catch (error) {
+          const authError = buildAuthErrorResponse(error)
+          if (authError) return authError
+          throw error
+        }
         return await tagLinesLoop(startIndex, count, userId)
       }
       case 'normalizeQASelfReply': {

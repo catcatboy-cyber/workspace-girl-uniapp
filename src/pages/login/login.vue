@@ -84,8 +84,8 @@ function loadRememberedLogin() {
       email.value = saved.email
       rememberLogin.value = true
     }
-  } catch (error) {
-    console.warn('[page:login] load remembered login failed:', error)
+  } catch {
+    // ignore storage errors
   }
 }
 
@@ -99,8 +99,8 @@ function saveRememberedLogin() {
     } else {
       uni.removeStorageSync(REMEMBER_LOGIN_KEY)
     }
-  } catch (error) {
-    console.warn('[page:login] save remembered login failed:', error)
+  } catch {
+    // ignore storage errors
   }
 }
 
@@ -170,8 +170,7 @@ function getWechatLoginCode(): Promise<string> {
       success(res: any) {
         resolve(res?.code || '')
       },
-      fail(error: any) {
-        console.warn('[page:login] wx.login failed:', error)
+      fail() {
         resolve('')
       }
     })
@@ -203,7 +202,6 @@ const handleLogin = async () => {
       errorMessage.value = result.message || '登录失败'
     }
   } catch (error: any) {
-    console.error('登录错误:', error)
     errorMessage.value = formatLoginError(error)
   } finally {
     loading.value = false
@@ -225,8 +223,7 @@ const handleWechatLogin = async () => {
     } else {
       wechatErrorMessage.value = result?.message || '\u5fae\u4fe1\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\uff1b\u5982\u679c\u4ecd\u4e0d\u53ef\u7528\uff0c\u53ef\u624b\u52a8\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'
     }
-  } catch (error: any) {
-    console.error('wechat login error:', error)
+  } catch {
     wechatErrorMessage.value = '\u5fae\u4fe1\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\uff1b\u5982\u679c\u4ecd\u4e0d\u53ef\u7528\uff0c\u53ef\u624b\u52a8\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'
   } finally {
     wechatLoading.value = false

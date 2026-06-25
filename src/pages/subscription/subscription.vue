@@ -334,10 +334,9 @@ async function onUpgrade(planKey: string) {
 
     // 4. 支付成功 → 触发发货 → 查单确认
     try {
-      const cbRes = await paymentCallback(res.order.orderNo)
-      console.log('paymentCallback result:', JSON.stringify(cbRes))
-    } catch (e: any) {
-      console.error('paymentCallback error:', e?.message || e)
+      await paymentCallback(res.order.orderNo)
+    } catch {
+      // Query order status below handles delayed fulfillment.
     }
     const confirm = await queryPaymentOrder({ orderNo: res.order?.orderNo })
     if (confirm?.order?.status === 'paid') {

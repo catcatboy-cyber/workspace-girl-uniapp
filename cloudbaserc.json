@@ -7,7 +7,7 @@
       "name": "register",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -16,7 +16,7 @@
       "name": "login",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -25,7 +25,7 @@
       "name": "wechatLogin",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -52,7 +52,7 @@
       "name": "initDb",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -61,7 +61,7 @@
       "name": "createCase",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -70,7 +70,7 @@
       "name": "getCases",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -79,7 +79,7 @@
       "name": "getCaseDetail",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -88,7 +88,7 @@
       "name": "deleteCase",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -97,7 +97,7 @@
       "name": "updateCaseProfile",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -106,7 +106,7 @@
       "name": "getTimeline",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -115,7 +115,7 @@
       "name": "createTimeline",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -124,7 +124,7 @@
       "name": "deleteTimeline",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -133,7 +133,7 @@
       "name": "reassess",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -142,7 +142,7 @@
       "name": "getAISettings",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -151,7 +151,7 @@
       "name": "updateAISettings",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -160,7 +160,7 @@
       "name": "testAIConnection",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -169,7 +169,7 @@
       "name": "weeklyReview",
       "timeout": 120,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 256,
       "handler": "index.main",
       "installDependency": true,
@@ -284,7 +284,7 @@
       "name": "getSubscriptionConfig",
       "timeout": 10,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -293,7 +293,7 @@
       "name": "getSubscriptionStatus",
       "timeout": 10,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -302,7 +302,7 @@
       "name": "redeemInviteCode",
       "timeout": 60,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -311,7 +311,7 @@
       "name": "getCallUsageHistory",
       "timeout": 10,
       "envVariables": {},
-      "runtime": "Nodejs16.13",
+      "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
@@ -331,15 +331,6 @@
       "envVariables": {},
       "runtime": "Nodejs18.15",
       "memorySize": 256,
-      "handler": "index.main",
-      "installDependency": true
-    },
-    {
-      "name": "tmpUpdateUser",
-      "timeout": 60,
-      "envVariables": {},
-      "runtime": "Nodejs18.15",
-      "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
     },

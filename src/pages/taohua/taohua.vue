@@ -561,11 +561,6 @@ import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
 
 // ============================================================
-// Mock 降级数据（Phase 2：云函数不可用时降级）
-// ============================================================
-import MOCK_REPORT from './mock-data'
-
-// ============================================================
 // 用户画像
 // ============================================================
 const selfProfile = ref<any>(null)
@@ -607,8 +602,8 @@ function iconStyle(size: number) {
 
 function refreshProfile() {
   selfProfile.value = getCachedSelfProfile()
-  userZodiac.value = selfProfile.value?.zodiac || '兔'
-  userSign.value = selfProfile.value?.constellation || '双鱼座'
+  userZodiac.value = selfProfile.value?.zodiac || ''
+  userSign.value = selfProfile.value?.constellation || ''
 }
 refreshProfile()
 
@@ -619,7 +614,6 @@ const dailyData = ref<any>(null)
 const practicalData = ref<any>(null)
 const scoreData = ref<any>(null)
 const reportData = ref<any>(null)
-const allowMockTaohuaFallback = import.meta.env.DEV
 
 function buildCacheKey() {
   const uid = getCurrentUserId() || 'anon'
@@ -660,48 +654,10 @@ async function loadData() {
       queryError = error
     }
 
-    if (!dailyData.value && queryError && !allowMockTaohuaFallback) {
+    if (!dailyData.value && queryError ) {
       const message = queryError?.message || '命理桃花数据加载失败，请稍后再试。'
       uni.showToast({ title: message, icon: 'none' })
       return
-    }
-
-    // 仅开发环境降级：云函数未部署时使用 mock 日历数据
-    if (!dailyData.value && allowMockTaohuaFallback) {
-      dailyData.value = {
-        solarDate: MOCK_REPORT.今日方位?.['公历日期'] || '',
-        lunarDate: MOCK_REPORT.今日方位?.['农历'] || '',
-        ganzhi: {
-          dayGanZhi: MOCK_REPORT.今日方位?.['日柱'] || '--',
-          dayGan: MOCK_REPORT.今日方位?.['日干'] || '--',
-          dayZhi: MOCK_REPORT.今日方位?.['日支'] || '--',
-          yearPillar: MOCK_REPORT.节气?.['年柱'] || '--',
-          monthPillar: MOCK_REPORT.节气?.['月柱'] || '--',
-        },
-        fangwei: {
-          xishen: MOCK_REPORT.今日方位?.['喜神'] || {},
-          caishen: MOCK_REPORT.今日方位?.['财神'] || {},
-          fushen: MOCK_REPORT.今日方位?.['福神'] || {},
-          yanggui: MOCK_REPORT.今日方位?.['阳贵'] || {},
-          yingui: MOCK_REPORT.今日方位?.['阴贵'] || {},
-        },
-        yiji: {
-          jianchu: MOCK_REPORT.今日宜忌?.['建除'] || '--',
-          yi: MOCK_REPORT.今日宜忌?.['宜'] || [],
-          ji: MOCK_REPORT.今日宜忌?.['忌'] || [],
-          jishen: MOCK_REPORT.今日宜忌?.['吉神'] || [],
-          xiongsha: MOCK_REPORT.今日宜忌?.['凶煞'] || [],
-        },
-        ershibaxiu: MOCK_REPORT.今日方位?.['二十八宿'] || '--',
-        pengzu: MOCK_REPORT.今日方位?.['彭祖百忌'] || '--',
-        chongsha: MOCK_REPORT.今日方位?.['生肖日冲'] || '--',
-        shafang: MOCK_REPORT.今日方位?.['煞方'] || '--',
-        jieqi: {
-          current: MOCK_REPORT.节气?.['当前节气'] || '',
-          next: MOCK_REPORT.节气?.['下一节气'] || '--',
-          lunarMonth: MOCK_REPORT.节气?.['农历月'] || '--',
-        },
-      }
     }
 
   // 本地计算个人数据
@@ -767,20 +723,20 @@ onShow(() => {
   }
 })
 
-// 统一报告：保持与旧 mock 相同结构，优先级：实时 > mock
+// 统一报告：保持与旧 mock 相同结构，优先级：实时 > 空态
 const computedReport = computed(() => {
   const d = dailyData.value
   const p = (reportData.value as any)?.personal || {}
-  if (!d) return MOCK_REPORT
+  if (!d) return {}
 
-  const mk = MOCK_REPORT
+  const mk = {} as any
   const dayZhi = d.ganzhi?.dayZhi || '丑'
   const yearZhi = d.ganzhi?.yearPillar?.split(' ')?.[0]?.slice(-1) || '午'
   const monthZhi = d.ganzhi?.monthPillar?.slice(-1) || '午'
 
   return {
     元数据: { ...mk.元数据, 生肖: userZodiac.value, 星座: userSign.value },
-    节气: { ...mk.节气, ...(d.jieqi || {}), 年柱: d.ganzhi?.yearPillar || mk.节气.年柱, 月柱: d.ganzhi?.monthPillar || mk.节气.月柱 },
+    节气: { ...mk.节气, ...(d.jieqi || {}), 年柱: d.ganzhi?.yearPillar || mk.节气?.年柱, 月柱: d.ganzhi?.monthPillar || mk.节气?.月柱 },
     今日方位: {
       公历日期: d.solarDate || mk.今日方位?.公历日期,
       农历: d.lunarDate || mk.今日方位?.农历,

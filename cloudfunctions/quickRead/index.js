@@ -1,6 +1,9 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const https = require('https')
 const http = require('http')
+const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
+const { recordTokenUsage } = require('./_shared/token-usage')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -8,6 +11,9 @@ const db = app.database()
 const TIMEOUT_MS = 20000
 const RATE_LIMIT_WINDOW_MS = 60000   // 1 分钟窗口
 const RATE_LIMIT_MAX = 5             // 每窗口最多 5 次
+const QUICK_READ_FEATURE = '即时反馈'
+const QUICK_READ_USAGE_FEATURE = 'quickRead'
+const QUICK_READ_EST_TOKENS = 800
 
 // ========== AI helpers ==========
 
@@ -26,7 +32,17 @@ function aiHttpRequest(urlStr, body, timeoutMs, apiKey) {
       path: `${u.pathname}${u.search}`, method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload), Authorization: `Bearer ${apiKey}` }
     }, (res) => {
-      resolve(res)
+      const chunks = []
+      res.on('data', chunk => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)))
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8')
+        resolve({
+          ok: res.statusCode >= 200 && res.statusCode < 300,
+          status: res.statusCode,
+          text: () => Promise.resolve(text),
+          json: () => Promise.resolve(JSON.parse(text))
+        })
+      })
     })
     req.setTimeout(timeoutMs, () => { req.destroy(new Error('TIMEOUT')) })
     req.on('error', reject)
@@ -68,6 +84,39 @@ function checkRateLimit(key) {
 function recordRateLimit(key) {
   if (!rateLimitStore[key]) rateLimitStore[key] = []
   rateLimitStore[key].push(Date.now())
+}
+
+function buildQuickReadUsage(usage, fallbackTokens = QUICK_READ_EST_TOKENS) {
+  const promptTokens = Number(usage?.prompt_tokens ?? usage?.input_tokens ?? 0)
+  const completionTokens = Number(usage?.completion_tokens ?? usage?.output_tokens ?? 0)
+  const totalTokens = Number(usage?.total_tokens ?? (promptTokens + completionTokens))
+  const safeTotal = Number.isFinite(totalTokens) && totalTokens > 0 ? Math.round(totalTokens) : Math.round(fallbackTokens)
+  const safePrompt = Number.isFinite(promptTokens) && promptTokens > 0 ? Math.round(promptTokens) : Math.round(safeTotal * 0.7)
+  const safeCompletion = Number.isFinite(completionTokens) && completionTokens > 0 ? Math.round(completionTokens) : Math.max(0, safeTotal - safePrompt)
+  return {
+    prompt_tokens: safePrompt,
+    completion_tokens: safeCompletion,
+    total_tokens: safeTotal
+  }
+}
+
+async function checkQuickReadAccess(userId) {
+  const access = await checkFeatureAccess(db, userId, QUICK_READ_FEATURE)
+  if (!access.allowed) {
+    return { ok: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason || '当前套餐不支持此功能' }
+  }
+
+  const tokenCheck = await checkTokenBalance(db, userId, QUICK_READ_EST_TOKENS)
+  if (!tokenCheck.ok) {
+    return {
+      ok: false,
+      code: tokenCheck.code || 'TOKEN_INSUFFICIENT',
+      message: tokenCheck.message || 'Token 余额不足',
+      ...tokenCheck
+    }
+  }
+
+  return { ok: true }
 }
 
 function buildFallbackResult(fallback, scene, question, source) {
@@ -240,6 +289,25 @@ exports.main = async (event = {}) => {
     return buildFallbackResult(fallback, scene, question, 'rules')
   }
 
+  let userId = ''
+  try {
+    userId = await requireAuthenticatedUserId(app, event)
+  } catch (error) {
+    const authError = buildAuthErrorResponse(error)
+    if (authError) return authError
+    throw error
+  }
+
+  const accessCheck = await checkQuickReadAccess(userId)
+  if (!accessCheck.ok) {
+    return {
+      success: false,
+      code: accessCheck.code,
+      message: accessCheck.message,
+      ...accessCheck
+    }
+  }
+
   const scenePrompts = {
     chat_reply: '聊天回复场景。判断对方回复是升温、敷衍、试探还是回避。',
     date_progress: '约见推进场景。判断对方是否愿意把暧昧变成具体安排。',
@@ -317,6 +385,14 @@ ${ageRange === 'under18' ? '用户未满18岁：只允许友谊、边界、安�
         scene,
         question
       }
+
+      await recordTokenUsage(db, {
+        userId,
+        feature: QUICK_READ_USAGE_FEATURE,
+        provider: 'openai-compatible',
+        model: model.model || model.id || '',
+        usage: buildQuickReadUsage(data?.usage)
+      })
 
       recordRateLimit(rateKey)
       return result

@@ -3,9 +3,59 @@ const path = require('path')
 
 const root = path.join('dist', 'build', 'mp-weixin')
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+}
+
+function writeJson(filePath, value) {
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
+}
+
+const appJsonPath = path.join(root, 'app.json')
+if (fs.existsSync(appJsonPath)) {
+  const appJson = readJson(appJsonPath)
+  if (appJson.permission && appJson.permission['scope.record']) {
+    delete appJson.permission['scope.record']
+    if (Object.keys(appJson.permission).length === 0) delete appJson.permission
+  }
+  if (Array.isArray(appJson.requiredPrivateInfos)) {
+    appJson.requiredPrivateInfos = appJson.requiredPrivateInfos.filter((item) => item !== 'record')
+    if (appJson.requiredPrivateInfos.length === 0) delete appJson.requiredPrivateInfos
+  }
+  appJson.__usePrivacyCheck__ = true
+  writeJson(appJsonPath, appJson)
+}
+
+const projectConfigPath = path.join(root, 'project.config.json')
+if (fs.existsSync(projectConfigPath)) {
+  const projectConfig = readJson(projectConfigPath)
+  projectConfig.setting = {
+    ...(projectConfig.setting || {}),
+    urlCheck: true,
+    postcss: true,
+    minified: true,
+    minifyWXML: true,
+    minifyWXSS: true,
+    uploadWithSourceMap: false
+  }
+  projectConfig.libVersion = projectConfig.libVersion || '3.7.0'
+  writeJson(projectConfigPath, projectConfig)
+}
+
+const privacySrc = 'privacy.json'
+const privacyDest = path.join(root, 'privacy.json')
+if (fs.existsSync(privacySrc)) {
+  fs.copyFileSync(privacySrc, privacyDest)
+}
+
 const staleSpritesheet = path.join(root, 'static', 'pets', 'xiaomi', 'spritesheet.webp')
 if (fs.existsSync(staleSpritesheet)) {
   fs.unlinkSync(staleSpritesheet)
+}
+
+const staleTaohuaMock = path.join(root, 'pages', 'taohua', 'mock-data.js')
+if (fs.existsSync(staleTaohuaMock)) {
+  fs.unlinkSync(staleTaohuaMock)
 }
 
 const tabbarSrc = 'custom-tab-bar'

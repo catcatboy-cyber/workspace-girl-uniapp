@@ -41,16 +41,24 @@ function buildCustomLoginErrorResponse(error) {
   return null
 }
 
+function safeError(error) {
+  return {
+    code: error?.code || error?.errCode || '',
+    message: String(error?.message || error || '').slice(0, 200)
+  }
+}
+
 function buildUserLoginPayload(user, ticket) {
   // 异步记录登录日志（不阻塞登录流程）
   const logData = {
     userId: user._id,
-    email: user.email || '',
+    email: maskEmail(user.email),
     loginType: 'email',
     platform: 'h5', // email 登录仅限 H5/后台
     createdAt: new Date(),
   }
   db.collection('login_logs').add(logData).catch((err) => {
+    err = safeError(err)
     console.error('[login] 记录登录日志失败:', err)
   })
 
@@ -71,9 +79,10 @@ const app = cloudbase.init({
   ...(credentials ? { credentials } : {})
 })
 const db = app.database()
-const TEST_ADMIN_EMAIL = '1'
-const TEST_ADMIN_PASSWORD = '1'
-const TEST_ADMIN_USER_ID = 'admin_test_1'
+const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000
+const LOGIN_RATE_LIMIT_MAX = 10
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const loginAttempts = new Map()
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex')
@@ -81,35 +90,29 @@ function hashPassword(password) {
   return `${salt}:${derivedKey}`
 }
 
-async function ensureTestAdminUser(existingUser) {
-  const now = new Date()
-  const adminPatch = {
-    email: TEST_ADMIN_EMAIL,
-    passwordHash: hashPassword(TEST_ADMIN_PASSWORD),
-    role: 'admin',
-    isAdmin: true,
-    loginType: 'email',
-    selfProfile: existingUser?.selfProfile || null,
-    updatedAt: now
-  }
+function maskEmail(email) {
+  const value = String(email || '').trim()
+  const [name, domain] = value.split('@')
+  if (!name || !domain) return ''
+  return `${name.slice(0, 2)}***@${domain}`
+}
 
-  if (existingUser?._id) {
-    await db.collection('users').doc(existingUser._id).update(adminPatch)
-    return { ...existingUser, ...adminPatch }
-  }
+function checkLoginRateLimit(key) {
+  const now = Date.now()
+  const start = now - LOGIN_RATE_LIMIT_WINDOW_MS
+  const list = (loginAttempts.get(key) || []).filter(ts => ts > start)
+  loginAttempts.set(key, list)
+  return list.length < LOGIN_RATE_LIMIT_MAX
+}
 
-  await db.collection('users').add({
-    _id: TEST_ADMIN_USER_ID,
-    ...adminPatch,
-    createdAt: now,
-    seedFromLegacy: false
-  })
-  return {
-    _id: TEST_ADMIN_USER_ID,
-    ...adminPatch,
-    createdAt: now,
-    seedFromLegacy: false
-  }
+function recordLoginFailure(key) {
+  const list = loginAttempts.get(key) || []
+  list.push(Date.now())
+  loginAttempts.set(key, list)
+}
+
+function clearLoginFailures(key) {
+  loginAttempts.delete(key)
 }
 
 /**
@@ -130,6 +133,14 @@ exports.main = async (event) => {
 
     // 规范化邮箱
     const normalizedEmail = email.toLowerCase().trim()
+    if (!EMAIL_RE.test(normalizedEmail)) {
+      return { success: false, message: '邮箱或密码错误' }
+    }
+
+    const rateLimitKey = normalizedEmail
+    if (!checkLoginRateLimit(rateLimitKey)) {
+      return { success: false, code: 'RATE_LIMITED', message: '尝试次数过多，请稍后再试' }
+    }
 
     // 查询用户
     const { data: users } = await db.collection('users')
@@ -137,20 +148,9 @@ exports.main = async (event) => {
       .limit(1)
       .get()
 
-    if (normalizedEmail === TEST_ADMIN_EMAIL && password === TEST_ADMIN_PASSWORD) {
-      const user = await ensureTestAdminUser(users[0])
-      const ticket = getCustomLoginCredentials() ? await app.auth().createTicket(user._id, {
-        refresh: 7 * 24 * 60 * 60 * 1000
-      }) : undefined
-
-      return buildUserLoginPayload(user, ticket)
-    }
-
     if (users.length === 0) {
-      return {
-        success: false,
-        message: '用户不存在'
-      }
+      recordLoginFailure(rateLimitKey)
+      return { success: false, message: '邮箱或密码错误' }
     }
 
     const user = users[0]
@@ -160,10 +160,8 @@ exports.main = async (event) => {
     const derivedKey = crypto.scryptSync(password, salt, 64).toString('hex')
 
     if (derivedKey !== storedKey) {
-      return {
-        success: false,
-        message: '密码错误'
-      }
+      recordLoginFailure(rateLimitKey)
+      return { success: false, message: '邮箱或密码错误' }
     }
 
     // 创建自定义登录票据（7天有效期）
@@ -171,8 +169,10 @@ exports.main = async (event) => {
       refresh: 7 * 24 * 60 * 60 * 1000 // 7天（毫秒）
     }) : undefined
 
+    clearLoginFailures(rateLimitKey)
     return buildUserLoginPayload(user, ticket)
   } catch (error) {
+    error = safeError(error)
     const customLoginError = buildCustomLoginErrorResponse(error)
     if (customLoginError) {
       return customLoginError

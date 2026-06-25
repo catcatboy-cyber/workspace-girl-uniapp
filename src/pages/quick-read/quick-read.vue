@@ -249,11 +249,10 @@ async function waitForSilentLogin() {
   const start = Date.now()
   while (Date.now() - start < 3000) {
     const uid = getCurrentUserId()
-    if (uid) { console.log('[quick-read] login ok, userId:', uid.slice(0, 20)); return }
+    if (uid) return
     if (uni.getStorageSync('silentLoginDone')) { await new Promise(r => setTimeout(r, 300)); return }
     await new Promise(r => setTimeout(r, 150))
   }
-  console.warn('[quick-read] login timeout after 3s')
 }
 
 async function retryLogin() {
@@ -444,9 +443,7 @@ async function confirmTargetProfile() {
         caseId,
         assessmentId: timelineRes.assessmentId,
         recordId: timelineRes.recordId
-      }).catch((error: any) => {
-        console.warn('[quick-read] generateAssessmentAI failed:', error?.message || error)
-      })
+      }).catch(() => {})
     }
 
     uni.hideLoading()

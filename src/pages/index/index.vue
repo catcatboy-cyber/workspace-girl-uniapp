@@ -422,14 +422,8 @@ function shortId(value: any) {
 }
 
 function indexAILog(stage: string, payload: Record<string, any> = {}) {
-  console.log('[index-ai]', stage, {
-    userIdTail: shortId(getCurrentUserId()),
-    activeCaseIdTail: shortId(activeCaseId.value),
-    latestResultTail: shortId(latestResultKey.value),
-    aiFeedbackLoading: aiFeedbackLoading.value,
-    dataReady: dataReady.value,
-    ...payload
-  })
+  void stage
+  void payload
 }
 
 const subjectRoleOptions = [
@@ -972,7 +966,7 @@ async function syncSelectedPet() {
     try {
       await downloadPetAssets(selectedPet.value.id)
     } catch (err: any) {
-      console.warn('[pets] download failed', selectedPet.value.id, err)
+      void err
     }
   }
   petAssetsVersion.value++
@@ -1065,8 +1059,6 @@ onShow(() => {
     indexInviteeNoticeAmount.value = Number(uni.getStorageSync('inviteeNoticeAmount') || 0)
   }
 
-  const _t0 = Date.now()
-  console.log('[PERF] index onShow start')
   currentUserId.value = getCurrentUserId() || ''
   fontSizeMode.value = getFontSizeMode()
   // Sync cached profile so showProfileReminder recomputes
@@ -1123,7 +1115,6 @@ onShow(() => {
   } else {
     maybeResumePendingAssessmentAI('onShow')
   }
-  console.log('[PERF] index onShow end', Date.now() - _t0, 'ms')
 })
 
 onShareAppMessage(() => {
@@ -2301,5 +2292,5 @@ function goTaohua() {
 
 /* Merged card: side read section */
 .referral-notice { margin: 0 20rpx 20rpx; padding: 22rpx 24rpx; background: #FFD93D; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; }
-.referral-notice-text { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; text-align: center; }
+.referral-notice-text { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: #111; text-align: center; }
 </style>

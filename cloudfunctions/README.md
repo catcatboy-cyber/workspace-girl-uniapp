@@ -8,7 +8,7 @@
 
 访问：https://console.cloud.tencent.com/tcb
 
-选择你的环境：`cloud1-d8gqh3f5g49993a5a`
+选择你的环境：`cloud1-d0gvhqu2c8a2b61fd`
 
 ### 步骤 2：创建云函数
 
@@ -19,7 +19,7 @@
 
 **基本信息：**
 - 函数名称：`login`
-- 运行环境：`Node.js 16.13`
+- 运行环境：`Node.js 18.15`
 - 内存：128MB（免费额度）
 - 超时时间：5秒
 
@@ -56,13 +56,13 @@
 
 ```bash
 # 进入项目目录
-cd C:\Users\catca\.openclaw\workspace-girl-uniapp
+cd C:\Users\Administrator\.openclaw\workspace-innergirl\workspace-girl-uniapp
 
 # 部署 login 云函数
-cloudbase functions:deploy login --envId cloud1-d8gqh3f5g49993a5a
+cloudbase functions:deploy login -e cloud1-d0gvhqu2c8a2b61fd
 
 # 部署 register 云函数
-cloudbase functions:deploy register --envId cloud1-d8gqh3f5g49993a5a
+cloudbase functions:deploy register -e cloud1-d0gvhqu2c8a2b61fd
 ```
 
 ---

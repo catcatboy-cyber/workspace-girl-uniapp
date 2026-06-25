@@ -1,9 +1,51 @@
 ﻿const cloudbase = require('@cloudbase/node-sdk')
-const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { buildAuthErrorResponse } = require('./_shared/auth')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
+
+function normalizeList(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+async function getStrictAuthUserId() {
+  const userInfo = await app.auth().getUserInfo()
+  const candidates = [
+    userInfo?.customUserId,
+    userInfo?.uid,
+    userInfo?.userInfo?.customUserId,
+    userInfo?.userInfo?.uid,
+    userInfo?.user?.customUserId,
+    userInfo?.user?.uid
+  ]
+
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+
+  const error = new Error('UNAUTHENTICATED')
+  error.code = 'UNAUTHENTICATED'
+  throw error
+}
+
+async function requireAdminUserId(userId) {
+  const adminEmails = normalizeList(process.env.ADMIN_EMAILS)
+  const userRes = await db.collection('users').doc(userId).get()
+  const raw = userRes?.data
+  const user = Array.isArray(raw) ? raw[0] : raw
+  const email = String(user?.email || '').trim().toLowerCase()
+  if (Boolean(user?.isAdmin) || user?.role === 'admin' || adminEmails.includes(email)) {
+    return userId
+  }
+
+  const error = new Error('ADMIN_REQUIRED')
+  error.code = 'ADMIN_REQUIRED'
+  throw error
+}
 const PROMPT_MODULE_KEYS = ['eventAssessment', 'eventUnderstanding', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
@@ -631,7 +673,8 @@ function migrateToV2(settings) {
 
 exports.main = async (event) => {
   try {
-    const userId = await requireAuthenticatedUserId(app, event)
+    const userId = await getStrictAuthUserId()
+    await requireAdminUserId(userId)
 
     const globalDocRes = await db.collection('system_settings').doc(GLOBAL_AI_SETTINGS_ID).get().catch(() => null)
     let rawSettings = normalizeDoc(globalDocRes)
@@ -660,6 +703,9 @@ exports.main = async (event) => {
 
     return { success: true, settings }
   } catch (error) {
+    if (error?.code === 'ADMIN_REQUIRED') {
+      return { success: false, message: '当前账号没有后台管理权限' }
+    }
     const authError = buildAuthErrorResponse(error)
     if (authError) return authError
     console.error('getAISettings error:', error)

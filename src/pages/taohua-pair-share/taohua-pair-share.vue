@@ -103,31 +103,20 @@ onShareAppMessage(() => {
 
 async function waitForSilentLogin() {
   const existingUserId = getCurrentUserId()
-  console.log('[pair-share] waitForSilentLogin start', {
-    hasUserId: Boolean(existingUserId),
-    silentLoginDone: Boolean(uni.getStorageSync('silentLoginDone')),
-    silentLoginTried: Boolean(uni.getStorageSync('silentLoginTried'))
-  })
   if (existingUserId) return
   const maxWait = 3000
   const start = Date.now()
   while (Date.now() - start < maxWait) {
     const uid = getCurrentUserId()
     if (uid) {
-      console.log('[pair-share] waitForSilentLogin user ready', { elapsedMs: Date.now() - start, userIdTail: uid.slice(-8) })
       return
     }
     if (uni.getStorageSync('silentLoginDone')) {
       await new Promise(resolve => setTimeout(resolve, 300))
-      console.log('[pair-share] waitForSilentLogin done flag', {
-        elapsedMs: Date.now() - start,
-        hasUserId: Boolean(getCurrentUserId())
-      })
       return
     }
     await new Promise(resolve => setTimeout(resolve, 150))
   }
-  console.warn('[pair-share] waitForSilentLogin timeout', { hasUserId: Boolean(getCurrentUserId()) })
 }
 
 function relationTone(relation = '') {
@@ -148,11 +137,6 @@ function startPair() {
 
 function goHome() {
   const uid = getCurrentUserId()
-  console.log('[pair-share] goHome', {
-    hasUserId: Boolean(uid),
-    userIdTail: uid ? uid.slice(-8) : '',
-    silentLoginDone: Boolean(uni.getStorageSync('silentLoginDone'))
-  })
   if (uid) {
     uni.switchTab({ url: '/pages/index/index' })
     return

@@ -54,7 +54,6 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
     }
   } catch (e: any) {
     uni.hideLoading()
-    console.error('[createCase] error:', e)
     showError(e?.message || '创建失败')
   }
 }

@@ -1197,7 +1197,7 @@ function writeTimelineCache(uid: string, id: string, detail: any) {
 async function loadTimelineExtras(uid: string) {
   getSelfProfile()
     .then((res: any) => { if (res?.success) selfProfile.value = res.selfProfile })
-    .catch((error: any) => console.warn('[page:timeline] load self profile failed:', error))
+    .catch(() => {})
   await Promise.all([
     loadTriggerImageLinks(),
     loadAssessmentImageLinks(),

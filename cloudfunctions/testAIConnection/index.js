@@ -42,33 +42,11 @@ async function getStrictAuthUserId() {
   throw error
 }
 
-function getEventAuthUserId(event = {}) {
-  const candidates = [
-    event.authUserId,
-    event.userId
-  ]
-
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim()) return value.trim()
-  }
-
-  return ''
-}
-
-async function requireAdminUserId(event = {}) {
+async function requireAdminUserId() {
   const adminEmails = normalizeList(process.env.ADMIN_EMAILS)
   const userIds = []
 
-  try {
-    userIds.push(await getStrictAuthUserId())
-  } catch (error) {
-    if (error?.code !== 'UNAUTHENTICATED' && error?.message !== 'UNAUTHENTICATED') {
-      throw error
-    }
-  }
-
-  const eventUserId = getEventAuthUserId(event)
-  if (eventUserId) userIds.push(eventUserId)
+  userIds.push(await getStrictAuthUserId())
 
   for (const userId of [...new Set(userIds)]) {
     const userRes = await db.collection('users').doc(userId).get()
@@ -122,7 +100,7 @@ function buildNonJsonResponseMessage(responseText, baseUrl, status) {
 
 exports.main = async (event) => {
   try {
-    await requireAdminUserId(event)
+    await requireAdminUserId()
 
     const savedSettings = await getGlobalAISettingsRaw()
 

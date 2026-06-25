@@ -154,7 +154,7 @@ async function loadData(options: { silent?: boolean } = {}) {
     writeMonthlyReviewCache()
   } catch (error: any) {
     if (silent && (reviews.value.length > 0 || caseName.value)) {
-      console.warn('[monthly-review] background refresh failed:', error)
+      // keep cached content visible on silent refresh failure
     } else {
       showError(error?.message || '加载月度复盘失败')
     }

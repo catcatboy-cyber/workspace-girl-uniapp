@@ -339,7 +339,6 @@ async function loadSubscriptionStatus() {
   try {
     const result = await getSubscriptionStatus()
     if (!result?.success || !result?.subscription) return
-    console.log('[me] subscription status:', JSON.stringify(result.subscription))
     const s = result.subscription
     subPlan.value = s.plan || 'free'
     subPlanName.value = s.planName || '免费版'
@@ -705,5 +704,5 @@ async function onLogout() {
 .v2-mode .explain-item-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; }
 .v2-mode .explain-item-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; line-height: 1.4; }
 .referral-notice { margin-bottom: 20rpx; padding: 22rpx 24rpx; background: #FFD93D; border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; }
-.referral-notice-text { display: block; font-size: 36rpx; font-weight: 800; color: #111; text-align: center; }
+.referral-notice-text { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: #111; text-align: center; }
 </style>

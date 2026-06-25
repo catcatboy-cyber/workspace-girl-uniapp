@@ -245,7 +245,6 @@ async function recalculateAssessmentFromEvent(params) {
     triggerEventId: event.id,
     triggerEventTitle: analysis.eventTitle || event.title,
     triggerEventType: analysis.eventType || event.type,
-    userQuestion: event.userQuestion || null,
     intentScore: nextIntentScore,
     intentBucket: bucketize(nextIntentScore),
     consistencyRiskScore: nextRiskScore,

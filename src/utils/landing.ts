@@ -30,7 +30,7 @@ export function captureLandingContext(options: Record<string, any>) {
   set('shareId', String(options?.shareId || options?.share_id || '').trim())
 
   if (changed) {
-    try { uni.setStorageSync(CTX_KEY, ctx); console.log('[landing] captureLandingContext saved:', JSON.stringify(ctx)) } catch {}
+    try { uni.setStorageSync(CTX_KEY, ctx) } catch {}
   }
 }
 
@@ -38,7 +38,6 @@ export function captureLandingContext(options: Record<string, any>) {
 export function readLandingContext(): LandingContext {
   try {
     const cached = uni.getStorageSync(CTX_KEY)
-    console.log('[landing] readLandingContext:', JSON.stringify(cached || {}))
     if (cached && typeof cached === 'object') {
       return {
         scene: cached.scene || '',

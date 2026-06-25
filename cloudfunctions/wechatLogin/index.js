@@ -20,6 +20,20 @@ function maskPhone(phone) {
   return `${value.slice(0, 3)}****${value.slice(-4)}`
 }
 
+function maskEmail(email) {
+  const value = String(email || '').trim()
+  const [name, domain] = value.split('@')
+  if (!name || !domain) return ''
+  return `${name.slice(0, 2)}***@${domain}`
+}
+
+function safeError(error) {
+  return {
+    code: error?.code || error?.errCode || '',
+    message: String(error?.message || error || '').slice(0, 200)
+  }
+}
+
 function cleanString(value, maxLength) {
   const text = String(value || '').trim()
   if (!text) return ''
@@ -56,7 +70,7 @@ function extractOpenId(event) {
     const ctx = cloud.getWXContext()
     return ctx.OPENID || ctx.FROM_OPENID || event?.openid || ''
   } catch (error) {
-    console.warn('getWXContext failed:', error)
+    console.warn('getWXContext failed:', safeError(error))
     return event?.openid || ''
   }
 }
@@ -89,6 +103,13 @@ function requestJson(url) {
   })
 }
 
+function safeWechatError(result) {
+  return {
+    errcode: result?.errcode ?? result?.errorCode ?? result?.result?.errcode ?? '',
+    errmsg: result?.errmsg ?? result?.errMsg ?? result?.result?.errmsg ?? ''
+  }
+}
+
 async function getOpenIdByLoginCode(loginCode) {
   const code = String(loginCode || '').trim()
   if (!code) return ''
@@ -98,7 +119,7 @@ async function getOpenIdByLoginCode(loginCode) {
     process.env.WX_APPID ||
     process.env.MP_APPID ||
     process.env.APPID ||
-    'wxb8bd1a6b518e931e'
+    ''
   ).trim()
   const secret = String(
     process.env.WECHAT_APP_SECRET ||
@@ -113,8 +134,8 @@ async function getOpenIdByLoginCode(loginCode) {
 
   if (!appid || !secret) {
     console.warn('wechatLogin missing appid/appsecret env for loginCode fallback')
-    const error = new Error('WECHAT_APP_SECRET_MISSING')
-    error.code = 'WECHAT_APP_SECRET_MISSING'
+    const error = new Error('WECHAT_APP_CONFIG_MISSING')
+    error.code = 'WECHAT_APP_CONFIG_MISSING'
     throw error
   }
 
@@ -126,7 +147,7 @@ async function getOpenIdByLoginCode(loginCode) {
   })
   const result = await requestJson(`https://api.weixin.qq.com/sns/jscode2session?${params.toString()}`)
   if (result?.errcode) {
-    console.warn('jscode2session failed:', JSON.stringify(result))
+    console.warn('jscode2session failed:', safeWechatError(result))
     return ''
   }
   return String(result?.openid || '').trim()
@@ -147,7 +168,7 @@ async function getPhoneNumber(code) {
   const phoneInfo = extractPhoneInfo(result)
   const phone = phoneInfo?.purePhoneNumber || phoneInfo?.phoneNumber || phoneInfo?.phone_number || ''
   if (!phone) {
-    console.warn('wechat phone response without phone:', JSON.stringify(result))
+    console.warn('wechat phone response without phone:', safeWechatError(result))
     const error = new Error('PHONE_NOT_RETURNED')
     error.code = 'PHONE_NOT_RETURNED'
     throw error
@@ -264,7 +285,6 @@ exports.main = async (event = {}) => {
   const landingRef = String(event.ref || '').trim()
   const landingShareId = String(event.shareId || '').trim()
   const landingInviteCode = String(event.inviteCode || event.invite_code || '').trim().toUpperCase()
-  console.log('[wechatLogin] event landing:', JSON.stringify({ channel: landingChannel, scene: landingScene, ref: landingRef, shareId: landingShareId?.slice(0,20) }))
   const profile = normalizeWechatProfile(event)
 
   try {
@@ -318,33 +338,29 @@ exports.main = async (event = {}) => {
     // 异步记录登录日志（不阻塞登录流程）
     db.collection('login_logs').add({
       userId: user._id,
-      email: user.email || '',
+      email: maskEmail(user.email),
       phone: phoneMasked,
       loginType: 'wechat',
       platform: 'miniprogram',
       createdAt: new Date(),
     }).catch((err) => {
+      err = safeError(err)
       console.error('[wechatLogin] 记录登录日志失败:', err)
     })
 
     // 新用户邀请奖励结算
-    let settlement = null
-    console.log('[wechatLogin] settlement check', { isNewUser, inviteCodeParam: inviteCodeParam?.slice(0,8), landingShareId: landingShareId?.slice(0,12), landingChannel })
+    let referral = null
     if (isNewUser && inviteCodeParam) {
       try {
         const inviter = await db.collection('users')
           .where({ inviteCode: inviteCodeParam }).limit(1).get()
-        console.log('[wechatLogin] inviter lookup', { found: inviter.data.length, inviterId: inviter.data[0]?._id?.slice(0,20) })
         if (inviter.data.length > 0 && inviter.data[0]._id !== user._id) {
           const { settleReward } = require('./_shared/referral-settlement')
-          console.log('[wechatLogin] calling settleReward...')
-          settlement = await settleReward(db, user._id, inviter.data[0]._id,
+          referral = await settleReward(db, user._id, inviter.data[0]._id,
             inviteCodeParam, landingShareId, landingChannel)
-          console.log('[wechatLogin] settleReward result:', JSON.stringify(settlement))
-        } else {
-          console.log('[wechatLogin] skip settlement: inviter not found or self-invite')
         }
       } catch (err) {
+        err = safeError(err)
         console.error('[wechatLogin] settlement failed:', err?.message || err, err?.stack?.slice(0,200))
       }
     }
@@ -361,9 +377,11 @@ exports.main = async (event = {}) => {
       loginType: user.loginType || 'wechat_phone',
       selfProfile: user.selfProfile || null,
       inviteCode: user.inviteCode || '',
-      isNewUser
+      isNewUser,
+      referral: referral && referral.success ? { inviteeReward: referral.inviteeReward } : undefined
     }
   } catch (error) {
+    error = safeError(error)
     console.error('wechatLogin error:', error)
     if (error?.code === 'WECHAT_PHONE_OPENAPI_UNAVAILABLE') {
       return { success: false, message: '当前云函数环境不支持手机号换取接口' }
@@ -371,7 +389,7 @@ exports.main = async (event = {}) => {
     if (error?.code === 'PHONE_NOT_RETURNED') {
       return { success: false, message: '未能获取手机号，请重新授权' }
     }
-    if (error?.code === 'WECHAT_APP_SECRET_MISSING') {
+    if (error?.code === 'WECHAT_APP_CONFIG_MISSING') {
       return { success: false, message: '微信登录配置缺少 AppSecret，请配置云函数环境变量 WECHAT_APP_SECRET' }
     }
     return { success: false, message: '微信登录失败，请稍后重试或使用邮箱登录' }

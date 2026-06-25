@@ -103,8 +103,7 @@ const handleRegister = async () => {
     } else {
       errorMessage.value = result.message || '注册失败'
     }
-  } catch (error: any) {
-    console.error('注册错误:', error)
+  } catch {
     errorMessage.value = '网络错误，请稍后重试'
   } finally {
     loading.value = false

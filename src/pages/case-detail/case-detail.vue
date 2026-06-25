@@ -624,7 +624,7 @@ const radarDims = computed(() => {
       { key: 'temperature', label: '情绪温度', score: radarTemperature.value, desc: '升温、平淡还是回避 · ' + desc(radarTemperature.value), color: color(radarTemperature.value) },
       { key: 'stability',   label: '稳定性',  score: radarStability.value,   desc: '最近波动大不大 · ' + desc(radarStability.value),   color: color(radarStability.value) },
     ]
-  } catch(e) { console.warn('[radar]', e); return [] }
+  } catch(e) { void e; return [] }
 })
 
 // ===== 信号解释卡 =====
@@ -944,8 +944,6 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
-  const _t0 = Date.now()
-  console.log('[PERF] case-detail onShow start')
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
     fontSizeMode.value = getFontSizeMode()
@@ -970,7 +968,6 @@ onShow(() => {
   }
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
   if (dv > lastDataVersion.value) { lastDataVersion.value = dv; loadData({ silent: true }) }
-  console.log('[PERF] case-detail onShow end', Date.now() - _t0, 'ms')
 })
 
 async function ensureCaseId(uid: string) {
@@ -1051,7 +1048,7 @@ async function loadWeeklyReviewsInBackground(uid: string) {
     weeklyReviews.value = monthlyRes.reviews || []
     currentMonthStart.value = monthlyRes.currentMonthStart || ''
   } catch (error) {
-    console.warn('[page:case-detail] load weekly reviews failed:', error)
+    void error
   }
 }
 

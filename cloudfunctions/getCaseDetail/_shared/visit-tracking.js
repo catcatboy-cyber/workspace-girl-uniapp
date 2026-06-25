@@ -24,10 +24,9 @@ async function trackAnonymousVisit(db, { shareId, channel, scene, inviteCode, pa
       loginSuccess: false,
       createdAt: new Date()
     })
-    console.log('[visit] anonymous recorded', { shareId: shareId?.slice(0, 12), channel })
     return { success: true }
   } catch (err) {
-    console.warn('[visit] anonymous failed:', err?.message || err)
+    void err
     return { success: false }
   }
 }
@@ -46,10 +45,9 @@ async function trackLoginVisit(db, { shareId, channel, scene, inviteCode, visito
       loginSuccess: true,
       createdAt: new Date()
     })
-    console.log('[visit] login recorded', { shareId: shareId?.slice(0, 12), visitorUserId: visitorUserId?.slice(0, 20), isNewUser })
     return { success: true }
   } catch (err) {
-    console.warn('[visit] login failed:', err?.message || err)
+    void err
     return { success: false }
   }
 }

@@ -109,7 +109,7 @@ function safeSetStorage(key: string, value: string) {
   try {
     uni.setStorageSync(key, value)
   } catch (error) {
-    console.warn(`[api] setStorage ${key} failed:`, error)
+    void error
   }
 }
 
@@ -117,7 +117,7 @@ function safeSetStorageAny(key: string, value: any) {
   try {
     uni.setStorageSync(key, value)
   } catch (error) {
-    console.warn(`[api] setStorage ${key} failed:`, error)
+    void error
   }
 }
 
@@ -301,14 +301,14 @@ export async function login(email: string, password: string) {
     try {
       await signInWithCustomTicketCompat(res.result.ticket)
     } catch (e) {
-      console.warn('票据登录失败，继续使用业务登录态:', e)
+      void e
     }
 
     cacheLoginUser(res.result)
 
     const verified = await verifyTicketLogin(res.result.userId)
     if (!verified) {
-      console.warn('CloudBase 登录态未及时生效，已使用业务登录态继续')
+      // Business login state is already cached; CloudBase auth will retry on later calls.
     }
   } else if (res.result.success) {
     cacheLoginUser(res.result)
@@ -385,14 +385,14 @@ export async function register(email: string, password: string, inviteCode?: str
     try {
       await signInWithCustomTicketCompat(res.result.ticket)
     } catch (e) {
-      console.warn('票据登录失败，继续使用业务登录态:', e)
+      void e
     }
 
     cacheLoginUser(res.result)
 
     const verified = await verifyTicketLogin(res.result.userId)
     if (!verified) {
-      console.warn('CloudBase 登录态未及时生效，已使用业务登录态继续')
+      // Business login state is already cached; CloudBase auth will retry on later calls.
     }
   } else if (res.result.success) {
     cacheLoginUser(res.result)
@@ -427,7 +427,7 @@ export function getCurrentUserId(): string | null {
   try {
     return uni.getStorageSync('userId') || null
   } catch (error) {
-    console.warn('[api] getCurrentUserId storage read failed:', error)
+    void error
     return null
   }
 }
@@ -532,9 +532,9 @@ export async function trackLoginVisit(params: { shareId?: string; channel?: stri
   } catch {}
 }
 
-/** 快速解读：免费，不依赖 caseId */
+/** 快速解读：不依赖 caseId */
 export async function quickRead(text: string, scene?: string, options?: { question?: string; ageRange?: string }) {
-  const data: Record<string, any> = { text, ...(options || {}) }
+  const data: Record<string, any> = { text, ...(options || {}), ...getBusinessAuthPayload() }
   if (scene) data.scene = scene
   const res = await callFunction({
     name: 'quickRead',
@@ -1297,7 +1297,8 @@ export async function getLoginLogs(params?: {
   page?: number
   pageSize?: number
 }) {
-  return callFunction({ name: 'getLoginLogs', data: params || {} }).then((res: any) => res.result)
+  const auth = getBusinessAuthPayload()
+  return callFunction({ name: 'getLoginLogs', data: { ...(params || {}), authUserId: auth.authUserId } }).then((res: any) => res.result)
 }
 
 export async function testAIConnection(data: {

@@ -46,29 +46,12 @@ async function recordTokenUsage(db, payload = {}) {
 
     // 额度扣减（旧系统：token_accounts）
     if (doc.totalTokens > 0) {
-      try {
-        const { chargeTokenUsage } = require('./billing')
-        const chargeResult = await chargeTokenUsage(db, {
-          userId,
-          realTokens: doc.totalTokens,
-          provider: doc.provider,
-          model: doc.model,
-          usageId,
-          feature: doc.feature
-        })
-        record.tokensDeducted = chargeResult?.deducted || 0
-        if (chargeResult?.insufficientBalance) {
-          record.insufficientBalance = true
-          record.balanceAtDeduction = chargeResult.balance
-        }
-      } catch (chargeErr) {
-        console.warn('[token charge failed (non-fatal)]', chargeErr)
-      }
-
-      // 同步扣减 v3.2 平台 Token（users.monthlyTokensUsed / extraTokens）
+      // 扣减 v3.2 平台 Token（users.monthlyTokensUsed / extraTokens）。
+      // 旧 token_accounts 只作为历史账本保留，避免同一次 AI 调用双重扣费。
       try {
         const { consumeTokens } = require('./subscription')
-        await consumeTokens(db, userId, doc.totalTokens, doc.feature, doc.model)
+        const consumeResult = await consumeTokens(db, userId, doc.totalTokens, doc.feature, doc.model)
+        record.tokensDeducted = consumeResult?.deducted || 0
       } catch (subErr) {
         console.warn('[v3.2 consumeTokens failed (non-fatal)]', subErr)
       }

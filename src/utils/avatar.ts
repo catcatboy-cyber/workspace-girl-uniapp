@@ -59,8 +59,7 @@ export async function resolveAvatarSrc(value?: string | null): Promise<string> {
     fileList: [avatar]
   })
     .then(({ fileList }) => fileList?.[0]?.tempFileURL || avatar)
-    .catch((error) => {
-      console.warn('resolveAvatarSrc failed:', error)
+    .catch(() => {
       return avatar
     })
   // #endif

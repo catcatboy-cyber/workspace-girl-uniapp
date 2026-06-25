@@ -5,11 +5,18 @@
 
 const { addExtraTokens, getSubscriptionConfig } = require('./subscription')
 
+function getWeekStart(date) {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+  d.setDate(diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareId, channel) {
-  console.log('[settleReward] START', { invitee: inviteeUserId?.slice(0,20), inviter: inviterUserId?.slice(0,20), inviteCode: inviteCode?.slice(0,8), channel })
   // 1. 自邀请检查
   if (inviteeUserId === inviterUserId) {
-    console.log('[settleReward] self-invite blocked')
     return { success: false, message: '自邀请不发放奖励' }
   }
 
@@ -18,12 +25,11 @@ async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareI
     const existing = await db.collection('referral_claims')
       .where({ inviteeUserId }).limit(1).get()
     if (existing.data?.length > 0) {
-      console.log('[settleReward] invitee already has claim, skip')
       return { success: false, message: '该用户已被邀请过' }
     }
   } catch (err) {
     // 集合不存在 → 首次创建，继续
-    console.log('[settleReward] referral_claims collection not yet created, proceeding')
+    void err
   }
 
   // 3. 读取奖励配置
@@ -40,7 +46,7 @@ async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareI
       }
     }
   } catch (err) {
-    console.warn('[settleReward] read config failed, using defaults:', err?.message || err)
+    void err
   }
 
   // 4. 创建 claim（_id = inviteeUserId，天然幂等：并发写入第二个会失败）
@@ -61,21 +67,33 @@ async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareI
   })
 
   // 5. 给邀请人发 Token
-  const inviterResult = await addExtraTokens(db, inviterUserId, inviterReward,
+  await addExtraTokens(db, inviterUserId, inviterReward,
     `referral_inviter:${inviteeUserId}`)
-  if (!inviterResult.success) {
-    console.warn('[settleReward] inviter addExtraTokens failed:', inviterResult.message)
-  }
 
   // 6. 给被邀请人发 Token
-  const inviteeResult = await addExtraTokens(db, inviteeUserId, inviteeReward,
+  await addExtraTokens(db, inviteeUserId, inviteeReward,
     `referral_invitee:${inviteeUserId}`)
-  if (!inviteeResult.success) {
-    console.warn('[settleReward] invitee addExtraTokens failed:', inviteeResult.message)
-  }
 
-  console.log('[settleReward] done', { inviteeUserId, inviterReward, inviteeReward,
-    invitee: inviteeUserId?.slice(0, 20), inviter: inviterUserId?.slice(0, 20) })
+  // 7. 更新邀请人的 referralCount（前端据此检测新邀请并弹出通知）
+  try {
+    const weekStart = getWeekStart(new Date())
+    const inviterDoc = await db.collection('users').doc(inviterUserId).get().catch(() => null)
+    const inviter = inviterDoc?.data?.[0]
+    if (inviter) {
+      let referralWeekStart = inviter.referralWeekStart ? new Date(inviter.referralWeekStart) : null
+      let referralWeekCount = inviter.referralWeekCount || 0
+      if (!referralWeekStart || referralWeekStart < weekStart) {
+        referralWeekCount = 0
+      }
+      await db.collection('users').doc(inviterUserId).update({
+        referralCount: db.command.inc(1),
+        referralWeekStart: weekStart,
+        referralWeekCount: referralWeekCount + 1
+      })
+    }
+  } catch (err) {
+    void err
+  }
 
   return { success: true, inviteeUserId, inviterReward, inviteeReward }
 }
@@ -84,10 +102,8 @@ async function blockClaim(db, inviteeUserId, reason) {
   try {
     await db.collection('referral_claims')
       .where({ inviteeUserId }).update({ status: 'blocked', updatedAt: new Date() })
-    console.log('[blockClaim] blocked', inviteeUserId?.slice(0, 20), reason)
     return { success: true }
   } catch (err) {
-    console.error('[blockClaim] error:', err?.message || err)
     return { success: false, message: err?.message || '封禁失败' }
   }
 }

@@ -41,7 +41,6 @@ Component({
       var idx = e.currentTarget.dataset.idx
       var item = this.data.list[idx]
       if (item && idx !== this.data.selected) {
-        console.log('[TABBAR] switchTab:', this.data.selected, '->', idx, item.pagePath, new Date().toISOString())
         wx.switchTab({ url: '/' + item.pagePath })
       }
     },

@@ -41,12 +41,20 @@ function buildCustomLoginErrorResponse(error) {
   return null
 }
 
+function safeError(error) {
+  return {
+    code: error?.code || error?.errCode || '',
+    message: String(error?.message || error || '').slice(0, 200)
+  }
+}
+
 const credentials = getCustomLoginCredentials()
 const app = cloudbase.init({
   env: (credentials && credentials.env_id) || cloudbase.SYMBOL_CURRENT_ENV,
   ...(credentials ? { credentials } : {})
 })
 const db = app.database()
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
  * 用户注册云函数
@@ -62,8 +70,15 @@ exports.main = async (event) => {
       }
     }
 
+    if (typeof email !== 'string') {
+      return { success: false, message: '请输入有效邮箱' }
+    }
+
     // 规范化邮箱
     const normalizedEmail = email.toLowerCase().trim()
+    if (!EMAIL_RE.test(normalizedEmail)) {
+      return { success: false, message: '请输入有效邮箱' }
+    }
 
     // 检查邮箱是否已存在
     const { data: existingUsers } = await db.collection('users')
@@ -140,7 +155,7 @@ exports.main = async (event) => {
     // 旧体系 token_accounts 的首次赠送保留为后备，但不再对 users.extraTokens 做 inc
 
     // 新用户邀请奖励结算
-    let settlement = null
+    let referral = null
     const regInviteCode = String(event.inviteCode || '').trim()
     if (regInviteCode) {
       try {
@@ -148,10 +163,10 @@ exports.main = async (event) => {
           .where({ inviteCode: regInviteCode }).limit(1).get()
         if (inviter.data.length > 0 && inviter.data[0]._id !== userId) {
           const { settleReward } = require('./_shared/referral-settlement')
-          settlement = await settleReward(db, userId, inviter.data[0]._id, regInviteCode, '', '')
+          referral = await settleReward(db, userId, inviter.data[0]._id, regInviteCode, '', '')
         }
       } catch (err) {
-        console.warn('register settlement failed (non-fatal):', err?.message || err)
+        console.warn('register settlement failed (non-fatal):', safeError(err))
       }
     }
 
@@ -165,10 +180,11 @@ exports.main = async (event) => {
       ticket,
       userId,
       email: normalizedEmail,
-      settlement,
+      referral,
       selfProfile: null
     }
   } catch (error) {
+    error = safeError(error)
     const customLoginError = buildCustomLoginErrorResponse(error)
     if (customLoginError) {
       return customLoginError

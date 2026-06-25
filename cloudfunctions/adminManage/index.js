@@ -888,38 +888,16 @@ async function getStrictAuthUserId() {
   throw error
 }
 
-function getEventAuthUserId(event = {}) {
-  const candidates = [
-    event.authUserId,
-    event.userId
-  ]
-
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim()) return value.trim()
-  }
-
-  return ''
-}
-
 async function getUserById(userId) {
   const res = await db.collection('users').doc(userId).get()
   return normalizeDoc(res)
 }
 
-async function requireAdminUser(event = {}) {
+async function requireAdminUser() {
   const adminEmails = normalizeList(process.env.ADMIN_EMAILS)
   const userIds = []
 
-  try {
-    userIds.push(await getStrictAuthUserId())
-  } catch (error) {
-    if (error?.code !== 'UNAUTHENTICATED' && error?.message !== 'UNAUTHENTICATED') {
-      throw error
-    }
-  }
-
-  const eventUserId = getEventAuthUserId(event)
-  if (eventUserId) userIds.push(eventUserId)
+  userIds.push(await getStrictAuthUserId())
 
   for (const userId of [...new Set(userIds)]) {
     const user = await getUserById(userId)
@@ -1934,6 +1912,7 @@ async function deleteUser(event, currentUserId) {
     await db.collection('token_ledger_records').where({ userId: targetUserId }).remove().catch(() => {})
     await db.collection('token_accounts').where({ userId: targetUserId }).remove().catch(() => {})
     await db.collection('feedbacks').where({ userId: targetUserId }).remove().catch(() => {})
+    await db.collection('system_feedback').where({ userId: targetUserId }).remove().catch(() => {})
     await db.collection('invite_rewards').where({ inviterId: targetUserId }).remove().catch(() => {})
     await db.collection('invite_rewards').where({ inviteeId: targetUserId }).remove().catch(() => {})
     await db.collection('users').doc(targetUserId).remove()
@@ -1978,7 +1957,7 @@ async function listReferralClaims() {
 
 exports.main = async (event = {}) => {
   try {
-    const { userId, user } = await requireAdminUser(event)
+    const { userId, user } = await requireAdminUser()
     const action = String(event.action || '').trim()
 
     if (action === 'getOverview') return await getOverview(userId, user)

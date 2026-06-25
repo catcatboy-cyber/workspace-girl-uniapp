@@ -98,12 +98,14 @@
         "navigationBarTitleText": "升级套餐"
       }
     },
+    // #ifdef H5
     {
       "path": "pages/ai-settings/ai-settings",
       "style": {
         "navigationBarTitleText": "AI 设置"
       }
     },
+    // #endif
     // #ifdef H5
     {
       "path": "pages/admin/admin",
@@ -192,12 +194,6 @@
       }
     }
   ],
-  "permission": {
-    "scope.record": {
-      "desc": "用于语音识别输入，将你说的话转为文字"
-    }
-  },
-  "requiredPrivateInfos": ["record"],
   "__usePrivacyCheck__": true,
   "globalStyle": {
     "navigationBarTextStyle": "black",

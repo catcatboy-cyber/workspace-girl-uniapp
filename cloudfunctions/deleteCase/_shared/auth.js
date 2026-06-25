@@ -29,7 +29,6 @@ async function requireAuthenticatedUserId(app, event = {}) {
   }
 
   if (!userId) {
-    console.warn('requireAuthenticatedUserId failed, userInfo:', JSON.stringify(userInfo))
     const error = new Error('UNAUTHENTICATED')
     error.code = 'UNAUTHENTICATED'
     throw error
@@ -57,12 +56,10 @@ async function getOwnedCase(db, caseId, userId) {
   }
 
   if (!caseDoc) {
-    console.warn('getOwnedCase: doc not found, caseId=', caseId, 'raw=', JSON.stringify(caseRes))
     return { error: { success: false, message: '档案不存在' } }
   }
 
   if (caseDoc.userId !== userId) {
-    console.warn('getOwnedCase: userId mismatch. caseDoc.userId=', caseDoc.userId, 'request userId=', userId)
     return { error: { success: false, message: '无权访问' } }
   }
 

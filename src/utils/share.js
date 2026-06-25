@@ -33,10 +33,8 @@ export function getMyInviteCode() {
   try {
     const user = uni.getStorageSync('currentUser')
     const code = user?.inviteCode || ''
-    console.log('[share] getMyInviteCode:', code || 'EMPTY', '| hasCurrentUser:', !!user)
     return code
   } catch {
-    console.log('[share] getMyInviteCode: ERROR')
     return ''
   }
 }

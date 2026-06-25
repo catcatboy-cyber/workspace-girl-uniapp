@@ -222,7 +222,7 @@ export function getCurrentThemeId(): ThemeId {
   try {
     return (uni.getStorageSync(THEME_STORAGE_KEY) as ThemeId) || 'campus-pop'
   } catch {
-    return 'pine-mist'
+    return 'campus-pop'
   }
 }
 

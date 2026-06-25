@@ -40,7 +40,7 @@ const pct = computed(() => Math.min(100, Math.round((countNum.value / 30) * 100)
 @import "@/styles/campus-pop.scss";
 
 .pm-card { @include card-v2; padding: 20rpx 28rpx; margin-bottom: 24rpx; background: #fff; }
-.pm-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; margin-bottom: 12rpx; }
+.pm-title { display: block; font-size: $fs-body; font-weight: $fw-heading; color: #111; margin-bottom: 12rpx; }
 .pm-track { height: 12rpx; background: #f0f0f0; border: 1rpx solid #111; overflow: hidden; }
 .pm-fill { height: 100%; background: #4ECDC4; transition: width 0.5s ease; }
 .pm-ticks { display: flex; justify-content: space-between; margin-top: 10rpx; gap: 8rpx; }

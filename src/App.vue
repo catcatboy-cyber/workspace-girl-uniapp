@@ -54,10 +54,8 @@ onHide(() => {})
 async function silentWechatLogin() {
   const hasTried = !!uni.getStorageSync(SILENT_LOGIN_TRIED_KEY)
   const hasUserId = !!getCurrentUserId()
-  console.log('[App] silentWechatLogin start', { hasTried, hasUserId })
   if (hasTried && hasUserId) {
     uni.setStorageSync(SILENT_LOGIN_DONE_KEY, true)
-    console.log('[App] skip: already tried')
     return
   }
   uni.setStorageSync(SILENT_LOGIN_TRIED_KEY, true)
@@ -65,31 +63,28 @@ async function silentWechatLogin() {
 
   try {
     const wxApi = (globalThis as any)?.wx
-    if (!wxApi?.login) { console.log('[App] skip: no wx.login'); return }
+    if (!wxApi?.login) return
 
     const launchOptions = uni.getLaunchOptionsSync?.() || ({} as any)
     if (launchOptions?.query) {
       captureLandingContext(launchOptions.query)
-      console.log('[App] launch query:', JSON.stringify({ path: launchOptions.path, query: launchOptions.query }))
     }
 
     const loginCode = await new Promise<string>((resolve) => {
       wxApi.login({
-        success(res: any) { console.log('[App] wx.login success', res?.code?.slice(0,10)); resolve(res?.code || '') },
-        fail(err: any) { console.warn('[App] wx.login fail:', err); resolve('') }
+        success(res: any) { resolve(res?.code || '') },
+        fail() { resolve('') }
       })
     })
-    if (!loginCode) { console.log('[App] skip: no loginCode'); return }
+    if (!loginCode) return
 
     const ctx = readLandingContext()
-    console.log('[App] landing ctx for login:', JSON.stringify(ctx))
     const result = await wechatLogin('', { loginCode, channel: ctx.channel, scene: ctx.scene, ref: ctx.ref, shareId: ctx.shareId, inviteCode: ctx.inviteCode })
-    console.log('[App] wechatLogin result:', JSON.stringify({ success: result?.success, userId: result?.userId?.slice(0,20), isNew: result?.isNew }))
     if (result?.success) {
       trackLoginVisit({ shareId: ctx.shareId, visitorUserId: result.userId, isNewUser: result.isNewUser || false }).catch(() => {})
     }
-  } catch (e) {
-    console.error('[App] silent login error:', e?.message || e)
+  } catch (_) {
+    // Silent login is best-effort; avoid logging user/session data in production.
   } finally {
     uni.setStorageSync(SILENT_LOGIN_DONE_KEY, true)
   }

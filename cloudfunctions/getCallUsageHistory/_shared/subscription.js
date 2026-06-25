@@ -178,9 +178,8 @@ async function ensureSubscriptionConfig(db) {
         try {
           const { _id, scope, key, ...patch } = existing
           await db.collection(SYSTEM_SETTINGS).doc(SUBSCRIPTION_DOC_ID).update(patch)
-          console.log('subscription config auto-migrated to v3.2')
         } catch (e) {
-          console.warn('subscription config migration failed:', e.message)
+          void e
         }
       }
       return existing
@@ -479,7 +478,6 @@ async function addExtraTokens(db, userId, amount, remark) {
     await db.collection(CALL_USAGE).add({ userId, type: 'grant', source: remark || 'manual', amount, createdAt: new Date() })
     return { success: true, amount }
   } catch (err) {
-    console.error('addExtraTokens error:', err)
     return { success: false, message: '增加Token失败' }
   }
 }
@@ -568,7 +566,7 @@ async function getCallUsageHistory(db, userId, limit = 100, types = null) {
       }
     }
   } catch (err) {
-    console.error('getCallUsageHistory error:', err)
+    void err
     return { records: [], summary: emptySummary }
   }
 }
@@ -585,17 +583,14 @@ async function getCallUsageHistory(db, userId, limit = 100, types = null) {
  * @returns {object} { success: boolean }
  */
 async function redeemInviteCode(db, inviteCode, inviteeUserId) {
-  console.log('[redeemInviteCode] start inviteCode:', inviteCode, 'inviteeUserId:', inviteeUserId)
   if (!inviteCode || !inviteeUserId) {
     return { success: false, message: '参数无效' }
   }
 
   const config = await getSubscriptionConfig(db)
   const referral = config.referral || {}
-  console.log('[redeemInviteCode] referral.enabled:', referral.enabled)
 
   if (!referral.enabled) {
-    console.log('[redeemInviteCode] referral disabled, aborting')
     return { success: false, message: '邀请活动已结束' }
   }
 
@@ -640,9 +635,7 @@ async function redeemInviteCode(db, inviteCode, inviteeUserId) {
 
   // 邀请人奖励
   if (inviterReward > 0) {
-    console.log('[redeemInviteCode] rewarding inviter:', inviter._id, 'amount:', inviterReward)
-    const addRes = await addExtraTokens(db, inviter._id, inviterReward, 'referral_inviter')
-    console.log('[redeemInviteCode] addExtraTokens result:', JSON.stringify(addRes))
+    await addExtraTokens(db, inviter._id, inviterReward, 'referral_inviter')
   }
   await db.collection(USERS).doc(inviter._id).update({
     referralCount: db.command.inc(1),
@@ -752,7 +745,7 @@ async function finalizePendingReferral(db, userId) {
       }
     }
   } catch (err) {
-    console.warn('finalizePendingReferral inviter update failed:', err.message)
+    void err
   }
 }
 

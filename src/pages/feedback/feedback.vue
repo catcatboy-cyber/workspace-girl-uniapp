@@ -23,7 +23,6 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { callFunction } from '@/utils/cloudbase'
-import { getCurrentUserId } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const themeVars = ref(getThemeStyle())
@@ -45,7 +44,7 @@ async function submit() {
   try {
     const res = await callFunction({
       name: 'submitFeedback',
-      data: { userId: getCurrentUserId(), content: content.value.trim(), contact: contact.value.trim() || undefined }
+      data: { content: content.value.trim(), contact: contact.value.trim() || undefined }
     })
     const result = res.result || {}
     if (result.success) {

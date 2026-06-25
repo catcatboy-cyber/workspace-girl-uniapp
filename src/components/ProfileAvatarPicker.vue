@@ -120,7 +120,6 @@ function chooseImage() {
               avatarValue.value = fileID
               avatarPreviewSrc.value = await resolveAvatarSrc(fileID)
             } catch (error) {
-              console.error('avatar upload failed:', error)
               uploadError.value = '上传图片失败'
             } finally {
               uploading.value = false

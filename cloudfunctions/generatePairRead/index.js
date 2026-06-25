@@ -10,7 +10,7 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const { Solar } = require('lunar-javascript')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
-const { checkFeatureAccess, checkTokenBalance, consumeTokens } = require('./_shared/subscription')
+const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
 const { postChatCompletions, parseJSONContent, AI_REQUEST_TIMEOUT_MS } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
 
@@ -194,7 +194,6 @@ exports.main = async (event = {}) => {
           const raw = data?.choices?.[0]?.message?.content
           aiEnhanced = parseJSONContent(raw)
           await recordTokenUsage(db, { userId, caseId, feature: 'pairRead', provider: settings.provider, model: settings.model, usage: data?.usage })
-          await consumeTokens(db, userId, data?.usage?.total_tokens || 1500, 'pairRead', settings.model)
         }
       } catch (err) {
         console.warn('pairRead AI failed:', err.message)
