@@ -40,13 +40,15 @@ class FakeQuery {
     this.query = options.query || null
     this.order = options.order || null
     this.limitValue = options.limitValue || null
+    this.skipValue = options.skipValue || 0
   }
 
   where(query) {
     return new FakeQuery(this.store, this.name, {
       query,
       order: this.order,
-      limitValue: this.limitValue
+      limitValue: this.limitValue,
+      skipValue: this.skipValue
     })
   }
 
@@ -54,7 +56,8 @@ class FakeQuery {
     return new FakeQuery(this.store, this.name, {
       query: this.query,
       order: { field, direction },
-      limitValue: this.limitValue
+      limitValue: this.limitValue,
+      skipValue: this.skipValue
     })
   }
 
@@ -62,11 +65,21 @@ class FakeQuery {
     return new FakeQuery(this.store, this.name, {
       query: this.query,
       order: this.order,
-      limitValue
+      limitValue,
+      skipValue: this.skipValue
     })
   }
 
-  async get() {
+  skip(skipValue) {
+    return new FakeQuery(this.store, this.name, {
+      query: this.query,
+      order: this.order,
+      limitValue: this.limitValue,
+      skipValue
+    })
+  }
+
+  async _filterData() {
     let data = [...this.store.getCollection(this.name).values()]
 
     if (this.query) {
@@ -78,11 +91,26 @@ class FakeQuery {
       data.sort((left, right) => compareValues(left[this.order.field], right[this.order.field]) * factor)
     }
 
+    return data
+  }
+
+  async get() {
+    let data = await this._filterData()
+
+    if (typeof this.skipValue === 'number' && this.skipValue > 0) {
+      data = data.slice(this.skipValue)
+    }
+
     if (typeof this.limitValue === 'number') {
       data = data.slice(0, this.limitValue)
     }
 
     return { data: clone(data) }
+  }
+
+  async count() {
+    const data = await this._filterData()
+    return { total: data.length }
   }
 
   async remove() {
@@ -167,8 +195,16 @@ class FakeCollection {
     return new FakeQuery(this.store, this.name, { limitValue })
   }
 
+  skip(skipValue) {
+    return new FakeQuery(this.store, this.name, { skipValue })
+  }
+
   async get() {
     return new FakeQuery(this.store, this.name).get()
+  }
+
+  async count() {
+    return new FakeQuery(this.store, this.name).count()
   }
 }
 
@@ -209,6 +245,31 @@ function createFakeCloudbase() {
   const store = new FakeStore()
   let currentAuthUserId = null
   const failures = []
+
+  function ensureUser(userId) {
+    if (!userId) return
+    const users = store.getCollection('users')
+    if (users.has(userId)) return
+    users.set(userId, {
+      _id: userId,
+      email: `${userId}@example.com`,
+      role: 'admin',
+      isAdmin: true,
+      selfProfile: null,
+      plan: 'free',
+      trialEndsAt: null,
+      planExpiresAt: null,
+      monthlyTokensReset: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      monthlyTokensUsed: 0,
+      extraTokens: 1000000,
+      inviteCode: 'TEST00',
+      invitedBy: null,
+      referralCount: 0,
+      referralWeekStart: null,
+      referralWeekCount: 0,
+      createdAt: new Date()
+    })
+  }
 
   function maybeFail(key) {
     const index = failures.findIndex((item) => item.key === key)
@@ -334,6 +395,7 @@ function createFakeCloudbase() {
     },
     __setAuthUser(userId) {
       currentAuthUserId = userId || null
+      ensureUser(currentAuthUserId)
     },
     __store: store
   }

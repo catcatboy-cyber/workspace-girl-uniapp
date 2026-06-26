@@ -1234,7 +1234,9 @@ exports.main = async (event = {}) => {
   const action = event.action || 'random'
   try {
     switch (action) {
-      case 'seed': { const result = await seedCollection(); return { success: true, ...result } }
+      case 'seed': {
+        return { success: false, message: 'seed is disabled' }
+      }
       case 'random': {
         const line = await getRandomLine(event.category)
         if (!line) return { success: false, message: '话术库暂无数据' }
@@ -1411,33 +1413,13 @@ exports.main = async (event = {}) => {
         return { success: true, ...result }
       }
       case 'tagQAStrategies': {
-        let userId
-        try {
-          userId = await requirePetUserId(event)
-        } catch (error) {
-          const authError = buildAuthErrorResponse(error)
-          if (authError) return authError
-          throw error
-        }
-        const tagResult = await tagQAStrategies(userId)
-        return { success: true, ...tagResult }
+        return { success: false, message: 'tagQAStrategies is disabled' }
       }
       case 'tagLines': {
-        const startIndex = Number(event.startIndex) || 0
-        const count = Math.min(Number(event.count) || 200, 300)
-        let userId
-        try {
-          userId = await requirePetUserId(event)
-        } catch (error) {
-          const authError = buildAuthErrorResponse(error)
-          if (authError) return authError
-          throw error
-        }
-        return await tagLinesLoop(startIndex, count, userId)
+        return { success: false, message: 'tagLines is disabled' }
       }
       case 'normalizeQASelfReply': {
-        const normResult = await normalizeQASelfReply()
-        return { success: true, ...normResult }
+        return { success: false, message: 'normalizeQASelfReply is disabled' }
       }
       case 'count': {
         const { total } = await db.collection(COLLECTION).count()

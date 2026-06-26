@@ -2,6 +2,26 @@ function isMpRuntime() {
   return Boolean(process.env.WX_CONTEXT_KEYS || process.env.TENCENTCLOUD_RUNENV)
 }
 
+function getTrustedOpenId() {
+  try {
+    const cloud = require('wx-server-sdk')
+    const ctx = cloud?.getWXContext ? cloud.getWXContext() : null
+    const openid = String(ctx?.OPENID || ctx?.FROM_OPENID || '').trim()
+    if (openid) return openid
+  } catch (_) {
+    // Non-mini-program and test contexts may not package wx-server-sdk.
+  }
+
+  return ''
+}
+
+async function findUserIdByOpenId(db, openid) {
+  if (!openid) return ''
+  const { data } = await db.collection('users').where({ openid }).limit(1).get()
+  const user = Array.isArray(data) ? data[0] : null
+  return String(user?._id || '').trim()
+}
+
 async function requireAuthenticatedUserId(app, event = {}) {
   const userInfo = await app.auth().getUserInfo()
 
@@ -14,10 +34,13 @@ async function requireAuthenticatedUserId(app, event = {}) {
     userInfo?.user?.uid
   ]
 
-  // In WeChat cloud functions the business user id is carried explicitly.
-  // H5 admin-sensitive calls must not trust arbitrary client-provided ids.
   if (isMpRuntime()) {
-    candidates.push(event?.userId)
+    const openid = getTrustedOpenId()
+    const db = app.database()
+    const mappedUserId = await findUserIdByOpenId(db, openid)
+    if (mappedUserId) candidates.push(mappedUserId)
+  } else {
+    candidates.push(event?.authUserId)
   }
 
   let userId = ''

@@ -14,14 +14,6 @@ function writeJson(filePath, value) {
 const appJsonPath = path.join(root, 'app.json')
 if (fs.existsSync(appJsonPath)) {
   const appJson = readJson(appJsonPath)
-  if (appJson.permission && appJson.permission['scope.record']) {
-    delete appJson.permission['scope.record']
-    if (Object.keys(appJson.permission).length === 0) delete appJson.permission
-  }
-  if (Array.isArray(appJson.requiredPrivateInfos)) {
-    appJson.requiredPrivateInfos = appJson.requiredPrivateInfos.filter((item) => item !== 'record')
-    if (appJson.requiredPrivateInfos.length === 0) delete appJson.requiredPrivateInfos
-  }
   appJson.__usePrivacyCheck__ = true
   writeJson(appJsonPath, appJson)
 }

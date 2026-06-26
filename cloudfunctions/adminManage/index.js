@@ -1536,6 +1536,37 @@ async function adminManualRecharge(event, adminUserId) {
     return { success: false, message: '额度需在 -1亿 ~ 1亿 之间（不含 0）' }
   }
   const isDeduction = amountTokens < 0
+  const safeRemark = String(event.remark || (isDeduction ? 'admin token deduction' : 'admin token grant')).trim()
+  const nowForTokenAdjustment = new Date()
+  const userForTokenAdjustmentRes = await db.collection('users').doc(targetUserId).get()
+  const userForTokenAdjustment = Array.isArray(userForTokenAdjustmentRes.data)
+    ? userForTokenAdjustmentRes.data[0]
+    : userForTokenAdjustmentRes.data
+  const currentExtraTokens = Number(userForTokenAdjustment?.extraTokens || 0)
+  const nextExtraTokens = currentExtraTokens + amountTokens
+  if (nextExtraTokens < 0) return { success: false, message: 'extraTokens cannot be negative after adjustment' }
+
+  await db.collection('users').doc(targetUserId).update({
+    extraTokens: db.command.inc(amountTokens)
+  })
+  await db.collection('call_usage_records').add({
+    userId: targetUserId,
+    type: amountTokens > 0 ? 'grant' : 'adjust',
+    source: 'adminManualRecharge',
+    amount: amountTokens,
+    remark: safeRemark,
+    createdAt: nowForTokenAdjustment
+  })
+
+  return {
+    success: true,
+    account: {
+      userId: targetUserId,
+      balanceTokens: nextExtraTokens,
+      extraTokens: nextExtraTokens,
+      updatedAt: nowForTokenAdjustment
+    }
+  }
   const remark = String(event.remark || (isDeduction ? '管理员调减额度' : '管理员手动充值')).trim()
 
   const { ensureTokenAccount } = require('./_shared/billing')
@@ -1707,6 +1738,17 @@ async function resolveFeedback(event) {
     const tokens = Math.max(0, Number(event.rewardTokens) || 0)
     if (tokens > 0) {
       if (!userId) return { success: false, message: '无法确定用户，请填写"用户ID"输入框' }
+      const { addExtraTokens } = require('./_shared/subscription')
+      const result = await addExtraTokens(db, userId, tokens, 'feedback_reward')
+      if (!result.success) return result
+
+      await db.collection('system_feedback').doc(feedbackId).update({
+        resolved: true,
+        rewardTokens: tokens,
+        resolvedAt: new Date()
+      })
+
+      return { success: true }
       const { ensureTokenAccount } = require('./_shared/billing')
       const account = await ensureTokenAccount(db, userId)
       const newBalance = (account.balanceTokens || 0) + tokens
@@ -1870,22 +1912,24 @@ async function refundOrder(event = {}) {
     refundedAt: new Date()
   })
 
-  // 扣回已充值的 token
-  if (order.grantedTokens && order.grantedTokens > 0) {
-    const accountRes = await db.collection('token_accounts').where({ userId: order.userId }).limit(1).get()
-    const account = (accountRes.data && accountRes.data.length > 0) ? accountRes.data[0] : null
-    if (account) {
-      await db.collection('token_accounts').doc(account._id).update({
-        balance: Math.max(0, (account.balance || 0) - order.grantedTokens),
-        updatedAt: new Date()
+  const refundTokens = Number(order.grantTokens || 0)
+  if (refundTokens > 0) {
+    const userRes = await db.collection('users').doc(order.userId).get()
+    const user = Array.isArray(userRes.data) ? userRes.data[0] : userRes.data
+    const currentExtraTokens = Number(user?.extraTokens || 0)
+    const deduction = Math.min(currentExtraTokens, refundTokens)
+    if (deduction > 0) {
+      await db.collection('users').doc(order.userId).update({
+        extraTokens: db.command.inc(-deduction)
       })
     }
-    await db.collection('token_ledger_records').add({
+    await db.collection('call_usage_records').add({
       userId: order.userId,
-      type: 'refund',
-      amount: -order.grantedTokens,
-      orderId,
-      remark: `退款扣回：${order.planName}`,
+      type: 'adjust',
+      source: 'refund',
+      amount: -deduction,
+      relatedOrderId: orderId,
+      remark: `refund: ${order.planName || order.productName || ''}`,
       createdAt: new Date()
     })
   }

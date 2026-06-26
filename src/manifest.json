@@ -44,6 +44,11 @@
         "setting" : {
             "urlCheck" : true
         },
+        "permission" : {
+            "scope.record" : {
+                "desc" : "用于语音输入和语音转文字"
+            }
+        },
         "usingComponents" : true
     },
     "mp-alipay" : {

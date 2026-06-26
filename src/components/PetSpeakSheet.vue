@@ -359,7 +359,7 @@ function close() {
 .option-tab {
   flex: 1; min-width: 0; text-align: center;
   padding: 12rpx 4rpx;
-  font-size: $fs-heading; font-weight: $fw-heading;
+  font-size: $fs-body; font-weight: $fw-label;
   color: #111; background: #fff;
   border: 2rpx solid #111;
   box-sizing: border-box;
@@ -377,8 +377,8 @@ function close() {
   border-left: 8rpx solid #FFD93D;
 }
 .turn-header { display: flex; align-items: center; gap: 10rpx; margin-bottom: 10rpx; }
-.turn-step { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
-.turn-note { font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
+.turn-step { font-size: $fs-body; font-weight: $fw-heading; color: #111; }
+.turn-note { font-size: $fs-body; font-weight: $fw-body; color: #666; }
 .turn-bubble {
   display: flex; justify-content: space-between; align-items: center; gap: 10rpx;
   padding: 14rpx;
@@ -389,7 +389,7 @@ function close() {
 .turn-text { font-size: $fs-body-lg; font-weight: $fw-body; color: #111; line-height: 1.5; flex: 1; }
 .turn-actions { display: flex; gap: 10rpx; justify-content: flex-end; }
 .turn-reactions { display: flex; flex-wrap: wrap; align-items: center; gap: 8rpx; }
-.reactions-label { font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
+.reactions-label { font-size: $fs-body; font-weight: $fw-label; color: #111; }
 .reaction-tag { padding: 4rpx 12rpx; font-size: $fs-caption; font-weight: $fw-label; color: #111; background: #fff; border: 2rpx solid #111; }
 
 .error-msg { margin-top: 16rpx; padding: 14rpx; background: #FFEEEC; border: 3rpx solid #FF5252; font-size: $fs-body-lg; color: #FF5252; font-weight: $fw-label; }

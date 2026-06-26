@@ -1,6 +1,6 @@
 /**
- * API 灏佽灞?
- * 灏佽鎵€鏈変簯鍑芥暟璋冪敤
+ * API 封装层
+ * 封装所有云函数调用
  */
 import app, { callFunction, auth, storage, ensureCloudAuthReady } from './cloudbase'
 import { resetCloudAuthState } from './cloudbase'
@@ -274,10 +274,10 @@ async function verifyTicketLogin(expectedUserId: string, maxRetries = 10): Promi
   return false
 }
 
-// ==================== 璁よ瘉鐩稿叧 ====================
+// ==================== 认证相关 ====================
 
 /**
- * 鐢ㄦ埛鐧诲綍
+ * 用户登录
  */
 export async function login(email: string, password: string) {
   await clearLocalAuthState()
@@ -318,7 +318,7 @@ export async function login(email: string, password: string) {
 }
 
 /**
- * 鐢ㄦ埛娉ㄥ唽
+ * 微信登录（也处理注册）
  */
 export async function wechatLogin(code = '', profile: { nickName?: string; nickname?: string; avatarUrl?: string; loginCode?: string; inviteCode?: string; channel?: string; scene?: string; ref?: string; shareId?: string } = {}) {
   await clearLocalAuthState()
@@ -402,12 +402,12 @@ export async function register(email: string, password: string, inviteCode?: str
 }
 
 /**
- * 鐢ㄦ埛鐧诲嚭
+ * 用户登出
  */
 export async function logout() {
   await auth.signOut()
 
-  // 娓呴櫎鏈湴瀛樺偍
+  // 清除本地存储
   uni.removeStorageSync('userId')
   uni.removeStorageSync('userEmail')
   uni.removeStorageSync('userPhone')
@@ -421,7 +421,7 @@ export async function logout() {
 }
 
 /**
- * 鑾峰彇褰撳墠鐢ㄦ埛 ID
+ * 获取当前用户 ID
  */
 export function getCurrentUserId(): string | null {
   try {
@@ -513,10 +513,10 @@ export async function updateSelfProfile(profile: SelfProfile) {
   return res.result
 }
 
-// ==================== 妗堜緥绠＄悊 ====================
+// ==================== 案例管理 ====================
 
 /**
- * 鑾峰彇妗堜緥鍒楄〃
+ * 获取案例列表
  */
 /** 分享访问记录：匿名 visit（fire-and-forget） */
 export async function trackAnonymousVisit(params: { shareId?: string; channel?: string; scene?: string; inviteCode?: string; path?: string }) {
@@ -569,7 +569,7 @@ export async function getCases(_userId?: string, options?: {
 }
 
 /**
- * 鍒涘缓妗堜緥
+ * 创建案例
  */
 export async function createCase(data: {
   userId?: string
@@ -587,7 +587,7 @@ export async function createCase(data: {
 }
 
 /**
- * 鑾峰彇妗堜緥璇︽儏
+ * 获取案例详情
  */
 export async function getCaseDetail(_userId: string, caseId: string) {
   const res = await callFunction({
@@ -601,7 +601,7 @@ export async function getCaseDetail(_userId: string, caseId: string) {
 }
 
 /**
- * 鍒犻櫎妗堜緥
+ * 删除案例
  */
 export async function deleteCase(_userId: string, caseId: string) {
   const res = await callFunction({
@@ -612,7 +612,7 @@ export async function deleteCase(_userId: string, caseId: string) {
 }
 
 /**
- * 鏇存柊妗堜緥鐢诲儚
+ * 更新案例画像
  */
 export async function updateCaseProfile(data: {
   userId?: string
@@ -629,10 +629,10 @@ export async function updateCaseProfile(data: {
   return res.result
 }
 
-// ==================== 鏃堕棿绾跨鐞?====================
+// ==================== 时间线管理 ====================
 
 /**
- * 鑾峰彇鏃堕棿绾胯褰?
+ * 获取时间线记录
  */
 export async function getTimeline(_userId: string, caseId: string) {
   const res = await callFunction({
@@ -643,7 +643,7 @@ export async function getTimeline(_userId: string, caseId: string) {
 }
 
 /**
- * 鍒涘缓鏃堕棿绾胯褰?
+ * 创建时间线记录
  */
 export async function createTimeline(data: {
   userId?: string
@@ -750,7 +750,7 @@ export async function generateSideRead(data: {
 }
 
 /**
- * 鍒犻櫎鏃堕棿绾胯褰?
+ * 删除时间线记录
  */
 export async function deleteTimeline(_userId: string, caseId: string, recordId: string) {
   const res = await callFunction({
@@ -761,7 +761,7 @@ export async function deleteTimeline(_userId: string, caseId: string, recordId: 
 }
 
 /**
- * 閲嶆柊璇勪及
+ * 重新评估
  */
 export async function reassess(data: {
   userId?: string
@@ -877,14 +877,6 @@ export async function queryPaymentOrder(options: { orderNo?: string; orderId?: s
   const res = await callFunction({
     name: 'recharge',
     data: { action: 'queryPaymentOrder', ...options, ...getBusinessAuthPayload() }
-  })
-  return res.result
-}
-
-export async function paymentCallback(orderNo: string) {
-  const res = await callFunction({
-    name: 'recharge',
-    data: { action: 'paymentCallback', outTradeNo: orderNo, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -1118,7 +1110,7 @@ export async function generateMonthlySideRead(_userId: string, caseId: string, m
   return res.result
 }
 
-// ==================== AI 璁剧疆 ====================
+// ==================== AI 设置 ====================
 
 export type AIModelConfig = {
   id: string
@@ -1157,7 +1149,7 @@ export type AIPersonaConfig = {
 }
 
 /**
- * 鑾峰彇 AI 璁剧疆
+ * 获取 AI 设置
  */
 export async function getAISettings(_userId?: string) {
   const res = await callFunction({
@@ -1168,7 +1160,7 @@ export async function getAISettings(_userId?: string) {
 }
 
 /**
- * 鏇存柊 AI 璁剧疆锛堟柊鐗堟湰锛屾敮鎸佸妯″瀷锛?
+ * 更新 AI 设置（新版本，支持多模型）
  */
 export async function updateAISettings(data: {
   userId?: string
@@ -1247,7 +1239,7 @@ export async function adminUpdateBillingSettings(data: Record<string, any>) {
 }
 
 /**
- * 娴嬭瘯 AI 杩炴帴锛堟敮鎸侀€氳繃 modelId 娴嬭瘯鎸囧畾妯″瀷锛?
+ * 测试 AI 连接（支持通过 modelId 测试指定模型）
  */
 export async function adminListFeedbacks() {
   return callFunction({ name: 'adminManage', data: { action: 'listFeedbacks', ...getBusinessAuthPayload() } }).then((res: any) => res.result)
@@ -1317,10 +1309,10 @@ export async function testAIConnection(data: {
   return res.result
 }
 
-// ==================== 浜戝瓨鍌?====================
+// ==================== 云存储 ====================
 
 /**
- * 涓婁紶鏂囦欢鍒颁簯瀛樺偍
+ * 上传文件到云存储
  */
 export async function uploadFile(filePath: any, cloudPath: string) {
   const result = await storage({
@@ -1331,7 +1323,7 @@ export async function uploadFile(filePath: any, cloudPath: string) {
 }
 
 /**
- * 鑾峰彇鏂囦欢涓存椂 URL
+ * 获取文件临时 URL
  */
 export async function getTempFileURL(fileID: string) {
   const { fileList } = await app.getTempFileURL({

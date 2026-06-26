@@ -186,7 +186,7 @@
       "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
-      "memorySize": 128,
+      "memorySize": 256,
       "handler": "index.main",
       "installDependency": true
     },
@@ -195,7 +195,7 @@
       "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
-      "memorySize": 128,
+      "memorySize": 256,
       "handler": "index.main",
       "installDependency": true
     },
@@ -204,7 +204,7 @@
       "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
-      "memorySize": 128,
+      "memorySize": 256,
       "handler": "index.main",
       "installDependency": true
     },
@@ -213,7 +213,7 @@
       "timeout": 60,
       "envVariables": {},
       "runtime": "Nodejs18.15",
-      "memorySize": 128,
+      "memorySize": 256,
       "handler": "index.main",
       "installDependency": true
     },
@@ -258,7 +258,7 @@
       "timeout": 300,
       "envVariables": {},
       "runtime": "Nodejs18.15",
-      "memorySize": 128,
+      "memorySize": 256,
       "handler": "index.main",
       "installDependency": true
     },

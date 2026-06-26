@@ -6,40 +6,16 @@ const { buildPromptMessages } = require('./_shared/ai-prompt-config')
 const { buildPersonaPrompt } = require('./_shared/persona-config')
 const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
 const { recordTokenUsage } = require('./_shared/token-usage')
+const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
 const SIDE_READ_TIMEOUT_MS = 45000
-function isMpRuntime() {
-  return Boolean(process.env.WX_CONTEXT_KEYS || process.env.TENCENTCLOUD_RUNENV)
-}
-
 function normalizeDoc(res) {
   if (Array.isArray(res?.data)) return res.data[0] || null
   return res?.data || null
-}
-
-async function requireAuthenticatedUserId(event = {}) {
-  const userInfo = await app.auth().getUserInfo()
-  const candidates = [
-    userInfo?.customUserId,
-    userInfo?.uid,
-    userInfo?.userInfo?.customUserId,
-    userInfo?.userInfo?.uid,
-    userInfo?.user?.customUserId,
-    userInfo?.user?.uid
-  ]
-  if (isMpRuntime()) {
-    candidates.push(event?.userId)
-  }
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim()) return value.trim()
-  }
-  const error = new Error('UNAUTHENTICATED')
-  error.code = 'UNAUTHENTICATED'
-  throw error
 }
 
 async function getAISettings(userId) {
@@ -439,7 +415,7 @@ function serializeProfile(profile) {
 exports.main = async (event = {}) => {
   const startedAt = Date.now()
   try {
-    const userId = await requireAuthenticatedUserId(event)
+    const userId = await requireAuthenticatedUserId(app, event)
     const caseId = typeof event.caseId === 'string' ? event.caseId.trim() : ''
     if (!caseId) return { success: false, message: '缺少档案ID' }
 
@@ -576,6 +552,8 @@ exports.main = async (event = {}) => {
 
     return { success: true, sideReadAdvice }
   } catch (error) {
+    const authError = buildAuthErrorResponse(error)
+    if (authError) return authError
     console.error('generateSideRead error:', error)
     if (error?.code === 'UNAUTHENTICATED' || error?.message === 'UNAUTHENTICATED') {
       return { success: false, message: '请先登录' }

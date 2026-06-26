@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getRechargePlans, createPaymentOrder, queryPaymentOrder, paymentCallback, getSubscriptionStatus } from '@/utils/api'
+import { getCurrentUserId, getRechargePlans, createPaymentOrder, queryPaymentOrder, getSubscriptionStatus } from '@/utils/api'
 import { bumpDataVersion } from '@/utils/helpers'
 
 const extraTokens = ref(0)
@@ -169,9 +169,7 @@ async function createOrder(planId: string) {
     // #endif
 
     // 4. 支付成功 → 触发发货 → 查单确认
-    try {
-      await paymentCallback(result.order.orderNo)
-    } catch (_) { /* 回调可能已经自动触发了，忽略 */ }
+    await new Promise((resolve) => setTimeout(resolve, 1200))
     const confirm = await queryPaymentOrder({ orderNo: result.order?.orderNo })
     if (confirm?.order?.status === 'paid') {
       orderOk.value = true

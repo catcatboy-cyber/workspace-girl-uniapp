@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getSubscriptionConfig, getSubscriptionStatus, createPaymentOrder, queryPaymentOrder, paymentCallback } from '@/utils/api'
+import { getSubscriptionConfig, getSubscriptionStatus, createPaymentOrder, queryPaymentOrder } from '@/utils/api'
 import { getCurrentThemeId, getFontSizeMode, getThemeStyle, applyThemeChrome } from '@/utils/theme'
 import { bumpDataVersion } from '@/utils/helpers'
 
@@ -333,11 +333,7 @@ async function onUpgrade(planKey: string) {
     // #endif
 
     // 4. 支付成功 → 触发发货 → 查单确认
-    try {
-      await paymentCallback(res.order.orderNo)
-    } catch {
-      // Query order status below handles delayed fulfillment.
-    }
+    await new Promise((resolve) => setTimeout(resolve, 1200))
     const confirm = await queryPaymentOrder({ orderNo: res.order?.orderNo })
     if (confirm?.order?.status === 'paid') {
       upgradeOk.value = true

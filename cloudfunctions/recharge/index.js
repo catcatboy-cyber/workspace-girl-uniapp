@@ -1,12 +1,12 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
-const { ensureBillingSettings, ensureTokenAccount } = require('./_shared/billing')
+const { ensureBillingSettings } = require('./_shared/billing')
+const { fulfillPayment } = require('./_shared/payment-fulfillment')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 
 const RECHARGE_ORDERS = 'recharge_orders'
-const TOKEN_ACCOUNTS = 'token_accounts'
 
 // 管理员的 ADMIN_EMAILS 环境变量（与 adminManage 保持一致）
 function normalizeList(val) {
@@ -102,54 +102,13 @@ async function adminConfirmRecharge(event) {
   if (!order) return { success: false, message: '订单不存在' }
   if (order.status !== 'pending') return { success: false, message: `订单状态为 "${order.status}"，无法确认` }
 
-  const now = new Date()
-  const account = await ensureTokenAccount(db, order.userId)
-  const newBalance = (account.balanceTokens || 0) + order.grantTokens
-  const newPurchased = (account.purchasedTokens || 0) + order.grantTokens
+  const fulfilled = await fulfillPayment(db, {
+    ...order,
+    _id: orderId,
+    productType: order.productType || 'recharge'
+  }, `admin:${userId}`)
 
-  // 幂等保护：检查是否已有同订单的流水记录
-  const { data: existingLedger } = await db.collection('token_ledger_records')
-    .where({ relatedOrderId: orderId, type: 'recharge' }).limit(1).get()
-  if (existingLedger && existingLedger.length > 0) return { success: true, order, alreadyConfirmed: true }
-
-  // 更新订单状态
-  await db.collection(RECHARGE_ORDERS).doc(orderId).update({
-    status: 'paid',
-    paidAt: now,
-    confirmedBy: userId,
-    updatedAt: now
-  })
-
-  // 更新账户余额
-  await db.collection(TOKEN_ACCOUNTS).doc(account._id).update({
-    balanceTokens: newBalance,
-    purchasedTokens: newPurchased,
-    updatedAt: now
-  })
-
-  // 写入流水
-  await db.collection('token_ledger_records').add({
-    userId: order.userId,
-    type: 'recharge',
-    amountTokens: order.grantTokens,
-    balanceAfter: newBalance,
-    relatedOrderId: orderId,
-    remark: `充值 ${order.planName} · ¥${order.amountYuan}`,
-    createdAt: now
-  })
-
-  // 新次数体系：给用户加额外次数（加油包次数，不过期）
-  const grantCalls = order.grantCalls || 0
-  if (order.grantTokens > 0) {
-    try {
-      const { addExtraTokens } = require('./_shared/subscription')
-      await addExtraTokens(db, order.userId, order.grantTokens, `recharge_${order.planId}`)
-    } catch (err) {
-      console.warn('addExtraTokens on recharge failed (non-fatal):', err.message)
-    }
-  }
-
-  return { success: true, order: { ...order, status: 'paid', paidAt: now } }
+  return { success: true, order: fulfilled }
 }
 
 // action: createSubscriptionUpgrade — 创建套餐升级订单（过渡阶段 pending，后续接入微信支付）
@@ -361,21 +320,15 @@ async function queryPaymentOrder(event) {
 // action: paymentCallback — 微信支付回调（由集成中心模板触发）
 // 回调格式参考: https://docs.cloudbase.net/integration/wechat-pay-miniprogram
 // event 结构: { event_type: 'TRANSACTION.SUCCESS', resource: { out_trade_no, transaction_id, amount: { total, currency } } }
-// 也可以被管理员手动调用（传 outTradeNo + transactionId）
 async function paymentCallback(event) {
   let outTradeNo, transactionId, totalFee
 
-  // 兼容两种调用方式:
-  // 1. 集成中心回调: event.event_type + event.resource.out_trade_no
-  // 2. 手动补单/前端触发: event.outTradeNo + event.transactionId
   if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
     outTradeNo = String(event.resource.out_trade_no || '').trim()
     transactionId = String(event.resource.transaction_id || '').trim()
     totalFee = Number(event.resource.amount?.total || 0)
   } else {
-    outTradeNo = String(event.outTradeNo || event.out_trade_no || '').trim()
-    transactionId = String(event.transactionId || event.transaction_id || '').trim()
-    totalFee = Number(event.totalFee || event.total_fee || 0)
+    return { success: false, message: '无效的支付回调来源' }
   }
 
   if (!outTradeNo) return { success: false, message: '缺少 outTradeNo' }
@@ -416,8 +369,6 @@ exports.main = async (event = {}) => {
     if (action === 'adminConfirmRecharge') return await adminConfirmRecharge(event)
     if (action === 'createPaymentOrder') return await createPaymentOrder(event)
     if (action === 'queryPaymentOrder') return await queryPaymentOrder(event)
-    if (action === 'paymentCallback') return await paymentCallback(event)
-
     return { success: false, message: '未知操作' }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)

@@ -105,7 +105,7 @@ exports.main = async (event = {}) => {
       if (user && user.plan !== undefined) {
         const now = new Date()
         const monthStart = getMonthStart(now)
-        let monthlyUsed = user.monthlyCallsUsed || 0
+        let monthlyUsed = user.monthlyTokensUsed || 0
         const planConfig = config.plans[user.plan || 'free'] || config.plans.free
         const monthlyLimit = planConfig.monthlyTokens
 
@@ -122,6 +122,15 @@ exports.main = async (event = {}) => {
           extraTokens: user.extraTokens || 0,
           inviteCode: user.inviteCode || ''
         }
+        const account = {
+          userId,
+          balanceTokens: subscription.extraTokens,
+          extraTokens: subscription.extraTokens,
+          monthlyTokensUsed: subscription.monthlyTokensUsed,
+          monthlyTokensLimit: subscription.monthlyTokensLimit,
+          source: 'subscription'
+        }
+        return { success: true, account, billing, subscription }
       }
     } catch (err) {
       console.warn('getSubscriptionStatus in getTokenAccount failed (non-fatal):', err.message)
