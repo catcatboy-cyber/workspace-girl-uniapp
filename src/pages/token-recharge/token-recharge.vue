@@ -14,16 +14,17 @@
         <text class="card-text-v2">{{ plansError || '暂无可用档位。' }}</text>
       </view>
 
-      <view v-else class="card-v2" v-for="plan in plans" :key="plan.id">
-        <view class="card-head-v2">
-          <text class="section-title-v2">{{ plan.name }}</text>
-          <button class="btn btn-primary btn-md btn-full" :disabled="orderingId === plan.id" @click="createOrder(plan.id)">
-            {{ orderingId === plan.id ? '处理中' : '¥' + plan.amountYuan }}
-          </button>
+      <view v-else class="recharge-plan-card" v-for="plan in plans" :key="plan.id">
+        <view class="plan-card-badge" v-if="plan.bonusTokens > 0">赠 {{ plan.bonusTokens.toLocaleString() }} Token</view>
+        <text class="plan-card-name">{{ plan.name }}</text>
+        <view class="plan-card-token-row">
+          <text class="plan-card-token-num">+{{ totalTokens(plan).toLocaleString() }}</text>
+          <text class="plan-card-token-unit">Token</text>
         </view>
-        <text class="card-text-v2 recharge-token-amount-v2">+{{ totalTokens(plan).toLocaleString() }} Token</text>
-        <text v-if="plan.bonusTokens > 0" class="card-text-v2" style="color:#e67e22;">含赠送 {{ plan.bonusTokens.toLocaleString() }} Token</text>
-        <text v-if="plan.tagline" class="card-text-v2 recharge-tagline-v2">{{ plan.tagline }}</text>
+        <text v-if="plan.tagline" class="plan-card-tagline">{{ plan.tagline }}</text>
+        <button class="plan-card-btn" :disabled="orderingId === plan.id" @click="createOrder(plan.id)">
+          {{ orderingId === plan.id ? '处理中…' : '¥ ' + plan.amountYuan + ' 立即充值' }}
+        </button>
       </view>
 
       <view v-if="orderMessage" class="card-v2">
@@ -37,7 +38,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getRechargePlans, createPaymentOrder, queryPaymentOrder, getSubscriptionStatus } from '@/utils/api'
+import { getCurrentUserId, getRechargePlans, unifiedOrder, queryOrder, confirmPayment, getSubscriptionStatus } from '@/utils/api'
 import { bumpDataVersion } from '@/utils/helpers'
 
 const extraTokens = ref(0)
@@ -96,59 +97,31 @@ async function createOrder(planId: string) {
   orderOk.value = false
   createdOrderId.value = ''
   try {
-    // 1. 服务端创建订单（查配置算价，写 recharge_orders）
-    const result = await createPaymentOrder({ productType: 'recharge', productId: planId })
+    // 1. 服务端统一下单（创建DB订单 + 微信V3下单 + 生成支付参数，一站式）
+    // #ifdef MP-WEIXIN
+    const result = await unifiedOrder({ productType: 'recharge', productId: planId })
     if (!result?.success) {
       orderMessage.value = result?.message || '创建订单失败'
       return
     }
     createdOrderId.value = result.order?._id || ''
+    const payParams = result.payParams
+    const orderNo = result.order?.orderNo
 
-    // 2. 调用集成中心 HTTP 云函数统一下单
-    // #ifdef MP-WEIXIN
-    let prepayData: any = {}
-    let payRes: any
-    try {
-      payRes = await new Promise((resolve, reject) => {
-        wx.cloud.callHTTPFunction({
-          name: 'CrushRadar-uty6nxqu-demo-scfweb',
-          config: { env: 'cloud1-d0gvhqu2c8a2b61fd' },
-          method: 'POST',
-          header: { 'Content-Type': 'application/json' },
-          path: '/wx-pay/wxpay_order',
-          data: {
-            description: result.order.productName,
-            out_trade_no: result.order.orderNo,
-            amount: { total: result.order.amountFen, currency: 'CNY' }
-          },
-          success: resolve,
-          fail: reject
-        })
-      })
-
-      // callHTTPFunction 自动解析 JSON → { code:0, data:{ status:200, data:{ timeStamp... } } }
-      // 穿透两层 data 取支付参数
-      const body = payRes?.data
-      prepayData = body?.data?.data || body?.data || body
-    } catch (payCreateErr: any) {
-      orderMessage.value = '统一下单: ' + (payCreateErr?.errMsg || payCreateErr?.message || '')
+    if (!payParams?.timeStamp) {
+      orderMessage.value = '支付参数缺失，请重试'
       return
     }
 
-    if (!prepayData?.timeStamp) {
-      orderMessage.value = 'timeStamp缺失:' + JSON.stringify(payRes?.data).slice(0, 300)
-      return
-    }
-
-    // 3. 调起微信支付
+    // 2. 调起微信支付（payParams 直接来自服务端，无需穿透 data）
     try {
       await new Promise((resolve, reject) => {
         wx.requestPayment({
-          timeStamp: String(prepayData.timeStamp || ''),
-          nonceStr: String(prepayData.nonceStr || ''),
-          package: prepayData.packageVal || prepayData.package || '',
-          signType: prepayData.signType || 'RSA',
-          paySign: String(prepayData.paySign || ''),
+          timeStamp: String(payParams.timeStamp || ''),
+          nonceStr: String(payParams.nonceStr || ''),
+          package: payParams.package || '',
+          signType: payParams.signType || 'RSA',
+          paySign: String(payParams.paySign || ''),
           success: resolve,
           fail: reject
         })
@@ -168,16 +141,47 @@ async function createOrder(planId: string) {
     return
     // #endif
 
-    // 4. 支付成功 → 触发发货 → 查单确认
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-    const confirm = await queryPaymentOrder({ orderNo: result.order?.orderNo })
-    if (confirm?.order?.status === 'paid') {
+    // 3. 支付成功 → 确认发货 + 轮询双保险
+    console.log('[PAYDBG] requestPayment 成功, orderNo=', orderNo)
+    let paid = false
+    const startTime = Date.now()
+
+    // 3a. 立即调云函数确认发货（wx.requestPayment success = 微信已扣款）
+    try {
+      const confirmed = await confirmPayment({ orderNo })
+      console.log('[PAYDBG] confirmPayment 结果=', JSON.stringify(confirmed))
+      if (confirmed?.order?.status === 'paid') {
+        paid = true
+        orderOk.value = true
+        orderMessage.value = `支付成功！已充值 ${((result.order?.grantTokens || 0)).toLocaleString()} Token`
+        bumpDataVersion()
+        await loadStatus()
+        return
+      }
+    } catch (e: any) {
+      console.error('[PAYDBG] confirmPayment 失败:', e?.message || e)
+    }
+
+    // 3b. 轮询兜底（30s 窗口，直接调微信 V3 查单）
+    for (let i = 0; i < 20; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      let confirm: any
+      try {
+        confirm = await queryOrder({ orderNo })
+      } catch (e) { continue }
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+      console.log(`[PAYDBG] 轮询#${i + 1} elapsed=${elapsed}s status=`, confirm?.order?.status)
+      if (confirm?.order?.status === 'paid') { paid = true; break }
+    }
+    if (paid) {
       orderOk.value = true
       orderMessage.value = `支付成功！已充值 ${((result.order?.grantTokens || 0)).toLocaleString()} Token`
       bumpDataVersion()
       await loadStatus()
     } else {
-      orderMessage.value = '支付处理中，稍后自动到账'
+      orderOk.value = true
+      orderMessage.value = '支付成功，到账处理中（约 1 分钟），可稍后在"我"页查看余额'
+      bumpDataVersion()
     }
   } catch (error: any) {
     orderMessage.value = error?.message || '操作失败'
@@ -202,6 +206,84 @@ async function createOrder(planId: string) {
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; margin-bottom: 6rpx; }
-.v2-mode .recharge-token-amount-v2 { font-size: $fs-heading; font-weight: $fw-hero; }
-.v2-mode .recharge-tagline-v2 { font-size: $fs-body; color: $c-soft; }
+
+/* ── 充值计划卡片 ── */
+.recharge-plan-card {
+  position: relative;
+  background: $c-card;
+  border: 3rpx solid $c-ink;
+  box-shadow: 6rpx 6rpx 0 $c-ink;
+  padding: 32rpx 28rpx 24rpx;
+  margin-bottom: $sp-card-gap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.plan-card-badge {
+  position: absolute;
+  top: -14rpx;
+  right: 20rpx;
+  background: $c-accent;
+  color: $c-ink;
+  border: 2rpx solid $c-ink;
+  padding: 4rpx 18rpx;
+  font-size: $fs-caption;
+  font-weight: $fw-hero;
+  letter-spacing: 1rpx;
+}
+.plan-card-name {
+  display: block;
+  font-size: $fs-body;
+  font-weight: $fw-heading;
+  color: $c-soft;
+  text-transform: uppercase;
+  letter-spacing: 4rpx;
+  margin-bottom: 12rpx;
+}
+.plan-card-token-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+}
+.plan-card-token-num {
+  font-size: $fs-display;
+  font-weight: $fw-hero;
+  color: $c-ink;
+  line-height: 1;
+  letter-spacing: -2rpx;
+}
+.plan-card-token-unit {
+  font-size: $fs-body;
+  font-weight: $fw-label;
+  color: $c-muted;
+}
+.plan-card-tagline {
+  display: block;
+  font-size: $fs-caption;
+  font-weight: $fw-body;
+  color: $c-muted;
+  line-height: 1.4;
+  margin-bottom: 20rpx;
+  max-width: 80%;
+}
+.plan-card-btn {
+  width: 100%;
+  height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  font-size: $fs-body-lg;
+  font-weight: $fw-heading;
+  color: $c-ink;
+  background: $c-mint;
+  border: 3rpx solid $c-ink;
+  box-shadow: 4rpx 4rpx 0 $c-ink;
+  padding: 0;
+  margin: 0;
+}
+.plan-card-btn[disabled] {
+  opacity: 0.5;
+  box-shadow: none;
+}
 </style>

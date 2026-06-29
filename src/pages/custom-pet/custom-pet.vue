@@ -68,13 +68,30 @@ onMounted(async () => {
   } catch (_) { /* ignore */ }
 })
 
-function pickImage() {
+async function pickImage() {
+  // 先确保隐私协议已同意（微信 2023.09 起要求）
+  try {
+    const wxApi = (globalThis as any)?.wx
+    if (wxApi?.requirePrivacyAuthorize) {
+      await new Promise<void>((resolve, reject) => {
+        wxApi.requirePrivacyAuthorize({ success: () => resolve(), fail: reject })
+      })
+    }
+  } catch {
+    uni.showToast({ title: '请先同意隐私政策', icon: 'none' })
+    return
+  }
+
   uni.chooseImage({
     count: 3 - images.value.length,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
     success: (res) => {
       images.value.push(...res.tempFilePaths)
+    },
+    fail: (err: any = {}) => {
+      const msg = String(err?.errMsg || err?.message || '')
+      if (!msg.includes('cancel')) uni.showToast({ title: '无法打开相册', icon: 'none' })
     }
   })
 }

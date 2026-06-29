@@ -2,7 +2,7 @@
   <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
-      <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">往事不可用</text><text class="empty-sub-v2">当前 Crush 不存在或已被删除。</text></view>
+      <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">往事按时间线展示</text><text class="empty-sub-v2">记录互动后，这里会按时间顺序排列你和 TA 的每一个重要瞬间。</text><button class="btn btn-primary btn-md btn-auto" style="margin-top:16rpx;" @click="goHome">去首页记录互动</button></view>
       <template v-else>
         <view class="hero-block-v2 anim-hero"><text class="hero-tag-v2">MEMORIES / {{ caseFile.name }}</text><text class="hero-title-v2">往<text class="hl-v2">事</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
         <view v-if="activeTimelineView === 'events'">
@@ -1031,6 +1031,10 @@ function scrollToEvent(eventId: string) {
   // #endif
 }
 
+function goHome() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
 function goCaseDetail() {
   setActiveCaseId(caseId.value)
   uni.switchTab({ url: '/pages/case-detail/case-detail' })
@@ -1129,7 +1133,7 @@ async function ensureCaseId(uid: string) {
 async function loadData(options?: { silent?: boolean }) {
   const uid = getCurrentUserId()
   if (!uid) {
-    uni.reLaunch({ url: '/pages/login/login' })
+    loading.value = false
     return
   }
   userId.value = uid

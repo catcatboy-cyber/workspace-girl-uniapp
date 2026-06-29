@@ -7,39 +7,65 @@ const SILENT_LOGIN_TRIED_KEY = 'silentLoginTried'
 const SILENT_LOGIN_DONE_KEY = 'silentLoginDone'
 
 onLaunch(() => {
-  // 记录分享访问（匿名，fire-and-forget）
+  // 记录分享访问（有参数时）
   try {
     const lo = uni.getLaunchOptionsSync?.() || ({} as any)
     const q = lo?.query || {}
-    if (q.shareId || q.inviteCode) {
+    if (q.shareId || q.inviteCode || q.scene || q.channel) {
       trackAnonymousVisit({ shareId: q.shareId, channel: q.channel, scene: q.scene, inviteCode: q.inviteCode, path: lo.path })
     }
   } catch (_) {}
 
-  // 微信隐私协议授权（2023.09 起要求）
+  // 微信隐私协议授权：首次启动弹窗，用户必须主动点击"同意"
+  // 不允许默认自动同意——审核明确要求用户自主选择
   try {
+    const PRIVACY_KEY = 'privacyAgreed_v2'
+    const alreadyAgreed = !!uni.getStorageSync(PRIVACY_KEY)
+
+    // 注册微信原生隐私监听（兼容 __usePrivacyCheck__）
     const wxApi = (globalThis as any)?.wx
     if (wxApi?.onNeedPrivacyAuthorization) {
       wxApi.onNeedPrivacyAuthorization((resolve: any) => {
         uni.showModal({
           title: '隐私政策提示',
-          content: '在使用语音识别等功能前，需要你阅读并同意《隐私政策》和《服务条款》。点击"确定"即表示同意。\n\n你可在"关于"页面随时查看完整政策。',
+          content: '在使用语音识别、图片上传等功能前，需要你阅读并同意《隐私政策》和《用户服务协议》。',
           confirmText: '同意并继续',
           cancelText: '暂不同意',
           success: (modalRes: any) => {
             if (modalRes.confirm) {
-              resolve({ event: 'agree', buttonId: 'agree' })
+              uni.setStorageSync(PRIVACY_KEY, true)
+              resolve({ event: 'agree' })
             } else {
-              resolve({ event: 'disagree', buttonId: 'disagree' })
+              resolve({ event: 'disagree' })
             }
           }
         })
       })
     }
+
+    // 首次启动：即使没有 __usePrivacyCheck__ 也要主动展示隐私同意弹窗
+    if (!alreadyAgreed) {
+      uni.showModal({
+        title: '欢迎使用 Crush Master',
+        content: '在使用本小程序前，请仔细阅读并同意《隐私政策》和《用户服务协议》。\n\n我们仅在功能需要时处理你主动提供的信息（账号、关系记录、图片、录音、支付等），不会用于其他用途。你可在"关于"页面查看完整政策。',
+        confirmText: '同意并继续',
+        cancelText: '暂不使用',
+        success: (modalRes: any) => {
+          if (modalRes.confirm) {
+            uni.setStorageSync(PRIVACY_KEY, true)
+          }
+          // 不同意也不强制退出，但后续涉及隐私的 API 会引导授权
+        }
+      })
+    }
   } catch (_) { /* H5 等非微信环境忽略 */ }
 
-  // 静默微信登录：已登录跳过，未登录自动注册
-  silentWechatLogin()
+  // 全量静默登录：wx.login 无弹窗，后端通过 openid 自动识别/创建用户
+  silentWechatLogin().then(() => {
+    console.log('[app] silentWechatLogin done, userId=', getCurrentUserId())
+  }).catch((e: any) => {
+    console.warn('[app] silentWechatLogin failed:', e?.message || e)
+  })
 })
 
 onShow((options: any) => {
@@ -130,7 +156,7 @@ button::after {
 /* Levels */
 .btn-primary   { background: $c-mint; box-shadow: 4rpx 4rpx 0 $c-ink; }
 .btn-secondary { background: $c-card; }
-.btn-ghost     { background: transparent; border-style: dashed; }
+.btn-ghost     { background: transparent; }
 
 /* Layout */
 .btn-full { width: 100%; flex: none; }

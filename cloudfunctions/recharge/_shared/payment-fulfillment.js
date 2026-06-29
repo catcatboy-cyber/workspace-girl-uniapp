@@ -20,6 +20,14 @@ async function grantRechargeTokens(db, order, orderId) {
 }
 
 async function fulfillSubscription(db, order, now) {
+  // 幂等检查：此订单的订阅是否已发放
+  const grantSource = `sub_${order._id}`
+  const { data: existingGrant } = await db.collection('call_usage_records')
+    .where({ userId: order.userId, type: 'grant', source: grantSource })
+    .limit(1)
+    .get()
+  if (existingGrant && existingGrant.length > 0) return
+
   const { data: userData } = await db.collection('users').doc(order.userId).get()
   const user = (userData && userData.length > 0) ? userData[0] : null
   if (!user) throw new Error('user not found')
@@ -51,30 +59,52 @@ async function fulfillSubscription(db, order, now) {
     trialEndsAt: null,
     updatedAt: now
   })
+
+  await db.collection('call_usage_records').add({
+    userId: order.userId,
+    type: 'grant',
+    source: grantSource,
+    amount: 0,
+    remark: `subscription: ${order.grantPlan || ''}`,
+    createdAt: now
+  })
 }
 
 async function fulfillPayment(db, order, transactionId) {
   const now = new Date()
   const orderId = order._id
+  console.log('[PAYDBG][fulfill] enter orderId=%s orderNo=%s productType=%s src/txn=%s', orderId, order.orderNo, order.productType, transactionId)
 
   const { data: current } = await db.collection(RECHARGE_ORDERS).doc(orderId).get()
   const latest = (current && current.length > 0) ? current[0] : null
   if (!latest) throw new Error('order not found')
-  if (latest.status === 'paid') return { ...latest, alreadyPaid: true }
 
-  await db.collection(RECHARGE_ORDERS).doc(orderId).update({
-    status: 'paid',
-    paidAt: now,
-    transactionId: transactionId || '',
-    updatedAt: now
-  })
+  const alreadyPaid = latest.status === 'paid'
 
-  const merged = { ...order, status: 'paid', paidAt: now }
+  if (!alreadyPaid) {
+    console.log('[PAYDBG][fulfill] mark paid orderId=%s prevStatus=%s amountFen=%s', orderId, latest.status, latest.amountFen)
+    await db.collection(RECHARGE_ORDERS).doc(orderId).update({
+      status: 'paid',
+      paidAt: now,
+      transactionId: transactionId || '',
+      updatedAt: now
+    })
+  } else {
+    console.log('[PAYDBG][fulfill] already-paid repair mode orderId=%s — re-running grant/idempotency check', orderId)
+  }
+
+  const merged = { ...order, status: 'paid', paidAt: latest.paidAt || now }
 
   if (order.productType === 'recharge') {
     await grantRechargeTokens(db, order, orderId)
+    console.log('[PAYDBG][fulfill] recharge granted orderId=%s grantTokens=%s userId=%s', orderId, order.grantTokens, order.userId)
   } else if (order.productType === 'subscription') {
     await fulfillSubscription(db, order, now)
+    console.log('[PAYDBG][fulfill] subscription fulfilled orderId=%s grantPlan=%s', orderId, order.grantPlan)
+  }
+
+  if (alreadyPaid) {
+    return { ...merged, alreadyPaid: true }
   }
 
   return merged

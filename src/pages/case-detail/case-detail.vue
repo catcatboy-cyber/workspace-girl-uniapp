@@ -3,8 +3,9 @@
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2">
-        <text class="empty-title-v2">结果不可用</text>
-        <text class="empty-sub-v2">当前 Crush 不存在或已被删除。</text>
+        <text class="empty-title-v2">想看关系分析？先创建一个 Crush</text>
+        <text class="empty-sub-v2">回到首页记录互动，AI 会在这里展示 TA 的态度变化、风险评分和深度分析。</text>
+        <button class="btn btn-primary btn-md btn-auto" style="margin-top:16rpx;" @click="goHome">去首页创建 Crush</button>
       </view>
       <template v-else>
         <view v-if="profileUpdated" class="notice-v2 ok"><text class="notice-title-v2">画像已更新</text><text class="notice-sub-v2">Crush 画像信息已保存。</text></view>
@@ -435,20 +436,30 @@ const olderAssessmentPreview = computed(() => {
 })
 
 const trendDataPanel = computed(() => {
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
   const assessments = [...assessmentsList.value]
     .sort((a: any, b: any) => getAssessmentTimestamp(a) - getAssessmentTimestamp(b))
     .filter((item: any) => getAssessmentTimestamp(item) > 0)
   if (!assessments.length) return null
 
-  const latest = assessments[assessments.length - 1]
+  // 本月评估（从当月 1 日至今）
+  const monthlyAssessments = assessments.filter((item: any) => getAssessmentTimestamp(item) >= monthStart)
+  // 如果本月无评估则回退到最近 6 条
+  const recentAssessments = monthlyAssessments.length >= 2 ? monthlyAssessments : assessments.slice(-6)
+  const latest = recentAssessments[recentAssessments.length - 1]
   const latestTime = getAssessmentTimestamp(latest)
-  const rangeStart = latestTime - 14 * 24 * 60 * 60 * 1000
-  const rangeBase = assessments.find((item: any) => getAssessmentTimestamp(item) >= rangeStart) || assessments[0]
-  const recentAssessments = assessments.slice(-6)
-  const transitions = assessments
+  // 月基准：本月第一条评估，不足则取最近 14 天前
+  const baseAssessment = monthlyAssessments.length >= 2
+    ? monthlyAssessments[0]
+    : (assessments.find((item: any) => getAssessmentTimestamp(item) >= latestTime - 14 * 24 * 60 * 60 * 1000) || assessments[0])
+
+  // 只计算本月内的 transition
+  const transitions = monthlyAssessments.length >= 2 ? monthlyAssessments : assessments
+  const transitionList = transitions
     .map((item: any, index: number) => {
       if (index === 0) return null
-      const previous = assessments[index - 1]
+      const previous = transitions[index - 1]
       const intentDelta = clampScore(item.intentScore) - clampScore(previous.intentScore)
       const riskDelta = clampScore(item.consistencyRiskScore) - clampScore(previous.consistencyRiskScore)
       return {
@@ -461,26 +472,25 @@ const trendDataPanel = computed(() => {
       }
     })
     .filter(Boolean)
-  const recentTransitions = transitions.slice(-5)
-  const avgMove = recentTransitions.length
-    ? recentTransitions.reduce((sum: number, item: any) => sum + item.impact, 0) / recentTransitions.length
+  const avgMove = transitionList.length
+    ? transitionList.reduce((sum: number, item: any) => sum + item.impact, 0) / transitionList.length
     : 0
   const stability = Math.max(0, Math.min(100, Math.round(100 - avgMove * 2.4)))
   const latestIntent = clampScore(latest.intentScore)
   const latestRisk = clampScore(latest.consistencyRiskScore)
-  const intentDelta14 = latestIntent - clampScore(rangeBase.intentScore)
-  const riskDelta14 = latestRisk - clampScore(rangeBase.consistencyRiskScore)
+  const intentDelta = latestIntent - clampScore(baseAssessment.intentScore)
+  const riskDelta = latestRisk - clampScore(baseAssessment.consistencyRiskScore)
   return {
     latestIntent,
     latestRisk,
-    intentDelta14,
-    riskDelta14,
+    intentDelta14: intentDelta,
+    riskDelta14: riskDelta,
     stability,
     sampleCount: recentAssessments.length,
-    evidenceCount: countRecentEvidence(caseFile.value?.timeline || [], latestTime),
-    tags: buildTrendDataTags(intentDelta14, riskDelta14, stability, recentAssessments.length),
+    evidenceCount: thisMonthRecs.value.length,
+    tags: buildTrendDataTags(intentDelta, riskDelta, stability, recentAssessments.length),
     lineChart: buildRelationshipLineChart(recentAssessments),
-    turningPoints: transitions
+    turningPoints: transitionList
       .filter((item: any) => item.impact > 0)
       .sort((a: any, b: any) => b.impact - a.impact || b.time - a.time)
       .slice(0, 3)
@@ -634,7 +644,7 @@ const warmingSignal = computed(() => {
   if (positive.length === 0) return null
   positive.sort(function(a, b) { return b.impact - a.impact })
   var best = positive[0]
-  return { title: best.title || '关系出现积极变化', detail: '本次意向 +' + best.intentDelta + '，属近期最显著的升温信号。', evidence: '分析节点：' + best.key }
+  return { title: best.title || '关系出现积极变化', detail: '本次意向 +' + best.intentDelta + '，属本月最显著的升温信号。', evidence: '分析节点：' + best.key }
 })
 const riskSignal2 = computed(() => {
   if (!riskFocusData.value) return null
@@ -652,7 +662,7 @@ const anomalySignal = computed(() => {
   var stabilityLow = radarStability.value < 45
   var intentHigh = (trendDataPanel.value?.latestIntent || 0) >= 60
   if (stabilityLow && intentHigh) {
-    return { title: '分数不错，但波动偏大', detail: '最近意向分较高但走势不稳定。单一高分不构成确认信号，建议等多几次分析再下判断。', evidence: '稳定性 ' + radarStability.value + ' · 意向 ' + (trendDataPanel.value?.latestIntent || 0) }
+    return { title: '分数不错，但波动偏大', detail: '本月意向分较高但走势不稳定。单一高分不构成确认信号，建议等多几次分析再下判断。', evidence: '稳定性 ' + radarStability.value + ' · 意向 ' + (trendDataPanel.value?.latestIntent || 0) }
   }
   return null
 })
@@ -693,7 +703,12 @@ const matrixActive = computed(() => {
 
 // 互动画像
 const timelineRecords = computed(() => caseFile.value?.timeline || [])
-const timelineCount = computed(() => timelineRecords.value.length)
+// 仅统计用户手记，排除系统自动生成的评估/趋势/系统记录
+const userTimelineRecords = computed(() => timelineRecords.value.filter((r: any) => {
+  const type = String(r?.type || '')
+  return type !== 'assessment' && type !== 'trend' && type !== 'system'
+}))
+const timelineCount = computed(() => userTimelineRecords.value.length)
 const timelineStats = computed(() => {
   const records = timelineRecords.value
   return records.length > 0 ? buildTimelineStats(records) : { totalCount: 0, offlineMeetCount: 0, movieCount: 0, mealCount: 0, coffeeTeaCount: 0, targetInitiatedCount: 0, selfInitiatedCount: 0, targetCommittedCount: 0, fulfilledCount: 0, rejectedCount: 0, cancelledDelayedCount: 0 }
@@ -727,13 +742,13 @@ const outcomeSummary = computed(() => {
 const sceneTypeMap = { meal: '线下', movie: '线下', offline_meet: '线下', walk_shop: '线下', group_social: '线下', trip: '线下', coffee_tea: '线上', chat: '线上', phone_call: '线上', game: '线上', sport: '线下', shopping: '线下', study: '线上', work: '线上', music: '线上', pet: '线下', food: '线下', travel: '线下' }
 const sceneLabelMap = { meal: '吃饭', movie: '电影', offline_meet: '见面', walk_shop: '散步', group_social: '朋友局', trip: '旅行', coffee_tea: '咖啡', chat: '聊天', phone_call: '电话', game: '游戏', sport: '运动', shopping: '逛街', study: '学习', work: '工作', music: '音乐', pet: '宠物', food: '美食', travel: '出行' }
 const sceneSlots = [
-  { key: 'chat', x: 72, y: 42, label: '聊天' },
-  { key: 'meal', x: 20, y: 80, label: '吃饭' },
-  { key: 'movie', x: 170, y: 88, label: '电影' },
-  { key: 'coffee', x: 50, y: 150, label: '咖啡' },
-  { key: 'walk', x: 130, y: 158, label: '散步' },
-  { key: 'group', x: 210, y: 162, label: '朋友局' },
-  { key: 'trip', x: 236, y: 40, label: '旅行' },
+  { key: 'chat', x: 80, y: 80, label: '聊天' },
+  { key: 'meal', x: 80, y: 140, label: '吃饭' },
+  { key: 'movie', x: 180, y: 140, label: '电影' },
+  { key: 'coffee', x: 100, y: 220, label: '咖啡' },
+  { key: 'walk', x: 180, y: 220, label: '散步' },
+  { key: 'group', x: 260, y: 220, label: '朋友局' },
+  { key: 'trip', x: 260, y: 80, label: '旅行' },
 ]
 const sceneBubbles = computed(() => {
   var s = thisMoStats.value
@@ -760,7 +775,7 @@ const sceneBubbles = computed(() => {
   var maxCount = allItems[0].count
   var minCount = allItems[allItems.length - 1].count
   return allItems.map(function(t, i) {
-    var slot = sceneSlots[i] || { x: 20 + i * 50, y: 100 + (i % 3) * 60 }
+    var slot = sceneSlots[i] || { x: 80 + i * 40, y: 100 + (i % 3) * 70 }
     var size = 44 + Math.round((t.count / maxCount) * 74)
     var tone = t.count >= maxCount * 0.7 ? 'hot' : t.count >= minCount + (maxCount - minCount) * 0.5 ? 'mid' : 'cool'
     return { key: t.key, label: t.label, count: t.count, size: size, x: slot.x, y: slot.y, tone: tone }
@@ -798,12 +813,12 @@ const tagOutcomeItems = computed(() => {
 function getRecordTs(r) { return new Date(r?.occurrenceAt || r?.createdAt || r?.date || 0).getTime() }
 const thisMonthRecs = computed(() => {
   var now = new Date(), start = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
-  return timelineRecords.value.filter(function(r) { return getRecordTs(r) >= start })
+  return userTimelineRecords.value.filter(function(r) { return getRecordTs(r) >= start })
 })
 const lastMonthRecs = computed(() => {
   var now = new Date(), start = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime()
   var end = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
-  return timelineRecords.value.filter(function(r) { var t = getRecordTs(r); return t >= start && t < end })
+  return userTimelineRecords.value.filter(function(r) { var t = getRecordTs(r); return t >= start && t < end })
 })
 const thisMoStats = computed(() => buildTimelineStats(thisMonthRecs.value))
 const lastMoStats = computed(() => buildTimelineStats(lastMonthRecs.value))
@@ -988,7 +1003,7 @@ async function ensureCaseId(uid: string) {
 async function loadData(options: { silent?: boolean } = {}) {
   const uid = getCurrentUserId()
   if (!uid) {
-    uni.reLaunch({ url: '/pages/login/login' })
+    loading.value = false
     return
   }
   userId.value = uid
@@ -1265,6 +1280,10 @@ function formatDelta(value: any) {
   return '持平'
 }
 
+function goHome() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
 // 桃花匹配度入口 → 跳转「命理桃花」页（带 caseId）
 function goTaohuaMatch() {
   if (caseId.value) setActiveCaseId(caseId.value)
@@ -1526,7 +1545,7 @@ async function generateThisMonthReview() {
 .v2-mode .scene-chart-v2 { position: relative; height: 460rpx; border: 2rpx solid #111; background: linear-gradient(180deg, #fff, #fffcf4); overflow: hidden; }
 .v2-mode .scene-axis-h-v2 { position: absolute; left: 16rpx; right: 16rpx; top: 50%; height: 2rpx; background: #111; opacity: .45; }
 .v2-mode .scene-axis-v-v2 { position: absolute; top: 16rpx; bottom: 16rpx; left: 50%; width: 2rpx; background: #111; opacity: .45; }
-.v2-mode .scene-axis-label-v2 { position: absolute; font-size: 20rpx; font-weight: 800; color: #999; background: #fff; padding: 2rpx 8rpx; }
+.v2-mode .scene-axis-label-v2 { position: absolute; font-size: $fs-micro; font-weight: $fw-label; color: #999; background: #fff; padding: 2rpx 8rpx; }
 .v2-mode .scene-axis-label-v2.top { top: 8rpx; left: 50%; transform: translateX(-50%); }
 .v2-mode .scene-axis-label-v2.bottom { bottom: 8rpx; left: 50%; transform: translateX(-50%); }
 .v2-mode .scene-axis-label-v2.left { left: 10rpx; top: 50%; transform: translateY(-50%); }
@@ -1535,16 +1554,16 @@ async function generateThisMonthReview() {
 .v2-mode .scene-bubble-v2.hot { background: #4ECDC4; }
 .v2-mode .scene-bubble-v2.mid { background: #FFD93D; }
 .v2-mode .scene-bubble-v2.cool { background: #fff; }
-.v2-mode .scene-bubble-name-v2 { display: block; font-size: 20rpx; font-weight: 900; color: #111; line-height: 1.1; }
-.v2-mode .scene-bubble-count-v2 { display: block; margin-top: 4rpx; font-size: 20rpx; font-weight: 900; color: rgba(0,0,0,.6); }
+.v2-mode .scene-bubble-name-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #111; line-height: 1.1; }
+.v2-mode .scene-bubble-count-v2 { display: block; margin-top: 4rpx; font-size: $fs-micro; font-weight: $fw-body; color: rgba(0,0,0,.6); }
 .v2-mode .scene-legend-v2 { display: flex; gap: 16rpx; margin-top: 14rpx; }
-.v2-mode .scene-legend-item-v2 { display: flex; align-items: center; gap: 8rpx; font-size: 20rpx; font-weight: 800; color: #666; }
+.v2-mode .scene-legend-item-v2 { display: flex; align-items: center; gap: 8rpx; font-size: $fs-micro; font-weight: $fw-label; color: #666; }
 .v2-mode .scene-legend-dot-v2 { width: 20rpx; height: 20rpx; border: 2rpx solid #111; }
 .v2-mode .scene-legend-dot-v2.mint { background: #4ECDC4; }
 .v2-mode .scene-legend-dot-v2.yellow { background: #FFD93D; }
 .v2-mode .scene-legend-dot-v2.white { background: #fff; }
 .v2-mode .scene-chips-v2 { margin-top: 14rpx; border: 2rpx solid #111; background: #fff; padding: 12rpx; display: flex; flex-wrap: wrap; gap: 8rpx; }
-.v2-mode .scene-chip-v2 { display: inline-flex; align-items: center; gap: 6rpx; min-height: 40rpx; border: 2rpx solid #111; background: #fff; padding: 4rpx 12rpx; font-size: 20rpx; font-weight: 900; color: #111; }
+.v2-mode .scene-chip-v2 { display: inline-flex; align-items: center; gap: 6rpx; min-height: 40rpx; border: 2rpx solid #111; background: #fff; padding: 4rpx 12rpx; font-size: $fs-micro; font-weight: $fw-label; color: #111; }
 .v2-mode .scene-chip-v2.hot { background: #4ECDC4; }
 .v2-mode .scene-chip-v2.mid { background: #FFD93D; }
 .v2-mode .scene-chip-v2.cool { background: repeating-linear-gradient(45deg, #fff, #fff 6rpx, #f5f5f5 6rpx, #f5f5f5 12rpx); }
@@ -1651,9 +1670,6 @@ async function generateThisMonthReview() {
 .v2-mode .section-more-v2,
 .v2-mode .diverging-label-v2,
 .v2-mode .diverging-axis-v2,
-.v2-mode .scene-bubble-name-v2,
-.v2-mode .scene-bubble-count-v2,
-.v2-mode .scene-chip-v2,
 .v2-mode .info-tree-q {
   font-size: $fs-body;
   font-weight: $fw-heading;

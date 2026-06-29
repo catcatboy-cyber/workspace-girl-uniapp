@@ -4,7 +4,7 @@
       <!-- Profile -->
       <view class="card-v2 anim-card" style="animation-delay:0.15s"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn btn-secondary btn-md" @click="goSelfProfile">编辑本人画像</button></view>
       <!-- Account -->
-      <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">Crushes 数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view><view class="btn-row-v2"><button class="btn btn-danger btn-md" @click="onLogout">退出登录</button></view></view>
+      <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">Crushes 数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view></view>
       <!-- Pet picker -->
       <view class="card-v2 anim-card" style="animation-delay:0.25s"><text class="section-title-v2">陪伴形象</text><view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn btn-secondary btn-sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view></view>
       <!-- Pet select sheet -->
@@ -51,8 +51,7 @@
           <view class="btn-row-v2" style="margin-top:14rpx;">
             <button class="btn btn-secondary btn-sm" @click="goSubscriptionPlan">升级套餐</button>
             <button class="btn btn-secondary btn-sm" @click="goRecharge">买加油包</button>
-            <button class="btn btn-secondary btn-sm" open-type="share">+{{ referralRewardTokens }}</button>
-            <button class="btn btn-ghost btn-sm" @click="goTokenUsage">消费明细</button>
+            <button class="btn btn-secondary btn-sm" @click="goTokenUsage">消费明细</button>
           </view>
       </view>
       <!-- 低 Token 提示 -->
@@ -72,7 +71,6 @@
       <!-- #ifdef H5 -->
       <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、AI、Token 和反馈管理 →</text></view>
       <!-- #endif -->
-      <view class="card-v2" @click="goSystemTracks"><text class="section-title-v2">系统轨迹</text><text class="card-text-v2">查看系统自动生成的分析和趋势记录 →</text></view>
       <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
       <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
       <view class="card-v2" @click="goReferences"><text class="section-title-v2">引用经典</text><text class="card-text-v2">本小程序引用的古今中外经典文献 →</text></view>
@@ -94,7 +92,6 @@ import {
   getTokenUsage,
   getVoiceUsage,
   hasUsableSelfProfile,
-  logout,
   updateSelfProfile,
   type AIBoldnessValue,
   type AIStyleValue,
@@ -313,10 +310,7 @@ function chooseTheme(themeId: ThemeId) {
 
 async function loadData() {
   const uid = getCurrentUserId()
-  if (!uid) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!uid) return
 
   userEmail.value = uni.getStorageSync('userEmail') || ''
   syncProfileState(getCachedSelfProfile())
@@ -523,10 +517,6 @@ function goRecharge() {
   uni.navigateTo({ url: '/pages/token-recharge/token-recharge' })
 }
 
-function goSystemTracks() {
-  uni.navigateTo({ url: '/pages/system-tracks/system-tracks' })
-}
-
 function goExplain() {
   uni.navigateTo({ url: '/pages/explain/explain' })
 }
@@ -567,11 +557,6 @@ function goReferences() {
 
 function goAbout() {
   uni.navigateTo({ url: '/pages/about/about' })
-}
-
-async function onLogout() {
-  await logout()
-  uni.reLaunch({ url: '/pages/login/login' })
 }
 </script>
 

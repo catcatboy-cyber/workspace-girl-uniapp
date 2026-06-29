@@ -25,7 +25,7 @@ import { register, shouldCompleteSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const INVITE_CODE_KEY = 'pendingInviteCode'
-const privacyCopy = '登录即表示同意《隐私政策》和《服务条款》，查看请前往“关于”页。'
+const privacyCopy = '请阅读并了解《隐私政策》和《服务条款》（点击查看）'
 
 const email = ref('')
 const password = ref('')

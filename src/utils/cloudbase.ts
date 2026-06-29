@@ -284,10 +284,8 @@ export const callFunction: typeof _rawCallFunction = (async (...args: any[]) => 
     await ensureCloudAuthReady()
   } catch (error: any) {
     const storedUserId = getStoredUserId()
-    if (error?.code === 'AUTH_SESSION_REQUIRED' && !storedUserId) {
-      uni.reLaunch({ url: '/pages/login/login' })
-    }
     if (!storedUserId) throw error
+    // AUTH_SESSION_REQUIRED 不再自动跳登录 —— 游客模式允许浏览
   }
   const options = args[0] || {}
   const storedUserId = getStoredUserId()

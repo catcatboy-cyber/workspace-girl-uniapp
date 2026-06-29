@@ -144,7 +144,8 @@ onShow(() => {
 async function loadData() {
   const uid = getCurrentUserId()
   if (!uid) {
-    uni.reLaunch({ url: '/pages/login/login' })
+    userId.value = ''
+    loading.value = false
     return
   }
   userId.value = uid

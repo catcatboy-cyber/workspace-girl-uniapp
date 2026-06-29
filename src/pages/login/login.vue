@@ -62,6 +62,11 @@ const hideEmailCopy = '\u6536\u8d77\u90ae\u7bb1\u767b\u5f55'
 const useEmailCopy = '\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55'
 
 onShow(() => {
+  // 静默登录已自动完成，直接回首页
+  if (getCurrentUserId()) {
+    uni.switchTab({ url: '/pages/index/index' })
+    return
+  }
   isWechatMiniProgram.value = Boolean((globalThis as any)?.wx?.cloud)
   if (isWechatMiniProgram.value) {
     showEmailLogin.value = false

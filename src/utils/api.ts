@@ -858,25 +858,34 @@ export async function createSubscriptionPayment(
   return res.result
 }
 
-export async function createPaymentOrder(params: {
+/** 统一下单（自研）— 一站式：创建DB订单 + 微信V3下单 + 生成支付参数 */
+export async function unifiedOrder(params: {
   productType: 'recharge' | 'subscription'
   productId?: string
   planKey?: string
   billingCycle?: 'monthly' | 'annual'
   priceVariant?: 'standard' | 'student'
-  openid?: string
 }) {
   const res = await callFunction({
     name: 'recharge',
-    data: { action: 'createPaymentOrder', ...params, ...getBusinessAuthPayload() }
+    data: { action: 'unifiedOrder', ...params, ...getBusinessAuthPayload() }
   })
   return res.result
 }
 
-export async function queryPaymentOrder(options: { orderNo?: string; orderId?: string }) {
+/** 主动查单（自研）— 微信 V3 查单，用于轮询兜底 */
+export async function queryOrder(params: { orderNo: string }) {
   const res = await callFunction({
     name: 'recharge',
-    data: { action: 'queryPaymentOrder', ...options, ...getBusinessAuthPayload() }
+    data: { action: 'queryOrder', ...params, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function confirmPayment(options: { orderNo: string }) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'confirmPayment', ...options, ...getBusinessAuthPayload() }
   })
   return res.result
 }

@@ -1,5 +1,5 @@
 <template>
-  <view v-if="currentUserId" :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
+  <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
 
     <view v-if="loading" class="loading">LOADING...</view>
 
@@ -22,7 +22,7 @@
         <!-- 命理 · 今日桃花 -->
         <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;" @click="goTaohua">
           <view class="taohua-teaser-head">
-            <text class="taohua-teaser-head-title">🧭 今日桃花</text>
+            <text class="taohua-teaser-head-title">今日桃花</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
           </view>
           <view v-if="taohuaTeaserData" class="taohua-teaser-body">
@@ -98,7 +98,7 @@
         <!-- 命理 · 今日桃花 -->
         <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.05s;" @click="goTaohua">
           <view class="taohua-teaser-head">
-            <text class="taohua-teaser-head-title">🧭 今日桃花</text>
+            <text class="taohua-teaser-head-title">今日桃花</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
           </view>
           <view v-if="taohuaTeaserData" class="taohua-teaser-body">
@@ -284,7 +284,6 @@
 
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
-  <view v-else :class="['page v2-mode', fontSizeMode === 'large' ? 'font-large' : '']" />
   <!-- 桃花算法说明弹窗 -->
   <view v-if="showTaohuaInfo" class="taohua-info-overlay" @click="showTaohuaInfo = false">
     <view class="taohua-info-sheet" @click.stop>
@@ -1110,6 +1109,7 @@ onShow(() => {
     activeNeedsDetail,
     latestAiPending: Boolean(latestCase.value?.latestResult?.aiPending)
   })
+  loadTaohuaTeaser()
   if (!dataReady.value || dv > lastDataVersion.value || activeMissing || activeChanged || activeNeedsDetail) {
     loadData()
   } else {
@@ -1166,8 +1166,7 @@ onUnload(() => {
 async function loadData() {
   const uid = getCurrentUserId()
   if (!uid) {
-    currentUserId.value = ''
-    uni.reLaunch({ url: '/pages/login/login' })
+    loading.value = false
     return
   }
   currentUserId.value = uid
@@ -1197,7 +1196,6 @@ async function loadData() {
       latestAiUsed: latestCase.value?.latestResult?.aiUsed
     })
     refreshSelfProfileInBackground()
-    loadTaohuaTeaser()
     maybeResumePendingAssessmentAI('loadData')
   } catch (e: any) {
     indexAILog('loadData_error', { message: e?.message || String(e || '') })
@@ -1454,6 +1452,10 @@ async function chooseQuickImages() {
     count: remain,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
+    fail: (err: any = {}) => {
+      const msg = String(err?.errMsg || err?.message || '')
+      if (!msg.includes('cancel')) showError(msg || '无法打开相册，请检查相册权限')
+    },
     success: async (res: any = {}) => {
       const files = res?.tempFiles || []
       if (!files.length) return
@@ -1870,11 +1872,10 @@ const showTaohuaInfo = ref(false)
 const taohuaTeaserData = ref<{ score: number; direction: string; directionZhi: string; hongluanDir: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
 
 async function loadTaohuaTeaser() {
-  try { const access = await checkFeatureAccess('命理桃花'); showTaohuaTeaser.value = access?.allowed !== false }
-  catch { showTaohuaTeaser.value = true }
-  if (!showTaohuaTeaser.value) return
+  const profile = selfProfile.value || {}
+
+
   try {
-    const profile = selfProfile.value || {}
     const result = await queryTaohua(profile.zodiac || '', profile.constellation || '', profile.gender || '')
     if (!result?.success || !result?.data?.daily?.ganzhi?.dayZhi) {
       taohuaTeaserData.value = null
@@ -1902,6 +1903,7 @@ async function loadTaohuaTeaser() {
       summary,
       guidance,
     }
+    showTaohuaTeaser.value = true
   } catch (_) {
     taohuaTeaserData.value = null
   }
@@ -2029,6 +2031,7 @@ function goTaohua() {
 .v2-mode .quick-wave-bar-v2:nth-child(3) { animation-delay: 0.24s; }
 .v2-mode .quick-voice-time-v2 { font-size: $fs-micro; font-weight: $fw-heading; color: #fff; font-variant-numeric: tabular-nums; line-height: 1; }
 .v2-mode .voice-status-v2 { display: block; margin-top: 10rpx; font-size: $fs-caption; font-weight: $fw-body; color: #666; }
+
 @media (max-width: 360px) {
   .v2-mode .role-row { gap: 6rpx; }
   .v2-mode .role-main-v2 { gap: 6rpx; }

@@ -8,7 +8,7 @@
         </view>
         <view v-if="activeTab === 'ledger'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">额度变动记录</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="ledgerLoading" @click="loadLedger">{{ ledgerLoading ? '读取中' : '刷新' }}</button></view>
-            <view v-if="ledgerRecords.length > 0" class="usage-list-v2"><view v-for="item in ledgerRecords" :key="item._id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapLedgerType(item.type) }}{{ item.remark ? ' · ' + item.remark : '' }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text :class="['usage-total-v2', item.amountTokens > 0 ? 'positive' : 'negative']">{{ item.amountTokens > 0 ? '+' : '' }}{{ item.amountTokens }}</text><text class="usage-meta-v2">余额 {{ item.balanceAfter }}</text></view></view></view>
+            <view v-if="ledgerRecords.length > 0" class="usage-list-v2"><view v-for="item in ledgerRecords" :key="item._id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapLedgerType(item) }}{{ item.remark ? ' · ' + item.remark : '' }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text :class="['usage-total-v2', item.amountTokens > 0 ? 'positive' : 'negative']">{{ item.amountTokens > 0 ? '+' : '' }}{{ item.amountTokens }}</text><text class="usage-meta-v2">余额 {{ item.balanceAfter }}</text></view></view></view>
             <text v-else class="card-text-v2">{{ ledgerLoading ? '正在读取...' : '暂无记录。' }}</text>
           </view>
         </view>
@@ -169,10 +169,17 @@ function mapFeature(feature: string) {
   return map[feature] || feature || '未知调用'
 }
 
-function mapLedgerType(type: string) {
+function mapLedgerType(item: any) {
+  const type = String(item?.type || '')
+  const source = String(item?.source || '')
+
+  // grant 类型要按 source 区分来源
+  if (type === 'grant' && source.startsWith('recharge_')) return '充值获赠'
+  if (type === 'grant' && source.startsWith('referral_')) return '邀请获赠'
+  if (type === 'grant') return '赠送'
+
   const map: Record<string, string> = {
-    gift: '赠送',
-    grant: '邀请获赠',
+    gift: '赠送（旧）',
     recharge: '充值',
     consume: '消费',
     refund: '退款',

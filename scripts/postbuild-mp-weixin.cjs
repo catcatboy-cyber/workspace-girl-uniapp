@@ -11,13 +11,6 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
 }
 
-const appJsonPath = path.join(root, 'app.json')
-if (fs.existsSync(appJsonPath)) {
-  const appJson = readJson(appJsonPath)
-  appJson.__usePrivacyCheck__ = true
-  writeJson(appJsonPath, appJson)
-}
-
 const projectConfigPath = path.join(root, 'project.config.json')
 if (fs.existsSync(projectConfigPath)) {
   const projectConfig = readJson(projectConfigPath)
@@ -34,7 +27,7 @@ if (fs.existsSync(projectConfigPath)) {
   writeJson(projectConfigPath, projectConfig)
 }
 
-const privacySrc = 'privacy.json'
+const privacySrc = path.join('src', 'privacy.json')
 const privacyDest = path.join(root, 'privacy.json')
 if (fs.existsSync(privacySrc)) {
   fs.copyFileSync(privacySrc, privacyDest)

@@ -1907,15 +1907,34 @@ async function refundOrder(event = {}) {
   if (!order) return { success: false, message: '订单不存在' }
   if (order.status !== 'paid') return { success: false, message: '仅已支付订单可退款' }
 
+  const now = new Date()
+
   await db.collection('recharge_orders').doc(orderId).update({
     status: 'refunded',
-    refundedAt: new Date()
+    refundedAt: now
   })
 
+  // 查询用户（一次查询，供后续套餐回退 + token 扣除共用）
+  const userRes = await db.collection('users').doc(order.userId).get()
+  const user = Array.isArray(userRes.data) ? userRes.data[0] : userRes.data
+
+  // 退款时回退套餐升级
+  const isSubscription = order.productType === 'subscription' || order.type === 'subscription_upgrade'
+  if (isSubscription) {
+    const fromPlan = order.fromPlan || 'free'
+    if (user) {
+      console.log('[refundOrder] subscription revert userId=%s plan=%s → %s', order.userId, user.plan, fromPlan)
+      await db.collection('users').doc(order.userId).update({
+        plan: fromPlan,
+        planExpiresAt: null,
+        updatedAt: now
+      })
+    }
+  }
+
+  // 扣除已发放的 Token（充值与订阅升级都可能发放）
   const refundTokens = Number(order.grantTokens || 0)
   if (refundTokens > 0) {
-    const userRes = await db.collection('users').doc(order.userId).get()
-    const user = Array.isArray(userRes.data) ? userRes.data[0] : userRes.data
     const currentExtraTokens = Number(user?.extraTokens || 0)
     const deduction = Math.min(currentExtraTokens, refundTokens)
     if (deduction > 0) {
@@ -1930,7 +1949,7 @@ async function refundOrder(event = {}) {
       amount: -deduction,
       relatedOrderId: orderId,
       remark: `refund: ${order.planName || order.productName || ''}`,
-      createdAt: new Date()
+      createdAt: now
     })
   }
 

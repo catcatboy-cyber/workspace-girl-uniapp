@@ -2,6 +2,8 @@ const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
 const { ensureBillingSettings } = require('./_shared/billing')
 const { fulfillPayment } = require('./_shared/payment-fulfillment')
+const { createJsapiOrder, createPayParams, queryOrderByOutTradeNo,
+  verifyCallbackSignature, decryptResource } = require('./_shared/wxpay-v3')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -180,18 +182,58 @@ async function createSubscriptionUpgrade(event) {
   }
 }
 
-// ============================================================
-// 微信支付正式版（替换 pending → adminConfirm 过渡流程）
-// ============================================================
+// action: confirmPayment — 前端 wx.requestPayment 成功后的即时确认
+// 必须通过微信 V3 查单验证支付真实发生，防止绕过客户端直接调用云函数
+async function confirmPayment(event) {
+  const userId = await requireAuthenticatedUserId(app, event)
+  const orderNo = String(event.orderNo || '').trim()
+  if (!orderNo) return { success: false, message: '缺少 orderNo' }
 
-// action: createPaymentOrder — 创建正式支付订单
-// 输入: productType, productId/planKey, billingCycle?, priceVariant?, openid
-// 服务端查配置算价格，不信任前端传价
-async function createPaymentOrder(event) {
+  const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
+  const order = (data && data.length > 0) ? data[0] : null
+  console.log('[PAYDBG][confirm] orderNo=%s hit=%s status=%s', orderNo, !!order, order?.status)
+  if (!order) return { success: false, message: '订单不存在' }
+  if (order.status === 'paid') return { success: true, order, alreadyPaid: true }
+  if (order.status !== 'pending') return { success: false, message: `订单状态为 "${order.status}"，无法确认` }
+
+  // 服务端微信 V3 查单验证支付真实发生（防止绕过客户端伪造请求）
+  const wxResult = await queryOrderByOutTradeNo(orderNo)
+  console.log('[PAYDBG][confirm] wxQuery result=%j', wxResult)
+  if (wxResult && wxResult.trade_state === 'SUCCESS' && wxResult.transaction_id) {
+    const fulfilled = await fulfillPayment(db, order, wxResult.transaction_id)
+    console.log('[PAYDBG][confirm] fulfilled orderNo=%s productType=%s', orderNo, fulfilled.productType)
+    return { success: true, order: fulfilled }
+  }
+
+  // 微信侧未确认支付 → 让前端走轮询兜底
+  console.log('[PAYDBG][confirm] 微信侧未确认支付 orderNo=%s wxTradeState=%s', orderNo, wxResult?.trade_state)
+  return { success: true, order, pendingVerification: true, message: '支付确认中，请稍候...' }
+}
+
+// action: unifiedOrder — 统一下单（一站式：创建DB订单 + 微信V3下单 + 生成支付参数）
+// 替代旧的两段式: createPaymentOrder + callHTTPFunction 到集成中心模板
+// 产品/价格全部服务端计算，不信任前端传价
+async function unifiedOrder(event) {
   const userId = await requireAuthenticatedUserId(app, event)
   const productType = String(event.productType || '').trim()
-  const openid = String(event.openid || '').trim()
   if (!productType) return { success: false, message: '缺少 productType' }
+
+  // 获取 openid：优先 event 传入，fallback 查 DB
+  let openid = String(event.openid || '').trim()
+  if (!openid) {
+    try {
+      const { data: userData } = await db.collection('users').doc(userId).get()
+      openid = (userData && userData.length > 0) ? (userData[0].openid || '') : ''
+    } catch (_) {}
+  }
+  if (!openid) return { success: false, message: '缺少微信 openid，请在小程序中重试' }
+
+  const appid = String(process.env.WXPAY_APPID || '').trim()
+  const mchid = String(process.env.WXPAY_MCHID || '').trim()
+  const notifyUrl = String(process.env.WXPAY_NOTIFY_URL || '').trim()
+  if (!appid || !mchid || !notifyUrl) {
+    return { success: false, message: '支付系统配置未完成（APPID/MCHID/NOTIFY_URL）' }
+  }
 
   let order
 
@@ -205,21 +247,14 @@ async function createPaymentOrder(event) {
 
     const amountFen = Number(tier.priceFen) || 0
     const grantTokens = Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0)
-    console.log('[createPaymentOrder-recharge] tier.priceFen:', tier.priceFen, 'amountFen:', amountFen, 'tokensPerYuan:', billing.tokensPerYuan, 'bonusTokens:', tier.bonusTokens, '=> grantTokens:', grantTokens)
+    console.log('[PAYDBG][unifiedOrder] recharge tier=%s amountFen=%s grantTokens=%s', planId, amountFen, grantTokens)
     const now = new Date()
     order = {
       userId, openid,
-      productType: 'recharge',
-      planId: tier.id,
-      planName: tier.name,
-      productName: tier.name,
-      amountFen,
-      amountYuan: (amountFen / 100).toFixed(2),
-      grantTokens,
-      bonusTokens: tier.bonusTokens || 0,
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now
+      productType: 'recharge', planId: tier.id, planName: tier.name,
+      productName: tier.name, amountFen, amountYuan: (amountFen / 100).toFixed(2),
+      grantTokens, bonusTokens: tier.bonusTokens || 0,
+      status: 'pending', createdAt: now, updatedAt: now
     }
   } else if (productType === 'subscription') {
     const { getSubscriptionConfig } = require('./_shared/subscription')
@@ -247,37 +282,25 @@ async function createPaymentOrder(event) {
       ? (billingCycle === 'annual' ? studentAnnual : studentMonthly)
       : (billingCycle === 'annual' ? standardAnnual : standardMonthly)
 
-    console.log('[createPaymentOrder] planConfig keys:', JSON.stringify(Object.keys(planConfig)))
-    console.log('[createPaymentOrder] priceYuan:', planConfig.priceYuan, 'priceYuanAnnual:', planConfig.priceYuanAnnual)
-    console.log('[createPaymentOrder] calculated amountYuan:', amountYuan, 'amountFen:', Math.round(amountYuan * 100))
-
     if (!amountYuan || amountYuan <= 0) {
-      return { success: false, message: `套餐 ${planConfig.name} 的价格未配置，请在后台设置价格后重试` }
+      return { success: false, message: `套餐 ${planConfig.name} 的价格未配置` }
     }
 
     const amountFen = Math.round(amountYuan * 100)
     const now = new Date()
     order = {
       userId, openid,
-      productType: 'subscription',
-      type: 'subscription_upgrade',           // 兼容旧字段
-      planKey,
-      planName: planConfig.name,
+      productType: 'subscription', type: 'subscription_upgrade',
+      planKey, planName: planConfig.name,
       productName: `${planConfig.name} · ${priceVariant === 'student' ? '学生' : '标准'} · ${billingCycle === 'annual' ? '年付' : '月付'}`,
-      billingCycle,
-      priceVariant,
+      billingCycle, priceVariant,
       priceLabel: `${priceVariant === 'student' ? '学生价' : '标准价'} · ${billingCycle === 'annual' ? '年付' : '月付'}`,
-      fromPlan: '',
-      amountFen,
-      amountYuan: amountYuan.toFixed(2),
-      grantPlan: planKey,
+      fromPlan: '', grantPlan: planKey,
       grantDurationDays: billingCycle === 'annual' ? 365 : 30,
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now
+      amountFen, amountYuan: amountYuan.toFixed(2),
+      status: 'pending', createdAt: now, updatedAt: now
     }
 
-    // 查当前套餐
     try {
       const { data: userData } = await db.collection('users').doc(userId).get()
       const user = (userData && userData.length > 0) ? userData[0] : null
@@ -291,50 +314,135 @@ async function createPaymentOrder(event) {
   const orderNo = `PAY${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`
   order.orderNo = orderNo
 
-  // 写 recharge_orders
-  const result = await db.collection(RECHARGE_ORDERS).add(order)
-  order._id = result.id || result._id
+  // 写 DB
+  const addResult = await db.collection(RECHARGE_ORDERS).add(order)
+  order._id = addResult.id || addResult._id
+  console.log('[PAYDBG][unifiedOrder] DB订单已创建 orderNo=%s _id=%s', orderNo, order._id)
 
-  return { success: true, order }
+  // 调微信 V3 统一下单
+  const wxResult = await createJsapiOrder({
+    appid, mchid, openid,
+    description: order.productName.substring(0, 127),
+    out_trade_no: orderNo,
+    amount: { total: order.amountFen, currency: 'CNY' },
+    notify_url: notifyUrl
+  })
+
+  if (!wxResult.success || !wxResult.prepay_id) {
+    await db.collection(RECHARGE_ORDERS).doc(order._id).update({
+      status: 'failed',
+      failReason: 'wechat_unified_order_failed',
+      updatedAt: new Date()
+    }).catch(() => {})
+    return { success: false, message: '统一下单失败，请稍后重试' }
+  }
+
+  const payParams = createPayParams(wxResult.prepay_id)
+  order.prepay_id = wxResult.prepay_id
+  console.log('[PAYDBG][unifiedOrder] 完成 orderNo=%s prepay_id=%s', orderNo, wxResult.prepay_id)
+  return { success: true, order, payParams }
 }
 
-// action: queryPaymentOrder — 查单
-async function queryPaymentOrder(event) {
+// action: queryOrder — 主动查单（替代旧 activeWeChatQuery + 集成中心）
+// 前端轮询兜底 + 手动查单均可使用
+// 微信终态（CLOSED/PAYERROR/REVOKED）会同步到 DB，防止订单永远 pending
+async function queryOrder(event) {
   const userId = await requireAuthenticatedUserId(app, event)
   const orderNo = String(event.orderNo || '').trim()
-  const orderId = String(event.orderId || '').trim()
+  if (!orderNo) return { success: false, message: '缺少 orderNo' }
 
-  let order = null
-  if (orderNo) {
-    const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
-    order = (data && data.length > 0) ? data[0] : null
-  } else if (orderId) {
-    const { data } = await db.collection(RECHARGE_ORDERS).doc(orderId).get()
-    order = (data && data.length > 0) ? data[0] : null
-  }
+  // 先查 DB
+  const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
+  const order = (data && data.length > 0) ? data[0] : null
   if (!order) return { success: false, message: '订单不存在' }
 
+  // 已终态直接返回
+  if (order.status === 'paid' || order.status === 'failed' || order.status === 'expired') {
+    return { success: true, order }
+  }
+
+  // 调微信 V3 查单
+  const wxResult = await queryOrderByOutTradeNo(orderNo)
+  console.log('[PAYDBG][queryOrder] orderNo=%s wxResult=%j', orderNo, wxResult)
+
+  if (wxResult && wxResult.trade_state === 'SUCCESS' && wxResult.transaction_id) {
+    const fulfilled = await fulfillPayment(db, order, wxResult.transaction_id)
+    return { success: true, order: fulfilled }
+  }
+
+  // 微信终态同步到 DB（防止订单永远 pending）
+  const TERMINAL_STATES = ['CLOSED', 'PAYERROR', 'REVOKED']
+  if (wxResult && TERMINAL_STATES.includes(wxResult.trade_state) && order.status === 'pending') {
+    console.log('[PAYDBG][queryOrder] 微信终态同步 orderNo=%s trade_state=%s → DB status=expired', orderNo, wxResult.trade_state)
+    await db.collection(RECHARGE_ORDERS).doc(order._id).update({
+      status: 'expired',
+      failReason: `wechat_${wxResult.trade_state.toLowerCase()}`,
+      updatedAt: new Date()
+    }).catch(() => {})
+    return { success: true, order: { ...order, status: 'expired' } }
+  }
+
+  // 未支付或查单失败，返回当前 DB 状态
   return { success: true, order }
 }
 
-// action: paymentCallback — 微信支付回调（由集成中心模板触发）
-// 回调格式参考: https://docs.cloudbase.net/integration/wechat-pay-miniprogram
-// event 结构: { event_type: 'TRANSACTION.SUCCESS', resource: { out_trade_no, transaction_id, amount: { total, currency } } }
-async function paymentCallback(event) {
+// action: paymentCallback — 微信支付回调
+// 支持两个入口：
+//   路径A（新-自研）：HTTP 触发器直达 → event.httpMethod + event.body → 自己验签解密
+//   路径B（兼容）：集成中心转发 → event.event_type === 'TRANSACTION.SUCCESS'
+// rawCallbackBody: 仅路径A使用，路径B传 null
+async function paymentCallback(event, rawCallbackBody) {
   let outTradeNo, transactionId, totalFee
 
-  if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
+  // ── 路径 A：HTTP 触发器直达（自研） ──
+  if (rawCallbackBody) {
+    const headers = event.headers || {}
+    console.log('[PAYDBG][callback] HTTP直连 headers keys=%j body前200=%s',
+      Object.keys(headers), String(rawCallbackBody).slice(0, 200))
+
+    // 验签
+    if (!verifyCallbackSignature(headers, rawCallbackBody)) {
+      console.error('[PAYDBG][callback] ❌ 验签失败')
+      return { code: 'FAIL', message: '验签失败' }
+    }
+
+    // 解析 body
+    let callbackJSON
+    try { callbackJSON = JSON.parse(rawCallbackBody) } catch (e) {
+      console.error('[PAYDBG][callback] ❌ JSON解析失败:', e.message)
+      return { code: 'FAIL', message: '无效的请求体' }
+    }
+
+    // 解密 resource
+    const decrypted = decryptResource(callbackJSON.resource || {})
+    if (!decrypted) {
+      console.error('[PAYDBG][callback] ❌ 解密失败')
+      return { code: 'FAIL', message: '解密失败' }
+    }
+
+    outTradeNo = String(decrypted.out_trade_no || '').trim()
+    transactionId = String(decrypted.transaction_id || '').trim()
+    totalFee = Number(decrypted.amount?.total || 0)
+    console.log('[PAYDBG][callback] ✅ 验签解密成功 outTradeNo=%s txnId=%s totalFee=%s',
+      outTradeNo, transactionId, totalFee)
+  }
+  // ── 路径 B：集成中心转发（兼容旧回调通道） ──
+  else if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
     outTradeNo = String(event.resource.out_trade_no || '').trim()
     transactionId = String(event.resource.transaction_id || '').trim()
     totalFee = Number(event.resource.amount?.total || 0)
+    console.log('[PAYDBG][callback] 集成中心转发 outTradeNo=%s txnId=%s', outTradeNo, transactionId)
   } else {
     return { success: false, message: '无效的支付回调来源' }
   }
 
   if (!outTradeNo) return { success: false, message: '缺少 outTradeNo' }
 
+  console.log('[PAYDBG][callback] parsed outTradeNo=%s transactionId=%s totalFee=%s', outTradeNo, transactionId, totalFee)
+
   const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo: outTradeNo }).limit(1).get()
   const order = (data && data.length > 0) ? data[0] : null
+  console.log('[PAYDBG][callback] order lookup hit=%s status=%s amountFen=%s', !!order, order?.status, order?.amountFen)
   if (!order) return { success: false, message: '订单不存在' }
 
   // 金额校验
@@ -348,17 +456,59 @@ async function paymentCallback(event) {
   }
 
   // 发货
-  const { fulfillPayment } = require('./_shared/payment-fulfillment')
   const fulfilled = await fulfillPayment(db, order, transactionId)
 
   return { success: true, order: fulfilled }
 }
 
+// action: repairOrder — 修复已支付但发货遗漏的订单（grant/entitlement 由 fulfillPayment 幂等保护）
+async function repairOrder(event) {
+  const userId = await requireAuthenticatedUserId(app, event)
+  const orderNo = String(event.orderNo || '').trim()
+  const orderId = String(event.orderId || '').trim()
+
+  let order = null
+  if (orderNo) {
+    const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
+    order = (data && data.length > 0) ? data[0] : null
+  } else if (orderId) {
+    const { data } = await db.collection(RECHARGE_ORDERS).doc(orderId).get()
+    order = (data && data.length > 0) ? data[0] : null
+    if (order && order.userId !== userId) order = null
+  }
+  if (!order) return { success: false, message: '订单不存在' }
+  if (order.status !== 'paid') return { success: false, message: '仅已支付订单可修复' }
+
+  console.log('[PAYDBG][repair] repair orderId=%s orderNo=%s productType=%s', order._id, order.orderNo, order.productType)
+  const repaired = await fulfillPayment(db, order, `repair:${order._id || orderNo}`)
+  return { success: true, order: repaired }
+}
+
 exports.main = async (event = {}) => {
   try {
-    // 集成中心微信支付回调自动识别（event_type 而非 action）
+    // ── HTTP 触发器检测（自研回调入口） ──
+    // CloudBase HTTP 访问服务将请求路由到云函数时，event 会包含 httpMethod 字段
+    if (event.httpMethod) {
+      console.log('[PAYDBG][main] HTTP trigger method=%s path=%s keys=%j',
+        event.httpMethod, event.path, Object.keys(event))
+      // POST 请求一律走支付回调处理（安全验证由 paymentCallback 的验签+解密保证）
+      if (event.httpMethod === 'POST') {
+        return await paymentCallback(event, event.body)
+      }
+      return { code: 'FAIL', message: 'Only POST is accepted' }
+    }
+
+    // [PAYDBG] 最入口诊断：抓”回调到底有没有进来 + 真实结构”。前端调用带凭证，仅打印 keys；无 action 的（疑似回调）完整打印。
+    if (event && event.action) {
+      console.log('[PAYDBG][main] front-call action=%s keys=%j', event.action, Object.keys(event))
+    } else {
+      console.log('[PAYDBG][main] NO-ACTION event (疑似支付回调), raw=%j', event)
+    }
+
+    // 集成中心微信支付回调自动识别（event_type 而非 action）— 兼容旧通道
     if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
-      return await paymentCallback(event)
+      console.log('[PAYDBG][main] >>> 命中 TRANSACTION.SUCCESS 回调分支（兼容）')
+      return await paymentCallback(event, null)
     }
 
     const action = String(event.action || '').trim()
@@ -367,8 +517,10 @@ exports.main = async (event = {}) => {
     if (action === 'createRechargeOrder') return await createRechargeOrder(event)
     if (action === 'createSubscriptionUpgrade') return await createSubscriptionUpgrade(event)
     if (action === 'adminConfirmRecharge') return await adminConfirmRecharge(event)
-    if (action === 'createPaymentOrder') return await createPaymentOrder(event)
-    if (action === 'queryPaymentOrder') return await queryPaymentOrder(event)
+    if (action === 'unifiedOrder') return await unifiedOrder(event)
+    if (action === 'queryOrder') return await queryOrder(event)
+    if (action === 'confirmPayment') return await confirmPayment(event)
+    if (action === 'repairOrder') return await repairOrder(event)
     return { success: false, message: '未知操作' }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)

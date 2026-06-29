@@ -2,81 +2,65 @@
   <view :class="['page v2-mode', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
     <view class="hero-block-v2"><text class="hero-tag-v2">UPGRADE</text><text class="hero-title-v2">升级<text class="hl-v2">套餐</text></text><text class="hero-copy-v2">更多 Token，更多功能，更懂你的关系。</text></view>
 
-    <!-- 当前套餐 -->
-    <view class="card-v2" v-if="currentPlan">
-      <text class="section-title-v2">当前套餐</text>
-      <view class="current-plan-row">
-        <text class="current-plan-name">{{ currentPlan.planName }}</text>
-        <text v-if="currentPlan.isTrial" class="trial-badge">试用期剩{{ currentPlan.trialDaysLeft }}天</text>
+    <view class="sub-current-card" v-if="currentPlan">
+      <text class="sub-current-label">当前</text>
+      <view class="sub-current-name-row">
+        <text class="sub-current-name">{{ currentPlan.planName }}</text>
+        <text v-if="currentPlan.isTrial" class="sub-trial-badge">试用 · 剩{{ currentPlan.trialDaysLeft }}天</text>
       </view>
-      <view class="stats-grid-v2 stats-gap">
-        <view class="stat-box-v2"><text class="stat-num-v2">{{ monthlyDisplay }}</text><text class="stat-lbl-v2">本月可用</text></view>
-        <view class="stat-box-v2"><text class="stat-num-v2">{{ (currentPlan.extraTokens || 0).toLocaleString() }}</text><text class="stat-lbl-v2">加油包</text></view>
-        <view class="stat-box-v2"><text class="stat-num-v2">{{ currentPlan.maxCrushes === -1 ? '∞' : currentPlan.maxCrushes }}</text><text class="stat-lbl-v2">Crush 上限</text></view>
+      <view class="sub-current-stats">
+        <view class="sub-stat-item"><text class="sub-stat-num">{{ monthlyDisplay }}</text><text class="sub-stat-lbl">本月可用</text></view>
+        <view class="sub-stat-item"><text class="sub-stat-num">{{ (currentPlan.extraTokens || 0).toLocaleString() }}</text><text class="sub-stat-lbl">加油包</text></view>
+        <view class="sub-stat-item"><text class="sub-stat-num">{{ currentPlan.maxCrushes === -1 ? '∞' : currentPlan.maxCrushes }}</text><text class="sub-stat-lbl">Crush 上限</text></view>
       </view>
     </view>
 
-    <!-- 套餐卡片 -->
-    <text class="section-title-v2 section-gap">选择套餐</text>
-    <view class="plan-grid">
-      <view v-for="plan in plans" :key="plan.key" :class="['plan-card-v2', plan.key === currentPlan.plan ? 'current' : '', plan.key === 'pro' ? 'recommended' : '']">
-        <view v-if="plan.key === 'pro'" class="plan-recommend-badge">推荐</view>
-        <view class="plan-card-header">
-          <text class="plan-name">{{ plan.name }}</text>
-          <view class="plan-price-row">
-            <text class="plan-price">{{ plan.priceText }}</text>
-            <text v-if="plan.priceSub" class="plan-price-sub">{{ plan.priceSub }}</text>
+    <text class="section-title-v2 sub-section-title">选择套餐</text>
+    <view class="sub-plan-grid">
+      <view v-for="plan in plans" :key="plan.key" :class="['sub-plan-card', plan.key === currentPlan.plan ? 'is-current' : '', plan.key === 'pro' ? 'is-recommended' : '']">
+        <view v-if="plan.key === 'pro'" class="sub-plan-badge">推荐</view>
+        <view class="sub-plan-top">
+          <text class="sub-plan-name">{{ plan.name }}</text>
+          <view class="sub-plan-token">
+            <text class="sub-plan-token-num">{{ plan.callsText }}</text>
           </view>
         </view>
-        <view class="plan-card-body">
-          <view class="plan-highlight">
-            <text class="plan-calls">{{ plan.callsText }}</text>
+        <view class="sub-plan-features">
+          <view v-for="f in plan.featureList" :key="f.label" class="sub-feature-row">
+            <text :class="['sub-feature-mark', f.ok ? 'on' : 'off']">{{ f.ok ? '✓' : '—' }}</text>
+            <text :class="['sub-feature-label', f.ok ? '' : 'off']">{{ f.label }}</text>
           </view>
-          <view class="plan-features">
-            <view v-for="f in plan.featureList" :key="f.label" class="plan-feature-row">
-              <text :class="['plan-feature-icon', f.ok ? 'yes' : 'no']">{{ f.ok ? '✓' : '✗' }}</text>
-              <text :class="f.ok ? '' : 'dim'">{{ f.label }}</text>
-            </view>
-          </view>
-          <view v-if="plan.key !== 'free'" class="price-choice-grid">
-            <view
-              v-for="option in getPriceOptions(plan)"
-              :key="option.key"
-              :class="['price-choice', isSelectedPriceOption(plan.key, option) ? 'active' : '']"
-              @click="selectPriceOption(plan.key, option)"
-            >
-              <text class="price-choice-label">{{ option.label }}</text>
-              <text class="price-choice-value">{{ option.priceText }}</text>
-            </view>
-          </view>
-          <button
-            v-if="plan.key !== currentPlan.plan"
-            :class="['btn btn-md btn-full', plan.key === 'pro' ? 'btn-primary' : 'btn-secondary']"
-            :disabled="upgradingPlan === plan.key"
-            @click="onUpgrade(plan.key)"
-          >{{ upgradingPlan === plan.key ? '处理中...' : (plan.key === 'free' ? '切换至免费版' : '升级 ' + plan.name) }}</button>
-          <button v-else class="btn btn-md btn-full" disabled style="background:#f9f9f9;color:#999;border-color:rgba(18,60,54,0.1);">当前套餐</button>
         </view>
+        <view v-if="plan.key !== 'free'" class="sub-plan-price-options">
+          <view
+            v-for="option in getPriceOptions(plan)"
+            :key="option.key"
+            :class="['sub-price-chip', isSelectedPriceOption(plan.key, option) ? 'active' : '']"
+            @click="selectPriceOption(plan.key, option)"
+          >
+            <text class="sub-price-chip-label">{{ option.label }}</text>
+            <text class="sub-price-chip-val">{{ option.priceText }}</text>
+          </view>
+        </view>
+        <button
+          v-if="plan.key !== currentPlan.plan"
+          :class="['sub-plan-btn', plan.key === 'pro' ? 'btn-primary' : '']"
+          :disabled="upgradingPlan === plan.key"
+          @click="onUpgrade(plan.key)"
+        >{{ upgradingPlan === plan.key ? '处理中…' : (plan.key === 'free' ? '切换至免费版' : '升级 ' + plan.name) }}</button>
+        <button v-else class="sub-plan-btn is-current-btn" disabled>当前套餐</button>
       </view>
     </view>
 
-    <!-- 升级结果提示 -->
-    <view v-if="upgradeMessage" :class="['card-v2', 'upgrade-msg', upgradeOk ? 'upgrade-ok' : 'upgrade-err']">
-      <text class="upgrade-msg-icon">{{ upgradeOk ? '✓' : '⚠' }}</text>
-      <text class="upgrade-msg-text">{{ upgradeMessage }}</text>
-      <view v-if="upgradeOk" class="upgrade-msg-hint">
-        <text class="upgrade-msg-note">管理员确认后将自动升级套餐。如需加急请联系客服。</text>
-      </view>
+    <view v-if="upgradeMessage" :class="['sub-upgrade-msg', upgradeOk ? 'ok' : 'err']">
+      <text class="sub-upgrade-icon">{{ upgradeOk ? '✓' : '⚠' }}</text>
+      <text class="sub-upgrade-text">{{ upgradeMessage }}</text>
     </view>
 
-    <!-- 年付/学生价说明 -->
-    <view class="card-v2 section-gap">
-      <text class="section-title-v2">优惠方案</text>
-      <view class="discount-row" v-for="d in discounts" :key="d.label">
-        <text class="discount-label">{{ d.label }}</text>
-        <text class="discount-value">{{ d.value }}</text>
+    <view class="sub-bottom-links">
+      <view class="sub-bottom-link" @click="goRecharge">
+        <text class="sub-bottom-link-text">只需临时补 Token？买加油包 →</text>
       </view>
-      <button class="btn btn-ghost btn-sm" style="margin-top:16rpx;" @click="goRecharge">只需临时补 Token？买加油包 →</button>
     </view>
   </view>
 </template>
@@ -84,7 +68,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getSubscriptionConfig, getSubscriptionStatus, createPaymentOrder, queryPaymentOrder } from '@/utils/api'
+import { getSubscriptionConfig, getSubscriptionStatus, unifiedOrder, queryOrder, confirmPayment } from '@/utils/api'
 import { getCurrentThemeId, getFontSizeMode, getThemeStyle, applyThemeChrome } from '@/utils/theme'
 import { bumpDataVersion } from '@/utils/helpers'
 
@@ -255,9 +239,10 @@ async function onUpgrade(planKey: string) {
   upgradeOk.value = false
 
   try {
-    // 1. 服务端创建订单（查配置算价，写 recharge_orders）
+    // 1. 服务端统一下单（创建DB订单 + 微信V3下单 + 生成支付参数，一站式）
     const priceOpt = getSelectedPriceOption(planKey)
-    const res = await createPaymentOrder({
+    // #ifdef MP-WEIXIN
+    const res = await unifiedOrder({
       productType: 'subscription',
       planKey,
       billingCycle: priceOpt.billingCycle,
@@ -267,52 +252,23 @@ async function onUpgrade(planKey: string) {
       upgradeMessage.value = res?.message || '创建订单失败'
       return
     }
+    const payParams = res.payParams
+    const orderNo = res.order?.orderNo
 
-    // 2. 调用集成中心 HTTP 云函数统一下单
-    // #ifdef MP-WEIXIN
-    let prepayData: any = {}
-    let payRes: any
-    try {
-      payRes = await new Promise((resolve, reject) => {
-        wx.cloud.callHTTPFunction({
-          name: 'CrushRadar-uty6nxqu-demo-scfweb',
-          config: { env: 'cloud1-d0gvhqu2c8a2b61fd' },
-          method: 'POST',
-          header: { 'Content-Type': 'application/json' },
-          path: '/wx-pay/wxpay_order',
-          data: {
-            description: res.order.productName,
-            out_trade_no: res.order.orderNo,
-            amount: { total: res.order.amountFen, currency: 'CNY' }
-          },
-          success: resolve,
-          fail: reject
-        })
-      })
-
-      // callHTTPFunction 自动解析 JSON → { code:0, data:{ status:200, data:{ timeStamp... } } }
-      // 穿透两层 data 取支付参数
-      const body = payRes?.data
-      prepayData = body?.data?.data || body?.data || body
-    } catch (payCreateErr: any) {
-      upgradeMessage.value = '统一下单: ' + (payCreateErr?.errMsg || payCreateErr?.message || '')
+    if (!payParams?.timeStamp) {
+      upgradeMessage.value = '支付参数缺失，请重试'
       return
     }
 
-    if (!prepayData?.timeStamp) {
-      upgradeMessage.value = 'timeStamp缺失:' + JSON.stringify(payRes?.data).slice(0, 300)
-      return
-    }
-
-    // 3. 调起微信支付
+    // 2. 调起微信支付（payParams 直接来自服务端，无需穿透 data）
     try {
       await new Promise((resolve, reject) => {
         wx.requestPayment({
-          timeStamp: String(prepayData.timeStamp || ''),
-          nonceStr: String(prepayData.nonceStr || ''),
-          package: prepayData.packageVal || prepayData.package || '',
-          signType: prepayData.signType || 'RSA',
-          paySign: String(prepayData.paySign || ''),
+          timeStamp: String(payParams.timeStamp || ''),
+          nonceStr: String(payParams.nonceStr || ''),
+          package: payParams.package || '',
+          signType: payParams.signType || 'RSA',
+          paySign: String(payParams.paySign || ''),
           success: resolve,
           fail: reject
         })
@@ -332,16 +288,47 @@ async function onUpgrade(planKey: string) {
     return
     // #endif
 
-    // 4. 支付成功 → 触发发货 → 查单确认
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-    const confirm = await queryPaymentOrder({ orderNo: res.order?.orderNo })
-    if (confirm?.order?.status === 'paid') {
+    // 3. 支付成功 → 确认发货 + 轮询双保险
+    console.log('[PAYDBG] requestPayment 成功, orderNo=', orderNo)
+    let paid = false
+    const startTime = Date.now()
+
+    // 3a. 立即调云函数确认发货（wx.requestPayment success = 微信已扣款）
+    try {
+      const confirmed = await confirmPayment({ orderNo })
+      console.log('[PAYDBG] confirmPayment 结果=', JSON.stringify(confirmed))
+      if (confirmed?.order?.status === 'paid') {
+        paid = true
+        upgradeOk.value = true
+        upgradeMessage.value = `支付成功！已升级至 ${res.order?.planName || planKey}`
+        bumpDataVersion()
+        await loadSubscriptionData()
+        return
+      }
+    } catch (e: any) {
+      console.error('[PAYDBG] confirmPayment 失败:', e?.message || e)
+    }
+
+    // 3b. 轮询兜底（30s 窗口，直接调微信 V3 查单）
+    for (let i = 0; i < 20; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      let confirm: any
+      try {
+        confirm = await queryOrder({ orderNo })
+      } catch (e) { continue }
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+      console.log(`[PAYDBG] 轮询#${i + 1} elapsed=${elapsed}s status=`, confirm?.order?.status)
+      if (confirm?.order?.status === 'paid') { paid = true; break }
+    }
+    if (paid) {
       upgradeOk.value = true
       upgradeMessage.value = `支付成功！已升级至 ${res.order?.planName || planKey}`
       bumpDataVersion()
       await loadSubscriptionData()
     } else {
-      upgradeMessage.value = '支付处理中，稍后自动生效'
+      upgradeOk.value = true
+      upgradeMessage.value = '支付成功，权益生效处理中（约 1 分钟），可稍后刷新查看'
+      bumpDataVersion()
     }
   } catch (e: any) {
     upgradeMessage.value = e?.message || '网络错误，请稍后重试'
@@ -357,78 +344,67 @@ function goRecharge() {
 
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
-.v2-mode .page { min-height: 100vh; background: var(--app-bg, #FFFDF5); padding: 18rpx 18rpx calc(80rpx + env(safe-area-inset-bottom)) 18rpx; }
+.page { min-height: 100vh; background: var(--app-bg, #FFFDF5); padding: 18rpx; box-sizing: border-box; }
 
-/* Hero — 和其他页面完全一致 */
+.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx 18rpx calc(80rpx + env(safe-area-inset-bottom)) 18rpx; }
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hl-v2 { background: var(--accent, #FFD93D); padding: 0 8rpx; display: inline-block; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
-
-/* Card */
-.v2-mode .card-v2 { @include card-v2; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
+.sub-section-title { margin-bottom: 16rpx; }
 
-/* 当前套餐 */
-.v2-mode .current-plan-row { display: flex; align-items: center; gap: 12rpx; }
-.v2-mode .current-plan-name { font-size: $fs-heading; font-weight: $fw-hero; }
-.v2-mode .trial-badge { background: #4ECDC4; color: #111; padding: 4rpx 12rpx; font-size: $fs-body; font-weight: $fw-hero; border-radius: var(--radius-sm, 12rpx); border: 2rpx solid #111; }
+.sub-current-card { background: $c-card; border: 3rpx solid $c-ink; box-shadow: 6rpx 6rpx 0 $c-ink; padding: 24rpx 28rpx; margin-bottom: 28rpx; position: relative; }
+.sub-current-label { position: absolute; top: -12rpx; left: 20rpx; background: $c-ink; color: $c-accent; padding: 4rpx 18rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 2rpx; }
+.sub-current-name-row { display: flex; align-items: center; gap: 12rpx; margin-top: 6rpx; margin-bottom: 18rpx; }
+.sub-current-name { font-size: $fs-heading; font-weight: $fw-hero; color: $c-ink; }
+.sub-trial-badge { background: $c-mint; color: $c-ink; border: 2rpx solid $c-ink; padding: 4rpx 14rpx; font-size: $fs-caption; font-weight: $fw-label; }
+.sub-current-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; }
+.sub-stat-item { padding: 14rpx 8rpx; border: 2rpx solid $c-ink; background: $c-card-soft; text-align: center; }
+.sub-stat-num { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: $c-ink; }
+.sub-stat-lbl { display: block; font-size: $fs-caption; font-weight: $fw-body; color: $c-muted; margin-top: 2rpx; }
 
-/* Stats grid */
-.v2-mode .stats-grid-v2 { display: flex; gap: 8rpx; }
-.v2-mode .stat-box-v2 { flex: 1; text-align: center; padding: 16rpx 8rpx; border: 2rpx solid rgba(18,60,54,0.1); }
-.v2-mode .stat-num-v2 { font-size: $fs-heading; font-weight: $fw-hero; display: block; }
-.v2-mode .stat-lbl-v2 { font-size: $fs-caption; color: #999; display: block; margin-top: 4rpx; }
+.sub-plan-grid { display: flex; flex-direction: column; gap: 20rpx; }
+.sub-plan-card { position: relative; background: $c-card; border: 3rpx solid $c-ink; box-shadow: 6rpx 6rpx 0 $c-ink; padding: 28rpx; display: flex; flex-direction: column; }
+.sub-plan-card.is-current { border-color: $c-mint; border-width: 4rpx; }
+.sub-plan-badge { position: absolute; top: -14rpx; right: 20rpx; background: $c-accent; color: $c-ink; border: 2rpx solid $c-ink; padding: 4rpx 20rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 2rpx; }
 
-/* 套餐卡片 */
-.v2-mode .plan-grid { display: flex; flex-direction: column; gap: 16rpx; }
-.v2-mode .plan-card-v2 { border: 3rpx solid #111; background: #fff; padding: 0; position: relative; }
-.v2-mode .plan-card-v2.current { border-color: #4ECDC4; border-width: 4rpx; }
-.v2-mode .plan-card-v2.recommended { border-color: #111; }
-.v2-mode .plan-recommend-badge { position: absolute; top: -12rpx; right: 16rpx; background: #FFD93D; border: 2rpx solid #111; padding: 4rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; }
-.v2-mode .plan-card-header { padding: 24rpx; border-bottom: 2rpx solid rgba(18,60,54,0.1); }
-.v2-mode .plan-name { font-size: $fs-heading; font-weight: $fw-hero; }
-.v2-mode .plan-price-row { display: flex; align-items: baseline; gap: 8rpx; margin-top: 8rpx; }
-.v2-mode .plan-price { font-size: $fs-hero-title; font-weight: $fw-hero; }
-.v2-mode .plan-price-sub { font-size: $fs-body; color: #999; }
-.v2-mode .plan-card-body { padding: 24rpx; }
-.v2-mode .plan-highlight { text-align: center; margin-bottom: 20rpx; }
-.v2-mode .plan-calls { font-size: $fs-heading; font-weight: $fw-hero; background: #111; color: #FFD93D; padding: 8rpx 24rpx; }
-.v2-mode .plan-features { margin-bottom: 20rpx; }
-.v2-mode .plan-feature-row { display: flex; align-items: center; gap: 10rpx; padding: 8rpx 0; font-size: $fs-body-lg; }
-.v2-mode .plan-feature-icon { font-weight: $fw-hero; font-size: $fs-body-lg; width: 36rpx; text-align: center; }
-.v2-mode .plan-feature-icon.yes { color: #27ae60; }
-.v2-mode .plan-feature-icon.no { color: #999; }
-.v2-mode .dim { color: #999; }
+.sub-plan-top { text-align: center; margin-bottom: 20rpx; }
+.sub-plan-name { display: block; font-size: $fs-body; font-weight: $fw-heading; color: $c-soft; text-transform: uppercase; letter-spacing: 4rpx; margin-bottom: 12rpx; }
+.sub-plan-token { display: inline-block; background: $c-ink; padding: 10rpx 28rpx; }
+.sub-plan-token-num { font-size: $fs-body-lg; font-weight: $fw-hero; color: $c-accent; }
 
-/* 价格选项 */
-.v2-mode .price-choice-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-bottom: 18rpx; }
-.v2-mode .price-choice { border: 3rpx solid rgba(18,60,54,0.1); padding: 12rpx; background: #fff; }
-.v2-mode .price-choice.active { border-color: #111; background: #FFD93D; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .price-choice-label { display: block; font-size: $fs-body; font-weight: $fw-hero; }
-.v2-mode .price-choice-value { display: block; margin-top: 4rpx; font-size: $fs-body; color: #666; }
+.sub-plan-features { margin-bottom: 20rpx; flex: 1; }
+.sub-feature-row { display: flex; align-items: center; gap: 10rpx; padding: 10rpx 0; border-bottom: 1rpx solid rgba(0,0,0,0.06); }
+.sub-feature-row:last-child { border-bottom: none; }
+.sub-feature-mark { font-weight: $fw-hero; font-size: $fs-body-lg; width: 32rpx; text-align: center; flex-shrink: 0; }
+.sub-feature-mark.on { color: $c-mint; }
+.sub-feature-mark.off { color: $c-soft; }
+.sub-feature-label { font-size: $fs-body; font-weight: $fw-body; color: $c-ink; }
+.sub-feature-label.off { color: $c-soft; }
 
-/* 升级按钮 — 遵循 btn-v2 规范 */
+.sub-plan-price-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-bottom: 20rpx; }
+.sub-price-chip { border: 3rpx solid rgba(0,0,0,0.1); padding: 14rpx 12rpx; background: $c-card; text-align: center; }
+.sub-price-chip.active { border-color: $c-ink; background: $c-accent; box-shadow: 3rpx 3rpx 0 $c-ink; }
+.sub-price-chip-label { display: block; font-size: $fs-caption; font-weight: $fw-label; color: $c-muted; margin-bottom: 4rpx; }
+.sub-price-chip.active .sub-price-chip-label { color: $c-ink; }
+.sub-price-chip-val { display: block; font-size: $fs-body; font-weight: $fw-heading; color: $c-ink; }
 
-/* 优惠方案 */
-.v2-mode .discount-row { display: flex; justify-content: space-between; padding: 12rpx 0; border-bottom: 2rpx solid rgba(18,60,54,0.1); }
-.v2-mode .discount-label { font-size: $fs-body-lg; font-weight: $fw-hero; }
-.v2-mode .discount-value { font-size: $fs-body-lg; color: #666; }
+.sub-plan-btn { width: 100%; height: 72rpx; line-height: 72rpx; text-align: center; font-size: $fs-body-lg; font-weight: $fw-heading; color: $c-ink; background: $c-card; border: 3rpx solid $c-ink; box-shadow: 4rpx 4rpx 0 $c-ink; padding: 0; }
+.sub-plan-btn.btn-primary { background: $c-mint; }
+.sub-plan-btn[disabled] { opacity: 0.5; box-shadow: none; }
+.sub-plan-btn.is-current-btn { background: $c-card-soft; color: $c-soft; border-color: rgba(0,0,0,0.15); box-shadow: none; }
 
-/* 加油包入口 */
-.v2-mode .stats-gap { margin-top: 16rpx; }
+.sub-upgrade-msg { display: flex; align-items: center; gap: 10rpx; margin-top: 20rpx; padding: 20rpx 24rpx; border: 3rpx solid $c-ink; background: $c-card; }
+.sub-upgrade-msg.ok { border-color: $c-mint; }
+.sub-upgrade-msg.err { border-color: $c-risk; }
+.sub-upgrade-icon { font-weight: $fw-hero; font-size: $fs-heading; }
+.sub-upgrade-msg.ok .sub-upgrade-icon { color: $c-mint; }
+.sub-upgrade-msg.err .sub-upgrade-icon { color: $c-risk; }
+.sub-upgrade-text { font-size: $fs-body-lg; font-weight: $fw-label; color: $c-ink; }
 
-/* 升级结果提示 */
-.v2-mode .upgrade-msg { margin-top: 24rpx; }
-.v2-mode .upgrade-ok { border-color: #27ae60; }
-.v2-mode .upgrade-err { border-color: #FF5252; }
-.v2-mode .upgrade-msg-icon { font-weight: $fw-hero; font-size: $fs-body-lg; }
-.v2-mode .upgrade-ok .upgrade-msg-icon { color: #27ae60; }
-.v2-mode .upgrade-err .upgrade-msg-icon { color: #FF5252; }
-.v2-mode .upgrade-msg-text { font-size: $fs-body-lg; font-weight: $fw-label; margin-left: 12rpx; }
-.v2-mode .upgrade-ok .upgrade-msg-text { color: #27ae60; }
-.v2-mode .upgrade-err .upgrade-msg-text { color: #FF5252; }
-.v2-mode .upgrade-msg-hint { margin-top: 12rpx; }
-.v2-mode .upgrade-msg-note { font-size: $fs-body; color: #999; }
+.sub-bottom-links { margin-top: 28rpx; }
+.sub-bottom-link { padding: 20rpx; border: 2rpx dashed $c-ink; text-align: center; background: $c-card-soft; }
+.sub-bottom-link-text { font-size: $fs-body; font-weight: $fw-label; color: $c-muted; }
 </style>

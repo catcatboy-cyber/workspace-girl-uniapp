@@ -366,6 +366,56 @@ async function main() {
     assert.equal(fake.__store.dumpCollection('qa_normalize_results').length, 0)
   })
 
+  await runCase('petLines replyPair uses users.extraTokens instead of legacy token_accounts balance', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const petLines = loadFunction('petLines')
+
+    asUser(fake, 'user_pet_invitee')
+    Object.assign(fake.__store.getCollection('users').get('user_pet_invitee'), {
+      plan: 'free',
+      monthlyTokensUsed: 30000,
+      extraTokens: 110000
+    })
+
+    assert.equal(fake.__store.dumpCollection('token_accounts').length, 0)
+
+    const result = await petLines({
+      action: 'replyPair',
+      content: '对方说今天有点累，我想自然地关心一下'
+    })
+
+    assert.equal(result.success, false)
+    assert.notEqual(result.code, 'INSUFFICIENT_BALANCE')
+    assert.notEqual(result.code, 'TOKEN_INSUFFICIENT')
+    assert.equal(result.message, '无可用 AI 模型，请检查配置')
+  })
+
+  await runCase('petLines replyBundle preserves TOKEN_INSUFFICIENT details', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const petLines = loadFunction('petLines')
+
+    asUser(fake, 'user_pet_empty')
+    Object.assign(fake.__store.getCollection('users').get('user_pet_empty'), {
+      plan: 'free',
+      monthlyTokensUsed: 30000,
+      extraTokens: 0
+    })
+
+    const result = await petLines({
+      action: 'replyBundle',
+      content: '对方说今天有点累，我想自然地关心一下'
+    })
+
+    assert.equal(result.success, false)
+    assert.equal(result.code, 'TOKEN_INSUFFICIENT')
+    assert.equal(result.extraTokens, 0)
+    assert.equal(result.required, 700)
+  })
+
   await runCase('AI settings save and masked readback work', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)
@@ -771,6 +821,90 @@ async function main() {
       .filter((item) => item.userId === 'user_recharge_owner' && item.type === 'grant' && item.source === `recharge_${created.order._id}`)
     assert.equal(grantRecords.length, 1)
     assert.equal(fake.__store.dumpCollection('token_ledger_records').length, 0)
+  })
+
+  await runCase('repairOrder repairs paid recharge order missing token grant', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    asUser(fake, 'user_paid_recharge_owner')
+    Object.assign(fake.__store.getCollection('users').get('user_paid_recharge_owner'), {
+      extraTokens: 0
+    })
+    fake.__store.getCollection('recharge_orders').set('order_paid_missing_grant', {
+      _id: 'order_paid_missing_grant',
+      userId: 'user_paid_recharge_owner',
+      orderNo: 'PAY_REPAIR_001',
+      status: 'paid',
+      productType: 'recharge',
+      planName: 'repair pack',
+      amountFen: 100,
+      grantTokens: 7000,
+      paidAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+
+    const recharge = loadFunction('recharge')
+    asUser(fake, 'user_paid_recharge_owner')
+    const repaired = await recharge({ action: 'repairOrder', orderNo: 'PAY_REPAIR_001' })
+    assert.equal(repaired.success, true)
+    assert.equal(repaired.order.status, 'paid')
+
+    const afterRepair = fake.__store.getCollection('users').get('user_paid_recharge_owner')
+    assert.equal(afterRepair.extraTokens, 7000)
+
+    const repeated = await recharge({ action: 'repairOrder', orderNo: 'PAY_REPAIR_001' })
+    assert.equal(repeated.success, true)
+    const afterRepeat = fake.__store.getCollection('users').get('user_paid_recharge_owner')
+    assert.equal(afterRepeat.extraTokens, 7000)
+
+    const grantRecords = fake.__store.dumpCollection('call_usage_records')
+      .filter((item) => item.userId === 'user_paid_recharge_owner' && item.type === 'grant' && item.source === 'recharge_order_paid_missing_grant')
+    assert.equal(grantRecords.length, 1)
+  })
+
+  await runCase('repairOrder repairs paid subscription order missing entitlement', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    asUser(fake, 'user_paid_subscription_owner')
+    Object.assign(fake.__store.getCollection('users').get('user_paid_subscription_owner'), {
+      plan: 'free',
+      planExpiresAt: null,
+      trialEndsAt: null
+    })
+    fake.__store.getCollection('recharge_orders').set('order_paid_subscription_missing_entitlement', {
+      _id: 'order_paid_subscription_missing_entitlement',
+      userId: 'user_paid_subscription_owner',
+      orderNo: 'PAY_REPAIR_SUB_001',
+      status: 'paid',
+      productType: 'subscription',
+      planKey: 'pro',
+      grantPlan: 'pro',
+      grantDurationDays: 30,
+      planName: 'Pro',
+      amountFen: 1900,
+      paidAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+
+    const recharge = loadFunction('recharge')
+    asUser(fake, 'user_paid_subscription_owner')
+    const repaired = await recharge({ action: 'repairOrder', orderNo: 'PAY_REPAIR_SUB_001' })
+    assert.equal(repaired.success, true)
+    assert.equal(repaired.order.status, 'paid')
+
+    const afterRepair = fake.__store.getCollection('users').get('user_paid_subscription_owner')
+    assert.equal(afterRepair.plan, 'pro')
+    assert.ok(afterRepair.planExpiresAt)
+
+    const firstExpiresAt = afterRepair.planExpiresAt
+    const repeated = await recharge({ action: 'repairOrder', orderNo: 'PAY_REPAIR_SUB_001' })
+    assert.equal(repeated.success, true)
+    const afterRepeat = fake.__store.getCollection('users').get('user_paid_subscription_owner')
+    assert.equal(afterRepeat.planExpiresAt, firstExpiresAt)
   })
 
   await runCase('getTokenAccount returns subscription token fields from users collection', async () => {
