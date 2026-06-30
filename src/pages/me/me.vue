@@ -32,16 +32,16 @@
           </view>
           <view class="stats-grid-v2" style="margin-top:16rpx;">
             <view class="stat-box-v2">
-              <text class="stat-num-v2">{{ monthlyRemainingDisplay }}</text>
+              <text class="stat-num-sub-v2">{{ monthlyRemainingDisplay }}</text>
               <text class="stat-lbl-v2">本月套餐</text>
             </view>
             <view class="stat-box-v2">
-              <text class="stat-num-v2">{{ extraTokens }}</text>
+              <text class="stat-num-sub-v2">{{ extraTokens }}</text>
               <text class="stat-lbl-v2">加油包</text>
             </view>
             <view class="stat-box-v2">
-              <text class="stat-num-v2">{{ subMonthlyUsed }}/{{ totalLimit }}</text>
-              <text class="stat-lbl-v2">已用/上限</text>
+              <text class="stat-num-sub-v2">{{ subMonthlyUsed }}/{{ totalLimit }}</text>
+              <text class="stat-lbl-v2">月已用/月限额</text>
             </view>
           </view>
           <view class="referral-voice-row-v2">
@@ -71,16 +71,19 @@
       <!-- #ifdef H5 -->
       <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、AI、Token 和反馈管理 →</text></view>
       <!-- #endif -->
-      <view class="card-v2" @click="goExplain"><text class="section-title-v2">判断说明</text><text class="card-text-v2">查看系统判断标签的含义说明 →</text></view>
-      <view class="card-v2" @click="goFeedback"><text class="section-title-v2">系统反馈</text><text class="card-text-v2">告诉我们你的使用体验或建议 →</text></view>
-      <view class="card-v2" @click="goReferences"><text class="section-title-v2">引用经典</text><text class="card-text-v2">本小程序引用的古今中外经典文献 →</text></view>
-      <view class="card-v2" @click="goAbout"><text class="section-title-v2">关于</text><text class="card-text-v2">v1.0.0 · 查看版本信息 →</text></view>
+      <view class="card-v2">
+        <text class="section-title-v2">系统说明</text>
+        <view class="info-link-v2" @click="goExplain"><text class="info-link-label-v2">判断说明</text><text class="info-link-desc-v2">系统判断标签的含义</text><text class="info-link-arrow-v2">→</text></view>
+        <view class="info-link-v2" @click="goFeedback"><text class="info-link-label-v2">系统反馈</text><text class="info-link-desc-v2">使用体验或建议</text><text class="info-link-arrow-v2">→</text></view>
+        <view class="info-link-v2" @click="goReferences"><text class="info-link-label-v2">引用经典</text><text class="info-link-desc-v2">古今中外经典文献</text><text class="info-link-arrow-v2">→</text></view>
+        <view class="info-link-v2" @click="goAbout"><text class="info-link-label-v2">关于</text><text class="info-link-desc-v2">v1.0.0 · 版本信息</text><text class="info-link-arrow-v2">→</text></view>
+      </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
-import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import {
   getCachedSelfProfile,
   getCases,
@@ -170,7 +173,7 @@ function dismissInviteeNotice() {
 }
 const totalLimit = computed(() => {
   if (subMonthlyLimit.value === -1) return '∞'
-  return (subMonthlyLimit.value + subExtraTokens.value).toLocaleString()
+  return subMonthlyLimit.value.toLocaleString()
 })
 const planName = computed(() => subPlanName.value)
 const isTrial = computed(() => subIsTrial.value)
@@ -198,6 +201,11 @@ onShareAppMessage(() => ({ title: 'Crush Master｜读懂关系信号', path: app
 onShareTimeline(() => buildSafeTimelineShare({
   query: subInviteCode.value ? `inviteCode=${subInviteCode.value}` : ''
 }))
+
+onPullDownRefresh(async () => {
+  await loadData()
+  uni.stopPullDownRefresh()
+})
 
 const aiStyleOptions: Array<{
   value: AIStyleValue
@@ -572,16 +580,23 @@ function goAbout() {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; min-height: 100vh; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--text-main, #111); color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.5; margin-bottom: 6rpx; }
 .v2-mode .card-text-v2.muted { color: #999; font-size: $fs-caption; }
+
+/* 系统说明链接行 */
+.v2-mode .info-link-v2 { display: flex; align-items: center; padding: 14rpx 0; border-bottom: 2rpx dashed #ddd; gap: 12rpx; }
+.v2-mode .info-link-v2:last-child { border-bottom: none; }
+.v2-mode .info-link-label-v2 { font-size: $fs-body-lg; font-weight: $fw-label; color: #111; flex-shrink: 0; }
+.v2-mode .info-link-desc-v2 { font-size: $fs-body; font-weight: $fw-body; color: #999; flex: 1; min-width: 0; }
+.v2-mode .info-link-arrow-v2 { font-size: $fs-body; font-weight: $fw-body; color: #ccc; flex-shrink: 0; }
 .v2-mode .balance-hero-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 4rpx 4rpx 0 #111; padding: 20rpx 24rpx; margin-bottom: 12rpx; display: flex; align-items: baseline; gap: 10rpx; }
 .v2-mode .balance-num-v2 { min-width: 0; font-size: $fs-kpi; font-weight: $fw-heading; color: #111; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v2-mode .balance-unit-v2 { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-label; color: rgba(0,0,0,0.6); }
@@ -601,6 +616,7 @@ function goAbout() {
 .v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .stat-box-v2 { padding: 14rpx 16rpx; border: 2rpx solid #111; background: #f9f9f9; display: flex; flex-direction: column; align-items: center; }
 .v2-mode .stat-num-v2 { font-size: $fs-body-lg; font-weight: $fw-heading; color: #111; line-height: 1; white-space: nowrap; }
+.v2-mode .stat-num-sub-v2 { font-size: 28rpx; font-weight: $fw-label; }
 .v2-mode .stat-lbl-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
 
 .v2-mode .referral-voice-row-v2 { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; padding: 10rpx 0; border-top: 1rpx solid rgba(0,0,0,0.08); }

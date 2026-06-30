@@ -63,12 +63,14 @@
       </view>
     </view>
   </view>
+  <TokenCoinOverlay :visible="showCoin" :amount="coinAmount" :subtitle="coinSubtitle" @close="showCoin = false" />
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getSubscriptionConfig, getSubscriptionStatus, unifiedOrder, queryOrder, confirmPayment } from '@/utils/api'
+import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { getCurrentThemeId, getFontSizeMode, getThemeStyle, applyThemeChrome } from '@/utils/theme'
 import { bumpDataVersion } from '@/utils/helpers'
 
@@ -227,6 +229,9 @@ onShow(() => {
 const upgradingPlan = ref('')
 const upgradeMessage = ref('')
 const upgradeOk = ref(false)
+const showCoin = ref(false)
+const coinAmount = ref(0)
+const coinSubtitle = ref('')
 
 async function onUpgrade(planKey: string) {
   if (planKey === 'free') {
@@ -289,24 +294,25 @@ async function onUpgrade(planKey: string) {
     // #endif
 
     // 3. 支付成功 → 确认发货 + 轮询双保险
-    console.log('[PAYDBG] requestPayment 成功, orderNo=', orderNo)
     let paid = false
-    const startTime = Date.now()
+    let pendingFulfillment = false
 
     // 3a. 立即调云函数确认发货（wx.requestPayment success = 微信已扣款）
     try {
       const confirmed = await confirmPayment({ orderNo })
-      console.log('[PAYDBG] confirmPayment 结果=', JSON.stringify(confirmed))
-      if (confirmed?.order?.status === 'paid') {
+      if (confirmed?.order?.status === 'paid' && confirmed.order.fulfillmentStatus === 'succeeded') {
         paid = true
         upgradeOk.value = true
-        upgradeMessage.value = `支付成功！已升级至 ${res.order?.planName || planKey}`
+        const targetPlan = plans.value.find((p: any) => p.key === planKey)
+        const limit = targetPlan?.monthlyTokens
+        coinAmount.value = limit === -1 ? 99999 : (Number.isFinite(limit) && limit > 0 ? limit : 0)
+        coinSubtitle.value = `已升级至 ${res.order?.planName || planKey}`
+        showCoin.value = true
         bumpDataVersion()
         await loadSubscriptionData()
         return
       }
     } catch (e: any) {
-      console.error('[PAYDBG] confirmPayment 失败:', e?.message || e)
     }
 
     // 3b. 轮询兜底（30s 窗口，直接调微信 V3 查单）
@@ -316,15 +322,31 @@ async function onUpgrade(planKey: string) {
       try {
         confirm = await queryOrder({ orderNo })
       } catch (e) { continue }
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-      console.log(`[PAYDBG] 轮询#${i + 1} elapsed=${elapsed}s status=`, confirm?.order?.status)
-      if (confirm?.order?.status === 'paid') { paid = true; break }
+      if (confirm?.order?.status === 'paid') {
+        if (confirm.order.fulfillmentStatus === 'succeeded') {
+          paid = true
+          break
+        }
+        paid = true
+        pendingFulfillment = true
+        break
+      }
     }
     if (paid) {
-      upgradeOk.value = true
-      upgradeMessage.value = `支付成功！已升级至 ${res.order?.planName || planKey}`
-      bumpDataVersion()
-      await loadSubscriptionData()
+      if (pendingFulfillment) {
+        upgradeOk.value = true
+        upgradeMessage.value = '支付成功，权益生效处理中（约 1 分钟），可稍后刷新查看'
+        bumpDataVersion()
+      } else {
+        upgradeOk.value = true
+        const targetPlan = plans.value.find((p: any) => p.key === planKey)
+        const limit = targetPlan?.monthlyTokens
+        coinAmount.value = limit === -1 ? 99999 : (Number.isFinite(limit) && limit > 0 ? limit : 0)
+        coinSubtitle.value = `已升级至 ${res.order?.planName || planKey}`
+        showCoin.value = true
+        bumpDataVersion()
+        await loadSubscriptionData()
+      }
     } else {
       upgradeOk.value = true
       upgradeMessage.value = '支付成功，权益生效处理中（约 1 分钟），可稍后刷新查看'

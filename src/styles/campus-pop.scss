@@ -48,9 +48,13 @@ $sp-section-gap: 16rpx;
 // ═══════════════════════════════════════════════════════════
 
 @mixin hero-block-v2 {
-  background: $c-hero;
-  @include border-hard;
-  @include shadow-hero;
+  background: linear-gradient(
+    var(--hero-gradient-angle, 135deg),
+    var(--hero-bg, #{$c-hero}),
+    var(--hero-bg-2, #{$c-hero})
+  );
+  border: 3rpx solid var(--text-main, #{$c-ink});
+  box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #{$c-ink});
   padding: 32rpx;
   margin-bottom: $sp-card-gap;
   transform: rotate(-0.5deg);

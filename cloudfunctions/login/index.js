@@ -131,20 +131,26 @@ exports.main = async (event) => {
       return { success: false, message: '请输入密码' }
     }
 
-    // 规范化邮箱
-    const normalizedEmail = email.toLowerCase().trim()
-    if (!EMAIL_RE.test(normalizedEmail)) {
-      return { success: false, message: '邮箱或密码错误' }
-    }
+    // 规范化登录账号：邮箱走严格小写匹配；后台调试账号兼容 username/account/email 原值。
+    const normalizedLogin = email.trim()
+    const normalizedEmail = normalizedLogin.toLowerCase()
+    const isEmailLogin = EMAIL_RE.test(normalizedEmail)
 
-    const rateLimitKey = normalizedEmail
+    const rateLimitKey = isEmailLogin ? normalizedEmail : normalizedLogin
     if (!checkLoginRateLimit(rateLimitKey)) {
       return { success: false, code: 'RATE_LIMITED', message: '尝试次数过多，请稍后再试' }
     }
 
     // 查询用户
+    const userQuery = isEmailLogin
+      ? { email: normalizedEmail }
+      : db.command.or([
+        { email: normalizedLogin },
+        { username: normalizedLogin },
+        { account: normalizedLogin }
+      ])
     const { data: users } = await db.collection('users')
-      .where({ email: normalizedEmail })
+      .where(userQuery)
       .limit(1)
       .get()
 
@@ -156,6 +162,10 @@ exports.main = async (event) => {
     const user = users[0]
 
     // 验证密码 (scrypt)
+    if (typeof user.passwordHash !== 'string' || !user.passwordHash.includes(':')) {
+      recordLoginFailure(rateLimitKey)
+      return { success: false, message: '账号密码未初始化，请重置密码或重新创建账号' }
+    }
     const [salt, storedKey] = user.passwordHash.split(':')
     const derivedKey = crypto.scryptSync(password, salt, 64).toString('hex')
 

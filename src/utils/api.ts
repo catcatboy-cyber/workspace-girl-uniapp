@@ -767,6 +767,7 @@ export async function reassess(data: {
   userId?: string
   caseId: string
   answers: any[]
+  source?: string
 }) {
   const { userId: _userId, ...payload } = data
   const res = await callFunction({

@@ -5,6 +5,15 @@
       <text class="hero-title-v2">系统<text class="hl-v2">反馈</text></text>
       <text class="hero-copy-v2">告诉我们你的使用体验、建议或遇到的问题。</text>
     </view>
+    <view class="reward-card">
+      <view class="reward-card-inner">
+        <text class="reward-emoji">🎁</text>
+        <view class="reward-text-wrap">
+          <text class="reward-title">反馈被采纳，奖励 Token</text>
+          <text class="reward-desc">提出有价值的建议或 bug，一经采纳即赠 Token 到账。认真写，采纳率更高。</text>
+        </view>
+      </view>
+    </view>
     <view class="card-v2">
       <text class="section-title-v2">反馈内容</text>
       <textarea v-model="content" class="text-area-v2" placeholder="请输入你的反馈意见..." :maxlength="1000" />
@@ -75,6 +84,12 @@ async function submit() {
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .card-v2 { @include card-v2; }
+.v2-mode .reward-card { background: linear-gradient(135deg, #FFF8C4 0%, #FFFBEA 60%, #FFFDF5 100%); border: 3rpx solid #111; border-left: 12rpx solid #FFD93D; box-shadow: 6rpx 6rpx 0 #e6c800; padding: 24rpx 28rpx; margin-bottom: 24rpx; box-sizing: border-box; }
+.v2-mode .reward-card-inner { display: flex; align-items: flex-start; gap: 16rpx; }
+.v2-mode .reward-emoji { font-size: 48rpx; flex-shrink: 0; line-height: 1; }
+.v2-mode .reward-text-wrap { flex: 1; min-width: 0; }
+.v2-mode .reward-title { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: #111; margin-bottom: 6rpx; }
+.v2-mode .reward-desc { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .text-area-v2 { width: 100%; min-height: 200rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; }
 .v2-mode .char-count-v2 { display: block; text-align: right; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 8rpx; }

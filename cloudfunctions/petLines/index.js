@@ -396,7 +396,7 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
 
   if (userId) {
     const bal = await checkReplyBalance(userId)
-    if (!bal.ok) return { success: false, message: '余额不足', code: 'INSUFFICIENT_BALANCE' }
+    if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足' }
   }
 
   const inspirations = pickRandomLines(4, null, null, isMinor)
@@ -428,30 +428,30 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
 
 // ========== replyPair (双句) ==========
 
-function ensureTokenAccount(userId) {
-  return db.collection('token_accounts').where({ userId }).limit(1).get().then(res => {
-    if (res.data?.length) return res.data[0]
-    const now = new Date()
-    return db.collection('token_accounts').add({ userId, balanceTokens: 0, giftedTokens: 0, purchasedTokens: 0, consumedTokens: 0, firstGiftGranted: false, createdAt: now, updatedAt: now }).then(r => ({ _id: r.id, userId, balanceTokens: 0 }))
-  })
-}
-
 async function checkPetTokenBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, accessFeature = PET_REPLY_ACCESS_FEATURE) {
   try {
     // 功能 + Token 门控（v3.2）
     const access = await checkFeatureAccess(db, userId, accessFeature)
     if (!access.allowed) return { ok: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason, balance: 0, required: 0 }
     const tokCheck = await checkTokenBalance(db, userId, estTokens)
-    if (!tokCheck.ok) return { ok: false, code: tokCheck.code, message: tokCheck.message, balance: 0, required: 0 }
-
-    const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => ({ data: [] }))
-    const billing = billingRes.data?.[0] || { insufficientBalanceMode: 'block' }
-    const account = await ensureTokenAccount(userId)
-    const balance = account.balanceTokens || 0
-    if (billing.insufficientBalanceMode === 'block' && balance < estTokens) {
-      return { ok: false, balance, required: estTokens }
+    const monthlyRemaining = Number(tokCheck.monthlyRemaining || 0)
+    const extraTokens = Number(tokCheck.extraTokens || 0)
+    const balance = monthlyRemaining + extraTokens
+    if (!tokCheck.ok) {
+      return {
+        ...tokCheck,
+        ok: false,
+        balance,
+        required: tokCheck.required || estTokens
+      }
     }
-    return { ok: true, balance, required: estTokens }
+
+    return {
+      ...tokCheck,
+      ok: true,
+      balance,
+      required: tokCheck.required || estTokens
+    }
   } catch (e) {
     console.error('checkPetTokenBalance error:', e)
     return { ok: false, code: 'TOKEN_CHECK_FAILED', message: 'Token 校验失败，请稍后重试', balance: 0, required: estTokens }
@@ -460,6 +460,10 @@ async function checkPetTokenBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, a
 
 async function checkReplyBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS) {
   return checkPetTokenBalance(userId, estTokens, PET_REPLY_ACCESS_FEATURE)
+}
+
+function isTokenBalanceError(result) {
+  return result && ['TOKEN_INSUFFICIENT', 'INSUFFICIENT_BALANCE'].includes(result.code)
 }
 
 async function recordPetTokenUsage(userId, realTokens, model, usage, feature = PET_REPLY_USAGE_FEATURE) {
@@ -514,7 +518,7 @@ function buildReplySystemPrompt(baseSystemPrompt, jsonShape) {
 async function generateReplyPair(scene, content, userId, tone, safetyContext) {
   if (userId) {
     const balCheck = await checkReplyBalance(userId)
-    if (!balCheck.ok) return { success: false, code: 'INSUFFICIENT_BALANCE', balance: balCheck.balance, required: balCheck.required, message: '余额不足，请充值' }
+    if (!balCheck.ok) return { success: false, ...balCheck, message: balCheck.message || '余额不足，请充值' }
   }
 
   const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
@@ -669,7 +673,7 @@ async function tagLinesLoop(startIndex, count, userId) {
   while (current < endTarget) {
     if (userId) {
       const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS)
-      if (!bal.ok) return { success: false, message: '余额不足，请先充值', code: 'INSUFFICIENT_BALANCE' }
+      if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足，请先充值' }
     }
     const batch = SEED_DATA.slice(current, Math.min(current + BATCH_SIZE, endTarget))
     const { tagged, usage } = await tagOneBatch(ai, batch, current, cfg)
@@ -1058,7 +1062,7 @@ async function tagQAStrategies(userId) {
   for (let start = 0; start < allQA.length; start += BATCH_SIZE) {
     if (userId) {
       const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS)
-      if (!bal.ok) return { success: false, message: '余额不足，请先充值', code: 'INSUFFICIENT_BALANCE', done, tagged: allTagged.length }
+      if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足，请先充值', done, tagged: allTagged.length }
     }
 
     const batch = allQA.slice(start, start + BATCH_SIZE)
@@ -1137,7 +1141,7 @@ async function generateReplyStrategy(content, userId, scene = 'reply', safetyCon
       }
     }
     const bal = await checkPetTokenBalance(userId, REPLY_STRATEGY_EST_TOKENS, PET_STRATEGY_ACCESS_FEATURE)
-    if (!bal.ok) return { success: false, code: 'INSUFFICIENT_BALANCE', balance: bal.balance, required: bal.required, message: '余额不足，请充值' }
+    if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足，请充值' }
   }
 
   const isActiveScene = scene === 'active'
@@ -1325,11 +1329,11 @@ exports.main = async (event = {}) => {
           generateReplyPair(scene, content, userId, '', safetyContext).catch((e) => ({ success: false, message: e?.message || 'reply 失败' })),
           generateReplyStrategy(content, userId, scene, safetyContext).catch((e) => ({ success: false, message: e?.message || 'strategy 失败' }))
         ])
-        if (pairRes && pairRes.code === 'INSUFFICIENT_BALANCE') return pairRes
-        if (stratRes && stratRes.code === 'INSUFFICIENT_BALANCE') return stratRes
+        if (isTokenBalanceError(pairRes)) return pairRes
+        if (isTokenBalanceError(stratRes)) return stratRes
         if (stratRes && stratRes.code === 'FEATURE_NOT_AVAILABLE') return stratRes
         if (!pairRes?.success) {
-          return { success: false, message: pairRes?.message || '生成失败，请重试' }
+          return { success: false, ...pairRes, message: pairRes?.message || '生成失败，请重试' }
         }
         return {
           success: true,

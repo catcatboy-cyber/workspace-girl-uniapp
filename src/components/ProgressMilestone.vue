@@ -20,18 +20,18 @@ const props = withDefaults(defineProps<{ count: number | string }>(), { count: 0
 const countNum = computed(() => Number(props.count || 0))
 
 const milestones = [
-  { threshold: 3, label: '初步信号' },
+  { threshold: 3, label: '场景分布' },
   { threshold: 7, label: '互动天平' },
-  { threshold: 14, label: '稳定趋势' },
-  { threshold: 30, label: '月度报告' }
+  { threshold: 14, label: '趋势信号' },
+  { threshold: 30, label: '月度复盘' }
 ]
 const ticks = [{ threshold: 0, label: '0' }, ...milestones]
 
 const next = computed(() => milestones.find(m => countNum.value < m.threshold))
 const hint = computed(() => {
-  if (countNum.value === 0) return '记录第一条事件，看看小咪怎么说'
-  if (!next.value) return '全部解锁！'
-  return `再记 ${next.value.threshold - countNum.value} 条解锁${next.value.label}`
+  if (countNum.value === 0) return '记录第一条事件，开启分析旅程'
+  if (!next.value) return '全部解锁！可查看完整分析面板'
+  return `再记 ${next.value.threshold - countNum.value} 条解锁「${next.value.label}」`
 })
 const pct = computed(() => Math.min(100, Math.round((countNum.value / 30) * 100)))
 </script>

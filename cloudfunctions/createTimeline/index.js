@@ -221,6 +221,8 @@ exports.main = async (event) => {
       subjectRole: safeSubjectRole,
       subjectRoleConfidence: safeSubjectRoleConfidence,
       userQuestion: safeUserQuestion,
+      chatSelfName: typeof event.chatSelfName === 'string' ? event.chatSelfName.trim() : '',
+      chatTargetName: typeof event.chatTargetName === 'string' ? event.chatTargetName.trim() : '',
       dateLabel: dateLabel || '',
       description: safeDescription,
       attachments: safeAttachments,
@@ -287,6 +289,8 @@ exports.main = async (event) => {
     const understoodEvent = await inferTimelineRecord({
       description: safeDescription,
       subjectRole: draftRecord.subjectRole,
+      chatSelfName: draftRecord.chatSelfName,
+      chatTargetName: draftRecord.chatTargetName,
       recentTimeline: trimmedRecentTimeline,
       caseProfile: caseDoc.profile,
       settings: { aiEnabled: false, aiFallbackToRules: true }

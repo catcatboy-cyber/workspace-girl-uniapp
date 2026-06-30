@@ -5,15 +5,6 @@
 
 const { addExtraTokens, getSubscriptionConfig } = require('./subscription')
 
-function getWeekStart(date) {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-
 async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareId, channel) {
   // 1. 自邀请检查
   if (inviteeUserId === inviterUserId) {
@@ -73,27 +64,6 @@ async function settleReward(db, inviteeUserId, inviterUserId, inviteCode, shareI
   // 6. 给被邀请人发 Token
   await addExtraTokens(db, inviteeUserId, inviteeReward,
     `referral_invitee:${inviteeUserId}`)
-
-  // 7. 更新邀请人的 referralCount（前端据此检测新邀请并弹出通知）
-  try {
-    const weekStart = getWeekStart(new Date())
-    const inviterDoc = await db.collection('users').doc(inviterUserId).get().catch(() => null)
-    const inviter = inviterDoc?.data?.[0]
-    if (inviter) {
-      let referralWeekStart = inviter.referralWeekStart ? new Date(inviter.referralWeekStart) : null
-      let referralWeekCount = inviter.referralWeekCount || 0
-      if (!referralWeekStart || referralWeekStart < weekStart) {
-        referralWeekCount = 0
-      }
-      await db.collection('users').doc(inviterUserId).update({
-        referralCount: db.command.inc(1),
-        referralWeekStart: weekStart,
-        referralWeekCount: referralWeekCount + 1
-      })
-    }
-  } catch (err) {
-    void err
-  }
 
   return { success: true, inviteeUserId, inviterReward, inviteeReward }
 }

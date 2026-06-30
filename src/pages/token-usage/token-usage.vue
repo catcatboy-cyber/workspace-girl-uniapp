@@ -8,7 +8,7 @@
         </view>
         <view v-if="activeTab === 'ledger'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">额度变动记录</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="ledgerLoading" @click="loadLedger">{{ ledgerLoading ? '读取中' : '刷新' }}</button></view>
-            <view v-if="ledgerRecords.length > 0" class="usage-list-v2"><view v-for="item in ledgerRecords" :key="item._id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapLedgerType(item) }}{{ item.remark ? ' · ' + item.remark : '' }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text :class="['usage-total-v2', item.amountTokens > 0 ? 'positive' : 'negative']">{{ item.amountTokens > 0 ? '+' : '' }}{{ item.amountTokens }}</text><text class="usage-meta-v2">余额 {{ item.balanceAfter }}</text></view></view></view>
+            <view v-if="ledgerRecords.length > 0" class="usage-list-v2"><view v-for="item in ledgerRecords" :key="item._id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapLedgerType(item) }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text :class="['usage-total-v2', item.amountTokens > 0 ? 'positive' : 'negative']">{{ item.amountTokens > 0 ? '+' : '' }}{{ item.amountTokens }}</text><text class="usage-meta-v2">余额 {{ item.balanceAfter }}</text></view></view></view>
             <text v-else class="card-text-v2">{{ ledgerLoading ? '正在读取...' : '暂无记录。' }}</text>
           </view>
         </view>
@@ -160,11 +160,13 @@ function formatSeconds(ms: number) {
 function mapFeature(feature: string) {
   const map: Record<string, string> = {
     eventAssessment: '即时反馈',
+    initial_assessment_text: '初次评估·文本分析',
     weeklyReview: '月度复盘',
     weeklySideRead: '星象速写',
     sideRead: '星象速写',
     attachmentAnalysis: '附件识别',
-    petReply: '宠物帮说'
+    petReply: '宠物帮说',
+    petReplyStrategy: '宠物帮说·策略'
   }
   return map[feature] || feature || '未知调用'
 }
@@ -173,9 +175,10 @@ function mapLedgerType(item: any) {
   const type = String(item?.type || '')
   const source = String(item?.source || '')
 
-  // grant 类型要按 source 区分来源
-  if (type === 'grant' && source.startsWith('recharge_')) return '充值获赠'
-  if (type === 'grant' && source.startsWith('referral_')) return '邀请获赠'
+  // grant 类型要按 source 区分来源（normalizeLedgerSource 已将 recharge_xxx → source: 'recharge'）
+  if (type === 'grant' && (source === 'recharge' || source.startsWith('recharge_'))) return '充值获赠'
+  if (type === 'grant' && (source === 'sub' || source.startsWith('sub_'))) return '升级套餐'
+  if (type === 'grant' && (source === 'referral' || source.startsWith('referral_'))) return '邀请获赠'
   if (type === 'grant') return '赠送'
 
   const map: Record<string, string> = {

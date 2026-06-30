@@ -68,8 +68,6 @@
     <!-- ③ 今日行动指南 -->
     <view v-if="computedReport.今日行动指南" class="card-v2 action-guide-card-v2">
       <view class="section-title-row-v2">
-        <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(30)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
-        <text v-else class="taohua-icon-emoji">🎯</text>
         <text class="section-title-v2 no-margin">今日行动指南</text>
         <text class="info-dot-v2" @click="showGuideInfo = true">ⓘ</text>
       </view>
@@ -116,6 +114,7 @@
           <text v-else class="taohua-icon-emoji">🧭</text>
           <text>方位怎么用</text>
         </view>
+        <view class="action-guide-body-v2">
         <view class="action-dir-grid-v2">
           <view class="action-dir-card-v2">
             <text class="action-dir-name-v2">今日桃花</text>
@@ -138,6 +137,7 @@
           <text class="action-vibe-text-v2">{{ guideVibeLabel }}</text>
         </view>
         <text class="cite-inline-v2">《协纪辨方书》《三命通会》</text>
+        </view>
       </view>
 
       <view class="action-guide-section-v2">
@@ -146,6 +146,7 @@
           <text v-else class="taohua-icon-emoji">🎯</text>
           <text>今天怎么做</text>
         </view>
+        <view class="action-guide-body-v2">
         <view v-if="(guideActivities || []).length > 0" class="action-tag-row-v2">
           <view v-for="(a, i) in guideActivities" :key="'act-'+i" class="tag-v2 green tag-with-icon-v2">
             <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(18)" :src="taohuaIcon('target')" mode="aspectFit" />
@@ -163,6 +164,7 @@
             <text class="action-guide-line-text-v2">{{ a }}</text>
           </view>
         </view>
+        </view>
       </view>
 
       <view class="action-guide-section-v2" v-if="computedReport.今日行动指南?.穿戴建议">
@@ -172,6 +174,7 @@
           <text>穿什么戴什么</text>
           <text class="cite-inline-v2">《三命通会》</text>
         </view>
+        <view class="action-guide-body-v2">
         <text class="action-wear-main-v2">{{ computedReport.今日行动指南?.穿戴建议?.一句话 || '' }}</text>
         <view class="action-tag-row-v2">
           <text v-for="c in computedReport.今日行动指南?.穿戴建议?.桃花颜色 || []" :key="c" class="tag-v2">{{ c }}</text>
@@ -180,6 +183,7 @@
         <text v-if="computedReport.今日行动指南?.穿戴建议?.五行关系" class="action-wear-note-v2">
             桃花{{ computedReport.今日行动指南?.穿戴建议?.桃花五行 || '' }} · 本命{{ computedReport.今日行动指南?.穿戴建议?.本命五行 || '' }} → {{ computedReport.今日行动指南?.穿戴建议?.五行关系 || '' }}
         </text>
+        </view>
       </view>
     </view>
 
@@ -286,6 +290,7 @@
           </view>
         </view>
       </view>
+      <view class="action-guide-body-v2">
       <view v-if="pairParticipants" class="pair-summary-v2">
         <view class="pair-party-card-v2">
           <text class="pair-role-v2">{{ pairParticipants.selfLabel }}</text>
@@ -394,6 +399,7 @@
         <text v-if="pairAIResult.relationshipDynamics" class="action-text" user-select style="margin-top:6rpx;">{{ pairAIResult.relationshipDynamics }}</text>
         <text v-if="pairAIResult.advice" class="action-text" user-select style="margin-top:6rpx;font-weight:800;color:#111;">💡 {{ pairAIResult.advice }}</text>
         <text v-if="pairAIResult.message && !pairAIResult.dayEnergy && !pairAIResult.advice" class="action-text muted" user-select>{{ pairAIResult.message }}</text>
+      </view>
       </view>
     </view>
     <view v-else-if="showPairReadGuide" class="card-v2" style="border-style:dashed;">
@@ -1647,8 +1653,21 @@ function wrapText(ctx: any, text: string, x: number, y: number, maxWidth: number
   wrapTextLimited(ctx, text, x, y, maxWidth, lineHeight, 20)
 }
 
-function saveShareImage() {
+async function saveShareImage() {
   if (!shareImagePath.value) return
+  // 先确保隐私协议已同意（微信 2023.09 起要求）
+  try {
+    const wxApi = (globalThis as any)?.wx
+    if (wxApi?.requirePrivacyAuthorize) {
+      await new Promise<void>((resolve, reject) => {
+        wxApi.requirePrivacyAuthorize({ success: () => resolve(), fail: reject })
+      })
+    }
+  } catch {
+    uni.showToast({ title: '请先同意隐私政策', icon: 'none' })
+    return
+  }
+
   uni.saveImageToPhotosAlbum({
     filePath: shareImagePath.value,
     success: () => {
@@ -1893,6 +1912,7 @@ function saveShareImage() {
 .action-boost-v2 { display: inline-flex; align-items: center; gap: 6rpx; margin-top: 12rpx; padding: 6rpx 14rpx; border: 2rpx solid #111; background: #FF5252; color: #fff; font-size: $fs-caption; font-weight: $fw-heading; box-sizing: border-box; }
 .action-guide-section-v2 { padding: 18rpx 0; border-bottom: 2rpx dashed rgba(17,17,17,.22); }
 .action-guide-section-v2:last-child { border-bottom: none; padding-bottom: 0; }
+.action-guide-body-v2 { padding-left: 32rpx; }
 .action-guide-section-title-v2 { display: flex; align-items: center; gap: 8rpx; margin-bottom: 12rpx; font-size: $fs-body; font-weight: $fw-label; color: #111; }
 .action-dir-grid-v2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8rpx; }
 .action-dir-card-v2 { min-width: 0; padding: 14rpx 8rpx; border: 2rpx solid #111; background: #fff; text-align: center; box-sizing: border-box; }

@@ -13,6 +13,35 @@ const USERS = 'users'
 const SUBSCRIPTION_DOC_ID = 'settings_subscription'
 const CALL_USAGE = 'call_usage_records'
 
+function normalizeLedgerSource(source) {
+  const value = String(source || '').trim()
+  if (!value) return { source: 'manual', sourceId: '' }
+  const colonIndex = value.indexOf(':')
+  if (colonIndex > 0) {
+    return { source: value.slice(0, colonIndex), sourceId: value.slice(colonIndex + 1) }
+  }
+  for (const prefix of ['recharge', 'sub']) {
+    const marker = `${prefix}_`
+    if (value.startsWith(marker) && value.length > marker.length) {
+      return { source: prefix, sourceId: value.slice(marker.length) }
+    }
+  }
+  return { source: value, sourceId: '' }
+}
+
+function getUserExtraTokens(user) {
+  return Number(user?.extraTokens || 0)
+}
+
+async function getTokenBalanceAfter(db, userId, fallback = 0) {
+  try {
+    const { data } = await db.collection(USERS).doc(userId).get()
+    const user = data && data.length > 0 ? data[0] : null
+    if (user) return getUserExtraTokens(user)
+  } catch (_) {}
+  return fallback
+}
+
 const FEATURE_ALIASES = {
   '小咪帮你说': ['小咪帮你说（单轮）'],
   '小咪帮你说（单轮）': ['小咪帮你说'],
@@ -417,6 +446,12 @@ async function consumeTokens(db, userId, actualModelTokens, feature, model) {
     await db.collection(USERS).doc(userId).update({ extraTokens: db.command.inc(-fromExtra) })
   }
 
+  const deducted = fromMonthly + fromExtra
+  const monthlyUsedAfter = monthlyUsed + fromMonthly
+  const monthlyRemainingAfter = monthlyLimit === Infinity ? -1 : Math.max(0, monthlyLimit - monthlyUsedAfter)
+  const extraBalanceAfter = Math.max(0, (user.extraTokens || 0) - fromExtra)
+  const balanceAfter = monthlyRemainingAfter === -1 ? -1 : monthlyRemainingAfter + extraBalanceAfter
+
   // 记录消费明细
   try {
     await db.collection(CALL_USAGE).add({
@@ -426,6 +461,8 @@ async function consumeTokens(db, userId, actualModelTokens, feature, model) {
       source: fromMonthly > 0 ? 'monthly' : 'extra',
       modelTokens: actualModelTokens,
       platformTokens: toConsume,
+      amountTokens: -deducted,
+      balanceAfter,
       exchangeRate: rate,
       fromMonthly,
       fromExtra,
@@ -434,7 +471,7 @@ async function consumeTokens(db, userId, actualModelTokens, feature, model) {
     })
   } catch (_) {}
 
-  return { deducted: fromMonthly + fromExtra, fromMonthly, fromExtra, platformTokens: toConsume, rate }
+  return { deducted, fromMonthly, fromExtra, platformTokens: toConsume, amountTokens: -deducted, balanceAfter, rate }
 }
 
 // ─── 功能访问检查 ───────────────────────────────────────
@@ -474,9 +511,21 @@ async function checkFeatureAccess(db, userId, featureKey) {
 async function addExtraTokens(db, userId, amount, remark) {
   if (!userId || !amount || amount <= 0) return { success: false, message: '参数无效' }
   try {
+    const { source, sourceId } = normalizeLedgerSource(remark)
     await db.collection(USERS).doc(userId).update({ extraTokens: db.command.inc(amount) })
-    await db.collection(CALL_USAGE).add({ userId, type: 'grant', source: remark || 'manual', amount, createdAt: new Date() })
-    return { success: true, amount }
+    const balanceAfter = await getTokenBalanceAfter(db, userId, amount)
+    await db.collection(CALL_USAGE).add({
+      userId,
+      type: 'grant',
+      source: source || remark || 'manual',
+      sourceId,
+      amount,
+      amountTokens: amount,
+      balanceAfter,
+      remark: remark || '',
+      createdAt: new Date()
+    })
+    return { success: true, amount, amountTokens: amount, balanceAfter }
   } catch (err) {
     return { success: false, message: '增加Token失败' }
   }
@@ -545,7 +594,7 @@ async function getCallUsageHistory(db, userId, limit = 100, types = null) {
     const recentRecordsTokens = (records || []).reduce((sum, r) => {
       const platformTokens = Number(r.platformTokens)
       if (Number.isFinite(platformTokens) && platformTokens > 0) return sum + platformTokens
-      return sum + Math.abs(Number(r.amountTokens || r.totalTokens || 0))
+      return sum + Math.abs(Number(r.amountTokens || r.amount || r.totalTokens || 0))
     }, 0)
 
     return {

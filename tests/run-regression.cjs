@@ -818,8 +818,10 @@ async function main() {
     assert.equal(afterRepeat.extraTokens, afterFirst.extraTokens)
 
     const grantRecords = fake.__store.dumpCollection('call_usage_records')
-      .filter((item) => item.userId === 'user_recharge_owner' && item.type === 'grant' && item.source === `recharge_${created.order._id}`)
+      .filter((item) => item.userId === 'user_recharge_owner' && item.type === 'grant' && item.source === 'recharge' && item.sourceId === created.order._id)
     assert.equal(grantRecords.length, 1)
+    assert.equal(grantRecords[0].amountTokens, created.order.grantTokens)
+    assert.equal(grantRecords[0].remark, `recharge_${created.order._id}`)
     assert.equal(fake.__store.dumpCollection('token_ledger_records').length, 0)
   })
 
@@ -860,7 +862,92 @@ async function main() {
     assert.equal(afterRepeat.extraTokens, 7000)
 
     const grantRecords = fake.__store.dumpCollection('call_usage_records')
-      .filter((item) => item.userId === 'user_paid_recharge_owner' && item.type === 'grant' && item.source === 'recharge_order_paid_missing_grant')
+      .filter((item) => item.userId === 'user_paid_recharge_owner' && item.type === 'grant' && item.source === 'recharge' && item.sourceId === 'order_paid_missing_grant')
+    assert.equal(grantRecords.length, 1)
+    assert.equal(grantRecords[0].amountTokens, 7000)
+    assert.equal(grantRecords[0].remark, 'recharge_order_paid_missing_grant')
+  })
+
+  await runCase('queryOrder repairs paid recharge order missing token grant', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    asUser(fake, 'user_paid_query_repair_owner')
+    Object.assign(fake.__store.getCollection('users').get('user_paid_query_repair_owner'), {
+      extraTokens: 0
+    })
+    fake.__store.getCollection('recharge_orders').set('order_paid_query_missing_grant', {
+      _id: 'order_paid_query_missing_grant',
+      userId: 'user_paid_query_repair_owner',
+      orderNo: 'PAY_QUERY_REPAIR_001',
+      status: 'paid',
+      fulfillmentStatus: 'failed',
+      productType: 'recharge',
+      planName: 'query repair pack',
+      amountFen: 100,
+      grantTokens: 5000,
+      transactionId: 'wx_txn_query_repair',
+      paidAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+
+    const recharge = loadFunction('recharge')
+    asUser(fake, 'user_paid_query_repair_owner')
+    const repaired = await recharge({ action: 'queryOrder', orderNo: 'PAY_QUERY_REPAIR_001' })
+    assert.equal(repaired.success, true)
+    assert.equal(repaired.order.status, 'paid')
+    assert.equal(repaired.order.fulfillmentStatus, 'succeeded')
+
+    const afterRepair = fake.__store.getCollection('users').get('user_paid_query_repair_owner')
+    assert.equal(afterRepair.extraTokens, 5000)
+
+    const repeated = await recharge({ action: 'queryOrder', orderNo: 'PAY_QUERY_REPAIR_001' })
+    assert.equal(repeated.success, true)
+    const afterRepeat = fake.__store.getCollection('users').get('user_paid_query_repair_owner')
+    assert.equal(afterRepeat.extraTokens, 5000)
+  })
+
+  await runCase('repairOrder honors legacy recharge grant marker idempotently', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    asUser(fake, 'user_legacy_recharge_owner')
+    Object.assign(fake.__store.getCollection('users').get('user_legacy_recharge_owner'), {
+      extraTokens: 7000
+    })
+    fake.__store.getCollection('recharge_orders').set('order_legacy_granted', {
+      _id: 'order_legacy_granted',
+      userId: 'user_legacy_recharge_owner',
+      orderNo: 'PAY_REPAIR_LEGACY_001',
+      status: 'paid',
+      productType: 'recharge',
+      planName: 'legacy grant marker pack',
+      amountFen: 100,
+      grantTokens: 7000,
+      createdAt: new Date(),
+      paidAt: new Date(),
+      updatedAt: new Date()
+    })
+    fake.__store.getCollection('call_usage_records').set('legacy_recharge_grant_marker', {
+      _id: 'legacy_recharge_grant_marker',
+      userId: 'user_legacy_recharge_owner',
+      type: 'grant',
+      source: 'recharge_order_legacy_granted',
+      amount: 7000,
+      createdAt: new Date()
+    })
+
+    const recharge = loadFunction('recharge')
+    asUser(fake, 'user_legacy_recharge_owner')
+    const repaired = await recharge({ action: 'repairOrder', orderNo: 'PAY_REPAIR_LEGACY_001' })
+    assert.equal(repaired.success, true)
+
+    const user = fake.__store.getCollection('users').get('user_legacy_recharge_owner')
+    assert.equal(user.extraTokens, 7000)
+
+    const grantRecords = fake.__store.dumpCollection('call_usage_records')
+      .filter((item) => item.userId === 'user_legacy_recharge_owner' && item.type === 'grant')
     assert.equal(grantRecords.length, 1)
   })
 

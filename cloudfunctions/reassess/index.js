@@ -11,6 +11,11 @@ function randomHex(n) {
   return crypto.randomBytes(n).toString('hex')
 }
 
+function normalizeAssessmentSource(source) {
+  const value = String(source || '').trim()
+  return value === 'initial_questionnaire' ? value : 'manual_reassessment'
+}
+
 async function rollbackReassessment(params) {
   const { caseId, caseDoc, assessmentId, autoRecordIds } = params
 
@@ -60,7 +65,7 @@ exports.main = async (event) => {
     const doc = {
       _id: assessmentId,
       caseId,
-      source: source || 'manual_reassessment',
+      source: normalizeAssessmentSource(source),
       createdAt: now,
       ...result
     }

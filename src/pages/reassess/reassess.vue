@@ -19,6 +19,12 @@
         </view>
       </view>
 
+      <view class="card-v2 warn-card">
+        <text class="section-title-v2" style="color:#e67e22;">⚠️ 重新分析说明</text>
+        <text class="card-text-v2">本次分析仅基于下方问卷答案计算，与已有事件记录无关。新分数将完全重新生成，不会在现有分数上加减。</text>
+        <text class="card-text-v2" style="margin-top:8rpx;">历史事件和之前的评估仍会保留，新结果将追加为一条新的评估记录。</text>
+      </view>
+
       <AssessmentForm
         :relation-type="caseFile.profile?.relationType"
         :initial-name="caseFile.name"
@@ -38,13 +44,14 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import AiLoading from '@/components/AiLoading'
 import { getCaseDetail, reassess, getCurrentUserId } from '@/utils/api'
-import { setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import { bumpDataVersion, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const loading = ref(true)
 const caseFile = ref<any>(null)
 const userId = ref('')
 const caseId = ref('')
+const assessmentSource = ref('')
 const themeVars = ref(getThemeStyle())
 const lastDataVersion = ref(0)
 const assessing = ref(false)
@@ -53,6 +60,7 @@ let assessingTimer: any = null
 
 onLoad((options) => {
   caseId.value = options?.caseId || ''
+  assessmentSource.value = options?.source || ''
 })
 
 onShow(() => {
@@ -94,9 +102,11 @@ async function onSubmit(payload: { name: string; answers: any[]; profile: any })
     const res = await reassess({
       userId: userId.value,
       caseId: caseId.value,
-      answers: payload.answers
+      answers: payload.answers,
+      source: assessmentSource.value
     })
     if (res.success) {
+      bumpDataVersion()
       showSuccess('分析完成')
       setTimeout(() => {
         setActiveCaseId(caseId.value)
@@ -168,6 +178,7 @@ function goTimeline() {
 .v2-mode .hero-actions-v2 { display: flex; gap: 12rpx; margin-top: 20rpx; flex-wrap: wrap; }
 
 .v2-mode .card-v2 { @include card-v2; }
+.v2-mode .warn-card { border-color: #e67e22; background: #fff8f0; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .card-text-v2 {
   display: block;

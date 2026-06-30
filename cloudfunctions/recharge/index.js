@@ -9,6 +9,14 @@ const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 
 const RECHARGE_ORDERS = 'recharge_orders'
+const ENABLE_LEGACY_PAY_CALLBACK = String(process.env.ENABLE_LEGACY_PAY_CALLBACK || '').toLowerCase() === 'true'
+
+function isPayDebug() {
+  return String(process.env.PAY_DEBUG || '').trim() === 'true'
+}
+function payLog(...args) {
+  if (isPayDebug()) console.log(...args)
+}
 
 // 管理员的 ADMIN_EMAILS 环境变量（与 adminManage 保持一致）
 function normalizeList(val) {
@@ -191,22 +199,35 @@ async function confirmPayment(event) {
 
   const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
   const order = (data && data.length > 0) ? data[0] : null
-  console.log('[PAYDBG][confirm] orderNo=%s hit=%s status=%s', orderNo, !!order, order?.status)
+  payLog('[PAYDBG][confirm] orderNo=%s hit=%s status=%s', orderNo, !!order, order?.status)
   if (!order) return { success: false, message: '订单不存在' }
-  if (order.status === 'paid') return { success: true, order, alreadyPaid: true }
+  // 已支付且已成功发货 → 直接返回（幂等）
+  if (order.status === 'paid' && order.fulfillmentStatus === 'succeeded') {
+    return { success: true, order, alreadyPaid: true }
+  }
+  // 已支付但发货失败/未完成 → 重新补偿发货
+  if (order.status === 'paid') {
+    payLog('[PAYDBG][confirm] 已支付但未完成发货 orderNo=%s fulfillmentStatus=%s → 重新补偿', orderNo, order.fulfillmentStatus)
+    try {
+      const fulfilled = await fulfillPayment(db, order, order.transactionId || 'repair')
+      return { success: true, order: fulfilled }
+    } catch (e) {
+      return { success: false, message: '支付已完成，发货补偿失败：' + (e?.message || '未知错误') }
+    }
+  }
   if (order.status !== 'pending') return { success: false, message: `订单状态为 "${order.status}"，无法确认` }
 
   // 服务端微信 V3 查单验证支付真实发生（防止绕过客户端伪造请求）
   const wxResult = await queryOrderByOutTradeNo(orderNo)
-  console.log('[PAYDBG][confirm] wxQuery result=%j', wxResult)
+  payLog('[PAYDBG][confirm] wxQuery result=%j', wxResult)
   if (wxResult && wxResult.trade_state === 'SUCCESS' && wxResult.transaction_id) {
     const fulfilled = await fulfillPayment(db, order, wxResult.transaction_id)
-    console.log('[PAYDBG][confirm] fulfilled orderNo=%s productType=%s', orderNo, fulfilled.productType)
+    payLog('[PAYDBG][confirm] fulfilled orderNo=%s productType=%s', orderNo, fulfilled.productType)
     return { success: true, order: fulfilled }
   }
 
   // 微信侧未确认支付 → 让前端走轮询兜底
-  console.log('[PAYDBG][confirm] 微信侧未确认支付 orderNo=%s wxTradeState=%s', orderNo, wxResult?.trade_state)
+  payLog('[PAYDBG][confirm] 微信侧未确认支付 orderNo=%s wxTradeState=%s', orderNo, wxResult?.trade_state)
   return { success: true, order, pendingVerification: true, message: '支付确认中，请稍候...' }
 }
 
@@ -218,14 +239,12 @@ async function unifiedOrder(event) {
   const productType = String(event.productType || '').trim()
   if (!productType) return { success: false, message: '缺少 productType' }
 
-  // 获取 openid：优先 event 传入，fallback 查 DB
-  let openid = String(event.openid || '').trim()
-  if (!openid) {
-    try {
-      const { data: userData } = await db.collection('users').doc(userId).get()
-      openid = (userData && userData.length > 0) ? (userData[0].openid || '') : ''
-    } catch (_) {}
-  }
+  // openid 仅从已认证用户的 DB 记录获取，不接受客户端传入
+  let openid = ''
+  try {
+    const { data: userData } = await db.collection('users').doc(userId).get()
+    openid = (userData && userData.length > 0) ? (userData[0].openid || '') : ''
+  } catch (_) {}
   if (!openid) return { success: false, message: '缺少微信 openid，请在小程序中重试' }
 
   const appid = String(process.env.WXPAY_APPID || '').trim()
@@ -247,7 +266,7 @@ async function unifiedOrder(event) {
 
     const amountFen = Number(tier.priceFen) || 0
     const grantTokens = Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0)
-    console.log('[PAYDBG][unifiedOrder] recharge tier=%s amountFen=%s grantTokens=%s', planId, amountFen, grantTokens)
+    payLog('[PAYDBG][unifiedOrder] recharge tier=%s amountFen=%s grantTokens=%s', planId, amountFen, grantTokens)
     const now = new Date()
     order = {
       userId, openid,
@@ -317,7 +336,7 @@ async function unifiedOrder(event) {
   // 写 DB
   const addResult = await db.collection(RECHARGE_ORDERS).add(order)
   order._id = addResult.id || addResult._id
-  console.log('[PAYDBG][unifiedOrder] DB订单已创建 orderNo=%s _id=%s', orderNo, order._id)
+  payLog('[PAYDBG][unifiedOrder] DB订单已创建 orderNo=%s _id=%s', orderNo, order._id)
 
   // 调微信 V3 统一下单
   const wxResult = await createJsapiOrder({
@@ -339,7 +358,7 @@ async function unifiedOrder(event) {
 
   const payParams = createPayParams(wxResult.prepay_id)
   order.prepay_id = wxResult.prepay_id
-  console.log('[PAYDBG][unifiedOrder] 完成 orderNo=%s prepay_id=%s', orderNo, wxResult.prepay_id)
+  payLog('[PAYDBG][unifiedOrder] 完成 orderNo=%s prepay_id=%s', orderNo, wxResult.prepay_id)
   return { success: true, order, payParams }
 }
 
@@ -356,6 +375,15 @@ async function queryOrder(event) {
   const order = (data && data.length > 0) ? data[0] : null
   if (!order) return { success: false, message: '订单不存在' }
 
+  if (order.status === 'paid' && order.fulfillmentStatus !== 'succeeded') {
+    try {
+      const fulfilled = await fulfillPayment(db, order, order.transactionId || `repair:${order._id || orderNo}`)
+      return { success: true, order: fulfilled }
+    } catch (_) {
+      return { success: true, order }
+    }
+  }
+
   // 已终态直接返回
   if (order.status === 'paid' || order.status === 'failed' || order.status === 'expired') {
     return { success: true, order }
@@ -363,7 +391,7 @@ async function queryOrder(event) {
 
   // 调微信 V3 查单
   const wxResult = await queryOrderByOutTradeNo(orderNo)
-  console.log('[PAYDBG][queryOrder] orderNo=%s wxResult=%j', orderNo, wxResult)
+  payLog('[PAYDBG][queryOrder] orderNo=%s wxResult=%j', orderNo, wxResult)
 
   if (wxResult && wxResult.trade_state === 'SUCCESS' && wxResult.transaction_id) {
     const fulfilled = await fulfillPayment(db, order, wxResult.transaction_id)
@@ -373,7 +401,7 @@ async function queryOrder(event) {
   // 微信终态同步到 DB（防止订单永远 pending）
   const TERMINAL_STATES = ['CLOSED', 'PAYERROR', 'REVOKED']
   if (wxResult && TERMINAL_STATES.includes(wxResult.trade_state) && order.status === 'pending') {
-    console.log('[PAYDBG][queryOrder] 微信终态同步 orderNo=%s trade_state=%s → DB status=expired', orderNo, wxResult.trade_state)
+    payLog('[PAYDBG][queryOrder] 微信终态同步 orderNo=%s trade_state=%s → DB status=expired', orderNo, wxResult.trade_state)
     await db.collection(RECHARGE_ORDERS).doc(order._id).update({
       status: 'expired',
       failReason: `wechat_${wxResult.trade_state.toLowerCase()}`,
@@ -397,57 +425,65 @@ async function paymentCallback(event, rawCallbackBody) {
   // ── 路径 A：HTTP 触发器直达（自研） ──
   if (rawCallbackBody) {
     const headers = event.headers || {}
-    console.log('[PAYDBG][callback] HTTP直连 headers keys=%j body前200=%s',
+    payLog('[PAYDBG][callback] HTTP直连 headers keys=%j body前200=%s',
       Object.keys(headers), String(rawCallbackBody).slice(0, 200))
 
     // 验签
     if (!verifyCallbackSignature(headers, rawCallbackBody)) {
-      console.error('[PAYDBG][callback] ❌ 验签失败')
+      payLog('[PAYDBG][callback] 验签失败')
       return { code: 'FAIL', message: '验签失败' }
     }
 
     // 解析 body
     let callbackJSON
     try { callbackJSON = JSON.parse(rawCallbackBody) } catch (e) {
-      console.error('[PAYDBG][callback] ❌ JSON解析失败:', e.message)
+      payLog('[PAYDBG][callback] JSON解析失败: %s', e.message)
       return { code: 'FAIL', message: '无效的请求体' }
     }
 
     // 解密 resource
     const decrypted = decryptResource(callbackJSON.resource || {})
     if (!decrypted) {
-      console.error('[PAYDBG][callback] ❌ 解密失败')
+      payLog('[PAYDBG][callback] 解密失败')
       return { code: 'FAIL', message: '解密失败' }
     }
 
     outTradeNo = String(decrypted.out_trade_no || '').trim()
     transactionId = String(decrypted.transaction_id || '').trim()
     totalFee = Number(decrypted.amount?.total || 0)
-    console.log('[PAYDBG][callback] ✅ 验签解密成功 outTradeNo=%s txnId=%s totalFee=%s',
+    payLog('[PAYDBG][callback] ✅ 验签解密成功 outTradeNo=%s txnId=%s totalFee=%s',
       outTradeNo, transactionId, totalFee)
   }
   // ── 路径 B：集成中心转发（兼容旧回调通道） ──
   else if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
+    if (!ENABLE_LEGACY_PAY_CALLBACK) {
+      payLog('[PAYDBG][callback] legacy callback disabled')
+      return { code: 'FAIL', message: 'legacy callback disabled' }
+    }
     outTradeNo = String(event.resource.out_trade_no || '').trim()
     transactionId = String(event.resource.transaction_id || '').trim()
     totalFee = Number(event.resource.amount?.total || 0)
-    console.log('[PAYDBG][callback] 集成中心转发 outTradeNo=%s txnId=%s', outTradeNo, transactionId)
+    payLog('[PAYDBG][callback] 集成中心转发 outTradeNo=%s txnId=%s', outTradeNo, transactionId)
   } else {
     return { success: false, message: '无效的支付回调来源' }
   }
 
   if (!outTradeNo) return { success: false, message: '缺少 outTradeNo' }
 
-  console.log('[PAYDBG][callback] parsed outTradeNo=%s transactionId=%s totalFee=%s', outTradeNo, transactionId, totalFee)
+  payLog('[PAYDBG][callback] parsed outTradeNo=%s transactionId=%s totalFee=%s', outTradeNo, transactionId, totalFee)
 
   const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo: outTradeNo }).limit(1).get()
   const order = (data && data.length > 0) ? data[0] : null
-  console.log('[PAYDBG][callback] order lookup hit=%s status=%s amountFen=%s', !!order, order?.status, order?.amountFen)
+  payLog('[PAYDBG][callback] order lookup hit=%s status=%s amountFen=%s', !!order, order?.status, order?.amountFen)
   if (!order) return { success: false, message: '订单不存在' }
 
   // 金额校验
   if (totalFee && totalFee !== order.amountFen) {
-    console.warn(`paymentCallback: amount mismatch expected=${order.amountFen} got=${totalFee} outTradeNo=${outTradeNo}`)
+    if (isPayDebug()) {
+      console.warn(`paymentCallback: amount mismatch expected=${order.amountFen} got=${totalFee} outTradeNo=${outTradeNo}`)
+    } else {
+      console.warn('paymentCallback: amount mismatch')
+    }
     await db.collection(RECHARGE_ORDERS).doc(order._id).update({
       status: 'failed',
       updatedAt: new Date()
@@ -479,7 +515,7 @@ async function repairOrder(event) {
   if (!order) return { success: false, message: '订单不存在' }
   if (order.status !== 'paid') return { success: false, message: '仅已支付订单可修复' }
 
-  console.log('[PAYDBG][repair] repair orderId=%s orderNo=%s productType=%s', order._id, order.orderNo, order.productType)
+  payLog('[PAYDBG][repair] repair orderId=%s orderNo=%s productType=%s', order._id, order.orderNo, order.productType)
   const repaired = await fulfillPayment(db, order, `repair:${order._id || orderNo}`)
   return { success: true, order: repaired }
 }
@@ -489,7 +525,7 @@ exports.main = async (event = {}) => {
     // ── HTTP 触发器检测（自研回调入口） ──
     // CloudBase HTTP 访问服务将请求路由到云函数时，event 会包含 httpMethod 字段
     if (event.httpMethod) {
-      console.log('[PAYDBG][main] HTTP trigger method=%s path=%s keys=%j',
+      payLog('[PAYDBG][main] HTTP trigger method=%s path=%s keys=%j',
         event.httpMethod, event.path, Object.keys(event))
       // POST 请求一律走支付回调处理（安全验证由 paymentCallback 的验签+解密保证）
       if (event.httpMethod === 'POST') {
@@ -500,14 +536,14 @@ exports.main = async (event = {}) => {
 
     // [PAYDBG] 最入口诊断：抓”回调到底有没有进来 + 真实结构”。前端调用带凭证，仅打印 keys；无 action 的（疑似回调）完整打印。
     if (event && event.action) {
-      console.log('[PAYDBG][main] front-call action=%s keys=%j', event.action, Object.keys(event))
+      payLog('[PAYDBG][main] front-call action=%s keys=%j', event.action, Object.keys(event))
     } else {
-      console.log('[PAYDBG][main] NO-ACTION event (疑似支付回调), raw=%j', event)
+      payLog('[PAYDBG][main] NO-ACTION event (疑似支付回调), raw=%j', event)
     }
 
     // 集成中心微信支付回调自动识别（event_type 而非 action）— 兼容旧通道
     if (event.event_type === 'TRANSACTION.SUCCESS' && event.resource) {
-      console.log('[PAYDBG][main] >>> 命中 TRANSACTION.SUCCESS 回调分支（兼容）')
+      payLog('[PAYDBG][main] >>> 命中 TRANSACTION.SUCCESS 回调分支（兼容）')
       return await paymentCallback(event, null)
     }
 

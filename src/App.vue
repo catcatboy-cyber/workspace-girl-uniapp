@@ -43,29 +43,10 @@ onLaunch(() => {
       })
     }
 
-    // 首次启动：即使没有 __usePrivacyCheck__ 也要主动展示隐私同意弹窗
-    if (!alreadyAgreed) {
-      uni.showModal({
-        title: '欢迎使用 Crush Master',
-        content: '在使用本小程序前，请仔细阅读并同意《隐私政策》和《用户服务协议》。\n\n我们仅在功能需要时处理你主动提供的信息（账号、关系记录、图片、录音、支付等），不会用于其他用途。你可在"关于"页面查看完整政策。',
-        confirmText: '同意并继续',
-        cancelText: '暂不使用',
-        success: (modalRes: any) => {
-          if (modalRes.confirm) {
-            uni.setStorageSync(PRIVACY_KEY, true)
-          }
-          // 不同意也不强制退出，但后续涉及隐私的 API 会引导授权
-        }
-      })
-    }
   } catch (_) { /* H5 等非微信环境忽略 */ }
 
   // 全量静默登录：wx.login 无弹窗，后端通过 openid 自动识别/创建用户
-  silentWechatLogin().then(() => {
-    console.log('[app] silentWechatLogin done, userId=', getCurrentUserId())
-  }).catch((e: any) => {
-    console.warn('[app] silentWechatLogin failed:', e?.message || e)
-  })
+  silentWechatLogin().catch(() => {})
 })
 
 onShow((options: any) => {
@@ -78,14 +59,9 @@ onShow((options: any) => {
 onHide(() => {})
 
 async function silentWechatLogin() {
-  const hasTried = !!uni.getStorageSync(SILENT_LOGIN_TRIED_KEY)
-  const hasUserId = !!getCurrentUserId()
-  if (hasTried && hasUserId) {
-    uni.setStorageSync(SILENT_LOGIN_DONE_KEY, true)
-    return
-  }
+  // 每次冷启动都走 wechatLogin 刷新 CloudBase 鉴权状态
+  // 否则老用户冷启动时 CloudBase auth 过期，后续云函数调用全部鉴权失败
   uni.setStorageSync(SILENT_LOGIN_TRIED_KEY, true)
-  // 不跳过已登录用户，确保每次冷启动都走 wechatLogin 更新 landing 等字段
 
   try {
     const wxApi = (globalThis as any)?.wx

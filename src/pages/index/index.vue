@@ -137,7 +137,6 @@
         <!-- Quick record -->
         <view class="record-block anim-card" style="animation-delay:0.15s">
           <view class="block-head"><text class="block-title">快速记录</text><text class="block-badge">别脑补</text></view>
-          <textarea v-model="quickDesc" class="text-area-v2" placeholder="他做了什么？原话是什么？例如：他说下次一起去图书馆…" />
           <view class="role-row">
             <view class="role-main-v2">
               <text class="role-label">这条主要在说</text>
@@ -162,6 +161,14 @@
             </view>
           </view>
           <text class="role-hint-v2">{{ quickSubjectRoleHint }}</text>
+          <view v-if="quickSubjectRole === 'both'" class="quick-chat-names-v2">
+            <input v-model="quickChatSelfName" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
+            <text class="quick-chat-name-sep-v2">和</text>
+            <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="latestCase?.name || 'TA的微信昵称'" />
+            <text class="quick-chat-name-hint-v2">贴对话后标注，帮小咪分清谁说了什么</text>
+          </view>
+          <textarea :value="quickDesc" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
+          <text v-if="quickDescDebug" class="quick-desc-debug-v2">{{ quickDescDebug }}</text>
           <view class="datetime-row-v2">
             <picker mode="date" :value="quickDate" @change="onQuickDateChange"><view class="picker-v2">{{ quickDate }}</view></picker>
             <picker mode="time" :value="quickTime" @change="onQuickTimeChange"><view class="picker-v2">{{ quickTime }}</view></picker>
@@ -180,6 +187,7 @@
                 <text v-if="quickQuestionKey === item.value" class="quick-question-check-v2">✓</text>
               </view>
             </view>
+            <text v-if="quickQuestionKey === 'reply'" class="quick-question-hint-v2">💡 也可以直接点下方 {{ selectedPet.displayName }}，让 ta 帮你想怎么回～</text>
             <input
               v-if="quickQuestionKey === 'custom'"
               v-model="quickCustomQuestion"
@@ -313,10 +321,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
+import { onHide, onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
-import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua } from '@/utils/api'
+import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
@@ -388,6 +396,9 @@ const quickDate = ref(getDateInputValue())
 const quickTime = ref(getTimeInputValue())
 const quickQuestionKey = ref('like')
 const quickCustomQuestion = ref('')
+const quickChatSelfName = ref('')
+const quickChatTargetName = ref('')
+const quickDescDebug = ref('')
 const quickSubmitting = ref(false)
 const quickUploading = ref(false)
 const voiceUploading = ref(false)
@@ -731,7 +742,13 @@ const quickSubjectRoleHint = computed(() => {
   if (quickSubjectRoleConfidence.value === 'user_selected') return `已手动设为：${label}。`
   if (quickSubjectRole.value === 'self') return 'AI 判断这更像你的心理感受或自我状态，已归为“自己”。'
   if (quickSubjectRole.value === 'both') return 'AI 判断这更像双方互动，建议重点区分谁主动、谁回应、谁拒绝。'
-  return '默认按“对方”记录；如果写的是你的心理感受，请改为“自己”。'
+  return '默认按”对方”记录；如果写的是你的心理感受，请改为”自己”。'
+})
+
+const quickDescPlaceholder = computed(() => {
+  if (quickSubjectRole.value === 'both') return '可直接粘贴微信对话记录，AI 会自动解析双方说了什么'
+  if (quickSubjectRole.value === 'self') return '你做了什么？说了什么？你的感受是怎样的？例如：我主动问他周末有没有空…'
+  return 'TA 做了什么？原话是什么？例如：他说下次一起去图书馆…'
 })
 
 const recordingSeconds = ref(60)
@@ -845,19 +862,38 @@ function mapSubjectRoleLabel(role?: string) {
 function inferSubjectRole(value?: string): 'target' | 'self' | 'both' {
   const text = String(value || '').trim()
   if (!text) return 'target'
-  const hasSelf = /(我|我们|本人|自己|这边)/.test(text)
-  const hasTarget = /(他|她|对方|对象|男生|女生|ta|TA)/i.test(text)
-  const hasInteraction = /(一起|互相|聊天|见面|约|吃饭|看电影|通话|视频|见了|碰面|散步|出游|互动)/.test(text)
+  // 仅对话转录格式（多行 + 时间戳）自动判 both，普通描述只在 对方/自己 之间选
+  if (text.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(text)) return 'both'
+  const selfIndicators = /(我|我们|本人|自己|这边)/.test(text)
   const selfFeeling = /(我.*(感觉|觉得|感到|心理|心里|焦虑|难受|失落|开心|期待|害怕|纠结|想他|想她|想对方|放不下|不安|委屈|生气|吃醋)|自己.*(状态|感受|情绪|心理|心里))/.test(text)
-  if ((hasSelf && hasTarget) || hasInteraction) return 'both'
   if (selfFeeling) return 'self'
-  if (hasSelf) return 'self'
+  if (selfIndicators) return 'self'
   return 'target'
 }
 
 function setQuickSubjectRole(role: 'target' | 'self' | 'both') {
   quickSubjectRole.value = role
   quickSubjectRoleConfidence.value = 'user_selected'
+}
+
+// 用 :value + @input 替代 v-model，绕过微信 textarea 粘贴截断 bug
+function onQuickDescInput(e: any) {
+  const val = e?.detail?.value ?? e?.target?.value ?? ''
+  quickDesc.value = val.slice(0, 6000)
+  quickDescDebug.value = debugQuickDesc(val)
+  // 检测对话格式 → 自动切到互动
+  if (val.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(val)) {
+    quickSubjectRole.value = 'both'
+    quickSubjectRoleConfidence.value = 'user_selected'
+  }
+}
+
+function debugQuickDesc(value: string) {
+  const text = String(value || '')
+  if (!text) return ''
+  const first = text.split('\n').slice(0, 2).join(' / ').slice(0, 60)
+  const last = text.split('\n').slice(-2).join(' / ').slice(0, 60)
+  return `len=${text.length} | head=${first} | tail=${last}`
 }
 
 function clampScore(score: any) {
@@ -954,6 +990,43 @@ function applyPetScene(scene: PetScene | null, durationMs?: number, customMessag
 
 const showPetBar = ref(true)
 const petAssetsVersion = ref(0)
+
+// 分享提醒：试用期或 Token 不足时，每天最多 1 次、50% 概率提醒
+let shareNudgeTimer: ReturnType<typeof setTimeout> | null = null
+const SHARE_NUDGE_KEY = 'lastShareNudgeDate'
+async function checkShareNudge() {
+  // 已显示过宠物消息的场景（justRecorded）不覆盖
+  if (!petMsg.value) return
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    if (uni.getStorageSync(SHARE_NUDGE_KEY) === today) return
+    if (Math.random() > 0.5) return
+    const sub = await getSubscriptionStatus().catch(() => null)
+    if (!sub?.success) return
+    const tokens = Number(sub.subscription?.extraTokens || 0) + Number(sub.subscription?.monthlyRemaining || 0)
+    const isTrial = Boolean(sub.subscription?.isTrial)
+    if (!isTrial && tokens >= 20000) return
+    // 延迟 4 秒展示，不抢 mood 消息的首屏注意力
+    shareNudgeTimer = setTimeout(() => {
+      uni.setStorageSync(SHARE_NUDGE_KEY, today)
+      const msg = isTrial
+        ? '🎁 试用福利：邀请好友一起用，双方都能得 Token～'
+        : '📢 Token 余额不多了，邀请好友注册立得 Token →'
+      petMsg.value = msg
+      petState.value = 'waving'
+      startPetAnim('waving')
+      // 6 秒后恢复
+      setTimeout(() => {
+        const mood = getPetMood()
+        petMsg.value = mood.message
+        startPetAnim(mood.sprite)
+      }, 6000)
+    }, 4000)
+  } catch { /* ignore */ }
+}
+function stopShareNudgeTimer() {
+  if (shareNudgeTimer) { clearTimeout(shareNudgeTimer); shareNudgeTimer = null }
+}
 
 function syncPetBarPref() {
   try { showPetBar.value = uni.getStorageSync('showPetBar') !== false } catch { showPetBar.value = true }
@@ -1084,9 +1157,16 @@ onShow(() => {
       }, 2000)
     } else {
       const mood = getPetMood()
-      petMsg.value = mood.message
+      let msg = mood.message
+      // 新用户（无记录）：提示宠物可点击
+      if (cases.value.length === 0) {
+        msg = mood.message + ' 点我试试~'
+      }
+      petMsg.value = msg
       petState.value = mood.sprite
       startPetAnim(mood.sprite)
+      // 异步检查是否需要分享提醒（不阻塞主流程）
+      checkShareNudge()
     }
   } else {
     startPetAnim(petState.value || 'idle')
@@ -1145,11 +1225,17 @@ onShareAppMessage(() => {
 
 onShareTimeline(() => buildSafeTimelineShare())
 
+onPullDownRefresh(async () => {
+  await loadData()
+  uni.stopPullDownRefresh()
+})
+
 onHide(() => {
   if (recording.value && recorderManager?.stop) recorderManager.stop()
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
   stopPetAnim()
+  stopShareNudgeTimer()
   statusInfoVisible.value = false
   applyPetScene(null)
 })
@@ -1203,7 +1289,23 @@ async function loadData() {
   } finally {
     indexAILog('loadData_finally')
     loading.value = false
+    applyPendingOnboardingAction()
   }
+}
+
+function applyPendingOnboardingAction() {
+  if (!dataReady.value || cases.value.length > 0) return
+  const pendingAction = uni.getStorageSync('onboardingAction')
+  if (!pendingAction) return
+  uni.removeStorageSync('onboardingAction')
+  if (pendingAction === 'startAssessment') {
+    showFullAssessment.value = true
+    showQuickCreate.value = false
+  } else if (pendingAction === 'quickCreate') {
+    showQuickCreate.value = true
+    showFullAssessment.value = false
+  }
+  // 'dismiss' 不打开任何表单，用户看首页空状态
 }
 
 async function onCreateCase(payload: { name: string; answers: any[]; profile: any }) {
@@ -1707,6 +1809,8 @@ async function submitQuickRecord() {
       subjectRole: currentSubjectRole,
       subjectRoleConfidence: currentSubjectRoleConfidence,
       userQuestion: currentUserQuestion,
+      chatSelfName: quickChatSelfName.value.trim() || undefined,
+      chatTargetName: quickChatTargetName.value.trim() || undefined,
       attachments: currentAttachments,
       occurrenceAt: currentOccurrenceAt
     })
@@ -1725,6 +1829,8 @@ async function submitQuickRecord() {
       quickDesc.value = ''
       quickQuestionKey.value = 'like'
       quickCustomQuestion.value = ''
+      quickChatSelfName.value = ''
+      quickChatTargetName.value = ''
       quickSubjectRole.value = 'target'
       quickSubjectRoleConfidence.value = 'auto'
       quickAttachments.value = []
@@ -1795,6 +1901,14 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
       caseIdTail: shortId(payload.caseId),
       assessmentIdTail: shortId(payload.assessmentId),
       recordIdTail: shortId(payload.recordId)
+    })
+    return
+  }
+  // 幂等保护：已处理过的 assessment 不再重复触发 AI
+  if (latestCase.value?.latestResult?.aiUsed) {
+    indexAILog('run_ai_skip_already_done', {
+      caseIdTail: shortId(payload.caseId),
+      assessmentIdTail: shortId(payload.assessmentId)
     })
     return
   }
@@ -1910,6 +2024,20 @@ async function loadTaohuaTeaser() {
 }
 
 function goTaohua() {
+  if (!hasUsableSelfProfile(selfProfile.value)) {
+    uni.showModal({
+      title: '画像未完善',
+      content: '完善本人画像后，命理分析会更准确好看。是否前往完善？',
+      confirmText: '去完善',
+      cancelText: '取消',
+      success: (res: any) => {
+        if (res.confirm) {
+          uni.navigateTo({ url: '/pages/self-profile/self-profile' })
+        }
+      }
+    })
+    return
+  }
   uni.navigateTo({ url: '/pages/taohua/taohua' })
 }
 </script>
@@ -1961,7 +2089,9 @@ function goTaohua() {
 .v2-mode .analysis-share-icon { width: 28rpx; height: 28rpx; display: block; }
 
 .v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; line-height: 1.45; box-sizing: border-box; font-family: inherit; }
+.v2-mode .text-area-v2.chat-mode { min-height: 360rpx; max-height: 640rpx; font-size: $fs-body; }
 .v2-mode .text-area-v2::placeholder { font-size: $fs-body-lg; font-weight: $fw-body; color: #777; }
+.v2-mode .quick-desc-debug-v2 { display: block; margin-top: 8rpx; font-size: $fs-caption; font-weight: $fw-body; color: #999; line-height: 1.4; word-break: break-all; }
 
 .v2-mode .role-row { display: flex; align-items: center; gap: 10rpx; margin-top: 16rpx; }
 .v2-mode .role-main-v2 { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10rpx; }
@@ -2074,6 +2204,11 @@ function goTaohua() {
 .v2-mode .quick-question-label-v2 { flex: 1; min-width: 0; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.35; }
 .v2-mode .quick-question-option-v2.active .quick-question-label-v2 { color: #111; font-weight: $fw-heading; }
 .v2-mode .quick-question-check-v2 { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-heading; color: #111; }
+.v2-mode .quick-question-hint-v2 { display: block; margin-top: 10rpx; font-size: $fs-caption; font-weight: $fw-body; color: #999; line-height: 1.4; }
+.v2-mode .quick-chat-names-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 10rpx; padding: 12rpx; border: 2rpx dashed #ccc; background: #fafafa; }
+.v2-mode .quick-chat-name-input-v2 { flex: 1; min-width: 0; height: 56rpx; padding: 0 14rpx; border: 2rpx solid #111; font-size: $fs-body; font-weight: $fw-body; color: #111; background: #fff; box-sizing: border-box; }
+.v2-mode .quick-chat-name-sep-v2 { font-size: $fs-body; font-weight: $fw-body; color: #999; flex-shrink: 0; }
+.v2-mode .quick-chat-name-hint-v2 { width: 100%; font-size: $fs-caption; font-weight: $fw-body; color: #999; line-height: 1.3; }
 .v2-mode .quick-custom-question-input-v2 {
   width: 100%;
   height: 64rpx;
@@ -2262,7 +2397,7 @@ function goTaohua() {
 
 
 /* taohua teaser card */
-.v2-mode .taohua-teaser-v2 { background: #fff; border: 3rpx solid #111; border-left: 12rpx solid #4ECDC4; box-shadow: 8rpx 8rpx 0 #111; padding: 24rpx; margin-bottom: 24rpx; box-sizing: border-box; }
+.v2-mode .taohua-teaser-v2 { background: linear-gradient(135deg, #FFF8E7 0%, #FFFBEB 50%, #FFF5F0 100%); border: 3rpx solid #111; border-left: 12rpx solid #4ECDC4; box-shadow: 8rpx 8rpx 0 #111; padding: 24rpx; margin-bottom: 24rpx; box-sizing: border-box; cursor: pointer; }
 .v2-mode .taohua-teaser-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; padding-bottom: 16rpx; border-bottom: 3rpx solid #111; }
 .v2-mode .taohua-teaser-head-title { font-size: $fs-heading; font-weight: $fw-heading; color: #111; }
 .v2-mode .taohua-teaser-head-score { font-size: $fs-kpi; font-weight: $fw-hero; color: #111; line-height: 1; }

@@ -77,7 +77,7 @@ for (const name of fns) {
   if (result.synced) {
     synced++
     const labels = result.changes.map(c => {
-      if (c.type === 'extra') return `-${c.file}(removed)`
+      if (c.type === 'extra') return `${c.file}(extra)`
       if (c.type === 'new') return `+${c.file}(${c.size}B)`
       return `~${c.file}(${c.size}B)`
     })
@@ -96,7 +96,7 @@ if (DRY_RUN) {
 }
 
 if (extraReport.length) {
-  console.log('\nExtra files removed from function _shared/ (not in canonical):')
+  console.log('\nExtra files present in function _shared/ (not in canonical; left untouched):')
   for (const item of extraReport) {
     console.log(`  ${item.fn}: ${item.extras.join(', ')}`)
   }

@@ -33,12 +33,14 @@
           <button class="btn btn-secondary btn-sm btn-auto" @click="orderMessage = ''; createdOrderId = ''; orderOk = false">关闭</button>
         </view>
       </view>  </view>
+    <TokenCoinOverlay :visible="showCoin" :amount="coinAmount" :subtitle="coinSubtitle" @close="showCoin = false" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, getRechargePlans, unifiedOrder, queryOrder, confirmPayment, getSubscriptionStatus } from '@/utils/api'
+import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { bumpDataVersion } from '@/utils/helpers'
 
 const extraTokens = ref(0)
@@ -49,6 +51,9 @@ const orderingId = ref('')
 const orderMessage = ref('')
 const orderOk = ref(false)
 const createdOrderId = ref('')
+const showCoin = ref(false)
+const coinAmount = ref(0)
+const coinSubtitle = ref('')
 
 onShow(() => {
   if (!getCurrentUserId()) {
@@ -142,24 +147,23 @@ async function createOrder(planId: string) {
     // #endif
 
     // 3. 支付成功 → 确认发货 + 轮询双保险
-    console.log('[PAYDBG] requestPayment 成功, orderNo=', orderNo)
     let paid = false
-    const startTime = Date.now()
+    let pendingFulfillment = false
 
     // 3a. 立即调云函数确认发货（wx.requestPayment success = 微信已扣款）
     try {
       const confirmed = await confirmPayment({ orderNo })
-      console.log('[PAYDBG] confirmPayment 结果=', JSON.stringify(confirmed))
-      if (confirmed?.order?.status === 'paid') {
+      if (confirmed?.order?.status === 'paid' && confirmed.order.fulfillmentStatus === 'succeeded') {
         paid = true
         orderOk.value = true
-        orderMessage.value = `支付成功！已充值 ${((result.order?.grantTokens || 0)).toLocaleString()} Token`
+        coinAmount.value = result.order?.grantTokens || 0
+        coinSubtitle.value = result.order?.planName || ''
+        showCoin.value = true
         bumpDataVersion()
         await loadStatus()
         return
       }
     } catch (e: any) {
-      console.error('[PAYDBG] confirmPayment 失败:', e?.message || e)
     }
 
     // 3b. 轮询兜底（30s 窗口，直接调微信 V3 查单）
@@ -169,18 +173,33 @@ async function createOrder(planId: string) {
       try {
         confirm = await queryOrder({ orderNo })
       } catch (e) { continue }
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-      console.log(`[PAYDBG] 轮询#${i + 1} elapsed=${elapsed}s status=`, confirm?.order?.status)
-      if (confirm?.order?.status === 'paid') { paid = true; break }
+      if (confirm?.order?.status === 'paid') {
+        // 检查是否已成功发货
+        if (confirm.order.fulfillmentStatus === 'succeeded') {
+          paid = true; break
+        }
+        // 已支付但未完成发货 → 状态为"到账处理中"
+        paid = true
+        pendingFulfillment = true
+        break
+      }
     }
     if (paid) {
-      orderOk.value = true
-      orderMessage.value = `支付成功！已充值 ${((result.order?.grantTokens || 0)).toLocaleString()} Token`
+      const grantTokens = result.order?.grantTokens || 0
+      if (pendingFulfillment) {
+        orderOk.value = true
+        orderMessage.value = `支付成功，到账处理中… 请稍后在"我"页确认余额`
+      } else {
+        orderOk.value = true
+        coinAmount.value = grantTokens
+        coinSubtitle.value = result.order?.planName || ''
+        showCoin.value = true
+        await loadStatus()
+      }
       bumpDataVersion()
-      await loadStatus()
     } else {
       orderOk.value = true
-      orderMessage.value = '支付成功，到账处理中（约 1 分钟），可稍后在"我"页查看余额'
+      orderMessage.value = '支付确认中，可稍后在"我"页查看余额'
       bumpDataVersion()
     }
   } catch (error: any) {

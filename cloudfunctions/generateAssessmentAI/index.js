@@ -314,6 +314,18 @@ exports.main = async (event = {}) => {
 
     const assessment = normalizeDoc(await db.collection('assessments').doc(assessmentId).get())
     if (!assessment || assessment.caseId !== caseId) throw new Error('ASSESSMENT_NOT_FOUND')
+
+    // 幂等保护：已处理过的 assessment 不再重复消费
+    if (assessment.aiUsed) {
+      console.log('[generateAssessmentAI trace]', JSON.stringify({
+        traceId,
+        stage: 'idempotent_skip',
+        assessmentIdTail: shortId(assessmentId),
+        reason: 'already processed (aiUsed=true)'
+      }))
+      return { success: true, assessmentId, recordId: assessment.triggerEventId || '', aiUsed: true, alreadyProcessed: true }
+    }
+
     console.log('[generateAssessmentAI trace]', JSON.stringify({
       traceId,
       stage: 'assessment_loaded',

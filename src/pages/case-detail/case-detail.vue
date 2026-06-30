@@ -31,8 +31,11 @@
         <!-- 里程碑进度 -->
         <ProgressMilestone :count="timelineCount" />
         <!-- 补初评入口 -->
-        <view v-if="!isCurrentResultAIReviewed" class="card-v2 anim-card" style="animation-delay:0.15s" @click="goNewAssessment">
-          <text class="section-title-v2">还没有进行初评</text>
+        <view v-if="showInitialAssessmentPrompt" class="card-v2 anim-card" style="animation-delay:0.15s" @click="goNewAssessment">
+          <view class="remind-head-v2">
+            <text class="section-title-v2">还没有进行初评</text>
+            <text class="remind-dismiss-v2" @click.stop="dismissInitialAssessmentPrompt">不再提示</text>
+          </view>
           <text class="remind-text-v2">回答几个问题，让小咪帮你看看有没有戏。点击前往 →</text>
         </view>
         <!-- 桃花匹配度入口（详情已搬至「命理桃花」页） -->
@@ -81,10 +84,106 @@
           </view>
         </view>
 
+        <!-- 机会/风险矩阵 -->
+        <view class="card-v2 anim-card" style="animation-delay:0.25s">
+          <text class="section-title-v2">机会 / 风险矩阵</text>
+          <text class="section-sub-v2">把状态落到决策象限</text>
+          <view class="matrix-grid-v2">
+            <view :class="['matrix-cell-v2', matrixActive === 'high-low' ? 'active' : '']">
+              <text class="matrix-cell-label-v2">高机会 · 低风险</text>
+              <text class="matrix-cell-sub-v2">可以轻推</text>
+              <view v-if="matrixActive === 'high-low'" class="matrix-dot-v2"></view>
+            </view>
+            <view :class="['matrix-cell-v2', matrixActive === 'high-high' ? 'active' : '']">
+              <text class="matrix-cell-label-v2">高机会 · 高风险</text>
+              <text class="matrix-cell-sub-v2">谨慎试探</text>
+              <view v-if="matrixActive === 'high-high'" class="matrix-dot-v2"></view>
+            </view>
+            <view :class="['matrix-cell-v2', matrixActive === 'low-low' ? 'active' : '']">
+              <text class="matrix-cell-label-v2">低机会 · 低风险</text>
+              <text class="matrix-cell-sub-v2">继续观察</text>
+              <view v-if="matrixActive === 'low-low'" class="matrix-dot-v2"></view>
+            </view>
+            <view :class="['matrix-cell-v2', matrixActive === 'low-high' ? 'active' : '']">
+              <text class="matrix-cell-label-v2">低机会 · 高风险</text>
+              <text class="matrix-cell-sub-v2">减少投入</text>
+              <view v-if="matrixActive === 'low-high'" class="matrix-dot-v2"></view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 场景气泡图 -->
+        <view class="card-v2 mint-card anim-card" style="animation-delay:0.26s">
+          <view class="section-head-v2">
+            <view>
+              <text class="section-title-v2">场景分布</text>
+              <text class="section-sub-v2">本月互动场景出现次数</text>
+            </view>
+            <text v-if="sceneBars.length > 0" class="tag-v2 black">Top {{ sceneBars.length }}</text>
+          </view>
+          <template v-if="timelineCount >= 3">
+            <template v-if="sceneBars.length > 0">
+              <view class="scene-bars-v2">
+                <view v-for="bar in sceneBars" :key="bar.key" class="scene-bar-row-v2">
+                  <view class="scene-bar-meta-v2">
+                    <text class="scene-bar-name-v2">{{ bar.label }}</text>
+                    <text class="scene-bar-type-v2" :class="bar.type === '线上' ? 'online' : 'offline'">{{ bar.type }}</text>
+                  </view>
+                  <view class="scene-bar-track-v2">
+                    <view class="scene-bar-fill-v2" :class="bar.tone" :style="{ width: bar.percent + '%' }"></view>
+                  </view>
+                  <text class="scene-bar-count-v2">{{ bar.count }}</text>
+                </view>
+              </view>
+            </template>
+            <view v-else class="locked-content-v2">
+              <text class="locked-text-v2">已解锁，但本月记录暂未识别到场景标签。事件越丰富，分布越好看。</text>
+            </view>
+          </template>
+          <view v-else class="locked-content-v2">
+            <text class="locked-text-v2">🔒 记录 3 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+          </view>
+        </view>
+
+        <!-- 互动天平 -->
+        <view class="card-v2 cream-card anim-card" style="animation-delay:0.28s">
+          <view class="section-head-v2">
+            <view>
+              <text class="section-title-v2">互动天平</text>
+              <text class="section-sub-v2">中轴左边是你，右边是 TA</text>
+            </view>
+            <text class="tag-v2 black">本月</text>
+          </view>
+          <template v-if="timelineCount >= 7">
+            <view class="balance-summary-v2">
+              <view class="balance-summary-cell-v2"><text class="balance-summary-num-v2">{{ thisMoStats.selfInitiatedCount }} : {{ thisMoStats.targetInitiatedCount }}</text><text class="balance-summary-lbl-v2">主动发起</text></view>
+              <view class="balance-summary-cell-v2"><text class="balance-summary-num-v2">{{ thisMoStats.fulfilledCount }} : {{ thisMoStats.targetCommittedCount }}</text><text class="balance-summary-lbl-v2">回应接住</text></view>
+              <view class="balance-summary-cell-v2"><text class="balance-summary-num-v2">{{ thisMoStats.fulfilledCount }} : {{ thisMoStats.targetCommittedCount }}</text><text class="balance-summary-lbl-v2">承诺兑现</text></view>
+            </view>
+            <view class="diverging-panel-v2">
+              <view class="diverging-head-v2"><text>你</text><text>0</text><text>TA</text></view>
+              <view v-for="b in divergingBars" :key="b.label" class="diverging-row-v2">
+                <text class="diverging-label-v2">{{ b.label }}</text>
+                <view class="diverging-bar-left-v2"><view class="diverging-fill-left-v2" :style="{ width: b.youPct + '%' }"></view></view>
+                <text class="diverging-axis-v2">|</text>
+                <view class="diverging-bar-right-v2" :class="b.taClass"><view class="diverging-fill-right-v2" :style="{ width: b.taPct + '%' }"></view></view>
+                <text class="diverging-num-v2">{{ b.you }} / {{ b.ta }}</text>
+              </view>
+            </view>
+            <view class="balance-callout-v2">
+              <text>{{ balanceCallout }}</text>
+            </view>
+          </template>
+          <view v-else class="locked-content-v2">
+            <text class="locked-text-v2">🔒 记录 7 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+          </view>
+        </view>
+
         <!-- Trends -->
-        <view v-if="trendDataPanel" class="card-v2 anim-card" style="animation-delay:0.24s">
+        <view class="card-v2 anim-card" style="animation-delay:0.24s">
           <view class="trend-block-v2">
             <text class="section-title-v2">趋势数据 · 月度</text>
+            <template v-if="timelineCount >= 14 && trendDataPanel">
             <view class="trend-grid-v2">
               <view class="trend-item-v2"><view class="trend-item-row-v2"><text class="trend-num-v2">{{ trendDataPanel.latestIntent }}</text><text class="trend-chg-v2" :class="deltaClass(trendDataPanel.intentDelta14)">{{ formatSignedDelta(trendDataPanel.intentDelta14) }}</text></view><text class="trend-unit-v2">意向</text></view>
               <view class="trend-item-v2"><view class="trend-item-row-v2"><text class="trend-num-v2 risk">{{ trendDataPanel.latestRisk }}</text><text class="trend-chg-v2" :class="deltaClass(-trendDataPanel.riskDelta14)">{{ formatSignedDelta(trendDataPanel.riskDelta14) }}</text></view><text class="trend-unit-v2">风险</text></view>
@@ -129,10 +228,17 @@
               </view>
             </view>
             <view v-if="trendDataPanel.turningPoints.length > 0" class="turning-v2"><text class="section-title-v2">关键拐点</text><view v-for="tp in trendDataPanel.turningPoints" :key="tp.key" class="turning-row-v2"><text class="turning-name-v2">{{ tp.title }}</text><view class="turning-deltas-v2"><text :class="['delta-chip-v2', deltaClass(tp.intentDelta)]">意 {{ formatSignedDelta(tp.intentDelta) }}</text><text :class="['delta-chip-v2', deltaClass(-tp.riskDelta)]">险 {{ formatSignedDelta(tp.riskDelta) }}</text></view></view></view>
+            </template>
+            <view v-else class="locked-content-v2">
+              <text class="locked-text-v2">🔒 记录 14 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+            </view>
           </view>
         </view>
         <!-- 信号解释卡 -->
-        <view v-if="signalCards.length > 0" class="card-v2 anim-card" style="animation-delay:0.27s">
+        <view class="card-v2 anim-card" style="animation-delay:0.27s">
+          <text class="section-title-v2">信号解释卡</text>
+          <text class="section-sub-v2">本月最关键变化，每条附证据来源</text>
+          <template v-if="timelineCount >= 14 && signalCards.length > 0">
           <text class="section-title-v2">信号解释卡</text>
           <text class="section-sub-v2">本月最关键变化，每条附证据来源</text>
           <view v-for="card in signalCards" :key="card.type" class="signal-card-v2" :class="'signal-card-' + card.type">
@@ -147,128 +253,42 @@
               <text class="signal-card-evidence-text-v2">{{ card.data.evidence }}</text>
             </view>
           </view>
-        </view>
-
-        <!-- 场景气泡图 -->
-        <view v-if="timelineCount > 0 && sceneBubbles.length > 0" class="card-v2 mint-card anim-card" style="animation-delay:0.29s">
-          <view class="section-head-v2">
-            <view>
-              <text class="section-title-v2">场景分布</text>
-              <text class="section-sub-v2">气泡越大，出现次数越多</text>
-            </view>
-            <text class="tag-v2 black">Top {{ sceneBubbles.length }}</text>
-          </view>
-          <view class="scene-chart-v2">
-            <view class="scene-axis-h-v2"></view>
-            <view class="scene-axis-v-v2"></view>
-            <text class="scene-axis-label-v2 top">少</text>
-            <text class="scene-axis-label-v2 bottom">多</text>
-            <text class="scene-axis-label-v2 left">线下 / 关系推进</text>
-            <text class="scene-axis-label-v2 right">线上 / 日常互动</text>
-            <view v-for="b in sceneBubbles" :key="b.key" class="scene-bubble-v2" :class="b.tone" :style="{ left: b.x + 'rpx', top: b.y + 'rpx', width: b.size + 'rpx', height: b.size + 'rpx' }">
-              <text class="scene-bubble-name-v2">{{ b.label }}</text>
-              <text class="scene-bubble-count-v2">{{ b.count }}</text>
-            </view>
-          </view>
-          <view class="scene-legend-v2">
-            <text class="scene-legend-item-v2"><view class="scene-legend-dot-v2 mint"></view>高频</text>
-            <text class="scene-legend-item-v2"><view class="scene-legend-dot-v2 yellow"></view>中频</text>
-            <text class="scene-legend-item-v2"><view class="scene-legend-dot-v2 white"></view>低频</text>
-          </view>
-          <view class="scene-chips-v2">
-            <text v-for="c in sceneChips" :key="c.key" class="scene-chip-v2" :class="c.tone">{{ c.label }} <text class="scene-chip-count-v2">{{ c.count }}</text></text>
-          </view>
-        </view>
-
-        <!-- 互动天平 -->
-        <view class="card-v2 cream-card anim-card" style="animation-delay:0.31s">
-          <view class="section-head-v2">
-            <view>
-              <text class="section-title-v2">互动天平</text>
-              <text class="section-sub-v2">中轴左边是你，右边是 TA</text>
-            </view>
-            <text class="tag-v2 black">本月</text>
-          </view>
-          <template v-if="timelineCount > 0">
-            <view class="balance-summary-v2">
-              <view class="balance-summary-cell-v2"><text class="balance-summary-num-v2">{{ thisMoStats.selfInitiatedCount }} : {{ thisMoStats.targetInitiatedCount }}</text><text class="balance-summary-lbl-v2">主动发起</text></view>
-              <view class="balance-summary-cell-v2"><text class="balance-summary-num-v2">{{ thisMoStats.fulfilledCount }} : {{ thisMoStats.targetCommittedCount }}</text><text class="balance-summary-lbl-v2">回应接住</text></view>
-              <view class="balance-summary-cell-v2"><text class="balance-summary-num-v2">{{ thisMoStats.fulfilledCount }} : {{ thisMoStats.targetCommittedCount }}</text><text class="balance-summary-lbl-v2">承诺兑现</text></view>
-            </view>
-            <view class="diverging-panel-v2">
-              <view class="diverging-head-v2"><text>你</text><text>0</text><text>TA</text></view>
-              <view v-for="b in divergingBars" :key="b.label" class="diverging-row-v2">
-                <text class="diverging-label-v2">{{ b.label }}</text>
-                <view class="diverging-bar-left-v2"><view class="diverging-fill-left-v2" :style="{ width: b.youPct + '%' }"></view></view>
-                <text class="diverging-axis-v2">|</text>
-                <view class="diverging-bar-right-v2" :class="b.taClass"><view class="diverging-fill-right-v2" :style="{ width: b.taPct + '%' }"></view></view>
-                <text class="diverging-num-v2">{{ b.you }} / {{ b.ta }}</text>
-              </view>
-            </view>
-            <view class="balance-callout-v2">
-              <text>{{ balanceCallout }}</text>
-            </view>
           </template>
-          <view v-else class="empty-section-v2">
-            <text class="empty-section-text-v2">暂无互动数据。记录互动事件后可生成天平。</text>
-          </view>
-        </view>
-
-        <!-- 4. 机会/风险矩阵 -->
-        <view class="card-v2 anim-card" style="animation-delay:0.31s">
-          <text class="section-title-v2">机会 / 风险矩阵</text>
-          <text class="section-sub-v2">把状态落到决策象限</text>
-          <view class="matrix-grid-v2">
-            <view :class="['matrix-cell-v2', matrixActive === 'high-low' ? 'active' : '']">
-              <text class="matrix-cell-label-v2">高机会 · 低风险</text>
-              <text class="matrix-cell-sub-v2">可以轻推</text>
-              <view v-if="matrixActive === 'high-low'" class="matrix-dot-v2"></view>
-            </view>
-            <view :class="['matrix-cell-v2', matrixActive === 'high-high' ? 'active' : '']">
-              <text class="matrix-cell-label-v2">高机会 · 高风险</text>
-              <text class="matrix-cell-sub-v2">谨慎试探</text>
-              <view v-if="matrixActive === 'high-high'" class="matrix-dot-v2"></view>
-            </view>
-            <view :class="['matrix-cell-v2', matrixActive === 'low-low' ? 'active' : '']">
-              <text class="matrix-cell-label-v2">低机会 · 低风险</text>
-              <text class="matrix-cell-sub-v2">继续观察</text>
-              <view v-if="matrixActive === 'low-low'" class="matrix-dot-v2"></view>
-            </view>
-            <view :class="['matrix-cell-v2', matrixActive === 'low-high' ? 'active' : '']">
-              <text class="matrix-cell-label-v2">低机会 · 高风险</text>
-              <text class="matrix-cell-sub-v2">减少投入</text>
-              <view v-if="matrixActive === 'low-high'" class="matrix-dot-v2"></view>
-            </view>
+          <view v-else class="locked-content-v2">
+            <text class="locked-text-v2">🔒 记录 14 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
           </view>
         </view>
 
         <!-- 6. 月度复盘 -->
-        <view v-if="aiWeeklyPreview" class="card-v2 anim-card" style="animation-delay:0.33s">
+        <view class="card-v2 anim-card" style="animation-delay:0.33s">
           <view class="section-head-v2">
             <text class="section-title-v2">月度复盘</text>
-            <text class="section-more-v2" @click="goMonthlyReviews">查看全部</text>
+            <text v-if="timelineCount >= 30 && aiWeeklyPreview" class="section-more-v2" @click="goMonthlyReviews">查看全部</text>
           </view>
           <text class="section-sub-v2">最新复盘预览，完整记录按月归档</text>
-          <view class="full-review-v2">
-            <text class="full-review-p-v2"><text class="full-review-bold-v2">本月关系整体状况：</text>{{ aiWeeklyPreview.summary }}</text>
-            <text v-if="aiWeeklyPreview.keyChanges?.length" class="full-review-p-v2"><text class="full-review-bold-v2">关键变化：</text>{{ aiWeeklyPreview.keyChanges.join('；') }}</text>
-            <text v-if="aiWeeklyPreview.keyEvents?.length" class="full-review-p-v2"><text class="full-review-bold-v2">关键事件：</text>{{ aiWeeklyPreview.keyEvents.join('；') }}</text>
-            <text v-if="aiWeeklyPreview.avoidMisread?.length" class="full-review-p-v2"><text class="full-review-bold-v2">避免误读：</text>{{ aiWeeklyPreview.avoidMisread.join('；') }}</text>
-            <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2" style="margin-top:16rpx;">
-              <text class="focus-label-v2">后续验证重点</text>
-              <text class="focus-question-v2">{{ primaryWeeklyFocus }}</text>
-              <view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view>
+          <template v-if="timelineCount >= 30 && aiWeeklyPreview">
+            <view class="full-review-v2">
+              <text class="full-review-p-v2"><text class="full-review-bold-v2">本月关系整体状况：</text>{{ aiWeeklyPreview.summary }}</text>
+              <text v-if="aiWeeklyPreview.keyChanges?.length" class="full-review-p-v2"><text class="full-review-bold-v2">关键变化：</text>{{ aiWeeklyPreview.keyChanges.join('；') }}</text>
+              <text v-if="aiWeeklyPreview.keyEvents?.length" class="full-review-p-v2"><text class="full-review-bold-v2">关键事件：</text>{{ aiWeeklyPreview.keyEvents.join('；') }}</text>
+              <text v-if="aiWeeklyPreview.avoidMisread?.length" class="full-review-p-v2"><text class="full-review-bold-v2">避免误读：</text>{{ aiWeeklyPreview.avoidMisread.join('；') }}</text>
+              <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2" style="margin-top:16rpx;">
+                <text class="focus-label-v2">后续验证重点</text>
+                <text class="focus-question-v2">{{ primaryWeeklyFocus }}</text>
+                <view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view>
+              </view>
             </view>
+          </template>
+          <view v-else class="locked-content-v2">
+            <text class="locked-text-v2">🔒 记录 30 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
           </view>
-        </view>
-
-        <!-- Bottom action -->
-        <view class="bottom-action-v2">
-          <button class="btn-v2-bottom" style="width:100%;" :disabled="reviewGenerating || (aiWeeklyPreview && !hasNewEventsSinceReview)" @click="generateThisMonthReview">{{ reviewGenerating ? '生成中...' : (aiWeeklyPreview ? '重新生成本月复盘' : '生成本月复盘') }}</button>
-          <view v-if="reviewGenerating" class="action-box" style="margin-top:12rpx;">
-            <text class="action-label">月度复盘 生成中...</text>
-            <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，完成后将自动刷新</text></view>
-          </view>
+          <template v-if="timelineCount >= 30">
+            <button class="btn-v2-bottom" style="width:100%;margin-top:16rpx;" :disabled="reviewGenerating || (aiWeeklyPreview && !hasNewEventsSinceReview)" @click="generateThisMonthReview">{{ reviewGenerating ? '生成中...' : (aiWeeklyPreview ? '重新生成本月复盘' : '生成本月复盘') }}</button>
+            <view v-if="reviewGenerating" class="action-box" style="margin-top:12rpx;">
+              <text class="action-label">月度复盘 生成中...</text>
+              <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，完成后将自动刷新</text></view>
+            </view>
+          </template>
         </view>
       </template>
     <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
@@ -277,7 +297,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, generateMonthlyReview, handleInsufficientBalance } from '@/utils/api'
 import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments, buildTimelineStats, getTimelineRecordTags } from '@/utils/insights'
@@ -295,14 +315,21 @@ const caseId = ref('')
 const profileUpdated = ref(false)
 const showSignalInfo = ref(false)
 const themeVars = ref(getThemeStyle())
+const initialAssessmentPromptDismissed = ref(false)
 
 onShareAppMessage(() => {
-  let path = caseId.value ? `/pages/case-detail/case-detail?caseId=${caseId.value}` : '/pages/case-detail/case-detail'
-  path = appendReferralParams(path, 'we_card')
-  return { title: `我和 ${caseFile.value?.name || 'TA'} 的关系分析`, path, imageUrl: SAFE_SHARE_IMAGE }
+  // 不分享具体 caseId：接收者无法访问发送者的档案，改为引导对方创建自己的分析
+  const path = appendReferralParams('/pages/index/index', 'we_card')
+  return { title: `来看看我和 ${caseFile.value?.name || 'TA'} 的关系分析`, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
 onShareTimeline(() => buildSafeTimelineShare())
+
+onPullDownRefresh(async () => {
+  await loadData()
+  uni.stopPullDownRefresh()
+})
+
 const weeklyReviews = ref<any[]>([])
 const currentMonthStart = ref('')
 const initialized = ref(false)
@@ -707,6 +734,7 @@ const timelineRecords = computed(() => caseFile.value?.timeline || [])
 const userTimelineRecords = computed(() => timelineRecords.value.filter((r: any) => {
   const type = String(r?.type || '')
   return type !== 'assessment' && type !== 'trend' && type !== 'system'
+    && type !== 'weekly_review' && type !== 'monthly_review'
 }))
 const timelineCount = computed(() => userTimelineRecords.value.length)
 const timelineStats = computed(() => {
@@ -738,28 +766,19 @@ const outcomeSummary = computed(() => {
   return parts.join(' · ') || '暂无结果数据'
 })
 
-// 场景气泡图数据
+// 场景分布排行数据
 const sceneTypeMap = { meal: '线下', movie: '线下', offline_meet: '线下', walk_shop: '线下', group_social: '线下', trip: '线下', coffee_tea: '线上', chat: '线上', phone_call: '线上', game: '线上', sport: '线下', shopping: '线下', study: '线上', work: '线上', music: '线上', pet: '线下', food: '线下', travel: '线下' }
 const sceneLabelMap = { meal: '吃饭', movie: '电影', offline_meet: '见面', walk_shop: '散步', group_social: '朋友局', trip: '旅行', coffee_tea: '咖啡', chat: '聊天', phone_call: '电话', game: '游戏', sport: '运动', shopping: '逛街', study: '学习', work: '工作', music: '音乐', pet: '宠物', food: '美食', travel: '出行' }
-const sceneSlots = [
-  { key: 'chat', x: 80, y: 80, label: '聊天' },
-  { key: 'meal', x: 80, y: 140, label: '吃饭' },
-  { key: 'movie', x: 180, y: 140, label: '电影' },
-  { key: 'coffee', x: 100, y: 220, label: '咖啡' },
-  { key: 'walk', x: 180, y: 220, label: '散步' },
-  { key: 'group', x: 260, y: 220, label: '朋友局' },
-  { key: 'trip', x: 260, y: 80, label: '旅行' },
-]
-const sceneBubbles = computed(() => {
+const sceneBars = computed(() => {
   var s = thisMoStats.value
   var items = [
     { key: 'meal', label: '吃饭', count: s.mealCount, type: '线下' },
     { key: 'movie', label: '电影', count: s.movieCount, type: '线下' },
     { key: 'coffee', label: '咖啡', count: s.coffeeTeaCount, type: '线上' },
     { key: 'meet', label: '见面', count: s.offlineMeetCount, type: '线下' },
-    { key: 'chat', label: '聊天', count: 0, type: '线上' }, // chat tag count not in buildTimelineStats
+    { key: 'chat', label: '聊天', count: 0, type: '线上' },
   ].filter(function(t) { return t.count > 0 })
-  // 额外场景：遍历本月事件，统计 chat/walk/group/trip 标签
+  // 额外场景标签
   var extra = {}
   for (var i = 0; i < thisMonthRecs.value.length; i++) {
     var tags = getTimelineRecordTags(thisMonthRecs.value[i])
@@ -774,14 +793,12 @@ const sceneBubbles = computed(() => {
   if (allItems.length === 0) return []
   var maxCount = allItems[0].count
   var minCount = allItems[allItems.length - 1].count
-  return allItems.map(function(t, i) {
-    var slot = sceneSlots[i] || { x: 80 + i * 40, y: 100 + (i % 3) * 70 }
-    var size = 44 + Math.round((t.count / maxCount) * 74)
+  return allItems.map(function(t) {
+    var percent = Math.max(8, Math.round(t.count / Math.max(maxCount, 1) * 100))
     var tone = t.count >= maxCount * 0.7 ? 'hot' : t.count >= minCount + (maxCount - minCount) * 0.5 ? 'mid' : 'cool'
-    return { key: t.key, label: t.label, count: t.count, size: size, x: slot.x, y: slot.y, tone: tone }
+    return { key: t.key, label: t.label, count: t.count, type: t.type, percent: percent, tone: tone }
   })
 })
-const sceneChips = computed(() => sceneBubbles.value.map(function(b) { return { key: b.key, label: b.label, count: b.count, tone: b.tone } }))
 
 // 标签分布分组数据（旧，保留兼容）
 const tagSceneItems = computed(() => {
@@ -887,12 +904,20 @@ const triggerEvent = computed(() => {
   return caseFile.value?.timeline?.find((item: any) => (item.id || item._id) === result.value.triggerEventId) || null
 })
 
-const isCurrentResultAIReviewed = computed(() => {
+const hasInitialAssessment = computed(() => {
+  const assessments = Array.isArray(caseFile.value?.assessments) ? caseFile.value.assessments : []
   return Boolean(
-    triggerEvent.value?.aiUsed ||
-    String(result.value?.explanation?.headline || '').startsWith('AI 分析后：') ||
-    String(result.value?.explanation?.headline || '').startsWith('AI 研判后：')
+    isQuestionnaireAssessment(result.value) ||
+    assessments.some(isQuestionnaireAssessment)
   )
+})
+const initialAssessmentDismissKey = computed(() => {
+  const uid = userId.value || getCurrentUserId() || ''
+  const id = caseId.value || ''
+  return uid && id ? `initialAssessmentPromptDismissed:${uid}:${id}` : ''
+})
+const showInitialAssessmentPrompt = computed(() => {
+  return !hasInitialAssessment.value && !initialAssessmentPromptDismissed.value
 })
 
 const intentTone = computed(() => {
@@ -950,6 +975,7 @@ onLoad((options) => {
   applyThemeChrome()
   caseId.value = options?.caseId || getActiveCaseId()
   if (caseId.value) setActiveCaseId(caseId.value)
+  refreshInitialAssessmentPromptDismissed()
   profileUpdated.value = options?.profileUpdated === '1'
   initialized.value = true
   skipNextShowRefresh.value = true
@@ -972,6 +998,7 @@ onShow(() => {
   const active = getActiveCaseId()
   if (active && active !== caseId.value) {
     caseId.value = active
+    refreshInitialAssessmentPromptDismissed()
     profileUpdated.value = consumeActiveCaseProfileUpdated(active)
     loadData({ silent: true })
     return
@@ -990,6 +1017,7 @@ async function ensureCaseId(uid: string) {
   const active = getActiveCaseId()
   if (active) {
     caseId.value = active
+    refreshInitialAssessmentPromptDismissed()
     return true
   }
   const list = await getCases(uid)
@@ -997,6 +1025,7 @@ async function ensureCaseId(uid: string) {
   if (!firstCaseId) return false
   caseId.value = firstCaseId
   setActiveCaseId(firstCaseId)
+  refreshInitialAssessmentPromptDismissed()
   return true
 }
 
@@ -1007,6 +1036,7 @@ async function loadData(options: { silent?: boolean } = {}) {
     return
   }
   userId.value = uid
+  refreshInitialAssessmentPromptDismissed()
   if (!caseFile.value && caseId.value) {
     const cached = readCaseDetailCache(uid, caseId.value)
     if (cached) {
@@ -1026,6 +1056,7 @@ async function loadData(options: { silent?: boolean } = {}) {
       return
     }
     setActiveCaseId(caseId.value)
+    refreshInitialAssessmentPromptDismissed()
     const detail = await getCaseDetail(uid, caseId.value)
     caseFile.value = detail
     writeCaseDetailCache(uid, caseId.value, detail)
@@ -1080,7 +1111,33 @@ function goMonthlyReviews() {
 
 function goNewAssessment() {
   setActiveCaseId(caseId.value)
-  uni.navigateTo({ url: '/pages/reassess/reassess?caseId=' + caseId.value })
+  uni.navigateTo({ url: `/pages/reassess/reassess?caseId=${caseId.value}&source=initial_questionnaire` })
+}
+
+function isQuestionnaireAssessment(item: any) {
+  const source = String(item?.source || '')
+  return source === 'initial_questionnaire' || source === 'manual_reassessment'
+}
+
+function refreshInitialAssessmentPromptDismissed() {
+  const key = initialAssessmentDismissKey.value
+  if (!key) {
+    initialAssessmentPromptDismissed.value = false
+    return
+  }
+  try {
+    initialAssessmentPromptDismissed.value = Boolean(uni.getStorageSync(key))
+  } catch {
+    initialAssessmentPromptDismissed.value = false
+  }
+}
+
+function dismissInitialAssessmentPrompt() {
+  const key = initialAssessmentDismissKey.value
+  initialAssessmentPromptDismissed.value = true
+  if (key) {
+    try { uni.setStorageSync(key, true) } catch {}
+  }
 }
 
 function goSelfProfile() {
@@ -1333,9 +1390,9 @@ async function generateThisMonthReview() {
 .v2-mode .notice-sub-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #555; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--text-main, #111); color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: var(--text-main, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 .v2-mode .hero-profile-v2 { display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx; padding-top: 18rpx; border-top: 3rpx solid rgba(17,17,17,0.28); }
 .v2-mode .hero-profile-main-v2 { flex: 1; min-width: 0; }
 .v2-mode .hero-profile-name-row-v2 { display: flex; align-items: baseline; gap: 10rpx; flex-wrap: wrap; }
@@ -1361,6 +1418,9 @@ async function generateThisMonthReview() {
 .v2-mode .stat-hint-v2 { display: block; font-size: 18rpx; font-weight: 600; color: #999; margin-top: 2rpx; }
 
 .v2-mode .section-title-v2 { @include section-title-v2; text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
+.v2-mode .remind-head-v2 { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-bottom: 8rpx; }
+.v2-mode .remind-head-v2 .section-title-v2 { flex: 1; min-width: 0; margin-bottom: 0; }
+.v2-mode .remind-dismiss-v2 { flex-shrink: 0; padding: 6rpx 12rpx; border: 2rpx solid #111; background: #fff; font-size: 20rpx; font-weight: 800; color: #666; line-height: 1.2; }
 .v2-mode .remind-text-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #666; line-height: 1.5; }
 .v2-mode .trend-block-v2 { margin-top: 18rpx; }
 .v2-mode .trend-grid-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8rpx; }
@@ -1387,6 +1447,8 @@ async function generateThisMonthReview() {
 .v2-mode .side-block-v2 { padding: 20rpx; border: 2rpx dashed #111; background: #FFFBEB; margin-bottom: 24rpx; }
 
 .v2-mode .card-v2 { @include card-v2; }
+.v2-mode .locked-content-v2 { text-align: center; padding: 40rpx 28rpx; border: 2rpx dashed #ddd; border-radius: 8rpx; margin: 8rpx 0; }
+.v2-mode .locked-text-v2 { font-size: $fs-body; font-weight: $fw-body; color: #bbb; }
 .v2-mode .card-head-v2 { display: flex; align-items: center; gap: 16rpx; padding-bottom: 16rpx; border-bottom: 3rpx solid #111; margin-bottom: 14rpx; }
 
 .v2-mode .bullet-list-v2 { margin-top: 10rpx; }
@@ -1541,33 +1603,21 @@ async function generateThisMonthReview() {
 .v2-mode .diverging-num-v2 { font-size: 20rpx; font-weight: 800; color: #999; text-align: right; }
 .v2-mode .balance-callout-v2 { margin-top: 12rpx; border: 2rpx solid #111; background: #FFD93D; padding: 14rpx 16rpx; font-size: 20rpx; line-height: 1.45; font-weight: 700; color: #111; }
 
-/* Scene Bubble 场景气泡图 */
-.v2-mode .scene-chart-v2 { position: relative; height: 460rpx; border: 2rpx solid #111; background: linear-gradient(180deg, #fff, #fffcf4); overflow: hidden; }
-.v2-mode .scene-axis-h-v2 { position: absolute; left: 16rpx; right: 16rpx; top: 50%; height: 2rpx; background: #111; opacity: .45; }
-.v2-mode .scene-axis-v-v2 { position: absolute; top: 16rpx; bottom: 16rpx; left: 50%; width: 2rpx; background: #111; opacity: .45; }
-.v2-mode .scene-axis-label-v2 { position: absolute; font-size: $fs-micro; font-weight: $fw-label; color: #999; background: #fff; padding: 2rpx 8rpx; }
-.v2-mode .scene-axis-label-v2.top { top: 8rpx; left: 50%; transform: translateX(-50%); }
-.v2-mode .scene-axis-label-v2.bottom { bottom: 8rpx; left: 50%; transform: translateX(-50%); }
-.v2-mode .scene-axis-label-v2.left { left: 10rpx; top: 50%; transform: translateY(-50%); }
-.v2-mode .scene-axis-label-v2.right { right: 10rpx; top: 50%; transform: translateY(-50%); }
-.v2-mode .scene-bubble-v2 { position: absolute; border: 2rpx solid #111; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 2rpx 2rpx 0 rgba(17,17,17,.9); transform: translate(-50%, -50%); }
-.v2-mode .scene-bubble-v2.hot { background: #4ECDC4; }
-.v2-mode .scene-bubble-v2.mid { background: #FFD93D; }
-.v2-mode .scene-bubble-v2.cool { background: #fff; }
-.v2-mode .scene-bubble-name-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #111; line-height: 1.1; }
-.v2-mode .scene-bubble-count-v2 { display: block; margin-top: 4rpx; font-size: $fs-micro; font-weight: $fw-body; color: rgba(0,0,0,.6); }
-.v2-mode .scene-legend-v2 { display: flex; gap: 16rpx; margin-top: 14rpx; }
-.v2-mode .scene-legend-item-v2 { display: flex; align-items: center; gap: 8rpx; font-size: $fs-micro; font-weight: $fw-label; color: #666; }
-.v2-mode .scene-legend-dot-v2 { width: 20rpx; height: 20rpx; border: 2rpx solid #111; }
-.v2-mode .scene-legend-dot-v2.mint { background: #4ECDC4; }
-.v2-mode .scene-legend-dot-v2.yellow { background: #FFD93D; }
-.v2-mode .scene-legend-dot-v2.white { background: #fff; }
-.v2-mode .scene-chips-v2 { margin-top: 14rpx; border: 2rpx solid #111; background: #fff; padding: 12rpx; display: flex; flex-wrap: wrap; gap: 8rpx; }
-.v2-mode .scene-chip-v2 { display: inline-flex; align-items: center; gap: 6rpx; min-height: 40rpx; border: 2rpx solid #111; background: #fff; padding: 4rpx 12rpx; font-size: $fs-micro; font-weight: $fw-label; color: #111; }
-.v2-mode .scene-chip-v2.hot { background: #4ECDC4; }
-.v2-mode .scene-chip-v2.mid { background: #FFD93D; }
-.v2-mode .scene-chip-v2.cool { background: repeating-linear-gradient(45deg, #fff, #fff 6rpx, #f5f5f5 6rpx, #f5f5f5 12rpx); }
-.v2-mode .scene-chip-count-v2 { color: rgba(0,0,0,.5); }
+/* Scene Ranking 场景分布 */
+.v2-mode .scene-bars-v2 { border: 2rpx solid #111; background: #fff; padding: 14rpx; }
+.v2-mode .scene-bar-row-v2 { display: grid; grid-template-columns: minmax(118rpx, 150rpx) 1fr 42rpx; align-items: center; gap: 12rpx; min-height: 58rpx; }
+.v2-mode .scene-bar-row-v2 + .scene-bar-row-v2 { margin-top: 12rpx; }
+.v2-mode .scene-bar-meta-v2 { min-width: 0; display: flex; align-items: center; gap: 8rpx; }
+.v2-mode .scene-bar-name-v2 { min-width: 0; font-size: $fs-body; font-weight: $fw-heading; color: #111; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v2-mode .scene-bar-type-v2 { flex-shrink: 0; padding: 2rpx 6rpx; border: 2rpx solid #111; background: #fff; font-size: 16rpx; font-weight: $fw-label; color: #111; line-height: 1.2; }
+.v2-mode .scene-bar-type-v2.online { background: #E0FFF0; }
+.v2-mode .scene-bar-type-v2.offline { background: #FFFBEB; }
+.v2-mode .scene-bar-track-v2 { height: 24rpx; border: 2rpx solid #111; background: #f7f7f7; overflow: hidden; }
+.v2-mode .scene-bar-fill-v2 { height: 100%; min-width: 8rpx; background: #fff; }
+.v2-mode .scene-bar-fill-v2.hot { background: #4ECDC4; }
+.v2-mode .scene-bar-fill-v2.mid { background: #FFD93D; }
+.v2-mode .scene-bar-fill-v2.cool { background: repeating-linear-gradient(45deg, #fff, #fff 6rpx, #eeeeee 6rpx, #eeeeee 12rpx); }
+.v2-mode .scene-bar-count-v2 { font-size: $fs-body; font-weight: $fw-heading; color: #111; text-align: right; line-height: 1; }
 .v2-mode .tag-v2.yellow { background: #FFD93D; }
 .v2-mode .tag-v2.black { background: #111; color: #fff; }
 
@@ -1624,7 +1674,7 @@ async function generateThisMonthReview() {
 .v2-mode .info-sheet-close {
   font-size: $fs-heading;
   font-weight: $fw-heading;
-  color: $c-ink;
+  color: var(--text-main, #{$c-ink});
 }
 
 .v2-mode .hero-title-v2 {
@@ -1679,8 +1729,7 @@ async function generateThisMonthReview() {
 .v2-mode .card-text-v2.muted,
 .v2-mode .radar-meta-v2,
 .v2-mode .trajectory-detail-close-v2,
-.v2-mode .diverging-num-v2,
-.v2-mode .scene-axis-label-v2 {
+.v2-mode .diverging-num-v2 {
   color: $c-soft;
 }
 

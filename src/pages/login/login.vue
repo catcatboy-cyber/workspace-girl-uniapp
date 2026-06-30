@@ -1,283 +1,302 @@
 <template>
-  <view :class="['login-page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
+  <view :class="['landing-page', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
+    <!-- 小咪 avatar -->
+    <view class="landing-pet">
+      <image :src="petAvatar" mode="aspectFit" class="landing-pet-img" />
+    </view>
 
+    <!-- Hero -->
+    <view class="landing-hero">
+      <text class="landing-hero-tag">AI CRUSH ANALYZER</text>
+      <text class="landing-hero-title">Crush<text class="landing-hero-hl">Master</text></text>
+      <text class="landing-hero-sub">read the signals, not your mind.</text>
+    </view>
 
-<view class="container">
-              <view class="header-v2"><text class="title-v2 en-title">Crush Master</text><text class="subtitle-v2">read the signals, not your mind.</text></view>
-        <view v-if="isWechatMiniProgram" class="card-v2">
-          <button class="btn btn-primary btn-lg btn-full" :disabled="wechatLoading" @click="handleWechatLogin">{{ wechatLoading ? wechatLoadingCopy : wechatLoginCopy }}</button>
-          <text class="privacy-v2" @click="goAbout">{{ privacyCopy }}</text>
-          <text v-if="wechatErrorMessage" class="error-v2">{{ wechatErrorMessage }}</text>
-          <button class="btn btn-secondary btn-lg btn-full" @click="showEmailLogin = !showEmailLogin">{{ showEmailLogin ? hideEmailCopy : useEmailCopy }}</button>
-        </view>
-        <view v-if="showEmailLogin" class="card-v2">
-          <input v-model="email" type="text" placeholder="请输入邮箱" class="input-v2" @input="clearError" />
-          <input v-model="password" type="password" placeholder="请输入密码" class="input-v2" @input="clearError" style="margin-top:20rpx;" />
-          <view class="remember-v2" @click="toggleRemember"><view :class="['check-v2', rememberLogin ? 'checked' : '']"><text v-if="rememberLogin">✓</text></view><text class="remember-text-v2">记住邮箱</text><text class="remember-note-v2">仅保存在当前设备，不保存密码。</text></view>
-          <view v-if="errorMessage" class="error-v2">{{ errorMessage }}</view>
-          <button class="btn btn-primary btn-lg btn-full" :disabled="loading" @click="handleLogin">{{ loading ? '登录中...' : '登录' }}</button>
-          <text class="footer-v2" @click="goRegister">还没有账号？立即注册 →</text>
-        </view>
+    <!-- 功能介绍 -->
+    <view class="landing-features">
+      <text class="landing-features-title">小咪帮你看清暧昧信号</text>
+      <view class="landing-feat">
+        <text class="landing-feat-icon">📝</text>
+        <text class="landing-feat-text">记录互动，AI 实时分析 TA 的态度变化</text>
+      </view>
+      <view class="landing-feat">
+        <text class="landing-feat-icon">🔍</text>
+        <text class="landing-feat-text">解读 TA 的真实意图，看清关系信号</text>
+      </view>
+      <view class="landing-feat">
+        <text class="landing-feat-icon">💡</text>
+        <text class="landing-feat-text">判断关系走向，给你下一步行动建议</text>
+      </view>
+    </view>
+
+    <!-- 关闭按钮 -->
+    <button class="landing-btn" :disabled="entering" @click="handleEnter">
+      {{ entering ? '正在准备...' : '关  闭' }}
+    </button>
+
+    <!-- checkbox -->
+    <view class="landing-checkbox" @click="skipNext = !skipNext">
+      <view :class="['landing-check', skipNext ? 'checked' : '']">
+        <text v-if="skipNext">✓</text>
+      </view>
+      <text class="landing-check-label">下次不再弹出此页面</text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { formatLoginError, getCurrentUserId, login, shouldCompleteSelfProfile, wechatLogin } from '@/utils/api'
-import { resetCloudAuthState } from '@/utils/cloudbase'
+import { getCurrentUserId, shouldCompleteSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { getPetById, getSelectedPetId } from '@/utils/pets.js'
 
+const LANDING_SHOWN_KEY = 'landingShown:v1'
 const INVITE_CODE_KEY = 'pendingInviteCode'
-const pendingRedirect = ref('')
 
-// 接收分享链接中的邀请码
+const themeVars = ref(getThemeStyle())
+const petAvatar = getPetById(getSelectedPetId()).avatarPath
+const entering = ref(false)
+const skipNext = ref(false)
+
+let loginCheckTimer: ReturnType<typeof setInterval> | null = null
+
 onLoad((options: any) => {
   const code = options?.inviteCode || options?.invite_code || ''
   if (code && typeof code === 'string' && code.trim()) {
     uni.setStorageSync(INVITE_CODE_KEY, code.trim().toUpperCase())
   }
-  pendingRedirect.value = normalizeRedirect(options?.redirect || '')
-  if (getCurrentUserId()) {
-    goRedirectOrHome()
-  }
-})
-
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
-const wechatLoading = ref(false)
-const errorMessage = ref('')
-const wechatErrorMessage = ref('')
-const themeVars = ref(getThemeStyle())
-const showEmailLogin = ref(true)
-const isWechatMiniProgram = ref(false)
-const rememberLogin = ref(false)
-const REMEMBER_LOGIN_KEY = 'rememberedEmailLogin'
-const wechatLoadingCopy = '\u767b\u5f55\u4e2d...'
-const wechatLoginCopy = '\u5fae\u4fe1\u4e00\u952e\u767b\u5f55'
-const privacyCopy = '\u767b\u5f55\u5373\u8868\u793a\u540c\u610f\u300a\u9690\u79c1\u653f\u7b56\u300b\u548c\u300a\u670d\u52a1\u6761\u6b3e\u300b\uff0c\u67e5\u770b\u8bf7\u524d\u5f80"\u5173\u4e8e"\u9875\u3002'
-const hideEmailCopy = '\u6536\u8d77\u90ae\u7bb1\u767b\u5f55'
-const useEmailCopy = '\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55'
-
-onShow(() => {
-  // 静默登录已自动完成，直接回首页
-  if (getCurrentUserId()) {
-    uni.switchTab({ url: '/pages/index/index' })
-    return
-  }
-  isWechatMiniProgram.value = Boolean((globalThis as any)?.wx?.cloud)
-  if (isWechatMiniProgram.value) {
-    showEmailLogin.value = false
-  }
-  loadRememberedLogin()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
-  resetCloudAuthState({ clearBusinessUser: false }).catch(() => {})
 })
 
-const clearError = () => {
-  errorMessage.value = ''
-  wechatErrorMessage.value = ''
-}
-
-function loadRememberedLogin() {
-  try {
-    const saved = uni.getStorageSync(REMEMBER_LOGIN_KEY)
-    if (saved?.remember && saved?.email) {
-      email.value = saved.email
-      rememberLogin.value = true
-    }
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function saveRememberedLogin() {
-  try {
-    if (rememberLogin.value) {
-      uni.setStorageSync(REMEMBER_LOGIN_KEY, {
-        remember: true,
-        email: email.value.trim()
-      })
-    } else {
-      uni.removeStorageSync(REMEMBER_LOGIN_KEY)
-    }
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function toggleRemember() {
-  rememberLogin.value = !rememberLogin.value
-  if (!rememberLogin.value) {
-    try {
-      uni.removeStorageSync(REMEMBER_LOGIN_KEY)
-    } catch {
-      // ignore
-    }
-  }
-}
-
-function goAfterLogin(result: any) {
-  // 受邀奖励通知 — 在跳转前存入 storage，让"今日"和"我"页都能读到
-  if (result?.referral?.inviteeReward > 0) {
-    uni.setStorageSync('showInviteeNotice', true)
-    uni.setStorageSync('inviteeNoticeAmount', result.referral.inviteeReward)
-  }
-  // #ifdef H5
-  if (result?.isAdmin || result?.role === 'admin') {
-    uni.redirectTo({ url: '/pages/admin/admin' })
+onShow(() => {
+  const uid = getCurrentUserId()
+  if (uid && isLandingShown(uid)) {
+    goHome()
     return
   }
-  // #endif
-  if (shouldCompleteSelfProfile(result)) {
-    const redirect = pendingRedirect.value ? `&redirect=${encodeURIComponent(pendingRedirect.value)}` : ''
-    uni.redirectTo({ url: `/pages/self-profile/self-profile?mode=onboarding${redirect}` })
-    return
-  }
-  if (pendingRedirect.value) {
-    goRedirectOrHome()
-    return
-  }
+  startLoginCheck()
+})
+
+onUnmounted(() => {
+  stopLoginCheck()
+})
+
+function isLandingShown(uid: string): boolean {
+  try { return !!uni.getStorageSync(`${LANDING_SHOWN_KEY}:${uid}`) } catch { return false }
+}
+
+function markLandingShown(uid: string) {
+  try { uni.setStorageSync(`${LANDING_SHOWN_KEY}:${uid}`, true) } catch {}
+}
+
+function startLoginCheck() {
+  stopLoginCheck()
+  loginCheckTimer = setInterval(() => {
+    const uid = getCurrentUserId()
+    if (uid && isLandingShown(uid)) {
+      stopLoginCheck()
+      goHome()
+    }
+  }, 500)
+  setTimeout(() => stopLoginCheck(), 5000)
+}
+
+function stopLoginCheck() {
+  if (loginCheckTimer) { clearInterval(loginCheckTimer); loginCheckTimer = null }
+}
+
+function goHome() {
   uni.switchTab({ url: '/pages/index/index' })
 }
 
-function normalizeRedirect(value: string) {
-  const decoded = decodeURIComponent(String(value || '')).trim()
-  if (!decoded.startsWith('/pages/')) return ''
-  if (decoded.includes('://') || decoded.includes('\\')) return ''
-  return decoded
-}
+async function handleEnter() {
+  entering.value = true
 
-function goRedirectOrHome() {
-  const url = pendingRedirect.value
-  if (!url) {
+  let uid = getCurrentUserId()
+  if (!uid) {
+    uid = await waitForUserId(3000)
+  }
+
+  if (skipNext.value && uid) {
+    markLandingShown(uid)
+  }
+
+  if (!uid) {
+    uni.showToast({ title: '登录中，请稍后刷新', icon: 'none' })
+  }
+
+  if (uid && shouldCompleteSelfProfile()) {
+    uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
+  } else {
     uni.switchTab({ url: '/pages/index/index' })
-    return
   }
-  if (url.startsWith('/pages/index/index') || url.startsWith('/pages/me/me')) {
-    uni.switchTab({ url })
-    return
-  }
-  uni.redirectTo({ url })
+
+  entering.value = false
 }
 
-function getWechatLoginCode(): Promise<string> {
-  const wxApi = (globalThis as any)?.wx
-  if (!wxApi?.login) {
-    return Promise.resolve('')
-  }
-
+function waitForUserId(timeoutMs: number): Promise<string | null> {
   return new Promise((resolve) => {
-    wxApi.login({
-      success(res: any) {
-        resolve(res?.code || '')
-      },
-      fail() {
-        resolve('')
-      }
-    })
-  })
-}
-
-const handleLogin = async () => {
-  // 验证输入
-  if (!email.value.trim()) {
-    errorMessage.value = '请输入邮箱'
-    return
-  }
-  if (!password.value) {
-    errorMessage.value = '请输入密码'
-    return
-  }
-
-  loading.value = true
-  errorMessage.value = ''
-
-  try {
-    const result = await login(email.value, password.value)
-
-    if (result.success) {
-      saveRememberedLogin()
-      // 登录成功，跳转到首页
-      goAfterLogin(result)
-    } else {
-      errorMessage.value = result.message || '登录失败'
-    }
-  } catch (error: any) {
-    errorMessage.value = formatLoginError(error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleWechatLogin = async () => {
-  wechatLoading.value = true
-  errorMessage.value = ''
-  wechatErrorMessage.value = ''
-
-  try {
-    const loginCode = await getWechatLoginCode()
-    const inviteCode = String(uni.getStorageSync(INVITE_CODE_KEY) || '').trim().toUpperCase()
-    const result = await wechatLogin('', { loginCode, inviteCode })
-    if (result?.success) {
-      if (inviteCode) uni.removeStorageSync(INVITE_CODE_KEY)
-      goAfterLogin(result)
-    } else {
-      wechatErrorMessage.value = result?.message || '\u5fae\u4fe1\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\uff1b\u5982\u679c\u4ecd\u4e0d\u53ef\u7528\uff0c\u53ef\u624b\u52a8\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'
-    }
-  } catch {
-    wechatErrorMessage.value = '\u5fae\u4fe1\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\uff1b\u5982\u679c\u4ecd\u4e0d\u53ef\u7528\uff0c\u53ef\u624b\u52a8\u4f7f\u7528\u90ae\u7bb1\u767b\u5f55\u3002'
-  } finally {
-    wechatLoading.value = false
-  }
-}
-
-const goRegister = () => {
-  uni.navigateTo({
-    url: '/pages/register/register'
-  })
-}
-
-const goAbout = () => {
-  uni.navigateTo({
-    url: '/pages/about/about'
+    const start = Date.now()
+    const timer = setInterval(() => {
+      const uid = getCurrentUserId()
+      if (uid) { clearInterval(timer); resolve(uid); return }
+      if (Date.now() - start > timeoutMs) { clearInterval(timer); resolve(null) }
+    }, 300)
   })
 }
 </script>
 
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
-.login-page {
+
+.landing-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f4ede2 0%, #fbf6ee 100%);
-  padding: 40rpx;
+  background: var(--app-bg, #FFFDF5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx 36rpx;
+  // safe area for iPhone notch
+  padding-top: calc(48rpx + env(safe-area-inset-top));
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
-.v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
+// ── 小咪头像 ──
+.landing-pet {
+  margin-bottom: 36rpx;
+}
+.landing-pet-img {
+  width: 200rpx;
+  height: 200rpx;
+  border: 3rpx solid #111;
+  border-radius: 50%;
+  background: #FFFBEB;
+}
 
-.v2-mode .header-v2 { text-align: left; padding: 40rpx 0 32rpx; }
-.v2-mode .title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
-.v2-mode .title-v2.en-title { font-size: $fs-hero-title; font-weight: $fw-hero; font-style: italic; letter-spacing: 2rpx; background: #FFD93D; display: inline-block; padding: 6rpx 20rpx; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .subtitle-v2 { display: block; font-size: $fs-heading; font-weight: $fw-body; color: #666; margin-top: 10rpx; }
+// ── Hero ──
+.landing-hero {
+  text-align: center;
+  margin-bottom: 36rpx;
+}
+.landing-hero-tag {
+  display: inline-block;
+  font-size: $fs-caption;
+  font-weight: $fw-hero;
+  color: #111;
+  background: #FFD93D;
+  padding: 6rpx 20rpx;
+  border: 2rpx solid #111;
+  margin-bottom: 16rpx;
+  letter-spacing: 4rpx;
+}
+.landing-hero-title {
+  display: block;
+  font-size: $fs-display;
+  font-weight: $fw-hero;
+  color: #111;
+  line-height: 1.1;
+  letter-spacing: -1rpx;
+}
+.landing-hero-hl {
+  display: inline-block;
+  background: #111;
+  color: #FFD93D;
+  padding: 0 10rpx;
+}
+.landing-hero-sub {
+  display: block;
+  font-size: $fs-body-lg;
+  font-weight: $fw-body;
+  color: #666;
+  margin-top: 12rpx;
+  font-style: italic;
+}
 
-.v2-mode .card-v2 { @include card-v2; }
+// ── 功能介绍 ──
+.landing-features {
+  width: 100%;
+  background: #fff;
+  border: 3rpx solid #111;
+  box-shadow: 6rpx 6rpx 0 #111;
+  padding: 32rpx 28rpx;
+  margin-bottom: 40rpx;
+}
+.landing-features-title {
+  display: block;
+  font-size: $fs-heading;
+  font-weight: $fw-heading;
+  color: #111;
+  margin-bottom: 22rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 2rpx solid #111;
+}
+.landing-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  margin-bottom: 18rpx;
+  &:last-child { margin-bottom: 0; }
+}
+.landing-feat-icon {
+  font-size: $fs-body-lg;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.landing-feat-text {
+  font-size: $fs-body-lg;
+  font-weight: $fw-body;
+  color: #111;
+  line-height: 1.5;
+}
 
+// ── 关闭按钮 ──
+.landing-btn {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: #4ECDC4;
+  border: 3rpx solid #111;
+  box-shadow: 6rpx 6rpx 0 #111;
+  font-size: $fs-heading;
+  font-weight: $fw-heading;
+  color: #111;
+  text-align: center;
+  margin-bottom: 28rpx;
+  box-sizing: border-box;
+  &[disabled] {
+    opacity: 0.6;
+    box-shadow: 3rpx 3rpx 0 #111;
+  }
+}
 
-.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: $fs-body; font-weight: $fw-body; color: #666; text-align: center; line-height: 1.5; text-decoration: underline; }
-.v2-mode .error-v2 { display: block; margin: 0 0 18rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: $fs-body; font-weight: $fw-body; color: #FF5252; }
-
-.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; background: #fff; box-sizing: border-box; }
-.v2-mode .input-v2::placeholder { color: #999; }
-
-.v2-mode .remember-v2 { display: flex; align-items: center; gap: 10rpx; margin: 20rpx 0; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
-.v2-mode .check-v2 { width: 34rpx; height: 34rpx; line-height: 32rpx; border: 2rpx solid #111; text-align: center; font-size: $fs-body; font-weight: $fw-hero; color: #fff; }
-.v2-mode .check-v2.checked { background: #111; }
-.v2-mode .remember-text-v2 { font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
-.v2-mode .remember-note-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-left: auto; }
-
-.v2-mode .footer-v2 { display: block; margin-top: 24rpx; text-align: center; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; text-decoration: underline; }
+// ── checkbox ──
+.landing-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+}
+.landing-check {
+  width: 34rpx;
+  height: 34rpx;
+  line-height: 32rpx;
+  border: 2rpx solid #111;
+  text-align: center;
+  font-size: $fs-body;
+  font-weight: $fw-hero;
+  color: #fff;
+  flex-shrink: 0;
+}
+.landing-check.checked {
+  background: #111;
+}
+.landing-check-label {
+  font-size: $fs-body;
+  font-weight: $fw-body;
+  color: #666;
+}
 </style>

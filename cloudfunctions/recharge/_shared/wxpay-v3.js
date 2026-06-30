@@ -17,6 +17,11 @@ function env(name) {
   return String(process.env[name] || '').trim()
 }
 
+// 仅 PAY_DEBUG=true 时才打印支付敏感日志
+function isPayDebug() {
+  return String(process.env.PAY_DEBUG || '').trim() === 'true'
+}
+
 // ─── PEM / Base64 规范化 ───────────────────────────────────────
 
 /**
@@ -58,8 +63,10 @@ function signRequest(method, url, body) {
   const mchid = env('WXPAY_MCHID')
   const serialNo = env('WXPAY_SERIAL_NO')
 
-  console.log('[WXPAY][sign] mchid=%s serialNo=%s keyRawLen=%s keyDecodedLen=%s keyHasBegin=%s',
-    mchid, serialNo, rawKey.length, privateKey.length, privateKey.includes('-----BEGIN'))
+  if (isPayDebug()) {
+    console.log('[WXPAY][sign] mchid=%s serialNo=%s keyReady=%s',
+      mchid, serialNo, privateKey.length > 0)
+  }
 
   const u = new URL(url)
   const canonicalUrl = u.pathname + (u.search || '')
@@ -71,12 +78,12 @@ function signRequest(method, url, body) {
   // 签名串: HTTP方法\nURL路径\n时间戳\n随机串\n请求体\n（与微信官方示例逐字一致）
   const message = method + '\n' + canonicalUrl + '\n' + timestamp + '\n' + nonce + '\n' + bodyStr + '\n'
 
-  console.log('[WXPAY][sign] signMessage预览=%s', message.slice(0, 120))
+  if (isPayDebug()) {
+    console.log('[WXPAY][sign] signMessage前120=%s', message.slice(0, 120))
+  }
 
   // 微信官方示例: crypto.createSign('RSA-SHA256').update(signStr).sign(privateKey, 'base64')
   const signature = crypto.createSign('RSA-SHA256').update(message).sign(privateKey, 'base64')
-
-  console.log('[WXPAY][sign] signature=%s', signature)
 
   // Authorization 格式与微信官方示例逐字一致
   const authorization = 'WECHATPAY2-SHA256-RSA2048 ' +
@@ -104,8 +111,9 @@ function wechatpayRequest(method, path, body) {
   const bodyStr = body && typeof body === 'object' ? JSON.stringify(body) : (body || '')
   const { authorization } = signRequest(method, url, bodyStr)
 
-  console.log('[WXPAY][req] %s %s auth前80=%s', method, path, authorization.slice(0, 80))
-  console.log('[WXPAY][req] body=%s', bodyStr.slice(0, 200))
+  if (isPayDebug()) {
+    console.log('[WXPAY][req] %s %s bodyLen=%s', method, path, bodyStr.length)
+  }
 
   const u = new URL(url)
   const headers = {
@@ -188,12 +196,16 @@ async function createJsapiOrder(params) {
     }
   }
 
-  console.log('[WXPAY][createJsapiOrder] out_trade_no=%s amount=%s openid=%s appid=%s mchid=%s',
-    params.out_trade_no, params.amount.total, params.openid, params.appid, params.mchid)
+  if (isPayDebug()) {
+    console.log('[WXPAY][createJsapiOrder] out_trade_no=%s amount=%s mchid=%s',
+      params.out_trade_no, params.amount.total, params.mchid)
+  }
   const result = await wechatpayRequest('POST', '/v3/pay/transactions/jsapi', body)
 
   if (result.success && result.data && result.data.prepay_id) {
-    console.log('[WXPAY][createJsapiOrder] 成功 prepay_id=%s', result.data.prepay_id)
+    if (isPayDebug()) {
+      console.log('[WXPAY][createJsapiOrder] 成功 prepay_id=%s', result.data.prepay_id)
+    }
     return { success: true, prepay_id: result.data.prepay_id }
   }
 
@@ -302,13 +314,17 @@ function verifyCallbackSignature(headers, rawBody) {
     return false
   }
 
-  console.log('[WXPAY][verify] serial=%s timestamp=%s nonce=%s', serial, timestamp, nonce)
+  if (isPayDebug()) {
+    console.log('[WXPAY][verify] serial=%s timestamp=%s', serial, timestamp)
+  }
 
   const message = timestamp + '\n' + nonce + '\n' + rawBody + '\n'
 
   try {
     const ok = crypto.createVerify('RSA-SHA256').update(message).verify(platformPublicKey, signature, 'base64')
-    console.log('[WXPAY][verify] 验签结果=%s', ok)
+    if (isPayDebug()) {
+      console.log('[WXPAY][verify] result=%s', ok)
+    }
     return ok
   } catch (err) {
     console.error('[WXPAY][verify] 验签异常:', err.message)
@@ -372,8 +388,10 @@ function decryptResource(resource) {
     decrypted += decipher.final('utf8')
 
     const parsed = JSON.parse(decrypted)
-    console.log('[WXPAY][decrypt] 解密成功 out_trade_no=%s transaction_id=%s',
-      parsed.out_trade_no, parsed.transaction_id)
+    if (isPayDebug()) {
+      console.log('[WXPAY][decrypt] 解密成功 out_trade_no=%s transaction_id=%s',
+        parsed.out_trade_no, parsed.transaction_id)
+    }
     return parsed
   } catch (err) {
     console.error('[WXPAY][decrypt] 解密失败:', err.message)

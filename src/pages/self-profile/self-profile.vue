@@ -29,9 +29,9 @@
 
       <view class="chat-foot">
         <view class="chat-progress">
-          <view v-for="i in 5" :key="i" :class="['progress-dot', step >= i ? 'done' : '']"></view>
+          <view v-for="i in totalOnboardingSteps" :key="i" :class="['progress-dot', step >= i ? 'done' : '']"></view>
         </view>
-        <text class="chat-step-text">{{ step >= 5 ? '全部完成' : step + ' / 5' }}</text>
+        <text class="chat-step-text">{{ step >= totalOnboardingSteps ? '全部完成' : step >= 5 ? '最后一步' : step + ' / ' + totalOnboardingSteps }}</text>
       </view>
     </template>
 
@@ -237,8 +237,39 @@ const questions = [
     ],
     chips: constellationChips,
     key: 'constellation' as const
+  },
+  // Step 5: 欢迎介绍
+  {
+    pet: [
+      { text: '好的，画像全啦！' },
+      { text: '现在让我正式介绍一下 Crush Master~' },
+      { text: '我会帮你记录你和 TA 的互动，用 AI 分析暧昧信号——', style: 'muted' },
+      { text: '他对你有没有意思？关系在升温还是降温？下一步该怎么推进？', style: 'muted' },
+      { text: '这些我都能帮你理清楚。' }
+    ],
+    chips: ['了解！继续'],
+    key: '_welcome' as const,
+    map: undefined as any
+  },
+  // Step 6: 功能导览 + 行动 CTA
+  {
+    pet: [
+      { text: '底部有 5 个标签——' },
+      { text: '「今日」每天来记录互动、看运势；', style: 'muted' },
+      { text: '「我们」看两个人的关系分析；', style: 'muted' },
+      { text: '「Crushes」管理不同对象；', style: 'muted' },
+      { text: '「往事」按时间回顾；', style: 'muted' },
+      { text: '「我」是设定和账户。' },
+      { text: '你每天来「今日」就好！' },
+      { text: '现在，最关键的一步——创建一个 Crush，AI 立刻给你第一份分析。' }
+    ],
+    chips: ['开始初评', '快速创建', '先逛逛'],
+    key: '_cta' as const,
+    map: undefined as any
   }
 ]
+
+const totalOnboardingSteps = computed(() => questions.length)
 
 // ====== Lifecycle ======
 onLoad((options) => {
@@ -316,14 +347,22 @@ function pickChip(msg: Msg & { type: 'chips' }, chip: string) {
   if (isOnboarding.value) {
     const q = questions[step.value]
     const value = q?.map?.[chip] || chip
-    ;(profile as any)[q.key] = value
+    // 步骤 0-4: 画像数据
+    if (step.value < 5) {
+      ;(profile as any)[q.key] = value
+    }
     step.value++
 
-    if (step.value < 5) {
+    if (step.value < 7) {
       showQuestion(step.value)
     } else {
+      // Step 6 完成 → 存 action → 保存并进入
       setTimeout(() => {
-        addPetMsg('可以啦！这些就够了。那我先不打扰你，随时点底部「今日」找我～')
+        const actionKey = chip === '开始初评' ? 'startAssessment'
+          : chip === '快速创建' ? 'quickCreate'
+          : 'dismiss'
+        uni.setStorageSync('onboardingAction', actionKey)
+        addPetMsg('好嘞！那我们开始吧～')
         setTimeout(() => onSave(), 800)
       }, 800)
     }

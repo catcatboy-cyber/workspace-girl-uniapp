@@ -24,11 +24,12 @@
     </view>
     <view class="card-v2">
       <text class="section-title-v2">隐私政策</text>
-      <text class="card-text-v2">本小程序收集以下信息用于提供服务：</text>
-      <text class="card-text-v2" style="margin-top:10rpx">1. 邮箱地址 — 用于账号注册和登录。</text>
-      <text class="card-text-v2">2. 微信头像和昵称 — 用于个性化展示（可选，仅在你授权后获取）。</text>
-      <text class="card-text-v2">3. 语音录音 — 用于语音转文字功能，录音仅用于实时识别，不会长期存储。</text>
-      <text class="card-text-v2" style="margin-top:10rpx">所有数据存储在微信云开发环境中，不会分享给第三方。你可以随时在"我"页面删除账号，所有数据将被清除。</text>
+      <text class="card-text-v2">本小程序仅收集提供服务所必需的信息：</text>
+      <text class="card-text-v2" style="margin-top:10rpx">1. 微信 OpenID — 用于识别用户身份，登录时由微信自动分配，不含任何个人资料。</text>
+      <text class="card-text-v2">2. 你主动填写的信息 — 包括本人画像（年龄阶段、性别、身份等）、关系记录、互动描述。这些信息仅用于 AI 分析。</text>
+      <text class="card-text-v2">3. 语音录音 — 用于语音转文字功能，仅在识别过程中使用，不会长期存储。</text>
+      <text class="card-text-v2">4. 你主动上传的图片 — 如 Crush 头像、定制宠物形象等，存储于云开发环境。</text>
+      <text class="card-text-v2" style="margin-top:10rpx">我们不会获取你的微信头像和昵称。所有数据存储在微信云开发环境中，不会分享给第三方。你可以随时在"我"页面删除账号，所有数据将被清除。</text>
     </view>
     <view class="card-v2">
       <text class="section-title-v2">服务条款</text>

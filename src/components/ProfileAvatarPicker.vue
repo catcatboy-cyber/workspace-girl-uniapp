@@ -89,7 +89,20 @@ function selectPreset(value: string) {
   uploadError.value = ''
 }
 
-function chooseImage() {
+async function chooseImage() {
+  // 先确保隐私协议已同意（微信 2023.09 起要求）
+  try {
+    const wxApi = (globalThis as any)?.wx
+    if (wxApi?.requirePrivacyAuthorize) {
+      await new Promise<void>((resolve, reject) => {
+        wxApi.requirePrivacyAuthorize({ success: () => resolve(), fail: reject })
+      })
+    }
+  } catch {
+    uni.showToast({ title: '请先同意隐私政策', icon: 'none' })
+    return
+  }
+
   uni.chooseImage({
     count: 1,
     sizeType: ['compressed'],
@@ -127,12 +140,14 @@ function chooseImage() {
           })()
         },
         fail: () => {
-          uploadError.value = '获��文件信息失败'
+          uploadError.value = '获取文件信息失败'
         }
       })
     },
-    fail: () => {
-      // 用户取消选择
+    fail: (err: any) => {
+      const msg = String(err?.errMsg || '')
+      if (msg.includes('cancel')) return // 用户取消
+      uploadError.value = '选择图片失败，请检查相册权限'
     }
   })
 }

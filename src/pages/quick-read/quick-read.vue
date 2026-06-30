@@ -96,7 +96,8 @@
 
         <view class="qr-field-block">
           <text class="qr-form-title">TA 做了什么？原话是什么？</text>
-          <textarea v-model="form.text" class="qr-textarea" maxlength="600" placeholder="比如：他昨天说下次约我，但一直没定时间..." />
+          <textarea v-model="form.text" class="qr-textarea" maxlength="6000" placeholder="比如：他昨天说下次约我，但一直没定时间..." />
+          <text class="qr-text-count">当前 {{ form.text.length }}/6000</text>
         </view>
 
         <view class="qr-field-block">
@@ -517,6 +518,7 @@ async function onCTA() {
 .qr-chip.active { background: #111; color: #FFD93D; }
 .qr-input { width: 100%; height: 88rpx; box-sizing: border-box; padding: 0 18rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; }
 .qr-textarea { width: 100%; min-height: 180rpx; box-sizing: border-box; padding: 18rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; line-height: 1.55; }
+.qr-text-count { display: block; margin-top: 8rpx; text-align: right; font-size: $fs-caption; font-weight: $fw-label; color: #999; }
 .qr-form-actions, .qr-result-actions { display: flex; gap: 12rpx; margin-top: 18rpx; }
 .qr-form-actions .btn, .qr-result-actions .btn { flex: 1; }
 .qr-skip-link { display: block; margin-top: 16rpx; text-align: center; font-size: $fs-body; font-weight: $fw-label; color: #666; text-decoration: underline; }
