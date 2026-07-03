@@ -386,10 +386,10 @@
       </view>
 
       <button v-if="!isPairPreviewing" class="btn-v2-me primary" style="width:100%;margin-top:16rpx;" :disabled="pairReadLoading" @click="doPairAIDeepRead">{{ pairReadLoading ? '解读中...' : (pairAIResult ? '🔄 重新解读（获取今日最新气场）' : '🔍 深度解读') }}</button>
-      <text v-else class="pair-preview-hint-v2">AI 深度解读仍绑定当前 TA。恢复当前 TA 后可继续查看。</text>
+      <text v-else class="pair-preview-hint-v2">{{ aiLabel() }} 深度解读仍绑定当前 TA。恢复当前 TA 后可继续查看。</text>
 
       <view v-if="pairReadLoading" class="action-box">
-        <text class="action-label">AI 深度解读中...</text>
+        <text class="action-label">{{ aiLabel() }} 深度解读中...</text>
         <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，结合今日气场...</text></view>
       </view>
       <view v-if="pairAIResult" class="action-box">
@@ -494,7 +494,7 @@
     <canvas type="2d" id="taohuaShareCanvas" style="position:fixed;left:-9999px;top:-9999px;width:640px;height:512px;"></canvas>
 
     <view class="ai-disclaimer">
-      <text class="ai-disclaimer-text">AI 辅助分析 · 仅供辅助参考，不构成专业意见</text>
+      <text class="ai-disclaimer-text">{{ aiLabel() }} 辅助分析 · 仅供辅助参考，不构成专业意见</text>
       <text class="go-home-link" @click="goHome">回到首页</text>
     </view>
 
@@ -565,6 +565,7 @@ import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId
 import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
+import { aiLabel } from '@/utils/labels'
 
 // ============================================================
 // 用户画像

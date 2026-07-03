@@ -56,7 +56,7 @@ async function normalizeCase(caseItem: any) {
 
   if (profile?.avatar) {
     profile.avatar = normalizeAvatarValue(profile.avatar)
-    const avatarUrl = await resolveAvatarSrc(profile.avatar)
+    const avatarUrl = await resolveAvatarSrc(profile.avatar).catch(() => '')
     profile.avatarUrl = avatarUrl || profile.avatar
   } else if (profile?.avatarUrl) {
     delete profile.avatarUrl
@@ -895,6 +895,38 @@ export async function adminConfirmRecharge(orderId: string) {
   const res = await callFunction({
     name: 'recharge',
     data: { action: 'adminConfirmRecharge', orderId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** 虚拟支付：创建订单 + 获取签名 */
+export async function createVirtualPayOrder(params: {
+  productType: 'recharge' | 'subscription'
+  productId?: string
+  planKey?: string; billingCycle?: string; priceVariant?: string
+  sandbox?: boolean
+}) {
+  // 虚拟支付用户态签名需要「新鲜」的 session_key —— 支付前重新 wx.login 拿 code，
+  // 后端用它现换最新 session_key 来签 signature（DB 存量的可能已过期 → SIGNATURE_INVALID）
+  let loginCode = ''
+  // #ifdef MP-WEIXIN
+  loginCode = await new Promise<string>((resolve) => {
+    // @ts-ignore wx 为微信小程序全局
+    wx.login({ success: (r: any) => resolve(r?.code || ''), fail: () => resolve('') })
+  })
+  // #endif
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'createVirtualPayOrder', ...params, loginCode, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** 虚拟支付：确认发货 */
+export async function confirmVirtualPay(outTradeNo: string, wxOrderId?: string) {
+  const res = await callFunction({
+    name: 'recharge',
+    data: { action: 'confirmVirtualPay', outTradeNo, wxOrderId: wxOrderId || '', ...getBusinessAuthPayload() }
   })
   return res.result
 }

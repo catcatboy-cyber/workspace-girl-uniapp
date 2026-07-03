@@ -6,11 +6,11 @@
     <block v-if="!loading">
       <!-- 邀请到账通知 -->
       <view v-if="showIndexReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissIndexReferralNotice">
-        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ indexReferralNoticeAmount }} Token →</text>
+        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ indexReferralNoticeAmount }} Credits →</text>
       </view>
       <!-- 受邀奖励通知 -->
       <view v-if="showIndexInviteeNotice" class="referral-notice" @click="dismissIndexInviteeNotice">
-        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ indexInviteeNoticeAmount }} Token →</text>
+        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ indexInviteeNoticeAmount }} Credits →</text>
       </view>
       <block v-else>
       <template v-if="cases.length === 0">
@@ -61,7 +61,7 @@
         <view v-if="!showFullAssessment && !showQuickCreate" class="onboard-options-v2">
           <view class="onboard-card-v2 primary anim-card" style="animation-delay:0.2s" @click="showFullAssessment = true">
             <text class="onboard-card-title-v2">开始初评</text>
-            <text class="onboard-card-desc-v2">填Crush画像 + 回答 14 题 → AI 分析结果</text>
+            <text class="onboard-card-desc-v2">填Crush画像 + 回答 14 题 → {{ aiLabel() }} 分析结果</text>
           </view>
           <view class="onboard-card-v2 anim-card" style="animation-delay:0.3s" @click="showQuickCreate = true">
             <text class="onboard-card-title-v2">快速创建</text>
@@ -167,8 +167,11 @@
             <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="latestCase?.name || 'TA的微信昵称'" />
             <text class="quick-chat-name-hint-v2">贴对话后标注，帮小咪分清谁说了什么</text>
           </view>
-          <textarea :value="quickDesc" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
-          <text v-if="quickDescDebug" class="quick-desc-debug-v2">{{ quickDescDebug }}</text>
+          <textarea :value="quickDesc" @blur="onQuickDescBlur" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
+          <view v-if="quickSubjectRole === 'both'" class="quick-paste-warn-v2">
+            <text class="quick-paste-warn-icon-v2">⚠️</text>
+            <text class="quick-paste-warn-text-v2">部分手机品牌（华为/鸿蒙、vivo 等）粘贴多行聊天记录时可能被截断，只显示第一条。如遇此情况，请先将聊天记录粘贴到<text class="quick-paste-warn-bold-v2">备忘录</text>或<text class="quick-paste-warn-bold-v2">文件传输助手</text>的输入框，再重新复制后粘贴到此处即可完整导入。</text>
+          </view>
           <view class="datetime-row-v2">
             <picker mode="date" :value="quickDate" @change="onQuickDateChange"><view class="picker-v2">{{ quickDate }}</view></picker>
             <picker mode="time" :value="quickTime" @change="onQuickTimeChange"><view class="picker-v2">{{ quickTime }}</view></picker>
@@ -215,12 +218,12 @@
           <text v-if="latestCase.latestResult?.userQuestion?.label" class="question-context-v2">你问：{{ latestCase.latestResult.userQuestion.label }}</text>
           <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
           <view v-if="aiFeedbackLoading" class="action-box">
-            <text class="action-label">AI 分析中...</text>
+            <text class="action-label">{{ aiLabel() }} 分析中...</text>
             <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，已用时 {{ aiFeedbackSeconds }} 秒</text></view>
           </view>
           <view v-else-if="latestCase.latestResult.aiPending" class="action-box">
             <text class="action-label">等待中</text>
-            <text class="action-text muted">AI 分析尚未开始，请稍候。</text>
+            <text class="action-text muted">{{ aiLabel() }} 分析尚未开始，请稍候。</text>
           </view>
           <template v-else>
             <view class="score-grid">
@@ -249,6 +252,7 @@
               <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ petLabel(item.label) }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
               <view v-if="aiParticipationLabel" :class="['ai-badge', aiParticipationLabel.type]">
                 <text class="ai-badge-dot"></text>
+                <text class="ai-badge-label">{{ aiParticipationLabel.text }}</text>
                 <text class="ai-badge-text">{{ aiParticipationLabel.detail }}</text>
               </view>
             </view>
@@ -290,7 +294,7 @@
     </block>
     </block>
 
-    <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
+    <view class="ai-disclaimer"><text class="ai-disclaimer-text">{{ aiLabel() }} 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
   <!-- 桃花算法说明弹窗 -->
   <view v-if="showTaohuaInfo" class="taohua-info-overlay" @click="showTaohuaInfo = false">
@@ -332,6 +336,7 @@ import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
 import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
+import { aiLabel } from '@/utils/labels'
 
 type PetScene =
   | 'ai_loading'
@@ -398,7 +403,6 @@ const quickQuestionKey = ref('like')
 const quickCustomQuestion = ref('')
 const quickChatSelfName = ref('')
 const quickChatTargetName = ref('')
-const quickDescDebug = ref('')
 const quickSubmitting = ref(false)
 const quickUploading = ref(false)
 const voiceUploading = ref(false)
@@ -614,7 +618,7 @@ function petLabel(label: string) {
 
 const latestActionPlanPanel = computed(() => {
   if (latestCase.value?.latestResult?.aiPending) {
-    return { show: true, text: 'AI 正在生成即时反馈。', missing: true, sections: [] }
+    return { show: true, text: aiLabel() + ' 正在生成即时反馈。', missing: true, sections: [] }
   }
   if (latestRawReply.value) {
     return { show: true, text: latestRawReply.value, missing: false, sections: parseRawReplySections(latestRawReply.value) }
@@ -623,10 +627,10 @@ const latestActionPlanPanel = computed(() => {
     return {
       show: true,
       text: latestCase.value.latestResult.aiFailed
-        ? '这次 AI 返回超时或格式不完整，系统先用了规则兜底。'
+        ? '这次 ' + aiLabel() + ' 返回超时或格式不完整，系统先用了规则兜底。'
         : latestCase.value.latestResult.aiUsed === false
-          ? '这次 AI 原文回复没有生成，系统先用了规则兜底。'
-        : '这次 AI 原文回复没有返回，下面先显示结构化建议。',
+          ? '这次 ' + aiLabel() + ' 原文回复没有生成，系统先用了规则兜底。'
+        : '这次 ' + aiLabel() + ' 原文回复没有返回，下面先显示结构化建议。',
       missing: true,
       sections: []
     }
@@ -637,9 +641,14 @@ const latestActionPlanPanel = computed(() => {
 const aiParticipationLabel = computed(() => {
   const result = latestCase.value?.latestResult
   if (!result || result.aiPending) return null
-  if (result.aiFailed) return { text: '规则兜底', type: 'fallback', detail: 'AI 超时或格式异常，本次为规则计算结果' }
+  if (result.aiFailed) return { text: '规则兜底', type: 'fallback', detail: aiLabel() + ' 超时或格式异常，本次为规则计算结果' }
   if (result.aiUsed === false) return { text: '规则兜底', type: 'fallback', detail: '未启用 AI，本次为规则计算结果' }
-  return null
+  // AI 成功生成
+  const modelName = result.aiModel || ''
+  const provider = result.aiProvider || ''
+  const labelParts = [provider, modelName].filter(Boolean).filter(s => !/openai.compatible/i.test(s))
+  const modelLabel = labelParts.length > 0 ? labelParts.join(' · ') : 'AI'
+  return { text: aiLabel() + ' 生成', type: 'ai', detail: `${aiLabel()} ${modelLabel} 生成分析，内容仅供参考` }
 })
 
 function startAIFeedbackTimer() {
@@ -740,13 +749,13 @@ const showProfileReminder = computed(() =>
 const quickSubjectRoleHint = computed(() => {
   const label = mapSubjectRoleLabel(quickSubjectRole.value)
   if (quickSubjectRoleConfidence.value === 'user_selected') return `已手动设为：${label}。`
-  if (quickSubjectRole.value === 'self') return 'AI 判断这更像你的心理感受或自我状态，已归为“自己”。'
-  if (quickSubjectRole.value === 'both') return 'AI 判断这更像双方互动，建议重点区分谁主动、谁回应、谁拒绝。'
+  if (quickSubjectRole.value === 'self') return aiLabel() + ' 判断这更像你的心理感受或自我状态，已归为”自己”。'
+  if (quickSubjectRole.value === 'both') return '检测到多行内容，已切为”互动”。可填入昵称帮小咪分清谁说了什么。'
   return '默认按”对方”记录；如果写的是你的心理感受，请改为”自己”。'
 })
 
 const quickDescPlaceholder = computed(() => {
-  if (quickSubjectRole.value === 'both') return '可直接粘贴微信对话记录，AI 会自动解析双方说了什么'
+  if (quickSubjectRole.value === 'both') return '可直接粘贴微信对话记录，' + aiLabel() + ' 会自动解析双方说了什么'
   if (quickSubjectRole.value === 'self') return '你做了什么？说了什么？你的感受是怎样的？例如：我主动问他周末有没有空…'
   return 'TA 做了什么？原话是什么？例如：他说下次一起去图书馆…'
 })
@@ -765,11 +774,6 @@ const showQuickFeedback = computed(() => {
     latestCase.value?.latestResult
     && latestTrend.value
   )
-})
-
-watch(quickDesc, (value) => {
-  if (quickSubjectRoleConfidence.value === 'user_selected') return
-  quickSubjectRole.value = inferSubjectRole(value)
 })
 
 watch(latestResultKey, () => {
@@ -859,18 +863,6 @@ function mapSubjectRoleLabel(role?: string) {
   }
 }
 
-function inferSubjectRole(value?: string): 'target' | 'self' | 'both' {
-  const text = String(value || '').trim()
-  if (!text) return 'target'
-  // 仅对话转录格式（多行 + 时间戳）自动判 both，普通描述只在 对方/自己 之间选
-  if (text.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(text)) return 'both'
-  const selfIndicators = /(我|我们|本人|自己|这边)/.test(text)
-  const selfFeeling = /(我.*(感觉|觉得|感到|心理|心里|焦虑|难受|失落|开心|期待|害怕|纠结|想他|想她|想对方|放不下|不安|委屈|生气|吃醋)|自己.*(状态|感受|情绪|心理|心里))/.test(text)
-  if (selfFeeling) return 'self'
-  if (selfIndicators) return 'self'
-  return 'target'
-}
-
 function setQuickSubjectRole(role: 'target' | 'self' | 'both') {
   quickSubjectRole.value = role
   quickSubjectRoleConfidence.value = 'user_selected'
@@ -880,20 +872,24 @@ function setQuickSubjectRole(role: 'target' | 'self' | 'both') {
 function onQuickDescInput(e: any) {
   const val = e?.detail?.value ?? e?.target?.value ?? ''
   quickDesc.value = val.slice(0, 6000)
-  quickDescDebug.value = debugQuickDesc(val)
-  // 检测对话格式 → 自动切到互动
-  if (val.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(val)) {
-    quickSubjectRole.value = 'both'
-    quickSubjectRoleConfidence.value = 'user_selected'
-  }
 }
 
-function debugQuickDesc(value: string) {
-  const text = String(value || '')
-  if (!text) return ''
-  const first = text.split('\n').slice(0, 2).join(' / ').slice(0, 60)
-  const last = text.split('\n').slice(-2).join(' / ').slice(0, 60)
-  return `len=${text.length} | head=${first} | tail=${last}`
+function inferSubjectRole(value?: string): 'target' | 'self' | 'both' {
+  const text = String(value || '').trim()
+  if (!text) return 'target'
+  if (text.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(text)) return 'both'
+  const selfIndicators = /(我|我们|本人|自己|这边)/.test(text)
+  const selfFeeling = /(我.*(感觉|觉得|感到|心理|心里|焦虑|难受|失落|开心|期待|害怕|纠结|想他|想她|想对方|放不下|不安|委屈|生气|吃醋)|自己.*(状态|感受|情绪|心理|心里))/.test(text)
+  if (selfFeeling) return 'self'
+  if (selfIndicators) return 'self'
+  return 'target'
+}
+
+function onQuickDescBlur() {
+  if (quickSubjectRoleConfidence.value !== 'user_selected') {
+    quickSubjectRole.value = inferSubjectRole(quickDesc.value)
+    quickSubjectRoleConfidence.value = 'auto'
+  }
 }
 
 function clampScore(score: any) {
@@ -993,10 +989,10 @@ const petAssetsVersion = ref(0)
 
 // 分享提醒：试用期或 Token 不足时，每天最多 1 次、50% 概率提醒
 let shareNudgeTimer: ReturnType<typeof setTimeout> | null = null
+let shareNudgeRestoreTimer: ReturnType<typeof setTimeout> | null = null
 const SHARE_NUDGE_KEY = 'lastShareNudgeDate'
 async function checkShareNudge() {
-  // 已显示过宠物消息的场景（justRecorded）不覆盖
-  if (!petMsg.value) return
+  // justRecorded 等特殊场景不会调用这里；普通 mood 消息允许延迟后替换为提醒
   try {
     const today = new Date().toISOString().slice(0, 10)
     if (uni.getStorageSync(SHARE_NUDGE_KEY) === today) return
@@ -1016,16 +1012,18 @@ async function checkShareNudge() {
       petState.value = 'waving'
       startPetAnim('waving')
       // 6 秒后恢复
-      setTimeout(() => {
+      shareNudgeRestoreTimer = setTimeout(() => {
         const mood = getPetMood()
         petMsg.value = mood.message
         startPetAnim(mood.sprite)
+        shareNudgeRestoreTimer = null
       }, 6000)
     }, 4000)
   } catch { /* ignore */ }
 }
 function stopShareNudgeTimer() {
   if (shareNudgeTimer) { clearTimeout(shareNudgeTimer); shareNudgeTimer = null }
+  if (shareNudgeRestoreTimer) { clearTimeout(shareNudgeRestoreTimer); shareNudgeRestoreTimer = null }
 }
 
 function syncPetBarPref() {
@@ -1245,6 +1243,7 @@ onUnload(() => {
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
   stopPetAnim()
+  stopShareNudgeTimer()
   statusInfoVisible.value = false
   applyPetScene(null)
 })
@@ -1663,7 +1662,7 @@ function applyPendingQuickFeedback(params: {
     aiFailed: false,
     previousAssessmentId: previousResult._id || previousResult.assessmentId || current.latestResultId,
     explanation: {
-      headline: 'AI 正在分析这次记录。',
+      headline: aiLabel() + ' 正在分析这次记录。',
       bullets: [],
       cautions: ['后台正在生成即时反馈，完成后会自动更新。']
     }
@@ -2091,7 +2090,21 @@ function goTaohua() {
 .v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; line-height: 1.45; box-sizing: border-box; font-family: inherit; }
 .v2-mode .text-area-v2.chat-mode { min-height: 360rpx; max-height: 640rpx; font-size: $fs-body; }
 .v2-mode .text-area-v2::placeholder { font-size: $fs-body-lg; font-weight: $fw-body; color: #777; }
-.v2-mode .quick-desc-debug-v2 { display: block; margin-top: 8rpx; font-size: $fs-caption; font-weight: $fw-body; color: #999; line-height: 1.4; word-break: break-all; }
+
+/* 品牌截断提示卡片 */
+.v2-mode .quick-paste-warn-v2 {
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+  margin-top: 10rpx;
+  padding: 14rpx 16rpx;
+  background: #FFFBEB;
+  border: 2rpx solid #111;
+  border-left: 10rpx solid #FFD93D;
+}
+.v2-mode .quick-paste-warn-icon-v2 { font-size: $fs-body; flex-shrink: 0; line-height: 1.4; }
+.v2-mode .quick-paste-warn-text-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #555; line-height: 1.5; }
+.v2-mode .quick-paste-warn-bold-v2 { font-weight: $fw-heading; color: #111; }
 
 .v2-mode .role-row { display: flex; align-items: center; gap: 10rpx; margin-top: 16rpx; }
 .v2-mode .role-main-v2 { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10rpx; }
@@ -2285,6 +2298,7 @@ function goTaohua() {
 .v2-mode .ai-badge.ai .ai-badge-dot { background: #4caf50; }
 .v2-mode .ai-badge.fallback .ai-badge-dot { background: #ff9800; }
 .v2-mode .ai-badge-text { font-size: $fs-body; font-weight: $fw-body; color: #111; }
+.v2-mode .ai-badge-label { font-size: $fs-caption; font-weight: $fw-heading; color: #111; padding: 2rpx 8rpx; border: 2rpx solid #111; margin-right: 4rpx; }
 
 .v2-mode .side-box { margin-top: 20rpx; padding: 18rpx; border: 2rpx dashed #111; background: #FFFBEB; }
 .v2-mode .side-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }

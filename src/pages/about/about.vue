@@ -18,22 +18,22 @@
     </view>
     <view class="card-v2">
       <text class="section-title-v2">技术说明</text>
-      <text class="card-text-v2">基于微信云开发构建。AI 能力由 DeepSeek / 腾讯混元等国内大模型驱动，通过 CloudBase 云函数代理调用。</text>
-      <text class="card-text-v2" style="margin-top:14rpx">Token 额度用于 AI 调用计费，每次生成分析、星象速写、月度复盘等均会消耗对应 token。</text>
-      <text class="card-text-v2" style="margin-top:14rpx">语音识别由腾讯云 ASR 单独计费，不消耗 Token 能量。</text>
+      <text class="card-text-v2">基于微信云开发构建。{{ aiLabel() }} 能力由 DeepSeek / 腾讯混元等国内大模型驱动，通过 CloudBase 云函数代理调用。</text>
+      <text class="card-text-v2" style="margin-top:14rpx">Credits 额度用于 {{ aiLabel() }} 调用计费，每次生成分析、星象速写、月度复盘等均会消耗对应 token。</text>
+      <text class="card-text-v2" style="margin-top:14rpx">语音识别由腾讯云 ASR 单独计费，不消耗 Credits 能量。</text>
     </view>
     <view class="card-v2">
       <text class="section-title-v2">隐私政策</text>
       <text class="card-text-v2">本小程序仅收集提供服务所必需的信息：</text>
       <text class="card-text-v2" style="margin-top:10rpx">1. 微信 OpenID — 用于识别用户身份，登录时由微信自动分配，不含任何个人资料。</text>
-      <text class="card-text-v2">2. 你主动填写的信息 — 包括本人画像（年龄阶段、性别、身份等）、关系记录、互动描述。这些信息仅用于 AI 分析。</text>
+      <text class="card-text-v2">2. 你主动填写的信息 — 包括本人画像（年龄阶段、性别、身份等）、关系记录、互动描述。这些信息仅用于 {{ aiLabel() }} 分析。</text>
       <text class="card-text-v2">3. 语音录音 — 用于语音转文字功能，仅在识别过程中使用，不会长期存储。</text>
       <text class="card-text-v2">4. 你主动上传的图片 — 如 Crush 头像、定制宠物形象等，存储于云开发环境。</text>
       <text class="card-text-v2" style="margin-top:10rpx">我们不会获取你的微信头像和昵称。所有数据存储在微信云开发环境中，不会分享给第三方。你可以随时在"我"页面删除账号，所有数据将被清除。</text>
     </view>
     <view class="card-v2">
       <text class="section-title-v2">服务条款</text>
-      <text class="card-text-v2">1. 本小程序提供 AI 辅助分析服务，分析结果仅供娱乐参考，不构成专业建议。</text>
+      <text class="card-text-v2">1. 本小程序提供 {{ aiLabel() }} 辅助分析服务，分析结果仅供娱乐参考，不构成专业建议。</text>
       <text class="card-text-v2" style="margin-top:8rpx">2. 用户应自行判断和承担基于分析结果所采取行动的风险。</text>
       <text class="card-text-v2" style="margin-top:8rpx">3. 禁止利用本服务进行骚扰、侵犯他人隐私或其他违法活动。</text>
       <text class="card-text-v2" style="margin-top:8rpx">4. 未成年人应在监护人指导下使用。</text>
@@ -45,6 +45,7 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const themeVars = ref(getThemeStyle())
 

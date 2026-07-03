@@ -11,16 +11,16 @@
       <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
       <!-- 邀请到账通知 -->
       <view v-if="showReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissReferralNotice">
-        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Token →</text>
+        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Credits →</text>
       </view>
       <!-- 受邀奖励通知 -->
       <view v-if="showInviteeNotice" class="referral-notice" @click="dismissInviteeNotice">
-        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Token →</text>
+        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Credits →</text>
       </view>
       <!-- Token（订阅体系 v3.2） -->
       <view class="card-v2 anim-card" style="animation-delay:0.3s">
         <view style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16rpx;">
-          <text class="section-title-v2" style="margin-bottom:0;">Token</text>
+          <text class="section-title-v2" style="margin-bottom:0;">Credits</text>
           <view :class="['plan-badge', planBadgeClass]">
             <text v-if="isTrial" class="plan-badge-text">✦ 试用期 · 剩{{ trialDaysLeft }}天</text>
             <text v-else class="plan-badge-text">{{ planBadgeLabel }}</text>
@@ -28,7 +28,7 @@
         </view>
         <view class="balance-hero-v2">
             <text class="balance-num-v2">{{ totalAvailableDisplay }}</text>
-            <text class="balance-unit-v2">Token 可用</text>
+            <text class="balance-unit-v2">Credits 可用</text>
           </view>
           <view class="stats-grid-v2" style="margin-top:16rpx;">
             <view class="stat-box-v2">
@@ -55,10 +55,10 @@
           </view>
       </view>
       <!-- 低 Token 提示 -->
-      <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:#FFFBEB;border-style:dashed;" @click="() => {}" >
+      <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:#FFFBEB;border-style:dashed;">
         <view open-type="share" style="width:100%;">
-          <text class="section-title-v2" style="color:#e67e22;">Token 快不够了</text>
-          <text class="card-text-v2">邀请好友注册，双方各得 Token →</text>
+          <text class="section-title-v2" style="color:#e67e22;">Credits 快不够了</text>
+          <text class="card-text-v2">邀请好友注册，双方各得 Credits →</text>
           <button class="btn btn-secondary btn-sm" open-type="share" style="margin-top:12rpx;">+{{ referralRewardTokens }}</button>
         </view>
       </view>
@@ -67,9 +67,9 @@
       <!-- Font size -->
       <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2">Crush Master</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2">Crush Master</text></view></view></view>
       <!-- AI analysis style -->
-      <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">AI 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">AI 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn btn-primary btn-md btn-full" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 AI 风格' }}</button></view>
+      <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">{{ aiLabel() }} 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">{{ aiLabel() }} 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn btn-primary btn-md btn-full" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 ' + aiLabel() + ' 风格' }}</button></view>
       <!-- #ifdef H5 -->
-      <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、AI、Token 和反馈管理 →</text></view>
+      <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、{{ aiLabel() }}、Credits 和反馈管理 →</text></view>
       <!-- #endif -->
       <view class="card-v2">
         <text class="section-title-v2">系统说明</text>
@@ -103,6 +103,7 @@ import {
 import { applyThemeChrome, getCurrentThemeId, getFontSizeMode, getThemeStyle, setCurrentTheme, setFontSizeMode, themeOptions, type ThemeId } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { downloadPetAssets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, setSelectedPetId } from '@/utils/pets.js'
+import { aiLabel } from '@/utils/labels'
 
 type PetId = 'xiaomi' | 'doggo'
 
@@ -497,7 +498,7 @@ async function saveAIPersona() {
       return
     }
     syncProfileState(result.selfProfile)
-    uni.showToast({ title: 'AI 风格已保存', icon: 'none' })
+    uni.showToast({ title: aiLabel() + ' 风格已保存', icon: 'none' })
   } catch (error: any) {
     uni.showToast({ title: error?.message || '保存失败', icon: 'none' })
   } finally {

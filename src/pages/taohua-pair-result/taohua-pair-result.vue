@@ -79,6 +79,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCachedSelfProfile, getCaseDetail, getCurrentUserId, getSelfProfile } from '@/utils/api'
 import { SIGN_NAMES, ZODIAC_NAMES, buildPairMatchPayload, type PairMatchPayload } from '@/utils/taohua'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const ready = ref(false)
 const loading = ref(true)

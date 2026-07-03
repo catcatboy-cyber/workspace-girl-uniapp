@@ -87,6 +87,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { getLoginLogs } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 
 const emit = defineEmits<{ error: [string] }>()
 

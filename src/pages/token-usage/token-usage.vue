@@ -4,7 +4,7 @@
         <view class="tabs-v2"><view :class="['tab-btn-v2', activeTab === 'usage' ? 'active' : '']" @click="switchTab('usage')">消费明细</view><view :class="['tab-btn-v2', activeTab === 'ledger' ? 'active' : '']" @click="switchTab('ledger')">充值记录</view><view :class="['tab-btn-v2', activeTab === 'voice' ? 'active' : '']" @click="switchTab('voice')">语音识别</view></view>
         <view v-if="activeTab === 'usage'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">汇总</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="loading" @click="loadUsage">{{ loading ? '读取中' : '刷新' }}</button></view><text class="card-text-v2">最近 {{ records.length }} 条记录</text><view class="stats-grid-v2" style="grid-template-columns: repeat(3, 1fr);"><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.monthlyTokensUsed.toLocaleString() }}</text><text class="stat-lbl-v2">本月已用</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.recentRecordsTokens.toLocaleString() }}</text><text class="stat-lbl-v2">最近合计</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view></view></view>
-          <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item._id || item.recordId || item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature || (item.remark || '').split(' · ')[0]) }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text class="usage-total-v2">-{{ (Math.abs(Number(item.amountTokens || 0)) || Number(item.platformTokens || item.totalTokens) || 0).toLocaleString() }}</text><text class="usage-meta-v2">Token</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
+          <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item._id || item.recordId || item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature || (item.remark || '').split(' · ')[0]) }}</text><text v-if="item.model" class="usage-model-v2">{{ item.model }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><view v-if="item.inputTokens || item.outputTokens" class="usage-io-v2"><text class="usage-io-item-v2">入 {{ (item.inputTokens || 0).toLocaleString() }}</text><text class="usage-io-item-v2">出 {{ (item.outputTokens || 0).toLocaleString() }}</text></view><text class="usage-total-v2">-{{ (Math.abs(Number(item.amountTokens || 0)) || Number(item.platformTokens || item.totalTokens) || 0).toLocaleString() }}</text><text class="usage-meta-v2">Credits</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
         </view>
         <view v-if="activeTab === 'ledger'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">额度变动记录</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="ledgerLoading" @click="loadLedger">{{ ledgerLoading ? '读取中' : '刷新' }}</button></view>
@@ -14,7 +14,7 @@
         </view>
         <view v-if="activeTab === 'voice'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">语音识别汇总</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="voiceLoading" @click="loadVoice">{{ voiceLoading ? '读取中' : '刷新' }}</button></view>
-            <text class="card-text-v2 muted">语音识别由腾讯云 ASR 单独计费，不消耗 Token 能量。</text>
+            <text class="card-text-v2 muted">语音识别由腾讯云 ASR 单独计费，不消耗 Credits 能量。</text>
             <view class="stats-grid-v2" style="grid-template-columns: repeat(2, 1fr);"><view class="stat-box-v2"><text class="stat-num-v2">{{ voiceSummary.totalCount }}</text><text class="stat-lbl-v2">识别次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ formatSeconds(voiceSummary.totalDurationMs) }}</text><text class="stat-lbl-v2">累计时长</text></view></view>
           </view>
           <view class="card-v2"><text class="section-title-v2">明细</text>
@@ -30,6 +30,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, getConsumeHistory, getTokenLedger, getVoiceUsage } from '@/utils/api'
 import { callFunction } from '@/utils/cloudbase'
+import { aiLabel } from '@/utils/labels'
 
 const activeTab = ref<'usage' | 'ledger' | 'voice'>('usage')
 const loading = ref(false)
@@ -237,6 +238,9 @@ function formatDate(value: string) {
 .v2-mode .usage-row-v2 { display: flex; justify-content: space-between; align-items: center; gap: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
 .v2-mode .usage-main-v2 { flex: 1; min-width: 0; }
 .v2-mode .usage-feature-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
+.v2-mode .usage-model-v2 { display: inline-block; margin-top: 4rpx; padding: 2rpx 10rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-caption; font-weight: $fw-label; color: #666; }
+.v2-mode .usage-io-v2 { display: flex; gap: 6rpx; margin-bottom: 4rpx; }
+.v2-mode .usage-io-item-v2 { font-size: $fs-micro; font-weight: $fw-body; color: #999; white-space: nowrap; }
 .v2-mode .usage-meta-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
 .v2-mode .usage-counts-v2 { text-align: right; flex-shrink: 0; }
 .v2-mode .usage-total-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }

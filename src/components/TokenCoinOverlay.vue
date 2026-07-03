@@ -21,7 +21,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
+import { aiLabel } from '@/utils/labels'
 
 const props = withDefaults(defineProps<{
   visible: boolean
@@ -66,6 +67,8 @@ function dismiss() {
   stopTimers()
   emit('close')
 }
+
+onUnmounted(stopTimers)
 </script>
 
 <style scoped lang="scss">

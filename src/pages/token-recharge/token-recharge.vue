@@ -2,8 +2,12 @@
   <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
       <view class="hero-block-v2">
         <text class="hero-tag-v2">BOOST</text>
-        <text class="hero-title-v2">Token<text class="hl-v2">加油包</text></text>
-        <text class="hero-copy-v2">套餐 Token 不够？买加油包，不过期。当前额外 Token：{{ extraTokens.toLocaleString() }}</text>
+        <text class="hero-title-v2">Credits<text class="hl-v2">加油包</text></text>
+        <text class="hero-copy-v2">套餐 Credits 不够？买加油包，不过期。当前额外 Credits：{{ extraTokens.toLocaleString() }}</text>
+        <view class="sandbox-toggle" @click="sandboxMode = !sandboxMode">
+          <text :class="['sandbox-dot', sandboxMode ? 'on' : '']"></text>
+          <text class="sandbox-label">{{ sandboxMode ? '沙箱测试中' : '正式支付' }}</text>
+        </view>
       </view>
 
       <view v-if="plansLoading" class="card-v2">
@@ -15,11 +19,11 @@
       </view>
 
       <view v-else class="recharge-plan-card" v-for="plan in plans" :key="plan.id">
-        <view class="plan-card-badge" v-if="plan.bonusTokens > 0">赠 {{ plan.bonusTokens.toLocaleString() }} Token</view>
+        <view class="plan-card-badge" v-if="plan.bonusTokens > 0">赠 {{ plan.bonusTokens.toLocaleString() }} Credits</view>
         <text class="plan-card-name">{{ plan.name }}</text>
         <view class="plan-card-token-row">
           <text class="plan-card-token-num">+{{ totalTokens(plan).toLocaleString() }}</text>
-          <text class="plan-card-token-unit">Token</text>
+          <text class="plan-card-token-unit">Credits</text>
         </view>
         <text v-if="plan.tagline" class="plan-card-tagline">{{ plan.tagline }}</text>
         <button class="plan-card-btn" :disabled="orderingId === plan.id" @click="createOrder(plan.id)">
@@ -39,9 +43,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getRechargePlans, unifiedOrder, queryOrder, confirmPayment, getSubscriptionStatus } from '@/utils/api'
+import { getCurrentUserId, getRechargePlans, unifiedOrder, queryOrder, confirmPayment, getSubscriptionStatus, createVirtualPayOrder, confirmVirtualPay } from '@/utils/api'
 import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { bumpDataVersion } from '@/utils/helpers'
+import { aiLabel } from '@/utils/labels'
 
 const extraTokens = ref(0)
 const plans = ref<Array<any>>([])
@@ -49,6 +54,8 @@ const plansLoading = ref(false)
 const plansError = ref('')
 const orderingId = ref('')
 const orderMessage = ref('')
+const sandboxMode = ref(false) // 沙箱测试开关
+const useVirtualPay = ref(false) // 后台开关
 const orderOk = ref(false)
 const createdOrderId = ref('')
 const showCoin = ref(false)
@@ -85,6 +92,7 @@ async function loadPlans() {
     const result = await getRechargePlans()
     if (result?.success) {
       plans.value = Array.isArray(result.tiers) ? result.tiers : []
+      useVirtualPay.value = result.useVirtualPay === true
       if (plans.value.length === 0) plansError.value = '暂无启用的充值档位，请联系管理员配置。'
     } else {
       plansError.value = result?.message || '加载充值档位失败'
@@ -96,12 +104,64 @@ async function loadPlans() {
   }
 }
 
+async function doVirtualRecharge(planId: string) {
+  try {
+    const result = await createVirtualPayOrder({ productType: 'recharge', productId: planId, sandbox: sandboxMode.value })
+    if (!result?.success) { orderMessage.value = result?.message || '创建订单失败'; return }
+    const { paySig, signature, signData, outTradeNo, mode } = result
+
+    // 调起虚拟支付 — signData 是后端序列化好的 JSON 字符串，原样传，不能改动
+    const payResult: any = await new Promise((resolve, reject) => {
+      wx.requestVirtualPayment({
+        mode,
+        paySig,
+        signature,
+        signData,
+        success: resolve,
+        fail: reject
+      })
+    })
+    // payResult.orderId 就是微信内部订单号 wx_order_id，query_order 必须用它查单
+    const wxOrderId = payResult?.orderId || ''
+
+    // 确认发货 —— 首次 confirm 未成功则轮询兜底（服务端查单/发货可能延迟），最多 ~30s
+    let confirmed = await confirmVirtualPay(outTradeNo, wxOrderId)
+    for (let i = 0; i < 20 && !confirmed?.success; i++) {
+      await new Promise((r) => setTimeout(r, 1500))
+      try { confirmed = await confirmVirtualPay(outTradeNo, wxOrderId) } catch (_) { /* 继续重试 */ }
+    }
+    if (confirmed?.success) {
+      orderOk.value = true
+      coinAmount.value = result.order?.grantTokens || 0
+      coinSubtitle.value = result.order?.planName || ''
+      showCoin.value = true
+      bumpDataVersion()
+      await loadStatus()
+    } else {
+      // 支付面板已回调成功、但服务端未在窗口内确认发货 → 到账处理中（非失败），可稍后自动/手动补货
+      orderOk.value = true
+      orderMessage.value = '支付成功，到账处理中，可稍后在“我”页查看余额'
+      bumpDataVersion()
+    }
+  } catch (err: any) {
+    if (err?.errMsg?.includes('cancel')) { orderMessage.value = '已取消支付' }
+    else { orderMessage.value = '支付失败: ' + (err?.errMsg || err?.message || '') }
+  }
+}
+
 async function createOrder(planId: string) {
   orderingId.value = planId
   orderMessage.value = ''
   orderOk.value = false
   createdOrderId.value = ''
   try {
+    // 0. 虚拟支付通道：沙箱开关 或 后台开启
+    // #ifdef MP-WEIXIN
+    if (useVirtualPay.value || sandboxMode.value) {
+      await doVirtualRecharge(planId)
+      return
+    }
+    // #endif
     // 1. 服务端统一下单（创建DB订单 + 微信V3下单 + 生成支付参数，一站式）
     // #ifdef MP-WEIXIN
     const result = await unifiedOrder({ productType: 'recharge', productId: planId })
@@ -220,6 +280,10 @@ async function createOrder(planId: string) {
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .sandbox-toggle { display: flex; align-items: center; gap: 8rpx; margin-top: 12rpx; cursor: pointer; }
+.v2-mode .sandbox-dot { width: 32rpx; height: 32rpx; border: 2rpx solid #111; border-radius: 50%; background: #fff; }
+.v2-mode .sandbox-dot.on { background: #FFD93D; }
+.v2-mode .sandbox-label { font-size: $fs-caption; font-weight: $fw-heading; color: #111; }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }

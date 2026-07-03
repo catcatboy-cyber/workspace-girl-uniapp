@@ -13,7 +13,7 @@
         <view class="hero-block-v2 anim-hero">
           <text class="hero-tag-v2">WE / {{ caseFile.name }}</text>
           <text class="hero-title-v2">{{ result?.explanation?.petLine || result?.explanation?.bullets?.[0] || '暂无分析结果' }}</text>
-          <text class="hero-copy-v2">AI 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
+          <text class="hero-copy-v2">{{ aiLabel() }} 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
           <view class="hero-profile-v2">
             <view class="avatar-v2 lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseFile.name) }}</text></view>
             <view class="hero-profile-main-v2">
@@ -41,7 +41,7 @@
         <!-- 桃花匹配度入口（详情已搬至「命理桃花」页） -->
         <view class="card-v2 anim-card" style="animation-delay:0.22s;background:#FFFBEB;" @click="goTaohuaMatch">
           <text class="section-title-v2">桃花匹配度</text>
-          <text class="weekly-desc-v2">查看你和 TA 的生肖星座匹配 + AI 深度解读 →</text>
+          <text class="weekly-desc-v2">查看你和 TA 的生肖星座匹配 + {{ aiLabel() }} 深度解读 →</text>
         </view>
 
         <!-- ===== 新增板块 ===== -->
@@ -60,7 +60,7 @@
                 <text class="info-sheet-close" @click="showSignalInfo = false">×</text>
               </view>
               <scroll-view scroll-y class="info-sheet-body">
-                <view class="info-tree-item"><text class="info-tree-q">数据来源</text><text class="info-tree-a">全部基于结构化数据（timeline 事件标签 + assessments 趋势），不依赖 AI 主观打分。样本不足（&lt;3）时自动向 50 收敛，避免小样本误判。</text></view>
+                <view class="info-tree-item"><text class="info-tree-q">数据来源</text><text class="info-tree-a">全部基于结构化数据（timeline 事件标签 + assessments 趋势），不依赖 {{ aiLabel() }} 主观打分。样本不足（&lt;3）时自动向 50 收敛，避免小样本误判。</text></view>
                 <view class="info-tree-item"><text class="info-tree-q">主动性</text><text class="info-tree-a">50 + (TA主动 − 你主动) ÷ 总数 × 50。&gt;60 TA更主动，&lt;40 主要是你在推。</text></view>
                 <view class="info-tree-item"><text class="info-tree-q">回应度</text><text class="info-tree-a">加权正向回应率：兑现+1，计划/承诺+0.7，待确认+0.45，拖延+0.2，拒绝/冷淡+0。÷ 总回应权重×100。</text></view>
                 <view class="info-tree-item"><text class="info-tree-q">承诺度</text><text class="info-tree-a">(兑现×1 + 待确认×0.45 + 拖延×0.15) ÷ 承诺总数 × 100。专门衡量"说了算不算"。</text></view>
@@ -222,7 +222,7 @@
                 <text v-if="trajectoryMarkers[selectedTrajectoryIdx]?.event" class="trajectory-detail-title-v2">{{ trajectoryMarkers[selectedTrajectoryIdx].event.title }}</text>
                 <text v-if="trajectoryMarkers[selectedTrajectoryIdx]?.event" class="trajectory-detail-desc-v2">{{ trajectoryMarkers[selectedTrajectoryIdx].event.description }}</text>
                 <view v-if="trajectoryMarkers[selectedTrajectoryIdx]?.assessment" class="trajectory-detail-ai-v2">
-                  <text class="trajectory-detail-ai-label-v2">AI 解读</text>
+                  <text class="trajectory-detail-ai-label-v2">{{ aiLabel() }} 解读</text>
                   <text class="trajectory-detail-ai-text-v2">{{ trajectoryMarkers[selectedTrajectoryIdx].assessment.explanation?.petLine || trajectoryMarkers[selectedTrajectoryIdx].assessment.explanation?.headline || '暂无解读' }}</text>
                 </view>
               </view>
@@ -239,8 +239,6 @@
           <text class="section-title-v2">信号解释卡</text>
           <text class="section-sub-v2">本月最关键变化，每条附证据来源</text>
           <template v-if="timelineCount >= 14 && signalCards.length > 0">
-          <text class="section-title-v2">信号解释卡</text>
-          <text class="section-sub-v2">本月最关键变化，每条附证据来源</text>
           <view v-for="card in signalCards" :key="card.type" class="signal-card-v2" :class="'signal-card-' + card.type">
             <view class="signal-card-head-v2">
               <text class="signal-card-icon-v2">{{ card.icon }}</text>
@@ -291,7 +289,7 @@
           </template>
         </view>
       </template>
-    <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
+    <view class="ai-disclaimer"><text class="ai-disclaimer-text">{{ aiLabel() }} 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
 </template>
 
@@ -304,6 +302,7 @@ import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compare
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType } from '@/utils/crush-type.js'
+import { aiLabel } from '@/utils/labels'
 import ProgressMilestone from '@/components/ProgressMilestone.vue'
 
 const loading = ref(true)

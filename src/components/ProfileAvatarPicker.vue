@@ -45,6 +45,7 @@ import { computed, ref, watch } from 'vue'
 import { presetAvatarOptions, isPresetAvatar } from '@/utils/avatar-options'
 import { uploadFile } from '@/utils/api'
 import { createAvatarCloudPath, resolveAvatarSrc } from '@/utils/avatar'
+import { aiLabel } from '@/utils/labels'
 
 const props = defineProps<{
   modelValue?: string

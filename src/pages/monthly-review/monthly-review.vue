@@ -44,7 +44,7 @@
           <view class="tag-row-v2">
             <text class="tag-v2 black sm">月度复盘</text>
             <text v-if="item.trendLabel" class="tag-v2 sm">{{ mapMonthlyTrendLabel(item.trendLabel) }}</text>
-            <text v-if="item.aiUsed" class="tag-v2 sm">AI 复盘</text>
+            <text v-if="item.aiUsed" class="tag-v2 sm">{{ aiLabel() }} 复盘</text>
           </view>
           <text v-if="item.summary" class="review-desc-v2">{{ item.summary }}</text>
           <view v-if="item.eventCount || item.assessmentCount || item.intentDelta !== undefined || item.riskDelta !== undefined" class="tag-row-v2 review-metrics-v2">
@@ -82,6 +82,7 @@ import { generateMonthlyReview, getCaseDetail, getCurrentUserId, getMonthlyRevie
 import { getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { appendReferralParams, buildSafeTimelineShare, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { aiLabel } from '@/utils/labels'
 
 const loading = ref(true)
 const refreshing = ref(false)

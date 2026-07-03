@@ -48,6 +48,7 @@
 // 修复：原模板里交付输入框的 v-if 用了未定义变量 deliveredPetIds（in_progress 项渲染即崩），已移除该 v-if。
 import { ref, reactive, onMounted } from 'vue'
 import { adminListCustomPetRequests, adminUpdateCustomPetRequest } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 
 const emit = defineEmits<{ error: [string] }>()
 

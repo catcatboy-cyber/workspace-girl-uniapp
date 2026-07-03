@@ -46,10 +46,10 @@ export function getMyInviteCode() {
 export function appendReferralParams(path, channel, scene) {
   const params = []
   const inviteCode = getMyInviteCode()
-  if (inviteCode) params.push(`inviteCode=${inviteCode}`)
-  if (channel) params.push(`channel=${channel}`)
-  if (scene) params.push(`scene=${scene}`)
-  params.push(`shareId=${generateShareId()}`)
+  if (inviteCode) params.push(`inviteCode=${encodeURIComponent(inviteCode)}`)
+  if (channel) params.push(`channel=${encodeURIComponent(channel)}`)
+  if (scene) params.push(`scene=${encodeURIComponent(scene)}`)
+  params.push(`shareId=${encodeURIComponent(generateShareId())}`)
   const sep = path.includes('?') ? '&' : '?'
   return path + sep + params.join('&')
 }

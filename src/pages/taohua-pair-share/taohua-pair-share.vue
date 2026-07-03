@@ -59,7 +59,7 @@
       <button class="ghost-btn" @click="goHome">先逛逛</button>
     </view>
 
-    <text class="disclaimer">AI 辅助分析 · 仅供文化娱乐参考</text>
+    <text class="disclaimer">{{ aiLabel() }} 辅助分析 · 仅供文化娱乐参考</text>
   </view>
 </template>
 
@@ -70,6 +70,7 @@ import { getCurrentUserId } from '@/utils/api'
 import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { captureLandingContext } from '@/utils/landing'
 import { buildPairMatchPayload, SIGN_NAMES, ZODIAC_NAMES } from '@/utils/taohua'
+import { aiLabel } from '@/utils/labels'
 
 const selfZodiac = ref('兔')
 const selfSign = ref('双鱼座')

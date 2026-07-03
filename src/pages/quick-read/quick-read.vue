@@ -165,6 +165,7 @@ import { createCase, createTimeline, generateAssessmentAI, getCurrentUserId, get
 import { bumpDataVersion, combineDateAndTimeToISOString, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext } from '@/utils/helpers'
 import { captureLandingContext, readLandingContext } from '@/utils/landing'
 import { SIGN_NAMES, ZODIAC_NAMES } from '@/utils/taohua'
+import { aiLabel } from '@/utils/labels'
 
 const DRAFT_KEY = 'quickReadAnalysisDraft'
 

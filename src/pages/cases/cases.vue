@@ -100,6 +100,7 @@ import { bumpDataVersion, clearActiveCaseId, formatDateTime, getActiveCaseId, se
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType } from '@/utils/crush-type.js'
+import { aiLabel } from '@/utils/labels'
 
 const loading = ref(true)
 const cases = ref<any[]>([])

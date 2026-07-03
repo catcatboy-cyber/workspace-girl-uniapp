@@ -79,6 +79,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { aiLabel } from '@/utils/labels'
 
 const props = withDefaults(defineProps<{
   direction?: string

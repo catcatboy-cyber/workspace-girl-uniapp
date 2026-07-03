@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { aiLabel } from '@/utils/labels'
 import ProfileAvatarPicker from './ProfileAvatarPicker.vue'
 
 const props = withDefaults(defineProps<{

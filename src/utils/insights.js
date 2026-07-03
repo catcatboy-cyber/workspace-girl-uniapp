@@ -310,7 +310,8 @@ function summarizeWeeklyDirection(caseFile, now) {
 
 export function buildCaseWeeklyReview(caseFile, now = new Date()) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const recentTimeline = caseFile.timeline.filter((item) => getTimelineRecordTime(item) >= monthStart.getTime())
+  const timeline = Array.isArray(caseFile?.timeline) ? caseFile.timeline : []
+  const recentTimeline = timeline.filter((item) => getTimelineRecordTime(item) >= monthStart.getTime())
   const userFacingTimeline = recentTimeline.filter((item) => item.type === 'positive' || item.type === 'risk' || item.type === 'verification' || item.type === 'note')
   const verificationCount = userFacingTimeline.filter((item) => item.type === 'verification').length
   const riskEvent = userFacingTimeline.find((item) => item.type === 'risk')
@@ -1917,7 +1918,6 @@ export function buildProfileSideRead(params) {
   const { profile, selfProfile, event, latestResult, trend } = params
   const aiSideRead = normalizeAISideRead(latestResult?.sideReadAdvice)
   if (aiSideRead) return aiSideRead
-  return buildZodiacConstellationSideRead({ profile, selfProfile, event, latestResult })
   if ((!hasProfile(profile) && !hasSelfProfile(selfProfile)) || !latestResult) return null
 
   const intentScore = Number(latestResult.intentScore || 0)

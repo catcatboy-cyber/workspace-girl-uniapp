@@ -62,7 +62,7 @@ async function getRechargePlans(event) {
     grantCalls: t.grantTokens || t.grantCalls || 0,  // 兼容
     tagline: t.tagline || ''
   }))
-  return { success: true, tiers, tokensPerYuan: billing.tokensPerYuan || 100000 }
+  return { success: true, tiers, tokensPerYuan: billing.tokensPerYuan || 100000, useVirtualPay: billing.useVirtualPay === true }
 }
 
 // action: createRechargeOrder — 创建充值订单（pending 状态）
@@ -78,7 +78,7 @@ async function createRechargeOrder(event) {
 
   const amountFen = Number(tier.priceFen) || 0
   const amountYuan = (amountFen / 100).toFixed(2)
-  const grantTokens = Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0)
+  const grantTokens = tier.grantTokens || (Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0))
   const grantCalls = (tier.grantCalls || 0) + (tier.bonusCalls || 0)
   const now = new Date()
 
@@ -265,7 +265,7 @@ async function unifiedOrder(event) {
     if (tier.enabled === false) return { success: false, message: '该档位已下架' }
 
     const amountFen = Number(tier.priceFen) || 0
-    const grantTokens = Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0)
+    const grantTokens = tier.grantTokens || (Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0))
     payLog('[PAYDBG][unifiedOrder] recharge tier=%s amountFen=%s grantTokens=%s', planId, amountFen, grantTokens)
     const now = new Date()
     order = {
@@ -505,8 +505,12 @@ async function repairOrder(event) {
 
   let order = null
   if (orderNo) {
-    const { data } = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
-    order = (data && data.length > 0) ? data[0] : null
+    // 虚拟支付订单存 outTradeNo，普通支付订单存 orderNo —— 两者都试
+    let found = await db.collection(RECHARGE_ORDERS).where({ outTradeNo: orderNo, userId }).limit(1).get()
+    if (!found.data || found.data.length === 0) {
+      found = await db.collection(RECHARGE_ORDERS).where({ orderNo, userId }).limit(1).get()
+    }
+    order = (found.data && found.data.length > 0) ? found.data[0] : null
   } else if (orderId) {
     const { data } = await db.collection(RECHARGE_ORDERS).doc(orderId).get()
     order = (data && data.length > 0) ? data[0] : null
@@ -515,9 +519,241 @@ async function repairOrder(event) {
   if (!order) return { success: false, message: '订单不存在' }
   if (order.status !== 'paid') return { success: false, message: '仅已支付订单可修复' }
 
-  payLog('[PAYDBG][repair] repair orderId=%s orderNo=%s productType=%s', order._id, order.orderNo, order.productType)
+  payLog('[PAYDBG][repair] repair orderId=%s orderNo=%s productType=%s', order._id, order.orderNo || order.outTradeNo, order.productType)
   const repaired = await fulfillPayment(db, order, `repair:${order._id || orderNo}`)
   return { success: true, order: repaired }
+}
+
+// ── 虚拟支付 ──
+
+async function createVirtualPayOrder(event) {
+  const userId = await requireAuthenticatedUserId(app, event)
+  const productType = String(event.productType || '').trim()
+  const sandbox = event.sandbox === true || String(event.sandbox).toLowerCase() === 'true'
+
+  const vp = require('./_shared/virtual-pay')
+  const billing = await ensureBillingSettings(db)
+  if (!billing.useVirtualPay && !sandbox) return { success: false, message: '虚拟支付尚未启用' }
+
+  // 获取用户 session_key 用于用户态签名。
+  // 虚拟支付 signature 要求 session_key「有效/新鲜」，DB 存量的可能已过期（→ SIGNATURE_INVALID）。
+  // 优先用本次前端传来的 loginCode 现换最新 session_key，失败再回退 DB。
+  let sessionKey = ''
+  const loginCode = String(event.loginCode || '').trim()
+  if (loginCode) {
+    try { sessionKey = await vp.getSessionKeyByCode(loginCode) } catch (_) {}
+  }
+  if (sessionKey) {
+    // 换到新鲜 session_key —— 顺便刷新 DB，供其它场景使用
+    try { await db.collection('users').doc(userId).update({ sessionKey, updatedAt: new Date() }) } catch (_) {}
+  } else {
+    try {
+      const { data: userData } = await db.collection('users').doc(userId).get()
+      sessionKey = (userData && userData.length > 0) ? (userData[0].sessionKey || '') : ''
+    } catch (_) {}
+  }
+  payLog('[VPAY] sessionKey source=%s len=%s', (loginCode && sessionKey) ? 'fresh(jscode2session)' : 'db', sessionKey.length)
+
+  let order, mode, signDataObj
+
+  if (productType === 'recharge') {
+    // ── 代币充值 ──
+    const billing = await ensureBillingSettings(db)
+    const planId = String(event.productId || '').trim()
+    if (!planId) return { success: false, message: '缺少 productId' }
+    const tier = (billing.rechargeTiers || []).find(t => t.id === planId)
+    if (!tier) return { success: false, message: '档位不存在' }
+    if (tier.enabled === false) return { success: false, message: '该档位已下架' }
+
+    const amountFen = Number(tier.priceFen) || 0
+    const grantTokens = tier.grantTokens || (Math.floor(amountFen / 100 * (billing.tokensPerYuan || 100000)) + (tier.bonusTokens || 0))
+    const outTradeNo = vp.generateOutTradeNo('RC')
+
+    order = {
+      userId, outTradeNo, productType: 'recharge',
+      planId: tier.id, planName: tier.name,
+      amountFen, amountYuan: (amountFen / 100).toFixed(2),
+      grantTokens, bonusTokens: tier.bonusTokens || 0,
+      status: 'pending', channel: 'virtual_pay',
+      sandbox, createdAt: new Date(), updatedAt: new Date()
+    }
+    mode = 'short_series_coin'
+    signDataObj = vp.buildSignData({
+      outTradeNo, buyQuantity: amountFen, sandbox,
+      attach: JSON.stringify({ userId, productType, planId })
+    })
+
+  } else if (productType === 'subscription') {
+    // ── 道具直购（套餐升级） ──
+    const planKey = String(event.planKey || '').trim()
+    const billingCycle = String(event.billingCycle || 'monthly').trim()
+    const priceVariant = String(event.priceVariant || 'standard').trim()
+    if (!planKey) return { success: false, message: '缺少 planKey' }
+
+    const { getSubscriptionConfig } = require('./_shared/subscription')
+    const config = await getSubscriptionConfig(db)
+    const planConfig = config.plans[planKey]
+    if (!planConfig) return { success: false, message: '套餐配置不存在' }
+
+    const toAmount = (v, f) => { const n = Number(v); return (Number.isFinite(n) && n > 0) ? n : (Number.isFinite(Number(f)) ? Number(f) : 0) }
+    const standardMonthly = toAmount(planConfig.priceYuan, 19)
+    const standardAnnual = toAmount(planConfig.priceYuanAnnual, 168)
+    const studentMonthly = toAmount(planConfig.priceYuanStudent, 12)
+    const studentAnnual = toAmount(planConfig.priceYuanStudentAnnual, 99)
+    const amountYuan = priceVariant === 'student'
+      ? (billingCycle === 'annual' ? studentAnnual : studentMonthly)
+      : (billingCycle === 'annual' ? standardAnnual : standardMonthly)
+    if (!amountYuan || amountYuan <= 0) return { success: false, message: '套餐价格未配置' }
+
+    const amountFen = Math.round(amountYuan * 100)
+    const productId = planConfig.virtualProductId || `${planKey}_${billingCycle}`
+    const outTradeNo = vp.generateOutTradeNo('SUB')
+
+    order = {
+      userId, outTradeNo, productType: 'subscription',
+      planKey, planName: planConfig.name, billingCycle, priceVariant,
+      amountFen, amountYuan,
+      fromPlan: '', grantPlan: planKey,
+      grantDurationDays: billingCycle === 'annual' ? 365 : 30,
+      status: 'pending', channel: 'virtual_pay',
+      sandbox, createdAt: new Date(), updatedAt: new Date()
+    }
+    mode = 'short_series_goods'
+    signDataObj = vp.buildSignData({
+      outTradeNo, buyQuantity: 1, sandbox,
+      productId, goodsPrice: amountFen,
+      attach: JSON.stringify({ userId, productType, planKey, billingCycle })
+    })
+
+  } else {
+    return { success: false, message: '不支持的产品类型' }
+  }
+
+  // 保存订单
+  const result = await db.collection(RECHARGE_ORDERS).add(order)
+  order._id = result.id || result._id
+
+  // 生成签名 —— signData 序列化成「字段排序后的 JSON 字符串」，
+  // paySig / signature / 前端传参三者使用同一份字符串（逐字节一致）
+  const signDataStr = vp.serializeSignData(signDataObj)
+  const paySig = vp.signPaySig(signDataStr, sandbox ? 1 : 0)
+  const signature = sessionKey ? vp.signUserSig(signDataStr, sessionKey) : ''
+  payLog('[VPAY] sign sessionKey.len=%s signData=%s paySig(32)=%s sig(32)=%s',
+    sessionKey.length, signDataStr.slice(0, 120), paySig.slice(0, 32), signature.slice(0, 32))
+
+  payLog('[VPAY] order created outTradeNo=%s amount=%s mode=%s sandbox=%s',
+    order.outTradeNo, order.amountFen, mode, sandbox)
+
+  return {
+    success: true,
+    offerId: vp.OFFER_ID,
+    paySig,
+    signature,
+    signData: signDataStr,   // 排序后的 JSON 字符串，前端原样传给 requestVirtualPayment
+    outTradeNo: order.outTradeNo,
+    mode,
+    order
+  }
+}
+
+// action: confirmVirtualPay — 前端支付成功后验证并发货
+async function confirmVirtualPay(event) {
+  const vp = require('./_shared/virtual-pay')
+  const userId = await requireAuthenticatedUserId(app, event)
+  const outTradeNo = String(event.outTradeNo || '').trim()
+  const wxOrderId = String(event.wxOrderId || '').trim()
+  if (!outTradeNo) return { success: false, message: '缺少 outTradeNo' }
+
+  const { data } = await db.collection(RECHARGE_ORDERS).where({ outTradeNo, userId }).limit(1).get()
+  const order = (data && data.length > 0) ? data[0] : null
+  if (!order) return { success: false, message: '订单不存在' }
+  if (order.status === 'paid' && order.fulfillmentStatus === 'succeeded') {
+    return { success: true, order, alreadyPaid: true }
+  }
+  if (order.status === 'paid') {
+    // 已支付但发货未完成 → 补偿发货
+    payLog('[VPAY] re-fulfilling order outTradeNo=%s', outTradeNo)
+    const fulfilled = await fulfillPayment(db, { ...order, _id: order._id }, outTradeNo)
+    return { success: true, order: fulfilled }
+  }
+  if (order.status !== 'pending') return { success: false, message: `订单状态为 "${order.status}"` }
+
+  // 存储 wxOrderId 到订单记录（后续补单/查单可用）
+  if (wxOrderId && !order.wxOrderId) {
+    await db.collection(RECHARGE_ORDERS).doc(order._id).update({ wxOrderId, updatedAt: new Date() }).catch(() => {})
+  }
+  const effectiveWxOrderId = wxOrderId || order.wxOrderId || ''
+  // 服务端向微信查单确认支付真实发生
+  const isSandbox = order.sandbox === true
+  // 获取用户 openid 用于查单
+  let userOpenid = ''
+  try {
+    const { data: userData } = await db.collection('users').doc(userId).get()
+    userOpenid = (userData && userData.length > 0) ? (userData[0].openid || '') : ''
+  } catch (_) {}
+
+  let wxQuery = null
+  try {
+    wxQuery = await vp.queryVirtualOrder(outTradeNo, userOpenid, isSandbox ? 1 : 0, effectiveWxOrderId)
+    payLog('[VPAY] queryOrder FULL response outTradeNo=%s %j', outTradeNo, wxQuery)
+  } catch (e) {
+    payLog('[VPAY] queryOrder FAILED outTradeNo=%s err=%s', outTradeNo, e?.message || String(e))
+  }
+  // 判定「已支付」：虚拟支付 query_order 成功返回 { errcode:0, order:{ status, paid_time, order_fee, wx_order_id... } }
+  // 注意：没有普通微信支付的 trade_state 字段。用 errcode===0 && paid_time>0 判定，比猜 status 枚举鲁棒。
+  const qOrder = (wxQuery && wxQuery.order && typeof wxQuery.order === 'object') ? wxQuery.order : null
+  const paidTime = qOrder ? Number(qOrder.paid_time || 0) : 0
+  const isPaid = !!wxQuery && Number(wxQuery.errcode || 0) === 0 && qOrder && paidTime > 0
+  payLog('[VPAY] queryOrder verdict outTradeNo=%s errcode=%s status=%s paid_time=%s isPaid=%s',
+    outTradeNo, wxQuery?.errcode, qOrder?.status, paidTime, isPaid)
+
+  if (!isPaid) {
+    // 沙箱环境查单接口可能不通，允许降级通过
+    if (isSandbox && (!wxQuery || wxQuery.errcode == null || Number(wxQuery.errcode) !== 0)) {
+      payLog('[VPAY] sandbox queryOrder unavailable/failed, skipping verification')
+    } else {
+      return { success: false, message: '微信侧未确认支付，请稍后重试', wxErrcode: wxQuery?.errcode, wxStatus: qOrder?.status }
+    }
+  }
+  // ── 一致性校验（防御式）──
+  // 校验查单响应 order 里「确实返回」的字段与订单是否一致：
+  //   字段存在但不符 → 拒绝发货并标记订单异常（防串单/改价/复用单号）
+  //   字段缺失      → 告警但不阻断
+  if (qOrder) {
+    const q = qOrder
+    const pick = (...keys) => { for (const k of keys) if (q[k] != null) return q[k]; return undefined }
+    const mismatches = []
+
+    // 金额：虚拟支付返回 order_fee（分）
+    const qAmount = pick('order_fee', 'paid_fee', 'total_fee', 'total_amount')
+    if (qAmount != null) {
+      if (Number(qAmount) !== Number(order.amountFen)) mismatches.push(`amount:${qAmount}vs${order.amountFen}`)
+    } else {
+      payLog('[VPAY] consistency: amount field not found in queryOrder response (skipped) outTradeNo=%s', outTradeNo)
+    }
+
+    const qOffer = pick('offer_id', 'offerId')
+    if (qOffer != null && String(qOffer) !== String(vp.OFFER_ID)) mismatches.push(`offer_id:${qOffer}`)
+
+    if (order.productType === 'subscription' && order.productId != null) {
+      const qProd = pick('product_id', 'productId')
+      if (qProd != null && String(qProd) !== String(order.productId)) mismatches.push(`product_id:${qProd}`)
+    }
+
+    if (mismatches.length > 0) {
+      payLog('[VPAY] consistency MISMATCH outTradeNo=%s %j (wxQuery=%j)', outTradeNo, mismatches, wxQuery)
+      await db.collection(RECHARGE_ORDERS).doc(order._id).update({
+        status: 'failed', failReason: 'vpay-consistency: ' + mismatches.join(';'), updatedAt: new Date()
+      }).catch(() => {})
+      return { success: false, message: '订单校验未通过，请联系客服', mismatches }
+    }
+  }
+
+  // 微信确认已支付 → 标记为已支付并发货
+  await db.collection(RECHARGE_ORDERS).doc(order._id).update({ status: 'paid', paidAt: new Date(), updatedAt: new Date() })
+  const fulfilled = await fulfillPayment(db, { ...order, _id: order._id, status: 'paid' }, outTradeNo)
+
+  return { success: true, order: fulfilled }
 }
 
 exports.main = async (event = {}) => {
@@ -557,6 +793,8 @@ exports.main = async (event = {}) => {
     if (action === 'queryOrder') return await queryOrder(event)
     if (action === 'confirmPayment') return await confirmPayment(event)
     if (action === 'repairOrder') return await repairOrder(event)
+    if (action === 'createVirtualPayOrder') return await createVirtualPayOrder(event)
+    if (action === 'confirmVirtualPay') return await confirmVirtualPay(event)
     return { success: false, message: '未知操作' }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)
@@ -565,6 +803,7 @@ exports.main = async (event = {}) => {
       return { success: false, message: '仅管理员可执行此操作', code: 'ADMIN_REQUIRED' }
     }
     console.error('recharge error:', error)
-    return { success: false, message: '操作失败' }
+    const errMsg = error?.message || String(error || '')
+    return { success: false, message: '操作失败: ' + errMsg.slice(0, 120) }
   }
 }

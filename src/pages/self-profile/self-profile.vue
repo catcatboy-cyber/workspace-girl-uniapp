@@ -101,6 +101,7 @@ import {
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { showError, showSuccess } from '@/utils/helpers'
 import { getPetById, getSelectedPetId } from '@/utils/pets.js'
+import { aiLabel } from '@/utils/labels'
 
 const petAvatar = getPetById(getSelectedPetId()).avatarPath
 
@@ -243,7 +244,7 @@ const questions = [
     pet: [
       { text: '好的，画像全啦！' },
       { text: '现在让我正式介绍一下 Crush Master~' },
-      { text: '我会帮你记录你和 TA 的互动，用 AI 分析暧昧信号——', style: 'muted' },
+      { text: '我会帮你记录你和 TA 的互动，用 ' + aiLabel() + ' 分析暧昧信号——', style: 'muted' },
       { text: '他对你有没有意思？关系在升温还是降温？下一步该怎么推进？', style: 'muted' },
       { text: '这些我都能帮你理清楚。' }
     ],

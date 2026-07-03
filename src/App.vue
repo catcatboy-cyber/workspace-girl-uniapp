@@ -2,6 +2,7 @@
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { getCurrentUserId, wechatLogin, trackAnonymousVisit, trackLoginVisit } from '@/utils/api'
 import { captureLandingContext, readLandingContext } from '@/utils/landing'
+import { aiLabel, setAILabel } from '@/utils/labels'
 
 const SILENT_LOGIN_TRIED_KEY = 'silentLoginTried'
 const SILENT_LOGIN_DONE_KEY = 'silentLoginDone'
@@ -84,6 +85,7 @@ async function silentWechatLogin() {
     const result = await wechatLogin('', { loginCode, channel: ctx.channel, scene: ctx.scene, ref: ctx.ref, shareId: ctx.shareId, inviteCode: ctx.inviteCode })
     if (result?.success) {
       trackLoginVisit({ shareId: ctx.shareId, visitorUserId: result.userId, isNewUser: result.isNewUser || false }).catch(() => {})
+      setAILabel(result.showAILabel !== false)
     }
   } catch (_) {
     // Silent login is best-effort; avoid logging user/session data in production.

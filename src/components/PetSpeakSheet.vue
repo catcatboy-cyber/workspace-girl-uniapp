@@ -100,6 +100,7 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from 'vue'
 import { generatePetReplyBundle, generatePetReplyPair, handleInsufficientBalance, getCachedSelfProfile } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 import AiLoading from '@/components/AiLoading'
 
 const props = defineProps<{ visible: boolean; petName?: string }>()

@@ -4,8 +4,8 @@
 
     <template v-else>
       <view class="hero-block-v2">
-        <text class="hero-tag-v2">AI SETTINGS</text>
-        <text class="hero-title-v2">AI 事件分析设置</text>
+        <text class="hero-tag-v2">{{ aiLabel() }} SETTINGS</text>
+        <text class="hero-title-v2">{{ aiLabel() }} 事件分析设置</text>
         <text class="hero-copy-v2">支持配置多个模型，可随时切换默认使用的模型。新增往事记录时会优先用 AI 做结构化事件理解。</text>
       </view>
 
@@ -30,7 +30,7 @@
           <switch :checked="enabled" color="#4ECDC4" @change="onEnabledChange" />
         </view>
         <view class="switch-row-v2">
-          <text class="switch-label-v2">AI 调用失败时自动回退规则模式</text>
+          <text class="switch-label-v2">{{ aiLabel() }} 调用失败时自动回退规则模式</text>
           <switch :checked="fallbackToRules" color="#4ECDC4" @change="onFallbackChange" />
         </view>
       </view>
@@ -120,6 +120,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { getAISettings, updateAISettings, testAIConnection, getCurrentUserId } from '@/utils/api'
 import { showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 let modelIdCounter = 1
 

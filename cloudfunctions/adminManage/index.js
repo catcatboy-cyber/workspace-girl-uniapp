@@ -1256,6 +1256,7 @@ async function updateBillingSettings(event, adminUserId) {
     })),
     insufficientBalanceMode,
     noUsageFallback,
+    useVirtualPay: event.useVirtualPay !== undefined ? Boolean(event.useVirtualPay) : existing.useVirtualPay,
     updatedAt: now,
     updatedBy: adminUserId
   }
@@ -1496,6 +1497,8 @@ async function getUserTokenDetails(event = {}) {
         modelTokens: Number(r.realTokens || 0),
         rate: Number(r.chargeMultiplier || 1),
         model: r.model || '',
+        inputTokens: Number(r.inputTokens || 0),
+        outputTokens: Number(r.outputTokens || 0),
         createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : '',
         source: 'ledger'
       })
@@ -1517,7 +1520,9 @@ async function getUserTokenDetails(event = {}) {
           platformTokens: Number(r.platformTokens || 0),
           modelTokens: Number(r.modelTokens || 0),
           rate: Number(r.exchangeRate || 1),
-          model: '',
+          model: r.model || '',
+          inputTokens: Number(r.inputTokens || 0),
+          outputTokens: Number(r.outputTokens || 0),
           createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : '',
           source: 'call_usage'
         })

@@ -2,7 +2,7 @@
   <view class="panel">
     <view class="panel-head">
       <view>
-        <text class="panel-title">各用户 Token 消耗</text>
+        <text class="panel-title">各用户 Credits 消耗</text>
         <text class="panel-meta">{{ tokenUserRows.length }} 个用户 · 点击展开明细</text>
       </view>
       <button class="ghost-btn wide-btn" :disabled="tokenUsersLoading" @click="loadTokenUsers">{{ tokenUsersLoading ? '加载中' : '刷新' }}</button>
@@ -13,8 +13,8 @@
         <view class="table-row table-header">
           <text style="width:40rpx;"></text>
           <text style="flex:1;">用户</text>
-          <text style="width:130rpx;text-align:right;">平台 Token</text>
-          <text style="width:130rpx;text-align:right;">模型 Token</text>
+          <text style="width:130rpx;text-align:right;">平台 Credits</text>
+          <text style="width:130rpx;text-align:right;">模型 Credits</text>
           <text style="width:80rpx;text-align:right;">次数</text>
           <text style="width:140rpx;text-align:right;">最近使用</text>
         </view>
@@ -36,18 +36,20 @@
         </view>
         <view class="table" style="max-height:400px;overflow-y:auto;">
           <view class="table-row table-header" style="font-size:18rpx;">
-            <text style="flex:1.5;">功能</text>
-            <text style="width:110rpx;text-align:right;">平台 Token</text>
-            <text style="width:110rpx;text-align:right;">模型 Token</text>
-            <text style="width:60rpx;text-align:right;">倍率</text>
-            <text style="width:140rpx;text-align:right;">时间</text>
+            <text style="flex:1.2;">功能</text>
+            <text style="width:80rpx;text-align:center;">模型</text>
+            <text style="width:100rpx;text-align:right;">入 Credits</text>
+            <text style="width:100rpx;text-align:right;">出 Credits</text>
+            <text style="width:100rpx;text-align:right;">平台 Credits</text>
+            <text style="width:120rpx;text-align:right;">时间</text>
           </view>
           <view v-for="rec in tokenDetailRecords" :key="rec._id" class="table-row" style="font-size:20rpx;">
-            <text style="flex:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ formatTokenFeature(rec.feature) }}</text>
-            <text style="width:110rpx;text-align:right;font-weight:700;color:#111;">{{ rec.platformTokens.toLocaleString() }}</text>
-            <text style="width:110rpx;text-align:right;color:#999;">{{ rec.modelTokens.toLocaleString() }}</text>
-            <text style="width:60rpx;text-align:right;color:#999;">{{ rec.rate }}x</text>
-            <text style="width:140rpx;text-align:right;color:#999;font-size:16rpx;">{{ formatShortDate(rec.createdAt) }}</text>
+            <text style="flex:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ formatTokenFeature(rec.feature) }}</text>
+            <text style="width:80rpx;text-align:center;color:#999;font-size:18rpx;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ shortModelName(rec.model) }}</text>
+            <text style="width:100rpx;text-align:right;color:#999;">{{ (rec.inputTokens || 0).toLocaleString() }}</text>
+            <text style="width:100rpx;text-align:right;color:#999;">{{ (rec.outputTokens || 0).toLocaleString() }}</text>
+            <text style="width:100rpx;text-align:right;font-weight:700;color:#111;">{{ rec.platformTokens.toLocaleString() }}</text>
+            <text style="width:120rpx;text-align:right;color:#999;font-size:16rpx;">{{ formatShortDate(rec.createdAt) }}</text>
           </view>
         </view>
       </view>
@@ -61,6 +63,7 @@
 // 各用户 Token 消耗面板 —— 自 admin.vue 抽出（Phase 1 样板）。自包含：自己加载数据、无共享状态依赖。
 import { ref, computed, onMounted } from 'vue'
 import { adminGetUsersTokenConsumption, adminGetUserTokenDetails } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 
 const tokenUsersLoading = ref(false)
 const tokenUserRows = ref<Array<{ userId: string; email: string; phone: string; platformTokens: number; modelTokens: number; callCount: number; lastUsed: string }>>([])
@@ -102,6 +105,12 @@ async function toggleTokenUserDetail(userId: string) {
   finally { tokenDetailLoading.value = false }
 }
 
+function shortModelName(model: string) {
+  if (!model) return '-'
+  // deepseek-chat → deepseek / gpt-4o-mini → gpt-4o
+  return model.replace(/-chat|-instruct|-completion|-preview/g, '').slice(0, 12)
+}
+
 function formatTokenFeature(feature: string) {
   const map: Record<string, string> = {
     eventAssessment: '即时反馈',
@@ -114,7 +123,7 @@ function formatTokenFeature(feature: string) {
     unknown: '未知调用'
   }
   const clean = (feature || '').split(' · ')[0].trim()
-  return map[clean] || clean || 'AI 调用'
+  return map[clean] || clean || aiLabel() + ' 调用'
 }
 
 function formatShortDate(value: string) {

@@ -392,7 +392,8 @@ async function checkTokenBalance(db, userId, estTokens) {
  * 调用后：实际扣减平台 Token
  * @param {number} actualModelTokens - AI 返回的实际 token 数（prompt + completion）
  */
-async function consumeTokens(db, userId, actualModelTokens, feature, model) {
+async function consumeTokens(db, userId, actualModelTokens, feature, model, usage) {
+  // usage: { promptTokens, completionTokens, totalTokens }
   if (!userId || !actualModelTokens || actualModelTokens <= 0) return { deducted: 0 }
 
   let user
@@ -459,7 +460,11 @@ async function consumeTokens(db, userId, actualModelTokens, feature, model) {
       type: 'consume',
       feature: feature || 'unknown',
       source: fromMonthly > 0 ? 'monthly' : 'extra',
+      model: model || '',
       modelTokens: actualModelTokens,
+      inputTokens: (usage && usage.promptTokens) ? usage.promptTokens : 0,
+      outputTokens: (usage && usage.completionTokens) ? usage.completionTokens : 0,
+      rawTotalTokens: (usage && usage.totalTokens) ? usage.totalTokens : actualModelTokens,
       platformTokens: toConsume,
       amountTokens: -deducted,
       balanceAfter,

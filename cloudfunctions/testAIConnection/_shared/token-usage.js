@@ -50,7 +50,7 @@ async function recordTokenUsage(db, payload = {}) {
       // 旧 token_accounts 只作为历史账本保留，避免同一次 AI 调用双重扣费。
       try {
         const { consumeTokens } = require('./subscription')
-        const consumeResult = await consumeTokens(db, userId, doc.totalTokens, doc.feature, doc.model)
+        const consumeResult = await consumeTokens(db, userId, doc.totalTokens, doc.feature, doc.model, { promptTokens: doc.promptTokens, completionTokens: doc.completionTokens, totalTokens: doc.totalTokens })
         record.tokensDeducted = consumeResult?.deducted || 0
       } catch (subErr) {
         console.warn('[v3.2 consumeTokens failed (non-fatal)]', subErr)

@@ -23,6 +23,7 @@ import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { register, shouldCompleteSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const INVITE_CODE_KEY = 'pendingInviteCode'
 const privacyCopy = '请阅读并了解《隐私政策》和《服务条款》（点击查看）'

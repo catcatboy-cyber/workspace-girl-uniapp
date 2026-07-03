@@ -1,5 +1,17 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const cloud = require('wx-server-sdk')
+
+// sys_settings 缓存（同一次云函数调用内复用）
+let _showAILabelCache = undefined
+async function getShowAILabel(db) {
+  if (_showAILabelCache !== undefined) return _showAILabelCache
+  try {
+    const { data } = await db.collection('system_settings').doc('settings_ai').get().catch(() => null)
+    const doc = (data && data.length > 0) ? data[0] : null
+    _showAILabelCache = doc ? doc.showAILabel !== 0 : true
+  } catch { _showAILabelCache = true }
+  return _showAILabelCache
+}
 const crypto = require('crypto')
 const https = require('https')
 
@@ -112,7 +124,7 @@ function safeWechatError(result) {
 
 async function getOpenIdByLoginCode(loginCode) {
   const code = String(loginCode || '').trim()
-  if (!code) return ''
+  if (!code) return { openid: '', sessionKey: '' }
 
   const appid = String(
     process.env.WECHAT_APPID ||
@@ -148,9 +160,9 @@ async function getOpenIdByLoginCode(loginCode) {
   const result = await requestJson(`https://api.weixin.qq.com/sns/jscode2session?${params.toString()}`)
   if (result?.errcode) {
     console.warn('jscode2session failed:', safeWechatError(result))
-    return ''
+    return { openid: '', sessionKey: '' }
   }
-  return String(result?.openid || '').trim()
+  return { openid: String(result?.openid || '').trim(), sessionKey: String(result?.session_key || '').trim() }
 }
 
 function extractPhoneInfo(result) {
@@ -197,14 +209,13 @@ async function findUserByPhone(phone) {
   return data[0] || null
 }
 
-async function updateUser(userId, patch) {
-  await db.collection('users').doc(userId).update({
-    ...patch,
-    updatedAt: new Date()
-  })
+async function updateUser(userId, patch, sessionKey = '') {
+  const updateData = { ...patch, updatedAt: new Date() }
+  if (sessionKey) updateData.sessionKey = sessionKey
+  await db.collection('users').doc(userId).update(updateData)
 }
 
-async function createWechatUser({ openid, phone = '', profile, inviteCodeParam = '', landingChannel = '', landingScene = '', landingRef = '', landingShareId = '', landingInviteCode = '' }) {
+async function createWechatUser({ openid, phone = '', profile, inviteCodeParam = '', landingChannel = '', landingScene = '', landingRef = '', landingShareId = '', landingInviteCode = '', sessionKey = '' }) {
   const userId = `user_${Date.now()}_${randomHex(4)}`
   const now = new Date()
   const profilePatch = buildWechatProfilePatch(profile, {}, true)
@@ -253,6 +264,7 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
     landingRef: landingRef || '',
     landingShareId: landingShareId || '',
     landingInviteCode: landingInviteCode || '',
+    sessionKey: sessionKey || '',
     plan: subFields.plan,
     trialEndsAt: subFields.trialEndsAt,
     planExpiresAt: subFields.planExpiresAt,
@@ -288,7 +300,15 @@ exports.main = async (event = {}) => {
   const profile = normalizeWechatProfile(event)
 
   try {
-    const openid = extractOpenId(event) || await getOpenIdByLoginCode(event?.loginCode)
+    const extracted = extractOpenId(event) || ''
+    // 优先用 loginCode 换 session_key（虚拟支付用户态签名所需）
+    let sessionKey = ''
+    let openid = extracted
+    if (event?.loginCode) {
+      const jscodeResult = await getOpenIdByLoginCode(event.loginCode)
+      if (jscodeResult.openid) openid = jscodeResult.openid
+      sessionKey = jscodeResult.sessionKey || ''
+    }
     if (!openid) {
       return { success: false, message: '无法获取微信用户身份，请在微信小程序中重试' }
     }
@@ -311,7 +331,7 @@ exports.main = async (event = {}) => {
         lastLoginAt: now,
         ...profilePatch
       }
-      await updateUser(user._id, patch)
+      await updateUser(user._id, patch, sessionKey)
       user = { ...user, ...patch }
     } else {
       user = await findUserByPhone(phone)
@@ -324,10 +344,10 @@ exports.main = async (event = {}) => {
           lastLoginAt: now,
           ...profilePatch
         }
-        await updateUser(user._id, patch)
+        await updateUser(user._id, patch, sessionKey)
         user = { ...user, ...patch }
       } else {
-        user = await createWechatUser({ openid, phone, profile, inviteCodeParam, landingChannel, landingScene, landingRef, landingShareId, landingInviteCode })
+        user = await createWechatUser({ openid, phone, profile, inviteCodeParam, landingChannel, landingScene, landingRef, landingShareId, landingInviteCode, sessionKey })
         isNewUser = true
       }
     }
@@ -378,7 +398,8 @@ exports.main = async (event = {}) => {
       selfProfile: user.selfProfile || null,
       inviteCode: user.inviteCode || '',
       isNewUser,
-      referral: referral && referral.success ? { inviteeReward: referral.inviteeReward } : undefined
+      referral: referral && referral.success ? { inviteeReward: referral.inviteeReward } : undefined,
+      showAILabel: await getShowAILabel(db)
     }
   } catch (error) {
     error = safeError(error)

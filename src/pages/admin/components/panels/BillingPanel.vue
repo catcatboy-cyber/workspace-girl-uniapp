@@ -2,7 +2,7 @@
   <view class="panel">
     <view class="panel-head">
       <view>
-        <text class="panel-title">Token 额度配置</text>
+        <text class="panel-title">Credits 额度配置</text>
         <text class="panel-meta">管理首次赠送、充值档位、模型扣费倍率等计费规则。</text>
       </view>
     </view>
@@ -15,13 +15,21 @@
       <switch :checked="billingForm.firstGiftEnabled" @change="onFirstGiftEnabledChange" />
     </view>
     <view v-if="billingForm.firstGiftEnabled" class="field">
-      <text>赠送额度 (token)</text>
+      <text>赠送额度 (credits)</text>
       <input v-model.number="billingForm.welcomeTokens" type="number" placeholder="1000000" />
     </view>
 
     <view class="field">
-      <text>1 元兑换额度 (token)</text>
+      <text>1 元兑换额度 (Credits)</text>
       <input v-model.number="billingForm.tokensPerYuan" type="number" placeholder="100000" />
+    </view>
+
+    <view class="switch-row">
+      <view>
+        <text class="field-title">启用虚拟支付</text>
+        <text class="field-desc">开启后使用新的微信虚拟支付通道。关闭则回退到旧微信支付 V3。</text>
+      </view>
+      <switch :checked="billingForm.useVirtualPay" @change="billingForm.useVirtualPay = $event.detail.value" />
     </view>
 
     <view class="settings-section">
@@ -156,6 +164,7 @@
 // 原来靠 watch(activeTab) 懒加载，已改为 onMounted 自加载。
 import { ref, reactive, onMounted } from 'vue'
 import { adminGetBillingSettings, adminUpdateBillingSettings, adminManualRecharge } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 
 const emit = defineEmits<{ error: [string] }>()
 
@@ -167,7 +176,8 @@ const billingForm = reactive({
   welcomeTokens: 1000000,
   tokensPerYuan: 100000,
   insufficientBalanceMode: 'block',
-  noUsageFallback: 'zero'
+  noUsageFallback: 'zero',
+  useVirtualPay: false
 })
 const rechargeTiers = ref<Array<{ id: string; name: string; priceFen: number; bonusTokens: number; enabled: boolean }>>([])
 const modelPricing = ref<Array<{ modelId: string; costMultiplier: number; enabled: boolean }>>([])
@@ -213,6 +223,7 @@ async function loadBillingSettings() {
     billingForm.tokensPerYuan = Number(b.tokensPerYuan ?? 100000)
     billingForm.insufficientBalanceMode = b.insufficientBalanceMode || 'block'
     billingForm.noUsageFallback = b.noUsageFallback || 'zero'
+    billingForm.useVirtualPay = b.useVirtualPay === true
     rechargeTiers.value = Array.isArray(b.rechargeTiers)
       ? b.rechargeTiers.map((t: any) => ({
           id: t.id || '',
@@ -248,7 +259,8 @@ async function saveBillingSettings() {
       rechargeTiers: rechargeTiers.value,
       modelPricing: modelPricing.value,
       insufficientBalanceMode: billingForm.insufficientBalanceMode,
-      noUsageFallback: billingForm.noUsageFallback
+      noUsageFallback: billingForm.noUsageFallback,
+      useVirtualPay: billingForm.useVirtualPay
     })
     if (!result?.success) {
       emit('error', result?.message || '额度配置保存失败')

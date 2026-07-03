@@ -12,6 +12,7 @@ import { createCase, getCurrentUserId } from '@/utils/api'
 import { bumpDataVersion, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const themeVars = ref(getThemeStyle())
 

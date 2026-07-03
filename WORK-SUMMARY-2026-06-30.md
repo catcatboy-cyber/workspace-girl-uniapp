@@ -140,8 +140,13 @@
 - 角色选择（对方/自己/互动）移到输入框上方
 - placeholder 随角色动态变化
 - 昵称映射栏移到输入框上方
-- `:value` + `@input` 替代 `v-model` 修复微信粘贴截断 bug
+- `:value` + `@input` 替代 `v-model`（v-model 是 uni-app 包装层，先排除干扰）——但此修复未完全解决
 - `min-height: 360rpx`、`max-height: 640rpx`、`maxlength: 6000`
+
+### 8.4 微信 textarea 粘贴截断（已知问题，待修复）
+- **现象**：从微信聊天选择多段对话 → 粘贴到小程序 textarea，只粘入第一段（实测 len=37）
+- **根因**：微信 native textarea 组件在粘贴事件中截断了长文本，回传给 JS 的 value 已被裁剪。与 v-model 或 :value + @input 无关
+- **方案**：在互动模式下，语音按钮旁增加 📋 粘贴按钮，直接调 `wx.getClipboardData()` 读取剪贴板完整内容后写入 quickDesc。textarea 原生粘贴不可靠，绕过它
 
 ---
 
@@ -202,3 +207,26 @@
 | `cloudfunctions/createTimeline/index.js` | chatSelfName/chatTargetName 传递 |
 | `scripts/sync-shared.js` | 提示语修正 |
 | `.gitignore` | 添加 cloudbaserc.json |
+
+---
+
+## 11. 今日页「快速记录」多行粘贴截断问题
+
+### 11.1 现象
+- 「今日」页面的快速记录输入框，粘贴微信聊天记录时只进来第一小段
+- 备忘录里粘贴同一段内容是完整的，说明剪贴板原文没问题
+
+### 11.2 已确认事实
+- `src/pages/index/index.vue` 中该输入框当前 `maxlength=6000`，不是长度上限不够
+- 输入处理使用 `:value + @input`，不是 `v-model`
+- 临时调试结果：粘贴后进入 `onQuickDescInput` 的原始值只有 `len=37`
+- 说明文本在进入业务逻辑前就已经被微信小程序原生 `textarea` 截短
+
+### 11.3 已做的缓解
+- 暂停在输入中即时做角色重判，改为失焦后再做
+- 加了开发态调试文本，便于继续观察粘贴回传长度
+
+### 11.4 待跟踪方向
+- 排查微信小程序 `textarea` 对多行聊天记录粘贴的兼容问题
+- 必要时改成“从剪贴板导入”或独立粘贴弹层，绕开原生 `textarea` 的回传异常
+- 当前调试代码确认后需要清理

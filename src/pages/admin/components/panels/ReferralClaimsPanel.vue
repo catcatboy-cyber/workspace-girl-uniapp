@@ -3,7 +3,7 @@
     <view class="panel-head">
       <view>
         <text class="panel-title">邀请奖励</text>
-        <text class="panel-meta">{{ rows.length }} 条 · 发出 {{ totalInviter.toLocaleString() }} Token · 收到 {{ totalInvitee.toLocaleString() }} Token</text>
+        <text class="panel-meta">{{ rows.length }} 条 · 发出 {{ totalInviter.toLocaleString() }} Credits · 收到 {{ totalInvitee.toLocaleString() }} Credits</text>
       </view>
       <button class="ghost-btn wide-btn" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
     </view>
@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { adminListReferralClaims } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 
 const loading = ref(false)
 const rows = ref<any[]>([])

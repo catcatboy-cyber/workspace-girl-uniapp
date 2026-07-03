@@ -7,7 +7,7 @@
 
     <!-- Hero -->
     <view class="landing-hero">
-      <text class="landing-hero-tag">AI CRUSH ANALYZER</text>
+      <text class="landing-hero-tag">{{ aiLabel() }} CRUSH ANALYZER</text>
       <text class="landing-hero-title">Crush<text class="landing-hero-hl">Master</text></text>
       <text class="landing-hero-sub">read the signals, not your mind.</text>
     </view>
@@ -17,7 +17,7 @@
       <text class="landing-features-title">小咪帮你看清暧昧信号</text>
       <view class="landing-feat">
         <text class="landing-feat-icon">📝</text>
-        <text class="landing-feat-text">记录互动，AI 实时分析 TA 的态度变化</text>
+        <text class="landing-feat-text">记录互动，{{ aiLabel() }} 实时分析 TA 的态度变化</text>
       </view>
       <view class="landing-feat">
         <text class="landing-feat-icon">🔍</text>
@@ -50,6 +50,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, shouldCompleteSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { getPetById, getSelectedPetId } from '@/utils/pets.js'
+import { aiLabel } from '@/utils/labels'
 
 const LANDING_SHOWN_KEY = 'landingShown:v1'
 const INVITE_CODE_KEY = 'pendingInviteCode'

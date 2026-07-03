@@ -29,6 +29,7 @@
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const themeVars = ref(getThemeStyle())
 
@@ -103,7 +104,7 @@ function toggleSection(key: ExplainSectionKey) {
 }
 
 const snapshotOtherItems = [
-  { label: 'AI 分析', description: '表示最新分析由 AI 参与生成或分析，属于单次分析口径。' }
+  { label: aiLabel() + ' 分析', description: '表示最新分析由 AI 参与生成或分析，属于单次分析口径。' }
 ]
 
 const profileRelationItems = [
@@ -184,7 +185,7 @@ const weeklyTrendItems = [
   { label: '本月承压', description: '本月更突出的不是热度，而是回避、拖延、反复或兑现不足。' },
   { label: '本月波动', description: '本月分数变化较明显，但暂时还不适合下单向结论。' },
   { label: '本月平稳', description: '本月整体没有出现足够强的新变化，先继续记录。' },
-  { label: 'AI 复盘', description: '表示这块内容是按本月窗口汇总生成，不等同于单次 AI 分析。' }
+  { label: aiLabel() + ' 复盘', description: '表示这块内容是按本月窗口汇总生成，不等同于单次 ' + aiLabel() + ' 分析。' }
 ]
 
 const nextActionItems = [

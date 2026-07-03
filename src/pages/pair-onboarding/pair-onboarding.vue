@@ -110,6 +110,7 @@ import { createCase, getCachedSelfProfile, getCurrentUserId, updateSelfProfile }
 import { bumpDataVersion, setActiveCaseId } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildPairMatchPayload, SIGN_NAMES, ZODIAC_NAMES } from '@/utils/taohua'
+import { aiLabel } from '@/utils/labels'
 
 const fontSizeMode = ref(getFontSizeMode())
 const pageStyle = ref(getThemeStyle())

@@ -78,6 +78,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { aiLabel } from '@/utils/labels'
 
 type Assessment = {
   intentScore: number

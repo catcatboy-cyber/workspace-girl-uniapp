@@ -123,6 +123,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { questionDefinitions, getQuestionsForRelationType } from './assessment-questions'
+import { aiLabel } from '@/utils/labels'
 import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
 
 const props = defineProps<{

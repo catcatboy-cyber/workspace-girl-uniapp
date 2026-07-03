@@ -1,6 +1,6 @@
 <template>
   <view :class="['page v2-mode', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
-    <view class="hero-block-v2"><text class="hero-tag-v2">UPGRADE</text><text class="hero-title-v2">升级<text class="hl-v2">套餐</text></text><text class="hero-copy-v2">更多 Token，更多功能，更懂你的关系。</text></view>
+    <view class="hero-block-v2"><text class="hero-tag-v2">UPGRADE</text><text class="hero-title-v2">升级<text class="hl-v2">套餐</text></text><text class="hero-copy-v2">更多 Credits，更多功能，更懂你的关系。</text></view>
 
     <view class="sub-current-card" v-if="currentPlan">
       <text class="sub-current-label">当前</text>
@@ -59,7 +59,7 @@
 
     <view class="sub-bottom-links">
       <view class="sub-bottom-link" @click="goRecharge">
-        <text class="sub-bottom-link-text">只需临时补 Token？买加油包 →</text>
+        <text class="sub-bottom-link-text">只需临时补 Credits？买加油包 →</text>
       </view>
     </view>
   </view>
@@ -69,10 +69,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getSubscriptionConfig, getSubscriptionStatus, unifiedOrder, queryOrder, confirmPayment } from '@/utils/api'
+import { getSubscriptionConfig, getSubscriptionStatus, getRechargePlans, unifiedOrder, queryOrder, confirmPayment, createVirtualPayOrder, confirmVirtualPay } from '@/utils/api'
 import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { getCurrentThemeId, getFontSizeMode, getThemeStyle, applyThemeChrome } from '@/utils/theme'
 import { bumpDataVersion } from '@/utils/helpers'
+import { aiLabel } from '@/utils/labels'
 
 const fontSizeMode = ref(getFontSizeMode())
 const themeVars = ref(getThemeStyle())
@@ -98,9 +99,9 @@ const FEATURE_DISPLAY: Record<string, string> = {
   '记录': '互动记录',
   '时间轴': '时间轴',
   '时间线': '时间轴',
-  '规则分析': 'AI 规则分析',
-  '即时反馈': 'AI 即时反馈',
-  '事件理解': 'AI 事件理解',
+  '规则分析': aiLabel() + ' 规则分析',
+  '即时反馈': aiLabel() + ' 即时反馈',
+  '事件理解': aiLabel() + ' 事件理解',
   '周复盘': '月度复盘',
   '附件识别': '附件识别',
   '星象速写': '星象速写',
@@ -108,8 +109,7 @@ const FEATURE_DISPLAY: Record<string, string> = {
   '小咪帮你说（单轮）': '小咪帮你说（单轮）',
   '小咪多轮策略': '小咪多轮策略',
   '自定义宠物': '自定义宠物',
-  '自定义AI风格': '自定义 AI 风格',
-  '自定义 AI 风格': '自定义 AI 风格',
+  '自定义AI风格': '自定义 ' + aiLabel() + ' 风格',
   '命理桃花': '命理桃花',
 }
 const normalizeFeature = (name: string) => FEATURE_DISPLAY[name] || name
@@ -196,9 +196,10 @@ async function loadSubscriptionData() {
   if (plansLoading.value) return
   plansLoading.value = true
   try {
-    const [configRes, statusRes] = await Promise.all([
+    const [configRes, statusRes, plansRes] = await Promise.all([
       getSubscriptionConfig(),
-      getSubscriptionStatus()
+      getSubscriptionStatus(),
+      getRechargePlans()
     ])
     if (configRes?.success) {
       plans.value = buildPlanCards(configRes, statusRes)
@@ -211,6 +212,9 @@ async function loadSubscriptionData() {
     }
     if (statusRes?.success) {
       currentPlan.value = statusRes.subscription
+    }
+    if (plansRes?.success) {
+      useVirtualPay.value = plansRes.useVirtualPay === true
     }
   } catch (_) {
     // 静默降级 — 页面显示空状态即可
@@ -229,9 +233,58 @@ onShow(() => {
 const upgradingPlan = ref('')
 const upgradeMessage = ref('')
 const upgradeOk = ref(false)
+const sandboxMode = ref(false)
+const useVirtualPay = ref(false)
 const showCoin = ref(false)
 const coinAmount = ref(0)
 const coinSubtitle = ref('')
+
+async function doVirtualSubscribe(planKey: string, priceOpt: { billingCycle: string; priceVariant: string }) {
+  try {
+    const result = await createVirtualPayOrder({
+      productType: 'subscription', planKey,
+      billingCycle: priceOpt.billingCycle, priceVariant: priceOpt.priceVariant,
+      sandbox: sandboxMode.value
+    })
+    if (!result?.success) { upgradeMessage.value = result?.message || '创建订单失败'; return }
+    const { paySig, signature, signData, outTradeNo, mode } = result
+
+    const payResult: any = await new Promise((resolve, reject) => {
+      uni.requestVirtualPayment({
+        mode, paySig, signature,
+        signData,
+        success: resolve, fail: reject
+      })
+    })
+    // payResult.orderId 就是微信内部订单号 wx_order_id，query_order 必须用它查单
+    const wxOrderId = payResult?.orderId || ''
+
+    // 确认发货 —— 首次 confirm 未成功则轮询兜底（服务端查单/发货可能延迟），最多 ~30s
+    let confirmed = await confirmVirtualPay(outTradeNo, wxOrderId)
+    for (let i = 0; i < 20 && !confirmed?.success; i++) {
+      await new Promise((r) => setTimeout(r, 1500))
+      try { confirmed = await confirmVirtualPay(outTradeNo, wxOrderId) } catch (_) { /* 继续重试 */ }
+    }
+    if (confirmed?.success) {
+      upgradeOk.value = true
+      const targetPlan = plans.value.find((p: any) => p.key === planKey)
+      const limit = targetPlan?.monthlyTokens
+      coinAmount.value = limit === -1 ? 99999 : (Number.isFinite(limit) && limit > 0 ? limit : 0)
+      coinSubtitle.value = `已升级至 ${result.order?.planName || planKey}`
+      showCoin.value = true
+      bumpDataVersion()
+      await loadSubscriptionData()
+    } else {
+      // 支付面板已回调成功、但服务端未在窗口内确认发货 → 权益处理中（非失败）
+      upgradeOk.value = true
+      upgradeMessage.value = '支付成功，权益生效处理中（约 1 分钟），可稍后刷新查看'
+      bumpDataVersion()
+    }
+  } catch (err: any) {
+    if (err?.errMsg?.includes('cancel')) { upgradeMessage.value = '已取消支付' }
+    else { upgradeMessage.value = '支付失败: ' + (err?.errMsg || err?.message || '') }
+  }
+}
 
 async function onUpgrade(planKey: string) {
   if (planKey === 'free') {
@@ -244,8 +297,14 @@ async function onUpgrade(planKey: string) {
   upgradeOk.value = false
 
   try {
-    // 1. 服务端统一下单（创建DB订单 + 微信V3下单 + 生成支付参数，一站式）
     const priceOpt = getSelectedPriceOption(planKey)
+    // #ifdef MP-WEIXIN
+    if (useVirtualPay.value || sandboxMode.value) {
+      await doVirtualSubscribe(planKey, priceOpt)
+      return
+    }
+    // #endif
+    // 1. 服务端统一下单（创建DB订单 + 微信V3下单 + 生成支付参数，一站式）
     // #ifdef MP-WEIXIN
     const res = await unifiedOrder({
       productType: 'subscription',

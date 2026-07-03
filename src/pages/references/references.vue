@@ -97,6 +97,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { aiLabel } from '@/utils/labels'
 
 const fontSizeMode = ref('')
 const pageStyle = ref('')

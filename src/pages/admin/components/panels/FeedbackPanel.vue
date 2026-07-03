@@ -18,7 +18,7 @@
           <text v-if="fb.contact" class="feedback-contact">{{ fb.contact }}</text>
         </view>
         <text class="feedback-content">{{ fb.content }}</text>
-        <view v-if="fb.resolved" class="feedback-resolved-badge">已采纳 · 奖励 {{ fb.rewardTokens || 0 }} token</view>
+        <view v-if="fb.resolved" class="feedback-resolved-badge">已采纳 · 奖励 {{ fb.rewardTokens || 0 }} Credits</view>
         <view v-else class="feedback-actions">
           <input v-if="!fb.userId" :value="targetUserIds[fb._id] || ''" class="reward-input" placeholder="用户ID" @input="onTargetUserInput(fb._id, $event)" />
           <input :value="rewardInputs[fb._id] || ''" type="number" class="reward-input" placeholder="奖励 token" @input="onRewardInput(fb._id, $event)" />
@@ -33,6 +33,7 @@
 // 用户反馈面板 —— 自 admin.vue 抽出。自包含；错误通过 @error 上报给 admin 顶栏 alert。
 import { ref, reactive, onMounted } from 'vue'
 import { adminListFeedbacks, adminResolveFeedback } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 
 const emit = defineEmits<{ error: [string] }>()
 

@@ -106,6 +106,7 @@ import { markActiveCaseProfileUpdated, setActiveCaseId, setPendingTimelineContex
 import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
 import { buildProfileItems } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const loading = ref(true)
 const saving = ref(false)

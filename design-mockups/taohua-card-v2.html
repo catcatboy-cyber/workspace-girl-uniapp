@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今日桃花卡片 — 5 套设计方案</title>
+<style>
+:root {
+  --hero: #FF6B6B;
+  --accent: #FFD93D;
+  --mint: #4ECDC4;
+  --ink: #111;
+  --card: #FFF;
+  --bg: #FFFDF5;
+  --text-muted: #666;
+  --text-soft: #999;
+  --fs-display: 50rpx;
+  --fs-kpi: 40rpx;
+  --fs-heading: 38rpx;
+  --fs-body-lg: 34rpx;
+  --fs-body: 32rpx;
+  --fs-caption: 24rpx;
+  --fs-micro: 22rpx;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f0ede2;
+  padding: 20px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+h2 { font-size: 18px; font-weight: 900; color: #111; margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 2px; }
+
+/* === 方案一：罗盘指针 === */
+.c1 { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border: 3px solid #FFD93D; box-shadow: 8px 8px 0 #111; border-radius: 4px; padding: 24px; margin-bottom: 12px; cursor: pointer; }
+.c1-compass { width: 180px; height: 180px; margin: 0 auto 16px; border: 4px solid rgba(255,217,61,0.4); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: radial-gradient(circle, rgba(255,217,61,0.08) 0%, transparent 70%); }
+.c1-compass::after { content:''; position:absolute; width:2px; height:60px; background: linear-gradient(to top, #FFD93D, transparent); top: 10px; left: 50%; transform: translateX(-50%) rotate(-25deg); border-radius: 2px; }
+.c1-score { font-size: 64px; font-weight: 900; color: #FFD93D; line-height: 1; letter-spacing: -2px; }
+.c1-score-unit { font-size: 18px; font-weight: 800; color: rgba(255,217,61,0.6); margin-left: 2px; }
+.c1-dir { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.8); margin-top: 4px; letter-spacing: 2px; }
+.c1-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.c1-guide { color: rgba(255,255,255,0.7); font-size: 13px; text-align: center; margin: 12px 0 16px; line-height: 1.5; }
+.c1-sub-dirs { display: flex; gap: 8px; margin-bottom: 14px; }
+.c1-sub-dir { flex:1; padding: 8px 6px; border: 1px solid rgba(255,255,255,0.15); border-radius: 3px; text-align: center; }
+.c1-sub-dir-emoji { font-size: 16px; display: block; }
+.c1-sub-dir-label { font-size: 10px; color: rgba(255,255,255,0.5); display: block; margin-top: 2px; }
+.c1-sub-dir-val { font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 700; display: block; }
+.c1-cta { background: #FFD93D; border: 2px solid #111; padding: 10px; text-align: center; font-size: 14px; font-weight: 800; color: #111; letter-spacing: 1px; }
+.c1-cite { font-size: 10px; color: rgba(255,255,255,0.3); text-align: center; margin-top: 12px; }
+
+/* === 方案二：运势签条 === */
+.c2 { background: #FFFDF5; border: 3px solid #111; box-shadow: 8px 8px 0 #111; padding: 20px; margin-bottom: 12px; cursor: pointer; }
+.c2-stamp-row { display: flex; gap: 12px; align-items: stretch; margin-bottom: 14px; }
+.c2-stamp { width: 80px; background: var(--hero); border: 3px solid #111; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 3px 3px 0 #111; }
+.c2-stamp-title { font-size: 20px; font-weight: 900; color: #111; letter-spacing: 2px; writing-mode: vertical-rl; }
+.c2-stamp-sub { font-size: 10px; font-weight: 800; color: #111; margin-top: 4px; }
+.c2-score-box { flex:1; border: 3px solid #111; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+.c2-score-num { font-size: 72px; font-weight: 900; color: #111; line-height: 1; }
+.c2-score-label { font-size: 11px; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; }
+.c2-meta-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.c2-meta { flex:1; padding: 6px 4px; border: 2px solid #111; text-align: center; background: #fff; }
+.c2-meta-label { font-size: 10px; color: var(--text-muted); font-weight: 700; }
+.c2-meta-val { font-size: 12px; color: #111; font-weight: 800; margin-top: 2px; }
+.c2-dirs { display: flex; gap: 8px; margin-bottom: 12px; }
+.c2-dir { flex:1; padding: 8px; border: 2px solid #111; background: #FFFBEA; text-align: center; }
+.c2-dir-emoji { font-size: 18px; display: block; }
+.c2-dir-label { font-size: 10px; color: var(--text-muted); display: block; margin-top: 2px; }
+.c2-dir-val { font-size: 12px; color: #111; font-weight: 800; }
+.c2-cta { background: #111; color: #FFD93D; border: 2px solid #111; padding: 12px; text-align: center; font-size: 14px; font-weight: 800; letter-spacing: 2px; }
+
+/* === 方案三：花瓣散落 === */
+.c3 { background: linear-gradient(180deg, #FFF5F5 0%, #FFFDF5 60%); border: 3px solid #111; border-left: 12px solid var(--hero); box-shadow: 8px 8px 0 #111; padding: 22px; margin-bottom: 12px; cursor: pointer; }
+.c3-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 2px dashed #ccc; }
+.c3-head-title { font-size: 18px; font-weight: 900; color: #111; }
+.c3-head-score { font-size: 28px; font-weight: 900; color: var(--hero); }
+.c3-head-unit { font-size: 12px; color: var(--text-muted); font-weight: 700; }
+.c3-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.c3-bar-label { font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+.c3-bar-track { flex:1; height: 10px; background: #eee; border: 2px solid #111; border-radius: 2px; overflow: hidden; }
+.c3-bar-fill { height: 100%; background: linear-gradient(90deg, var(--hero), var(--accent)); width: 85%; }
+.c3-dirs-v { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.c3-dir-v { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px dashed #eee; }
+.c3-dir-v-emoji { font-size: 20px; width: 28px; text-align: center; }
+.c3-dir-v-info { flex:1; min-width: 0; }
+.c3-dir-v-name { font-size: 13px; font-weight: 800; color: #111; }
+.c3-dir-v-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.c3-dir-v-arrow { font-size: 14px; font-weight: 900; color: var(--hero); }
+.c3-quote { font-size: 14px; color: var(--text-muted); font-style: italic; margin-bottom: 14px; line-height: 1.5; padding-left: 12px; border-left: 3px solid var(--accent); }
+.c3-cta { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border: 2px solid #111; background: #fff; font-size: 14px; font-weight: 800; color: #111; letter-spacing: 1px; }
+
+/* === 方案四：探照灯 === */
+.c4 { background: #111; border: 3px solid #333; box-shadow: 8px 8px 0 rgba(0,0,0,0.4); padding: 28px 20px; margin-bottom: 12px; cursor: pointer; position: relative; overflow: hidden; }
+.c4-stars { display: flex; justify-content: center; gap: 8px; margin-bottom: 8px; }
+.c4-star { color: rgba(255,255,255,0.15); font-size: 8px; }
+.c4-spotlight { width: 160px; height: 160px; margin: 0 auto 14px; border-radius: 50%; background: radial-gradient(circle, rgba(255,217,61,0.15) 0%, rgba(255,107,107,0.08) 40%, transparent 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,217,61,0.15); }
+.c4-score { font-size: 68px; font-weight: 900; color: #FFD93D; line-height: 1; letter-spacing: -3px; text-shadow: 0 0 40px rgba(255,217,61,0.3); }
+.c4-score-sub { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 3px; margin-top: 4px; }
+.c4-poem { text-align: center; font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 4px; margin-bottom: 16px; }
+.c4-pills { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; }
+.c4-pill { padding: 4px 10px; border: 1px solid rgba(255,255,255,0.15); border-radius: 3px; font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
+.c4-cta { background: #FFD93D; color: #111; border: none; padding: 12px; text-align: center; font-size: 14px; font-weight: 800; letter-spacing: 2px; }
+
+/* === 方案五：极简条 === */
+.c5 { background: linear-gradient(90deg, var(--hero) 0%, #FF8E8E 100%); border: 3px solid #111; box-shadow: 6px 6px 0 #111; padding: 20px; margin-bottom: 12px; cursor: pointer; }
+.c5-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.c5-emoji { font-size: 28px; }
+.c5-main { font-size: 18px; font-weight: 900; color: #fff; }
+.c5-score-inline { font-size: 32px; font-weight: 900; color: #FFD93D; margin-left: auto; text-shadow: 2px 2px 0 rgba(0,0,0,0.2); }
+.c5-bar-wrap { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.c5-bar-track { flex:1; height: 6px; background: rgba(0,0,0,0.15); border-radius: 3px; overflow: hidden; }
+.c5-bar-fill { height: 100%; background: #FFD93D; width: 85%; border-radius: 3px; }
+.c5-bar-end { font-size: 10px; color: rgba(0,0,0,0.4); font-weight: 700; }
+.c5-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.c5-tag { padding: 3px 8px; border: 1px solid rgba(0,0,0,0.2); font-size: 10px; font-weight: 700; color: #111; background: rgba(255,255,255,0.7); }
+.c5-cta-row { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: #fff; padding: 6px 0; }
+
+/* === 通用 === */
+.section-label { font-size: 13px; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin: 28px 0 6px; }
+.section-desc { font-size: 11px; color: var(--text-soft); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1 style="font-size:24px;font-weight:900;letter-spacing:2px;margin-bottom:4px;">🌸 今日桃花卡片</h1>
+<p style="font-size:12px;color:#999;margin-bottom:20px;">5 套设计方案 · brutalist 设计系统 · 375px 小程序视口</p>
+
+<!-- ====== 方案一 ====== -->
+<div class="section-label">方案一 · 罗盘指针</div>
+<div class="section-desc">暗色科技感 · 分数居中如雷达 · 方位指针产生方向好奇</div>
+<div class="c1">
+  <div class="c1-compass">
+    <div class="c1-score">85<span class="c1-score-unit">分</span></div>
+    <div class="c1-dir">↗ 正东</div>
+    <div class="c1-sub">卯位 · 建日</div>
+  </div>
+  <div class="c1-guide">💡 今日气场佳，往正东方向约会有利。对方可能已经在那个方向等你。</div>
+  <div class="c1-sub-dirs">
+    <div class="c1-sub-dir"><span class="c1-sub-dir-emoji">🔴</span><span class="c1-sub-dir-label">本命红鸾</span><span class="c1-sub-dir-val">西南方</span></div>
+    <div class="c1-sub-dir"><span class="c1-sub-dir-emoji">🕊️</span><span class="c1-sub-dir-label">本命天喜</span><span class="c1-sub-dir-val">西北方</span></div>
+  </div>
+  <div class="c1-cta">🔮 解读今日桃花运势 →</div>
+  <div class="c1-cite">📖 咸池桃花 · 《三命通会》三合沐浴算法</div>
+</div>
+
+<!-- ====== 方案二 ====== -->
+<div class="section-label">方案二 · 运势签条</div>
+<div class="section-desc">仿通书黄历 · 红印章 + 竖排文字 · 签文评语驱动点击</div>
+<div class="c2">
+  <div class="c2-stamp-row">
+    <div class="c2-stamp">
+      <div class="c2-stamp-title">今日桃花</div>
+      <div class="c2-stamp-sub">宜约会</div>
+    </div>
+    <div class="c2-score-box">
+      <div class="c2-score-num">85</div>
+      <div class="c2-score-label">· 大 吉 ·</div>
+    </div>
+  </div>
+  <div class="c2-meta-row">
+    <div class="c2-meta"><div class="c2-meta-label">建除</div><div class="c2-meta-val">建日</div></div>
+    <div class="c2-meta"><div class="c2-meta-label">桃花位</div><div class="c2-meta-val">正东·卯</div></div>
+    <div class="c2-meta"><div class="c2-meta-label">气场</div><div class="c2-meta-val">适合行动</div></div>
+  </div>
+  <div class="c2-dirs">
+    <div class="c2-dir"><span class="c2-dir-emoji">🔴</span><span class="c2-dir-label">红鸾</span><span class="c2-dir-val">西南</span></div>
+    <div class="c2-dir"><span class="c2-dir-emoji">🕊️</span><span class="c2-dir-label">天喜</span><span class="c2-dir-val">西北</span></div>
+  </div>
+  <div class="c2-cta">📜 展开完整命理批注</div>
+</div>
+
+<!-- ====== 方案三 ====== -->
+<div class="section-label">方案三 · 花瓣散落</div>
+<div class="section-desc">柔暖渐变 + 进度条可视化 · 方位详细解释 · 引导语驱动</div>
+<div class="c3">
+  <div class="c3-head">
+    <span class="c3-head-title">🌸 今日桃花运势</span>
+    <span><span class="c3-head-score">85</span><span class="c3-head-unit"> /100</span></span>
+  </div>
+  <div class="c3-bar-wrap">
+    <span class="c3-bar-label">今日气场</span>
+    <div class="c3-bar-track"><div class="c3-bar-fill"></div></div>
+    <span class="c3-bar-label">行动</span>
+  </div>
+  <div class="c3-dirs-v">
+    <div class="c3-dir-v">
+      <span class="c3-dir-v-emoji">🌸</span>
+      <div class="c3-dir-v-info"><div class="c3-dir-v-name">桃花方位 · 正东</div><div class="c3-dir-v-desc">卯位 · 今日邂逅气场最强方向</div></div>
+      <span class="c3-dir-v-arrow">↗</span>
+    </div>
+    <div class="c3-dir-v">
+      <span class="c3-dir-v-emoji">🔴</span>
+      <div class="c3-dir-v-info"><div class="c3-dir-v-name">本命红鸾 · 西南方</div><div class="c3-dir-v-desc">姻缘开端星 · 关系突破从此起</div></div>
+      <span class="c3-dir-v-arrow">↗</span>
+    </div>
+    <div class="c3-dir-v" style="border-bottom:none">
+      <span class="c3-dir-v-emoji">🕊️</span>
+      <div class="c3-dir-v-info"><div class="c3-dir-v-name">本命天喜 · 西北方</div><div class="c3-dir-v-desc">婚庆落地星 · 长期发展守护位</div></div>
+      <span class="c3-dir-v-arrow">↗</span>
+    </div>
+  </div>
+  <div class="c3-quote">"今日最宜往正东走走。对方可能已经在那个方向了。"</div>
+  <div class="c3-cta">展开查看完整命理分析 ✦</div>
+</div>
+
+<!-- ====== 方案四 ====== -->
+<div class="section-label">方案四 · 探照灯</div>
+<div class="section-desc">全黑底 · 分数光晕聚焦 · 留白制造悬念 · 好奇心驱动</div>
+<div class="c4">
+  <div class="c4-stars">
+    <span class="c4-star">✦</span><span class="c4-star">·</span><span class="c4-star">✦</span><span class="c4-star">·</span><span class="c4-star">✦</span><span class="c4-star">·</span><span class="c4-star">✦</span><span class="c4-star">·</span>
+  </div>
+  <div class="c4-spotlight">
+    <div class="c4-score">85</div>
+    <div class="c4-score-sub">正东 · 卯位</div>
+  </div>
+  <div class="c4-poem">春 风 得 意 · 气 场 全 开</div>
+  <div class="c4-pills">
+    <span class="c4-pill">🔴 红鸾·西南</span>
+    <span class="c4-pill">🕊️ 天喜·西北</span>
+    <span class="c4-pill">建日</span>
+  </div>
+  <div class="c4-cta">🔮 解读今日运势（免费）</div>
+</div>
+
+<!-- ====== 方案五 ====== -->
+<div class="section-label">方案五 · 极简分数条</div>
+<div class="section-desc">Hero 红渐变底 · 一行通栏 · 最低认知负担 · 一眼看完</div>
+<div class="c5">
+  <div class="c5-top">
+    <span class="c5-emoji">🌸</span>
+    <span class="c5-main">今日桃花运</span>
+    <span class="c5-score-inline">85</span>
+  </div>
+  <div class="c5-bar-wrap">
+    <div class="c5-bar-track"><div class="c5-bar-fill"></div></div>
+    <span class="c5-bar-end">100</span>
+  </div>
+  <div class="c5-tags">
+    <span class="c5-tag">建日</span>
+    <span class="c5-tag">桃花·正东·卯</span>
+    <span class="c5-tag">🔴红鸾西南</span>
+    <span class="c5-tag">🕊天喜西北</span>
+    <span class="c5-tag">适合行动</span>
+  </div>
+  <div class="c5-cta-row">📖 查看完整命理 →</div>
+</div>
+
+<div class="section-label" style="margin-top:40px;">设计系统对照</div>
+<div style="display:flex;gap:8px;margin-bottom:40px;">
+  <div style="flex:1;background:var(--hero);color:#111;padding:12px;border:2px solid #111;font-size:11px;font-weight:800;text-align:center;">Hero<br>#FF6B6B</div>
+  <div style="flex:1;background:var(--accent);color:#111;padding:12px;border:2px solid #111;font-size:11px;font-weight:800;text-align:center;">Accent<br>#FFD93D</div>
+  <div style="flex:1;background:var(--mint);color:#111;padding:12px;border:2px solid #111;font-size:11px;font-weight:800;text-align:center;">Mint<br>#4ECDC4</div>
+  <div style="flex:1;background:var(--ink);color:#fff;padding:12px;border:2px solid #111;font-size:11px;font-weight:800;text-align:center;">Ink<br>#111</div>
+  <div style="flex:1;background:var(--bg);color:#111;padding:12px;border:2px solid #111;font-size:11px;font-weight:800;text-align:center;">BG<br>#FFFDF5</div>
+</div>
+
+</body>
+</html>

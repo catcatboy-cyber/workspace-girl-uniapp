@@ -33,7 +33,7 @@
         submit-label="提交新的分析版本"
         @submit="onSubmit"
       />
-      <AiLoading v-if="assessing" label="AI 分析中..." :seconds="assessingSeconds" />
+      <AiLoading v-if="assessing" :label="aiLabel() + ' 分析中...'" :seconds="assessingSeconds" />
     </template>
   </view>
 </template>
@@ -46,6 +46,7 @@ import AiLoading from '@/components/AiLoading'
 import { getCaseDetail, reassess, getCurrentUserId } from '@/utils/api'
 import { bumpDataVersion, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const loading = ref(true)
 const caseFile = ref<any>(null)

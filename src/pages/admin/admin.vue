@@ -8,17 +8,17 @@
           <view :class="['sidebar-item', activeTab === 'users' ? 'active' : '']" @click="activeTab = 'users'">👤 用户管理</view>
         </view>
         <view class="sidebar-group">
-          <text class="sidebar-group-title">AI 配置</text>
+          <text class="sidebar-group-title">{{ aiLabel() }} 配置</text>
           <view :class="['sidebar-item', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'">🤖 AI 设置</view>
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">计费管理</text>
-          <view :class="['sidebar-item', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">🪙 Token 额度</view>
+          <view :class="['sidebar-item', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">🪙 Credits 额度</view>
           <view :class="['sidebar-item', activeTab === 'subscription' ? 'active' : '']" @click="activeTab = 'subscription'">📦 订阅配置</view>
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">数据中心</text>
-          <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Token 消耗</view>
+          <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Credits 消耗</view>
           <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'">📋 订单管理</view>
           <view :class="['sidebar-item', activeTab === 'loginLogs' ? 'active' : '']" @click="activeTab = 'loginLogs'">🔐 登录日志</view>
           <view :class="['sidebar-item', activeTab === 'referralClaims' ? 'active' : '']" @click="activeTab = 'referralClaims'">💎 邀请奖励</view>
@@ -61,7 +61,7 @@
           <text class="stat-value">{{ stats.caseCount }}</text>
         </view>
         <view class="stat-card">
-          <text class="stat-label">AI 状态</text>
+          <text class="stat-label">{{ aiLabel() }} 状态</text>
           <text class="stat-value">{{ stats.aiEnabled ? '已启用' : '未启用' }}</text>
         </view>
       </view>
@@ -152,11 +152,11 @@
                   </picker>
                 </view>
                 <view class="field">
-                  <text>加油包 Token</text>
+                  <text>加油包 Credits</text>
                   <input v-model.number="userEditForm.extraTokens" type="number" placeholder="0" />
                 </view>
                 <view class="field">
-                  <text>本月已用 Token</text>
+                  <text>本月已用 Credits</text>
                   <input v-model.number="userEditForm.monthlyTokensUsed" type="number" placeholder="0" />
                 </view>
                 <view class="field">
@@ -190,7 +190,7 @@
         <view class="panel-head">
           <view>
             <text class="panel-title">全局 AI 设置</text>
-            <text class="panel-meta">支持多模型配置，默认模型会被时间线 AI 分析优先使用。</text>
+            <text class="panel-meta">支持多模型配置，默认模型会被时间线 {{ aiLabel() }} 分析优先使用。</text>
           </view>
           <button class="ghost-btn wide-btn" @click="addModel">添加模型</button>
         </view>
@@ -205,7 +205,7 @@
 
         <view class="switch-row">
           <view>
-            <text class="field-title">AI 失败时回退规则</text>
+            <text class="field-title">{{ aiLabel() }} 失败时回退规则</text>
             <text class="field-desc">建议保持开启，避免用户保存记录失败。</text>
           </view>
           <switch :checked="aiForm.aiFallbackToRules" @change="onFallbackChange" />
@@ -296,7 +296,7 @@
                   :placeholder="String(petSpeakDefaults[petSpeakActiveKey]?.temperature ?? 0.8)" />
               </view>
               <view class="field">
-                <text>Max Tokens</text>
+                <text>Max Credits</text>
                 <input v-model.number="petSpeakForm.maxTokens" type="number" step="50" min="50" max="4000"
                   :placeholder="String(petSpeakDefaults[petSpeakActiveKey]?.maxTokens ?? 400)" />
               </view>
@@ -316,6 +316,15 @@
               <text>{{ item.label }}</text>
               <input v-model.number="runtimeConfig[item.key]" type="number" :placeholder="String(item.fallback)" />
             </view>
+          </view>
+          <view class="switch-row" style="margin-top:16rpx;padding-top:16rpx;border-top:2rpx dashed #ccc;">
+            <view>
+              <text class="field-title">前端 AI 文案显示</text>
+              <text class="field-desc">开启显示"AI"，关闭显示"Crush算法"。保存后用户端下次启动生效。</text>
+            </view>
+            <button :class="['toggle-btn', showAILabel ? 'on' : 'off']" @click="showAILabel = !showAILabel">
+              {{ showAILabel ? 'AI' : 'Crush算法' }}
+            </button>
           </view>
         </view>
 
@@ -470,7 +479,7 @@
               <view class="prompt-overview-head">
                 <view>
                   <text class="prompt-overview-title">{{ module.title }} / {{ module.key }}</text>
-                  <text class="panel-meta">{{ promptMetaFor(module.key).description || '当前 AI 调用模块' }}</text>
+                  <text class="panel-meta">{{ promptMetaFor(module.key).description || '当前 ' + aiLabel() + ' 调用模块' }}</text>
                 </view>
                 <text :class="['status-pill', module.enabled ? 'enabled' : 'disabled']">
                   {{ module.enabled ? '已启用' : '已停用' }}
@@ -500,7 +509,7 @@
 
         <view class="settings-section">
           <view class="section-head">
-            <text class="section-title">AI 陪伴风格模板</text>
+            <text class="section-title">{{ aiLabel() }} 陪伴风格模板</text>
             <text class="section-desc">小程序用户只选择风格和强度；这里配置每个选项对应的文案。</text>
           </view>
           <view class="persona-grid">
@@ -571,6 +580,7 @@ import {
   logout,
   testAIConnection
 } from '@/utils/api'
+import { aiLabel } from '@/utils/labels'
 import TokenUsersPanel from './components/panels/TokenUsersPanel.vue'
 import OrdersPanel from './components/panels/OrdersPanel.vue'
 import FeedbackPanel from './components/panels/FeedbackPanel.vue'
@@ -831,6 +841,7 @@ const promptPreviewMessage = ref('')
 const promptPreviewMeta = ref({ provider: '', model: '', baseUrl: '' })
 const promptPreviewRecentTimeline = ref<Array<any>>([])
 const runtimeConfig = reactive<Record<string, number>>({})
+const showAILabel = ref(true)
 const personaConfig = reactive<PersonaConfig>(createEmptyPersonaConfig())
 // Token 额度配置（state）已抽到 components/panels/BillingPanel.vue
 
@@ -1030,6 +1041,7 @@ function applyRuntimeConfig(raw: any) {
   for (const field of runtimeFields) {
     runtimeConfig[field.key] = Number.isFinite(Number(source[field.key])) ? Number(source[field.key]) : field.fallback
   }
+  showAILabel.value = source.showAILabel !== 0
 }
 
 function applyPersonaConfig(raw: any) {
@@ -1210,6 +1222,7 @@ function applyOverview(result: any) {
   applyPromptModules(settings.promptModules, settings.promptConfig)
   syncPromptDrafts()
   applyRuntimeConfig(settings.runtimeConfig)
+  showAILabel.value = settings.showAILabel !== 0
   applyPersonaConfig(settings.personaConfig)
   loadPetSpeakConfig(settings.petSpeakConfig)
   if (!promptPreviewCaseId.value) {
@@ -1532,16 +1545,17 @@ async function saveAISettings() {
       promptModules: buildPromptModulesPayload(),
       petSpeakConfig: collectPetSpeakConfig({}),
       personaConfig: buildPersonaConfigPayload(),
-      runtimeConfig
+      runtimeConfig,
+      showAILabel: showAILabel.value ? 1 : 0
     })
     if (!result?.success) {
-      errorMessage.value = result?.message || 'AI 设置保存失败'
+      errorMessage.value = result?.message || aiLabel() + ' 设置保存失败'
       return
     }
-    saveMessage.value = 'AI 设置已保存'
+    saveMessage.value = aiLabel() + ' 设置已保存'
     await refresh()
   } catch (error: any) {
-    errorMessage.value = error?.message || 'AI 设置保存失败'
+    errorMessage.value = error?.message || aiLabel() + ' 设置保存失败'
   } finally {
     savingAI.value = false
   }

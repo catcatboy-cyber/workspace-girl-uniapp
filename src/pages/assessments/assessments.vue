@@ -20,7 +20,7 @@
 
       <view class="card-v2">
         <text class="section-title-v2">分析记录</text>
-        <text class="card-text-v2">最新分析排在最上面。共 {{ assessments.length }} 次分析。每条记录包含趋势变化、AI 分析、证据等级和触发事件。</text>
+        <text class="card-text-v2">最新分析排在最上面。共 {{ assessments.length }} 次分析。每条记录包含趋势变化、{{ aiLabel() }} 分析、证据等级和触发事件。</text>
       </view>
 
       <view v-if="assessments.length === 0" class="card-v2">
@@ -40,7 +40,7 @@
             </view>
             <view class="a-meta-pills">
               <text class="source-pill">{{ mapSourceLabel(item.source) }}</text>
-              <text v-if="hasAIReview(item)" class="ai-badge">AI 已参与分析</text>
+              <text v-if="hasAIReview(item)" class="ai-badge">{{ aiLabel() }} 已参与分析</text>
             </view>
           </view>
 
@@ -125,8 +125,8 @@
             </view>
             <view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list">
               <view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card">
-                <view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · AI 提取</view>
-                <view v-else class="img-analysis-label">图片 · AI 摘要</view>
+                <view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · {{ aiLabel() }} 提取</view>
+                <view v-else class="img-analysis-label">图片 · {{ aiLabel() }} 摘要</view>
                 <text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text>
                 <text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text>
                 <view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', imgConfidenceClass(att.analysis.confidence)]">可信度：{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view>
@@ -146,7 +146,7 @@
           </view>
 
           <view v-if="item.explanation?.petLine || item.explanation?.bullets?.length" class="ai-panel">
-            <text class="ai-panel-label">{{ hasAIReview(item) ? 'AI 分析内容' : '分析内容' }}</text>
+            <text class="ai-panel-label">{{ hasAIReview(item) ? aiLabel() + ' 分析内容' : '分析内容' }}</text>
             <text v-if="item.explanation?.petLine" class="headline" user-select>{{ item.explanation.petLine }}</text>
             <view v-if="item.explanation?.bullets?.length" class="bullets">
               <text v-for="bullet in item.explanation.bullets?.slice(0, 3)" :key="bullet" class="bullet" user-select>• {{ bullet }}</text>
@@ -159,7 +159,7 @@
         </view>
       </view>
     </template>
-    <view class="ai-disclaimer"><text class="ai-disclaimer-text">AI 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
+    <view class="ai-disclaimer"><text class="ai-disclaimer-text">{{ aiLabel() }} 辅助分析 · 基于事件线索生成，仅供辅助参考，不构成专业意见或事实认定。</text></view>
   </view>
 </template>
 
@@ -170,6 +170,7 @@ import { getCachedSelfProfile, getCaseDetail, getCurrentUserId, getSelfProfile, 
 import { setActiveCaseId, setPendingTimelineContext, showError } from '@/utils/helpers'
 import { buildObjectStatusCard, buildProfileSideRead, compareAssessments } from '@/utils/insights'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const loading = ref(true)
 const caseFile = ref<any>(null)

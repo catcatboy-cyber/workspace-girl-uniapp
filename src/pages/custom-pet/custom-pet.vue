@@ -43,6 +43,7 @@ import { computed, ref, onMounted } from 'vue'
 import { callFunction } from '@/utils/cloudbase'
 import { checkFeatureAccess, getCurrentUserId } from '@/utils/api'
 import { getCurrentThemeId, getThemeStyle } from '@/utils/theme'
+import { aiLabel } from '@/utils/labels'
 
 const themeVars = ref(getThemeStyle())
 

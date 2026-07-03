@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { aiLabel } from '@/utils/labels'
 
 const props = withDefaults(defineProps<{
   modelValue?: { gender?: string; ageRange?: string; identity?: string; zodiac?: string; constellation?: string }
