@@ -1,10 +1,10 @@
 <template>
   <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
-        <view class="hero-block-v2"><text class="hero-tag-v2">TOKEN USAGE</text><text class="hero-title-v2">消费<text class="hl-v2">明细</text></text><text class="hero-copy-v2">当前账号的 token 调用和额度变动记录。</text></view>
+        <view class="hero-block-v2"><text class="hero-tag-v2">CREDITS USAGE</text><text class="hero-title-v2">消费<text class="hl-v2">明细</text></text><text class="hero-copy-v2">当前账号的 Credits 调用和额度变动记录。</text></view>
         <view class="tabs-v2"><view :class="['tab-btn-v2', activeTab === 'usage' ? 'active' : '']" @click="switchTab('usage')">消费明细</view><view :class="['tab-btn-v2', activeTab === 'ledger' ? 'active' : '']" @click="switchTab('ledger')">充值记录</view><view :class="['tab-btn-v2', activeTab === 'voice' ? 'active' : '']" @click="switchTab('voice')">语音识别</view></view>
         <view v-if="activeTab === 'usage'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">汇总</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="loading" @click="loadUsage">{{ loading ? '读取中' : '刷新' }}</button></view><text class="card-text-v2">最近 {{ records.length }} 条记录</text><view class="stats-grid-v2" style="grid-template-columns: repeat(3, 1fr);"><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.monthlyTokensUsed.toLocaleString() }}</text><text class="stat-lbl-v2">本月已用</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.recentRecordsTokens.toLocaleString() }}</text><text class="stat-lbl-v2">最近合计</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ summary.callCount }}</text><text class="stat-lbl-v2">调用次数</text></view></view></view>
-          <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item._id || item.recordId || item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature || (item.remark || '').split(' · ')[0]) }}</text><text v-if="item.model" class="usage-model-v2">{{ item.model }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><view v-if="item.inputTokens || item.outputTokens" class="usage-io-v2"><text class="usage-io-item-v2">入 {{ (item.inputTokens || 0).toLocaleString() }}</text><text class="usage-io-item-v2">出 {{ (item.outputTokens || 0).toLocaleString() }}</text></view><text class="usage-total-v2">-{{ (Math.abs(Number(item.amountTokens || 0)) || Number(item.platformTokens || item.totalTokens) || 0).toLocaleString() }}</text><text class="usage-meta-v2">Credits</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
+          <view class="card-v2"><text class="section-title-v2">明细</text><view v-if="records.length > 0" class="usage-list-v2"><view v-for="item in records" :key="item._id || item.recordId || item.id" class="usage-row-v2"><view class="usage-main-v2"><text class="usage-feature-v2">{{ mapFeature(item.feature || (item.remark || '').split(' · ')[0]) }}</text><text class="usage-meta-v2">{{ formatDate(item.createdAt) }}</text></view><view class="usage-counts-v2"><text class="usage-total-v2">-{{ (Math.abs(Number(item.amountTokens || 0)) || Number(item.platformTokens || item.totalTokens) || 0).toLocaleString() }}</text><text class="usage-meta-v2">Credits</text></view></view></view><text v-else class="card-text-v2">{{ loading ? '正在读取...' : '暂无记录。' }}</text></view>
         </view>
         <view v-if="activeTab === 'ledger'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">额度变动记录</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="ledgerLoading" @click="loadLedger">{{ ledgerLoading ? '读取中' : '刷新' }}</button></view>
@@ -14,7 +14,6 @@
         </view>
         <view v-if="activeTab === 'voice'">
           <view class="card-v2"><view class="card-head-v2"><text class="section-title-v2">语音识别汇总</text><button class="btn btn-secondary btn-sm btn-auto" :disabled="voiceLoading" @click="loadVoice">{{ voiceLoading ? '读取中' : '刷新' }}</button></view>
-            <text class="card-text-v2 muted">语音识别由腾讯云 ASR 单独计费，不消耗 Credits 能量。</text>
             <view class="stats-grid-v2" style="grid-template-columns: repeat(2, 1fr);"><view class="stat-box-v2"><text class="stat-num-v2">{{ voiceSummary.totalCount }}</text><text class="stat-lbl-v2">识别次数</text></view><view class="stat-box-v2"><text class="stat-num-v2">{{ formatSeconds(voiceSummary.totalDurationMs) }}</text><text class="stat-lbl-v2">累计时长</text></view></view>
           </view>
           <view class="card-v2"><text class="section-title-v2">明细</text>
@@ -163,8 +162,6 @@ function mapFeature(feature: string) {
     eventAssessment: '即时反馈',
     initial_assessment_text: '初次评估·文本分析',
     weeklyReview: '月度复盘',
-    weeklySideRead: '星象速写',
-    sideRead: '星象速写',
     attachmentAnalysis: '附件识别',
     petReply: '宠物帮说',
     petReplyStrategy: '宠物帮说·策略'

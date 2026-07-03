@@ -987,6 +987,7 @@ async function getOverview(currentUserId = '', currentUser = null) {
     }
     return {
     id: user._id,
+    openid: user.openid || '',
     email: user.email || '',
     phone: user.phone || '',
     loginType: user.loginType || (user.phone ? 'wechat_phone' : 'email'),

@@ -64,13 +64,13 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
   _id: SUBSCRIPTION_DOC_ID,
   scope: 'global',
   key: 'subscription',
-  configVersion: 3,
+  configVersion: 4,
 
   trial: {
     enabled: true,
     durationDays: 7,
     extendOnReferral: 3,
-    features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '星象速写', '小咪帮你说（单轮）', '命理桃花'],
+    features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '小咪帮你说（单轮）', '命理桃花'],
     excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格']
   },
 
@@ -80,7 +80,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       monthlyTokens: 30000,
       maxCrushes: 1,
       features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '小咪帮你说（单轮）'],
-      excludedFeatures: ['星象速写', '自定义宠物', '自定义AI风格', '小咪多轮策略', '命理桃花']
+      excludedFeatures: ['自定义宠物', '自定义AI风格', '小咪多轮策略', '命理桃花']
     },
     pro: {
       name: 'Pro',
@@ -90,7 +90,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       priceYuanStudentAnnual: 99,
       monthlyTokens: 300000,
       maxCrushes: 3,
-      features: ['免费版全部', '星象速写', '命理桃花'],
+      features: ['免费版全部', '命理桃花'],
       excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格']
     },
     ultra: {
@@ -131,73 +131,26 @@ async function ensureSubscriptionConfig(db) {
       // 自动补全新字段（向后兼容旧版配置，每次读取时检查）
       let needsUpdate = false
       const set = (obj, key, defaultVal) => { if (obj[key] === undefined || obj[key] === null) { obj[key] = defaultVal; needsUpdate = true } }
+      // 版本升级时：用代码默认值刷新系统管理的字段，保留用户自定义字段
       if (existing.configVersion !== DEFAULT_SUBSCRIPTION_CONFIG.configVersion) {
+        const def = DEFAULT_SUBSCRIPTION_CONFIG
+        // trial: 刷新 features / excludedFeatures，保留 durationDays 等用户设置
+        if (existing.trial) {
+          existing.trial.features = [...def.trial.features]
+          existing.trial.excludedFeatures = [...def.trial.excludedFeatures]
+        }
+        // plans: 刷新 features / excludedFeatures / monthlyTokens / maxCrushes，保留价格/名称
+        for (const pk of ['free', 'pro', 'ultra']) {
+          const plan = existing.plans?.[pk]
+          const defPlan = def.plans?.[pk]
+          if (!plan || !defPlan) continue
+          plan.features = [...defPlan.features]
+          plan.excludedFeatures = [...defPlan.excludedFeatures]
+          plan.monthlyTokens = defPlan.monthlyTokens
+          plan.maxCrushes = defPlan.maxCrushes
+        }
         existing.configVersion = DEFAULT_SUBSCRIPTION_CONFIG.configVersion
         needsUpdate = true
-      }
-      for (const key of ['free', 'pro', 'ultra']) {
-        const plan = existing.plans?.[key]
-        if (!plan) continue
-        // 优先用 monthlyTokens，没有则从 monthlyCalls 换算
-        if (plan.monthlyTokens === undefined || plan.monthlyTokens === null) {
-          const oldVal = plan.monthlyCalls
-          plan.monthlyTokens = (oldVal === -1 || oldVal === undefined) ? -1 : (oldVal || 0) * 1500
-          needsUpdate = true
-        }
-        // v3→v4 迁移：免费版小咪帮你说从 excluded 移到 features
-        if (key === 'free' && Array.isArray(plan.excludedFeatures)) {
-          const aliases = ['小咪帮你说', '小咪帮你说（单轮）']
-          const idx = plan.excludedFeatures.findIndex((f) => aliases.includes(f))
-          if (idx !== -1) {
-            plan.excludedFeatures.splice(idx, 1)
-            if (!Array.isArray(plan.features)) plan.features = []
-            if (!plan.features.includes('小咪帮你说（单轮）')) {
-              plan.features.push('小咪帮你说（单轮）')
-            }
-            needsUpdate = true
-          }
-        }
-        // v4 迁移：清理 Pro/Ultra 中已被"全部"meta 覆盖的重复功能 + 补齐遗漏
-        if (key === 'pro' && Array.isArray(plan.features)) {
-          const hasFreeAll = plan.features.includes('免费版全部')
-          const freeFeatures = existing.plans?.free?.features || []
-          const freeExcluded = existing.plans?.free?.excludedFeatures || []
-          // 删除 Pro features 中已被 Free 覆盖的功能
-          const dupes = plan.features.filter((f) =>
-            f !== '免费版全部' && freeFeatures.includes(f))
-          if (dupes.length > 0) {
-            plan.features = plan.features.filter((f) => !dupes.includes(f))
-            needsUpdate = true
-          }
-          // 补齐：Free excluded 但不在 Pro features/excluded 中的，应加到 Pro（表示 Pro 解锁了）
-          for (const f of freeExcluded) {
-            if (!plan.features.includes(f) && !(plan.excludedFeatures || []).includes(f)) {
-              if (!Array.isArray(plan.features)) plan.features = []
-              plan.features.push(f)
-              needsUpdate = true
-            }
-          }
-          // Pro excluded 中如果有 Free features 已有的，移到 Pro features（不应同时 exclude）
-          for (const f of [...(plan.excludedFeatures || [])]) {
-            if (freeFeatures.includes(f)) {
-              plan.excludedFeatures = (plan.excludedFeatures || []).filter((x) => x !== f)
-              if (!plan.features.includes(f)) plan.features.push(f)
-              needsUpdate = true
-            }
-          }
-        }
-        if (key === 'ultra' && Array.isArray(plan.features)) {
-          const hasProAll = plan.features.some((f) => f === 'Pro全部' || f === 'Pro 全部')
-          const proFeatures = existing.plans?.pro?.features || []
-          if (hasProAll) {
-            const dupes = plan.features.filter((f) =>
-              f !== 'Pro全部' && f !== 'Pro 全部' && proFeatures.includes(f))
-            if (dupes.length > 0) {
-              plan.features = plan.features.filter((f) => !dupes.includes(f))
-              needsUpdate = true
-            }
-          }
-        }
       }
       if (existing.referral) {
         set(existing.referral, 'inviterRewardTokens', (existing.referral.inviterRewardCalls || 3) * 1000)
@@ -316,6 +269,42 @@ async function ensureUserSubscriptionFields(db, user, userId) {
   return user
 }
 
+// ─── planExpiresAt 过期检查 ──────────────────────────
+
+/**
+ * 获取用户的有效套餐（考虑 planExpiresAt 过期）。
+ * 付费套餐 + planExpiresAt 已过期 → 降级为 'free'。
+ * planExpiresAt 为 null 的 legacy 用户不受影响。
+ */
+function getEffectivePlan(user) {
+  const storedPlan = String(user.plan || 'free').trim()
+  if (!storedPlan || storedPlan === 'free') return 'free'
+  // 付费套餐：检查过期
+  if (user.planExpiresAt) {
+    const expiresAt = new Date(user.planExpiresAt)
+    if (!isNaN(expiresAt.getTime()) && expiresAt < new Date()) {
+      return 'free'
+    }
+  }
+  // planExpiresAt 为 null → legacy/管理员手动设置，保留原套餐
+  return storedPlan
+}
+
+/**
+ * 懒降级：如果有效套餐为 free 但数据库中仍标记为付费套餐，更新 DB
+ */
+async function ensurePlanDowngraded(db, user, userId, effectivePlan) {
+  if (effectivePlan === 'free' && user.plan && user.plan !== 'free') {
+    try {
+      await db.collection(USERS).doc(userId).update({
+        plan: 'free',
+        planExpiresAt: null,
+        updatedAt: new Date()
+      })
+    } catch (_) {}
+  }
+}
+
 // ─── Token 门控 v3.2 ─────────────────────────────────
 
 /**
@@ -336,8 +325,11 @@ async function checkTokenBalance(db, userId, estTokens) {
 
   await ensureUserSubscriptionFields(db, user, userId)
 
+  const effectivePlan = getEffectivePlan(user)
+  await ensurePlanDowngraded(db, user, userId, effectivePlan)
+
   const config = await getSubscriptionConfig(db)
-  const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+  const planConfig = config.plans[effectivePlan] || config.plans.free
 
   // 套餐配置为无限（monthlyTokens = -1）→ 不限制
   if (planConfig && planConfig.monthlyTokens === -1) {
@@ -406,8 +398,9 @@ async function consumeTokens(db, userId, actualModelTokens, feature, model, usag
   }
 
   // 读取订阅配置
+  const effectivePlan = getEffectivePlan(user)
   const config = await getSubscriptionConfig(db)
-  const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+  const planConfig = config.plans[effectivePlan] || config.plans.free
 
   // 套餐配置为无限（monthlyTokens = -1）→ 不扣
   if (planConfig && planConfig.monthlyTokens === -1) return { deducted: 0, source: user.plan === 'ultra' ? 'ultra' : 'unlimited' }
@@ -503,7 +496,8 @@ async function checkFeatureAccess(db, userId, featureKey) {
     return { allowed: true }
   }
 
-  const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+  const effectivePlan = getEffectivePlan(user)
+  const planConfig = config.plans[effectivePlan] || config.plans.free
   if (featureListIncludes(planConfig.excludedFeatures, featureKey)) {
     return { allowed: false, reason: `${planConfig.name}不支持此功能，请升级套餐` }
   }
@@ -819,6 +813,8 @@ module.exports = {
   checkTokenBalance,
   consumeTokens,
   checkFeatureAccess,
+  getEffectivePlan,
+  ensurePlanDowngraded,
 
   // 兼容旧接口
   checkAndConsumeCall: async (db, userId) => {

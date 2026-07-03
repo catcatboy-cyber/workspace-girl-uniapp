@@ -64,10 +64,23 @@ if (fs.existsSync(projectConfigPath)) {
   writeJson(projectConfigPath, projectConfig)
 }
 
+// 不注入 __usePrivacyCheck__ — 2025 年后微信已内置隐私检查，开启此 flag 反而要求
+// 管理后台为每个 API scope 单独声明（未声明则报 api scope is not declared），关闭即可正常工作。
+
 const privacySrc = path.join('src', 'privacy.json')
 const privacyDest = path.join(root, 'privacy.json')
 if (fs.existsSync(privacySrc)) {
   fs.copyFileSync(privacySrc, privacyDest)
+}
+
+// 清理不参与小程序包的大体积文件（仅 H5/通用用途，放 static/ 是为了共用引用路径）
+const largeStaticFiles = ['logo.png', 'app-icon.png']
+for (const f of largeStaticFiles) {
+  const fp = path.join(root, 'static', f)
+  if (fs.existsSync(fp)) {
+    fs.unlinkSync(fp)
+    console.log(`[postbuild] removed large static file from mp-weixin: ${f}`)
+  }
 }
 
 const staleSpritesheet = path.join(root, 'static', 'pets', 'xiaomi', 'spritesheet.webp')

@@ -2,6 +2,9 @@
   <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
     <view class="hero-block-v2"><text class="hero-tag-v2">NEW CRUSH</text><text class="hero-title-v2">新建<text class="hl-v2">Crush</text></text><text class="hero-copy-v2">只有当你要开始判断一个新的 Crush 时，才需要重新填写这份初次分析。已有 Crush 更适合继续追加事件和滚动观察。</text><view class="btn-row-v2"><button class="btn btn-secondary btn-md" @click="goHome">返回首页</button><button class="btn btn-secondary btn-md" @click="goCases">查看 Crushes</button></view></view>
     <AssessmentForm @submit="onSubmit" />
+    <view class="ai-note-bar">
+      <text class="ai-note-text">{{ aiLabel() }} 辅助分析 · 帮你梳理线索，不代表最终结论</text>
+    </view>
   </view>
 </template>
 
@@ -88,4 +91,6 @@ function goCases() {
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
+.v2-mode .ai-note-bar { text-align: center; padding: 24rpx 18rpx; margin-top: 18rpx; border-top: 2rpx dashed #ccc; }
+.v2-mode .ai-note-text { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 </style>

@@ -10,7 +10,9 @@ const {
   getDefaultUserSubscriptionFields,
   getMonthStart,
   generateInviteCode,
-  checkFeatureAccess
+  checkFeatureAccess,
+  getEffectivePlan,
+  ensurePlanDowngraded
 } = require('./_shared/subscription')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
@@ -86,7 +88,10 @@ exports.main = async (event) => {
       monthlyTokensUsed = 0
     }
 
-    const planConfig = config.plans[user.plan || 'free'] || config.plans.free
+    const effectivePlan = getEffectivePlan(user)
+    await ensurePlanDowngraded(db, user, userId, effectivePlan)
+
+    const planConfig = config.plans[effectivePlan] || config.plans.free
     let extraTokens = user.extraTokens || 0
 
     // 试用期（day 计数仍保留，但不再无限；token 走正常扣费）
@@ -127,7 +132,7 @@ exports.main = async (event) => {
     return {
       success: true,
       subscription: {
-        plan: user.plan || 'free',
+        plan: effectivePlan,
         planName: planConfig.name,
         isTrial,
         trialDaysLeft,

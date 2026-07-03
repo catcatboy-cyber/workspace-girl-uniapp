@@ -116,7 +116,6 @@ function formatTokenFeature(feature: string) {
     eventAssessment: '即时反馈',
     eventUnderstanding: '事件理解',
     weeklyReview: '近月度复盘',
-    sideRead: '星象速写',
     attachmentAnalysis: '附件识别',
     petReply: '宠物帮说',
     batchTag: '批量标签',

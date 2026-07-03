@@ -57,9 +57,9 @@
                 <view class="event-body-v2 assessment-card-v2">
                   <text class="event-title-v2">{{ item.title || '本月复盘' }}</text>
                   <view class="tag-row-v2" style="margin:6rpx 0;">
-                    <text class="tag-v2 black sm">{{ isWeeklySideReadRecord(item) ? '星象速写' : '月度复盘' }}</text>
+                    <text class="tag-v2 black sm">月度复盘</text>
                     <text v-if="!isWeeklySideReadRecord(item) && item.trendLabel" class="tag-v2 sm">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text>
-                    <text v-if="item.aiUsed" class="tag-v2 sm">{{ isWeeklySideReadRecord(item) ? aiLabel() + ' 星象速写' : aiLabel() + ' 复盘' }}</text>
+                    <text v-if="item.aiUsed" class="tag-v2 sm">{{ aiLabel() + ' 复盘' }}</text>
                   </view>
                   <text class="event-desc-v2">{{ item.description }}</text>
                   <view v-if="!isWeeklySideReadRecord(item) && (item.eventCount || item.assessmentCount || item.intentDelta || item.riskDelta)" class="tag-row-v2" style="margin-top:8rpx;">
@@ -1264,7 +1264,7 @@ async function syncSemanticTags() {
 .v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111; padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
 .v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }

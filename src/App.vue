@@ -23,7 +23,7 @@ onLaunch(() => {
     const PRIVACY_KEY = 'privacyAgreed_v2'
     const alreadyAgreed = !!uni.getStorageSync(PRIVACY_KEY)
 
-    // 注册微信原生隐私监听（兼容 __usePrivacyCheck__）
+    // 注册微信原生隐私监听
     const wxApi = (globalThis as any)?.wx
     if (wxApi?.onNeedPrivacyAuthorization) {
       wxApi.onNeedPrivacyAuthorization((resolve: any) => {

@@ -116,7 +116,7 @@ const profileBasicItems = [
 ]
 
 const profileFunItems = [
-  { label: '属相 / 星座', description: '轻娱乐星象速写入口，不参与核心意向分、风险分和证据等级。' }
+  { label: '属相 / 星座', description: '画像信息，用于桃花命理分析参考。不参与核心意向分、风险分和证据等级。' }
 ]
 
 const trend14IntentItems = [

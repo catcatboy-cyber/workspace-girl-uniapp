@@ -148,7 +148,8 @@ async function chooseImage() {
     fail: (err: any) => {
       const msg = String(err?.errMsg || '')
       if (msg.includes('cancel')) return // 用户取消
-      uploadError.value = '选择图片失败，请检查相册权限'
+      // 露出微信真实错误信息，便于定位问题
+      uploadError.value = msg || '选择图片失败，请检查相册权限'
     }
   })
 }

@@ -104,7 +104,6 @@ const FEATURE_DISPLAY: Record<string, string> = {
   '事件理解': aiLabel() + ' 事件理解',
   '周复盘': '月度复盘',
   '附件识别': '附件识别',
-  '星象速写': '星象速写',
   '小咪帮你说': '小咪帮你说（单轮）',
   '小咪帮你说（单轮）': '小咪帮你说（单轮）',
   '小咪多轮策略': '小咪多轮策略',
@@ -117,8 +116,8 @@ const normalizeFeature = (name: string) => FEATURE_DISPLAY[name] || name
 function buildPlanCards(config: any, status: any) {
   const s = status?.subscription || {}
   const planDefs: any[] = [
-    { key: 'free', name: '免费版', monthlyTokens: 30000, priceText: '¥0', priceSub: '永久', callsText: '30K Token/月' },
-    { key: 'pro', name: 'Pro', monthlyTokens: 300000, priceText: '¥19', priceSub: '/月 · 年付 ¥168', callsText: '300K Token/月' },
+    { key: 'free', name: '免费版', monthlyTokens: 30000, priceText: '¥0', priceSub: '永久', callsText: '30K Credits/月' },
+    { key: 'pro', name: 'Pro', monthlyTokens: 300000, priceText: '¥19', priceSub: '/月 · 年付 ¥168', callsText: '300K Credits/月' },
     { key: 'ultra', name: 'Ultra', monthlyTokens: -1, priceText: '¥39', priceSub: '/月 · 年付 ¥298', callsText: '不限' }
   ]
   planDefs.forEach((d) => {
@@ -135,7 +134,7 @@ function buildPlanCards(config: any, status: any) {
         d.name = pc.name || d.name
         const mt = pc.monthlyTokens ?? pc.monthlyCalls
         d.monthlyTokens = mt
-        d.callsText = mt === -1 ? '不限' : `${(mt / 1000).toFixed(0)}K Token/月`
+        d.callsText = mt === -1 ? '不限' : `${(mt / 1000).toFixed(0)}K Credits/月`
         if (d.key !== 'free' && pc.priceYuan !== undefined && pc.priceYuan !== null) {
           d.priceText = `¥${pc.priceYuan}`
           if (pc.priceYuanAnnual !== undefined && pc.priceYuanAnnual !== null) d.priceSub = `/月 · 年付 ¥${pc.priceYuanAnnual}`
@@ -233,7 +232,6 @@ onShow(() => {
 const upgradingPlan = ref('')
 const upgradeMessage = ref('')
 const upgradeOk = ref(false)
-const sandboxMode = ref(false)
 const useVirtualPay = ref(false)
 const showCoin = ref(false)
 const coinAmount = ref(0)
@@ -244,7 +242,7 @@ async function doVirtualSubscribe(planKey: string, priceOpt: { billingCycle: str
     const result = await createVirtualPayOrder({
       productType: 'subscription', planKey,
       billingCycle: priceOpt.billingCycle, priceVariant: priceOpt.priceVariant,
-      sandbox: sandboxMode.value
+      sandbox: false
     })
     if (!result?.success) { upgradeMessage.value = result?.message || '创建订单失败'; return }
     const { paySig, signature, signData, outTradeNo, mode } = result
@@ -299,7 +297,7 @@ async function onUpgrade(planKey: string) {
   try {
     const priceOpt = getSelectedPriceOption(planKey)
     // #ifdef MP-WEIXIN
-    if (useVirtualPay.value || sandboxMode.value) {
+    if (useVirtualPay.value) {
       await doVirtualSubscribe(planKey, priceOpt)
       return
     }

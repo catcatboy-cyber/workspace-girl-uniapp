@@ -14,43 +14,63 @@
       </view>
       <block v-else>
       <template v-if="cases.length === 0">
-        <view class="hero-block anim-hero">
-          <text class="hero-tag">Crush Master BOARD</text>
-          <text class="hero-title">先做一次<text class="hl">初次</text>分析</text>
-          <text class="hero-copy">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
+        <view class="hero-block-v2 anim-hero">
+          <text class="hero-tag-v2">Crush Master BOARD</text>
+          <text class="hero-title-v2">先做一次<text class="hl-v2">初次</text>分析</text>
+          <text class="hero-copy-v2">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
         </view>
         <!-- 命理 · 今日桃花 -->
         <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;" @click="goTaohua">
           <view class="taohua-teaser-head">
-            <text class="taohua-teaser-head-title">今日桃花</text>
+            <text class="taohua-teaser-head-title">🌸 今日桃花运势</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
           </view>
-          <view v-if="taohuaTeaserData" class="taohua-teaser-body">
-            <view class="taohua-teaser-dirs">
-              <view class="taohua-teaser-dir">
-                <text class="taohua-teaser-dir-emoji">🌸</text>
-                <text class="taohua-teaser-dir-label">桃花</text>
-                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.direction }}（{{ taohuaTeaserData.directionZhi }}位）</text>
+          <view v-if="taohuaTeaserData">
+            <!-- 气场进度条 -->
+            <view class="taohua-bar-wrap">
+              <text class="taohua-bar-label">气场</text>
+              <view class="taohua-bar-track"><view class="taohua-bar-fill" :style="{ width: taohuaTeaserData.score + '%' }"></view></view>
+              <text class="taohua-bar-label">行动</text>
+            </view>
+            <!-- 方位竖排 -->
+            <view class="taohua-dirs-v">
+              <view class="taohua-dir-v">
+                <text class="taohua-dir-v-emoji">🌸</text>
+                <view class="taohua-dir-v-info">
+                  <text class="taohua-dir-v-name">桃花方位 · {{ taohuaTeaserData.direction }}</text>
+                  <text class="taohua-dir-v-desc">{{ taohuaTeaserData.directionZhi }}位 · 今日邂逅气场最强方向</text>
+                </view>
+                <text class="taohua-dir-v-arrow">↗</text>
               </view>
-              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-teaser-dir">
-                <text class="taohua-teaser-dir-emoji">🔴</text>
-                <text class="taohua-teaser-dir-label">本命红鸾</text>
-                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.hongluanDir }}方</text>
+              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-dir-v">
+                <text class="taohua-dir-v-emoji">🔴</text>
+                <view class="taohua-dir-v-info">
+                  <text class="taohua-dir-v-name">本命红鸾 · {{ taohuaTeaserData.hongluanDir }}方</text>
+                  <text class="taohua-dir-v-desc">姻缘开端星 · 关系突破从此起</text>
+                </view>
+                <text class="taohua-dir-v-arrow">↗</text>
               </view>
-              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-teaser-dir">
-                <text class="taohua-teaser-dir-emoji">🕊️</text>
-                <text class="taohua-teaser-dir-label">本命天喜</text>
-                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.tianxiDir }}方</text>
+              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-dir-v">
+                <text class="taohua-dir-v-emoji">🕊️</text>
+                <view class="taohua-dir-v-info">
+                  <text class="taohua-dir-v-name">本命天喜 · {{ taohuaTeaserData.tianxiDir }}方</text>
+                  <text class="taohua-dir-v-desc">婚庆落地星 · 长期发展守护位</text>
+                </view>
+                <text class="taohua-dir-v-arrow">↗</text>
               </view>
             </view>
-            <text class="taohua-teaser-guide">💡</text><text class="taohua-teaser-guide-text">{{ taohuaTeaserData.guidance }}</text>
-            <text class="taohua-teaser-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
+            <!-- 引导语 -->
+            <text class="taohua-quote">"{{ taohuaTeaserData.guidance }}"</text>
+            <!-- 建除 + 概要 -->
+            <text class="taohua-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
           </view>
-          <view v-else class="taohua-teaser-body">
-            <text class="taohua-teaser-meta">加载中...</text>
+          <view v-else class="taohua-teaser-body-loading">
+            <text class="taohua-meta">加载中...</text>
           </view>
-          <view class="taohua-teaser-cta">查看完整命理分析 →</view>
-          <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
+          <!-- CTA -->
+          <view class="taohua-cta">展开查看完整命理分析 ✦</view>
+          <!-- 出处 -->
+          <view class="taohua-cite">📖 咸池桃花 · 《三命通会》三合沐浴算法</view>
         </view>
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
           <text class="remind-card-title-v2">你的画像未完善</text>
@@ -81,15 +101,11 @@
 
       <template v-else>
         <!-- Hero -->
-        <view class="hero-block anim-hero">
-          <text class="hero-tag">Crush Master BOARD</text>
-          <text class="hero-title">今天他<text class="hl">有戏</text>吗？</text>
+        <view class="hero-block-v2 anim-hero">
+          <text class="hero-tag-v2">Crush Master BOARD</text>
+          <text class="hero-title-v2">今天他<text class="hl-v2">有戏</text>吗？</text>
           <view class="hero-identity"><view class="profile-avatar-v2 sm"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(latestCase.name) }}</text></view><text class="hero-identity-name">{{ latestCase.name || '--' }}</text></view>
-          <view class="crush-type-panel">
-            <text class="crush-type-label">{{ latestCrushType.label }}</text>
-            <text class="crush-type-summary">{{ latestCrushType.summary }}</text>
-            <text class="crush-type-action">{{ latestCrushNextAction }}</text>
-          </view>
+          <text class="crush-type-badge">{{ latestCrushType.label }}</text>
           <view v-if="latestProfileItems.length > 0" class="tag-row-v2">
             <text v-for="item in latestProfileItems" :key="item" class="tag-v2">{{ item }}</text>
           </view>
@@ -98,35 +114,55 @@
         <!-- 命理 · 今日桃花 -->
         <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.05s;" @click="goTaohua">
           <view class="taohua-teaser-head">
-            <text class="taohua-teaser-head-title">今日桃花</text>
+            <text class="taohua-teaser-head-title">🌸 今日桃花运势</text>
             <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
           </view>
-          <view v-if="taohuaTeaserData" class="taohua-teaser-body">
-            <view class="taohua-teaser-dirs">
-              <view class="taohua-teaser-dir">
-                <text class="taohua-teaser-dir-emoji">🌸</text>
-                <text class="taohua-teaser-dir-label">桃花</text>
-                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.direction }}（{{ taohuaTeaserData.directionZhi }}位）</text>
+          <view v-if="taohuaTeaserData">
+            <!-- 气场进度条 -->
+            <view class="taohua-bar-wrap">
+              <text class="taohua-bar-label">气场</text>
+              <view class="taohua-bar-track"><view class="taohua-bar-fill" :style="{ width: taohuaTeaserData.score + '%' }"></view></view>
+              <text class="taohua-bar-label">行动</text>
+            </view>
+            <!-- 方位竖排 -->
+            <view class="taohua-dirs-v">
+              <view class="taohua-dir-v">
+                <text class="taohua-dir-v-emoji">🌸</text>
+                <view class="taohua-dir-v-info">
+                  <text class="taohua-dir-v-name">桃花方位 · {{ taohuaTeaserData.direction }}</text>
+                  <text class="taohua-dir-v-desc">{{ taohuaTeaserData.directionZhi }}位 · 今日邂逅气场最强方向</text>
+                </view>
+                <text class="taohua-dir-v-arrow">↗</text>
               </view>
-              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-teaser-dir">
-                <text class="taohua-teaser-dir-emoji">🔴</text>
-                <text class="taohua-teaser-dir-label">本命红鸾</text>
-                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.hongluanDir }}方</text>
+              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-dir-v">
+                <text class="taohua-dir-v-emoji">🔴</text>
+                <view class="taohua-dir-v-info">
+                  <text class="taohua-dir-v-name">本命红鸾 · {{ taohuaTeaserData.hongluanDir }}方</text>
+                  <text class="taohua-dir-v-desc">姻缘开端星 · 关系突破从此起</text>
+                </view>
+                <text class="taohua-dir-v-arrow">↗</text>
               </view>
-              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-teaser-dir">
-                <text class="taohua-teaser-dir-emoji">🕊️</text>
-                <text class="taohua-teaser-dir-label">本命天喜</text>
-                <text class="taohua-teaser-dir-val">{{ taohuaTeaserData.tianxiDir }}方</text>
+              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-dir-v">
+                <text class="taohua-dir-v-emoji">🕊️</text>
+                <view class="taohua-dir-v-info">
+                  <text class="taohua-dir-v-name">本命天喜 · {{ taohuaTeaserData.tianxiDir }}方</text>
+                  <text class="taohua-dir-v-desc">婚庆落地星 · 长期发展守护位</text>
+                </view>
+                <text class="taohua-dir-v-arrow">↗</text>
               </view>
             </view>
-            <text class="taohua-teaser-guide">💡</text><text class="taohua-teaser-guide-text">{{ taohuaTeaserData.guidance }}</text>
-            <text class="taohua-teaser-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
+            <!-- 引导语 -->
+            <text class="taohua-quote">"{{ taohuaTeaserData.guidance }}"</text>
+            <!-- 建除 + 概要 -->
+            <text class="taohua-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
           </view>
-          <view v-else class="taohua-teaser-body">
-            <text class="taohua-teaser-meta">加载中...</text>
+          <view v-else class="taohua-teaser-body-loading">
+            <text class="taohua-meta">加载中...</text>
           </view>
-          <view class="taohua-teaser-cta">查看完整命理分析 →</view>
-          <view class="taohua-teaser-cite">📖 咸池桃花：《三命通会》三合沐浴算法</view>
+          <!-- CTA -->
+          <view class="taohua-cta">展开查看完整命理分析 ✦</view>
+          <!-- 出处 -->
+          <view class="taohua-cite">📖 咸池桃花 · 《三命通会》三合沐浴算法</view>
         </view>
 
         <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.1s" @click="goSelfProfile">
@@ -170,7 +206,7 @@
           <textarea :value="quickDesc" @blur="onQuickDescBlur" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
           <view v-if="quickSubjectRole === 'both'" class="quick-paste-warn-v2">
             <text class="quick-paste-warn-icon-v2">⚠️</text>
-            <text class="quick-paste-warn-text-v2">部分手机品牌（华为/鸿蒙、vivo 等）粘贴多行聊天记录时可能被截断，只显示第一条。如遇此情况，请先将聊天记录粘贴到<text class="quick-paste-warn-bold-v2">备忘录</text>或<text class="quick-paste-warn-bold-v2">文件传输助手</text>的输入框，再重新复制后粘贴到此处即可完整导入。</text>
+            <text class="quick-paste-warn-text-v2">部分手机粘贴多行聊天记录时可能被截断，只显示第一条。如遇此情况，请先将聊天记录粘贴到<text class="quick-paste-warn-bold-v2">备忘录</text>或<text class="quick-paste-warn-bold-v2">文件传输助手</text>的输入框，再重新复制后粘贴到此处即可完整导入。</text>
           </view>
           <view class="datetime-row-v2">
             <picker mode="date" :value="quickDate" @change="onQuickDateChange"><view class="picker-v2">{{ quickDate }}</view></picker>
@@ -644,11 +680,7 @@ const aiParticipationLabel = computed(() => {
   if (result.aiFailed) return { text: '规则兜底', type: 'fallback', detail: aiLabel() + ' 超时或格式异常，本次为规则计算结果' }
   if (result.aiUsed === false) return { text: '规则兜底', type: 'fallback', detail: '未启用 AI，本次为规则计算结果' }
   // AI 成功生成
-  const modelName = result.aiModel || ''
-  const provider = result.aiProvider || ''
-  const labelParts = [provider, modelName].filter(Boolean).filter(s => !/openai.compatible/i.test(s))
-  const modelLabel = labelParts.length > 0 ? labelParts.join(' · ') : 'AI'
-  return { text: aiLabel() + ' 生成', type: 'ai', detail: `${aiLabel()} ${modelLabel} 生成分析，内容仅供参考` }
+  return { text: aiLabel() + ' 生成', type: 'ai', detail: 'AI 生成分析，内容仅供参考。' }
 })
 
 function startAIFeedbackTimer() {
@@ -2047,13 +2079,10 @@ function goTaohua() {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; }
 .v2-mode .loading { text-align: center; padding: 120rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
 
-.v2-mode .hero-block {
-  background: var(--hero-bg, #FF6B6B); border: 3rpx solid #111; box-shadow: 8rpx 8rpx 0 #111;
-  padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg);
-}
-.v2-mode .hero-tag { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-heading; letter-spacing: 2rpx; margin-bottom: 14rpx; }
-.v2-mode .hero-title { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: 0; text-transform: uppercase; }
-.v2-mode .hero-title .hl { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.v2-mode .hero-block-v2 { @include hero-block-v2; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-title-v2 .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .v2-mode .hero-identity { display: flex; align-items: center; gap: 16rpx; margin-bottom: 14rpx; }
 .v2-mode .profile-avatar-v2 { border-radius: 50%; overflow: hidden; border: 3rpx solid #111; background: #FFD93D; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .v2-mode .profile-avatar-v2.sm { width: 68rpx; height: 68rpx; }
@@ -2062,13 +2091,9 @@ function goTaohua() {
 .v2-mode .hero-identity-name { font-size: $fs-heading; font-weight: $fw-heading; color: #111; }
 .v2-mode .role-hint-v2 { display: block; margin-top: 8rpx; font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 
-.v2-mode .hero-copy { display: block; margin-top: 14rpx; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; }
-.v2-mode .hero-copy .strong { color: #111; font-weight: $fw-hero; }
-.v2-mode .crush-type-panel { margin: 16rpx 0; padding: 20rpx; border: 3rpx solid #111; background: #FFFBEB; box-shadow: 4rpx 4rpx 0 #111; }
-.v2-mode .crush-type-kicker { display: block; font-size: $fs-body; font-weight: $fw-heading; color: #666; text-transform: uppercase; letter-spacing: 2rpx; }
-.v2-mode .crush-type-label { display: block; margin-top: 4rpx; font-size: $fs-heading; font-weight: $fw-hero; color: #111; line-height: 1.1; }
-.v2-mode .crush-type-summary { display: block; margin-top: 8rpx; font-size: $fs-body; font-weight: $fw-body; color: #111; line-height: 1.45; }
-.v2-mode .crush-type-action { display: block; margin-top: 10rpx; padding-top: 10rpx; border-top: 2rpx solid #111; font-size: $fs-body; font-weight: $fw-body; color: #666; line-height: 1.5; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-copy-v2 .strong { color: #111; font-weight: $fw-hero; }
+.v2-mode .crush-type-badge { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-heading; letter-spacing: 2rpx; white-space: nowrap; margin: 16rpx 0 0; }
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-row-v2.compact { margin-top: 0; margin-bottom: 12rpx; }
@@ -2410,23 +2435,57 @@ function goTaohua() {
 .v2-mode .back-link-v2 { display: inline-block; text-align: left; padding: 12rpx 0; margin-bottom: 16rpx; font-size: $fs-heading; font-weight: $fw-body; color: #111; }
 
 
-/* taohua teaser card */
-.v2-mode .taohua-teaser-v2 { background: linear-gradient(135deg, #FFF8E7 0%, #FFFBEB 50%, #FFF5F0 100%); border: 3rpx solid #111; border-left: 12rpx solid #4ECDC4; box-shadow: 8rpx 8rpx 0 #111; padding: 24rpx; margin-bottom: 24rpx; box-sizing: border-box; cursor: pointer; }
-.v2-mode .taohua-teaser-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; padding-bottom: 16rpx; border-bottom: 3rpx solid #111; }
-.v2-mode .taohua-teaser-head-title { font-size: $fs-heading; font-weight: $fw-heading; color: #111; }
-.v2-mode .taohua-teaser-head-score { font-size: $fs-kpi; font-weight: $fw-hero; color: #111; line-height: 1; }
-.v2-mode .taohua-teaser-head-unit { font-size: $fs-caption; font-weight: $fw-body; color: #666; margin-left: 4rpx; }
-.v2-mode .taohua-teaser-body { padding: 18rpx 0 0; }
-.v2-mode .taohua-teaser-dirs { display: flex; gap: 10rpx; margin-bottom: 10rpx; }
-.v2-mode .taohua-teaser-dir { flex: 1; min-width: 0; padding: 12rpx 10rpx; border: 2rpx solid #111; background: #FFFBEA; display: flex; align-items: center; gap: 6rpx; box-sizing: border-box; }
-.v2-mode .taohua-teaser-dir-emoji { font-size: $fs-body; flex-shrink: 0; }
-.v2-mode .taohua-teaser-dir-label { font-size: $fs-micro; font-weight: $fw-heading; color: #111; max-width: 2em; word-break: break-all; line-height: 1.2; }
-.v2-mode .taohua-teaser-dir-val { min-width: 0; font-size: $fs-micro; font-weight: $fw-body; color: #111; margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.v2-mode .taohua-teaser-guide { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; margin-bottom: 2rpx; }
-.v2-mode .taohua-teaser-guide-text { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; margin-bottom: 4rpx; }
-.v2-mode .taohua-teaser-meta { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #666; }
-.v2-mode .taohua-teaser-cta { margin-top: 16rpx; padding: 12rpx 18rpx; border: 2rpx solid #111; background: #FFD93D; box-shadow: 3rpx 3rpx 0 #111; font-size: $fs-body; font-weight: $fw-heading; color: #111; text-align: center; box-sizing: border-box; }
-.v2-mode .taohua-teaser-cite { margin-top: 14rpx; padding-top: 10rpx; border-top: 2rpx dashed #111; font-size: $fs-caption; font-weight: $fw-body; color: #777; text-align: center; }
+/* ===== 今日桃花卡片 · 方案三 · 花瓣散落 ===== */
+.v2-mode .taohua-teaser-v2 {
+  background: linear-gradient(180deg, #FFF5F5 0%, #FFFDF5 60%);
+  border: 3rpx solid #111;
+  border-left: 12rpx solid var(--hero, #FF6B6B);
+  box-shadow: 8rpx 8rpx 0 #111;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.v2-mode .taohua-teaser-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 14rpx; padding-bottom: 12rpx;
+  border-bottom: 2rpx dashed #ccc;
+}
+.v2-mode .taohua-teaser-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
+.v2-mode .taohua-teaser-head-score { font-size: 48rpx; font-weight: $fw-hero; color: var(--hero, #FF6B6B); line-height: 1; }
+.v2-mode .taohua-teaser-head-unit { font-size: $fs-caption; font-weight: $fw-body; color: #666; }
+
+/* 进度条 */
+.v2-mode .taohua-bar-wrap { display: flex; align-items: center; gap: 8rpx; margin-bottom: 16rpx; }
+.v2-mode .taohua-bar-label { font-size: $fs-caption; font-weight: $fw-label; color: #666; white-space: nowrap; }
+.v2-mode .taohua-bar-track { flex: 1; height: 10rpx; background: #eee; border: 2rpx solid #111; border-radius: 2rpx; overflow: hidden; }
+.v2-mode .taohua-bar-fill { height: 100%; background: linear-gradient(90deg, var(--hero, #FF6B6B), var(--accent, #FFD93D)); }
+
+/* 方位竖排 */
+.v2-mode .taohua-dirs-v { display: flex; flex-direction: column; gap: 6rpx; margin-bottom: 14rpx; }
+.v2-mode .taohua-dir-v { display: flex; align-items: center; gap: 8rpx; padding: 8rpx 10rpx; border-bottom: 1rpx dashed #eee; }
+.v2-mode .taohua-dir-v:last-child { border-bottom: none; }
+.v2-mode .taohua-dir-v-emoji { font-size: $fs-body; width: 36rpx; text-align: center; flex-shrink: 0; }
+.v2-mode .taohua-dir-v-info { flex: 1; min-width: 0; }
+.v2-mode .taohua-dir-v-name { font-size: $fs-body; font-weight: $fw-heading; color: #111; }
+.v2-mode .taohua-dir-v-desc { font-size: $fs-caption; color: #666; margin-top: 2rpx; }
+.v2-mode .taohua-dir-v-arrow { font-size: $fs-body; font-weight: $fw-hero; color: var(--hero, #FF6B6B); }
+
+/* 引导语 */
+.v2-mode .taohua-quote { display: block; font-size: $fs-body-lg; color: #666; font-style: italic; margin-bottom: 8rpx; padding-left: 12rpx; border-left: 3rpx solid var(--accent, #FFD93D); line-height: 1.5; }
+
+/* 建除 + 概要 */
+.v2-mode .taohua-meta { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-bottom: 16rpx; }
+
+/* CTA */
+.v2-mode .taohua-cta { display: flex; align-items: center; justify-content: center; gap: 6rpx; padding: 12rpx 18rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-body; font-weight: $fw-heading; color: #111; letter-spacing: 1rpx; text-align: center; box-sizing: border-box; }
+
+/* 出处 */
+.v2-mode .taohua-cite { margin-top: 14rpx; padding-top: 10rpx; border-top: 2rpx dashed #ccc; font-size: $fs-caption; font-weight: $fw-body; color: #999; text-align: center; }
+
+/* 加载 */
+.v2-mode .taohua-teaser-body-loading { padding: 18rpx 0; text-align: center; }
 .taohua-info-dot { display: inline-flex; align-items: center; justify-content: center; width: 34rpx; height: 34rpx; border: 2rpx solid #111; font-size: $fs-micro; font-weight: $fw-hero; color: #111; margin-left: 6rpx; cursor: pointer; vertical-align: middle; }
 .taohua-info-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); }
 .taohua-info-sheet { width: 100%; max-width: 500px; max-height: 65vh; background: #FFFDF5; border: 3px solid #111; box-shadow: 8rpx 8rpx 0 #111; display: flex; flex-direction: column; overflow: hidden; }

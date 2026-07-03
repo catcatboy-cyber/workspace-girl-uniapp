@@ -134,17 +134,6 @@
             </view>
           </view>
 
-          <view v-if="sideSnapshots[index]" class="side-snapshot-box">
-            <text class="ai-panel-label">星象速写快照</text>
-            <text class="headline" user-select>{{ sideSnapshots[index].summary }}</text>
-            <view class="side-grid">
-              <view v-for="section in sideSnapshots[index].sections" :key="section.label" class="side-item">
-                <text class="side-label">{{ section.label }}</text>
-                <text class="side-text" user-select>{{ section.text }}</text>
-              </view>
-            </view>
-          </view>
-
           <view v-if="item.explanation?.petLine || item.explanation?.bullets?.length" class="ai-panel">
             <text class="ai-panel-label">{{ hasAIReview(item) ? aiLabel() + ' 分析内容' : '分析内容' }}</text>
             <text v-if="item.explanation?.petLine" class="headline" user-select>{{ item.explanation.petLine }}</text>

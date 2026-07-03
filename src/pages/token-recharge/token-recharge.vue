@@ -4,10 +4,6 @@
         <text class="hero-tag-v2">BOOST</text>
         <text class="hero-title-v2">Credits<text class="hl-v2">加油包</text></text>
         <text class="hero-copy-v2">套餐 Credits 不够？买加油包，不过期。当前额外 Credits：{{ extraTokens.toLocaleString() }}</text>
-        <view class="sandbox-toggle" @click="sandboxMode = !sandboxMode">
-          <text :class="['sandbox-dot', sandboxMode ? 'on' : '']"></text>
-          <text class="sandbox-label">{{ sandboxMode ? '沙箱测试中' : '正式支付' }}</text>
-        </view>
       </view>
 
       <view v-if="plansLoading" class="card-v2">
@@ -54,7 +50,6 @@ const plansLoading = ref(false)
 const plansError = ref('')
 const orderingId = ref('')
 const orderMessage = ref('')
-const sandboxMode = ref(false) // 沙箱测试开关
 const useVirtualPay = ref(false) // 后台开关
 const orderOk = ref(false)
 const createdOrderId = ref('')
@@ -106,7 +101,7 @@ async function loadPlans() {
 
 async function doVirtualRecharge(planId: string) {
   try {
-    const result = await createVirtualPayOrder({ productType: 'recharge', productId: planId, sandbox: sandboxMode.value })
+    const result = await createVirtualPayOrder({ productType: 'recharge', productId: planId })
     if (!result?.success) { orderMessage.value = result?.message || '创建订单失败'; return }
     const { paySig, signature, signData, outTradeNo, mode } = result
 
@@ -155,9 +150,9 @@ async function createOrder(planId: string) {
   orderOk.value = false
   createdOrderId.value = ''
   try {
-    // 0. 虚拟支付通道：沙箱开关 或 后台开启
+    // 0. 虚拟支付通道：后台开启
     // #ifdef MP-WEIXIN
-    if (useVirtualPay.value || sandboxMode.value) {
+    if (useVirtualPay.value) {
       await doVirtualRecharge(planId)
       return
     }
@@ -280,10 +275,6 @@ async function createOrder(planId: string) {
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
-.v2-mode .sandbox-toggle { display: flex; align-items: center; gap: 8rpx; margin-top: 12rpx; cursor: pointer; }
-.v2-mode .sandbox-dot { width: 32rpx; height: 32rpx; border: 2rpx solid #111; border-radius: 50%; background: #fff; }
-.v2-mode .sandbox-dot.on { background: #FFD93D; }
-.v2-mode .sandbox-label { font-size: $fs-caption; font-weight: $fw-heading; color: #111; }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }

@@ -403,7 +403,7 @@ export function buildObservationAchievements(cases, now = new Date()) {
     achievements.push({
       title: '画像补全中',
       value: `${cases.filter((item) => item.profile.relationType || item.profile.age || item.profile.gender || item.profile.occupation || item.profile.zodiac || item.profile.constellation).length} 个`,
-      description: '已经开始给 Crush 补充画像，后续星象速写会更有意思。'
+      description: '已经开始给 Crush 补充画像，后续星座侧写会更有意思。'
     })
   }
 
@@ -1911,7 +1911,7 @@ function buildConstellationPairMeaning(selfConstellation, targetConstellation, e
   if (selfConstellation === targetConstellation) {
     return `你和对方同为${selfConstellation}，趣味上容易理解彼此的表达习惯，但也可能互相放大同一种敏感点。${eventTail}`
   }
-  return `从星象速写看，你是${selfConstellation}、对方是${targetConstellation}，可以把它当成沟通风格差异的小提示：一个人怎么表达热度，另一个人怎么确认安全感。${eventTail}`
+  return `从星座侧写看，你是${selfConstellation}、对方是${targetConstellation}，可以把它当成沟通风格差异的小提示：一个人怎么表达热度，另一个人怎么确认安全感。${eventTail}`
 }
 
 export function buildProfileSideRead(params) {
@@ -1939,7 +1939,7 @@ export function buildProfileSideRead(params) {
           : eventType === 'verification'
             ? `这次围绕"${eventTitle}"，重点是事实、承诺和说法能不能对上。`
             : `这次围绕"${eventTitle}"，先把它放进连续行为里看，不单独下结论。`
-      : '当前还没有明确触发事件，星象速写会更多参考画像和当前分数。'
+      : '当前还没有明确触发事件，星座侧写会更多参考画像和当前分数。'
 
   const facts = [
     profile?.age ? `${profile.age}岁` : '',
@@ -1956,12 +1956,12 @@ export function buildProfileSideRead(params) {
   if (false && (selfFacts.length > 0 || facts.length > 0)) {
     sections.push({
       label: '画像对照',
-      text: `${selfFacts.length ? `你这边：${selfFacts.join('、')}。` : ''}${facts.length ? `对方这边：${facts.join('、')}。` : ''}这部分只作为星象速写入口，不参与意向和风险评分。`
+      text: `${selfFacts.length ? `你这边：${selfFacts.join('、')}。` : ''}${facts.length ? `对方这边：${facts.join('、')}。` : ''}这部分只作为星座侧写入口，不参与意向和风险评分。`
     })
   }
 
   sections.push({
-    label: '综合星象速写',
+    label: '综合星座侧写',
     text: `${facts.length > 0 ? `结合${facts.join('、')}来看，` : ''}${eventBase} 当前意向分是${intentScore}，风险分是${riskScore}。${trendText}${intentScore >= 60 && riskScore < 45
       ? '这类组合更适合看持续兑现，不要只看一时热度。'
       : riskScore >= 60
@@ -2010,7 +2010,7 @@ export function buildProfileSideRead(params) {
   }
 
   return {
-    title: '星象速写',
+    title: '星座侧写',
     summary: '结合本人画像、对方画像、最新事件和趋势变化做趣味解读，不参与核心评分。',
     sections: sections.filter((item) => item.text)
   }
@@ -2063,7 +2063,7 @@ export function buildZodiacConstellationSideRead(params) {
   if (availableSections.length === 0) return null
 
   return {
-    title: '星象速写',
+    title: '星座侧写',
     summary: hasSelfAstroProfile
       ? '结合你们的属相、星座和本次事件来看，不参与评分。'
       : '结合 Crush 的属相、星座和本次事件来看，不参与评分。',
@@ -2074,7 +2074,7 @@ export function buildZodiacConstellationSideRead(params) {
 function normalizeAISideRead(value) {
   const input = value && typeof value === 'object' ? value : null
   if (!input) return null
-  const title = sanitizeSideReadText(cleanShortText(input.title || '星象速写', 24) || '星象速写')
+  const title = sanitizeSideReadText(cleanShortText(input.title || '星座侧写', 24) || '星座侧写')
   const summary = sanitizeSideReadText(cleanShortText(input.summary || '', 120))
   const sections = Array.isArray(input.sections)
     ? input.sections.slice(0, 3).map((item) => ({
@@ -2088,13 +2088,13 @@ function normalizeAISideRead(value) {
 
 function sanitizeSideReadText(value) {
   return String(value || '')
-    .replace(/属相星座侧写/g, '星象速写')
+    .replace(/属相星座侧写/g, '星座侧写')
     .replace(/星座侧写/g, '星座速写')
     .replace(/属相侧写/g, '属相速写')
-    .replace(/综合侧写/g, '综合星象速写')
-    .replace(/保守侧写/g, '保守星象速写')
-    .replace(/侧写资料不足/g, '星象速写资料不足')
-    .replace(/侧写/g, '星象速写')
+    .replace(/综合侧写/g, '综合星座侧写')
+    .replace(/保守侧写/g, '保守星座侧写')
+    .replace(/侧写资料不足/g, '星座侧写资料不足')
+    .replace(/侧写/g, '星座侧写')
 }
 
 function withAISideReadAnchor(text, latestResult) {

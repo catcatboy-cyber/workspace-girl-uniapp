@@ -155,7 +155,7 @@ const subForm = reactive({
 }) as any
 const ALL_FEATURES = [
   '记录', '时间轴', '规则分析', '即时反馈', '事件理解',
-  '周复盘', '附件识别', '星象速写', '小咪帮你说（单轮）',
+  '周复盘', '附件识别', '小咪帮你说（单轮）',
   '小咪多轮策略', '自定义宠物', '自定义AI风格', '命理桃花'
 ]
 const subSaving = ref(false)
@@ -197,8 +197,8 @@ async function loadSubscriptionConfig() {
     subForm.trialEnabled = c.trial?.enabled !== false
     subForm.trialDurationDays = Number(c.trial?.durationDays ?? 7)
     subForm.trialExtendOnReferral = Number(c.trial?.extendOnReferral ?? 3)
-    if (Array.isArray(c.trial?.features)) subForm.trialFeatures = [...c.trial.features]
-    if (Array.isArray(c.trial?.excludedFeatures)) subForm.trialExcludedFeatures = [...c.trial.excludedFeatures]
+    if (Array.isArray(c.trial?.features)) subForm.trialFeatures = c.trial.features.filter((f: string) => ALL_FEATURES.includes(f))
+    if (Array.isArray(c.trial?.excludedFeatures)) subForm.trialExcludedFeatures = c.trial.excludedFeatures.filter((f: string) => ALL_FEATURES.includes(f))
     subForm.welcomeCalls = Number(c.welcomeCalls ?? 10)
     if (c.plans) {
       for (const key of ['free', 'pro', 'ultra']) {
@@ -206,8 +206,8 @@ async function loadSubscriptionConfig() {
           subForm.plans[key].name = c.plans[key].name || subForm.plans[key].name
           subForm.plans[key].monthlyTokens = Number(c.plans[key].monthlyTokens ?? subForm.plans[key].monthlyTokens)
           subForm.plans[key].maxCrushes = Number(c.plans[key].maxCrushes ?? subForm.plans[key].maxCrushes)
-          if (Array.isArray(c.plans[key].features)) subForm.plans[key].features = [...c.plans[key].features]
-          if (Array.isArray(c.plans[key].excludedFeatures)) subForm.plans[key].excludedFeatures = [...c.plans[key].excludedFeatures]
+          if (Array.isArray(c.plans[key].features)) subForm.plans[key].features = c.plans[key].features.filter((f: string) => ALL_FEATURES.includes(f))
+          if (Array.isArray(c.plans[key].excludedFeatures)) subForm.plans[key].excludedFeatures = c.plans[key].excludedFeatures.filter((f: string) => ALL_FEATURES.includes(f))
           if (key !== 'free') {
             subForm.plans[key].priceYuan = Number(c.plans[key].priceYuan ?? subForm.plans[key].priceYuan)
             subForm.plans[key].priceYuanAnnual = Number(c.plans[key].priceYuanAnnual ?? subForm.plans[key].priceYuanAnnual)

@@ -1389,10 +1389,10 @@ async function generateThisMonthReview() {
 .v2-mode .notice-sub-v2 { display: block; font-size: 20rpx; font-weight: 600; color: #555; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: var(--text-main, #111); color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: 20rpx; font-weight: 900; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: 48rpx; font-weight: 900; color: var(--text-main, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: 26rpx; font-weight: 600; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
-.v2-mode .hero-profile-v2 { display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx; padding-top: 18rpx; border-top: 3rpx solid rgba(17,17,17,0.28); }
+.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-profile-v2 { display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx; padding-top: 18rpx; border-top: 2rpx solid rgba(0,0,0,0.12); }
 .v2-mode .hero-profile-main-v2 { flex: 1; min-width: 0; }
 .v2-mode .hero-profile-name-row-v2 { display: flex; align-items: baseline; gap: 10rpx; flex-wrap: wrap; }
 .v2-mode .hero-profile-tags-v2 { margin-top: 10rpx; }

@@ -606,7 +606,6 @@ async function createVirtualPayOrder(event) {
     if (!amountYuan || amountYuan <= 0) return { success: false, message: '套餐价格未配置' }
 
     const amountFen = Math.round(amountYuan * 100)
-    const productId = planConfig.virtualProductId || `${planKey}_${billingCycle}`
     const outTradeNo = vp.generateOutTradeNo('SUB')
 
     order = {
@@ -618,10 +617,9 @@ async function createVirtualPayOrder(event) {
       status: 'pending', channel: 'virtual_pay',
       sandbox, createdAt: new Date(), updatedAt: new Date()
     }
-    mode = 'short_series_goods'
+    mode = 'short_series_coin'
     signDataObj = vp.buildSignData({
-      outTradeNo, buyQuantity: 1, sandbox,
-      productId, goodsPrice: amountFen,
+      outTradeNo, buyQuantity: amountFen, sandbox,
       attach: JSON.stringify({ userId, productType, planKey, billingCycle })
     })
 

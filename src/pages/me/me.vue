@@ -1,24 +1,20 @@
 <template>
   <view :class="['page v2-mode anim-ready', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
-      <view class="hero-block-v2 anim-hero"><text class="hero-tag-v2">SETTINGS</text><text class="hero-title-v2">我<text class="hl-v2">的</text></text><text class="hero-copy-v2">管理账号、系统能力说明和个人设置。</text></view>
-      <!-- Profile -->
-      <view class="card-v2 anim-card" style="animation-delay:0.15s"><text class="section-title-v2">本人画像</text><text class="card-text-v2">{{ selfProfileSummary }}</text><button class="btn btn-secondary btn-md" @click="goSelfProfile">编辑本人画像</button></view>
-      <!-- Account -->
-      <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">账号信息</text><text class="card-text-v2">当前登录：{{ userEmail || '未登录' }}</text><text class="card-text-v2">Crushes 数：{{ caseCount }}</text><view class="switch-row-v2"><text class="card-text-v2" style="flex:1">显示陪伴助手</text><switch :checked="showPetBar" color="#111" @change="onPetBarChange" /></view></view>
-      <!-- Pet picker -->
-      <view class="card-v2 anim-card" style="animation-delay:0.25s"><text class="section-title-v2">陪伴形象</text><view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn btn-secondary btn-sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view></view>
-      <!-- Pet select sheet -->
-      <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
-      <!-- 邀请到账通知 -->
-      <view v-if="showReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissReferralNotice">
-        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Credits →</text>
+      <!-- Hero + 本人画像 -->
+      <view class="hero-block-v2 anim-hero">
+        <text class="hero-tag-v2">SETTINGS</text>
+        <text class="hero-title-v2">我<text class="hl-v2">的</text></text>
+        <view v-if="hasProfile" class="hero-profile-inline">
+          <text class="hero-profile-text">{{ selfProfileSummary }}</text>
+          <text class="hero-profile-link" @click.stop="goSelfProfile">编辑 →</text>
+        </view>
+        <view v-else class="hero-profile-inline hero-profile-empty">
+          <text class="hero-profile-text">完善画像，分析更准更贴心</text>
+          <text class="hero-profile-link" @click.stop="goSelfProfile">去完善 →</text>
+        </view>
       </view>
-      <!-- 受邀奖励通知 -->
-      <view v-if="showInviteeNotice" class="referral-notice" @click="dismissInviteeNotice">
-        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Credits →</text>
-      </view>
-      <!-- Token（订阅体系 v3.2） -->
-      <view class="card-v2 anim-card" style="animation-delay:0.3s">
+      <!-- Credits -->
+      <view class="card-v2 anim-card" style="animation-delay:0.15s">
         <view style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16rpx;">
           <text class="section-title-v2" style="margin-bottom:0;">Credits</text>
           <view :class="['plan-badge', planBadgeClass]">
@@ -44,9 +40,12 @@
               <text class="stat-lbl-v2">月已用/月限额</text>
             </view>
           </view>
-          <view class="referral-voice-row-v2">
-            <text class="voice-row-lbl-v2">已邀请 <text class="voice-row-val-v2">{{ referralCount }} 人</text></text>
-            <text class="voice-row-val-v2">语音 {{ voiceUsageSummary.totalCount }} 次 · {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text>
+          <view class="account-meta-row">
+            <text class="account-meta-item">{{ caseCount }} Crushes</text>
+            <text class="account-meta-item">已邀请 {{ referralCount }} 人</text>
+          </view>
+          <view class="account-meta-row">
+            <text class="account-meta-item">语音 {{ voiceUsageSummary.totalCount }} 次 · {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text>
           </view>
           <view class="btn-row-v2" style="margin-top:14rpx;">
             <button class="btn btn-secondary btn-sm" @click="goSubscriptionPlan">升级套餐</button>
@@ -54,6 +53,25 @@
             <button class="btn btn-secondary btn-sm" @click="goTokenUsage">消费明细</button>
           </view>
       </view>
+      <!-- 邀请到账通知 -->
+      <view v-if="showReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissReferralNotice">
+        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Credits →</text>
+      </view>
+      <!-- 受邀奖励通知 -->
+      <view v-if="showInviteeNotice" class="referral-notice" @click="dismissInviteeNotice">
+        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Credits →</text>
+      </view>
+      <!-- 陪伴形象 -->
+      <view class="card-v2 anim-card" style="animation-delay:0.25s">
+        <text class="section-title-v2">陪伴形象</text>
+        <view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn btn-secondary btn-sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view>
+        <view class="switch-row-v2" style="margin-top:16rpx;">
+          <text class="card-text-v2" style="flex:1">显示陪伴助手</text>
+          <switch :checked="showPetBar" color="#111" @change="onPetBarChange" />
+        </view>
+      </view>
+      <!-- Pet select sheet -->
+      <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
       <!-- 低 Token 提示 -->
       <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:#FFFBEB;border-style:dashed;">
         <view open-type="share" style="width:100%;">
@@ -146,7 +164,8 @@ const subInviteCode = ref('')
 const subReferralCount = ref(0)
 const subReferralRewardTokens = ref(3000)
 const currentUserIsAdmin = ref(false)
-const canSaveAIPersona = computed(() => hasUsableSelfProfile(currentSelfProfile.value) && !aiSaving.value)
+const hasProfile = computed(() => hasUsableSelfProfile(currentSelfProfile.value))
+const canSaveAIPersona = computed(() => hasProfile.value && !aiSaving.value)
 
 // 次数显示用 computed
 const monthlyRemainingDisplay = computed(() => {
@@ -585,6 +604,9 @@ function goAbout() {
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
+.v2-mode .hero-profile-inline { margin-top: 16rpx; padding-top: 14rpx; border-top: 1rpx solid rgba(0,0,0,0.12); display: flex; align-items: baseline; justify-content: space-between; gap: 12rpx; }
+.v2-mode .hero-profile-text { font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; flex: 1; min-width: 0; }
+.v2-mode .hero-profile-link { font-size: $fs-caption; font-weight: $fw-heading; color: var(--accent, #FFD93D); white-space: nowrap; flex-shrink: 0; }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
@@ -620,9 +642,9 @@ function goAbout() {
 .v2-mode .stat-num-sub-v2 { font-size: 28rpx; font-weight: $fw-label; }
 .v2-mode .stat-lbl-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
 
-.v2-mode .referral-voice-row-v2 { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; padding: 10rpx 0; border-top: 1rpx solid rgba(0,0,0,0.08); }
-.v2-mode .voice-row-lbl-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
-.v2-mode .voice-row-val-v2 { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
+.v2-mode .account-meta-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10rpx; padding: 6rpx 0; }
+.v2-mode .account-meta-row + .account-meta-row { margin-top: 0; padding-top: 0; }
+.v2-mode .account-meta-item { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
 
 .v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .theme-card-v2 { padding: 14rpx 10rpx; border: 2rpx solid #111; background: #fff; text-align: center; }

@@ -1147,7 +1147,7 @@ export async function generateMonthlySideRead(_userId: string, caseId: string, m
     data: { action: 'generateSideRead', caseId, monthStart }
   })
   if (!res.result?.success) {
-    throw Object.assign(new Error(res.result?.message || '生成星象速写失败'), res.result || {})
+    throw Object.assign(new Error(res.result?.message || '生成星座侧写失败'), res.result || {})
   }
   return res.result
 }
