@@ -1,6 +1,6 @@
 <template>
   <view :class="['page v2-mode', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
-    <view class="hero-block-v2"><text class="hero-tag-v2">UPGRADE</text><text class="hero-title-v2">升级<text class="hl-v2">套餐</text></text><text class="hero-copy-v2">更多 Credits，更多功能，更懂你的关系。</text></view>
+    <view class="hero-block-v2"><text class="hero-tag-v2">月卡</text><text class="hero-title-v2">权益<text class="hl-v2">月卡</text></text><text class="hero-copy-v2">一次购买，畅享 30 天。到期自动结束，不续费不扣款。</text></view>
 
     <view class="sub-current-card" v-if="currentPlan">
       <text class="sub-current-label">当前</text>
@@ -26,8 +26,11 @@
           </view>
         </view>
         <view class="sub-plan-features">
+          <view v-if="plan.summary" class="sub-summary-row">
+            <text class="sub-summary-text">{{ plan.summary }}</text>
+          </view>
           <view v-for="f in plan.featureList" :key="f.label" class="sub-feature-row">
-            <text :class="['sub-feature-mark', f.ok ? 'on' : 'off']">{{ f.ok ? '✓' : '—' }}</text>
+            <text :class="['sub-feature-mark', f.ok ? 'on' : 'off']">{{ f.ok ? '+' : '—' }}</text>
             <text :class="['sub-feature-label', f.ok ? '' : 'off']">{{ f.label }}</text>
           </view>
         </view>
@@ -42,13 +45,16 @@
             <text class="sub-price-chip-val">{{ option.priceText }}</text>
           </view>
         </view>
+        <view v-if="plan.key !== 'free'" class="sub-plan-reassure">
+          <text class="sub-reassure-text">🛡️ 一次购买 · 不自动续费 · 到期自动结束</text>
+        </view>
         <button
           v-if="plan.key !== currentPlan.plan"
           :class="['sub-plan-btn', plan.key === 'pro' ? 'btn-primary' : '']"
           :disabled="upgradingPlan === plan.key"
           @click="onUpgrade(plan.key)"
-        >{{ upgradingPlan === plan.key ? '处理中…' : (plan.key === 'free' ? '切换至免费版' : '升级 ' + plan.name) }}</button>
-        <button v-else class="sub-plan-btn is-current-btn" disabled>当前套餐</button>
+        >{{ upgradingPlan === plan.key ? '处理中…' : (plan.key === 'free' ? '切换至免费版' : '¥' + getPlanButtonPrice(plan) + ' 立即开通') }}</button>
+        <button v-else class="sub-plan-btn is-current-btn" disabled>当前月卡</button>
       </view>
     </view>
 
@@ -111,14 +117,15 @@ const FEATURE_DISPLAY: Record<string, string> = {
   '自定义AI风格': '自定义 ' + aiLabel() + ' 风格',
   '命理桃花': '命理桃花',
 }
+const SUMMARY_MARKERS = ['免费版全部', 'Pro全部']
 const normalizeFeature = (name: string) => FEATURE_DISPLAY[name] || name
 
 function buildPlanCards(config: any, status: any) {
   const s = status?.subscription || {}
   const planDefs: any[] = [
-    { key: 'free', name: '免费版', monthlyTokens: 30000, priceText: '¥0', priceSub: '永久', callsText: '30K Credits/月' },
-    { key: 'pro', name: 'Pro', monthlyTokens: 300000, priceText: '¥19', priceSub: '/月 · 年付 ¥168', callsText: '300K Credits/月' },
-    { key: 'ultra', name: 'Ultra', monthlyTokens: -1, priceText: '¥39', priceSub: '/月 · 年付 ¥298', callsText: '不限' }
+    { key: 'free', name: '免费版', monthlyTokens: 30000, priceText: '¥0', priceSub: '永久', callsText: '30K Credits/30天' },
+    { key: 'pro', name: 'Pro 月卡', monthlyTokens: 300000, priceText: '¥19', priceSub: '/月 · 年付 ¥168', callsText: '300K Credits/30天' },
+    { key: 'ultra', name: 'Ultra 月卡', monthlyTokens: -1, priceText: '¥39', priceSub: '/月 · 年付 ¥298', callsText: '不限' }
   ]
   planDefs.forEach((d) => {
     const monthly = d.key === 'pro' ? 19 : d.key === 'ultra' ? 39 : 0
@@ -134,7 +141,7 @@ function buildPlanCards(config: any, status: any) {
         d.name = pc.name || d.name
         const mt = pc.monthlyTokens ?? pc.monthlyCalls
         d.monthlyTokens = mt
-        d.callsText = mt === -1 ? '不限' : `${(mt / 1000).toFixed(0)}K Credits/月`
+        d.callsText = mt === -1 ? '不限' : `${(mt / 1000).toFixed(0)}K Credits/30天`
         if (d.key !== 'free' && pc.priceYuan !== undefined && pc.priceYuan !== null) {
           d.priceText = `¥${pc.priceYuan}`
           if (pc.priceYuanAnnual !== undefined && pc.priceYuanAnnual !== null) d.priceSub = `/月 · 年付 ¥${pc.priceYuanAnnual}`
@@ -153,14 +160,45 @@ function buildPlanCards(config: any, status: any) {
   return planDefs.map(d => {
     const included = d.backendFeatures || []
     const excluded = d.backendExcluded || []
+
+    // 汇总行 + 去重：只显示当前套餐比下一级多出的功能，动态对比实际配置
+    const SUMMARY_BY_KEY: Record<string, string> = {
+      pro: '含免费版全部功能',
+      ultra: '含 Pro 全部功能',
+    }
+    const summary = SUMMARY_BY_KEY[d.key] || ''
+
+    // 收集所有套餐实际拥有的功能（排除标记），用于动态去重
+    const actualFeatures: Record<string, string[]> = {}
+    for (const pd of planDefs) {
+      actualFeatures[pd.key] = (pd.backendFeatures || [])
+        .filter((f: string) => !SUMMARY_MARKERS.includes(f))
+    }
+
+    // 有汇总的套餐：被覆盖的功能 = 下一级套餐实际拥有的全部功能
+    const COVERED_BY_LOWER: Record<string, string[]> = {
+      pro: actualFeatures.free || [],
+      ultra: actualFeatures.pro || [],
+    }
+    const covered = COVERED_BY_LOWER[d.key] || []
+
+    // 有汇总行的套餐只显示比下级多出的功能，不显示"没有的功能"
+    const displayOnlyIncluded = Boolean(summary)
+    const uniqueIncluded = included
+      .filter((f: string) => !SUMMARY_MARKERS.includes(f))
+      .filter((f: string) => !covered.includes(f))
+
     const featureList = [
-      ...included.map((f: string) => ({ label: normalizeFeature(f), ok: true })),
-      ...excluded.map((f: string) => ({ label: normalizeFeature(f), ok: false })),
+      ...uniqueIncluded.map((f: string) => ({ label: normalizeFeature(f), ok: true })),
     ]
-    if (featureList.length === 0) {
+    if (!displayOnlyIncluded) {
+      const uniqueExcluded = excluded.filter((f: string) => !covered.includes(f))
+      featureList.push(...uniqueExcluded.map((f: string) => ({ label: normalizeFeature(f), ok: false })))
+    }
+    if (featureList.length === 0 && !summary) {
       featureList.push({ label: '后台配置未加载，请刷新', ok: false })
     }
-    return { ...d, featureList }
+    return { ...d, featureList, summary }
   })
 }
 
@@ -171,8 +209,8 @@ function getSelectedPriceOption(planKey: string) {
 function getPriceOptions(plan: any) {
   const p = plan?.prices || {}
   return [
-    { key: 'standard-monthly', label: '月付', priceText: `¥${Number(p.standardMonthly || 0)}/月`, billingCycle: 'monthly' as const, priceVariant: 'standard' as const, amount: Number(p.standardMonthly || 0) },
-    { key: 'standard-annual', label: '年付', priceText: `¥${Number(p.standardAnnual || 0)}/年`, billingCycle: 'annual' as const, priceVariant: 'standard' as const, amount: Number(p.standardAnnual || 0) }
+    { key: 'standard-monthly', label: '30天', priceText: `¥${Number(p.standardMonthly || 0)}`, billingCycle: 'monthly' as const, priceVariant: 'standard' as const, amount: Number(p.standardMonthly || 0) },
+    { key: 'standard-annual', label: '365天', priceText: `¥${Number(p.standardAnnual || 0)}`, billingCycle: 'annual' as const, priceVariant: 'standard' as const, amount: Number(p.standardAnnual || 0) }
   ].filter((item) => item.key === 'standard-monthly' || item.amount > 0)
 }
 
@@ -189,6 +227,13 @@ function selectPriceOption(planKey: string, option: any) {
 function isSelectedPriceOption(planKey: string, option: any) {
   const selected = getSelectedPriceOption(planKey)
   return selected.billingCycle === option.billingCycle && selected.priceVariant === option.priceVariant
+}
+
+function getPlanButtonPrice(plan: any) {
+  const opt = getSelectedPriceOption(plan.key)
+  const p = plan?.prices || {}
+  if (opt.billingCycle === 'annual') return Number(p.standardAnnual || 0)
+  return Number(p.standardMonthly || 0)
 }
 
 async function loadSubscriptionData() {
@@ -455,6 +500,8 @@ function goRecharge() {
 .sub-plan-token-num { font-size: $fs-body-lg; font-weight: $fw-hero; color: $c-accent; }
 
 .sub-plan-features { margin-bottom: 20rpx; flex: 1; }
+.sub-summary-row { padding: 14rpx 0; margin-bottom: 6rpx; }
+.sub-summary-text { font-size: $fs-body; font-weight: $fw-label; color: $c-muted; }
 .sub-feature-row { display: flex; align-items: center; gap: 10rpx; padding: 10rpx 0; border-bottom: 1rpx solid rgba(0,0,0,0.06); }
 .sub-feature-row:last-child { border-bottom: none; }
 .sub-feature-mark { font-weight: $fw-hero; font-size: $fs-body-lg; width: 32rpx; text-align: center; flex-shrink: 0; }
@@ -463,7 +510,9 @@ function goRecharge() {
 .sub-feature-label { font-size: $fs-body; font-weight: $fw-body; color: $c-ink; }
 .sub-feature-label.off { color: $c-soft; }
 
-.sub-plan-price-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-bottom: 20rpx; }
+.sub-plan-price-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-bottom: 12rpx; }
+.sub-plan-reassure { text-align: center; margin-bottom: 20rpx; }
+.sub-reassure-text { font-size: $fs-caption; font-weight: $fw-body; color: $c-muted; }
 .sub-price-chip { border: 3rpx solid rgba(0,0,0,0.1); padding: 14rpx 12rpx; background: $c-card; text-align: center; }
 .sub-price-chip.active { border-color: $c-ink; background: $c-accent; box-shadow: 3rpx 3rpx 0 $c-ink; }
 .sub-price-chip-label { display: block; font-size: $fs-caption; font-weight: $fw-label; color: $c-muted; margin-bottom: 4rpx; }

@@ -158,6 +158,7 @@ const ALL_FEATURES = [
   '周复盘', '附件识别', '小咪帮你说（单轮）',
   '小咪多轮策略', '自定义宠物', '自定义AI风格', '命理桃花'
 ]
+const SUMMARY_MARKERS = ['免费版全部', 'Pro全部']
 const subSaving = ref(false)
 const subSaveMsg = ref('')
 
@@ -206,7 +207,12 @@ async function loadSubscriptionConfig() {
           subForm.plans[key].name = c.plans[key].name || subForm.plans[key].name
           subForm.plans[key].monthlyTokens = Number(c.plans[key].monthlyTokens ?? subForm.plans[key].monthlyTokens)
           subForm.plans[key].maxCrushes = Number(c.plans[key].maxCrushes ?? subForm.plans[key].maxCrushes)
-          if (Array.isArray(c.plans[key].features)) subForm.plans[key].features = c.plans[key].features.filter((f: string) => ALL_FEATURES.includes(f))
+          if (Array.isArray(c.plans[key].features)) {
+            const rawFeatures = c.plans[key].features
+            const markers = rawFeatures.filter((f: string) => SUMMARY_MARKERS.includes(f))
+            const regulars = rawFeatures.filter((f: string) => ALL_FEATURES.includes(f))
+            subForm.plans[key].features = [...markers, ...regulars]
+          }
           if (Array.isArray(c.plans[key].excludedFeatures)) subForm.plans[key].excludedFeatures = c.plans[key].excludedFeatures.filter((f: string) => ALL_FEATURES.includes(f))
           if (key !== 'free') {
             subForm.plans[key].priceYuan = Number(c.plans[key].priceYuan ?? subForm.plans[key].priceYuan)

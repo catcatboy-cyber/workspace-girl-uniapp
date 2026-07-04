@@ -60,7 +60,7 @@ onMounted(async () => {
     if (access?.allowed === false) {
       uni.showModal({
         title: '功能不可用',
-        content: access.reason || '当前套餐不支持自定义宠物功能，请升级套餐。',
+        content: access.reason || '当前月卡不支持自定义宠物功能，请购买月卡。',
         confirmText: '返回',
         showCancel: false,
         success: () => uni.navigateBack({ delta: 1 })

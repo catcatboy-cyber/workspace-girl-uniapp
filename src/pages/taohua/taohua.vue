@@ -705,7 +705,7 @@ onMounted(async () => {
     if (!access?.allowed) {
       uni.showModal({
         title: '功能不可用',
-        content: access?.reason || '当前套餐不支持命理桃花功能，请升级套餐。',
+        content: access?.reason || '当前月卡不支持命理桃花功能，请购买月卡。',
         confirmText: '返回',
         showCancel: false,
         success: () => uni.navigateBack({ delta: 1 })

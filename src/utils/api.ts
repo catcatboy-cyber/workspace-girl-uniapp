@@ -189,7 +189,7 @@ export function handleInsufficientBalance(result: any): boolean {
   if (result?.code === 'QUOTA_EXCEEDED') {
     uni.showModal({
       title: '次数不足',
-      content: result.message || '次数已用完，请升级套餐或购买加油包。',
+      content: result.message || '次数已用完，请购买月卡或加油包。',
       confirmText: '去充值',
       cancelText: '取消',
       success(res: any) {

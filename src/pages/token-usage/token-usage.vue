@@ -175,7 +175,7 @@ function mapLedgerType(item: any) {
 
   // grant 类型要按 source 区分来源（normalizeLedgerSource 已将 recharge_xxx → source: 'recharge'）
   if (type === 'grant' && (source === 'recharge' || source.startsWith('recharge_'))) return '充值获赠'
-  if (type === 'grant' && (source === 'sub' || source.startsWith('sub_'))) return '升级套餐'
+  if (type === 'grant' && (source === 'sub' || source.startsWith('sub_'))) return '开通月卡'
   if (type === 'grant' && (source === 'referral' || source.startsWith('referral_'))) return '邀请获赠'
   if (type === 'grant') return '赠送'
 

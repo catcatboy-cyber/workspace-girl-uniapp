@@ -64,7 +64,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
   _id: SUBSCRIPTION_DOC_ID,
   scope: 'global',
   key: 'subscription',
-  configVersion: 4,
+  configVersion: 5,
 
   trial: {
     enabled: true,
@@ -83,7 +83,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       excludedFeatures: ['自定义宠物', '自定义AI风格', '小咪多轮策略', '命理桃花']
     },
     pro: {
-      name: 'Pro',
+      name: 'Pro 月卡',
       priceYuan: 19,
       priceYuanAnnual: 168,
       priceYuanStudent: 12,
@@ -94,7 +94,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格']
     },
     ultra: {
-      name: 'Ultra',
+      name: 'Ultra 月卡',
       priceYuan: 39,
       priceYuanAnnual: 298,
       priceYuanStudent: 25,
@@ -128,27 +128,11 @@ async function ensureSubscriptionConfig(db) {
     const { data } = await db.collection(SYSTEM_SETTINGS).doc(SUBSCRIPTION_DOC_ID).get()
     if (data && data.length > 0) {
       const existing = data[0]
-      // 自动补全新字段（向后兼容旧版配置，每次读取时检查）
+      // 自动补全新字段（向后兼容旧版配置，只补缺不覆盖已有值）
       let needsUpdate = false
       const set = (obj, key, defaultVal) => { if (obj[key] === undefined || obj[key] === null) { obj[key] = defaultVal; needsUpdate = true } }
-      // 版本升级时：用代码默认值刷新系统管理的字段，保留用户自定义字段
+      // 仅同步版本号，不覆盖管理员已配置的任何字段（features/monthlyTokens/价格等全部保留）
       if (existing.configVersion !== DEFAULT_SUBSCRIPTION_CONFIG.configVersion) {
-        const def = DEFAULT_SUBSCRIPTION_CONFIG
-        // trial: 刷新 features / excludedFeatures，保留 durationDays 等用户设置
-        if (existing.trial) {
-          existing.trial.features = [...def.trial.features]
-          existing.trial.excludedFeatures = [...def.trial.excludedFeatures]
-        }
-        // plans: 刷新 features / excludedFeatures / monthlyTokens / maxCrushes，保留价格/名称
-        for (const pk of ['free', 'pro', 'ultra']) {
-          const plan = existing.plans?.[pk]
-          const defPlan = def.plans?.[pk]
-          if (!plan || !defPlan) continue
-          plan.features = [...defPlan.features]
-          plan.excludedFeatures = [...defPlan.excludedFeatures]
-          plan.monthlyTokens = defPlan.monthlyTokens
-          plan.maxCrushes = defPlan.maxCrushes
-        }
         existing.configVersion = DEFAULT_SUBSCRIPTION_CONFIG.configVersion
         needsUpdate = true
       }

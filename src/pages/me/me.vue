@@ -29,7 +29,7 @@
           <view class="stats-grid-v2" style="margin-top:16rpx;">
             <view class="stat-box-v2">
               <text class="stat-num-sub-v2">{{ monthlyRemainingDisplay }}</text>
-              <text class="stat-lbl-v2">本月套餐</text>
+              <text class="stat-lbl-v2">月卡配额</text>
             </view>
             <view class="stat-box-v2">
               <text class="stat-num-sub-v2">{{ extraTokens }}</text>
@@ -48,7 +48,7 @@
             <text class="account-meta-item">语音 {{ voiceUsageSummary.totalCount }} 次 · {{ formatSeconds(voiceUsageSummary.totalDurationMs) }}</text>
           </view>
           <view class="btn-row-v2" style="margin-top:14rpx;">
-            <button class="btn btn-secondary btn-sm" @click="goSubscriptionPlan">升级套餐</button>
+            <button class="btn btn-secondary btn-sm" @click="goSubscriptionPlan">{{ subPlanButtonLabel }}</button>
             <button class="btn btn-secondary btn-sm" @click="goRecharge">买加油包</button>
             <button class="btn btn-secondary btn-sm" @click="goTokenUsage">消费明细</button>
           </view>
@@ -157,6 +157,7 @@ const subPlan = ref('free')
 const subPlanName = ref('免费版')
 const subIsTrial = ref(false)
 const subTrialDaysLeft = ref(0)
+const subPlanExpiresAt = ref('')
 const subMonthlyUsed = ref(0)
 const subMonthlyLimit = ref(20)
 const subExtraTokens = ref(0)
@@ -204,10 +205,20 @@ const totalAvailableDisplay = computed(() => {
   if (subMonthlyLimit.value === -1) return '∞'
   return (Math.max(0, subMonthlyLimit.value - subMonthlyUsed.value) + subExtraTokens.value).toLocaleString()
 })
+const planExpiresText = computed(() => {
+  if (!subPlanExpiresAt.value) return ''
+  const d = new Date(subPlanExpiresAt.value)
+  if (isNaN(d.getTime())) return ''
+  return ` · 到期 ${d.getMonth() + 1}月${d.getDate()}日`
+})
 const planBadgeLabel = computed(() => {
-  if (subPlan.value === 'pro') return 'PRO 会员'
-  if (subPlan.value === 'ultra') return 'ULTRA 会员'
-  return '免费用户'
+  if (subPlan.value === 'pro') return 'Pro 月卡' + planExpiresText.value
+  if (subPlan.value === 'ultra') return 'Ultra 月卡' + planExpiresText.value
+  return '免费版'
+})
+const subPlanButtonLabel = computed(() => {
+  if (subPlan.value === 'pro' || subPlan.value === 'ultra') return '购买套餐'
+  return '买月卡'
 })
 const planBadgeClass = computed(() => {
   if (subIsTrial.value) return 'badge-trial'
@@ -366,6 +377,7 @@ async function loadSubscriptionStatus() {
     subPlanName.value = s.planName || '免费版'
     subIsTrial.value = !!s.isTrial
     subTrialDaysLeft.value = s.trialDaysLeft || 0
+    subPlanExpiresAt.value = s.planExpiresAt || ''
     subMonthlyUsed.value = s.monthlyTokensUsed || 0
     subMonthlyLimit.value = s.monthlyTokensLimit || 0
     subExtraTokens.value = s.extraTokens || 0
@@ -566,8 +578,8 @@ async function goCustomPet() {
     if (access?.allowed === false) {
       uni.showModal({
         title: '功能不可用',
-        content: access.reason || '当前套餐不支持自定义宠物功能，请升级套餐。',
-        confirmText: '去升级',
+        content: access.reason || '当前月卡不支持自定义宠物功能，请购买月卡。',
+        confirmText: '去看看',
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) uni.navigateTo({ url: '/pages/subscription/subscription' })
