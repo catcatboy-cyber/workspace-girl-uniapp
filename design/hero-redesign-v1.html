@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hero 重设计 — 5 个主页面</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #f0ece4;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  padding: 32px 20px;
+}
+.board {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+.card {
+  background: #FFFDF5;
+  border: 3px solid #111;
+  box-shadow: 8rpx 8rpx 0 #111;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ═══ HERO 公共结构 ═══ */
+.hero {
+  padding: 28px 26px 26px;
+  position: relative;
+}
+.hero-tag {
+  display: inline-block;
+  background: #111;
+  color: #FFD93D;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero-title {
+  display: block;
+  font-size: 30px;
+  font-weight: 900;
+  color: #111;
+  line-height: 1.18;
+  letter-spacing: -1px;
+}
+.hero-title .hl {
+  display: inline-block;
+  background: #FFD93D;
+  padding: 0 6px;
+}
+.hero-sub {
+  display: block;
+  margin-top: 10px;
+  font-size: 15px;
+  color: rgba(0,0,0,0.6);
+  line-height: 1.5;
+  max-width: 90%;
+}
+.hero-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.hero-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 3px solid #111;
+  background: #FFD93D;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px; font-weight: 900; color: #111;
+}
+.hero-name {
+  font-size: 17px; font-weight: 800; color: #111;
+}
+.hero-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 2px solid #111;
+  font-size: 11px; font-weight: 800;
+  background: #FFD93D;
+  margin-left: auto;
+}
+.hero-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
+}
+.hero-tag-sm {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 2px solid #111;
+  background: #fff;
+  font-size: 10px; font-weight: 700; color: #111;
+}
+.hero-btn {
+  margin-top: 16px;
+  width: 100%; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: #4ECDC4;
+  border: 3px solid #111;
+  box-shadow: 4px 4px 0 #111;
+  font-size: 15px; font-weight: 800; color: #111;
+  cursor: pointer;
+}
+
+/* ═══ 各页专属调整 ═══ */
+
+/* A — index: 情绪化大标题 + 身份行 + 迷你标签 */
+.a .hero { background: #FF6B6B; }
+.a .hero-tag { background: #111; color: #FFD93D; }
+.a .hero-title { color: #111; font-size: 32px; }
+.a .hero-sub { color: rgba(0,0,0,0.58); }
+.a .hero-name { color: #111; }
+.a .hero-badge { background: #111; color: #FFD93D; }
+
+/* B — case-detail: 头像突出 + crush 类型醒目 */
+.b .hero { background: #FF6B6B; }
+.b .hero-row { gap: 16px; }
+.b .hero-avatar { width: 56px; height: 56px; font-size: 24px; }
+.b .hero-name { font-size: 20px; }
+.b .hero-badge { background: #111; color: #FFD93D; border-color: #FFD93D; }
+
+/* C — timeline: 时间线感 + 条目数 */
+.c .hero { background: #FF6B6B; }
+.c .hero-stat {
+  display: inline-flex; align-items: baseline; gap: 4px;
+  background: #111; padding: 6px 16px; margin-top: 14px;
+}
+.c .hero-stat-num { font-size: 30px; font-weight: 900; color: #FFD93D; line-height: 1; }
+.c .hero-stat-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.7); }
+
+/* D — cases: 列表感 + 统计数据 */
+.d .hero { background: #FF6B6B; }
+.d .hero-stats { display: flex; gap: 0; margin-top: 16px; }
+.d .hero-stat-cell {
+  flex: 1; text-align: center; padding: 12px 8px;
+  background: rgba(0,0,0,0.08); border-right: 2px solid rgba(0,0,0,0.12);
+}
+.d .hero-stat-cell:last-child { border-right: none; }
+.d .hero-stat-num { display: block; font-size: 26px; font-weight: 900; color: #111; line-height: 1; }
+.d .hero-stat-label { display: block; font-size: 10px; font-weight: 700; color: rgba(0,0,0,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 2px; }
+
+/* E — me: 设置感 + 画像预览 */
+.e .hero { background: #FF6B6B; }
+.e .hero-profile-line {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,0.12);
+}
+.e .hero-profile-text { font-size: 15px; color: rgba(0,0,0,0.6); flex: 1; }
+.e .hero-profile-link { font-size: 13px; font-weight: 800; color: #FFD93D; white-space: nowrap; padding: 4px 10px; background: #111; }
+
+/* ═══ 页面背景和标题 ═══ */
+.page-label {
+  font-size: 13px; font-weight: 800; color: #999;
+  padding: 16px 18px 0;
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.content-preview {
+  padding: 18px; font-size: 13px; color: #666; line-height: 1.6;
+  border-top: 2px dashed rgba(0,0,0,0.08);
+  background: #fafaf8;
+}
+.content-preview .mock-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border: 2px solid #ddd; background: #fff; margin-bottom: 8px;
+  font-size: 12px; color: #999;
+}
+</style>
+</head>
+<body>
+
+<h2 style="text-align:center;font-weight:900;font-size:28px;margin-bottom:8px;letter-spacing:-1px;">Hero 重设计 · 5 套方案</h2>
+<p style="text-align:center;color:#999;font-size:14px;margin-bottom:32px;">统一结构：眉标 → 标题 → 副标题 → 信息行</p>
+
+<div class="board">
+
+<!-- ═══════════════ A: index 今日 ═══════════════ -->
+<article class="card a">
+  <div class="page-label">Tab 1 · 今日</div>
+  <div class="hero">
+    <span class="hero-tag">TODAY</span>
+    <span class="hero-title">今天他<em class="hl">有戏</em>吗？</span>
+    <span class="hero-sub">基于最新互动记录的即时分析。越记越准。</span>
+    <div class="hero-row">
+      <div class="hero-avatar">陈</div>
+      <div>
+        <div class="hero-name">陈某某</div>
+      </div>
+      <span class="hero-badge">暧昧升温</span>
+    </div>
+    <div class="hero-tags">
+      <span class="hero-tag-sm">22 岁</span>
+      <span class="hero-tag-sm">男</span>
+      <span class="hero-tag-sm">产品经理</span>
+    </div>
+  </div>
+  <div class="content-preview">
+    <div class="mock-row">🌸 今日桃花运势 &nbsp; 76/100</div>
+    <div class="mock-row">📝 快速记录 &nbsp; 输入互动内容…</div>
+    <div class="mock-row">📊 本次分析 &nbsp; 意向 72 · 风险 28</div>
+  </div>
+</article>
+
+<!-- ═══════════════ B: case-detail 我们 ═══════════════ -->
+<article class="card b">
+  <div class="page-label">Tab 2 · 我们</div>
+  <div class="hero">
+    <span class="hero-tag">RELATIONSHIP</span>
+    <span class="hero-title"><em class="hl">陈某某</em> · 关系分析</span>
+    <span class="hero-sub">12 条记录 · 上次分析 7月6日</span>
+    <div class="hero-row">
+      <div class="hero-avatar">陈</div>
+      <div>
+        <div class="hero-name">陈某某</div>
+        <div style="font-size:12px;color:rgba(0,0,0,0.5);">25岁 · 男 · 天秤座</div>
+      </div>
+      <span class="hero-badge">TA 当前：暧昧升温</span>
+    </div>
+  </div>
+  <div class="content-preview">
+    <div class="mock-row">🎯 关系雷达 &nbsp; 五维分析</div>
+    <div class="mock-row">⚡ 机会/风险矩阵</div>
+    <div class="mock-row">📈 趋势数据 · 月度</div>
+  </div>
+</article>
+
+<!-- ═══════════════ C: timeline 往事 ═══════════════ -->
+<article class="card c">
+  <div class="page-label">Tab 3 · 往事</div>
+  <div class="hero">
+    <span class="hero-tag">TIMELINE</span>
+    <span class="hero-title"><em class="hl">往</em>事</span>
+    <span class="hero-sub">把真实发生过的互动按时间看清楚。</span>
+    <div class="hero-stat">
+      <span class="hero-stat-num">14</span>
+      <span class="hero-stat-label">条记录</span>
+    </div>
+    <div class="hero-tags" style="margin-top:14px;">
+      <span class="hero-tag-sm">25岁</span>
+      <span class="hero-tag-sm">男</span>
+      <span class="hero-tag-sm">天秤座</span>
+    </div>
+  </div>
+  <div class="content-preview">
+    <div class="mock-row">🔍 搜索事件标题或描述…</div>
+    <div class="mock-row">全部 · 碰面 3 · 聊天 5 · 吃饭 2</div>
+    <div class="mock-row">7/4 · 他说周末一起去看展 &nbsp; 📎</div>
+  </div>
+</article>
+
+<!-- ═══════════════ D: cases Crushes列表 ═══════════════ -->
+<article class="card d">
+  <div class="page-label">Tab 4 · Crushes</div>
+  <div class="hero">
+    <span class="hero-tag">CRUSHES</span>
+    <span class="hero-title"><em class="hl">3</em> 个 Crush</span>
+    <span class="hero-sub">先切换，再进入当前档案。随时可以新增。</span>
+    <div class="hero-stats">
+      <div class="hero-stat-cell">
+        <span class="hero-stat-num">2</span>
+        <span class="hero-stat-label">活跃中</span>
+      </div>
+      <div class="hero-stat-cell">
+        <span class="hero-stat-num">14</span>
+        <span class="hero-stat-label">总记录</span>
+      </div>
+      <div class="hero-stat-cell">
+        <span class="hero-stat-num">5</span>
+        <span class="hero-stat-label">次分析</span>
+      </div>
+    </div>
+    <button class="hero-btn">+ 开个新的</button>
+  </div>
+  <div class="content-preview">
+    <div class="mock-row">陈某某 · 暧昧升温 · 意向 72</div>
+    <div class="mock-row">李某某 · 初期观察 · 意向 45</div>
+  </div>
+</article>
+
+<!-- ═══════════════ E: me 我 ═══════════════ -->
+<article class="card e">
+  <div class="page-label">Tab 5 · 我</div>
+  <div class="hero">
+    <span class="hero-tag">PROFILE</span>
+    <span class="hero-title"><em class="hl">我的</em>主页</span>
+    <span class="hero-sub">管理画像、Credits 和偏好设置。</span>
+    <div class="hero-profile-line">
+      <span class="hero-profile-text">女生 · 22岁 · 大学生 · 属猴 · 天蝎座</span>
+      <span class="hero-profile-link">编辑 →</span>
+    </div>
+  </div>
+  <div class="content-preview">
+    <div class="mock-row">💳 Credits 可用 &nbsp; 280K</div>
+    <div class="mock-row">🎨 界面风格 &nbsp; Velvet Diary</div>
+    <div class="mock-row">🐱 陪伴形象 &nbsp; 小咪</div>
+  </div>
+</article>
+
+</div>
+</body>
+</html>

@@ -74,7 +74,7 @@ onUnmounted(stopTimers)
 <style scoped lang="scss">
 .coin-overlay {
   position: fixed; inset: 0; z-index: 2000;
-  background: rgba(0,0,0,0.6);
+  background: var(--overlay, rgba(0,0,0,0.6));
   display: flex; align-items: center; justify-content: center;
 }
 .coin-stage {
@@ -123,12 +123,12 @@ onUnmounted(stopTimers)
   animation: coin-text-pop 0.5s 0.3s both;
 }
 .coin-sub {
-  font-size: 28rpx; font-weight: 700; color: #fff;
+  font-size: 28rpx; font-weight: 700; color: var(--surface, #fff);
   text-align: center; line-height: 1.4;
   animation: coin-text-pop 0.5s 0.5s both;
 }
 .coin-hint {
-  font-size: 22rpx; color: rgba(255,255,255,0.5);
+  font-size: 22rpx; color: var(--on-active-muted, rgba(255,255,255,0.5));
   margin-top: 16rpx;
 }
 

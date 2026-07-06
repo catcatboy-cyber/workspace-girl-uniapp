@@ -173,9 +173,9 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
 .landing-pet-img {
   width: 200rpx;
   height: 200rpx;
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-radius: 50%;
-  background: #FFFBEB;
+  background: var(--brand-warm, #FFFBEB);
 }
 
 // ── Hero ──
@@ -187,10 +187,10 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
   display: inline-block;
   font-size: $fs-caption;
   font-weight: $fw-hero;
-  color: #111;
-  background: #FFD93D;
+  color: var(--text-main, #111);
+  background: var(--accent, #FFD93D);
   padding: 6rpx 20rpx;
-  border: 2rpx solid #111;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
   margin-bottom: 16rpx;
   letter-spacing: 4rpx;
 }
@@ -198,21 +198,21 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
   display: block;
   font-size: $fs-display;
   font-weight: $fw-hero;
-  color: #111;
+  color: var(--text-main, #111);
   line-height: 1.1;
   letter-spacing: -1rpx;
 }
 .landing-hero-hl {
   display: inline-block;
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
   padding: 0 10rpx;
 }
 .landing-hero-sub {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: #666;
+  color: var(--text-muted, #666);
   margin-top: 12rpx;
   font-style: italic;
 }
@@ -220,9 +220,9 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
 // ── 功能介绍 ──
 .landing-features {
   width: 100%;
-  background: #fff;
-  border: 3rpx solid #111;
-  box-shadow: 6rpx 6rpx 0 #111;
+  background: var(--surface, #fff);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
   padding: 32rpx 28rpx;
   margin-bottom: 40rpx;
 }
@@ -230,10 +230,10 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
   display: block;
   font-size: $fs-heading;
   font-weight: $fw-heading;
-  color: #111;
+  color: var(--text-main, #111);
   margin-bottom: 22rpx;
   padding-bottom: 16rpx;
-  border-bottom: 2rpx solid #111;
+  border-bottom: var(--border-width, 2rpx) solid var(--border, #111);
 }
 .landing-feat {
   display: flex;
@@ -250,7 +250,7 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
 .landing-feat-text {
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: #111;
+  color: var(--text-main, #111);
   line-height: 1.5;
 }
 
@@ -259,18 +259,18 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
   width: 100%;
   height: 80rpx;
   line-height: 80rpx;
-  background: #4ECDC4;
-  border: 3rpx solid #111;
-  box-shadow: 6rpx 6rpx 0 #111;
+  background: var(--accent-cool, #4ECDC4);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
   font-size: $fs-heading;
   font-weight: $fw-heading;
-  color: #111;
+  color: var(--text-main, #111);
   text-align: center;
   margin-bottom: 28rpx;
   box-sizing: border-box;
   &[disabled] {
     opacity: 0.6;
-    box-shadow: 3rpx 3rpx 0 #111;
+    box-shadow: none;
   }
 }
 
@@ -285,19 +285,19 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
   width: 34rpx;
   height: 34rpx;
   line-height: 32rpx;
-  border: 2rpx solid #111;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
   text-align: center;
   font-size: $fs-body;
   font-weight: $fw-hero;
-  color: #fff;
+  color: var(--surface, #fff);
   flex-shrink: 0;
 }
 .landing-check.checked {
-  background: #111;
+  background: var(--text-main, #111);
 }
 .landing-check-label {
   font-size: $fs-body;
   font-weight: $fw-body;
-  color: #666;
+  color: var(--text-muted, #666);
 }
 </style>

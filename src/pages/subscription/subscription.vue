@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view :class="['page v2-mode', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
     <view class="hero-block-v2"><text class="hero-tag-v2">月卡</text><text class="hero-title-v2">权益<text class="hl-v2">月卡</text></text><text class="hero-copy-v2">一次购买，畅享 30 天。到期自动结束，不续费不扣款。</text></view>
 
@@ -46,20 +46,20 @@
           </view>
         </view>
         <view v-if="plan.key !== 'free'" class="sub-plan-reassure">
-          <text class="sub-reassure-text">🛡️ 一次购买 · 不自动续费 · 到期自动结束</text>
+          <text class="sub-reassure-text">??? 一次购买 · 不自动续费 · 到期自动结束</text>
         </view>
         <button
           v-if="plan.key !== currentPlan.plan"
           :class="['sub-plan-btn', plan.key === 'pro' ? 'btn-primary' : '']"
           :disabled="upgradingPlan === plan.key"
           @click="onUpgrade(plan.key)"
-        >{{ upgradingPlan === plan.key ? '处理中…' : (plan.key === 'free' ? '切换至免费版' : '¥' + getPlanButtonPrice(plan) + ' 立即开通') }}</button>
+        >{{ upgradingPlan === plan.key ? '处理中…' : (plan.key === 'free' ? '切换至免费版' : '￥' + getPlanButtonPrice(plan) + ' 立即开通') }}</button>
         <button v-else class="sub-plan-btn is-current-btn" disabled>当前月卡</button>
       </view>
     </view>
 
     <view v-if="upgradeMessage" :class="['sub-upgrade-msg', upgradeOk ? 'ok' : 'err']">
-      <text class="sub-upgrade-icon">{{ upgradeOk ? '✓' : '⚠' }}</text>
+      <text class="sub-upgrade-icon">{{ upgradeOk ? '?' : '?' }}</text>
       <text class="sub-upgrade-text">{{ upgradeMessage }}</text>
     </view>
 
@@ -123,9 +123,9 @@ const normalizeFeature = (name: string) => FEATURE_DISPLAY[name] || name
 function buildPlanCards(config: any, status: any) {
   const s = status?.subscription || {}
   const planDefs: any[] = [
-    { key: 'free', name: '免费版', monthlyTokens: 30000, priceText: '¥0', priceSub: '永久', callsText: '30K Credits/30天' },
-    { key: 'pro', name: 'Pro 月卡', monthlyTokens: 300000, priceText: '¥19', priceSub: '/月 · 年付 ¥168', callsText: '300K Credits/30天' },
-    { key: 'ultra', name: 'Ultra 月卡', monthlyTokens: -1, priceText: '¥39', priceSub: '/月 · 年付 ¥298', callsText: '不限' }
+    { key: 'free', name: '免费版', monthlyTokens: 30000, priceText: '￥0', priceSub: '永久', callsText: '30K Credits/30天' },
+    { key: 'pro', name: 'Pro 月卡', monthlyTokens: 300000, priceText: '￥19', priceSub: '/月 · 年付 ￥168', callsText: '300K Credits/30天' },
+    { key: 'ultra', name: 'Ultra 月卡', monthlyTokens: -1, priceText: '￥39', priceSub: '/月 · 年付 ￥298', callsText: '不限' }
   ]
   planDefs.forEach((d) => {
     const monthly = d.key === 'pro' ? 19 : d.key === 'ultra' ? 39 : 0
@@ -143,8 +143,8 @@ function buildPlanCards(config: any, status: any) {
         d.monthlyTokens = mt
         d.callsText = mt === -1 ? '不限' : `${(mt / 1000).toFixed(0)}K Credits/30天`
         if (d.key !== 'free' && pc.priceYuan !== undefined && pc.priceYuan !== null) {
-          d.priceText = `¥${pc.priceYuan}`
-          if (pc.priceYuanAnnual !== undefined && pc.priceYuanAnnual !== null) d.priceSub = `/月 · 年付 ¥${pc.priceYuanAnnual}`
+          d.priceText = `￥${pc.priceYuan}`
+          if (pc.priceYuanAnnual !== undefined && pc.priceYuanAnnual !== null) d.priceSub = `/月 · 年付 ￥${pc.priceYuanAnnual}`
         }
         d.prices = {
           standardMonthly: Number(pc.priceYuan ?? d.prices.standardMonthly),
@@ -209,8 +209,8 @@ function getSelectedPriceOption(planKey: string) {
 function getPriceOptions(plan: any) {
   const p = plan?.prices || {}
   return [
-    { key: 'standard-monthly', label: '30天', priceText: `¥${Number(p.standardMonthly || 0)}`, billingCycle: 'monthly' as const, priceVariant: 'standard' as const, amount: Number(p.standardMonthly || 0) },
-    { key: 'standard-annual', label: '365天', priceText: `¥${Number(p.standardAnnual || 0)}`, billingCycle: 'annual' as const, priceVariant: 'standard' as const, amount: Number(p.standardAnnual || 0) }
+    { key: 'standard-monthly', label: '30天', priceText: `￥${Number(p.standardMonthly || 0)}`, billingCycle: 'monthly' as const, priceVariant: 'standard' as const, amount: Number(p.standardMonthly || 0) },
+    { key: 'standard-annual', label: '365天', priceText: `￥${Number(p.standardAnnual || 0)}`, billingCycle: 'annual' as const, priceVariant: 'standard' as const, amount: Number(p.standardAnnual || 0) }
   ].filter((item) => item.key === 'standard-monthly' || item.amount > 0)
 }
 
@@ -249,8 +249,8 @@ async function loadSubscriptionData() {
       plans.value = buildPlanCards(configRes, statusRes)
       if (configRes.config?.plans?.pro?.priceYuanAnnual) {
         discounts.value = [
-          { label: 'Pro 年付', value: `¥${configRes.config.plans.pro.priceYuanAnnual}/年（约 ¥${Math.round(configRes.config.plans.pro.priceYuanAnnual / 12)}/月）` },
-          { label: 'Ultra 年付', value: `¥${configRes.config.plans.ultra.priceYuanAnnual || 298}/年` }
+          { label: 'Pro 年付', value: `￥${configRes.config.plans.pro.priceYuanAnnual}/年（约 ￥${Math.round(configRes.config.plans.pro.priceYuanAnnual / 12)}/月）` },
+          { label: 'Ultra 年付', value: `￥${configRes.config.plans.ultra.priceYuanAnnual || 298}/年` }
         ]
       }
     }
@@ -479,61 +479,61 @@ function goRecharge() {
 .v2-mode .section-title-v2 { @include section-title-v2; }
 .sub-section-title { margin-bottom: 16rpx; }
 
-.sub-current-card { background: var(--surface, #{$c-card}); border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink}); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #{$c-ink}); padding: 24rpx 28rpx; margin-bottom: 28rpx; position: relative; }
-.sub-current-label { position: absolute; top: -12rpx; left: 20rpx; background: var(--hero-tag-bg, #{$c-ink}); color: var(--hero-tag-color, #{$c-accent}); padding: 4rpx 18rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 2rpx; }
+.sub-current-card { background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111); padding: 24rpx 28rpx; margin-bottom: 28rpx; position: relative; }
+.sub-current-label { position: absolute; top: -12rpx; left: 20rpx; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 4rpx 18rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 2rpx; }
 .sub-current-name-row { display: flex; align-items: center; gap: 12rpx; margin-top: 6rpx; margin-bottom: 18rpx; }
-.sub-current-name { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #{$c-ink}); }
-.sub-trial-badge { background: var(--accent-cool, #{$c-mint}); color: var(--text-main, #{$c-ink}); border: var(--border-width, 2rpx) solid var(--border, #{$c-ink}); padding: 4rpx 14rpx; font-size: $fs-caption; font-weight: $fw-label; }
+.sub-current-name { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
+.sub-trial-badge { background: var(--accent-cool, #4ECDC4); color: var(--text-main, #111); border: var(--border-width, 2rpx) solid var(--border, #111); padding: 4rpx 14rpx; font-size: $fs-caption; font-weight: $fw-label; }
 .sub-current-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; }
-.sub-stat-item { padding: 14rpx 8rpx; border: var(--border-width, 2rpx) solid var(--border, #{$c-ink}); background: var(--surface-dim, #{$c-card-soft}); text-align: center; }
-.sub-stat-num { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #{$c-ink}); }
-.sub-stat-lbl { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #{$c-muted}); margin-top: 2rpx; }
+.sub-stat-item { padding: 14rpx 8rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); text-align: center; }
+.sub-stat-num { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); }
+.sub-stat-lbl { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #666); margin-top: 2rpx; }
 
 .sub-plan-grid { display: flex; flex-direction: column; gap: 20rpx; }
-.sub-plan-card { position: relative; background: var(--surface, #{$c-card}); border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink}); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #{$c-ink}); padding: 28rpx; display: flex; flex-direction: column; }
-.sub-plan-card.is-current { border-color: var(--accent-cool, #{$c-mint}); border-width: 4rpx; }
-.sub-plan-badge { position: absolute; top: -14rpx; right: 20rpx; background: var(--accent, #{$c-accent}); color: var(--text-main, #{$c-ink}); border: var(--border-width, 2rpx) solid var(--border, #{$c-ink}); padding: 4rpx 20rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 2rpx; }
+.sub-plan-card { position: relative; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111); padding: 28rpx; display: flex; flex-direction: column; }
+.sub-plan-card.is-current { border-color: var(--accent-cool, #4ECDC4); border-width: 4rpx; }
+.sub-plan-badge { position: absolute; top: -14rpx; right: 20rpx; background: var(--accent, #FFD93D); color: var(--text-main, #111); border: var(--border-width, 2rpx) solid var(--border, #111); padding: 4rpx 20rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 2rpx; }
 
 .sub-plan-top { text-align: center; margin-bottom: 20rpx; }
-.sub-plan-name { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-soft, #{$c-soft}); text-transform: uppercase; letter-spacing: 4rpx; margin-bottom: 12rpx; }
-.sub-plan-token { display: inline-block; background: var(--hero-tag-bg, #{$c-ink}); padding: 10rpx 28rpx; }
-.sub-plan-token-num { font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--hero-tag-color, #{$c-accent}); }
+.sub-plan-name { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-soft, #999); text-transform: uppercase; letter-spacing: 4rpx; margin-bottom: 12rpx; }
+.sub-plan-token { display: inline-block; background: var(--hero-tag-bg, #111); padding: 10rpx 28rpx; }
+.sub-plan-token-num { font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--hero-tag-color, #FFD93D); }
 
 .sub-plan-features { margin-bottom: 20rpx; flex: 1; }
 .sub-summary-row { padding: 14rpx 0; margin-bottom: 6rpx; }
-.sub-summary-text { font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #{$c-muted}); }
+.sub-summary-text { font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #666); }
 .sub-feature-row { display: flex; align-items: center; gap: 10rpx; padding: 10rpx 0; border-bottom: 1rpx solid var(--divider, rgba(0,0,0,0.06)); }
 .sub-feature-row:last-child { border-bottom: none; }
 .sub-feature-mark { font-weight: $fw-hero; font-size: $fs-body-lg; width: 32rpx; text-align: center; flex-shrink: 0; }
-.sub-feature-mark.on { color: var(--accent-cool, #{$c-mint}); }
-.sub-feature-mark.off { color: var(--text-soft, #{$c-soft}); }
-.sub-feature-label { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #{$c-ink}); }
-.sub-feature-label.off { color: var(--text-soft, #{$c-soft}); }
+.sub-feature-mark.on { color: var(--accent-cool, #4ECDC4); }
+.sub-feature-mark.off { color: var(--text-soft, #999); }
+.sub-feature-label { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); }
+.sub-feature-label.off { color: var(--text-soft, #999); }
 
 .sub-plan-price-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-bottom: 12rpx; }
 .sub-plan-reassure { text-align: center; margin-bottom: 20rpx; }
-.sub-reassure-text { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #{$c-muted}); }
-.sub-price-chip { border: var(--border-width-strong, 3rpx) solid var(--divider, rgba(0,0,0,0.1)); padding: 14rpx 12rpx; background: var(--surface, #{$c-card}); text-align: center; }
-.sub-price-chip.active { border-color: var(--border, #{$c-ink}); background: var(--accent, #{$c-accent}); box-shadow: var(--shadow-hard, 3rpx 3rpx 0 #{$c-ink}); }
-.sub-price-chip-label { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #{$c-muted}); margin-bottom: 4rpx; }
-.sub-price-chip.active .sub-price-chip-label { color: var(--text-main, #{$c-ink}); }
-.sub-price-chip-val { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #{$c-ink}); }
+.sub-reassure-text { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #666); }
+.sub-price-chip { border: var(--border-width-strong, 3rpx) solid var(--divider, rgba(0,0,0,0.1)); padding: 14rpx 12rpx; background: var(--surface, #fff); text-align: center; }
+.sub-price-chip.active { border-color: var(--border, #111); background: var(--accent, #FFD93D); box-shadow: var(--shadow-hard, 3rpx 3rpx 0 #111); }
+.sub-price-chip-label { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); margin-bottom: 4rpx; }
+.sub-price-chip.active .sub-price-chip-label { color: var(--text-main, #111); }
+.sub-price-chip-val { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); }
 
-.sub-plan-btn { width: 100%; height: 72rpx; line-height: 72rpx; text-align: center; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #{$c-ink}); background: var(--surface, #{$c-card}); border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink}); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #{$c-ink}); padding: 0; }
-.sub-plan-btn.btn-primary { background: var(--accent-cool, #{$c-mint}); }
+.sub-plan-btn { width: 100%; height: 72rpx; line-height: 72rpx; text-align: center; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); padding: 0; }
+.sub-plan-btn.btn-primary { background: var(--accent-cool, #4ECDC4); }
 .sub-plan-btn[disabled] { opacity: 0.5; box-shadow: none; }
-.sub-plan-btn.is-current-btn { background: var(--surface-dim, #{$c-card-soft}); color: var(--text-soft, #{$c-soft}); border-color: var(--divider-strong, rgba(0,0,0,0.15)); box-shadow: none; }
+.sub-plan-btn.is-current-btn { background: var(--surface-dim, #f9f9f9); color: var(--text-soft, #999); border-color: var(--divider-strong, rgba(0,0,0,0.15)); box-shadow: none; }
 
-.sub-upgrade-msg { display: flex; align-items: center; gap: 10rpx; margin-top: 20rpx; padding: 20rpx 24rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink}); background: var(--surface, #{$c-card}); }
-.sub-upgrade-msg.ok { border-color: var(--accent-cool, #{$c-mint}); }
-.sub-upgrade-msg.err { border-color: var(--risk, #{$c-risk}); }
+.sub-upgrade-msg { display: flex; align-items: center; gap: 10rpx; margin-top: 20rpx; padding: 20rpx 24rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.sub-upgrade-msg.ok { border-color: var(--accent-cool, #4ECDC4); }
+.sub-upgrade-msg.err { border-color: var(--risk, #FF5252); }
 .sub-upgrade-icon { font-weight: $fw-hero; font-size: $fs-heading; }
-.sub-upgrade-msg.ok .sub-upgrade-icon { color: var(--accent-cool, #{$c-mint}); }
-.sub-upgrade-msg.err .sub-upgrade-icon { color: var(--risk, #{$c-risk}); }
-.sub-upgrade-text { font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #{$c-ink}); }
+.sub-upgrade-msg.ok .sub-upgrade-icon { color: var(--accent-cool, #4ECDC4); }
+.sub-upgrade-msg.err .sub-upgrade-icon { color: var(--risk, #FF5252); }
+.sub-upgrade-text { font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); }
 
 .sub-bottom-links { margin-top: 28rpx; }
-.sub-bottom-link { padding: 20rpx; border: var(--border-width, 2rpx) dashed var(--border, #{$c-ink}); text-align: center; background: var(--surface-dim, #{$c-card-soft}); }
-.sub-bottom-link-text { font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #{$c-muted}); }
+.sub-bottom-link { padding: 20rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); text-align: center; background: var(--surface-dim, #f9f9f9); }
+.sub-bottom-link-text { font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #666); }
 </style>
 

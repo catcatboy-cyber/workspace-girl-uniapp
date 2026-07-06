@@ -40,14 +40,14 @@ const pct = computed(() => Math.min(100, Math.round((countNum.value / 30) * 100)
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
 
-.pm-card { @include card-v2; padding: 20rpx 28rpx; margin-bottom: 24rpx; background: #fff; }
-.pm-title { display: block; font-size: $fs-body; font-weight: $fw-heading; color: #111; margin-bottom: 12rpx; }
-.pm-track { height: 12rpx; background: #f0f0f0; border: 1rpx solid #111; overflow: hidden; }
-.pm-fill { height: 100%; background: #4ECDC4; transition: width 0.5s ease; }
+.pm-card { @include card-v2; padding: 20rpx 28rpx; margin-bottom: 24rpx; background: var(--surface, #fff); }
+.pm-title { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); margin-bottom: 12rpx; }
+.pm-track { height: 12rpx; background: var(--surface-dim, #f0f0f0); border: 1rpx solid var(--border, #111); overflow: hidden; }
+.pm-fill { height: 100%; background: var(--dot-positive, var(--accent-cool, #4ECDC4)); transition: width 0.5s ease; }
 .pm-ticks { display: flex; justify-content: space-between; margin-top: 10rpx; gap: 8rpx; }
 .pm-tick { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2rpx; min-width: 0; }
-.pm-dot { width: 10rpx; height: 10rpx; border-radius: 50%; border: 2rpx solid #999; background: #fff; }
-.pm-tick.done .pm-dot { background: #4ECDC4; border-color: #111; }
-.pm-label { font-size: 24rpx; font-weight: $fw-label; color: #999; text-align: center; white-space: nowrap; }
-.pm-tick.done .pm-label { color: #111; }
+.pm-dot { width: 10rpx; height: 10rpx; border-radius: 50%; border: 2rpx solid var(--text-soft, #999); background: var(--surface, #fff); }
+.pm-tick.done .pm-dot { background: var(--dot-positive, var(--accent-cool, #4ECDC4)); border-color: var(--border, #111); }
+.pm-label { font-size: 24rpx; font-weight: $fw-label; color: var(--text-soft, #999); text-align: center; white-space: nowrap; }
+.pm-tick.done .pm-label { color: var(--text-main, #111); }
 </style>

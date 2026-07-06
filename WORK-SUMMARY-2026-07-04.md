@@ -116,12 +116,68 @@ Pro 和 Ultra 卡片列出全部功能（含与下级重复的），用户需要
 - `docs/APP-PACKAGING-PLAN.md`（v4）：三平台详细方案，经 2 轮 GPT 审计修正，10 个改动文件，环境变量通过 CloudBase 控制台设置不入仓库，零影响微信小程序
 
 ---
-## 7. 今日数据
+## 7. UI V3 四套新风格设计与实施评估
+
+### 7.1 背景
+用户对现有 "UI 方案 V2" 中 4 套设计（Crush Arcade / Campus Sticker / Bubble Chat Lab / Signal Game）不满意，要求面向不同用户群设计新风格。
+
+### 7.2 产出
+- **`design/ui-options-v3-preview.html`**：4 套全新风格手机框 mockup（可直接浏览器打开查看）
+  - A. 赛博信号（Neon Signal）：男生向，暗色霓虹仪表盘，monospace 终端美学
+  - B. 丝绒日记（Velvet Diary）：女生向，暖调精装日记本，衬线字体
+  - C. 薄荷玻璃（Mint Glass）：中性通用，Apple Health × Notion 毛玻璃数据风
+  - D. 粗粝宣言（Fuzzy Bold）：Z 世代甜酷，粗黑边框撞色独立杂志风
+- 每套给出精确到 CSS 变量的配色、圆角、阴影、字体参数
+
+### 7.3 实施评估
+- **`design/ui-options-v3-implementation-plan.md`**：全项目审计后的诚实方案
+  - 初版错误判断"只改 2 文件 150 行"，经审计发现 ~500 处硬编码值需替换
+  - 90% 可用脚本批量替换（`#111`→`var(--ink)` 等 10 条规则），10% 需人工审查
+  - 真实工作量 ~7h（1 天）：1h 脚本 + 2h diff 审查 + 1h SCSS 改造 + 1h 主题定义 + 2h 全量回归
+  - 装饰性组件（TaohuaCompass、TokenCoinOverlay）和 admin 面板不参与主题化
+
+### 7.4 设计文件
+- `design/ui-options-v3-preview.html`（4 套风格可视化 mockup）
+- `design/ui-options-v3-implementation-plan.md`（审计修正后的实施方案）
+
+---
+## 8. UI V3 风格切换二次审计
+
+### 8.1 背景
+用户进一步确认：如果基于 `design/ui-options-v3-preview.html` 在现项目实现样式风格切换，担心“全局样式风格”无法在所有页面生效，因此对现有主题体系和页面样式覆盖面做二次审计。
+
+### 8.2 审计结论
+- 结论：担心成立。现项目不能只靠全局 CSS 变量完整切换到 4 套 V3 风格。
+- V3 四套风格不是单纯换色，而是换完整视觉语言：圆角、边框、阴影、字体、背景纹理、卡片结构、按钮样式都有差异。
+- 当前 `src/utils/theme.ts` 已有主题变量体系，但仅覆盖颜色和少量形状 token，且现有主题 ID 仍是 `campus-pop` / `sea-salt-lemon` / `peach-oolong`。
+- `src/uni.scss` 和 `src/styles/campus-pop.scss` 大量使用 SCSS 编译期变量（如 `$c-ink`、`$c-card`、`$c-mint`），运行时主题切换无法影响这些值。
+- 小程序端导航栏/TabBar 不会动态换肤：`applyThemeChrome()` 在 `MP-WEIXIN` 下直接 `return`，这是当前代码的显式限制。
+
+### 8.3 覆盖面数据
+- `pages.json` 共 30 个路由。
+- 显式接入 `themeVars` / `pageStyle` 的页面文件约 24 个。
+- 未接入或接入不完整的关键页面：`token-usage`、`token-recharge`、`admin`、`taohua-share`、`taohua-pair-share`、`quick-read`。
+- 项目内硬编码颜色 / `rgba()` 命中约 1876 处，分布在约 50 个文件。
+- 高硬编码页面包括：`taohua`、`index`、`case-detail`、`timeline`、`admin`、`me`、`quick-read`、`token-usage`、分享页等。
+
+### 8.4 代码量估算
+- **最小版**：只新增 4 个主题选项和基础变量，约 `150-300 LOC`，1 天内可做，但只能局部生效。
+- **可上线版**：覆盖主流程页面，统一卡片 / 按钮 / Hero / token，约 `800-1500 LOC`，3-5 天。
+- **高保真全量版**：覆盖所有页面、分享页、admin、组件，并保持 4 套风格一致，约 `2500-5000 LOC`，1.5-3 周。
+
+### 8.5 推荐路线
+- 不建议直接做“全局样式覆盖”，会出现部分页面生效、部分页面被 scoped 样式和硬编码覆盖的问题。
+- 推荐先做“可上线版”：扩展 `theme.ts` 语义 token，再把 `campus-pop.scss` 核心 mixin 改成 `var(...)`，补齐缺失页面根节点主题绑定。
+- 对 Neon Signal / Velvet Diary / Fuzzy Bold 这类结构差异大的风格，额外增加 `theme-neon-signal`、`theme-velvet-diary`、`theme-fuzzy-bold` 主题修饰类，不强行只靠变量表达。
+- 第一阶段优先覆盖 5 个 Tab 主页面 + 登录 / 注册 + 订阅 / 充值 / 用量页；分享页和 admin 可放第二阶段。
+
+---
+## 9. 今日数据
 
 | 指标 | 数值 |
 |------|------|
-| 提交 | 1 次（`migrate-company-miniprogram`） |
-| 文件变更 | 47 files, +294/-867 |
+| 提交 | 2 次（`migrate-company-miniprogram`） |
+| 文件变更 | 47 files（commit 1）+ 3 files（commit 2） |
 | 回归测试 | 28 PASS, 0 FAIL |
 | 云函数部署 | 39 个（全量） |
-| 新增文档 | `docs/APP-PACKAGING-PLAN.md`（499 行） |
+| 新增文档 | `WORK-SUMMARY-2026-07-04.md`, `docs/APP-PACKAGING-PLAN.md`, `design/ui-options-v3-preview.html`, `design/ui-options-v3-implementation-plan.md` |

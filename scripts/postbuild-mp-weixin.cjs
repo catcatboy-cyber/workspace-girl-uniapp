@@ -74,7 +74,7 @@ if (fs.existsSync(privacySrc)) {
 }
 
 // 清理不参与小程序包的大体积文件（仅 H5/通用用途，放 static/ 是为了共用引用路径）
-const largeStaticFiles = ['logo.png', 'app-icon.png']
+const largeStaticFiles = ['logo.png']
 for (const f of largeStaticFiles) {
   const fp = path.join(root, 'static', f)
   if (fs.existsSync(fp)) {

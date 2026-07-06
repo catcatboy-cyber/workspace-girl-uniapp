@@ -147,6 +147,12 @@ button::after {
 /* Disabled */
 .btn[disabled] { opacity: 0.5; box-shadow: none; }
 
+/* ===== Hero layout v2 — 上下分区 + 分割线 + 大头像左置 ===== */
+.hero-divider { border: none; border-top: 1px solid var(--hero-divider, rgba(0,0,0,0.12)); margin: 16px 0; }
+.hero-bottom { display: flex; gap: 16px; align-items: center; }
+.hero-avatar-lg { width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--text-main, #111); background: var(--accent, #FFD93D); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 26px; font-weight: 900; color: var(--text-main, #111); }
+.hero-info-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+
 /* ===== Fortune / Mystical button system（命理卡片专用）===== */
 .fortune-card {
   background: #FFFDF5 !important;

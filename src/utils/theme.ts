@@ -1,4 +1,4 @@
-export type ThemeId = 'campus-pop' | 'sea-salt-lemon' | 'peach-oolong'
+export type ThemeId = 'campus-pop' | 'sea-salt-lemon' | 'peach-oolong' | 'velvet-diary'
 
 export type ThemeOption = {
   id: ThemeId
@@ -51,6 +51,27 @@ const styleSheets: Record<string, StyleSheet> = {
     '--spacing-card': '36rpx',
     '--text-line-height': '1.65',
     '--text-line-height-heading': '1.35'
+  },
+  // Velvet Diary — warm, refined, paper-soft.
+  velvet: {
+    '--radius-sm': '18rpx',
+    '--radius-md': '28rpx',
+    '--radius-lg': '40rpx',
+    '--shadow-sm': '0 6rpx 16rpx rgba(92,48,32,0.05)',
+    '--shadow-md': '0 14rpx 34rpx rgba(92,48,32,0.08)',
+    '--shadow-lg': '0 22rpx 52rpx rgba(92,48,32,0.10)',
+    '--shadow-hard': '0 12rpx 28rpx rgba(92,48,32,0.10)',
+    '--shadow-hero': '0 18rpx 42rpx rgba(154,93,62,0.16)',
+    '--font-weight-normal': '400',
+    '--font-weight-strong': '600',
+    '--font-weight-hero': '700',
+    '--card-border-style': 'solid',
+    '--card-gradient-angle': '155deg',
+    '--hero-gradient-angle': '160deg',
+    '--spacing-page': '30rpx',
+    '--spacing-card': '30rpx',
+    '--text-line-height': '1.68',
+    '--text-line-height-heading': '1.28'
   },
   // Tea Mist — minimal, structured, crisp
   minimal: {
@@ -111,6 +132,27 @@ const styleSheets: Record<string, StyleSheet> = {
     '--spacing-card': '32rpx',
     '--text-line-height': '1.6',
     '--text-line-height-heading': '1.3'
+  },
+  // Current Campus Pop baseline: bouncy shape with hard poster shadows.
+  campusHard: {
+    '--radius-sm': '20rpx',
+    '--radius-md': '28rpx',
+    '--radius-lg': '36rpx',
+    '--shadow-sm': '0 4rpx 12rpx rgba(0,0,0,0.03)',
+    '--shadow-md': '0 10rpx 28rpx rgba(0,0,0,0.05)',
+    '--shadow-lg': '0 18rpx 40rpx rgba(0,0,0,0.06)',
+    '--shadow-hard': '6rpx 6rpx 0 var(--text-main, #111111)',
+    '--shadow-hero': '8rpx 8rpx 0 var(--text-main, #111111)',
+    '--font-weight-normal': '400',
+    '--font-weight-strong': '600',
+    '--font-weight-hero': '800',
+    '--card-border-style': 'solid',
+    '--card-gradient-angle': '145deg',
+    '--hero-gradient-angle': '145deg',
+    '--spacing-page': '28rpx',
+    '--spacing-card': '32rpx',
+    '--text-line-height': '1.6',
+    '--text-line-height-heading': '1.2'
   }
 }
 
@@ -138,18 +180,41 @@ function mergeStyleSheet(vars: Record<string, string>, sheet: StyleSheet): Recor
     '--surface-blur': '18rpx',
     '--surface-opacity': '0.86',
     '--page-wash': 'rgba(18, 60, 54, 0.07)',
+    '--placeholder': '#777777',
+    '--on-active-muted': 'rgba(255,255,255,0.6)',
     '--primary-contrast': cardBg,
     '--accent-cool': cool,
     '--brand-warm': accentSoft,
     '--brand-cool': '#f5f5ff',
     '--success-soft': '#E0FFF0',
+    '--success-text': '#0F6B45',
     '--dot-positive': cool,
     '--dot-risk': risk,
+    '--chart-intent': textMain,
+    '--chart-risk': risk,
+    '--relation-good': '#0A8F86',
+    '--relation-mid': '#A87600',
+    '--relation-bad': '#D33F49',
+    '--relation-neutral': textMain,
     '--warning': '#E67E22',
     '--warning-soft': '#FFF4E3',
     '--hero-text-color': textMain,
+    '--hero-divider': 'rgba(0,0,0,0.12)',
     '--hero-tag-bg': textMain,
     '--hero-tag-color': accent,
+    '--timeline-positive-gradient': 'linear-gradient(90deg, rgba(53,111,96,0.75), rgba(18,60,54,0.75))',
+    '--timeline-risk-gradient': 'linear-gradient(90deg, rgba(184,74,58,0.75), rgba(126,43,35,0.75))',
+    '--sync-gradient': 'linear-gradient(90deg, transparent, var(--hero-bg, #FF6B6B), transparent)',
+    '--onboard-primary-bg': '#f6fffd',
+    '--taohua-card-bg': 'linear-gradient(180deg, #FFF5F5 0%, var(--app-bg, #FFFDF5) 60%)',
+    '--taohua-bar-gradient': 'linear-gradient(90deg, var(--hero, #FF6B6B), var(--accent, #FFD93D))',
+    '--taohua-hongluan': '#FF5252',
+    '--taohua-tianxi': '#0A8F86',
+    '--stripe-surface': 'repeating-linear-gradient(45deg, var(--surface, #fff), var(--surface, #fff) 6rpx, var(--divider, #eeeeee) 6rpx, var(--divider, #eeeeee) 12rpx)',
+    '--status-ai-bg': '#e8f5e9',
+    '--status-ai-dot': '#4caf50',
+    '--status-fallback-bg': '#fff3e0',
+    '--status-fallback-dot': '#ff9800',
     '--border': textMain,
     '--divider': 'rgba(0,0,0,0.08)',
     '--divider-strong': textMain,
@@ -180,9 +245,9 @@ function mergeStyleSheet(vars: Record<string, string>, sheet: StyleSheet): Recor
     '--font-weight-heading': '800',
     ...merged,
     '--shadow-hard': merged['--shadow-hard'] || `6rpx 6rpx 0 ${textMain}`,
-    '--shadow-hero': merged['--shadow-hero-hard'] || `8rpx 8rpx 0 ${textMain}`,
-    '--font-weight-hero': merged['--font-weight-hero-hard'] || '800',
-    '--text-line-height-heading': merged['--text-line-height-heading-hard'] || '1.2',
+    '--shadow-hero': merged['--shadow-hero'] || `8rpx 8rpx 0 ${textMain}`,
+    '--font-weight-hero': merged['--font-weight-hero'] || '800',
+    '--text-line-height-heading': merged['--text-line-height-heading'] || '1.2',
     '--text-soft': merged['--text-soft'] || '#999999',
     '--risk-soft': riskSoft,
     '--text-muted': textMuted
@@ -219,7 +284,7 @@ export const themeOptions: ThemeOption[] = [
       '--risk': '#FF5252',
       '--risk-soft': '#FFEEEC',
       '--success': '#4ECDC4'
-    }, styleSheets.bouncy)
+    }, styleSheets.campusHard)
   },
   {
     id: 'sea-salt-lemon',
@@ -241,7 +306,7 @@ export const themeOptions: ThemeOption[] = [
       '--risk': '#E74C3C',
       '--risk-soft': '#FDEDEC',
       '--success': '#27AE60'
-    }, styleSheets.bouncy)
+    }, styleSheets.campusHard)
   },
   {
     id: 'peach-oolong',
@@ -263,7 +328,82 @@ export const themeOptions: ThemeOption[] = [
       '--risk': '#C0392B',
       '--risk-soft': '#FDEDEC',
       '--success': '#27AE60'
-    }, styleSheets.bouncy)
+    }, styleSheets.campusHard)
+  },
+  {
+    id: 'velvet-diary',
+    name: 'Velvet Diary',
+    description: '暖调精致日记本，柔和纸张感，适合细腻记录。',
+    navText: 'black',
+    vars: mergeStyleSheet({
+      '--app-bg': '#FFF7EE',
+      '--page-wash': 'rgba(180, 106, 82, 0.08)',
+      '--hero-bg': '#F2B39B',
+      '--hero-bg-2': '#F8D9C8',
+      '--card-bg': '#FFFDF8',
+      '--card-soft': '#FFF3E8',
+      '--surface': '#FFFDF8',
+      '--surface-rgb': '255,253,248',
+      '--surface-soft': '#FFF3E8',
+      '--surface-dim': '#FFF0E2',
+      '--surface-bright': '#FFFFFF',
+      '--surface-raised': '#FFFDF8',
+      '--text-main': '#5C3020',
+      '--text-muted': '#8C6B58',
+      '--text-soft': '#B99A86',
+      '--placeholder': '#B99A86',
+      '--primary': '#9F5B47',
+      '--primary-2': '#D9896C',
+      '--primary-contrast': '#FFFDF8',
+      '--accent-cool': '#D9896C',
+      '--accent': '#F0B869',
+      '--accent-soft': '#FFF0DC',
+      '--brand-warm': '#FFF0DC',
+      '--brand-cool': '#F6ECE6',
+      '--success': '#8C9A72',
+      '--success-soft': '#EEF4E5',
+      '--success-text': '#6F7D56',
+      '--risk': '#B84A3A',
+      '--risk-soft': '#FBE7E2',
+      '--warning': '#C9823C',
+      '--warning-soft': '#FFF1DF',
+      '--dot-positive': '#D9896C',
+      '--dot-risk': '#B84A3A',
+      '--chart-intent': '#9F5B47',
+      '--chart-risk': '#B84A3A',
+      '--relation-good': '#6F7D56',
+      '--relation-mid': '#A66E2F',
+      '--relation-bad': '#B84A3A',
+      '--relation-neutral': '#5C3020',
+      '--hero-text-color': '#5C3020',
+      '--hero-divider': 'rgba(92,48,32,0.14)',
+      '--hero-tag-bg': '#5C3020',
+      '--hero-tag-color': '#FFF0DC',
+      '--border': '#D9B99D',
+      '--divider': 'rgba(92,48,32,0.12)',
+      '--divider-strong': '#C79A78',
+      '--overlay': 'rgba(92,48,32,0.42)',
+      '--scrim': 'rgba(92,48,32,0.32)',
+      '--border-width': '1rpx',
+      '--border-width-strong': '2rpx',
+      '--border-style': 'solid',
+      '--hero-transform': 'rotate(-0.2deg)',
+      '--hero-rotate': '-0.2deg',
+      '--timeline-positive-gradient': 'linear-gradient(90deg, rgba(217,137,108,0.82), rgba(159,91,71,0.82))',
+      '--timeline-risk-gradient': 'linear-gradient(90deg, rgba(184,74,58,0.82), rgba(129,55,44,0.82))',
+      '--sync-gradient': 'linear-gradient(90deg, transparent, rgba(217,137,108,0.84), transparent)',
+      '--onboard-primary-bg': '#FFF2EA',
+      '--taohua-card-bg': 'linear-gradient(180deg, #FFF0E8 0%, #FFF7EE 62%)',
+      '--taohua-bar-gradient': 'linear-gradient(90deg, #D9896C, #F0B869)',
+      '--taohua-hongluan': '#B84A3A',
+      '--taohua-tianxi': '#6F7D56',
+      '--stripe-surface': 'repeating-linear-gradient(45deg, #FFFDF8, #FFFDF8 6rpx, rgba(92,48,32,0.12) 6rpx, rgba(92,48,32,0.12) 12rpx)',
+      '--status-ai-bg': '#EEF4E5',
+      '--status-ai-dot': '#8C9A72',
+      '--status-fallback-bg': '#FFF1DF',
+      '--status-fallback-dot': '#C9823C',
+      '--on-active-muted': 'rgba(255,253,248,0.72)'
+    }, styleSheets.velvet)
   }
 ]
 

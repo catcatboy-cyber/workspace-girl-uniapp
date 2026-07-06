@@ -225,20 +225,20 @@ const subjectRoleItems = [
 .page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: var(--spacing-page, 24rpx); box-sizing: border-box; }
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
-.v2-mode .explain-v2 { margin-top: 14rpx; border: 2rpx solid #111; background: #fff; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: var(--font-weight-hero, $fw-hero); letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: var(--font-weight-hero, $fw-hero); color: var(--hero-text-color, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
+.v2-mode .explain-v2 { margin-top: 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
 .v2-mode .explain-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 18rpx; }
-.v2-mode .explain-title-v2 { font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
-.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-caption; font-weight: $fw-hero; color: #111; }
-.v2-mode .explain-body-v2 { padding: 0 18rpx 18rpx; border-top: 2rpx solid #111; }
+.v2-mode .explain-title-v2 { font-size: $fs-body-lg; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); }
+.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-caption; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); }
+.v2-mode .explain-body-v2 { padding: 0 18rpx 18rpx; border-top: var(--border-width, 2rpx) solid var(--border, #111); }
 .v2-mode .explain-subgroup-v2 { padding-top: 14rpx; }
 .v2-mode .explain-subgroup-v2 + .explain-subgroup-v2 { margin-top: 8rpx; }
-.v2-mode .explain-subtitle-v2 { display: block; padding: 8rpx 12rpx; border: 2rpx solid #111; background: #f9f9f9; color: #666; font-size: $fs-caption; font-weight: $fw-hero; }
-.v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed #111; }
+.v2-mode .explain-subtitle-v2 { display: block; padding: 8rpx 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); color: var(--text-muted, #666); font-size: $fs-caption; font-weight: var(--font-weight-hero, $fw-hero); }
+.v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed var(--divider-strong, #111); }
 .v2-mode .explain-item-v2:last-child { border-bottom: none; }
-.v2-mode .explain-item-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: #111; }
-.v2-mode .explain-item-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; line-height: 1.4; }
+.v2-mode .explain-item-title-v2 { display: block; font-size: $fs-body; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); }
+.v2-mode .explain-item-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 2rpx; line-height: 1.4; }
 </style>

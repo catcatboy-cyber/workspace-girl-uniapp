@@ -80,22 +80,22 @@ async function submit() {
 .page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: var(--spacing-page, 24rpx); box-sizing: border-box; }
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx; min-height: 100vh; }
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: var(--font-weight-hero, $fw-hero); letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: var(--font-weight-hero, $fw-hero); color: var(--hero-text-color, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 .v2-mode .card-v2 { @include card-v2; }
-.v2-mode .reward-card { background: linear-gradient(135deg, #FFF8C4 0%, #FFFBEA 60%, #FFFDF5 100%); border: 3rpx solid #111; border-left: 12rpx solid #FFD93D; box-shadow: 6rpx 6rpx 0 #e6c800; padding: 24rpx 28rpx; margin-bottom: 24rpx; box-sizing: border-box; }
+.v2-mode .reward-card { background: var(--brand-warm, linear-gradient(135deg, #FFF8C4 0%, #FFFBEA 60%, #FFFDF5 100%)); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-left: 12rpx solid var(--accent, #FFD93D); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111); padding: 24rpx 28rpx; margin-bottom: 24rpx; box-sizing: border-box; }
 .v2-mode .reward-card-inner { display: flex; align-items: flex-start; gap: 16rpx; }
 .v2-mode .reward-emoji { font-size: 48rpx; flex-shrink: 0; line-height: 1; }
 .v2-mode .reward-text-wrap { flex: 1; min-width: 0; }
-.v2-mode .reward-title { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: #111; margin-bottom: 6rpx; }
-.v2-mode .reward-desc { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; line-height: 1.5; }
+.v2-mode .reward-title { display: block; font-size: $fs-body-lg; font-weight: var(--font-weight-heading, $fw-heading); color: var(--text-main, #111); margin-bottom: 6rpx; }
+.v2-mode .reward-desc { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.5; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
-.v2-mode .text-area-v2 { width: 100%; min-height: 200rpx; padding: 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; }
-.v2-mode .char-count-v2 { display: block; text-align: right; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 8rpx; }
-.v2-mode .input-v2 { width: 100%; height: 72rpx; padding: 0 18rpx; background: #fff; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; }
+.v2-mode .text-area-v2 { width: 100%; min-height: 200rpx; padding: 18rpx; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); box-sizing: border-box; }
+.v2-mode .char-count-v2 { display: block; text-align: right; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 8rpx; }
+.v2-mode .input-v2 { width: 100%; height: 72rpx; padding: 0 18rpx; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); box-sizing: border-box; }
 .v2-mode .result-text-v2 { display: block; margin-top: 20rpx; text-align: center; font-size: $fs-body-lg; font-weight: $fw-label; }
-.v2-mode .result-text-v2.ok { color: #4ECDC4; }
-.v2-mode .result-text-v2.fail { color: #FF5252; }
+.v2-mode .result-text-v2.ok { color: var(--success-text, #4ECDC4); }
+.v2-mode .result-text-v2.fail { color: var(--risk, #FF5252); }
 </style>

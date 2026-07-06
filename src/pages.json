@@ -196,8 +196,8 @@
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Crush Master",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
+    "navigationBarBackgroundColor": "#FFFDF5",
+    "backgroundColor": "#FFFDF5"
   },
   "easycom": {
     "autoscan": true,

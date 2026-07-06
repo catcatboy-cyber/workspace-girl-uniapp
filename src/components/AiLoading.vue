@@ -20,15 +20,15 @@ defineProps<{ label: string; seconds?: number }>()
   align-items: flex-start;
   gap: 10rpx;
   padding: 20rpx 24rpx;
-  border: 2rpx solid #111;
-  background: #f5f5ff;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--brand-cool, #f5f5ff);
   margin: 12rpx 0;
 }
 
 .ai-loading-label {
   font-size: 34rpx;
   font-weight: 900;
-  color: #111;
+  color: var(--text-main, #111);
   text-transform: uppercase;
   letter-spacing: 2rpx;
 }
@@ -42,8 +42,8 @@ defineProps<{ label: string; seconds?: number }>()
 .ai-loading-dot {
   width: 20rpx;
   height: 20rpx;
-  border: 2rpx solid #111;
-  background: #FFD93D;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--accent, #FFD93D);
   display: inline-block;
   animation: blink-dot 1s ease-in-out infinite;
 }
@@ -51,7 +51,7 @@ defineProps<{ label: string; seconds?: number }>()
 .ai-loading-text {
   font-size: 34rpx;
   font-weight: 600;
-  color: #999;
+  color: var(--text-soft, #999);
 }
 
 @keyframes blink-dot {

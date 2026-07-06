@@ -3,9 +3,15 @@
       <!-- Hero -->
       <view class="hero-block-v2 anim-hero">
         <text class="hero-tag-v2">CRUSHES</text>
-        <text class="hero-title-v2">Crushes <text class="hl-v2">列表</text></text>
-        <text class="hero-copy-v2">先切换，再进入当前 Crush。共 <text class="strong">{{ cases.length }}</text> 个 Crushes。</text>
-        <button class="btn btn-primary btn-md btn-full anim-pulse" @click="goNew">+ 开个新的</button>
+        <text class="hero-title-v2"><text class="hl-v2">{{ cases.length }}</text> 个 Crush</text>
+        <text class="hero-copy-v2">先切换，再进入当前档案。随时可以新增。</text>
+        <hr class="hero-divider">
+        <view class="hero-bottom">
+          <view class="hero-avatar-lg"><image v-if="cases.find(c => c.caseId === activeCaseId)?.profile?.avatar" :src="cases.find(c => c.caseId === activeCaseId)?.profile?.avatarUrl || cases.find(c => c.caseId === activeCaseId)?.profile?.avatar" mode="aspectFill" style="width:100%;height:100%;border-radius:50%;" /><text v-else>{{ cases.find(c => c.caseId === activeCaseId)?.name?.slice(0,1) || '?' }}</text></view>
+          <view class="hero-info-col">
+            <button class="btn btn-primary btn-md btn-full" style="margin-top:0;" @click="goNew">+ 开个新的</button>
+          </view>
+        </view>
       </view>
 
       <!-- Deleted notice -->
@@ -204,7 +210,7 @@ function askDeleteCase(item: any): Promise<boolean> {
       title: '删除 Crush？',
       content: `将删除「${name}」的档案、时间轴和分析记录，删除后无法恢复。${isCurrent ? '这是当前 Crush，删除后会自动切换到其他 Crush。' : ''}`,
       confirmText: '删除',
-      confirmColor: '#FF5252',
+      confirmColor: String(themeVars.value['--risk'] || themeVars.value['--dot-risk'] || themeVars.value['--text-main'] || ''),
       cancelText: '取消',
       success: (res) => resolve(Boolean(res.confirm)),
       fail: () => resolve(false)
@@ -341,7 +347,7 @@ async function confirmDeleteCase(item: any) {
 .page {
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 380rpx),
+    linear-gradient(180deg, var(--page-wash, rgba(18, 60, 54, 0.07)), transparent 380rpx),
     var(--app-bg, #f6f1e8);
   padding: var(--spacing-page, 28rpx);
   box-sizing: border-box;
@@ -407,4 +413,3 @@ async function confirmDeleteCase(item: any) {
 
 .v2-mode .case-actions-v2 { display: flex; gap: 12rpx; margin-top: 16rpx; }
 </style>
-

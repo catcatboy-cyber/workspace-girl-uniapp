@@ -203,60 +203,60 @@ function formatTime(createdAt?: string) {
   gap: 20rpx;
   margin-bottom: 18rpx;
 }
-.trend-title { display: block; font-size: 38rpx; font-weight: 900; color: #111; }
-.trend-subtitle { display: block; margin-top: 8rpx; font-size: 34rpx; line-height: 1.55; color: #666; font-weight: 600; }
+.trend-title { display: block; font-size: 38rpx; font-weight: 900; color: var(--text-main, #111); }
+.trend-subtitle { display: block; margin-top: 8rpx; font-size: 34rpx; line-height: 1.55; color: var(--text-muted, #666); font-weight: 600; }
 .trend-count {
   flex-shrink: 0; padding: 8rpx 16rpx;
-  border: 2rpx solid #111; color: #111; font-size: 34rpx; font-weight: 800;
-  background: #FFD93D;
+  border: var(--border-width, 2rpx) solid var(--border, #111); color: var(--text-main, #111); font-size: 34rpx; font-weight: 800;
+  background: var(--accent, #FFD93D);
 }
 
 .empty-state { padding: 56rpx 0; text-align: center; }
-.muted { font-size: 34rpx; color: #666; font-weight: 600; }
+.muted { font-size: 34rpx; color: var(--text-muted, #666); font-weight: 600; }
 
 .legend-row { display: flex; align-items: center; flex-wrap: wrap; gap: 16rpx; margin-bottom: 14rpx; }
-.legend-item { display: flex; align-items: center; gap: 8rpx; color: #111; font-size: 34rpx; font-weight: 700; }
+.legend-item { display: flex; align-items: center; gap: 8rpx; color: var(--text-main, #111); font-size: 34rpx; font-weight: 700; }
 .legend-line { width: 34rpx; height: 3rpx; }
-.legend-line.intent { background: #111; }
-.legend-line.risk { background: #FF5252; }
-.legend-tip { color: #666; font-size: 32rpx; font-weight: 600; }
+.legend-line.intent { background: var(--chart-intent, #111); }
+.legend-line.risk { background: var(--chart-risk, var(--risk, #FF5252)); }
+.legend-tip { color: var(--text-muted, #666); font-size: 32rpx; font-weight: 600; }
 
 .chart-scroll {
-  width: 100%; border: 3rpx solid #111;
-  background: #fff;
+  width: 100%; border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
 }
 .line-chart { position: relative; height: 410rpx; box-sizing: border-box; }
 
 .grid-line {
   position: absolute; left: 34rpx; right: 28rpx; height: 2rpx;
-  background: #111;
+  background: var(--divider-strong, #111);
 }
 .grid-line text {
   position: absolute; left: -4rpx; top: -18rpx; transform: translateX(-100%);
-  color: #666; font-size: 24rpx; font-weight: 600;
+  color: var(--text-muted, #666); font-size: 24rpx; font-weight: 600;
 }
 .grid-line.top { top: 44rpx; }
 .grid-line.middle { top: 174rpx; }
 .grid-line.bottom { top: 304rpx; }
 
 .line-segment { position: absolute; height: 3rpx; transform-origin: 0 50%; }
-.line-segment.intent { background: #111; }
-.line-segment.risk { background: #FF5252; }
+.line-segment.intent { background: var(--chart-intent, #111); }
+.line-segment.risk { background: var(--chart-risk, var(--risk, #FF5252)); }
 
 .point {
   position: absolute; width: 22rpx; height: 22rpx;
   margin-left: -11rpx; margin-top: -11rpx;
   border-radius: 50%;
-  border: 2rpx solid #fff;
+  border: var(--border-width, 2rpx) solid var(--surface, #fff);
   box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
 }
-.point text { position: absolute; top: -22rpx; color: #111; font-size: 24rpx; font-weight: 800; }
-.point.intent { background: #111; }
-.point.risk { background: #FF5252; }
+.point text { position: absolute; top: -22rpx; color: var(--text-main, #111); font-size: 24rpx; font-weight: 800; }
+.point.intent { background: var(--chart-intent, #111); }
+.point.risk { background: var(--chart-risk, var(--risk, #FF5252)); }
 .point.risk text { top: 18rpx; }
 
 .x-label { position: absolute; top: 330rpx; width: 116rpx; margin-left: -58rpx; text-align: center; }
-.x-index, .x-time { display: block; color: #666; font-size: 32rpx; line-height: 1.3; font-weight: 600; }
-.x-index { color: #111; font-weight: 800; }
+.x-index, .x-time { display: block; color: var(--text-muted, #666); font-size: 32rpx; line-height: 1.3; font-weight: 600; }
+.x-index { color: var(--text-main, #111); font-weight: 800; }
 </style>

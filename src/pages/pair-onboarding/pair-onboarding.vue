@@ -311,29 +311,29 @@ function buildRedirectTarget() {
 .hero-block-v2 { @include hero-block-v2; margin-bottom: 20rpx; }
 .hero-tag-v2 {
   display: inline-block;
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
   padding: 6rpx 16rpx;
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   letter-spacing: 4rpx;
   margin-bottom: 16rpx;
 }
 .hero-title-v2 {
   display: block;
   font-size: $fs-hero-title;
-  font-weight: $fw-hero;
-  color: #111;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  color: var(--hero-text-color, #111);
   line-height: 1.15;
   letter-spacing: -2rpx;
 }
-.hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
+.hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .hero-copy-v2 {
   display: block;
   margin-top: 14rpx;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: rgba(0,0,0,0.7);
+  color: var(--text-muted, rgba(0,0,0,0.7));
   line-height: 1.5;
 }
 .guide-card,
@@ -343,22 +343,22 @@ function buildRedirectTarget() {
   margin-bottom: 20rpx;
 }
 .guide-card {
-  background: #111;
-  color: #fff;
-  box-shadow: 6rpx 6rpx 0 #4ECDC4;
+  background: var(--text-main, #111);
+  color: var(--surface, #fff);
+  box-shadow: 6rpx 6rpx 0 var(--accent-cool, #4ECDC4);
 }
 .guide-name {
   display: inline-block;
   padding: 4rpx 12rpx;
-  background: #FFD93D;
-  color: #111;
+  background: var(--accent, #FFD93D);
+  color: var(--text-main, #111);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .guide-copy {
   display: block;
   margin-top: 12rpx;
-  color: rgba(255,255,255,0.82);
+  color: var(--on-active-muted, rgba(255,255,255,0.82));
   font-size: $fs-body-lg;
   line-height: 1.5;
   font-weight: $fw-label;
@@ -372,7 +372,7 @@ function buildRedirectTarget() {
 .section-title-v2 { @include section-title-v2; }
 .section-title-v2.no-margin { margin-bottom: 0; }
 .chat-card {
-  background: #fff;
+  background: var(--surface, #fff);
 }
 .chat-row {
   display: flex;
@@ -383,35 +383,35 @@ function buildRedirectTarget() {
 .chat-avatar {
   width: 76rpx;
   height: 76rpx;
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-radius: 50%;
-  background: #FFD93D;
-  color: #111;
+  background: var(--accent, #FFD93D);
+  color: var(--text-main, #111);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .chat-bubble {
   flex: 1;
   min-width: 0;
   padding: 18rpx;
-  border: 3rpx solid #111;
-  background: #F7FFF7;
-  box-shadow: 5rpx 5rpx 0 #4ECDC4;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--onboard-primary-bg, #F7FFF7);
+  box-shadow: 5rpx 5rpx 0 var(--accent-cool, #4ECDC4);
 }
 .chat-bubble text {
   display: block;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
   font-weight: $fw-label;
   line-height: 1.55;
 }
 .chat-bubble .muted {
   margin-top: 6rpx;
-  color: #666;
+  color: var(--text-muted, #666);
   font-size: $fs-body;
   font-weight: $fw-body;
 }
@@ -421,11 +421,11 @@ function buildRedirectTarget() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3rpx solid #111;
-  background: #FFD93D;
-  color: #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--accent, #FFD93D);
+  color: var(--text-main, #111);
   font-size: $fs-body;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .field-grid {
   display: grid;
@@ -441,13 +441,13 @@ function buildRedirectTarget() {
 .label {
   display: block;
   margin-bottom: 8rpx;
-  color: #666;
+  color: var(--text-muted, #666);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .label.required::after {
   content: " *";
-  color: #FF5252;
+  color: var(--risk, #FF5252);
 }
 .chip-row {
   display: flex;
@@ -459,9 +459,9 @@ function buildRedirectTarget() {
 }
 .chip {
   padding: 12rpx 16rpx;
-  border: 2rpx solid #111;
-  background: #fff;
-  color: #111;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
+  color: var(--text-main, #111);
   font-size: $fs-body;
   font-weight: $fw-label;
   line-height: 1.2;
@@ -471,9 +471,9 @@ function buildRedirectTarget() {
   font-size: $fs-caption;
 }
 .chip.active {
-  background: #111;
-  color: #FFD93D;
-  box-shadow: 4rpx 4rpx 0 #4ECDC4;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
+  box-shadow: 4rpx 4rpx 0 var(--accent-cool, #4ECDC4);
 }
 .picker-view,
 .text-input {
@@ -481,11 +481,11 @@ function buildRedirectTarget() {
   height: 78rpx;
   line-height: 78rpx;
   padding: 0 18rpx;
-  border: 3rpx solid #111;
-  background: #fff;
-  color: #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -495,26 +495,26 @@ function buildRedirectTarget() {
   line-height: normal;
 }
 .preview-card {
-  background: #FFF4C7;
+  background: var(--taohua-card-bg, #FFF4C7);
 }
 .preview-title {
   display: block;
-  color: #8A3A28;
+  color: var(--primary, #8A3A28);
   font-size: $fs-body;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .preview-copy {
   display: block;
   margin-top: 10rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-heading;
   line-height: 1.25;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .preview-desc {
   display: block;
   margin-top: 10rpx;
-  color: #555;
+  color: var(--text-muted, #555);
   font-size: $fs-body;
   line-height: 1.45;
   font-weight: $fw-label;
@@ -523,13 +523,13 @@ function buildRedirectTarget() {
   width: 100%;
   height: 86rpx;
   line-height: 86rpx;
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-radius: 0;
-  background: #4ECDC4;
-  color: #111;
-  box-shadow: 6rpx 6rpx 0 #111;
+  background: var(--accent-cool, #4ECDC4);
+  color: var(--text-main, #111);
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .submit-btn[disabled] {
   opacity: 0.65;

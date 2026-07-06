@@ -437,48 +437,48 @@ function onSkip() {
 /* ====== Hero / Form（编辑模式） ====== */
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--hero-text-color, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
-.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.5; margin-bottom: 10rpx; }
-.v2-mode .field-v2 { padding: 20rpx 0; border-bottom: 3rpx solid #111; }
+.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.5; margin-bottom: 10rpx; }
+.v2-mode .field-v2 { padding: 20rpx 0; border-bottom: var(--border-width-strong, 3rpx) solid var(--border, #111); }
 .v2-mode .field-v2:last-child { border-bottom: 0; }
-.v2-mode .field-label-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; margin-bottom: 10rpx; }
+.v2-mode .field-label-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 10rpx; }
 .v2-mode .segmented-v2 { display: flex; gap: 10rpx; }
-.v2-mode .segment-v2 { flex: 1; height: 68rpx; line-height: 68rpx; text-align: center; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
-.v2-mode .segment-v2.active { background: #111; color: #FFD93D; }
-.v2-mode .picker-v2 { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; }
-.v2-mode .minor-note-v2 { display: block; margin-top: 10rpx; padding: 14rpx; border: 2rpx solid #111; background: #FFFBEB; font-size: $fs-caption; font-weight: $fw-body; color: #111; line-height: 1.5; }
-.chat-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: #FFD93D; }
+.v2-mode .segment-v2 { flex: 1; height: 68rpx; line-height: 68rpx; text-align: center; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); }
+.v2-mode .segment-v2.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
+.v2-mode .picker-v2 { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); }
+.v2-mode .minor-note-v2 { display: block; margin-top: 10rpx; padding: 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--brand-warm, #FFFBEB); font-size: $fs-caption; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.5; }
+.chat-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--accent, #FFD93D); }
 
 .msg { display: flex; gap: 10rpx; align-items: flex-end; max-width: 92%; margin-bottom: 24rpx; }
 .msg-pet { align-self: flex-start; }
 .msg-user { align-self: flex-end; justify-content: flex-end; }
 
-.msg-avatar { width: 44rpx; height: 44rpx; background: #FFD93D; border: 2rpx solid #111; display: flex; align-items: center; justify-content: center; font-size: $fs-body; flex-shrink: 0; }
+.msg-avatar { width: 44rpx; height: 44rpx; background: var(--accent, #FFD93D); border: var(--border-width, 2rpx) solid var(--border, #111); display: flex; align-items: center; justify-content: center; font-size: $fs-body; flex-shrink: 0; }
 
-.msg-bubble { max-width: 100%; padding: 16rpx 20rpx; background: #fff; border: 2rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; line-height: $lh-loose; }
+.msg-bubble { max-width: 100%; padding: 16rpx 20rpx; background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); line-height: $lh-loose; }
 .msg-line { display: block; }
-.msg-line.muted { font-size: $fs-body; font-weight: $fw-body; color: #666; margin-top: 4rpx; }
+.msg-line.muted { font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); margin-top: 4rpx; }
 
-.msg-answer { padding: 12rpx 22rpx; background: #111; border: 2rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-label; color: #FFD93D; }
+.msg-answer { padding: 12rpx 22rpx; background: var(--hero-tag-bg, #111); border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-label; color: var(--hero-tag-color, #FFD93D); }
 
 .msg-chips { display: flex; flex-wrap: wrap; gap: 10rpx; justify-content: flex-end; }
-.msg-chip { padding: 12rpx 22rpx; background: #fff; border: 2rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
-.msg-chip.picked { background: #111; color: #FFD93D; }
+.msg-chip { padding: 12rpx 22rpx; background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
+.msg-chip.picked { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
 
-.msg-typing { display: flex; gap: 6rpx; padding: 14rpx 20rpx; background: #fff; border: 2rpx solid #111; }
-.msg-typing view { width: 10rpx; height: 10rpx; background: #999; animation: type-bounce 1.2s infinite; }
+.msg-typing { display: flex; gap: 6rpx; padding: 14rpx 20rpx; background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); }
+.msg-typing view { width: 10rpx; height: 10rpx; background: var(--text-soft, #999); animation: type-bounce 1.2s infinite; }
 .msg-typing view:nth-child(2) { animation-delay: .2s; }
 .msg-typing view:nth-child(3) { animation-delay: .4s; }
 @keyframes type-bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-8rpx); } }
 
-.chat-foot { display: flex; align-items: center; justify-content: center; gap: 16rpx; padding: 16rpx 24rpx; border-top: 2rpx solid #111; background: #fff; flex-shrink: 0; padding-bottom: calc(16rpx + env(safe-area-inset-bottom)); }
+.chat-foot { display: flex; align-items: center; justify-content: center; gap: 16rpx; padding: 16rpx 24rpx; border-top: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); flex-shrink: 0; padding-bottom: calc(16rpx + env(safe-area-inset-bottom)); }
 .chat-progress { display: flex; gap: 12rpx; }
-.progress-dot { width: 16rpx; height: 16rpx; border: 2rpx solid #111; background: #fff; }
-.progress-dot.done { background: #FFD93D; }
-.chat-step-text { font-size: $fs-body; font-weight: $fw-label; color: #666; }
+.progress-dot { width: 16rpx; height: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.progress-dot.done { background: var(--accent, #FFD93D); }
+.chat-step-text { font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #666); }
 </style>

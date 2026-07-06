@@ -289,9 +289,9 @@ async function createOrder(planId: string) {
 /* ── 充值计划卡片 ── */
 .recharge-plan-card {
   position: relative;
-  background: var(--surface, #{$c-card});
-  border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink});
-  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #{$c-ink});
+  background: var(--surface, #fff);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
   padding: 32rpx 28rpx 24rpx;
   margin-bottom: $sp-card-gap;
   display: flex;
@@ -303,9 +303,9 @@ async function createOrder(planId: string) {
   position: absolute;
   top: -14rpx;
   right: 20rpx;
-  background: var(--accent, #{$c-accent});
-  color: var(--text-main, #{$c-ink});
-  border: var(--border-width, 2rpx) solid var(--border, #{$c-ink});
+  background: var(--accent, #FFD93D);
+  color: var(--text-main, #111);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
   padding: 4rpx 18rpx;
   font-size: $fs-caption;
   font-weight: $fw-hero;
@@ -315,7 +315,7 @@ async function createOrder(planId: string) {
   display: block;
   font-size: $fs-body;
   font-weight: $fw-heading;
-  color: var(--text-soft, #{$c-soft});
+  color: var(--text-soft, #999);
   text-transform: uppercase;
   letter-spacing: 4rpx;
   margin-bottom: 12rpx;
@@ -329,20 +329,20 @@ async function createOrder(planId: string) {
 .plan-card-token-num {
   font-size: $fs-display;
   font-weight: $fw-hero;
-  color: var(--text-main, #{$c-ink});
+  color: var(--text-main, #111);
   line-height: 1;
   letter-spacing: -2rpx;
 }
 .plan-card-token-unit {
   font-size: $fs-body;
   font-weight: $fw-label;
-  color: var(--text-muted, #{$c-muted});
+  color: var(--text-muted, #666);
 }
 .plan-card-tagline {
   display: block;
   font-size: $fs-caption;
   font-weight: $fw-body;
-  color: var(--text-muted, #{$c-muted});
+  color: var(--text-muted, #666);
   line-height: 1.4;
   margin-bottom: 20rpx;
   max-width: 80%;
@@ -354,10 +354,10 @@ async function createOrder(planId: string) {
   text-align: center;
   font-size: $fs-body-lg;
   font-weight: $fw-heading;
-  color: var(--text-main, #{$c-ink});
-  background: var(--accent-cool, #{$c-mint});
-  border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink});
-  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #{$c-ink});
+  color: var(--text-main, #111);
+  background: var(--accent-cool, #4ECDC4);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
   padding: 0;
   margin: 0;
 }

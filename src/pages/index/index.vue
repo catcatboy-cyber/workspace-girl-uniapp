@@ -15,9 +15,9 @@
       <block v-else>
       <template v-if="cases.length === 0">
         <view class="hero-block-v2 anim-hero">
-          <text class="hero-tag-v2">Crush Master BOARD</text>
+          <text class="hero-tag-v2">TODAY</text>
           <text class="hero-title-v2">先做一次<text class="hl-v2">初次</text>分析</text>
-          <text class="hero-copy-v2">第一次进入时先完成一轮结构化问答。后续你更常做的动作会是补记录、看往事和重新分析。</text>
+          <text class="hero-copy-v2">完成一轮结构化问答，然后补记录、看往事、重新分析。</text>
         </view>
         <!-- 命理 · 今日桃花 -->
         <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;" @click="goTaohua">
@@ -102,12 +102,21 @@
       <template v-else>
         <!-- Hero -->
         <view class="hero-block-v2 anim-hero">
-          <text class="hero-tag-v2">Crush Master BOARD</text>
+          <text class="hero-tag-v2">TODAY</text>
           <text class="hero-title-v2">今天他<text class="hl-v2">有戏</text>吗？</text>
-          <view class="hero-identity"><view class="profile-avatar-v2 sm"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(latestCase.name) }}</text></view><text class="hero-identity-name">{{ latestCase.name || '--' }}</text></view>
-          <text class="crush-type-badge">{{ latestCrushType.label }}</text>
-          <view v-if="latestProfileItems.length > 0" class="tag-row-v2">
-            <text v-for="item in latestProfileItems" :key="item" class="tag-v2">{{ item }}</text>
+          <text class="hero-copy-v2">基于最新互动记录的即时分析。越记越准。</text>
+          <hr class="hero-divider">
+          <view class="hero-bottom">
+            <view class="hero-avatar-lg"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" style="width:100%;height:100%;border-radius:50%;" /><text v-else>{{ avatarLabel(latestCase.name) }}</text></view>
+            <view class="hero-info-col">
+              <view style="display:flex;align-items:center;gap:8px;">
+                <text style="font-size:17px;font-weight:800;color:var(--text-main,#111);">{{ latestCase.name || '--' }}</text>
+                <text class="crush-type-badge">{{ latestCrushType.label }}</text>
+              </view>
+              <view v-if="latestProfileItems.length > 0" class="tag-row-v2" style="margin-top:0;">
+                <text v-for="item in latestProfileItems" :key="item" class="tag-v2">{{ item }}</text>
+              </view>
+            </view>
           </view>
         </view>
 
@@ -286,11 +295,6 @@
               <text class="action-label">{{ selectedPet.displayName }} 帮你看看</text>
               <text v-if="latestActionPlanPanel.missing" class="action-text muted">{{ latestActionPlanPanel.text }}</text>
               <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ petLabel(item.label) }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
-              <view v-if="aiParticipationLabel" :class="['ai-badge', aiParticipationLabel.type]">
-                <text class="ai-badge-dot"></text>
-                <text class="ai-badge-label">{{ aiParticipationLabel.text }}</text>
-                <text class="ai-badge-text">{{ aiParticipationLabel.detail }}</text>
-              </view>
             </view>
           </template>
         </view>
@@ -672,15 +676,6 @@ const latestActionPlanPanel = computed(() => {
     }
   }
   return { show: false, text: '', missing: false, sections: [] }
-})
-
-const aiParticipationLabel = computed(() => {
-  const result = latestCase.value?.latestResult
-  if (!result || result.aiPending) return null
-  if (result.aiFailed) return { text: '规则兜底', type: 'fallback', detail: aiLabel() + ' 超时或格式异常，本次为规则计算结果' }
-  if (result.aiUsed === false) return { text: '规则兜底', type: 'fallback', detail: '未启用 AI，本次为规则计算结果' }
-  // AI 成功生成
-  return { text: aiLabel() + ' 生成', type: 'ai', detail: 'AI 生成分析，内容仅供参考。' }
 })
 
 function startAIFeedbackTimer() {
@@ -2083,12 +2078,6 @@ function goTaohua() {
 .v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hero-title-v2 .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
-.v2-mode .hero-identity { display: flex; align-items: center; gap: 16rpx; margin-bottom: 14rpx; }
-.v2-mode .profile-avatar-v2 { border-radius: 50%; overflow: hidden; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--accent, #FFD93D); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.v2-mode .profile-avatar-v2.sm { width: 68rpx; height: 68rpx; }
-.v2-mode .profile-avatar-v2 image { width: 100%; height: 100%; }
-.v2-mode .avatar-placeholder-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .hero-identity-name { font-size: $fs-heading; font-weight: $fw-heading; color: var(--text-main, #111); }
 .v2-mode .role-hint-v2 { display: block; margin-top: 8rpx; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); }
 
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
@@ -2109,12 +2098,12 @@ function goTaohua() {
 .v2-mode .btn-share-sm { flex: none; width: 48rpx; height: 48rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); display: flex; align-items: center; justify-content: center; padding: 0; }
 .v2-mode .btn-share-sm::after { border: none; }
 .v2-mode .analysis-head { padding-right: 64rpx; box-sizing: border-box; }
-.v2-mode .analysis-share-btn { position: absolute; top: 24rpx; right: 24rpx; z-index: 2; background: #FFFBEA; }
+.v2-mode .analysis-share-btn { position: absolute; top: 24rpx; right: 24rpx; z-index: 2; background: var(--brand-warm, #FFFBEA); }
 .v2-mode .analysis-share-icon { width: 28rpx; height: 28rpx; display: block; }
 
 .v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.45; box-sizing: border-box; font-family: inherit; }
 .v2-mode .text-area-v2.chat-mode { min-height: 360rpx; max-height: 640rpx; font-size: $fs-body; }
-.v2-mode .text-area-v2::placeholder { font-size: $fs-body-lg; font-weight: $fw-body; color: #777; }
+.v2-mode .text-area-v2::placeholder { font-size: $fs-body-lg; font-weight: $fw-body; color: var(--placeholder, #777); }
 
 /* 品牌截断提示卡片 */
 .v2-mode .quick-paste-warn-v2 {
@@ -2243,7 +2232,7 @@ function goTaohua() {
 .v2-mode .quick-question-option-v2.active .quick-question-label-v2 { color: var(--text-main, #111); font-weight: $fw-heading; }
 .v2-mode .quick-question-check-v2 { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); }
 .v2-mode .quick-question-hint-v2 { display: block; margin-top: 10rpx; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.4; }
-.v2-mode .quick-chat-names-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 10rpx; padding: 12rpx; border: 2rpx dashed #ccc; background: #fafafa; }
+.v2-mode .quick-chat-names-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 10rpx; padding: 12rpx; border: 2rpx dashed var(--divider, #ccc); background: var(--surface-dim, #fafafa); }
 .v2-mode .quick-chat-name-input-v2 { flex: 1; min-width: 0; height: 56rpx; padding: 0 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); box-sizing: border-box; }
 .v2-mode .quick-chat-name-sep-v2 { font-size: $fs-body; font-weight: $fw-body; color: var(--text-soft, #999); flex-shrink: 0; }
 .v2-mode .quick-chat-name-hint-v2 { width: 100%; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.3; }
@@ -2315,15 +2304,6 @@ function goTaohua() {
 .v2-mode .action-item:last-child { border-bottom: none; padding-bottom: 0; }
 .v2-mode .action-item-label { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); }
 .v2-mode .action-item-text { display: block; font-size: $fs-body; color: var(--text-muted, #666); margin-top: 6rpx; line-height: 1.5; }
-
-.v2-mode .ai-badge { display: flex; align-items: center; gap: 8rpx; margin-top: 14rpx; padding: 10rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); }
-.v2-mode .ai-badge.ai { background: #e8f5e9; }
-.v2-mode .ai-badge.fallback { background: #fff3e0; }
-.v2-mode .ai-badge-dot { width: 12rpx; height: 12rpx; border-radius: 50%; border: var(--border-width, 2rpx) solid var(--border, #111); flex-shrink: 0; }
-.v2-mode .ai-badge.ai .ai-badge-dot { background: #4caf50; }
-.v2-mode .ai-badge.fallback .ai-badge-dot { background: #ff9800; }
-.v2-mode .ai-badge-text { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); }
-.v2-mode .ai-badge-label { font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-main, #111); padding: 2rpx 8rpx; border: var(--border-width, 2rpx) solid var(--border, #111); margin-right: 4rpx; }
 
 .v2-mode .side-box { margin-top: 20rpx; padding: 18rpx; border: 2rpx dashed var(--text-main, #111); background: var(--brand-warm, #FFFBEB); }
 .v2-mode .side-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
@@ -2429,7 +2409,7 @@ function goTaohua() {
 
 .v2-mode .onboard-options-v2 { display: flex; gap: 14rpx; margin: 12rpx 0; }
 .v2-mode .onboard-card-v2 { flex: 1; padding: 20rpx 16rpx; background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); cursor: pointer; }
-.v2-mode .onboard-card-v2.primary { border-color: var(--accent-cool, #4ECDC4); background: #f6fffd; }
+.v2-mode .onboard-card-v2.primary { border-color: var(--accent-cool, #4ECDC4); background: var(--onboard-primary-bg, #f6fffd); }
 .v2-mode .onboard-card-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 6rpx; }
 .v2-mode .onboard-card-desc-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.4; }
 .v2-mode .back-link-v2 { display: inline-block; text-align: left; padding: 12rpx 0; margin-bottom: 16rpx; font-size: $fs-heading; font-weight: $fw-body; color: var(--text-main, #111); }
@@ -2437,7 +2417,7 @@ function goTaohua() {
 
 /* ===== 今日桃花卡片 · 方案三 · 花瓣散落 ===== */
 .v2-mode .taohua-teaser-v2 {
-  background: linear-gradient(180deg, #FFF5F5 0%, var(--app-bg, #FFFDF5) 60%);
+  background: var(--taohua-card-bg, linear-gradient(180deg, #FFF5F5 0%, var(--app-bg, #FFFDF5) 60%));
   border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-left: 12rpx solid var(--hero, #FF6B6B);
   box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111);
@@ -2450,7 +2430,7 @@ function goTaohua() {
 .v2-mode .taohua-teaser-head {
   display: flex; align-items: baseline; justify-content: space-between;
   margin-bottom: 14rpx; padding-bottom: 12rpx;
-  border-bottom: 2rpx dashed #ccc;
+  border-bottom: 2rpx dashed var(--divider, #ccc);
 }
 .v2-mode .taohua-teaser-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .taohua-teaser-head-score { font-size: 48rpx; font-weight: $fw-hero; color: var(--hero, #FF6B6B); line-height: 1; }
@@ -2460,7 +2440,7 @@ function goTaohua() {
 .v2-mode .taohua-bar-wrap { display: flex; align-items: center; gap: 8rpx; margin-bottom: 16rpx; }
 .v2-mode .taohua-bar-label { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); white-space: nowrap; }
 .v2-mode .taohua-bar-track { flex: 1; height: 10rpx; background: var(--divider, #eee); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: 2rpx; overflow: hidden; }
-.v2-mode .taohua-bar-fill { height: 100%; background: linear-gradient(90deg, var(--hero, #FF6B6B), var(--accent, #FFD93D)); }
+.v2-mode .taohua-bar-fill { height: 100%; background: var(--taohua-bar-gradient, linear-gradient(90deg, var(--hero, #FF6B6B), var(--accent, #FFD93D))); }
 
 /* 方位竖排 */
 .v2-mode .taohua-dirs-v { display: flex; flex-direction: column; gap: 6rpx; margin-bottom: 14rpx; }
@@ -2482,7 +2462,7 @@ function goTaohua() {
 .v2-mode .taohua-cta { display: flex; align-items: center; justify-content: center; gap: 6rpx; padding: 12rpx 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); letter-spacing: 1rpx; text-align: center; box-sizing: border-box; }
 
 /* 出处 */
-.v2-mode .taohua-cite { margin-top: 14rpx; padding-top: 10rpx; border-top: 2rpx dashed #ccc; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); text-align: center; }
+.v2-mode .taohua-cite { margin-top: 14rpx; padding-top: 10rpx; border-top: 2rpx dashed var(--divider, #ccc); font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); text-align: center; }
 
 /* 加载 */
 .v2-mode .taohua-teaser-body-loading { padding: 18rpx 0; text-align: center; }
@@ -2493,7 +2473,7 @@ function goTaohua() {
 .taohua-info-title { font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .taohua-info-close { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); padding: 0 8rpx; line-height: 1; }
 .taohua-info-body { padding: 24rpx 28rpx; overflow-y: auto; flex: 1; }
-.taohua-info-item { padding: 14rpx 0; border-bottom: 1rpx dashed #ccc; }
+.taohua-info-item { padding: 14rpx 0; border-bottom: 1rpx dashed var(--divider, #ccc); }
 .taohua-info-item:last-child { border-bottom: none; }
 .taohua-info-q { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); margin-bottom: 4rpx; }
 .taohua-info-a { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.5; }

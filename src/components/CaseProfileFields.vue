@@ -152,17 +152,17 @@ watch(() => props.modelValue, (newVal) => {
 .field-label {
   font-size: 36rpx;
   font-weight: 800;
-  color: #111;
+  color: var(--text-main, #111);
 }
 
 .text-input {
   height: 80rpx;
   padding: 0 24rpx;
-  background: #fff;
-  border: 3rpx solid #111;
+  background: var(--surface, #fff);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   font-size: 36rpx;
   font-weight: 600;
-  color: #111;
+  color: var(--text-main, #111);
   box-sizing: border-box;
 }
 
@@ -170,10 +170,10 @@ watch(() => props.modelValue, (newVal) => {
   height: 80rpx;
   line-height: 80rpx;
   padding: 0 24rpx;
-  background: #fff;
-  border: 3rpx solid #111;
+  background: var(--surface, #fff);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   font-size: 36rpx;
   font-weight: 600;
-  color: #111;
+  color: var(--text-main, #111);
 }
 </style>

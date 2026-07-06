@@ -256,17 +256,17 @@ function goTimeline() {
 
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
-.page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
+.page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: 18rpx; box-sizing: border-box; }
 
 /* V2 Mode */
 .v2-mode { background: var(--app-bg, #FFFDF5); }
-.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); letter-spacing: 4rpx; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 {
   display: inline-block;
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
   padding: 6rpx 16rpx;
   font-size: $fs-caption;
   font-weight: $fw-hero;
@@ -277,7 +277,7 @@ function goTimeline() {
   display: block;
   font-size: $fs-hero-title;
   font-weight: $fw-hero;
-  color: #111;
+  color: var(--hero-text-color, #111);
   line-height: $lh-hero;
   letter-spacing: -2rpx;
   text-transform: uppercase;
@@ -288,7 +288,7 @@ function goTimeline() {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: rgba(0,0,0,0.7);
+  color: var(--text-muted, rgba(0,0,0,0.7));
   line-height: $lh-loose;
   margin-top: 6rpx;
 }
@@ -297,16 +297,16 @@ function goTimeline() {
 .v2-mode .profile-avatar-v2 {
   border-radius: 50%;
   overflow: hidden;
-  background: #f9f9f9;
+  background: var(--surface-dim, #f9f9f9);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
 }
 .v2-mode .profile-avatar-v2.lg { width: 120rpx; height: 120rpx; }
 .v2-mode .profile-avatar-v2 image { width: 100%; height: 100%; }
-.v2-mode .avatar-placeholder-v2 { font-size: $fs-kpi; font-weight: $fw-hero; color: #111; }
+.v2-mode .avatar-placeholder-v2 { font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
@@ -314,7 +314,7 @@ function goTimeline() {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: #666;
+  color: var(--text-muted, #666);
   line-height: $lh-loose;
   margin: 6rpx 0;
 }
@@ -324,35 +324,35 @@ function goTimeline() {
 .v2-mode .tag-v2 { @include tag-v2; }
 
 /* Fields */
-.v2-mode .field-v2 { margin-top: 16rpx; padding: 18rpx 0; border-bottom: 2rpx solid #111; }
+.v2-mode .field-v2 { margin-top: 16rpx; padding: 18rpx 0; border-bottom: var(--border-width, 2rpx) solid var(--border, #111); }
 .v2-mode .field-v2:last-child { border-bottom: 0; }
 .v2-mode .field-label-v2 {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-label;
-  color: #111;
+  color: var(--text-main, #111);
   margin-bottom: 8rpx;
 }
 .v2-mode .input-v2 {
   width: 100%;
   height: 80rpx;
   padding: 0 24rpx;
-  background: #fff;
-  border: 2rpx solid #111;
+  background: var(--surface, #fff);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
   font-size: $fs-heading;
   font-weight: $fw-body;
-  color: #111;
+  color: var(--text-main, #111);
   box-sizing: border-box;
 }
 .v2-mode .picker-v2 {
   height: 80rpx;
   line-height: 80rpx;
   padding: 0 24rpx;
-  background: #fff;
-  border: 3rpx solid #111;
+  background: var(--surface, #fff);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: #111;
+  color: var(--text-main, #111);
 }
 
 /* Buttons */

@@ -216,60 +216,60 @@ function handleSubmit() {
 .assessment-form { padding: 0; }
 
 .assessment-form .card {
-  background: #fff; border: 3px solid #111; box-shadow: 6rpx 6rpx 0 #111;
-  padding: 32rpx; margin-bottom: 24rpx; border-radius: 0;
+  background: var(--surface, #fff); border: var(--border-width-strong, 3px) solid var(--border, #111); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
+  padding: 32rpx; margin-bottom: 24rpx; border-radius: var(--radius-xs, 0);
 }
-.assessment-form .card .h2 { font-size: 38rpx; font-weight: 900; color: #111; text-transform: uppercase; margin-bottom: 16rpx; padding: 0; border: none; }
+.assessment-form .card .h2 { font-size: 38rpx; font-weight: 900; color: var(--text-main, #111); text-transform: uppercase; margin-bottom: 16rpx; padding: 0; border: none; }
 
 .assessment-form .field { margin-top: 18rpx; }
-.assessment-form .field-label { display: block; font-size: 34rpx; font-weight: 800; color: #111; margin-bottom: 8rpx; }
+.assessment-form .field-label { display: block; font-size: 34rpx; font-weight: 800; color: var(--text-main, #111); margin-bottom: 8rpx; }
 
 .assessment-form .toggle-row { display: flex; gap: 12rpx; margin: 16rpx 0; }
-.assessment-form .toggle-chip { padding: 14rpx 24rpx; border: 3rpx solid #111; background: #fff; font-size: 34rpx; font-weight: 700; color: #111; border-radius: 0; }
-.assessment-form .toggle-chip.active { background: #111; color: #FFD93D; }
+.assessment-form .toggle-chip { padding: 14rpx 24rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 34rpx; font-weight: 700; color: var(--text-main, #111); border-radius: var(--radius-xs, 0); }
+.assessment-form .toggle-chip.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
 
 .assessment-form .text-input {
   width: 100%; height: 72rpx; padding: 0 20rpx;
-  border: 3rpx solid #111; background: #fff; font-size: 36rpx; font-weight: 600; color: #111;
-  box-sizing: border-box; border-radius: 0;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 36rpx; font-weight: 600; color: var(--text-main, #111);
+  box-sizing: border-box; border-radius: var(--radius-xs, 0);
 }
-.assessment-form .text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 36rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
+.assessment-form .text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 36rpx; font-weight: 600; color: var(--text-main, #111); box-sizing: border-box; border-radius: var(--radius-xs, 0); }
 
-.assessment-form .picker-view { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 36rpx; font-weight: 600; color: #111; border-radius: 0; }
+.assessment-form .picker-view { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 36rpx; font-weight: 600; color: var(--text-main, #111); border-radius: var(--radius-xs, 0); }
 
 .assessment-form .grid { display: flex; flex-direction: column; gap: 14rpx; }
 .assessment-form .questions { display: flex; flex-direction: column; gap: 20rpx; margin-top: 14rpx; }
-.assessment-form .question { background: #fff; border: 3rpx solid #111; padding: 24rpx; border-radius: 0; }
+.assessment-form .question { background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); padding: 24rpx; border-radius: var(--radius-xs, 0); }
 
-.assessment-form .q-title { display: block; font-size: 36rpx; font-weight: 900; color: #111; margin-bottom: 10rpx; }
+.assessment-form .q-title { display: block; font-size: 36rpx; font-weight: 900; color: var(--text-main, #111); margin-bottom: 10rpx; }
 
 .assessment-form .options { display: flex; flex-wrap: wrap; gap: 10rpx; }
-.assessment-form .option { padding: 14rpx 22rpx; border: 2rpx solid #111; background: #fff; font-size: 34rpx; font-weight: 600; color: #111; border-radius: 0; }
-.assessment-form .option.selected { background: #111; color: #FFD93D; }
+.assessment-form .option { padding: 14rpx 22rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 34rpx; font-weight: 600; color: var(--text-main, #111); border-radius: var(--radius-xs, 0); }
+.assessment-form .option.selected { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
 
-.assessment-form .muted { display: block; font-size: 32rpx; font-weight: 600; color: #999; margin: 6rpx 0; line-height: 1.5; }
-.assessment-form .text-area { width: 100%; min-height: 160rpx; padding: 18rpx; border: 3rpx solid #111; background: #fff; font-size: 36rpx; font-weight: 600; color: #111; box-sizing: border-box; font-family: inherit; }
-.assessment-form .text-area::placeholder { font-size: 32rpx; color: #bbb; font-weight: 500; }
+.assessment-form .muted { display: block; font-size: 32rpx; font-weight: 600; color: var(--text-soft, #999); margin: 6rpx 0; line-height: 1.5; }
+.assessment-form .text-area { width: 100%; min-height: 160rpx; padding: 18rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 36rpx; font-weight: 600; color: var(--text-main, #111); box-sizing: border-box; font-family: inherit; }
+.assessment-form .text-area::placeholder { font-size: 32rpx; color: var(--placeholder, #bbb); font-weight: 500; }
 
 .assessment-form .btn-primary {
   width: 100%; height: 80rpx; line-height: 80rpx; text-align: center;
-  background: #4ECDC4; border: 3rpx solid #111; box-shadow: 6rpx 6rpx 0 #111;
-  font-size: 36rpx; font-weight: 900; color: #111; margin-top: 14rpx;
+  background: var(--accent-cool, #4ECDC4); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
+  font-size: 36rpx; font-weight: 900; color: var(--text-main, #111); margin-top: 14rpx;
 }
 .assessment-form .btn-primary:disabled { opacity: 0.6; }
 
 .assessment-form .btn-secondary {
   width: 100%; height: 64rpx; line-height: 64rpx; text-align: center;
-  background: #fff; border: 3rpx solid #111; font-size: 34rpx; font-weight: 800; color: #111; margin-top: 12rpx;
+  background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: 34rpx; font-weight: 800; color: var(--text-main, #111); margin-top: 12rpx;
 }
 
-.assessment-form .error-message { margin-top: 14rpx; padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: 34rpx; font-weight: 600; color: #FF5252; }
+.assessment-form .error-message { margin-top: 14rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--risk, #FF5252); background: var(--risk-soft, #FFEEEC); font-size: 34rpx; font-weight: 600; color: var(--risk, #FF5252); }
 
 .assessment-form .section-head { margin-bottom: 12rpx; }
 .assessment-form .actions { display: flex; gap: 10rpx; margin-top: 14rpx; }
 .assessment-form .actions .btn-primary, .assessment-form .actions .btn-secondary { flex: 1; }
-.assessment-form .profile-avatar { border: 3rpx solid #111; border-radius: 50%; }
+.assessment-form .profile-avatar { border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: 50%; }
 
-.assessment-form .field .text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: 36rpx; font-weight: 600; color: #111; box-sizing: border-box; border-radius: 0; }
+.assessment-form .field .text-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 36rpx; font-weight: 600; color: var(--text-main, #111); box-sizing: border-box; border-radius: var(--radius-xs, 0); }
 .assessment-form .field .field-picker { display: block; }
 </style>

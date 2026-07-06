@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <view v-if="syncing" class="sync-bar"></view>
       <view v-if="loading" class="loading-v2">LOADING...</view>
@@ -11,17 +11,18 @@
         <view v-if="profileUpdated" class="notice-v2 ok"><text class="notice-title-v2">画像已更新</text><text class="notice-sub-v2">Crush 画像信息已保存。</text></view>
         <!-- Hero -->
         <view class="hero-block-v2 anim-hero">
-          <text class="hero-tag-v2">WE / {{ caseFile.name }}</text>
-          <text class="hero-title-v2">{{ result?.explanation?.petLine || result?.explanation?.bullets?.[0] || '暂无分析结果' }}</text>
-          <text class="hero-copy-v2">{{ aiLabel() }} 辅助分析 · 帮你梳理线索，不代表最终结论。</text>
-          <view class="hero-profile-v2">
-            <view class="avatar-v2 lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" /><text v-else class="avatar-placeholder-v2">{{ avatarLabel(caseFile.name) }}</text></view>
-            <view class="hero-profile-main-v2">
-              <view class="hero-profile-name-row-v2">
-                <text class="profile-name-v2">{{ caseFile.name }}</text>
-                <text v-if="objectTypeLabel" class="profile-type-v2">{{ objectTypeLabel }}</text>
+          <text class="hero-tag-v2">RELATIONSHIP</text>
+          <text class="hero-title-v2"><text class="hl-v2">{{ caseFile.name }}</text> · 关系分析</text>
+          <text class="hero-copy-v2">{{ timelineCount }} 条记录 · {{ aiLabel() }} 辅助分析，不代表最终结论。</text>
+          <hr class="hero-divider">
+          <view class="hero-bottom">
+            <view class="hero-avatar-lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" style="width:100%;height:100%;border-radius:50%;" /><text v-else>{{ avatarLabel(caseFile.name) }}</text></view>
+            <view class="hero-info-col">
+              <view style="display:flex;align-items:center;gap:8px;">
+                <text style="font-size:17px;font-weight:800;color:var(--text-main,#111);">{{ caseFile.name }}</text>
+                <text v-if="objectTypeLabel" style="font-size:12px;color:var(--text-muted,rgba(0,0,0,0.45));">{{ objectTypeLabel }}</text>
               </view>
-              <view class="tag-row-v2 hero-profile-tags-v2">
+              <view class="tag-row-v2" style="margin-top:0;">
                 <text class="tag-v2 black">TA 当前：{{ caseCrushType.label }}</text>
                 <text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text>
               </view>
@@ -50,7 +51,7 @@
         <view class="card-v2 anim-card" style="animation-delay:0.23s">
           <view style="display:flex;align-items:center;gap:12rpx;">
             <text class="section-title-v2">关系雷达</text>
-            <text class="info-dot-v2" @click="showSignalInfo = true">ⓘ</text>
+            <text class="info-dot-v2" @click="showSignalInfo = true">?</text>
           </view>
           <text class="section-sub-v2">五个维度看关系，不只盯意向和风险</text>
           <view v-if="showSignalInfo" class="info-overlay" @click="showSignalInfo = false">
@@ -61,11 +62,11 @@
               </view>
               <scroll-view scroll-y class="info-sheet-body">
                 <view class="info-tree-item"><text class="info-tree-q">数据来源</text><text class="info-tree-a">全部基于结构化数据（timeline 事件标签 + assessments 趋势），不依赖 {{ aiLabel() }} 主观打分。样本不足（&lt;3）时自动向 50 收敛，避免小样本误判。</text></view>
-                <view class="info-tree-item"><text class="info-tree-q">主动性</text><text class="info-tree-a">50 + (TA主动 − 你主动) ÷ 总数 × 50。&gt;60 TA更主动，&lt;40 主要是你在推。</text></view>
+                <view class="info-tree-item"><text class="info-tree-q">主动性</text><text class="info-tree-a">50 + (TA主动 ? 你主动) ÷ 总数 × 50。&gt;60 TA更主动，&lt;40 主要是你在推。</text></view>
                 <view class="info-tree-item"><text class="info-tree-q">回应度</text><text class="info-tree-a">加权正向回应率：兑现+1，计划/承诺+0.7，待确认+0.45，拖延+0.2，拒绝/冷淡+0。÷ 总回应权重×100。</text></view>
                 <view class="info-tree-item"><text class="info-tree-q">承诺度</text><text class="info-tree-a">(兑现×1 + 待确认×0.45 + 拖延×0.15) ÷ 承诺总数 × 100。专门衡量"说了算不算"。</text></view>
-                <view class="info-tree-item"><text class="info-tree-q">情绪温度</text><text class="info-tree-a">50 + 最近意向变化×1.2 + 正向事件占比×25 − 风险事件占比×25。综合衡量关系走向。</text></view>
-                <view class="info-tree-item"><text class="info-tree-q">稳定性</text><text class="info-tree-a">100 − 最近波动幅度×2.5。&gt;80走势稳定，50-80正常波动，&lt;50信号摇摆不宜下结论。</text></view>
+                <view class="info-tree-item"><text class="info-tree-q">情绪温度</text><text class="info-tree-a">50 + 最近意向变化×1.2 + 正向事件占比×25 ? 风险事件占比×25。综合衡量关系走向。</text></view>
+                <view class="info-tree-item"><text class="info-tree-q">稳定性</text><text class="info-tree-a">100 ? 最近波动幅度×2.5。&gt;80走势稳定，50-80正常波动，&lt;50信号摇摆不宜下结论。</text></view>
               </scroll-view>
             </view>
           </view>
@@ -141,7 +142,7 @@
             </view>
           </template>
           <view v-else class="locked-content-v2">
-            <text class="locked-text-v2">🔒 记录 3 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+            <text class="locked-text-v2">?? 记录 3 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
           </view>
         </view>
 
@@ -175,7 +176,7 @@
             </view>
           </template>
           <view v-else class="locked-content-v2">
-            <text class="locked-text-v2">🔒 记录 7 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+            <text class="locked-text-v2">?? 记录 7 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
           </view>
         </view>
 
@@ -217,7 +218,7 @@
               <view v-if="selectedTrajectoryIdx >= 0" class="trajectory-detail-v2">
                 <view class="trajectory-detail-head-v2">
                   <text class="trajectory-detail-label-v2">{{ trajectoryMarkers[selectedTrajectoryIdx]?.label || '事件' }}</text>
-                  <text class="trajectory-detail-close-v2" @click="selectedTrajectoryIdx = -1">✕</text>
+                  <text class="trajectory-detail-close-v2" @click="selectedTrajectoryIdx = -1">?</text>
                 </view>
                 <text v-if="trajectoryMarkers[selectedTrajectoryIdx]?.event" class="trajectory-detail-title-v2">{{ trajectoryMarkers[selectedTrajectoryIdx].event.title }}</text>
                 <text v-if="trajectoryMarkers[selectedTrajectoryIdx]?.event" class="trajectory-detail-desc-v2">{{ trajectoryMarkers[selectedTrajectoryIdx].event.description }}</text>
@@ -230,7 +231,7 @@
             <view v-if="trendDataPanel.turningPoints.length > 0" class="turning-v2"><text class="section-title-v2">关键拐点</text><view v-for="tp in trendDataPanel.turningPoints" :key="tp.key" class="turning-row-v2"><text class="turning-name-v2">{{ tp.title }}</text><view class="turning-deltas-v2"><text :class="['delta-chip-v2', deltaClass(tp.intentDelta)]">意 {{ formatSignedDelta(tp.intentDelta) }}</text><text :class="['delta-chip-v2', deltaClass(-tp.riskDelta)]">险 {{ formatSignedDelta(tp.riskDelta) }}</text></view></view></view>
             </template>
             <view v-else class="locked-content-v2">
-              <text class="locked-text-v2">🔒 记录 14 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+              <text class="locked-text-v2">?? 记录 14 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
             </view>
           </view>
         </view>
@@ -253,7 +254,7 @@
           </view>
           </template>
           <view v-else class="locked-content-v2">
-            <text class="locked-text-v2">🔒 记录 14 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+            <text class="locked-text-v2">?? 记录 14 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
           </view>
         </view>
 
@@ -273,12 +274,12 @@
               <view v-if="weeklyFocusItems.length > 0" class="focus-box-v2" style="margin-top:16rpx;">
                 <text class="focus-label-v2">后续验证重点</text>
                 <text class="focus-question-v2">{{ primaryWeeklyFocus }}</text>
-                <view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">• {{ item }}</text></view>
+                <view v-if="weeklyFocusItems.length > 1" class="bullet-list-v2" style="margin-top:8rpx;"><text v-for="item in weeklyFocusItems.slice(1)" :key="item" class="bullet-v2">? {{ item }}</text></view>
               </view>
             </view>
           </template>
           <view v-else class="locked-content-v2">
-            <text class="locked-text-v2">🔒 记录 30 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
+            <text class="locked-text-v2">?? 记录 30 条事件后解锁 · 已记录 {{ timelineCount }} 条</text>
           </view>
           <template v-if="timelineCount >= 30">
             <button class="btn-v2-bottom" style="width:100%;margin-top:16rpx;" :disabled="reviewGenerating || (aiWeeklyPreview && !hasNewEventsSinceReview)" @click="generateThisMonthReview">{{ reviewGenerating ? '生成中...' : (aiWeeklyPreview ? '重新生成本月复盘' : '生成本月复盘') }}</button>
@@ -652,7 +653,11 @@ const radarStability = computed(() => {
 const radarDims = computed(() => {
   try {
     function desc(v) { if (v >= 70) return '强'; if (v >= 58) return '偏强'; if (v >= 43) return '中性'; if (v >= 30) return '偏弱'; return '弱' }
-    function color(v) { if (v >= 58) return '#4ECDC4'; if (v >= 43) return '#FFD93D'; return '#FF6B6B' }
+    function color(v) {
+      if (v >= 58) return 'var(--dot-positive, #4ECDC4)'
+      if (v >= 43) return 'var(--accent, #FFD93D)'
+      return 'var(--risk, #FF6B6B)'
+    }
     return [
       { key: 'initiative',  label: '主动性',  score: radarInitiative.value,  desc: '谁更常发起互动 · ' + desc(radarInitiative.value),  color: color(radarInitiative.value) },
       { key: 'responsive',  label: '回应度',  score: radarResponsive.value,  desc: '对方是否接得住你的信号 · ' + desc(radarResponsive.value),  color: color(radarResponsive.value) },
@@ -694,9 +699,9 @@ const anomalySignal = computed(() => {
 })
 const signalCards = computed(() => {
   var cards = []
-  if (warmingSignal.value) cards.push({ type: 'warming', icon: '🔥', label: '升温信号', data: warmingSignal.value })
-  if (riskSignal2.value) cards.push({ type: 'risk', icon: '⚠️', label: '风险信号', data: riskSignal2.value })
-  if (anomalySignal.value) cards.push({ type: 'anomaly', icon: '🔍', label: '反常信号', data: anomalySignal.value })
+  if (warmingSignal.value) cards.push({ type: 'warming', icon: '??', label: '升温信号', data: warmingSignal.value })
+  if (riskSignal2.value) cards.push({ type: 'risk', icon: '??', label: '风险信号', data: riskSignal2.value })
+  if (anomalySignal.value) cards.push({ type: 'anomaly', icon: '??', label: '反常信号', data: anomalySignal.value })
   return cards
 })
 
@@ -1260,15 +1265,15 @@ const trajectoryMarkers = computed(() => {
     var assess = assessments[i]
     var eventId = assess?.triggerEventId
     var event = eventId ? timeline.find(function(e) { return (e.id || e._id) === eventId }) : null
-    var type = 'other', icon = '⬤', label = '分析'
+    var type = 'other', icon = '?', label = '分析'
     if (event) {
       var tags = event.semanticTags || getTimelineRecordTags(event)
       var all = tags.all || tags.scene || []
-      if (all.indexOf('offline_meet') >= 0 || all.indexOf('movie') >= 0 || all.indexOf('meal') >= 0) { type = 'meet'; icon = '👥'; label = '见面' }
-      else if (all.indexOf('cold') >= 0 || all.indexOf('rejected') >= 0) { type = 'cold'; icon = '❄️'; label = '冷淡' }
-      else if (all.indexOf('target_committed') >= 0 || all.indexOf('planned') >= 0) { type = 'commit'; icon = '🤝'; label = '承诺' }
-      else if (all.indexOf('cancelled_delayed') >= 0) { type = 'cancel'; icon = '✕'; label = '取消' }
-      else if (all.indexOf('target_initiated') >= 0) { type = 'flirt'; icon = '💕'; label = '暧昧' }
+      if (all.indexOf('offline_meet') >= 0 || all.indexOf('movie') >= 0 || all.indexOf('meal') >= 0) { type = 'meet'; icon = '??'; label = '见面' }
+      else if (all.indexOf('cold') >= 0 || all.indexOf('rejected') >= 0) { type = 'cold'; icon = '??'; label = '冷淡' }
+      else if (all.indexOf('target_committed') >= 0 || all.indexOf('planned') >= 0) { type = 'commit'; icon = '??'; label = '承诺' }
+      else if (all.indexOf('cancelled_delayed') >= 0) { type = 'cancel'; icon = '?'; label = '取消' }
+      else if (all.indexOf('target_initiated') >= 0) { type = 'flirt'; icon = '??'; label = '暧昧' }
     }
     return { index: i, x: p.x, y: p.intentY - 32, type: type, icon: icon, label: label, event: event, assessment: assess }
   })
@@ -1370,7 +1375,7 @@ async function generateThisMonthReview() {
 
 .page {
   min-height: 100vh;
-  background: linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 380rpx), var(--app-bg, #f6f1e8);
+  background: linear-gradient(180deg, var(--page-wash, rgba(18, 60, 54, 0.07)), transparent 380rpx), var(--app-bg, #f6f1e8);
   padding: var(--spacing-page, 28rpx);
   box-sizing: border-box;
 }
@@ -1392,7 +1397,7 @@ async function generateThisMonthReview() {
 .v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
-.v2-mode .hero-profile-v2 { display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx; padding-top: 18rpx; border-top: 2rpx solid rgba(0,0,0,0.12); }
+.v2-mode .hero-profile-v2 { display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx; padding-top: 18rpx; border-top: 2rpx solid var(--hero-divider, rgba(0,0,0,0.12)); }
 .v2-mode .hero-profile-main-v2 { flex: 1; min-width: 0; }
 .v2-mode .hero-profile-name-row-v2 { display: flex; align-items: baseline; gap: 10rpx; flex-wrap: wrap; }
 .v2-mode .hero-profile-tags-v2 { margin-top: 10rpx; }
@@ -1411,7 +1416,7 @@ async function generateThisMonthReview() {
 
 .v2-mode .stats-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8rpx; margin-top: 16rpx; }
 .v2-mode .stat-box-v2 { padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); text-align: center; }
-.v2-mode .stat-box-v2.warn { background: #FFF0EE; }
+.v2-mode .stat-box-v2.warn { background: var(--risk-soft, #FFF0EE); }
 .v2-mode .stat-num-v2 { display: block; font-size: 26rpx; font-weight: 900; color: var(--text-main, #111); line-height: 1; }
 .v2-mode .stat-lbl-v2 { display: block; font-size: 18rpx; font-weight: 700; color: var(--text-muted, #666); margin-top: 2rpx; }
 .v2-mode .stat-hint-v2 { display: block; font-size: 18rpx; font-weight: 600; color: var(--text-soft, #999); margin-top: 2rpx; }
@@ -1493,7 +1498,7 @@ async function generateThisMonthReview() {
 .v2-mode .turning-name-v2 { font-size: 20rpx; font-weight: 600; color: var(--text-main, #111); line-height: 1.5; }
 .v2-mode .turning-deltas-v2 { display: flex; gap: 6rpx; }
 .v2-mode .delta-chip-v2 { padding: 2rpx 8rpx; border: 1rpx solid var(--text-main, #111); font-size: 18rpx; font-weight: 700; }
-.v2-mode .delta-chip-v2.positive { background: var(--success-soft, #E0FFF0); color: #0F6B45; }
+.v2-mode .delta-chip-v2.positive { background: var(--success-soft, #E0FFF0); color: var(--success-text, #0F6B45); }
 .v2-mode .delta-chip-v2.negative { background: var(--risk-soft, #FFEEEC); color: var(--risk, #FF5252); }
 .v2-mode .delta-chip-v2.flat { background: var(--surface-dim, #f9f9f9); color: var(--text-soft, #999); }
 
@@ -1509,7 +1514,7 @@ async function generateThisMonthReview() {
 .v2-mode .bottom-action-v2 { text-align: center; margin-bottom: 24rpx; padding: 0 28rpx; }
 .v2-mode .btn-v2-bottom { display: block; width: 100%; height: 72rpx; line-height: 72rpx; background: var(--accent-cool, #4ECDC4); border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: 26rpx; font-weight: 800; color: var(--text-main, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
 .v2-mode .btn-v2-bottom[disabled] { opacity: 0.5; box-shadow: none; }
-.sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: linear-gradient(90deg, transparent, var(--hero-bg, #FF6B6B), transparent); animation: sync-slide 0.8s ease-in-out infinite; }
+.sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: var(--sync-gradient, linear-gradient(90deg, transparent, var(--hero-bg, #FF6B6B), transparent)); animation: sync-slide 0.8s ease-in-out infinite; }
 @keyframes sync-slide {
   0% { width: 30%; left: -30%; }
   100% { width: 30%; left: 130%; }
@@ -1615,7 +1620,7 @@ async function generateThisMonthReview() {
 .v2-mode .scene-bar-fill-v2 { height: 100%; min-width: 8rpx; background: var(--surface, #fff); }
 .v2-mode .scene-bar-fill-v2.hot { background: var(--accent-cool, #4ECDC4); }
 .v2-mode .scene-bar-fill-v2.mid { background: var(--accent, #FFD93D); }
-.v2-mode .scene-bar-fill-v2.cool { background: repeating-linear-gradient(45deg, var(--surface, #fff), var(--surface, #fff) 6rpx, var(--divider, #eeeeee) 6rpx, var(--divider, #eeeeee) 12rpx); }
+.v2-mode .scene-bar-fill-v2.cool { background: var(--stripe-surface, repeating-linear-gradient(45deg, var(--surface, #fff), var(--surface, #fff) 6rpx, var(--divider, #eeeeee) 6rpx, var(--divider, #eeeeee) 12rpx)); }
 .v2-mode .scene-bar-count-v2 { font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); text-align: right; line-height: 1; }
 .v2-mode .tag-v2.yellow { background: var(--accent, #FFD93D); }
 .v2-mode .tag-v2.black { background: var(--text-main, #111); color: var(--surface, #fff); }
@@ -1673,13 +1678,13 @@ async function generateThisMonthReview() {
 .v2-mode .info-sheet-close {
   font-size: $fs-heading;
   font-weight: $fw-heading;
-  color: var(--text-main, #{$c-ink});
+  color: var(--text-main, #111);
 }
 
 .v2-mode .hero-title-v2 {
   font-size: $fs-hero-title;
   font-weight: $fw-hero;
-  color: var(--hero-text-color, #{$c-ink});
+  color: var(--hero-text-color, #111);
   letter-spacing: 0;
 }
 
@@ -1701,7 +1706,7 @@ async function generateThisMonthReview() {
 .v2-mode .info-tree-a {
   font-size: $fs-body;
   font-weight: $fw-body;
-  color: var(--text-muted, #{$c-muted});
+  color: var(--text-muted, #666);
   line-height: $lh-body;
 }
 
@@ -1722,14 +1727,14 @@ async function generateThisMonthReview() {
 .v2-mode .info-tree-q {
   font-size: $fs-body;
   font-weight: $fw-heading;
-  color: var(--text-main, #{$c-ink});
+  color: var(--text-main, #111);
 }
 
 .v2-mode .card-text-v2.muted,
 .v2-mode .radar-meta-v2,
 .v2-mode .trajectory-detail-close-v2,
 .v2-mode .diverging-num-v2 {
-  color: var(--text-soft, #{$c-soft});
+  color: var(--text-soft, #999);
 }
 
 .v2-mode .avatar-placeholder-v2,

@@ -71,6 +71,32 @@
 .crush-btn.active .crush-text {
   color: #111;
 }
+.tab-bar.theme-velvet-diary {
+  background: #FFF7EE;
+  border-top-color: #D9B99D;
+  box-shadow: 0 -4rpx 0 #D9B99D;
+}
+.tab-bar.theme-velvet-diary .tab-text {
+  color: #B99A86;
+}
+.tab-bar.theme-velvet-diary .tab-item.active .tab-text {
+  color: #5C3020;
+}
+.tab-bar.theme-velvet-diary .crush-btn {
+  background: #5C3020;
+  border-color: #D9B99D;
+  box-shadow: 0 6rpx 0 #F0B869;
+}
+.tab-bar.theme-velvet-diary .crush-btn.active {
+  background: #F0B869;
+  box-shadow: 0 6rpx 0 #D9B99D;
+}
+.tab-bar.theme-velvet-diary .crush-text {
+  color: #FFF0DC;
+}
+.tab-bar.theme-velvet-diary .crush-btn.active .crush-text {
+  color: #5C3020;
+}
 .tab-bar.font-large .tab-text,
 .tab-bar.font-large .crush-text {
   font-size: 29rpx;

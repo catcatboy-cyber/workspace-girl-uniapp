@@ -98,14 +98,14 @@ function onSubmit() { emit('submit', { ...local.value }) }
 @import "@/styles/campus-pop.scss";
 
 .pi-card { padding: 28rpx; }
-.pi-title { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; margin-bottom: 4rpx; }
-.pi-sub { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-bottom: 24rpx; }
+.pi-title { display: block; font-size: $fs-heading; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); margin-bottom: 4rpx; }
+.pi-sub { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-bottom: 24rpx; }
 .pi-field { margin-bottom: 20rpx; }
-.pi-label { display: block; font-size: $fs-body; font-weight: $fw-label; color: #111; margin-bottom: 8rpx; }
-.pi-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; background: #fff; box-sizing: border-box; }
-.pi-input::placeholder { color: #999; }
+.pi-label { display: block; font-size: $fs-body; font-weight: $fw-label; color: var(--text-main, #111); margin-bottom: 8rpx; }
+.pi-input { width: 100%; height: 72rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); box-sizing: border-box; }
+.pi-input::placeholder { color: var(--placeholder, #999); }
 .pi-segmented { display: flex; gap: 12rpx; }
-.pi-seg { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; border: 2rpx solid #111; background: #fff; font-size: $fs-body; font-weight: $fw-label; color: #666; &.active { background: #111; color: #FFD93D; font-weight: $fw-hero; } }
-.pi-picker { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; }
-.pi-skip { display: block; text-align: center; margin-top: 20rpx; font-size: $fs-body; font-weight: $fw-body; color: #999; text-decoration: underline; }
+.pi-seg { flex: 1; height: 64rpx; line-height: 64rpx; text-align: center; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #666); &.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); font-weight: var(--font-weight-hero, $fw-hero); } }
+.pi-picker { height: 72rpx; line-height: 72rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); }
+.pi-skip { display: block; text-align: center; margin-top: 20rpx; font-size: $fs-body; font-weight: $fw-body; color: var(--text-soft, #999); text-decoration: underline; }
 </style>

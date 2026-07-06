@@ -76,7 +76,7 @@ function goCases() {
 .page {
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 360rpx),
+    linear-gradient(180deg, var(--page-wash, rgba(18, 60, 54, 0.07)), transparent 360rpx),
     var(--app-bg, #f6f1e8);
   padding: 28rpx;
   box-sizing: border-box;
@@ -85,12 +85,12 @@ function goCases() {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--hero-text-color, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 
 .v2-mode .btn-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .ai-note-bar { text-align: center; padding: 24rpx 18rpx; margin-top: 18rpx; border-top: 2rpx dashed #ccc; }
-.v2-mode .ai-note-text { font-size: $fs-caption; font-weight: $fw-body; color: #999; }
+.v2-mode .ai-note-bar { text-align: center; padding: 24rpx 18rpx; margin-top: 18rpx; border-top: 2rpx dashed var(--divider, #ccc); }
+.v2-mode .ai-note-text { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); }
 </style>

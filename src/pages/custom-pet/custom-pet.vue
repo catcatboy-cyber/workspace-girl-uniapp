@@ -40,9 +40,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { callFunction } from '@/utils/cloudbase'
 import { checkFeatureAccess, getCurrentUserId } from '@/utils/api'
-import { getCurrentThemeId, getThemeStyle } from '@/utils/theme'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { aiLabel } from '@/utils/labels'
 
 const themeVars = ref(getThemeStyle())
@@ -53,6 +54,11 @@ const images = ref<string[]>([])
 const submitting = ref(false)
 
 const canSubmit = computed(() => nickname.value.trim() && description.value.trim())
+
+onShow(() => {
+  themeVars.value = getThemeStyle()
+  applyThemeChrome()
+})
 
 onMounted(async () => {
   try {
@@ -151,24 +157,24 @@ async function submit() {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--hero-text-color, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
-.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.4; margin-bottom: 10rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.4; margin-bottom: 10rpx; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; border: 2rpx solid #111; padding: 0 20rpx; font-size: $fs-body-lg; font-weight: $fw-label; color: #111; box-sizing: border-box; background: #fff; }
-.v2-mode .textarea-v2 { width: 100%; height: 240rpx; border: 2rpx solid #111; padding: 16rpx 20rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; box-sizing: border-box; background: #fff; line-height: 1.6; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; border: var(--border-width, 2rpx) solid var(--border, #111); padding: 0 20rpx; font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); box-sizing: border-box; background: var(--surface, #fff); }
+.v2-mode .textarea-v2 { width: 100%; height: 240rpx; border: var(--border-width, 2rpx) solid var(--border, #111); padding: 16rpx 20rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); box-sizing: border-box; background: var(--surface, #fff); line-height: 1.6; }
 
 .v2-mode .img-grid-v2 { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 12rpx; }
-.v2-mode .img-box-v2 { width: 180rpx; height: 180rpx; border: 2rpx solid #111; position: relative; }
+.v2-mode .img-box-v2 { width: 180rpx; height: 180rpx; border: var(--border-width, 2rpx) solid var(--border, #111); position: relative; }
 .v2-mode .img-preview-v2 { width: 100%; height: 100%; }
-.v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: #FF5252; color: #fff; font-size: $fs-body-lg; font-weight: $fw-hero; text-align: center; line-height: 44rpx; border: 2rpx solid #111; }
-.v2-mode .img-add-v2 { width: 180rpx; height: 180rpx; border: 2rpx dashed #111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; background: #f9f9f9; }
-.v2-mode .img-add-icon-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1; }
-.v2-mode .img-add-label-v2 { font-size: $fs-caption; font-weight: $fw-label; color: #999; }
+.v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: var(--risk, #FF5252); color: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-hero; text-align: center; line-height: 44rpx; border: var(--border-width, 2rpx) solid var(--border, #111); }
+.v2-mode .img-add-v2 { width: 180rpx; height: 180rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; background: var(--surface-dim, #f9f9f9); }
+.v2-mode .img-add-icon-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
+.v2-mode .img-add-label-v2 { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); }
 
 </style>

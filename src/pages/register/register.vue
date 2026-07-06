@@ -124,24 +124,24 @@ const goAbout = () => {
 @import "@/styles/campus-pop.scss";
 .register-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f4ede2 0%, #fbf6ee 100%);
+  background: var(--app-bg, #FFFDF5);
   padding: 40rpx;
 }
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
 
 .v2-mode .header-v2 { text-align: left; padding: 40rpx 0 32rpx; }
-.v2-mode .title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; letter-spacing: -2rpx; line-height: 1.1; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .subtitle-v2 { display: block; font-size: $fs-heading; font-weight: $fw-body; color: #666; margin-top: 10rpx; }
+.v2-mode .title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); letter-spacing: -2rpx; line-height: 1.1; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .subtitle-v2 { display: block; font-size: $fs-heading; font-weight: $fw-body; color: var(--text-muted, #666); margin-top: 10rpx; }
 
 .v2-mode .card-v2 { @include card-v2; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: 3rpx solid #111; font-size: $fs-body-lg; font-weight: $fw-body; color: #111; background: #fff; box-sizing: border-box; }
-.v2-mode .input-v2::placeholder { color: #999; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; padding: 0 28rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); box-sizing: border-box; }
+.v2-mode .input-v2::placeholder { color: var(--placeholder, #999); }
 
-.v2-mode .error-v2 { padding: 16rpx; border: 2rpx solid #FF5252; background: #FFEEEC; font-size: $fs-body; font-weight: $fw-body; color: #FF5252; }
+.v2-mode .error-v2 { padding: 16rpx; border: var(--border-width, 2rpx) solid var(--risk, #FF5252); background: var(--risk-soft, #FFEEEC); font-size: $fs-body; font-weight: $fw-body; color: var(--risk, #FF5252); }
 
-.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: $fs-body; font-weight: $fw-body; color: #666; text-align: center; line-height: 1.5; text-decoration: underline; }
+.v2-mode .privacy-v2 { display: block; margin: 16rpx 0; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); text-align: center; line-height: 1.5; text-decoration: underline; }
 
 </style>

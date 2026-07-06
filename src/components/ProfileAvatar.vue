@@ -28,8 +28,8 @@ const initial = computed(() => {
   position: relative;
   border-radius: 50%;
   overflow: hidden;
-  background: #FFD93D;
-  border: 3rpx solid #111;
+  background: var(--accent, #FFD93D);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,7 +66,7 @@ const initial = computed(() => {
 .avatar-placeholder {
   font-size: 36rpx;
   font-weight: 900;
-  color: #111;
+  color: var(--text-main, #111);
   text-transform: uppercase;
 }
 

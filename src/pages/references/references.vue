@@ -97,46 +97,47 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { aiLabel } from '@/utils/labels'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 
-const fontSizeMode = ref('')
-const pageStyle = ref('')
+const fontSizeMode = ref(getFontSizeMode())
+const pageStyle = ref(getThemeStyle())
 
-try { fontSizeMode.value = uni.getStorageSync('fontSizeMode') || '' } catch (_) { /* ignore */ }
-try {
-  const themeId = uni.getStorageSync('theme') || 'campus-pop'
-  if (themeId === 'campus-pop') {
-    pageStyle.value = '--app-bg:#FFFDF5;--hero-bg:#FF6B6B;--hero-bg-2:#e85d5d;'
-  }
-} catch (_) { /* ignore */ }
+onShow(() => {
+  fontSizeMode.value = getFontSizeMode()
+  pageStyle.value = getThemeStyle()
+  applyThemeChrome()
+})
 
 function goBack() { uni.navigateBack() }
 </script>
 
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
-.nav-bar-v2 { display:flex; align-items:center; justify-content:space-between; padding:20rpx 28rpx; border-bottom:3rpx solid #111; background:#FFFDF5; margin-bottom:20rpx; }
-.nav-back-v2 { font-size: $fs-body-lg; font-weight: $fw-hero; color:#111; }
-.nav-title-v2 { font-size: $fs-heading; font-weight: $fw-hero; color:#111; }
+.page { min-height: 100vh; background: var(--app-bg, #FFFDF5); padding-bottom: 24rpx; box-sizing: border-box; }
+.nav-bar-v2 { display:flex; align-items:center; justify-content:space-between; padding:20rpx 28rpx; border-bottom:var(--border-width-strong, 3rpx) solid var(--border, #111); background:var(--app-bg, #FFFDF5); margin-bottom:20rpx; }
+.nav-back-v2 { font-size: $fs-body-lg; font-weight: var(--font-weight-hero, $fw-hero); color:var(--text-main, #111); }
+.nav-title-v2 { font-size: $fs-heading; font-weight: var(--font-weight-hero, $fw-hero); color:var(--text-main, #111); }
 .nav-placeholder-v2 { width:60rpx; }
 
-.hero-block-v2 { background:var(--hero-bg,#FF6B6B); padding:32rpx 28rpx; border:3rpx solid #111; box-shadow:8rpx 8rpx 0 #111; transform:rotate(-0.5deg); margin:0 20rpx 24rpx; }
-.hero-tag-v2 { display:inline-block; background:#111; color:#FFD93D; font-size: $fs-caption; font-weight: $fw-hero; padding:4rpx 14rpx; letter-spacing:2rpx; margin-bottom:10rpx; }
-.hero-title-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color:#111; line-height:1.1; letter-spacing:-2rpx; }
-.hl-v2 { background:#FFD93D; padding:0 6rpx; }
-.hero-copy-v2 { display:block; font-size: $fs-body; font-weight: $fw-body; color:rgba(0,0,0,0.7); margin-top:8rpx; line-height:1.4; }
+.hero-block-v2 { background:var(--hero-bg,#FF6B6B); padding:32rpx 28rpx; border:var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow:var(--shadow-hero, 8rpx 8rpx 0 #111); transform:var(--hero-transform, rotate(-0.5deg)); margin:0 20rpx 24rpx; }
+.hero-tag-v2 { display:inline-block; background:var(--hero-tag-bg, #111); color:var(--hero-tag-color, #FFD93D); font-size: $fs-caption; font-weight: var(--font-weight-hero, $fw-hero); padding:4rpx 14rpx; letter-spacing:2rpx; margin-bottom:10rpx; }
+.hero-title-v2 { font-size: $fs-hero-title; font-weight: var(--font-weight-hero, $fw-hero); color:var(--hero-text-color, #111); line-height:1.1; letter-spacing:-2rpx; }
+.hl-v2 { background:var(--accent, #FFD93D); padding:0 6rpx; }
+.hero-copy-v2 { display:block; font-size: $fs-body; font-weight: $fw-body; color:var(--text-muted, rgba(0,0,0,0.7)); margin-top:8rpx; line-height:1.4; }
 
-.card-v2 { background:#fff; border:3rpx solid #111; box-shadow:6rpx 6rpx 0 #111; padding:28rpx; margin:0 20rpx 24rpx; }
-.section-title-v2 { display:block; font-size: $fs-body; font-weight: $fw-hero; color:#111; text-transform:uppercase; letter-spacing:2rpx; margin-bottom:16rpx; }
+.card-v2 { background:var(--surface, #fff); border:var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow:var(--shadow-hard, 6rpx 6rpx 0 #111); padding:28rpx; margin:0 20rpx 24rpx; }
+.section-title-v2 { display:block; font-size: $fs-body; font-weight: var(--font-weight-hero, $fw-hero); color:var(--text-main, #111); text-transform:uppercase; letter-spacing:2rpx; margin-bottom:16rpx; }
 
 .ref-item-v2 { margin-bottom:8rpx; }
-.ref-name-v2 { font-size: $fs-body-lg; font-weight: $fw-hero; color:#111; display:block; }
-.ref-meta-v2 { font-size: $fs-caption; font-weight: $fw-body; color:#999; display:block; margin-top:4rpx; }
-.ref-desc-v2 { font-size: $fs-caption; font-weight: $fw-body; color:#666; display:block; margin-top:8rpx; line-height:1.5; }
+.ref-name-v2 { font-size: $fs-body-lg; font-weight: var(--font-weight-hero, $fw-hero); color:var(--text-main, #111); display:block; }
+.ref-meta-v2 { font-size: $fs-caption; font-weight: $fw-body; color:var(--text-soft, #999); display:block; margin-top:4rpx; }
+.ref-desc-v2 { font-size: $fs-caption; font-weight: $fw-body; color:var(--text-muted, #666); display:block; margin-top:8rpx; line-height:1.5; }
 .ref-uses-v2 { display:flex; flex-wrap:wrap; gap:6rpx; margin-top:8rpx; }
-.ref-use-tag { display:inline-block; font-size: $fs-caption; font-weight: $fw-label; color:#111; background:#FFFBEB; border:1.5rpx solid #FFD93D; padding:3rpx 10rpx; }
-.ref-divider-v2 { height:1rpx; background:#eee; margin:20rpx 0; }
+.ref-use-tag { display:inline-block; font-size: $fs-caption; font-weight: $fw-label; color:var(--text-main, #111); background:var(--brand-warm, #FFFBEB); border:1.5rpx solid var(--accent, #FFD93D); padding:3rpx 10rpx; }
+.ref-divider-v2 { height:1rpx; background:var(--divider, #eee); margin:20rpx 0; }
 
 .ai-disclaimer { text-align:center; padding:20rpx 20rpx 40rpx; }
-.ai-disclaimer-text { font-size: $fs-caption; color:#999; }
+.ai-disclaimer-text { font-size: $fs-caption; color:var(--text-soft, #999); }
 </style>

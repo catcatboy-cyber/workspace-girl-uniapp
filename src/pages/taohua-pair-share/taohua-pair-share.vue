@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
+  <view :class="['page', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
     <view class="hero">
       <text class="brand">Crush Master · 桃花匹配</text>
       <text class="title">我和 TA 的桃花匹配度</text>
@@ -65,18 +65,21 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId } from '@/utils/api'
 import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { captureLandingContext } from '@/utils/landing'
 import { buildPairMatchPayload, SIGN_NAMES, ZODIAC_NAMES } from '@/utils/taohua'
 import { aiLabel } from '@/utils/labels'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 
 const selfZodiac = ref('兔')
 const selfSign = ref('双鱼座')
 const taZodiac = ref('马')
 const taSign = ref('天秤座')
 const ready = ref(false)
+const fontSizeMode = ref(getFontSizeMode())
+const pageStyle = ref(getThemeStyle())
 
 const payload = computed(() => buildPairMatchPayload(selfZodiac.value, selfSign.value, taZodiac.value, taSign.value))
 const relationClass = computed(() => relationTone(payload.value.match.relation))
@@ -94,6 +97,12 @@ onLoad(async (options: any) => {
   if (SIGN_NAMES.includes(ts)) taSign.value = ts
   await waitForSilentLogin()
   ready.value = true
+})
+
+onShow(() => {
+  fontSizeMode.value = getFontSizeMode()
+  pageStyle.value = getThemeStyle()
+  applyThemeChrome()
 })
 
 onShareAppMessage(() => {
@@ -152,7 +161,7 @@ function goHome() {
 .page {
   min-height: 100vh;
   padding: 24rpx;
-  background: linear-gradient(160deg, #fff6e4 0%, #eaf7ff 52%, #fffdf5 100%);
+  background: var(--taohua-card-bg, linear-gradient(160deg, #fff6e4 0%, #eaf7ff 52%, #fffdf5 100%));
   box-sizing: border-box;
 }
 
@@ -160,33 +169,33 @@ function goHome() {
 .brand {
   display: inline-block;
   padding: 8rpx 18rpx;
-  background: #111;
-  color: #ffd93d;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #ffd93d);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
-  box-shadow: 4rpx 4rpx 0 #4ecdc4;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  box-shadow: 4rpx 4rpx 0 var(--accent-cool, #4ecdc4);
 }
 .title {
   display: block;
   margin-top: 28rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-display;
   line-height: $lh-hero;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .subtitle {
   display: block;
   margin-top: 12rpx;
-  color: #0a6f69;
+  color: var(--relation-good, #0a6f69);
   font-size: $fs-body-lg;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .poster {
   padding: 30rpx;
-  background: #fffdf5;
-  border: 4rpx solid #111;
-  box-shadow: 10rpx 10rpx 0 #111;
+  background: var(--surface, #fffdf5);
+  border: 4rpx solid var(--border, #111);
+  box-shadow: var(--shadow-hero, 10rpx 10rpx 0 #111);
 }
 .pair-grid {
   display: grid;
@@ -197,15 +206,15 @@ function goHome() {
 .party {
   min-width: 0;
   padding: 16rpx;
-  border: 3rpx dashed #111;
-  background: #fff;
+  border: var(--border-width-strong, 3rpx) dashed var(--border, #111);
+  background: var(--surface, #fff);
 }
 .role {
   display: block;
   text-align: center;
-  color: #666;
+  color: var(--text-muted, #666);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .token {
   display: flex;
@@ -213,16 +222,16 @@ function goHome() {
   justify-content: center;
   min-height: 58rpx;
   margin-top: 12rpx;
-  border: 3rpx solid #111;
-  color: #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.token.zodiac { background: #ffd93d; }
-.token.sign { background: #eaf7ff; }
+.token.zodiac { background: var(--accent, #ffd93d); }
+.token.sign { background: var(--brand-cool, #eaf7ff); }
 .relation {
   min-width: 0;
   display: flex;
@@ -232,66 +241,66 @@ function goHome() {
   text-align: center;
 }
 .relation-kicker {
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .relation-main {
   display: block;
   font-size: 34rpx;
   line-height: 1.2;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
-.relation-main.good { color: #0a8f86; }
-.relation-main.mid { color: #a87600; }
-.relation-main.bad { color: #d33f49; }
-.relation-main.neutral { color: #111; }
+.relation-main.good { color: var(--relation-good, #0a8f86); }
+.relation-main.mid { color: var(--relation-mid, #a87600); }
+.relation-main.bad { color: var(--relation-bad, #d33f49); }
+.relation-main.neutral { color: var(--relation-neutral, #111); }
 
 .summary,
 .section {
   margin-top: 24rpx;
   padding: 24rpx;
-  border: 3rpx solid #111;
-  background: #fff;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
 }
-.summary { background: #fff4c7; }
+.summary { background: var(--brand-warm, #fff4c7); }
 .summary-title,
 .section-title {
   display: block;
-  color: #8a3a28;
+  color: var(--primary, #8a3a28);
   font-size: $fs-body;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .summary-copy,
 .line {
   display: block;
   margin-top: 12rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
   line-height: 1.55;
   font-weight: $fw-label;
 }
-.line.good { color: #0a8f86; }
-.compact { background: #f2f0ea; }
+.line.good { color: var(--relation-good, #0a8f86); }
+.compact { background: var(--surface-dim, #f2f0ea); }
 
 .cta-card {
   margin-top: 34rpx;
   padding: 30rpx;
-  background: #111;
-  color: #fff;
-  border: 4rpx solid #111;
-  box-shadow: 8rpx 8rpx 0 #4ecdc4;
+  background: var(--hero-tag-bg, #111);
+  color: var(--surface, #fff);
+  border: 4rpx solid var(--border, #111);
+  box-shadow: 8rpx 8rpx 0 var(--accent-cool, #4ecdc4);
 }
 .cta-title {
   display: block;
-  color: #ffd93d;
+  color: var(--hero-tag-color, #ffd93d);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .cta-copy {
   display: block;
   margin-top: 12rpx;
-  color: rgba(255,255,255,0.78);
+  color: var(--on-active-muted, rgba(255,255,255,0.78));
   font-size: $fs-body-lg;
   line-height: 1.45;
   font-weight: $fw-label;
@@ -302,18 +311,18 @@ function goHome() {
   width: 100%;
   height: 82rpx;
   line-height: 82rpx;
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-radius: 0;
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
-.primary-btn { background: #4ecdc4; color: #111; }
-.ghost-btn { background: #fff; color: #111; }
+.primary-btn { background: var(--accent-cool, #4ecdc4); color: var(--text-main, #111); }
+.ghost-btn { background: var(--surface, #fff); color: var(--text-main, #111); }
 .disclaimer {
   display: block;
   padding: 30rpx 0 10rpx;
   text-align: center;
-  color: #8e8177;
+  color: var(--text-soft, #8e8177);
   font-size: $fs-caption;
   font-weight: $fw-label;
 }

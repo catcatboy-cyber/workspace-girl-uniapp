@@ -2,15 +2,17 @@
   <view :class="['page v2-mode anim-ready', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <!-- Hero + 本人画像 -->
       <view class="hero-block-v2 anim-hero">
-        <text class="hero-tag-v2">SETTINGS</text>
-        <text class="hero-title-v2">我<text class="hl-v2">的</text></text>
-        <view v-if="hasProfile" class="hero-profile-inline">
-          <text class="hero-profile-text">{{ selfProfileSummary }}</text>
-          <text class="hero-profile-link" @click.stop="goSelfProfile">编辑 →</text>
-        </view>
-        <view v-else class="hero-profile-inline hero-profile-empty">
-          <text class="hero-profile-text">完善画像，分析更准更贴心</text>
-          <text class="hero-profile-link" @click.stop="goSelfProfile">去完善 →</text>
+        <text class="hero-tag-v2">PROFILE</text>
+        <text class="hero-title-v2"><text class="hl-v2">我的</text>主页</text>
+        <text class="hero-copy-v2">管理画像、Credits 和偏好设置。</text>
+        <hr class="hero-divider">
+        <view class="hero-bottom">
+          <view class="hero-avatar-lg" style="background:var(--hero-tag-bg,#111);color:var(--hero-tag-color,#FFD93D);font-size:20px;letter-spacing:-1px;">我</view>
+          <view class="hero-info-col">
+            <text v-if="hasProfile" style="font-size:14px;color:var(--text-muted,rgba(0,0,0,0.55));">{{ selfProfileSummary }}</text>
+            <text v-else style="font-size:14px;color:var(--text-muted,rgba(0,0,0,0.55));">完善画像，分析更准更贴心</text>
+            <text class="hero-profile-link" style="align-self:flex-start;" @click.stop="goSelfProfile">编辑 →</text>
+          </view>
         </view>
       </view>
       <!-- Credits -->
@@ -67,7 +69,7 @@
         <view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn btn-secondary btn-sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view>
         <view class="switch-row-v2" style="margin-top:16rpx;">
           <text class="card-text-v2" style="flex:1">显示陪伴助手</text>
-          <switch :checked="showPetBar" color="#111" @change="onPetBarChange" />
+          <switch :checked="showPetBar" :color="switchColor" @change="onPetBarChange" />
         </view>
       </view>
       <!-- Pet select sheet -->
@@ -75,7 +77,7 @@
       <!-- 低 Token 提示 -->
       <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:var(--brand-warm,#FFFBEB);border-style:dashed;">
         <view open-type="share" style="width:100%;">
-          <text class="section-title-v2" style="color:#e67e22;">Credits 快不够了</text>
+          <text class="section-title-v2" style="color:var(--warning,#e67e22);">Credits 快不够了</text>
           <text class="card-text-v2">邀请好友注册，双方各得 Credits →</text>
           <button class="btn btn-secondary btn-sm" open-type="share" style="margin-top:12rpx;">+{{ referralRewardTokens }}</button>
         </view>
@@ -264,6 +266,7 @@ const showPetBar = ref(true)
 const showPetSheet = ref(false)
 const currentPetId = ref<PetId>(getSelectedPetId())
 const currentPet = computed(() => getPetById(currentPetId.value))
+const switchColor = computed(() => String(themeVars.value['--text-main'] || themeVars.value['--border'] || ''))
 
 function setCustomTabBarHidden(hidden: boolean) {
   try {
@@ -345,6 +348,12 @@ function chooseTheme(themeId: ThemeId) {
   const theme = setCurrentTheme(themeId)
   currentThemeId.value = theme.id
   themeVars.value = getThemeStyle(theme)
+  applyThemeChrome(theme)
+  try {
+    const tabBar = getCurrentPages().pop()?.getTabBar?.()
+    tabBar?.syncTheme?.()
+    tabBar?.updateSelected?.()
+  } catch {}
 }
 
 async function loadData() {
@@ -616,7 +625,7 @@ function goAbout() {
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
-.v2-mode .hero-profile-inline { margin-top: 16rpx; padding-top: 14rpx; border-top: 1rpx solid rgba(0,0,0,0.12); display: flex; align-items: baseline; justify-content: space-between; gap: 12rpx; }
+.v2-mode .hero-profile-inline { margin-top: 16rpx; padding-top: 14rpx; border-top: 1rpx solid var(--hero-divider, rgba(0,0,0,0.12)); display: flex; align-items: baseline; justify-content: space-between; gap: 12rpx; }
 .v2-mode .hero-profile-text { font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; flex: 1; min-width: 0; }
 .v2-mode .hero-profile-link { font-size: $fs-caption; font-weight: $fw-heading; color: var(--accent, #FFD93D); white-space: nowrap; flex-shrink: 0; }
 
@@ -658,7 +667,7 @@ function goAbout() {
 .v2-mode .account-meta-row + .account-meta-row { margin-top: 0; padding-top: 0; }
 .v2-mode .account-meta-item { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); }
 
-.v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
+.v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .theme-card-v2 { padding: 14rpx 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); text-align: center; }
 .v2-mode .theme-card-v2.active { background: var(--text-main, #111); }
 .v2-mode .theme-dot-v2 { width: 32rpx; height: 32rpx; border-radius: 50%; border: var(--border-width, 2rpx) solid var(--border, #111); margin: 0 auto 6rpx; }
@@ -666,7 +675,7 @@ function goAbout() {
 .v2-mode .theme-name-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .theme-card-v2.active .theme-name-v2 { color: var(--accent, #FFD93D); }
 .v2-mode .theme-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 4rpx; line-height: 1.3; }
-.v2-mode .theme-card-v2.active .theme-desc-v2 { color: rgba(255,255,255,0.6); }
+.v2-mode .theme-card-v2.active .theme-desc-v2 { color: var(--on-active-muted, rgba(255,255,255,0.6)); }
 
 /* Font size picker */
 .v2-mode .font-size-row-v2 { display: flex; gap: 14rpx; }
@@ -701,7 +710,7 @@ function goAbout() {
 .v2-mode .pet-option-name-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .pet-option-v2.active .pet-option-name-v2 { color: var(--accent, #FFD93D); }
 .v2-mode .pet-option-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.3; margin-top: 4rpx; }
-.v2-mode .pet-option-v2.active .pet-option-desc-v2 { color: rgba(255,255,255,0.6); }
+.v2-mode .pet-option-v2.active .pet-option-desc-v2 { color: var(--on-active-muted, rgba(255,255,255,0.6)); }
 .v2-mode .pet-option-check-v2 { position: absolute; top: 8rpx; right: 10rpx; font-size: $fs-body; font-weight: $fw-hero; color: var(--accent, #FFD93D); }
 .v2-mode .pet-option-name-row-v2 { display: flex; align-items: center; gap: 8rpx; }
 .v2-mode .pet-option-badge-v2 { display: inline-block; padding: 2rpx 10rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--accent-cool, #4ECDC4); border: 1rpx solid var(--accent-cool, #4ECDC4); }
@@ -726,7 +735,7 @@ function goAbout() {
 .v2-mode .chip-label-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .chip-v2.active .chip-label-v2 { color: var(--accent, #FFD93D); }
 .v2-mode .chip-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 4rpx; line-height: 1.4; }
-.v2-mode .chip-v2.active .chip-desc-v2 { color: rgba(255,255,255,0.6); }
+.v2-mode .chip-v2.active .chip-desc-v2 { color: var(--on-active-muted, rgba(255,255,255,0.6)); }
 .v2-mode .ai-style-panel-v2 { display: flex; flex-direction: column; gap: 12rpx; }
 .v2-mode .sub-title-v2 { display: block; padding: 8rpx 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); color: var(--text-muted, #666); font-size: $fs-caption; font-weight: $fw-hero; }
 .v2-mode .sub-title-v2.compact { margin-bottom: 8rpx; }

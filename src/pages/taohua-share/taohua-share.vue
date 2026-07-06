@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
+  <view :class="['page', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
     <view class="hero">
       <text class="brand">Crush Master · 命理桃花</text>
       <text class="title">TA 的桃花人格卡</text>
@@ -64,16 +64,19 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import { getCachedSelfProfile, getCurrentUserId, hasUsableSelfProfile } from '@/utils/api'
 import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { captureLandingContext } from '@/utils/landing'
 import { SIGN_NAMES, ZODIAC_NAMES, zodiacSignMatch } from '@/utils/taohua'
 import { aiLabel } from '@/utils/labels'
+import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 
 const zodiac = ref('兔')
 const sign = ref('双鱼座')
 const ready = ref(false)
+const fontSizeMode = ref(getFontSizeMode())
+const pageStyle = ref(getThemeStyle())
 const fallbackText = '自带吸引力，越真实越容易被看见。'
 
 const crossData = computed<any>(() => {
@@ -93,6 +96,12 @@ onLoad(async (options: any) => {
   if (SIGN_NAMES.includes(s)) sign.value = s
   await waitForSilentLogin()
   ready.value = true
+})
+
+onShow(() => {
+  fontSizeMode.value = getFontSizeMode()
+  pageStyle.value = getThemeStyle()
+  applyThemeChrome()
 })
 
 onShareAppMessage(() => {
@@ -136,9 +145,7 @@ function goHome() {
 .page {
   min-height: 100vh;
   padding: 24rpx;
-  background:
-    linear-gradient(135deg, rgba(78,205,196,0.22) 0%, rgba(255,255,255,0) 34%),
-    linear-gradient(160deg, #fff6e4 0%, #ffe2d8 44%, #fffdf5 100%);
+  background: var(--taohua-card-bg, linear-gradient(160deg, #fff6e4 0%, #ffe2d8 44%, #fffdf5 100%));
   box-sizing: border-box;
 }
 
@@ -149,37 +156,37 @@ function goHome() {
 .brand {
   display: inline-block;
   padding: 8rpx 18rpx;
-  background: #111;
-  color: #ffd93d;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #ffd93d);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
-  box-shadow: 5rpx 5rpx 0 #4ecdc4;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  box-shadow: 5rpx 5rpx 0 var(--accent-cool, #4ecdc4);
 }
 
 .title {
   display: block;
   margin-top: 28rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-display;
   line-height: $lh-hero;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .subtitle {
   display: block;
   margin-top: 12rpx;
-  color: #0a6f69;
+  color: var(--relation-good, #0a6f69);
   font-size: $fs-body-lg;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .poster {
   position: relative;
   overflow: hidden;
   padding: 42rpx 34rpx 36rpx;
-  background: linear-gradient(180deg, #fffdf5 0%, #ffffff 58%, #fff8ec 100%);
-  border: 4rpx solid #111;
-  box-shadow: 10rpx 10rpx 0 #111;
+  background: var(--surface, #fffdf5);
+  border: 4rpx solid var(--border, #111);
+  box-shadow: var(--shadow-hero, 10rpx 10rpx 0 #111);
 }
 
 .poster::before {
@@ -189,33 +196,33 @@ function goHome() {
   right: 0;
   top: 0;
   height: 16rpx;
-  background: linear-gradient(90deg, #FFD93D 0 28%, #FF6B6B 28% 58%, #4ECDC4 58% 100%);
+  background: var(--taohua-bar-gradient, linear-gradient(90deg, #FFD93D 0 28%, #FF6B6B 28% 58%, #4ECDC4 58% 100%));
   pointer-events: none;
 }
 
 .seal {
   width: 120rpx;
   height: 120rpx;
-  border: 4rpx solid #111;
-  background: #FFD93D;
+  border: 4rpx solid var(--border, #111);
+  background: var(--accent, #FFD93D);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 7rpx 7rpx 0 #FF6B6B;
+  box-shadow: 7rpx 7rpx 0 var(--hero-bg, #FF6B6B);
   transform: rotate(-4deg);
 }
 
 .seal-text {
   font-size: $fs-display;
-  font-weight: $fw-hero;
-  color: #111;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  color: var(--text-main, #111);
   transform: rotate(4deg);
 }
 
 .persona {
   margin-top: 30rpx;
   padding-top: 24rpx;
-  border-top: 3rpx solid #111;
+  border-top: var(--border-width-strong, 3rpx) solid var(--divider-strong, #111);
 }
 
 .kicker,
@@ -223,25 +230,25 @@ function goHome() {
 .mini-title,
 .match-label {
   display: block;
-  color: #8a3a28;
+  color: var(--primary, #8a3a28);
   font-size: $fs-body;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .persona-title {
   display: block;
   margin-top: 10rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-hero-title;
   line-height: $lh-hero;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   letter-spacing: 0;
 }
 
 .persona-desc {
   display: block;
   margin-top: 16rpx;
-  color: #5f5148;
+  color: var(--text-muted, #5f5148);
   font-size: $fs-body-lg;
   line-height: $lh-loose;
   font-weight: $fw-label;
@@ -258,40 +265,40 @@ function goHome() {
 .tag,
 .match-pill {
   padding: 10rpx 18rpx;
-  border: 3rpx solid #111;
-  background: #fff;
-  color: #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
+  color: var(--text-main, #111);
   font-size: $fs-body;
-  font-weight: $fw-hero;
-  box-shadow: 4rpx 4rpx 0 rgba(17,17,17,0.18);
+  font-weight: var(--font-weight-hero, $fw-hero);
+  box-shadow: 4rpx 4rpx 0 var(--divider, rgba(17,17,17,0.18));
 }
 
 .tag.black {
-  background: #111;
-  color: #ffd93d;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #ffd93d);
 }
 
 .tag.warm,
 .match-pill {
-  background: #fff0e5;
-  color: #8a3a28;
+  background: var(--brand-warm, #fff0e5);
+  color: var(--primary, #8a3a28);
 }
 
 .section {
   margin-top: 34rpx;
   padding: 28rpx;
-  background: #F7FFF7;
-  border: 3rpx solid #111;
-  box-shadow: 6rpx 6rpx 0 #4ECDC4;
+  background: var(--onboard-primary-bg, #F7FFF7);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: 6rpx 6rpx 0 var(--accent-cool, #4ECDC4);
 }
 
 .section-text {
   display: block;
   margin-top: 16rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
   line-height: $lh-loose;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .split {
@@ -304,27 +311,27 @@ function goHome() {
 .mini-card {
   min-height: 180rpx;
   padding: 24rpx;
-  background: #fff4c7;
-  border: 3rpx solid #111;
-  box-shadow: 5rpx 5rpx 0 rgba(17,17,17,0.16);
+  background: var(--brand-warm, #fff4c7);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: 5rpx 5rpx 0 var(--divider, rgba(17,17,17,0.16));
 }
 
 .mini-card:nth-child(2) {
-  background: #EAF7FF;
+  background: var(--brand-cool, #EAF7FF);
 }
 
 .mini-main {
   display: block;
   margin-top: 14rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .mini-sub {
   display: block;
   margin-top: 10rpx;
-  color: #5f5148;
+  color: var(--text-muted, #5f5148);
   font-size: $fs-body;
   line-height: 1.45;
   font-weight: $fw-label;
@@ -333,23 +340,23 @@ function goHome() {
 .cta-card {
   margin-top: 34rpx;
   padding: 30rpx;
-  background: #111;
-  color: #fff;
-  border: 4rpx solid #111;
-  box-shadow: 8rpx 8rpx 0 #4ECDC4;
+  background: var(--hero-tag-bg, #111);
+  color: var(--surface, #fff);
+  border: 4rpx solid var(--border, #111);
+  box-shadow: 8rpx 8rpx 0 var(--accent-cool, #4ECDC4);
 }
 
 .cta-title {
   display: block;
-  color: #ffd93d;
+  color: var(--hero-tag-color, #ffd93d);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .cta-copy {
   display: block;
   margin-top: 12rpx;
-  color: rgba(255,255,255,0.78);
+  color: var(--on-active-muted, rgba(255,255,255,0.78));
   font-size: $fs-body-lg;
   line-height: 1.45;
   font-weight: $fw-label;
@@ -361,28 +368,28 @@ function goHome() {
   width: 100%;
   height: 82rpx;
   line-height: 82rpx;
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 
 .primary-btn {
-  background: #ffd93d;
-  color: #111;
-  box-shadow: 5rpx 5rpx 0 #FF6B6B;
+  background: var(--accent, #ffd93d);
+  color: var(--text-main, #111);
+  box-shadow: 5rpx 5rpx 0 var(--hero-bg, #FF6B6B);
 }
 
 .ghost-btn {
-  background: #fff;
-  color: #111;
-  box-shadow: 5rpx 5rpx 0 #4ECDC4;
+  background: var(--surface, #fff);
+  color: var(--text-main, #111);
+  box-shadow: 5rpx 5rpx 0 var(--accent-cool, #4ECDC4);
 }
 
 .disclaimer {
   display: block;
   padding: 30rpx 0 10rpx;
   text-align: center;
-  color: #8e8177;
+  color: var(--text-soft, #8e8177);
   font-size: $fs-caption;
   font-weight: $fw-label;
 }

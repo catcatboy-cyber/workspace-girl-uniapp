@@ -189,26 +189,26 @@ function goTaohua() {
 .hero-block-v2 { @include hero-block-v2; margin-bottom: 20rpx; }
 .hero-tag-v2 {
   display: inline-block;
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
   padding: 6rpx 16rpx;
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   letter-spacing: 4rpx;
   margin-bottom: 16rpx;
 }
 .hero-title-v2 {
   display: block;
-  color: #111;
+  color: var(--hero-text-color, #111);
   font-size: $fs-hero-title;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   line-height: 1.12;
 }
-.hl-v2 { display: inline-block; padding: 0 8rpx; background: #FFD93D; }
+.hl-v2 { display: inline-block; padding: 0 8rpx; background: var(--accent, #FFD93D); }
 .hero-copy-v2 {
   display: block;
   margin-top: 14rpx;
-  color: rgba(0,0,0,0.68);
+  color: var(--text-muted, rgba(0,0,0,0.68));
   font-size: $fs-body-lg;
   font-weight: $fw-label;
   line-height: 1.5;
@@ -221,8 +221,8 @@ function goTaohua() {
 }
 .section-title-v2 { @include section-title-v2; }
 .result-card {
-  background: #fff;
-  box-shadow: 8rpx 8rpx 0 #111;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111);
 }
 .pair-grid {
   display: grid;
@@ -233,15 +233,15 @@ function goTaohua() {
 .party {
   min-width: 0;
   padding: 16rpx 12rpx;
-  border: 3rpx solid #111;
-  background: #FFFDF5;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--app-bg, #FFFDF5);
   text-align: center;
 }
 .role {
   display: block;
-  color: #666;
+  color: var(--text-muted, #666);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .symbol {
   display: block;
@@ -252,57 +252,57 @@ function goTaohua() {
 .token {
   display: block;
   margin-top: 8rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   line-height: 1.25;
 }
 .token.sign {
-  color: #0a6f69;
+  color: var(--relation-good, #0a6f69);
   font-size: $fs-body;
 }
 .match-core {
   min-width: 0;
   padding: 14rpx 10rpx;
-  border: 3rpx solid #111;
-  background: #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--hero-tag-bg, #111);
   text-align: center;
 }
 .kicker {
   display: block;
-  color: #FFD93D;
+  color: var(--hero-tag-color, #FFD93D);
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .relation {
   display: block;
   margin-top: 8rpx;
-  color: #fff;
+  color: var(--surface, #fff);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   line-height: 1.2;
 }
 .relation.sign {
   font-size: $fs-body;
 }
-.relation.good { color: #4ECDC4; }
-.relation.mid { color: #FFD93D; }
-.relation.bad { color: #FF6B6B; }
+.relation.good { color: var(--relation-good, #4ECDC4); }
+.relation.mid { color: var(--relation-mid, #FFD93D); }
+.relation.bad { color: var(--relation-bad, #FF6B6B); }
 .summary-block {
   margin-top: 22rpx;
   padding-top: 20rpx;
-  border-top: 3rpx solid #111;
+  border-top: var(--border-width-strong, 3rpx) solid var(--divider-strong, #111);
 }
 .summary-title {
   display: block;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-body;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .summary-copy {
   display: block;
   margin-top: 8rpx;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
   font-weight: $fw-body;
   line-height: 1.65;
@@ -314,15 +314,15 @@ function goTaohua() {
 }
 .tag {
   padding: 10rpx 14rpx;
-  border: 2rpx solid #111;
-  background: #fff;
-  color: #111;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
+  color: var(--text-main, #111);
   font-size: $fs-body;
   font-weight: $fw-label;
 }
 .tag.good {
-  background: #F7FFF7;
-  box-shadow: 3rpx 3rpx 0 #4ECDC4;
+  background: var(--onboard-primary-bg, #F7FFF7);
+  box-shadow: 3rpx 3rpx 0 var(--accent-cool, #4ECDC4);
 }
 .line-list {
   display: flex;
@@ -332,16 +332,16 @@ function goTaohua() {
 .line {
   display: block;
   padding: 14rpx 16rpx;
-  border-left: 6rpx solid #FF6B6B;
-  background: #FFFBEB;
-  color: #111;
+  border-left: 6rpx solid var(--hero-bg, #FF6B6B);
+  background: var(--brand-warm, #FFFBEB);
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
   font-weight: $fw-body;
   line-height: 1.5;
 }
 .style-copy {
   display: block;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-body-lg;
   font-weight: $fw-body;
   line-height: 1.65;
@@ -354,47 +354,47 @@ function goTaohua() {
 .btn-v2 {
   flex: 1;
   height: 88rpx;
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-radius: 0;
   font-size: $fs-body-lg;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   line-height: 82rpx;
 }
 .btn-v2.primary {
-  background: #111;
-  color: #FFD93D;
-  box-shadow: 6rpx 6rpx 0 #FF6B6B;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
+  box-shadow: 6rpx 6rpx 0 var(--hero-bg, #FF6B6B);
 }
 .btn-v2.ghost {
-  background: #fff;
-  color: #111;
-  box-shadow: 6rpx 6rpx 0 #4ECDC4;
+  background: var(--surface, #fff);
+  color: var(--text-main, #111);
+  box-shadow: 6rpx 6rpx 0 var(--accent-cool, #4ECDC4);
 }
 .empty-title {
   display: block;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
 }
 .empty-copy {
   display: block;
   margin: 12rpx 0 24rpx;
-  color: #666;
+  color: var(--text-muted, #666);
   font-size: $fs-body-lg;
   line-height: 1.5;
 }
 .loading-v2 {
   padding: 140rpx 0;
   text-align: center;
-  color: #111;
+  color: var(--text-main, #111);
   font-size: $fs-heading;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   letter-spacing: 4rpx;
 }
 .page-disclaimer {
   display: block;
   padding: 30rpx 0 12rpx;
-  color: #aaa;
+  color: var(--text-soft, #aaa);
   text-align: center;
   font-size: $fs-caption;
   font-weight: $fw-label;

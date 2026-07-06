@@ -27,11 +27,11 @@
         <text class="section-title-v2">启用状态</text>
         <view class="switch-row-v2">
           <text class="switch-label-v2">启用 AI 事件分析</text>
-          <switch :checked="enabled" color="#4ECDC4" @change="onEnabledChange" />
+          <switch :checked="enabled" :color="switchColor" @change="onEnabledChange" />
         </view>
         <view class="switch-row-v2">
           <text class="switch-label-v2">{{ aiLabel() }} 调用失败时自动回退规则模式</text>
-          <switch :checked="fallbackToRules" color="#4ECDC4" @change="onFallbackChange" />
+          <switch :checked="fallbackToRules" :color="switchColor" @change="onFallbackChange" />
         </view>
       </view>
 
@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getAISettings, updateAISettings, testAIConnection, getCurrentUserId } from '@/utils/api'
 import { showError, showSuccess } from '@/utils/helpers'
@@ -169,6 +169,7 @@ const testSummary = ref('')
 
 const testingId = ref('')
 const themeVars = ref(getThemeStyle())
+const switchColor = computed(() => themeVars.value['--accent-cool'] || themeVars.value['--primary-2'] || themeVars.value['--primary'])
 
 onShow(() => {
   themeVars.value = getThemeStyle()
@@ -381,35 +382,35 @@ function goBack() {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
+.page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: var(--spacing-page, 18rpx); box-sizing: border-box; }
 
 /* V2 Mode */
 .v2-mode { background: var(--app-bg, #FFFDF5); }
-.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); letter-spacing: 4rpx; }
 
 .v2-mode .hero-block-v2 {
   background: var(--hero-bg, #FF6B6B);
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   padding: 32rpx;
   margin-bottom: 24rpx;
-  box-shadow: 8rpx 8rpx 0 #111;
-  transform: rotate(-0.5deg);
+  box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111);
+  transform: var(--hero-transform, rotate(-0.5deg));
 }
 .v2-mode .hero-tag-v2 {
   display: inline-block;
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
   padding: 6rpx 16rpx;
   font-size: $fs-caption;
-  font-weight: $fw-hero;
+  font-weight: var(--font-weight-hero, $fw-hero);
   letter-spacing: 4rpx;
   margin-bottom: 16rpx;
 }
 .v2-mode .hero-title-v2 {
   display: block;
   font-size: $fs-hero-title;
-  font-weight: $fw-hero;
-  color: #111;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  color: var(--hero-text-color, #111);
   line-height: $lh-hero;
   letter-spacing: -2rpx;
   text-transform: uppercase;
@@ -418,23 +419,23 @@ function goBack() {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: rgba(0,0,0,0.7);
+  color: var(--text-muted, rgba(0,0,0,0.7));
   line-height: $lh-loose;
   margin-top: 8rpx;
 }
 
 .v2-mode .card-v2 {
-  background: #fff;
-  border: 3rpx solid #111;
+  background: var(--surface, #fff);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   padding: 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: 6rpx 6rpx 0 #111;
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
 }
 .v2-mode .section-title-v2 {
   display: block;
   font-size: $fs-body;
-  font-weight: $fw-hero;
-  color: #111;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  color: var(--text-main, #111);
   text-transform: uppercase;
   letter-spacing: 2rpx;
   margin-bottom: 10rpx;
@@ -443,7 +444,7 @@ function goBack() {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: #666;
+  color: var(--text-muted, #666);
   line-height: $lh-loose;
   margin: 6rpx 0;
 }
@@ -451,18 +452,18 @@ function goBack() {
 
 /* Notice blocks */
 .v2-mode .notice-v2 {
-  border: 3rpx solid #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   padding: 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: 6rpx 6rpx 0 #111;
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
 }
 .v2-mode .notice-v2.ok {
-  background: #E0FFF0;
-  border-left: 12rpx solid #4ECDC4;
+  background: var(--success-soft, #E0FFF0);
+  border-left: 12rpx solid var(--accent-cool, #4ECDC4);
 }
 .v2-mode .notice-v2.warn {
-  background: #FFEEEC;
-  border-left: 12rpx solid #FF6B6B;
+  background: var(--risk-soft, #FFEEEC);
+  border-left: 12rpx solid var(--hero-bg, #FF6B6B);
 }
 
 /* Switch rows */
@@ -472,24 +473,24 @@ function goBack() {
   justify-content: space-between;
   gap: 24rpx;
   padding: 18rpx 0;
-  border-bottom: 2rpx solid #111;
+  border-bottom: var(--border-width, 2rpx) solid var(--divider-strong, #111);
 }
 .v2-mode .switch-row-v2:last-child { border-bottom: 0; }
 .v2-mode .switch-label-v2 {
   flex: 1;
   font-size: $fs-body-lg;
   font-weight: $fw-label;
-  color: #111;
+  color: var(--text-main, #111);
   line-height: 1.5;
 }
 
 /* Model cards */
 .v2-mode .model-card-v2 {
-  background: #f9f9f9;
-  border: 2rpx solid #111;
+  background: var(--surface-dim, #f9f9f9);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
   padding: 24rpx;
   margin-bottom: 20rpx;
-  box-shadow: 4rpx 4rpx 0 #111;
+  box-shadow: 4rpx 4rpx 0 var(--border, #111);
 }
 .v2-mode .model-header-v2 {
   display: flex;
@@ -497,7 +498,7 @@ function goBack() {
   justify-content: space-between;
   margin-bottom: 16rpx;
   padding-bottom: 16rpx;
-  border-bottom: 2rpx solid #111;
+  border-bottom: var(--border-width, 2rpx) solid var(--divider-strong, #111);
 }
 .v2-mode .model-name-row-v2 {
   display: flex;
@@ -507,19 +508,19 @@ function goBack() {
 .v2-mode .default-badge-v2 {
   padding: 4rpx 14rpx;
   font-size: $fs-body;
-  font-weight: $fw-hero;
-  border: 2rpx solid #111;
-  color: #666;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  color: var(--text-muted, #666);
   cursor: pointer;
 }
 .v2-mode .default-badge-v2.active {
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
 }
 .v2-mode .model-label-v2 {
   font-size: $fs-heading;
-  font-weight: $fw-hero;
-  color: #111;
+  font-weight: var(--font-weight-hero, $fw-hero);
+  color: var(--text-main, #111);
 }
 .v2-mode .model-actions-v2 {
   display: flex;
@@ -532,18 +533,18 @@ function goBack() {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-label;
-  color: #111;
+  color: var(--text-main, #111);
   margin-bottom: 8rpx;
 }
 .v2-mode .input-v2 {
   width: 100%;
   height: 72rpx;
   padding: 0 22rpx;
-  background: #fff;
-  border: 2rpx solid #111;
+  background: var(--surface, #fff);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: #111;
+  color: var(--text-main, #111);
   box-sizing: border-box;
 }
 .v2-mode .grid-two-v2 { display: flex; gap: 16rpx; }
@@ -557,6 +558,6 @@ function goBack() {
 
 /* Test result */
 .v2-mode .test-result-v2 { font-size: $fs-body-lg; font-weight: $fw-label; }
-.v2-mode .test-result-v2.pass { color: #4ECDC4; }
-.v2-mode .test-result-v2.fail { color: #FF5252; }
+.v2-mode .test-result-v2.pass { color: var(--success-text, #4ECDC4); }
+.v2-mode .test-result-v2.fail { color: var(--risk, #FF5252); }
 </style>

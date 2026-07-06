@@ -480,19 +480,19 @@ const guaLabels = computed(() => GUAS.map(item => ({
 
 .caption-kicker {
   padding: 6rpx 12rpx;
-  border: 2rpx solid #111;
-  background: #ffefaa;
-  box-shadow: 3rpx 3rpx 0 #111;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--brand-warm, #ffefaa);
+  box-shadow: 3rpx 3rpx 0 var(--border, #111);
   font-size: 24rpx;
   line-height: 1;
   font-weight: 900;
-  color: #6f351b;
+  color: var(--primary, #6f351b);
 }
 
 .caption-main {
   font-size: 34rpx;
   line-height: 1;
   font-weight: 900;
-  color: #111;
+  color: var(--text-main, #111);
 }
 </style>

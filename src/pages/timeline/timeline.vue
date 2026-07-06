@@ -4,7 +4,21 @@
       <view v-if="loading" class="loading-v2">LOADING...</view>
       <view v-else-if="!caseFile" class="empty-v2"><text class="empty-title-v2">往事按时间线展示</text><text class="empty-sub-v2">记录互动后，这里会按时间顺序排列你和 TA 的每一个重要瞬间。</text><button class="btn btn-primary btn-md btn-auto" style="margin-top:16rpx;" @click="goHome">去首页记录互动</button></view>
       <template v-else>
-        <view class="hero-block-v2 anim-hero"><text class="hero-tag-v2">MEMORIES / {{ caseFile.name }}</text><text class="hero-title-v2">往<text class="hl-v2">事</text></text><text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text><view v-if="profileItems.length > 0" class="tag-row-v2"><text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text></view></view>
+        <view class="hero-block-v2 anim-hero">
+          <text class="hero-tag-v2">TIMELINE</text>
+          <text class="hero-title-v2">往<text class="hl-v2">事</text></text>
+          <text class="hero-copy-v2">把真实发生过的互动按时间看清楚。</text>
+          <hr class="hero-divider">
+          <view class="hero-bottom">
+            <view class="hero-avatar-lg"><image v-if="caseFile.profile?.avatar" :src="caseFile.profile.avatarUrl || caseFile.profile.avatar" mode="aspectFill" style="width:100%;height:100%;border-radius:50%;" /><text v-else>{{ caseFile.name?.slice(0,1) || '?' }}</text></view>
+            <view class="hero-info-col">
+              <text style="font-size:17px;font-weight:800;color:var(--text-main,#111);">{{ caseFile.name || '--' }}</text>
+              <view v-if="profileItems.length > 0" class="tag-row-v2" style="margin-top:0;">
+                <text v-for="item in profileItems" :key="item" class="tag-v2">{{ item }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
         <view v-if="activeTimelineView === 'events'">
           <view class="card-v2 anim-card" style="animation-delay:0.15s;border-color:var(--accent-cool,#4ECDC4);">
   <view class="search-row-v2"><input class="search-input-v2" v-model="searchQuery" placeholder="搜索事件标题或描述..." confirm-type="search" /><view v-if="searchQuery" class="search-clear-v2" @click="searchQuery = ''">✕</view></view>
@@ -26,7 +40,7 @@
                 <view v-if="isAnalysisExpanded(getLinkedAssessmentKey(item))" class="expanded-analysis-v2">
                   <view v-if="getAssessmentReasonBullets(getLinkedAssessment(item)).length > 0" class="reason-box-v2"><text class="section-title-v2">判断依据</text><text v-for="reason in getAssessmentReasonBullets(getLinkedAssessment(item))" :key="reason" class="reason-line-v2">• {{ reason }}</text></view>
                   <view v-if="getAssessmentLinkedStatusTags(item).length" class="status-box-v2" style="margin-top:10rpx;"><text class="section-title-v2">状态标签</text><view class="tag-row-v2"><text v-for="tag in getAssessmentLinkedStatusTags(item)" :key="tag" class="tag-v2 sm">{{ tag }}</text></view></view>
-                  <view v-if="getAssessmentProblemTypeTags(getLinkedAssessment(item)).length && getAssessmentProblemTypeTags(getLinkedAssessment(item))[0] !== '暂无突出问题'" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="tag in getAssessmentProblemTypeTags(getLinkedAssessment(item))" :key="tag" class="tag-v2 sm" style="background:#111;color:#666;">{{ tag }}</text></view>
+                  <view v-if="getAssessmentProblemTypeTags(getLinkedAssessment(item)).length && getAssessmentProblemTypeTags(getLinkedAssessment(item))[0] !== '暂无突出问题'" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="tag in getAssessmentProblemTypeTags(getLinkedAssessment(item))" :key="tag" class="tag-v2 sm linked-assessment-tag-v2">{{ tag }}</text></view>
                   <view v-if="getAssessmentActionPlanPanel(getLinkedAssessment(item)).show" class="action-box-v2" style="margin-top:10rpx;"><text class="action-label-v2">{{ getPetById(getSelectedPetId()).displayName }} 帮你看看</text><text v-if="getAssessmentActionPlanPanel(getLinkedAssessment(item)).missing" class="trend-summary-v2">{{ getAssessmentActionPlanPanel(getLinkedAssessment(item)).text }}</text><view v-else><view v-for="s in getAssessmentActionPlanPanel(getLinkedAssessment(item)).sections" :key="s.label" class="action-item-v2"><text class="action-item-label-v2">{{ petLabel(s.label) }}</text><text class="action-item-text-v2">{{ s.text }}</text></view></view></view>
                   <view v-if="getAssessmentSideRead(getLinkedAssessment(item))" class="side-inline-v2" style="margin-top:10rpx;">
                     <text class="focus-label-v2">{{ getAssessmentSideRead(getLinkedAssessment(item)).title }}</text>
@@ -527,13 +541,11 @@ function clampScore(score: any) {
 
 function scoreFillStyle(score: any, kind: 'intent' | 'risk') {
   const value = clampScore(score)
-  const alpha = 0.18 + (value / 100) * 0.72
-  const color = kind === 'risk'
-    ? `linear-gradient(90deg, rgba(184, 74, 58, ${alpha}), rgba(126, 43, 35, ${alpha}))`
-    : `linear-gradient(90deg, rgba(53, 111, 96, ${alpha}), rgba(18, 60, 54, ${alpha}))`
   return {
     width: `${value}%`,
-    background: color
+    background: kind === 'risk'
+      ? 'var(--timeline-risk-gradient, linear-gradient(90deg, rgba(184,74,58,0.75), rgba(126,43,35,0.75)))'
+      : 'var(--timeline-positive-gradient, linear-gradient(90deg, rgba(53,111,96,0.75), rgba(18,60,54,0.75)))'
   }
 }
 
@@ -1244,7 +1256,7 @@ async function syncSemanticTags() {
   box-sizing: border-box;
   padding: var(--spacing-page, 28rpx);
   background:
-    linear-gradient(180deg, rgba(18, 60, 54, 0.07), rgba(18, 60, 54, 0) 390rpx),
+    linear-gradient(180deg, var(--page-wash, rgba(18, 60, 54, 0.07)), transparent 390rpx),
     var(--app-bg, #f6f1e8);
 }
 
@@ -1270,6 +1282,7 @@ async function syncSemanticTags() {
 .v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { background: var(--text-main, #111); color: var(--surface, #fff); }
 .v2-mode .tag-v2.sm { min-height: 28rpx; padding: 2rpx 10rpx; font-size: $fs-caption; }
+.v2-mode .linked-assessment-tag-v2 { background: var(--hero-tag-bg, #111); color: var(--text-muted, #666); }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .section-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
@@ -1329,7 +1342,6 @@ async function syncSemanticTags() {
 .v2-mode .event-dot-v2.verification { background: var(--accent, #FFD93D); }
 .v2-mode .event-dot-v2.assessment { background: var(--text-main, #111); }
 .v2-mode .event-dot-v2.trend { background: var(--text-muted, #666); }
-.v2-mode .event-dot-v2.weekly { background: #B8F35A; }
 .v2-mode .event-dot-v2.note { background: var(--text-main, #111); }
 .v2-mode .event-dot-v2.weekly { background: var(--accent-cool, #4ECDC4); }
 
@@ -1418,7 +1430,7 @@ async function syncSemanticTags() {
 
 .v2-mode .bottom-action-v2 { text-align: center; margin: 10rpx 0 24rpx; }
 .v2-mode .btn-v2-bottom { display: inline-block; padding: 14rpx 40rpx; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
-.sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: linear-gradient(90deg, transparent, var(--hero-bg, #FF6B6B), transparent); animation: sync-slide 0.8s ease-in-out infinite; }
+.sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: var(--sync-gradient, linear-gradient(90deg, transparent, var(--hero-bg, #FF6B6B), transparent)); animation: sync-slide 0.8s ease-in-out infinite; }
 @keyframes sync-slide {
   0% { width: 30%; left: -30%; }
   100% { width: 30%; left: 130%; }
@@ -1439,7 +1451,7 @@ async function syncSemanticTags() {
 .v2-mode .stats-grid-4col-v2 { grid-template-columns: repeat(4, 1fr); }
 .v2-mode .stat-box-v2.active { background: var(--text-main, #111); }
 .v2-mode .stat-box-v2.active .stat-num-v2 { color: var(--accent, #FFD93D); }
-.v2-mode .stat-box-v2.active .stat-lbl-v2 { color: rgba(255,255,255,0.7); }
+.v2-mode .stat-box-v2.active .stat-lbl-v2 { color: var(--on-active-muted, rgba(255,255,255,0.7)); }
 
 /* === Analysis summary bar (merged events+assessments) === */
 .v2-mode .analysis-summary-v2 {
@@ -1448,7 +1460,7 @@ async function syncSemanticTags() {
   display: inline-flex; align-items: center; gap: 8rpx;
   cursor: pointer; max-width: 100%; flex-wrap: wrap;
 }
-.v2-mode .analysis-summary-v2:active { background: #eee8d5; }
+.v2-mode .analysis-summary-v2:active { background: var(--accent-soft, #eee8d5); }
 .v2-mode .summary-score-v2 { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); }
 .v2-mode .summary-score-num-v2 { font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); margin-left: 4rpx; }
 .v2-mode .summary-score-num-v2.risk { color: var(--risk, #FF5252); }

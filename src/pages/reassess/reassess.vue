@@ -12,7 +12,7 @@
         <text class="hero-tag-v2">REASSESSMENT / {{ caseFile.name }}</text>
         <text class="hero-title-v2">给同一个 Crush 再做一次分析</text>
         <text class="hero-copy-v2">提交后不会覆盖历史，会追加成新的 assessment 记录。</text>
-        <text class="card-text-v2" style="color: rgba(0,0,0,0.5)">Crush 名称、关系类型和画像不在这里修改，避免你改了但本次提交并不会保存。</text>
+        <text class="card-text-v2 reassess-note-v2">Crush 名称、关系类型和画像不在这里修改，避免你改了但本次提交并不会保存。</text>
         <view class="hero-actions-v2">
           <button class="btn btn-secondary btn-sm" @click="goCaseDetail">返回我们</button>
           <button class="btn btn-secondary btn-sm" @click="goTimeline">打开往事</button>
@@ -20,7 +20,7 @@
       </view>
 
       <view class="card-v2 warn-card">
-        <text class="section-title-v2" style="color:#e67e22;">⚠️ 重新分析说明</text>
+        <text class="section-title-v2 warn-title-v2">⚠️ 重新分析说明</text>
         <text class="card-text-v2">本次分析仅基于下方问卷答案计算，与已有事件记录无关。新分数将完全重新生成，不会在现有分数上加减。</text>
         <text class="card-text-v2" style="margin-top:8rpx;">历史事件和之前的评估仍会保留，新结果将追加为一条新的评估记录。</text>
       </view>
@@ -143,16 +143,16 @@ function goTimeline() {
 
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
-.page { min-height: 100vh; background: #f4ede2; padding: 18rpx; box-sizing: border-box; }
+.page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: 18rpx; box-sizing: border-box; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5); }
-.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading-v2 { text-align: center; padding: 60rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); letter-spacing: 4rpx; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
 .v2-mode .hero-tag-v2 {
   display: inline-block;
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
   padding: 6rpx 16rpx;
   font-size: $fs-caption;
   font-weight: $fw-hero;
@@ -163,7 +163,7 @@ function goTimeline() {
   display: block;
   font-size: $fs-hero-title;
   font-weight: $fw-hero;
-  color: #111;
+  color: var(--hero-text-color, #111);
   line-height: 1.15;
   letter-spacing: -2rpx;
   text-transform: uppercase;
@@ -172,22 +172,24 @@ function goTimeline() {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: rgba(0,0,0,0.7);
+  color: var(--text-muted, rgba(0,0,0,0.7));
   line-height: 1.6;
   margin-top: 8rpx;
 }
 .v2-mode .hero-actions-v2 { display: flex; gap: 12rpx; margin-top: 20rpx; flex-wrap: wrap; }
 
 .v2-mode .card-v2 { @include card-v2; }
-.v2-mode .warn-card { border-color: #e67e22; background: #fff8f0; }
+.v2-mode .warn-card { border-color: var(--warning, #e67e22); background: var(--warning-soft, #fff8f0); }
 .v2-mode .section-title-v2 { @include section-title-v2; }
+.v2-mode .warn-title-v2 { color: var(--warning, #e67e22); }
 .v2-mode .card-text-v2 {
   display: block;
   font-size: $fs-body-lg;
   font-weight: $fw-body;
-  color: #666;
+  color: var(--text-muted, #666);
   line-height: 1.6;
   margin: 6rpx 0;
 }
+.v2-mode .reassess-note-v2 { color: var(--text-soft, rgba(0,0,0,0.5)); }
 
 </style>

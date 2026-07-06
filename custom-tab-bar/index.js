@@ -3,6 +3,7 @@ Component({
     hidden: false,
     selected: 0,
     fontSizeMode: 'default',
+    themeClass: 'theme-campus-pop',
     list: [
       { pagePath: 'pages/index/index', text: '今日' },
       { pagePath: 'pages/case-detail/case-detail', text: '我们' },
@@ -20,11 +21,13 @@ Component({
   lifetimes: {
     attached() {
       this.syncFontSizeMode()
+      this.syncTheme()
     }
   },
   pageLifetimes: {
     show() {
       this.syncFontSizeMode()
+      this.syncTheme()
     }
   },
   methods: {
@@ -35,6 +38,16 @@ Component({
       } catch (e) {}
       if (this.data.fontSizeMode !== mode) {
         this.setData({ fontSizeMode: mode })
+      }
+    },
+    syncTheme() {
+      var themeId = 'campus-pop'
+      try {
+        themeId = wx.getStorageSync('uiThemeId') || 'campus-pop'
+      } catch (e) {}
+      var themeClass = 'theme-' + themeId
+      if (this.data.themeClass !== themeClass) {
+        this.setData({ themeClass: themeClass })
       }
     },
     switchTab(e) {
@@ -51,6 +64,7 @@ Component({
     },
     updateSelected() {
       this.syncFontSizeMode()
+      this.syncTheme()
       var pages = getCurrentPages()
       var current = pages[pages.length - 1]
       if (current) {
