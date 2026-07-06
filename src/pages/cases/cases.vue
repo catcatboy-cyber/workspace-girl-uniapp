@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view :class="['page v2-mode', !loading ? 'anim-ready' : '', fontSizeMode === 'large' ? 'font-large' : '']" :style="themeVars">
       <!-- Hero -->
       <view class="hero-block-v2 anim-hero">
@@ -350,60 +350,61 @@ async function confirmDeleteCase(item: any) {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; padding: 18rpx 18rpx calc(140rpx + env(safe-area-inset-bottom)) 18rpx; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: var(--text-main, #111); color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 .v2-mode .hero-copy-v2 .strong { color: var(--text-main, #111); font-weight: $fw-hero; }
 
-.v2-mode .notice-v2 { padding: 20rpx; border: 3rpx solid #111; margin-bottom: 18rpx; }
-.v2-mode .notice-v2.ok { background: #E0FFF0; border-left: 12rpx solid #4ECDC4; }
-.v2-mode .notice-v2.warn { background: #FFEEEC; border-left: 12rpx solid #FF6B6B; }
-.v2-mode .notice-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; margin-bottom: 6rpx; }
-.v2-mode .notice-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: #555; }
+.v2-mode .notice-v2 { padding: 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); margin-bottom: 18rpx; }
+.v2-mode .notice-v2.ok { background: var(--success-soft, #E0FFF0); border-left: 12rpx solid var(--accent-cool, #4ECDC4); }
+.v2-mode .notice-v2.warn { background: var(--risk-soft, #FFEEEC); border-left: 12rpx solid var(--hero-bg, #FF6B6B); }
+.v2-mode .notice-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 6rpx; }
+.v2-mode .notice-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); }
 
-.v2-mode .loading-v2 { text-align: center; padding: 80rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: #111; letter-spacing: 4rpx; }
+.v2-mode .loading-v2 { text-align: center; padding: 80rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); letter-spacing: 4rpx; }
 
-.v2-mode .empty-v2 { padding: 40rpx; border: 3rpx solid #111; background: #fff; text-align: center; }
-.v2-mode .empty-title-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; margin-bottom: 8rpx; }
-.v2-mode .empty-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: #666; line-height: 1.5; }
+.v2-mode .empty-v2 { padding: 40rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); text-align: center; }
+.v2-mode .empty-title-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 8rpx; }
+.v2-mode .empty-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.5; }
 
 .v2-mode .case-list-v2 { display: flex; flex-direction: column; gap: 18rpx; }
 
 .v2-mode .case-block-v2 {
-  background: #fff; border: 3rpx solid #111;
-  box-shadow: 6rpx 6rpx 0 #111; padding: 28rpx;
+  background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111); padding: 28rpx;
 }
 .v2-mode .case-head-v2 {
   display: flex; justify-content: space-between; align-items: flex-start;
-  padding-bottom: 16rpx; border-bottom: 3rpx solid #111; margin-bottom: 14rpx;
+  padding-bottom: 16rpx; border-bottom: 3rpx solid var(--text-main, #111); margin-bottom: 14rpx;
 }
 .v2-mode .case-identity-v2 { display: flex; align-items: center; gap: 14rpx; flex: 1; min-width: 0; }
 .v2-mode .avatar-v2 {
   width: 68rpx; height: 68rpx; border-radius: 50%; overflow: hidden;
-  border: 3rpx solid #111; background: #FFD93D;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--accent, #FFD93D);
   display: flex; align-items: center; justify-content: center;
 }
 .v2-mode .avatar-v2 image { width: 100%; height: 100%; }
-.v2-mode .avatar-placeholder-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
-.v2-mode .case-name-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
-.v2-mode .case-id-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
-.v2-mode .case-updated-v2 { font-size: $fs-micro; font-weight: $fw-body; color: #999; text-align: right; }
+.v2-mode .avatar-placeholder-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .case-name-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .case-id-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 2rpx; }
+.v2-mode .case-updated-v2 { font-size: $fs-micro; font-weight: $fw-body; color: var(--text-soft, #999); text-align: right; }
 
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }
-.v2-mode .tag-v2.black { background: #111; color: #fff; }
-.v2-mode .type-summary-v2 { margin-bottom: 12rpx; padding: 16rpx; border: 2rpx solid #111; background: #FFFBEB; }
-.v2-mode .type-label-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; line-height: 1.25; }
-.v2-mode .type-copy-v2 { display: block; margin-top: 6rpx; font-size: $fs-body; font-weight: $fw-body; color: #666; line-height: 1.45; }
+.v2-mode .tag-v2.black { background: var(--text-main, #111); color: var(--surface, #fff); }
+.v2-mode .type-summary-v2 { margin-bottom: 12rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--brand-warm, #FFFBEB); }
+.v2-mode .type-label-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.25; }
+.v2-mode .type-copy-v2 { display: block; margin-top: 6rpx; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.45; }
 
-.v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: 3rpx solid #111; background: #f9f9f9; }
-.v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 18rpx 8rpx; border-right: 3rpx solid #111; }
+.v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); }
+.v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 18rpx 8rpx; border-right: 3rpx solid var(--text-main, #111); }
 .v2-mode .kpi-cell-v2:last-child { border-right: none; }
-.v2-mode .kpi-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: #111; line-height: 1; }
-.v2-mode .kpi-num-v2.risk { color: #FF5252; }
-.v2-mode .kpi-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 4rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .kpi-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
+.v2-mode .kpi-num-v2.risk { color: var(--risk, #FF5252); }
+.v2-mode .kpi-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); margin-top: 4rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
 
 .v2-mode .case-actions-v2 { display: flex; gap: 12rpx; margin-top: 16rpx; }
 </style>
+

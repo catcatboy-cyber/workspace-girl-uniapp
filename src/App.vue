@@ -101,7 +101,7 @@ async function silentWechatLogin() {
 page {
   background: var(--app-bg, #f6f1e8);
   color: var(--text-main, #201914);
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif);
 }
 
 button {
@@ -116,10 +116,10 @@ button::after {
 .btn {
   box-sizing: border-box;
   text-align: center;
-  font-weight: $fw-heading;
-  color: $c-ink;
-  border: 3rpx solid $c-ink;
-  background: $c-card;
+  font-weight: var(--font-weight-hero, #{$fw-heading});
+  color: var(--text-main, #{$c-ink});
+  border: var(--border-width-strong, 3rpx) var(--border-style, solid) var(--border, #{$c-ink});
+  background: var(--surface, #{$c-card});
   flex: 1;
   display: flex;
   align-items: center;
@@ -132,8 +132,8 @@ button::after {
 .btn-lg  { height: 80rpx; line-height: 80rpx; font-size: $fs-heading; padding: 0 32rpx; }
 
 /* Levels */
-.btn-primary   { background: $c-mint; box-shadow: 4rpx 4rpx 0 $c-ink; }
-.btn-secondary { background: $c-card; }
+.btn-primary   { background: var(--accent-cool, #{$c-mint}); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #{$c-ink}); }
+.btn-secondary { background: var(--surface, #{$c-card}); }
 .btn-ghost     { background: transparent; }
 
 /* Layout */
@@ -141,8 +141,8 @@ button::after {
 .btn-auto { flex: none; }
 
 /* Danger */
-.btn-danger { color: $c-risk; border-color: $c-risk; }
-.btn-danger.btn-primary { background: $c-risk; color: $c-card; }
+.btn-danger { color: var(--risk, #{$c-risk}); border-color: var(--risk, #{$c-risk}); }
+.btn-danger.btn-primary { background: var(--risk, #{$c-risk}); color: var(--surface, #{$c-card}); }
 
 /* Disabled */
 .btn[disabled] { opacity: 0.5; box-shadow: none; }
@@ -307,7 +307,7 @@ button::after {
 }
 .ai-disclaimer-text {
   font-size: $fs-body;
-  color: $c-soft;
+  color: var(--text-soft, #{$c-soft});
   line-height: $lh-body;
 }
 

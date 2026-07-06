@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
         <view class="hero-block-v2"><text class="hero-tag-v2">CREDITS USAGE</text><text class="hero-title-v2">消费<text class="hl-v2">明细</text></text><text class="hero-copy-v2">当前账号的 Credits 调用和额度变动记录。</text></view>
         <view class="tabs-v2"><view :class="['tab-btn-v2', activeTab === 'usage' ? 'active' : '']" @click="switchTab('usage')">消费明细</view><view :class="['tab-btn-v2', activeTab === 'ledger' ? 'active' : '']" @click="switchTab('ledger')">充值记录</view><view :class="['tab-btn-v2', activeTab === 'voice' ? 'active' : '']" @click="switchTab('voice')">语音识别</view></view>
         <view v-if="activeTab === 'usage'">
@@ -30,8 +30,10 @@ import { onShow } from '@dcloudio/uni-app'
 import { getCurrentUserId, getConsumeHistory, getTokenLedger, getVoiceUsage } from '@/utils/api'
 import { callFunction } from '@/utils/cloudbase'
 import { aiLabel } from '@/utils/labels'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const activeTab = ref<'usage' | 'ledger' | 'voice'>('usage')
+const themeVars = ref(getThemeStyle())
 const loading = ref(false)
 const summary = ref({ monthlyTokensUsed: 0, recentRecordsTokens: 0, callCount: 0 })
 const records = ref<Array<any>>([])
@@ -42,6 +44,8 @@ const voiceLoading = ref(false)
 const voiceSummary = ref({ totalCount: 0, totalDurationMs: 0 })
 
 onShow(() => {
+  themeVars.value = getThemeStyle()
+  applyThemeChrome()
   if (!getCurrentUserId()) {
     uni.reLaunch({ url: '/pages/login/login' })
     return
@@ -207,43 +211,43 @@ function formatDate(value: string) {
 
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
-.page { min-height: 100vh; background: #f4ede2; padding: 24rpx; box-sizing: border-box; }
+.page { min-height: 100vh; background: var(--app-bg, #f4ede2); padding: 24rpx; box-sizing: border-box; }
 
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; padding: 18rpx; }
-.v2-mode .tabs { border-color: #111; }
-.v2-mode .tab-btn.active { background: #111; color: #FFD93D; }
+.v2-mode .tabs { border-color: var(--border, #111); }
+.v2-mode .tab-btn.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: #FFD93D; padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--hero-text-color, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10rpx; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
-.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: #666; line-height: 1.5; }
-.v2-mode .card-text-v2.muted { color: #999; font-size: $fs-caption; }
+.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.5; }
+.v2-mode .card-text-v2.muted { color: var(--text-soft, #999); font-size: $fs-caption; }
 
 
 .v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8rpx; margin-top: 12rpx; }
-.v2-mode .stat-box-v2 { padding: 16rpx 8rpx; border: 2rpx solid #111; background: #f9f9f9; text-align: center; }
-.v2-mode .stat-num-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; line-height: 1; }
-.v2-mode .stat-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: #666; margin-top: 4rpx; }
+.v2-mode .stat-box-v2 { padding: 16rpx 8rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); text-align: center; }
+.v2-mode .stat-num-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
+.v2-mode .stat-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); margin-top: 4rpx; }
 
 .v2-mode .usage-list-v2 { display: flex; flex-direction: column; gap: 10rpx; margin-top: 12rpx; }
-.v2-mode .usage-row-v2 { display: flex; justify-content: space-between; align-items: center; gap: 14rpx; padding: 16rpx; border: 2rpx solid #111; background: #f9f9f9; }
+.v2-mode .usage-row-v2 { display: flex; justify-content: space-between; align-items: center; gap: 14rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); }
 .v2-mode .usage-main-v2 { flex: 1; min-width: 0; }
-.v2-mode .usage-feature-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
-.v2-mode .usage-model-v2 { display: inline-block; margin-top: 4rpx; padding: 2rpx 10rpx; border: 2rpx solid #111; background: #fff; font-size: $fs-caption; font-weight: $fw-label; color: #666; }
+.v2-mode .usage-feature-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .usage-model-v2 { display: inline-block; margin-top: 4rpx; padding: 2rpx 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); }
 .v2-mode .usage-io-v2 { display: flex; gap: 6rpx; margin-bottom: 4rpx; }
-.v2-mode .usage-io-item-v2 { font-size: $fs-micro; font-weight: $fw-body; color: #999; white-space: nowrap; }
-.v2-mode .usage-meta-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: #999; margin-top: 2rpx; }
+.v2-mode .usage-io-item-v2 { font-size: $fs-micro; font-weight: $fw-body; color: var(--text-soft, #999); white-space: nowrap; }
+.v2-mode .usage-meta-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 2rpx; }
 .v2-mode .usage-counts-v2 { text-align: right; flex-shrink: 0; }
-.v2-mode .usage-total-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: #111; }
+.v2-mode .usage-total-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .tabs-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8rpx; margin-bottom: 18rpx; }
-.v2-mode .tab-btn-v2 { text-align: center; padding: 16rpx; border: 3rpx solid #111; background: #fff; font-size: $fs-body-lg; font-weight: $fw-hero; color: #111; }
-.v2-mode .tab-btn-v2.active { background: #111; color: #FFD93D; }
-.v2-mode .positive { color: #27ae60 !important; }
-.v2-mode .negative { color: #e74c3c !important; }
+.v2-mode .tab-btn-v2 { text-align: center; padding: 16rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .tab-btn-v2.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
+.v2-mode .positive { color: var(--success, #27ae60) !important; }
+.v2-mode .negative { color: var(--risk, #e74c3c) !important; }
 </style>

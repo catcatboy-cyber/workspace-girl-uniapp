@@ -10,10 +10,10 @@ $sp-card-gap:   24rpx;
 $sp-section-gap: 16rpx;
 
 // ── 边框/阴影 Token ───────────────────────────────────────
-@mixin border-hard  { border: 3rpx solid $c-ink; }
-@mixin border-soft  { border: 2rpx solid $c-ink; }
-@mixin shadow-card  { box-shadow: 6rpx 6rpx 0 $c-ink; }
-@mixin shadow-hero  { box-shadow: 8rpx 8rpx 0 $c-ink; }
+@mixin border-hard  { border: var(--border-width-strong, 3rpx) var(--border-style, solid) var(--border, #{$c-ink}); }
+@mixin border-soft  { border: var(--border-width, 2rpx) var(--border-style, solid) var(--border, #{$c-ink}); }
+@mixin shadow-card  { box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #{$c-ink}); }
+@mixin shadow-hero  { box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #{$c-ink}); }
 
 // ═══════════════════════════════════════════════════════════
 // 卡片 3 种
@@ -21,26 +21,26 @@ $sp-section-gap: 16rpx;
 
 // 1. 基础卡片
 @mixin card-v2 {
-  background: $c-card;
+  background: var(--surface, #{$c-card});
   @include border-hard;
   @include shadow-card;
-  padding: $sp-card-pad;
-  margin-bottom: $sp-card-gap;
+  padding: var(--card-padding, #{$sp-card-pad});
+  margin-bottom: var(--card-gap, #{$sp-card-gap});
 }
 
 // 2. 轻量内嵌卡片（无阴影）
 @mixin card-light-v2 {
-  background: $c-card;
+  background: var(--surface, #{$c-card});
   @include border-soft;
   padding: 20rpx;
 }
 
 // 3. 提示卡片（左侧语义色条）
 @mixin card-hint-v2($accent-color) {
-  background: $c-card;
+  background: var(--surface, #{$c-card});
   @include border-soft;
   border-left: 10rpx solid $accent-color;
-  padding: $sp-card-pad;
+  padding: var(--card-padding, #{$sp-card-pad});
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -53,11 +53,11 @@ $sp-section-gap: 16rpx;
     var(--hero-bg, #{$c-hero}),
     var(--hero-bg-2, #{$c-hero})
   );
-  border: 3rpx solid var(--text-main, #{$c-ink});
+  border: var(--border-width-strong, 3rpx) var(--border-style, solid) var(--border, #{$c-ink});
   box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #{$c-ink});
   padding: 32rpx;
-  margin-bottom: $sp-card-gap;
-  transform: rotate(-0.5deg);
+  margin-bottom: var(--card-gap, #{$sp-card-gap});
+  transform: var(--hero-transform, rotate(-0.5deg));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -67,9 +67,9 @@ $sp-section-gap: 16rpx;
 @mixin section-title-v2 {
   display: block;
   font-size: $fs-heading;
-  font-weight: $fw-heading;
-  color: $c-ink;
-  line-height: $lh-heading;
+  font-weight: var(--font-weight-heading, #{$fw-heading});
+  color: var(--text-main, #{$c-ink});
+  line-height: var(--text-line-height-heading, #{$lh-heading});
 }
 
 @mixin section-sub-v2 {
@@ -77,8 +77,8 @@ $sp-section-gap: 16rpx;
   margin-top: 4rpx;
   font-size: $fs-caption;
   font-weight: $fw-label;
-  color: $c-muted;
-  line-height: $lh-label;
+  color: var(--text-muted, #{$c-muted});
+  line-height: var(--text-line-height-heading, #{$lh-label});
 }
 
 @mixin tag-v2 {
@@ -87,15 +87,15 @@ $sp-section-gap: 16rpx;
   min-height: 36rpx;
   padding: 4rpx 14rpx;
   @include border-soft;
-  background: $c-accent;
+  background: var(--accent, #{$c-accent});
   font-size: $fs-caption;
   font-weight: $fw-label;
-  color: $c-ink;
+  color: var(--text-main, #{$c-ink});
 }
 
 @mixin tag-v2-black {
-  background: $c-ink;
-  color: $c-card;
+  background: var(--hero-tag-bg, #{$c-ink});
+  color: var(--surface, #{$c-card});
 }
 
 @mixin tag-row-v2 {
@@ -116,12 +116,12 @@ $sp-section-gap: 16rpx;
 }
 
 @mixin btn-v2-primary {
-  background: $c-mint;
+  background: var(--accent-cool, #{$c-mint});
   @include shadow-card;
 }
 
 @mixin btn-v2-secondary {
-  background: $c-card;
+  background: var(--surface, #{$c-card});
 }
 
 @mixin btn-v2-md { height: 64rpx; line-height: 64rpx; font-size: $fs-body-lg; padding: 0 24rpx; }
@@ -134,7 +134,7 @@ $sp-section-gap: 16rpx;
 
 @mixin chart-panel-v2 {
   @include border-soft;
-  background: $c-card;
+  background: var(--surface, #{$c-card});
   padding: 20rpx;
 }
 
@@ -142,7 +142,7 @@ $sp-section-gap: 16rpx;
 // 颜色背景变体（直接用于 .card-v2 等元素）
 // ═══════════════════════════════════════════════════════════
 
-@mixin bg-hero   { background: $c-hero; }
-@mixin bg-accent { background: $c-soft-warm; }
-@mixin bg-risk   { background: $c-soft-risk; }
-@mixin bg-mint   { background: $c-soft-mint; }
+@mixin bg-hero   { background: var(--hero-bg, #{$c-hero}); }
+@mixin bg-accent { background: var(--brand-warm, #{$c-soft-warm}); }
+@mixin bg-risk   { background: var(--risk-soft, #{$c-soft-risk}); }
+@mixin bg-mint   { background: var(--success-soft, #{$c-soft-mint}); }

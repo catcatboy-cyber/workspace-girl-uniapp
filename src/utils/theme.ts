@@ -9,25 +9,7 @@ export type ThemeOption = {
 }
 
 // Shared shape variables that define each style's personality beyond color
-type StyleSheet = {
-  '--radius-sm': string
-  '--radius-md': string
-  '--radius-lg': string
-  '--shadow-sm': string
-  '--shadow-md': string
-  '--shadow-lg': string
-  '--shadow-hero': string
-  '--font-weight-normal': string
-  '--font-weight-strong': string
-  '--font-weight-hero': string
-  '--card-border-style': string
-  '--card-gradient-angle': string
-  '--hero-gradient-angle': string
-  '--spacing-page': string
-  '--spacing-card': string
-  '--text-line-height': string
-  '--text-line-height-heading': string
-}
+type StyleSheet = Record<string, string>
 
 const styleSheets: Record<string, StyleSheet> = {
   // Styles 1-5: original themes share a classic warm style sheet
@@ -133,7 +115,78 @@ const styleSheets: Record<string, StyleSheet> = {
 }
 
 function mergeStyleSheet(vars: Record<string, string>, sheet: StyleSheet): Record<string, string> {
-  return { ...vars, ...sheet }
+  const merged = { ...vars, ...sheet }
+  const textMain = merged['--text-main'] || '#111111'
+  const textMuted = merged['--text-muted'] || '#666666'
+  const cardBg = merged['--card-bg'] || '#ffffff'
+  const cardSoft = merged['--card-soft'] || '#f9f9f9'
+  const accent = merged['--accent'] || '#FFD93D'
+  const accentSoft = merged['--accent-soft'] || '#FFFBEB'
+  const cool = merged['--primary-2'] || merged['--success'] || '#4ECDC4'
+  const risk = merged['--risk'] || '#FF5252'
+  const riskSoft = merged['--risk-soft'] || '#FFEEEC'
+
+  return {
+    '--ink': textMain,
+    '--hero': merged['--hero-bg'] || '#FF6B6B',
+    '--surface': cardBg,
+    '--surface-rgb': '255,255,255',
+    '--surface-soft': cardSoft,
+    '--surface-dim': cardSoft,
+    '--surface-bright': cardBg,
+    '--surface-raised': cardBg,
+    '--surface-blur': '18rpx',
+    '--surface-opacity': '0.86',
+    '--page-wash': 'rgba(18, 60, 54, 0.07)',
+    '--primary-contrast': cardBg,
+    '--accent-cool': cool,
+    '--brand-warm': accentSoft,
+    '--brand-cool': '#f5f5ff',
+    '--success-soft': '#E0FFF0',
+    '--dot-positive': cool,
+    '--dot-risk': risk,
+    '--warning': '#E67E22',
+    '--warning-soft': '#FFF4E3',
+    '--hero-text-color': textMain,
+    '--hero-tag-bg': textMain,
+    '--hero-tag-color': accent,
+    '--border': textMain,
+    '--divider': 'rgba(0,0,0,0.08)',
+    '--divider-strong': textMain,
+    '--scrim': 'rgba(0,0,0,0.4)',
+    '--overlay': 'rgba(0,0,0,0.5)',
+    '--radius-xs': '4rpx',
+    '--radius-pill': '999rpx',
+    '--border-width': '2rpx',
+    '--border-width-strong': '3rpx',
+    '--border-style': 'solid',
+    '--shadow-glow': merged['--shadow-lg'] || '0 16rpx 36rpx rgba(0,0,0,0.08)',
+    '--control-height-sm': '48rpx',
+    '--control-height-md': '64rpx',
+    '--control-height-lg': '80rpx',
+    '--section-gap': '16rpx',
+    '--card-padding': '28rpx',
+    '--card-gap': '24rpx',
+    '--motion-fast': '150ms',
+    '--motion-normal': '260ms',
+    '--motion-ease': 'ease-out',
+    '--press-scale': '0.98',
+    '--hero-rotate': '-0.5deg',
+    '--hero-transform': 'rotate(-0.5deg)',
+    '--font-ui': '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif',
+    '--font-display': '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif',
+    '--font-mono': 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+    '--font-weight-body': merged['--font-weight-normal'] || '400',
+    '--font-weight-heading': '800',
+    ...merged,
+    '--shadow-hard': merged['--shadow-hard'] || `6rpx 6rpx 0 ${textMain}`,
+    '--shadow-hero': merged['--shadow-hero-hard'] || `8rpx 8rpx 0 ${textMain}`,
+    '--font-weight-hero': merged['--font-weight-hero-hard'] || '800',
+    '--text-line-height-heading': merged['--text-line-height-heading-hard'] || '1.2',
+    '--text-soft': merged['--text-soft'] || '#999999',
+    '--risk-soft': riskSoft,
+    '--text-muted': textMuted
+  }
 }
 
 const THEME_STORAGE_KEY = 'uiThemeId'
@@ -232,6 +285,10 @@ export function getCurrentTheme() {
 
 export function getThemeStyle(theme = getCurrentTheme()) {
   return theme.vars
+}
+
+export function getThemeClass(id: ThemeId | string = getCurrentThemeId()) {
+  return `theme-${id}`
 }
 
 function isCurrentTabBarPage() {

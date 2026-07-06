@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']">
+  <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
       <view class="hero-block-v2">
         <text class="hero-tag-v2">BOOST</text>
         <text class="hero-title-v2">Credits<text class="hl-v2">加油包</text></text>
@@ -28,7 +28,7 @@
       </view>
 
       <view v-if="orderMessage" class="card-v2">
-        <text :class="['card-text-v2', orderOk ? '' : '']" :style="orderOk ? '' : 'color: #e74c3c;'">{{ orderMessage }}</text>
+        <text :class="['card-text-v2', orderOk ? '' : 'error']">{{ orderMessage }}</text>
         <view v-if="orderOk && createdOrderId" style="margin-top: 12rpx;">
           <button class="btn btn-secondary btn-sm btn-auto" @click="orderMessage = ''; createdOrderId = ''; orderOk = false">关闭</button>
         </view>
@@ -43,7 +43,9 @@ import { getCurrentUserId, getRechargePlans, unifiedOrder, queryOrder, confirmPa
 import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { bumpDataVersion } from '@/utils/helpers'
 import { aiLabel } from '@/utils/labels'
+import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
+const themeVars = ref(getThemeStyle())
 const extraTokens = ref(0)
 const plans = ref<Array<any>>([])
 const plansLoading = ref(false)
@@ -58,6 +60,8 @@ const coinAmount = ref(0)
 const coinSubtitle = ref('')
 
 onShow(() => {
+  themeVars.value = getThemeStyle()
+  applyThemeChrome()
   if (!getCurrentUserId()) {
     uni.reLaunch({ url: '/pages/login/login' })
     return
@@ -271,22 +275,23 @@ async function createOrder(planId: string) {
 .v2-mode { background: var(--app-bg, #FFFDF5) !important; min-height: 100vh; }
 
 .v2-mode .hero-block-v2 { @include hero-block-v2; }
-.v2-mode .hero-tag-v2 { display: inline-block; background: #111; color: var(--accent, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; text-transform: uppercase; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: #111; line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: #FFD93D; padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; text-transform: uppercase; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--hero-text-color, #111); line-height: 1.15; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .card-head-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
 .v2-mode .section-title-v2 { @include section-title-v2; }
-.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: rgba(0,0,0,0.7); line-height: 1.5; margin-bottom: 6rpx; }
+.v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; margin-bottom: 6rpx; }
+.v2-mode .card-text-v2.error { color: var(--risk, #e74c3c); }
 
 /* ── 充值计划卡片 ── */
 .recharge-plan-card {
   position: relative;
-  background: $c-card;
-  border: 3rpx solid $c-ink;
-  box-shadow: 6rpx 6rpx 0 $c-ink;
+  background: var(--surface, #{$c-card});
+  border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink});
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #{$c-ink});
   padding: 32rpx 28rpx 24rpx;
   margin-bottom: $sp-card-gap;
   display: flex;
@@ -298,9 +303,9 @@ async function createOrder(planId: string) {
   position: absolute;
   top: -14rpx;
   right: 20rpx;
-  background: $c-accent;
-  color: $c-ink;
-  border: 2rpx solid $c-ink;
+  background: var(--accent, #{$c-accent});
+  color: var(--text-main, #{$c-ink});
+  border: var(--border-width, 2rpx) solid var(--border, #{$c-ink});
   padding: 4rpx 18rpx;
   font-size: $fs-caption;
   font-weight: $fw-hero;
@@ -310,7 +315,7 @@ async function createOrder(planId: string) {
   display: block;
   font-size: $fs-body;
   font-weight: $fw-heading;
-  color: $c-soft;
+  color: var(--text-soft, #{$c-soft});
   text-transform: uppercase;
   letter-spacing: 4rpx;
   margin-bottom: 12rpx;
@@ -324,20 +329,20 @@ async function createOrder(planId: string) {
 .plan-card-token-num {
   font-size: $fs-display;
   font-weight: $fw-hero;
-  color: $c-ink;
+  color: var(--text-main, #{$c-ink});
   line-height: 1;
   letter-spacing: -2rpx;
 }
 .plan-card-token-unit {
   font-size: $fs-body;
   font-weight: $fw-label;
-  color: $c-muted;
+  color: var(--text-muted, #{$c-muted});
 }
 .plan-card-tagline {
   display: block;
   font-size: $fs-caption;
   font-weight: $fw-body;
-  color: $c-muted;
+  color: var(--text-muted, #{$c-muted});
   line-height: 1.4;
   margin-bottom: 20rpx;
   max-width: 80%;
@@ -349,10 +354,10 @@ async function createOrder(planId: string) {
   text-align: center;
   font-size: $fs-body-lg;
   font-weight: $fw-heading;
-  color: $c-ink;
-  background: $c-mint;
-  border: 3rpx solid $c-ink;
-  box-shadow: 4rpx 4rpx 0 $c-ink;
+  color: var(--text-main, #{$c-ink});
+  background: var(--accent-cool, #{$c-mint});
+  border: var(--border-width-strong, 3rpx) solid var(--border, #{$c-ink});
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #{$c-ink});
   padding: 0;
   margin: 0;
 }
