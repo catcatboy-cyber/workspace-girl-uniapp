@@ -7,13 +7,22 @@
         <text class="hero-copy-v2">先切换，再进入当前档案。随时可以新增。</text>
         <hr class="hero-divider">
         <view class="hero-bottom">
-          <view class="hero-avatar-lg"><image v-if="cases.find(c => c.caseId === activeCaseId)?.profile?.avatar" :src="cases.find(c => c.caseId === activeCaseId)?.profile?.avatarUrl || cases.find(c => c.caseId === activeCaseId)?.profile?.avatar" mode="aspectFill" style="width:100%;height:100%;border-radius:50%;" /><text v-else>{{ cases.find(c => c.caseId === activeCaseId)?.name?.slice(0,1) || '?' }}</text></view>
+          <view class="hero-avatar-lg"><image v-if="activeHeroCase?.profile?.avatar" :src="activeHeroCase.profile.avatarUrl || activeHeroCase.profile.avatar" mode="aspectFill" class="hero-avatar-img" /><text v-else>{{ avatarLabel(activeHeroCase?.name) }}</text></view>
           <view class="hero-info-col">
-            <button class="btn btn-primary btn-md btn-full" style="margin-top:0;" @click="goNew">+ 开个新的</button>
+            <view class="hero-main-row">
+              <view class="hero-main-left">
+                <text class="hero-name-v2">{{ activeHeroCase?.name || '还没有 Crush' }}</text>
+                <text class="hero-chip primary">{{ activeHeroTypeLabel }}</text>
+              </view>
+              <view class="hero-action-pill" @click="goNew">+ 新建</view>
+            </view>
+            <view class="hero-meta-row">
+              <text v-if="activeHeroProfileTags.length === 0" class="hero-chip muted">暂无画像</text>
+              <text v-for="item in activeHeroProfileTags" :key="item" class="hero-chip">{{ item }}</text>
+            </view>
           </view>
         </view>
       </view>
-
       <!-- Deleted notice -->
       <view v-if="deleted" class="notice-v2 ok">
         <text class="notice-title-v2">Crush 已删除</text>
@@ -98,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCases, getCurrentUserId } from '@/utils/api'
 import { callFunction } from '@/utils/cloudbase'
@@ -115,6 +124,20 @@ const deleted = ref(false)
 const themeVars = ref(getThemeStyle())
 const fontSizeMode = ref(getFontSizeMode())
 const deletingCaseId = ref('')
+const activeHeroCase = computed(() => {
+  const active = activeCaseId.value
+  return cases.value.find((item: any) => item.caseId === active || item._id === active) || cases.value[0] || null
+})
+const activeHeroTypeLabel = computed(() => {
+  const item: any = activeHeroCase.value
+  return item?.cardTypeLabel || (item ? 'Crush 档案' : '待创建')
+})
+const activeHeroProfileTags = computed(() => {
+  const item: any = activeHeroCase.value
+  if (!item) return []
+  const tags = (item.cardProfileItems || []).filter(Boolean).slice(0, 5)
+  return tags
+})
 
 onShareAppMessage(() => ({ title: 'TA已经把你设置为Crush了。', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE }))
 
@@ -240,9 +263,9 @@ function profileItems(p: any): string[] {
   const items: string[] = []
   if (p.age) items.push(`${p.age} 岁`)
   if (p.gender) items.push(p.gender)
-  if (p.occupation) items.push(p.occupation)
   if (p.zodiac) items.push(`属${p.zodiac}`)
   if (p.constellation) items.push(p.constellation)
+  if (p.occupation) items.push(p.occupation)
   return items
 }
 
@@ -362,7 +385,7 @@ async function confirmDeleteCase(item: any) {
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 .v2-mode .hero-copy-v2 .strong { color: var(--text-main, #111); font-weight: $fw-hero; }
 
-.v2-mode .notice-v2 { padding: 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); margin-bottom: 18rpx; }
+.v2-mode .notice-v2 { padding: 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); margin-bottom: 18rpx; }
 .v2-mode .notice-v2.ok { background: var(--success-soft, #E0FFF0); border-left: 12rpx solid var(--accent-cool, #4ECDC4); }
 .v2-mode .notice-v2.warn { background: var(--risk-soft, #FFEEEC); border-left: 12rpx solid var(--hero-bg, #FF6B6B); }
 .v2-mode .notice-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 6rpx; }
@@ -370,7 +393,7 @@ async function confirmDeleteCase(item: any) {
 
 .v2-mode .loading-v2 { text-align: center; padding: 80rpx 0; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); letter-spacing: 4rpx; }
 
-.v2-mode .empty-v2 { padding: 40rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); text-align: center; }
+.v2-mode .empty-v2 { padding: 40rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); background: var(--surface, #fff); text-align: center; }
 .v2-mode .empty-title-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 8rpx; }
 .v2-mode .empty-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.5; }
 
@@ -378,6 +401,7 @@ async function confirmDeleteCase(item: any) {
 
 .v2-mode .case-block-v2 {
   background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-card, 0);
   box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111); padding: 28rpx;
 }
 .v2-mode .case-head-v2 {
@@ -399,11 +423,11 @@ async function confirmDeleteCase(item: any) {
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { background: var(--text-main, #111); color: var(--surface, #fff); }
-.v2-mode .type-summary-v2 { margin-bottom: 12rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--brand-warm, #FFFBEB); }
+.v2-mode .type-summary-v2 { margin-bottom: 12rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--brand-warm, #FFFBEB); }
 .v2-mode .type-label-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.25; }
 .v2-mode .type-copy-v2 { display: block; margin-top: 6rpx; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.45; }
 
-.v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); }
+.v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #f9f9f9); overflow: hidden; }
 .v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 18rpx 8rpx; border-right: 3rpx solid var(--text-main, #111); }
 .v2-mode .kpi-cell-v2:last-child { border-right: none; }
 .v2-mode .kpi-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }

@@ -14,7 +14,6 @@
 
     <!-- 功能介绍 -->
     <view class="landing-features">
-      <text class="landing-features-title">小咪帮你看清暧昧信号</text>
       <view class="landing-feat">
         <text class="landing-feat-icon">📝</text>
         <text class="landing-feat-text">记录互动，{{ aiLabel() }} 实时分析 TA 的态度变化</text>
@@ -219,21 +218,14 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
 
 // ── 功能介绍 ──
 .landing-features {
-  width: 100%;
+  width: calc(100% - 48rpx);
+  max-width: 640rpx;
   background: var(--surface, #fff);
   border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
   padding: 32rpx 28rpx;
-  margin-bottom: 40rpx;
-}
-.landing-features-title {
-  display: block;
-  font-size: $fs-heading;
-  font-weight: $fw-heading;
-  color: var(--text-main, #111);
-  margin-bottom: 22rpx;
-  padding-bottom: 16rpx;
-  border-bottom: var(--border-width, 2rpx) solid var(--border, #111);
+  margin: 0 auto 40rpx;
+  box-sizing: border-box;
 }
 .landing-feat {
   display: flex;
@@ -256,7 +248,8 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
 
 // ── 关闭按钮 ──
 .landing-btn {
-  width: 100%;
+  width: calc(100% - 48rpx);
+  max-width: 640rpx;
   height: 80rpx;
   line-height: 80rpx;
   background: var(--accent-cool, #4ECDC4);
@@ -266,7 +259,7 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
   font-weight: $fw-heading;
   color: var(--text-main, #111);
   text-align: center;
-  margin-bottom: 28rpx;
+  margin: 0 auto 28rpx;
   box-sizing: border-box;
   &[disabled] {
     opacity: 0.6;

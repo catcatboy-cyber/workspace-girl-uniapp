@@ -326,6 +326,7 @@ function close() {
 .sheet-panel {
   width: 100%; max-width: 500px; max-height: 85vh;
   background: var(--app-bg, #FFFDF5); border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-hero, 0) var(--shape-radius-hero, 0) 0 0;
   box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111);
   padding: 24rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
@@ -335,19 +336,20 @@ function close() {
 
 .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
 .sheet-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); letter-spacing: 2rpx; }
-.sheet-close { font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); padding: 8rpx; }
+.sheet-close { font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); padding: 8rpx; border-radius: var(--shape-radius-control, 0); }
 
 .tab-row { display: flex; gap: 12rpx; margin-bottom: 20rpx; }
-.tab { flex: 1; text-align: center; padding: 14rpx; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.tab { flex: 1; text-align: center; padding: 14rpx; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); }
 .tab.active { color: var(--hero-tag-color, #FFD93D); border-color: var(--border, #111); background: var(--hero-tag-bg, #111); }
 
 .input-label { display: block; font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); margin-bottom: 8rpx; }
-.text-area { width: 100%; height: 140rpx; padding: 16rpx; font-size: $fs-body-lg; font-weight: $fw-body; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); color: var(--text-main, #111); box-sizing: border-box; }
+.text-area { width: 100%; height: 140rpx; padding: 16rpx; font-size: $fs-body-lg; font-weight: $fw-body; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); color: var(--text-main, #111); box-sizing: border-box; }
 
 .btn-generate {
   width: 100%; margin-top: 16rpx; padding: 16rpx;
   font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111);
   background: var(--accent-cool, #4ECDC4); border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-control, 0);
   box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
 }
 .btn-generate:disabled { opacity: 0.4; }
@@ -363,18 +365,20 @@ function close() {
   font-size: $fs-caption; font-weight: $fw-body;
   color: var(--text-main, #111); background: var(--surface, #fff);
   border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-control, 0);
   box-sizing: border-box;
 }
 .option-tab.active { color: var(--hero-tag-color, #FFD93D); background: var(--hero-tag-bg, #111); border-color: var(--border, #111); }
 
 .answer-card { margin-top: 8rpx; }
-.btn-sm { padding: 8rpx 20rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 3rpx 3rpx 0 #111); }
+.btn-sm { padding: 8rpx 20rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); box-shadow: var(--shadow-hard, 3rpx 3rpx 0 #111); }
 .btn-sm:disabled { opacity: 0.4; }
 
 .turn-block {
   margin-bottom: 20rpx; padding: 16rpx;
   background: var(--surface, #fff);
   border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-inner, 0);
   border-left: 8rpx solid var(--accent, #FFD93D);
 }
 .turn-header { display: flex; align-items: center; gap: 10rpx; margin-bottom: 10rpx; }
@@ -385,15 +389,16 @@ function close() {
   padding: 14rpx;
   background: var(--brand-warm, #FFFEF5);
   border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-inner, 0);
   margin-bottom: 8rpx;
 }
 .turn-text { font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.5; flex: 1; }
 .turn-actions { display: flex; gap: 10rpx; justify-content: flex-end; }
 .turn-reactions { display: flex; flex-wrap: wrap; align-items: center; gap: 8rpx; }
 .reactions-label { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-main, #111); }
-.reaction-tag { padding: 4rpx 12rpx; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); }
+.reaction-tag { padding: 4rpx 12rpx; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); }
 
-.error-msg { margin-top: 16rpx; padding: 14rpx; background: var(--risk-soft, #FFEEEC); border: var(--border-width-strong, 3rpx) solid var(--risk, #FF5252); font-size: $fs-body-lg; color: var(--risk, #FF5252); font-weight: $fw-label; }
-.safety-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: var(--success-soft, #E0FFF0); border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body-lg; color: var(--text-main, #111); font-weight: $fw-label; }
-.boundary-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: var(--brand-warm, #FFFBEB); border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body-lg; color: var(--text-main, #111); font-weight: $fw-label; }
+.error-msg { margin-top: 16rpx; padding: 14rpx; background: var(--risk-soft, #FFEEEC); border: var(--border-width-strong, 3rpx) solid var(--risk, #FF5252); border-radius: var(--shape-radius-inner, 0); font-size: $fs-body-lg; color: var(--risk, #FF5252); font-weight: $fw-label; }
+.safety-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: var(--success-soft, #E0FFF0); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); font-size: $fs-body-lg; color: var(--text-main, #111); font-weight: $fw-label; }
+.boundary-notice { margin-bottom: 16rpx; padding: 12rpx 16rpx; background: var(--brand-warm, #FFFBEB); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); font-size: $fs-body-lg; color: var(--text-main, #111); font-weight: $fw-label; }
 </style>

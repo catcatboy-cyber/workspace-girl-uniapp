@@ -107,14 +107,17 @@
           <text class="hero-copy-v2">基于最新互动记录的即时分析。越记越准。</text>
           <hr class="hero-divider">
           <view class="hero-bottom">
-            <view class="hero-avatar-lg"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatar" mode="aspectFill" style="width:100%;height:100%;border-radius:50%;" /><text v-else>{{ avatarLabel(latestCase.name) }}</text></view>
+            <view class="hero-avatar-lg"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatarUrl || latestCase.profile.avatar" mode="aspectFill" class="hero-avatar-img" /><text v-else>{{ avatarLabel(latestCase.name) }}</text></view>
             <view class="hero-info-col">
-              <view style="display:flex;align-items:center;gap:8px;">
-                <text style="font-size:17px;font-weight:800;color:var(--text-main,#111);">{{ latestCase.name || '--' }}</text>
-                <text class="crush-type-badge">{{ latestCrushType.label }}</text>
+              <view class="hero-main-row">
+                <view class="hero-main-left">
+                  <text class="hero-name-v2">{{ latestCase.name || '--' }}</text>
+                  <text class="hero-chip primary">{{ latestHeroTypeLabel }}</text>
+                </view>
               </view>
-              <view v-if="latestProfileItems.length > 0" class="tag-row-v2" style="margin-top:0;">
-                <text v-for="item in latestProfileItems" :key="item" class="tag-v2">{{ item }}</text>
+              <view class="hero-meta-row">
+                <text v-if="latestProfileItems.length === 0" class="hero-chip muted">暂无画像</text>
+                <text v-for="item in latestProfileItems" :key="item" class="hero-chip">{{ item }}</text>
               </view>
             </view>
           </view>
@@ -370,7 +373,7 @@ import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
-import { buildProfileItems, compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
+import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
@@ -520,10 +523,17 @@ const latestProfileItems = computed(() => {
   const items: string[] = []
   if (p.age) items.push(`${p.age} 岁`)
   if (p.gender) items.push(p.gender)
-  if (p.occupation) items.push(p.occupation)
   if (p.zodiac) items.push(`属${p.zodiac}`)
   if (p.constellation) items.push(p.constellation)
+  if (p.occupation) items.push(p.occupation)
   return items
+})
+
+const latestHeroTypeLabel = computed(() => {
+  const relationType = String(latestCase.value?.profile?.relationType || '').trim()
+  if (relationType === 'close_friend') return 'Friend Crush'
+  if (relationType === 'romantic') return 'Crush'
+  return 'Crush 档案'
 })
 
 const latestTimelineStats = computed(() => {
@@ -2082,26 +2092,24 @@ function goTaohua() {
 
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
 .v2-mode .hero-copy-v2 .strong { color: var(--text-main, #111); font-weight: $fw-hero; }
-.v2-mode .crush-type-badge { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-heading; letter-spacing: 2rpx; white-space: nowrap; margin: 16rpx 0 0; }
-
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-row-v2.compact { margin-top: 0; margin-bottom: 12rpx; }
 .v2-mode .tag-v2 { @include tag-v2; min-height: 34rpx; padding: 4rpx 12rpx; }
 .v2-mode .tag-v2.black { background: var(--text-main, #111); color: var(--surface, #fff); }
 .v2-mode .quick-feedback-signal-v2 { font-size: $fs-body; }
 
-.v2-mode .record-block { background: var(--surface-dim, #f9f9f9); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 32rpx; margin-bottom: 24rpx; }
+.v2-mode .record-block { background: var(--surface-dim, #f9f9f9); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
 .v2-mode .block-title { font-size: $fs-heading; font-weight: $fw-heading; color: var(--text-main, #111); text-transform: uppercase; }
-.v2-mode .block-badge { padding: 6rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--accent, #FFD93D); font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-main, #111); letter-spacing: 1rpx; }
+.v2-mode .block-badge { padding: 6rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--accent, #FFD93D); font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-main, #111); letter-spacing: 1rpx; }
 .v2-mode .block-badge.black { background: var(--text-main, #111); color: var(--surface, #fff); }
-.v2-mode .btn-share-sm { flex: none; width: 48rpx; height: 48rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); display: flex; align-items: center; justify-content: center; padding: 0; }
+.v2-mode .btn-share-sm { flex: none; width: 48rpx; height: 48rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); display: flex; align-items: center; justify-content: center; padding: 0; }
 .v2-mode .btn-share-sm::after { border: none; }
 .v2-mode .analysis-head { padding-right: 64rpx; box-sizing: border-box; }
 .v2-mode .analysis-share-btn { position: absolute; top: 24rpx; right: 24rpx; z-index: 2; background: var(--brand-warm, #FFFBEA); }
 .v2-mode .analysis-share-icon { width: 28rpx; height: 28rpx; display: block; }
 
-.v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.45; box-sizing: border-box; font-family: inherit; }
+.v2-mode .text-area-v2 { width: 100%; min-height: 140rpx; padding: 18rpx; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.45; box-sizing: border-box; font-family: inherit; }
 .v2-mode .text-area-v2.chat-mode { min-height: 360rpx; max-height: 640rpx; font-size: $fs-body; }
 .v2-mode .text-area-v2::placeholder { font-size: $fs-body-lg; font-weight: $fw-body; color: var(--placeholder, #777); }
 
@@ -2114,6 +2122,7 @@ function goTaohua() {
   padding: 14rpx 16rpx;
   background: var(--brand-warm, #FFFBEB);
   border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-inner, 0);
   border-left: 10rpx solid var(--accent, #FFD93D);
 }
 .v2-mode .quick-paste-warn-icon-v2 { font-size: $fs-body; flex-shrink: 0; line-height: 1.4; }
@@ -2124,7 +2133,7 @@ function goTaohua() {
 .v2-mode .role-main-v2 { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10rpx; }
 .v2-mode .role-label { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); }
 .v2-mode .role-options { min-width: 0; display: flex; gap: 6rpx; }
-.v2-mode .role-chip { padding: 8rpx 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); white-space: nowrap; }
+.v2-mode .role-chip { padding: 8rpx 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); white-space: nowrap; }
 .v2-mode .role-chip.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); font-weight: $fw-heading; }
 .v2-mode .quick-tool-row-v2 { flex-shrink: 0; display: flex; align-items: center; gap: 8rpx; }
 .v2-mode .quick-tool-btn-v2 {
@@ -2133,6 +2142,7 @@ function goTaohua() {
   min-width: 56rpx;
   padding: 0;
   border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-control, 0);
   background: var(--surface, #fff);
   box-shadow: var(--shadow-hard, 2rpx 2rpx 0 #111);
   display: flex;
@@ -2198,7 +2208,7 @@ function goTaohua() {
   .v2-mode .quick-tool-btn-v2 { width: 52rpx; height: 52rpx; min-width: 52rpx; }
   .v2-mode .quick-tool-btn-v2.recording { width: 104rpx; }
 }
-.v2-mode .quick-question-block-v2 { margin-top: 16rpx; padding: 16rpx; border: 2rpx dashed var(--text-main, #111); background: var(--surface, #fff); }
+.v2-mode .quick-question-block-v2 { margin-top: 16rpx; padding: 16rpx; border: 2rpx dashed var(--text-main, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); }
 .v2-mode .quick-question-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); margin-bottom: 10rpx; }
 .v2-mode .quick-question-list-v2 { display: flex; flex-direction: column; gap: 8rpx; }
 .v2-mode .quick-question-option-v2 {
@@ -2208,6 +2218,7 @@ function goTaohua() {
   align-items: center;
   gap: 10rpx;
   border: 2rpx solid transparent;
+  border-radius: var(--shape-radius-inner, 0);
   background: var(--surface-dim, #f9f9f9);
   box-sizing: border-box;
 }
@@ -2232,8 +2243,8 @@ function goTaohua() {
 .v2-mode .quick-question-option-v2.active .quick-question-label-v2 { color: var(--text-main, #111); font-weight: $fw-heading; }
 .v2-mode .quick-question-check-v2 { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); }
 .v2-mode .quick-question-hint-v2 { display: block; margin-top: 10rpx; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.4; }
-.v2-mode .quick-chat-names-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 10rpx; padding: 12rpx; border: 2rpx dashed var(--divider, #ccc); background: var(--surface-dim, #fafafa); }
-.v2-mode .quick-chat-name-input-v2 { flex: 1; min-width: 0; height: 56rpx; padding: 0 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); box-sizing: border-box; }
+.v2-mode .quick-chat-names-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 10rpx; padding: 12rpx; border: 2rpx dashed var(--divider, #ccc); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #fafafa); }
+.v2-mode .quick-chat-name-input-v2 { flex: 1; min-width: 0; height: 56rpx; padding: 0 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); box-sizing: border-box; }
 .v2-mode .quick-chat-name-sep-v2 { font-size: $fs-body; font-weight: $fw-body; color: var(--text-soft, #999); flex-shrink: 0; }
 .v2-mode .quick-chat-name-hint-v2 { width: 100%; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.3; }
 .v2-mode .quick-custom-question-input-v2 {
@@ -2242,6 +2253,7 @@ function goTaohua() {
   margin-top: 10rpx;
   padding: 0 16rpx;
   border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-control, 0);
   background: var(--surface, #fff);
   box-sizing: border-box;
   font-size: $fs-body;
@@ -2250,7 +2262,7 @@ function goTaohua() {
 }
 
 .v2-mode .datetime-row-v2 { display: flex; gap: 10rpx; margin-top: 16rpx; }
-.v2-mode .picker-v2 { height: 56rpx; line-height: 56rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); }
+.v2-mode .picker-v2 { height: 56rpx; line-height: 56rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); }
 
 /* Image thumbnail grid */
 .v2-mode .attach-row { display: flex; gap: 10rpx; margin-top: 16rpx; }
@@ -2261,7 +2273,7 @@ function goTaohua() {
 .v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: var(--risk, #FF5252); color: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-hero; text-align: center; line-height: 44rpx; border: var(--border-width, 2rpx) solid var(--border, #111); }
 
 
-.v2-mode .ai-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 14rpx; margin-top: 16rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.v2-mode .ai-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 14rpx; margin-top: 16rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); }
 .v2-mode .ai-row { display: flex; align-items: center; gap: 14rpx; }
 .v2-mode .ai-dot { width: 20rpx; height: 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--accent, #FFD93D); display: inline-block; animation: blink-dot 1s ease-in-out infinite; }
 .v2-mode .ai-text { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); }
@@ -2270,19 +2282,19 @@ function goTaohua() {
   50% { opacity: 0.3; transform: scale(0.75); }
 }
 
-.v2-mode .feedback-block { position: relative; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 32rpx; margin-bottom: 24rpx; }
+.v2-mode .feedback-block { position: relative; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 32rpx; margin-bottom: 24rpx; }
 .v2-mode .feedback-block.ok { border-left: 12rpx solid var(--accent-cool, #4ECDC4); }
 .v2-mode .feedback-block.warn { border-left: 12rpx solid var(--hero-bg, #FF6B6B); }
-.v2-mode .question-context-v2 { display: inline-flex; max-width: 100%; min-height: 42rpx; align-items: center; padding: 0 14rpx; margin-bottom: 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--accent, #FFD93D); box-sizing: border-box; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .question-context-v2 { display: inline-flex; max-width: 100%; min-height: 42rpx; align-items: center; padding: 0 14rpx; margin-bottom: 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--accent, #FFD93D); box-sizing: border-box; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .feedback-desc { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.5; margin-bottom: 16rpx; }
 
 .v2-mode .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 14rpx; }
-.v2-mode .score-item { padding: 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); }
+.v2-mode .score-item { padding: 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #f9f9f9); }
 .v2-mode .score-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-muted, #555); text-transform: uppercase; letter-spacing: 1rpx; }
 .v2-mode .score-num-v2 { display: block; font-size: $fs-display; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; margin-top: 6rpx; }
 .v2-mode .score-num-v2.risk { color: var(--risk, #FF5252); }
 .v2-mode .score-bucket-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #666); margin-top: 4rpx; }
-.v2-mode .bar-track-v2 { height: 12rpx; background: var(--surface, #fff); margin-top: 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); overflow: hidden; box-sizing: border-box; }
+.v2-mode .bar-track-v2 { height: 12rpx; background: var(--surface, #fff); margin-top: 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-xs, 0); overflow: hidden; box-sizing: border-box; }
 .v2-mode .bar-fill-v2 { height: 100%; background: var(--accent-cool, #4ECDC4); }
 .v2-mode .bar-fill-v2.risk { background: var(--risk, #FF5252); }
 
@@ -2293,10 +2305,10 @@ function goTaohua() {
 .v2-mode .score-delta-val.down { color: var(--risk, #FF5252); }
 .v2-mode .score-delta-val.flat { color: var(--text-soft, #999); }
 
-.v2-mode .reason-box { margin-top: 16rpx; padding: 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--brand-warm, #FFFBEB); }
+.v2-mode .reason-box { margin-top: 16rpx; padding: 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--brand-warm, #FFFBEB); }
 .v2-mode .reason-line { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: $lh-loose; }
 
-.v2-mode .action-box { margin-top: 16rpx; padding: 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--brand-cool, #f5f5ff); }
+.v2-mode .action-box { margin-top: 16rpx; padding: 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--brand-cool, #f5f5ff); }
 .v2-mode .action-label { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); text-transform: uppercase; letter-spacing: 1rpx; margin-bottom: 12rpx; }
 .v2-mode .action-text { font-size: $fs-body; color: var(--text-muted, #555); line-height: 1.5; }
 .v2-mode .action-text.muted { color: var(--text-muted, #666); }
@@ -2305,22 +2317,22 @@ function goTaohua() {
 .v2-mode .action-item-label { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); }
 .v2-mode .action-item-text { display: block; font-size: $fs-body; color: var(--text-muted, #666); margin-top: 6rpx; line-height: 1.5; }
 
-.v2-mode .side-box { margin-top: 20rpx; padding: 18rpx; border: 2rpx dashed var(--text-main, #111); background: var(--brand-warm, #FFFBEB); }
+.v2-mode .side-box { margin-top: 20rpx; padding: 18rpx; border: 2rpx dashed var(--text-main, #111); border-radius: var(--shape-radius-inner, 0); background: var(--brand-warm, #FFFBEB); }
 .v2-mode .side-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 10rpx; text-transform: uppercase; letter-spacing: 2rpx; }
 
 .v2-mode .info-mask { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: var(--text-muted, rgba(0,0,0,0.6)); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }
-.v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 10rpx 10rpx 0 #111); }
+.v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 10rpx 10rpx 0 #111); }
 .v2-mode .info-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 24rpx; border-bottom: 3rpx solid var(--text-main, #111); }
 .v2-mode .info-title-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .info-close { width: 48rpx; height: 48rpx; line-height: 46rpx; text-align: center; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .info-close { width: 48rpx; height: 48rpx; line-height: 46rpx; text-align: center; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .info-body-v2 { max-height: 60vh; padding: 20rpx 24rpx 24rpx; box-sizing: border-box; }
-.v2-mode .info-section-v2 { padding: 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); margin-top: 16rpx; }
+.v2-mode .info-section-v2 { padding: 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); margin-top: 16rpx; }
 .v2-mode .info-section-v2.ylw { background: var(--brand-warm, #FFFBEB); }
 .v2-mode .info-sec-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 10rpx; }
 .v2-mode .info-sec-copy { display: block; font-size: $fs-body; color: var(--text-soft, #999); line-height: $lh-loose; margin-top: 6rpx; }
 .v2-mode .info-sec-copy.strong { font-weight: $fw-body; color: var(--text-main, #111); }
 .v2-mode .info-tag-row { display: flex; align-items: flex-start; gap: 14rpx; padding: 14rpx 0; border-top: 2rpx solid var(--text-main, #111); }
-.v2-mode .info-chip { padding: 6rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--accent, #FFD93D); font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .info-chip { padding: 6rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--accent, #FFD93D); font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .info-chip.muted { background: var(--text-main, #111); }
 .v2-mode .info-chip-copy { flex: 1; }
 .v2-mode .info-chip-title { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
@@ -2363,6 +2375,7 @@ function goTaohua() {
 .v2-mode .pet-bubble {
   position: relative;
   background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-inner, 0);
   padding: 14rpx 20rpx; max-width: 420rpx;
 }
 .v2-mode .pet-bubble::before {
@@ -2403,12 +2416,12 @@ function goTaohua() {
   100% { height: 28rpx; }
 }
 
-.v2-mode .remind-card-v2 { background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); padding: 20rpx 24rpx; margin-bottom: 16rpx; }
+.v2-mode .remind-card-v2 { background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); padding: 20rpx 24rpx; margin-bottom: 16rpx; }
 .v2-mode .remind-card-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 6rpx; }
 .v2-mode .remind-card-text-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.5; }
 
 .v2-mode .onboard-options-v2 { display: flex; gap: 14rpx; margin: 12rpx 0; }
-.v2-mode .onboard-card-v2 { flex: 1; padding: 20rpx 16rpx; background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); cursor: pointer; }
+.v2-mode .onboard-card-v2 { flex: 1; padding: 20rpx 16rpx; background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); cursor: pointer; }
 .v2-mode .onboard-card-v2.primary { border-color: var(--accent-cool, #4ECDC4); background: var(--onboard-primary-bg, #f6fffd); }
 .v2-mode .onboard-card-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 6rpx; }
 .v2-mode .onboard-card-desc-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.4; }
@@ -2420,6 +2433,7 @@ function goTaohua() {
   background: var(--taohua-card-bg, linear-gradient(180deg, #FFF5F5 0%, var(--app-bg, #FFFDF5) 60%));
   border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-left: 12rpx solid var(--hero, #FF6B6B);
+  border-radius: var(--shape-radius-card, 0);
   box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111);
   padding: 28rpx;
   margin-bottom: 24rpx;
@@ -2428,18 +2442,20 @@ function goTaohua() {
 }
 
 .v2-mode .taohua-teaser-head {
-  display: flex; align-items: baseline; justify-content: space-between;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 58rpx;
   margin-bottom: 14rpx; padding-bottom: 12rpx;
   border-bottom: 2rpx dashed var(--divider, #ccc);
 }
-.v2-mode .taohua-teaser-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .taohua-teaser-head-score { font-size: 48rpx; font-weight: $fw-hero; color: var(--hero, #FF6B6B); line-height: 1; }
+.v2-mode .taohua-teaser-head-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); text-align: center; line-height: 1.2; }
+.v2-mode .taohua-teaser-head-score { position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 48rpx; font-weight: $fw-hero; color: var(--hero, #FF6B6B); line-height: 1; }
 .v2-mode .taohua-teaser-head-unit { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #666); }
 
 /* 进度条 */
 .v2-mode .taohua-bar-wrap { display: flex; align-items: center; gap: 8rpx; margin-bottom: 16rpx; }
 .v2-mode .taohua-bar-label { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); white-space: nowrap; }
-.v2-mode .taohua-bar-track { flex: 1; height: 10rpx; background: var(--divider, #eee); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: 2rpx; overflow: hidden; }
+.v2-mode .taohua-bar-track { flex: 1; height: 10rpx; background: var(--divider, #eee); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-xs, 2rpx); overflow: hidden; }
 .v2-mode .taohua-bar-fill { height: 100%; background: var(--taohua-bar-gradient, linear-gradient(90deg, var(--hero, #FF6B6B), var(--accent, #FFD93D))); }
 
 /* 方位竖排 */
@@ -2453,22 +2469,22 @@ function goTaohua() {
 .v2-mode .taohua-dir-v-arrow { font-size: $fs-body; font-weight: $fw-hero; color: var(--hero, #FF6B6B); }
 
 /* 引导语 */
-.v2-mode .taohua-quote { display: block; font-size: $fs-body-lg; color: var(--text-muted, #666); font-style: italic; margin-bottom: 8rpx; padding-left: 12rpx; border-left: 3rpx solid var(--accent, #FFD93D); line-height: 1.5; }
+.v2-mode .taohua-quote { display: block; font-size: $fs-body-lg; color: var(--text-muted, #666); font-style: normal; margin-bottom: 8rpx; padding-left: 12rpx; border-left: 3rpx solid var(--accent, #FFD93D); line-height: 1.5; }
 
 /* 建除 + 概要 */
 .v2-mode .taohua-meta { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-bottom: 16rpx; }
 
 /* CTA */
-.v2-mode .taohua-cta { display: flex; align-items: center; justify-content: center; gap: 6rpx; padding: 12rpx 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); letter-spacing: 1rpx; text-align: center; box-sizing: border-box; }
+.v2-mode .taohua-cta { display: flex; align-items: center; justify-content: center; gap: 6rpx; padding: 12rpx 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); letter-spacing: 1rpx; text-align: center; box-sizing: border-box; }
 
 /* 出处 */
 .v2-mode .taohua-cite { margin-top: 14rpx; padding-top: 10rpx; border-top: 2rpx dashed var(--divider, #ccc); font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); text-align: center; }
 
 /* 加载 */
 .v2-mode .taohua-teaser-body-loading { padding: 18rpx 0; text-align: center; }
-.taohua-info-dot { display: inline-flex; align-items: center; justify-content: center; width: 34rpx; height: 34rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-micro; font-weight: $fw-hero; color: var(--text-main, #111); margin-left: 6rpx; cursor: pointer; vertical-align: middle; }
+.taohua-info-dot { display: inline-flex; align-items: center; justify-content: center; width: 34rpx; height: 34rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); font-size: $fs-micro; font-weight: $fw-hero; color: var(--text-main, #111); margin-left: 6rpx; cursor: pointer; vertical-align: middle; }
 .taohua-info-overlay { position: fixed; inset: 0; z-index: 1100; background: var(--overlay, rgba(0,0,0,0.5)); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); }
-.taohua-info-sheet { width: 100%; max-width: 500px; max-height: 65vh; background: var(--app-bg, #FFFDF5); border: 3px solid var(--text-main, #111); box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); display: flex; flex-direction: column; overflow: hidden; }
+.taohua-info-sheet { width: 100%; max-width: 500px; max-height: 65vh; background: var(--app-bg, #FFFDF5); border: 3px solid var(--text-main, #111); border-radius: var(--shape-radius-card, 0) var(--shape-radius-card, 0) 0 0; box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); display: flex; flex-direction: column; overflow: hidden; }
 .taohua-info-head { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 28rpx; border-bottom: 2rpx solid var(--text-main, #111); flex-shrink: 0; }
 .taohua-info-title { font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .taohua-info-close { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); padding: 0 8rpx; line-height: 1; }
@@ -2482,7 +2498,7 @@ function goTaohua() {
 
 
 /* Merged card: side read section */
-.referral-notice { margin: 0 20rpx 20rpx; padding: 22rpx 24rpx; background: var(--accent, #FFD93D); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
+.referral-notice { margin: 0 20rpx 20rpx; padding: 22rpx 24rpx; background: var(--accent, #FFD93D); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
 .referral-notice-text { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); text-align: center; }
 </style>
 

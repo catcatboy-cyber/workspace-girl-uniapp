@@ -119,6 +119,7 @@ button::after {
   font-weight: var(--font-weight-hero, #{$fw-heading});
   color: var(--text-main, #{$c-ink});
   border: var(--border-width-strong, 3rpx) var(--border-style, solid) var(--border, #{$c-ink});
+  border-radius: var(--shape-radius-control, 0);
   background: var(--surface, #{$c-card});
   flex: 1;
   display: flex;
@@ -148,10 +149,79 @@ button::after {
 .btn[disabled] { opacity: 0.5; box-shadow: none; }
 
 /* ===== Hero layout v2 — 上下分区 + 分割线 + 大头像左置 ===== */
-.hero-divider { border: none; border-top: 1px solid var(--hero-divider, rgba(0,0,0,0.12)); margin: 16px 0; }
-.hero-bottom { display: flex; gap: 16px; align-items: center; }
-.hero-avatar-lg { width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--text-main, #111); background: var(--accent, #FFD93D); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 26px; font-weight: 900; color: var(--text-main, #111); }
-.hero-info-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.hero-divider { border: none; border-top: 1px solid var(--hero-divider, rgba(0,0,0,0.12)); margin: 16px 0 14px; }
+.hero-bottom { display: flex; gap: 14px; align-items: stretch; }
+.hero-avatar-lg {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  border: var(--border-width-strong, 3rpx) solid var(--text-main, #111);
+  background: var(--accent, #FFD93D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  font-size: 40rpx;
+  line-height: 1;
+  font-weight: 900;
+  color: var(--text-main, #111);
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
+}
+.hero-avatar-img { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.hero-info-col { flex: 1; min-width: 0; min-height: 88rpx; display: flex; flex-direction: column; justify-content: space-between; gap: 8rpx; }
+.hero-main-row { min-height: 40rpx; display: flex; align-items: center; justify-content: space-between; gap: 12rpx; overflow: hidden; }
+.hero-main-left { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8rpx; flex-wrap: nowrap; overflow: hidden; }
+.hero-name-v2 { min-width: 0; max-width: 100%; font-size: $fs-body-lg; line-height: 1.25; font-weight: $fw-hero; color: var(--text-main, #111); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero-meta-row {
+  height: 34rpx;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8rpx;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.hero-meta-row::-webkit-scrollbar { display: none; }
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32rpx;
+  max-width: none;
+  padding: 3rpx 12rpx;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-control, 0);
+  background: var(--surface, #fff);
+  color: var(--text-main, #111);
+  font-size: $fs-caption;
+  line-height: 1.2;
+  font-weight: $fw-heading;
+  white-space: nowrap;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.hero-chip.primary { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
+.hero-chip.muted { background: var(--surface-dim, #f9f9f9); color: var(--text-muted, #666); border-color: var(--divider-strong, var(--border, #111)); }
+.hero-action-pill {
+  flex-shrink: 0;
+  min-height: 42rpx;
+  padding: 0 16rpx;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-control, 0);
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $fs-caption;
+  line-height: 1;
+  font-weight: $fw-hero;
+  box-shadow: var(--shadow-hard, 3rpx 3rpx 0 #111);
+  white-space: nowrap;
+}
 
 /* ===== Fortune / Mystical button system（命理卡片专用）===== */
 .fortune-card {

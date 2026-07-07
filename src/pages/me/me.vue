@@ -7,11 +7,18 @@
         <text class="hero-copy-v2">管理画像、Credits 和偏好设置。</text>
         <hr class="hero-divider">
         <view class="hero-bottom">
-          <view class="hero-avatar-lg" style="background:var(--hero-tag-bg,#111);color:var(--hero-tag-color,#FFD93D);font-size:20px;letter-spacing:-1px;">我</view>
+          <view class="hero-avatar-lg hero-self-avatar">我</view>
           <view class="hero-info-col">
-            <text v-if="hasProfile" style="font-size:14px;color:var(--text-muted,rgba(0,0,0,0.55));">{{ selfProfileSummary }}</text>
-            <text v-else style="font-size:14px;color:var(--text-muted,rgba(0,0,0,0.55));">完善画像，分析更准更贴心</text>
-            <text class="hero-profile-link" style="align-self:flex-start;" @click.stop="goSelfProfile">编辑 →</text>
+            <view class="hero-main-row">
+              <view class="hero-main-left">
+                <text class="hero-name-v2">{{ hasProfile ? '个人画像' : '画像未完善' }}</text>
+                <text :class="['hero-chip', hasProfile ? 'primary' : 'muted']">{{ hasProfile ? '已同步' : '待补充' }}</text>
+              </view>
+              <view class="hero-action-pill" @click.stop="goSelfProfile">编辑</view>
+            </view>
+            <view class="hero-meta-row">
+              <text v-for="item in heroProfileTags" :key="item" class="hero-chip">{{ item }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -107,9 +114,9 @@
         </view>
       </view>
       <!-- Font size -->
-      <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2">Crush Master</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2">Crush Master</text></view></view></view>
+      <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text></view></view></view>
       <!-- AI analysis style -->
-      <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">{{ aiLabel() }} 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '']" @click="aiStyle = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '']" @click="aiBoldness = item.value"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><view class="ai-status-v2"><text class="sub-title-v2 compact">{{ aiLabel() }} 风格状态</text><text class="card-text-v2">{{ aiStatusSummary }}</text></view><button class="btn btn-primary btn-md btn-full" :disabled="!canSaveAIPersona || aiSaving" @click="saveAIPersona">{{ aiSaving ? '保存中...' : '保存 ' + aiLabel() + ' 风格' }}</button></view>
+      <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">{{ aiLabel() }} 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '', aiSaving ? 'disabled' : '']" @click="chooseAIStyle(item.value)"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '', aiSaving ? 'disabled' : '']" @click="chooseAIBoldness(item.value)"><text class="chip-label-v2">{{ item.label }}</text></view></view></view>
       <!-- #ifdef H5 -->
       <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、{{ aiLabel() }}、Credits 和反馈管理 →</text></view>
       <!-- #endif -->
@@ -152,7 +159,6 @@ type PetId = 'xiaomi' | 'doggo'
 const userEmail = ref('')
 const caseCount = ref(0)
 const selfProfileSummary = ref('还没填写。系统会用它调整措辞、入口推荐和未成年人保护表达。')
-const aiStatusSummary = ref('当前：温柔陪伴 · 平衡。未满 18 岁时会自动切换为谨慎守护 + 保守建议。')
 const currentThemeId = ref<ThemeId>(getCurrentThemeId())
 const themeVars = ref(getThemeStyle())
 const fontSizeMode = ref(getFontSizeMode())
@@ -190,7 +196,10 @@ const subReferralCount = ref(0)
 const subReferralRewardTokens = ref(3000)
 const currentUserIsAdmin = ref(false)
 const hasProfile = computed(() => hasUsableSelfProfile(currentSelfProfile.value))
-const canSaveAIPersona = computed(() => hasProfile.value && !aiSaving.value)
+const heroProfileTags = computed(() => {
+  if (!hasProfile.value) return ['完善后分析更贴合你']
+  return selfProfileSummary.value.split(' · ').filter(Boolean).slice(0, 5)
+})
 const themeGroups: Array<{
   title: string
   description: string
@@ -303,11 +312,10 @@ const aiStyleOptions: Array<{
 const aiBoldnessOptions: Array<{
   value: AIBoldnessValue
   label: string
-  description: string
 }> = [
-  { value: 'conservative', label: '保守', description: '优先观察、验证和降误判。' },
-  { value: 'balanced', label: '平衡', description: '该推进时推进，该收口时收口。' },
-  { value: 'bold', label: '大胆', description: '更敢给动作建议，但高风险场景仍会自动收口。' }
+  { value: 'conservative', label: '保守' },
+  { value: 'balanced', label: '平衡' },
+  { value: 'bold', label: '大胆' }
 ]
 
 const showPetBar = ref(true)
@@ -556,24 +564,48 @@ function syncAIPersonaState(profile: SelfProfile | null | undefined) {
   const boldness = aiBoldnessOptions.find((item) => item.value === profile?.aiBoldness)?.value || 'balanced'
   aiStyle.value = style
   aiBoldness.value = boldness
-
-  const styleLabel = aiStyleOptions.find((item) => item.value === style)?.label || '温柔陪伴'
-  const boldnessLabel = aiBoldnessOptions.find((item) => item.value === boldness)?.label || '平衡'
-  const safetyNote = profile?.ageRange === 'under18'
-    ? '未满 18 岁时会自动切换为谨慎守护 + 保守建议。'
-    : '遇到明显越界、私密或高风险事件时，系统会自动收口，不会按大胆风格硬推。'
-  aiStatusSummary.value = `当前：${styleLabel} · ${boldnessLabel}。${safetyNote}`
 }
 
-async function saveAIPersona() {
-  if (!canSaveAIPersona.value || !currentSelfProfile.value) return
+async function chooseAIStyle(value: AIStyleValue) {
+  await selectAIPersona({ style: value })
+}
+
+async function chooseAIBoldness(value: AIBoldnessValue) {
+  await selectAIPersona({ boldness: value })
+}
+
+async function selectAIPersona(next: { style?: AIStyleValue; boldness?: AIBoldnessValue }) {
+  if (aiSaving.value) return
+
+  const previousStyle = aiStyle.value
+  const previousBoldness = aiBoldness.value
+  const nextStyle = next.style || previousStyle
+  const nextBoldness = next.boldness || previousBoldness
+  if (nextStyle === previousStyle && nextBoldness === previousBoldness) return
+
+  aiStyle.value = nextStyle
+  aiBoldness.value = nextBoldness
+
+  const saved = await saveAIPersona()
+  if (!saved) {
+    aiStyle.value = previousStyle
+    aiBoldness.value = previousBoldness
+  }
+}
+
+async function saveAIPersona(): Promise<boolean> {
+  if (!currentSelfProfile.value || !hasProfile.value) {
+    uni.showToast({ title: '请先完善个人画像', icon: 'none' })
+    return false
+  }
+  if (aiSaving.value) return false
 
   aiSaving.value = true
   try {
     const access = await checkFeatureAccess('自定义AI风格')
     if (!access?.success || !access?.allowed) {
       uni.showToast({ title: access?.message || access?.reason || '当前套餐不支持自定义AI风格', icon: 'none' })
-      return
+      return false
     }
 
     const result = await updateSelfProfile({
@@ -583,12 +615,14 @@ async function saveAIPersona() {
     })
     if (!result?.success) {
       uni.showToast({ title: result?.message || '保存失败', icon: 'none' })
-      return
+      return false
     }
     syncProfileState(result.selfProfile)
-    uni.showToast({ title: aiLabel() + ' 风格已保存', icon: 'none' })
+    uni.showToast({ title: '已自动保存', icon: 'none' })
+    return true
   } catch (error: any) {
     uni.showToast({ title: error?.message || '保存失败', icon: 'none' })
+    return false
   } finally {
     aiSaving.value = false
   }
@@ -673,6 +707,7 @@ function goAbout() {
 .v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
 .v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
 .v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
+.v2-mode .hero-self-avatar { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); font-size: 34rpx; letter-spacing: 0; }
 .v2-mode .hero-profile-inline { margin-top: 16rpx; padding-top: 14rpx; border-top: 1rpx solid var(--hero-divider, rgba(0,0,0,0.12)); display: flex; align-items: baseline; justify-content: space-between; gap: 12rpx; }
 .v2-mode .hero-profile-text { font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; flex: 1; min-width: 0; }
 .v2-mode .hero-profile-link { font-size: $fs-caption; font-weight: $fw-heading; color: var(--accent, #FFD93D); white-space: nowrap; flex-shrink: 0; }
@@ -689,12 +724,12 @@ function goAbout() {
 .v2-mode .info-link-label-v2 { font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); flex-shrink: 0; }
 .v2-mode .info-link-desc-v2 { font-size: $fs-body; font-weight: $fw-body; color: var(--text-soft, #999); flex: 1; min-width: 0; }
 .v2-mode .info-link-arrow-v2 { font-size: $fs-body; font-weight: $fw-body; color: var(--divider, #ccc); flex-shrink: 0; }
-.v2-mode .balance-hero-v2 { background: var(--hero-bg, #FF6B6B); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); padding: 20rpx 24rpx; margin-bottom: 12rpx; display: flex; align-items: baseline; gap: 10rpx; }
+.v2-mode .balance-hero-v2 { background: var(--hero-bg, #FF6B6B); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); padding: 20rpx 24rpx; margin-bottom: 12rpx; display: flex; align-items: baseline; gap: 10rpx; }
 .v2-mode .balance-num-v2 { min-width: 0; font-size: $fs-kpi; font-weight: $fw-heading; color: var(--text-main, #111); letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v2-mode .balance-unit-v2 { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, rgba(0,0,0,0.6)); }
 
 /* 套餐身份标签 */
-.plan-badge { padding: 8rpx 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body; font-weight: $fw-hero; letter-spacing: 2rpx; }
+.plan-badge { padding: 8rpx 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); font-size: $fs-body; font-weight: $fw-hero; letter-spacing: 2rpx; }
 .plan-badge.badge-trial { background: var(--accent-cool, #4ECDC4); color: var(--surface, #fff); }
 .plan-badge.badge-pro { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
 .plan-badge.badge-ultra { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
@@ -706,7 +741,7 @@ function goAbout() {
 .v2-mode .switch-row-v2 { display: flex; align-items: center; gap: 24rpx; padding: 12rpx 0; }
 
 .v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10rpx; margin-top: 12rpx; }
-.v2-mode .stat-box-v2 { padding: 14rpx 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); display: flex; flex-direction: column; align-items: center; }
+.v2-mode .stat-box-v2 { padding: 14rpx 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #f9f9f9); display: flex; flex-direction: column; align-items: center; }
 .v2-mode .stat-num-v2 { font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); line-height: 1; white-space: nowrap; }
 .v2-mode .stat-num-sub-v2 { font-size: 28rpx; font-weight: $fw-label; }
 .v2-mode .stat-lbl-v2 { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 2rpx; }
@@ -717,37 +752,35 @@ function goAbout() {
 
 .v2-mode .theme-picker-v2 { display: flex; flex-direction: column; gap: 12rpx; }
 .v2-mode .theme-family-list-v2 { display: flex; flex-direction: column; gap: 14rpx; margin-top: 2rpx; }
-.v2-mode .theme-family-v2 { padding: 14rpx; border: var(--border-width, 2rpx) solid var(--divider-strong, var(--border, #111)); background: var(--surface-soft, var(--surface, #fff)); }
+.v2-mode .theme-family-v2 { padding: 14rpx; border: var(--border-width, 2rpx) solid var(--divider-strong, var(--border, #111)); border-radius: var(--shape-radius-card, 0); background: var(--surface-soft, var(--surface, #fff)); }
 .v2-mode .theme-family-head-v2 { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; margin-bottom: 12rpx; }
 .v2-mode .theme-family-title-v2 { flex-shrink: 0; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .theme-family-desc-v2 { min-width: 0; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #666); text-align: right; line-height: 1.35; }
 .v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10rpx; }
-.v2-mode .theme-card-v2 { position: relative; min-height: 116rpx; padding: 12rpx 8rpx 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); text-align: center; box-sizing: border-box; overflow: hidden; }
+.v2-mode .theme-card-v2 { position: relative; min-height: 116rpx; padding: 12rpx 8rpx 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); text-align: center; box-sizing: border-box; overflow: hidden; }
 .v2-mode .theme-card-v2.active { background: var(--text-main, #111); border-color: var(--text-main, #111); }
-.v2-mode .theme-swatch-v2 { height: 38rpx; border: var(--border-width, 2rpx) solid var(--border, #111); margin-bottom: 10rpx; position: relative; }
+.v2-mode .theme-swatch-v2 { height: 38rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); margin-bottom: 10rpx; position: relative; }
 .v2-mode .theme-card-v2.active .theme-swatch-v2 { border-color: var(--accent, #FFD93D); }
 .v2-mode .theme-name-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.2; white-space: nowrap; }
 .v2-mode .theme-card-v2.active .theme-name-v2 { color: var(--accent, #FFD93D); }
 
 /* Font size picker */
 .v2-mode .font-size-row-v2 { display: flex; gap: 14rpx; }
-.v2-mode .font-size-option-v2 { flex: 1; padding: 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); text-align: center; cursor: pointer; }
+.v2-mode .font-size-option-v2 { flex: 1; padding: 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); text-align: center; cursor: pointer; }
 .v2-mode .font-size-option-v2.active { background: var(--text-main, #111); }
-.v2-mode .font-size-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 10rpx; }
+.v2-mode .font-size-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .font-size-option-v2.active .font-size-label-v2 { color: var(--accent, #FFD93D); }
-.v2-mode .font-size-sample-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .font-size-option-v2.active .font-size-sample-v2 { color: var(--accent, #FFD93D); }
 
 /* pet row layout: avatar + info + button */
 .v2-mode .pet-row-v2 { display: flex; align-items: center; gap: 24rpx; margin-top: 14rpx; }
-.v2-mode .pet-avatar-img-v2 { width: 140rpx; height: 140rpx; flex-shrink: 0; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); }
+.v2-mode .pet-avatar-img-v2 { width: 140rpx; height: 140rpx; flex-shrink: 0; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #f9f9f9); }
 .v2-mode .pet-row-info-v2 { flex: 1; min-width: 0; }
 .v2-mode .pet-row-name-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .pet-row-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.4; margin-top: 6rpx; }
 
 /* bottom sheet */
 .v2-mode .sheet-mask { position: fixed; inset: 0; z-index: 1000; background: var(--overlay, rgba(0,0,0,0.5)); display: flex; align-items: flex-end; justify-content: center; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }
-.v2-mode .sheet-panel { width: 100%; max-width: 500px; max-height: 75vh; background: var(--app-bg, #FFFDF5); border: 3px solid var(--text-main, #111); box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 24rpx; padding-bottom: calc(24rpx + env(safe-area-inset-bottom)); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
+.v2-mode .sheet-panel { width: 100%; max-width: 500px; max-height: 75vh; background: var(--app-bg, #FFFDF5); border: 3px solid var(--text-main, #111); border-radius: var(--shape-radius-hero, 0) var(--shape-radius-hero, 0) 0 0; box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 24rpx; padding-bottom: calc(24rpx + env(safe-area-inset-bottom)); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
 .v2-mode .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; flex-shrink: 0; }
 .v2-mode .sheet-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .sheet-close { font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); padding: 0 8rpx; line-height: 1; }
@@ -755,7 +788,7 @@ function goAbout() {
 /* pet sheet grid */
 .v2-mode .pet-sheet-scroll-v2 { flex: 1; overflow-y: auto; }
 .v2-mode .pet-sheet-grid-inner-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14rpx; padding-right: 4rpx; }
-.v2-mode .pet-option-v2 { display: flex; align-items: center; gap: 14rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); position: relative; }
+.v2-mode .pet-option-v2 { display: flex; align-items: center; gap: 14rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); position: relative; }
 .v2-mode .pet-option-v2.active { background: var(--text-main, #111); }
 .v2-mode .pet-option-img-v2 { width: 80rpx; height: 80rpx; flex-shrink: 0; }
 .v2-mode .pet-option-text-v2 { flex: 1; min-width: 0; }
@@ -765,7 +798,7 @@ function goAbout() {
 .v2-mode .pet-option-v2.active .pet-option-desc-v2 { color: var(--on-active-muted, rgba(255,255,255,0.6)); }
 .v2-mode .pet-option-check-v2 { position: absolute; top: 8rpx; right: 10rpx; font-size: $fs-body; font-weight: $fw-hero; color: var(--accent, #FFD93D); }
 .v2-mode .pet-option-name-row-v2 { display: flex; align-items: center; gap: 8rpx; }
-.v2-mode .pet-option-badge-v2 { display: inline-block; padding: 2rpx 10rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--accent-cool, #4ECDC4); border: 1rpx solid var(--accent-cool, #4ECDC4); }
+.v2-mode .pet-option-badge-v2 { display: inline-block; padding: 2rpx 10rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--accent-cool, #4ECDC4); border: 1rpx solid var(--accent-cool, #4ECDC4); border-radius: var(--shape-radius-control, 0); }
 .v2-mode .pet-option-badge-v2.download { color: var(--hero-bg, #FF6B6B); border-color: var(--hero-bg, #FF6B6B); }
 .v2-mode .pet-option-v2.active .pet-option-badge-v2 { color: var(--accent, #FFD93D); border-color: var(--accent, #FFD93D); }
 
@@ -775,32 +808,31 @@ function goAbout() {
 .v2-mode .pet-sheet-divider-v2::before,
 .v2-mode .pet-sheet-divider-v2::after { content: ''; flex: 1; height: 2rpx; background: var(--text-main, #111); }
 .v2-mode .pet-sheet-divider-text-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); text-transform: uppercase; letter-spacing: 2rpx; white-space: nowrap; }
-.v2-mode .pet-custom-entry-v2 { display: flex; align-items: center; gap: 12rpx; padding: 20rpx; border: 2rpx dashed var(--text-main, #111); background: var(--surface-bright, #fcfcfc); }
+.v2-mode .pet-custom-entry-v2 { display: flex; align-items: center; gap: 12rpx; padding: 20rpx; border: 2rpx dashed var(--text-main, #111); border-radius: var(--shape-radius-card, 0); background: var(--surface-bright, #fcfcfc); }
 .v2-mode .pet-custom-icon-v2 { font-size: $fs-heading; }
 .v2-mode .pet-custom-text-v2 { flex: 1; font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-muted, #666); }
 .v2-mode .pet-custom-arrow-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
 
 .v2-mode .chip-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-top: 12rpx; }
 .v2-mode .chip-grid-v2.cols3 { grid-template-columns: repeat(3, 1fr); }
-.v2-mode .chip-v2 { padding: 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.v2-mode .chip-v2 { padding: 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); }
 .v2-mode .chip-v2.active { background: var(--text-main, #111); }
+.v2-mode .chip-v2.disabled { opacity: 0.65; pointer-events: none; }
 .v2-mode .chip-label-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .chip-v2.active .chip-label-v2 { color: var(--accent, #FFD93D); }
 .v2-mode .chip-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 4rpx; line-height: 1.4; }
 .v2-mode .chip-v2.active .chip-desc-v2 { color: var(--on-active-muted, rgba(255,255,255,0.6)); }
 .v2-mode .ai-style-panel-v2 { display: flex; flex-direction: column; gap: 12rpx; }
-.v2-mode .sub-title-v2 { display: block; padding: 8rpx 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); color: var(--text-muted, #666); font-size: $fs-caption; font-weight: $fw-hero; }
-.v2-mode .sub-title-v2.compact { margin-bottom: 8rpx; }
-.v2-mode .ai-status-v2 { padding-top: 4rpx; }
+.v2-mode .sub-title-v2 { display: block; padding: 8rpx 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface-dim, #f9f9f9); color: var(--text-muted, #666); font-size: $fs-caption; font-weight: $fw-hero; }
 .v2-mode .explain-head-v2 { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 18rpx; }
 .v2-mode .explain-title-v2 { font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .explain-arrow-v2 { padding: 4rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .explain-body-v2 { padding: 0 18rpx 18rpx; border-top: 2rpx solid var(--text-main, #111); }
 .v2-mode .explain-item-v2 { padding: 12rpx 0; border-bottom: 2rpx dashed var(--text-main, #111); }
 .v2-mode .explain-item-v2:last-child { border-bottom: none; }
 .v2-mode .explain-item-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .explain-item-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 2rpx; line-height: 1.4; }
-.referral-notice { margin-bottom: 20rpx; padding: 22rpx 24rpx; background: var(--accent, #FFD93D); border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
+.referral-notice { margin-bottom: 20rpx; padding: 22rpx 24rpx; background: var(--accent, #FFD93D); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
 .referral-notice-text { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); text-align: center; }
 </style>
 

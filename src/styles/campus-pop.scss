@@ -24,6 +24,7 @@ $sp-section-gap: 16rpx;
   background: var(--surface, #fff);
   @include border-hard;
   @include shadow-card;
+  border-radius: var(--shape-radius-card, 0);
   padding: var(--card-padding, #{$sp-card-pad});
   margin-bottom: var(--card-gap, #{$sp-card-gap});
 }
@@ -32,6 +33,7 @@ $sp-section-gap: 16rpx;
 @mixin card-light-v2 {
   background: var(--surface, #fff);
   @include border-soft;
+  border-radius: var(--shape-radius-inner, 0);
   padding: 20rpx;
 }
 
@@ -40,6 +42,7 @@ $sp-section-gap: 16rpx;
   background: var(--surface, #fff);
   @include border-soft;
   border-left: 10rpx solid $accent-color;
+  border-radius: var(--shape-radius-card, 0);
   padding: var(--card-padding, #{$sp-card-pad});
 }
 
@@ -55,6 +58,7 @@ $sp-section-gap: 16rpx;
   );
   border: var(--border-width-strong, 3rpx) var(--border-style, solid) var(--border, #111);
   box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111);
+  border-radius: var(--shape-radius-hero, 0);
   padding: 32rpx;
   margin-bottom: var(--card-gap, #{$sp-card-gap});
   transform: var(--hero-transform, rotate(-0.5deg));
@@ -87,6 +91,7 @@ $sp-section-gap: 16rpx;
   min-height: 36rpx;
   padding: 4rpx 14rpx;
   @include border-soft;
+  border-radius: var(--shape-radius-control, 0);
   background: var(--accent, #FFD93D);
   font-size: $fs-caption;
   font-weight: $fw-label;
@@ -113,6 +118,7 @@ $sp-section-gap: 16rpx;
   text-align: center;
   font-weight: $fw-heading;
   @include border-hard;
+  border-radius: var(--shape-radius-control, 0);
 }
 
 @mixin btn-v2-primary {
@@ -134,6 +140,7 @@ $sp-section-gap: 16rpx;
 
 @mixin chart-panel-v2 {
   @include border-soft;
+  border-radius: var(--shape-radius-inner, 0);
   background: var(--surface, #fff);
   padding: 20rpx;
 }

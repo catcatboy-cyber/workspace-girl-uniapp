@@ -74,6 +74,7 @@
 .tab-bar.theme-velvet-diary {
   background: #FFF7EE;
   border-top-color: #D9B99D;
+  border-radius: 28rpx 28rpx 0 0;
   box-shadow: 0 -4rpx 0 #D9B99D;
 }
 .tab-bar.theme-velvet-diary .tab-text {
@@ -100,6 +101,7 @@
 .tab-bar.theme-rose-letter {
   background: #F7F4FA;
   border-top-color: #C7BEDA;
+  border-radius: 28rpx 28rpx 0 0;
   box-shadow: 0 -4rpx 0 #C7BEDA;
 }
 .tab-bar.theme-rose-letter .tab-text {
@@ -126,6 +128,7 @@
 .tab-bar.theme-seafoam-note {
   background: #F4FAF8;
   border-top-color: #BFD4D2;
+  border-radius: 28rpx 28rpx 0 0;
   box-shadow: 0 -4rpx 0 #BFD4D2;
 }
 .tab-bar.theme-seafoam-note .tab-text {

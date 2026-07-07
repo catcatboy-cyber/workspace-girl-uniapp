@@ -52,6 +52,10 @@ export default defineConfig(() => {
       uni(),
       patchMpWeixin(),
     ],
+    server: {
+      port: 5173,
+      strictPort: true,
+    },
     build: isAppBuild ? {
       rollupOptions: {
         output: {

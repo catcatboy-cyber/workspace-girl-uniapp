@@ -166,14 +166,14 @@ async function submit() {
 .v2-mode .section-title-v2 { @include section-title-v2; }
 .v2-mode .card-text-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.4; margin-bottom: 10rpx; }
 
-.v2-mode .input-v2 { width: 100%; height: 80rpx; border: var(--border-width, 2rpx) solid var(--border, #111); padding: 0 20rpx; font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); box-sizing: border-box; background: var(--surface, #fff); }
-.v2-mode .textarea-v2 { width: 100%; height: 240rpx; border: var(--border-width, 2rpx) solid var(--border, #111); padding: 16rpx 20rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); box-sizing: border-box; background: var(--surface, #fff); line-height: 1.6; }
+.v2-mode .input-v2 { width: 100%; height: 80rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); padding: 0 20rpx; font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); box-sizing: border-box; background: var(--surface, #fff); }
+.v2-mode .textarea-v2 { width: 100%; height: 240rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); padding: 16rpx 20rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); box-sizing: border-box; background: var(--surface, #fff); line-height: 1.6; }
 
 .v2-mode .img-grid-v2 { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 12rpx; }
-.v2-mode .img-box-v2 { width: 180rpx; height: 180rpx; border: var(--border-width, 2rpx) solid var(--border, #111); position: relative; }
+.v2-mode .img-box-v2 { width: 180rpx; height: 180rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); position: relative; overflow: hidden; }
 .v2-mode .img-preview-v2 { width: 100%; height: 100%; }
 .v2-mode .img-del-v2 { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: var(--risk, #FF5252); color: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-hero; text-align: center; line-height: 44rpx; border: var(--border-width, 2rpx) solid var(--border, #111); }
-.v2-mode .img-add-v2 { width: 180rpx; height: 180rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; background: var(--surface-dim, #f9f9f9); }
+.v2-mode .img-add-v2 { width: 180rpx; height: 180rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); border-radius: var(--shape-radius-inner, 0); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; background: var(--surface-dim, #f9f9f9); }
 .v2-mode .img-add-icon-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
 .v2-mode .img-add-label-v2 { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); }
 
