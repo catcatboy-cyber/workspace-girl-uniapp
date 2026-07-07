@@ -47,6 +47,8 @@ const FEATURE_ALIASES = {
   '小咪帮你说（单轮）': ['小咪帮你说'],
   '自定义AI风格': ['自定义 AI 风格'],
   '自定义 AI 风格': ['自定义AI风格'],
+  '更换宠物': ['宠物更换'],
+  '宠物更换': ['更换宠物'],
   '时间轴': ['时间线'],
   '时间线': ['时间轴']
 }
@@ -71,7 +73,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
     durationDays: 7,
     extendOnReferral: 3,
     features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '小咪帮你说（单轮）', '命理桃花'],
-    excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格']
+    excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格', '更换宠物']
   },
 
   plans: {
@@ -80,7 +82,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       monthlyTokens: 30000,
       maxCrushes: 1,
       features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '小咪帮你说（单轮）'],
-      excludedFeatures: ['自定义宠物', '自定义AI风格', '小咪多轮策略', '命理桃花']
+      excludedFeatures: ['自定义宠物', '自定义AI风格', '小咪多轮策略', '命理桃花', '更换宠物']
     },
     pro: {
       name: 'Pro 月卡',
@@ -91,7 +93,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       monthlyTokens: 300000,
       maxCrushes: 3,
       features: ['免费版全部', '命理桃花'],
-      excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格']
+      excludedFeatures: ['小咪多轮策略', '自定义宠物', '自定义AI风格', '更换宠物']
     },
     ultra: {
       name: 'Ultra 月卡',
@@ -101,7 +103,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       priceYuanStudentAnnual: 199,
       monthlyTokens: -1,
       maxCrushes: -1,
-      features: ['Pro全部', '小咪多轮策略', '自定义宠物', '自定义AI风格'],
+      features: ['Pro全部', '小咪多轮策略', '自定义宠物', '自定义AI风格', '更换宠物'],
       excludedFeatures: []
     }
   },

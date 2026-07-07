@@ -270,6 +270,7 @@ function mergeStyleSheet(vars: Record<string, string>, sheet: StyleSheet): Recor
 }
 
 const THEME_STORAGE_KEY = 'uiThemeId'
+const DEFAULT_THEME_ID: ThemeId = 'velvet-diary'
 const TAB_BAR_PAGES = new Set([
   'pages/index/index',
   'pages/case-detail/case-detail',
@@ -573,14 +574,14 @@ export const themeOptions: ThemeOption[] = [
 ]
 
 export function getTheme(id?: string | null): ThemeOption {
-  return themeOptions.find((item) => item.id === id) || themeOptions[0]
+  return themeOptions.find((item) => item.id === id) || themeOptions.find((item) => item.id === DEFAULT_THEME_ID) || themeOptions[0]
 }
 
 export function getCurrentThemeId(): ThemeId {
   try {
-    return (uni.getStorageSync(THEME_STORAGE_KEY) as ThemeId) || 'campus-pop'
+    return (uni.getStorageSync(THEME_STORAGE_KEY) as ThemeId) || DEFAULT_THEME_ID
   } catch {
-    return 'campus-pop'
+    return DEFAULT_THEME_ID
   }
 }
 

@@ -70,17 +70,17 @@
       <view v-if="showInviteeNotice" class="referral-notice" @click="dismissInviteeNotice">
         <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Credits →</text>
       </view>
-      <!-- 陪伴形象 -->
+      <!-- 陪伴宠物 -->
       <view class="card-v2 anim-card" style="animation-delay:0.25s">
-        <text class="section-title-v2">陪伴形象</text>
+        <text class="section-title-v2">陪伴宠物</text>
         <view class="pet-row-v2"><image :src="currentPet.avatarPath" class="pet-avatar-img-v2" mode="aspectFit" @click="showPetSheet = true" /><view class="pet-row-info-v2"><text class="pet-row-name-v2">{{ currentPet.displayName }}</text><text class="pet-row-desc-v2">{{ currentPet.description }}</text><button class="btn btn-secondary btn-sm" style="margin-top:10rpx" @click="showPetSheet = true">换只宠物</button></view></view>
         <view class="switch-row-v2" style="margin-top:16rpx;">
-          <text class="card-text-v2" style="flex:1">显示陪伴助手</text>
+          <text class="card-text-v2" style="flex:1">显示陪伴宠物</text>
           <switch :checked="showPetBar" :color="switchColor" @change="onPetBarChange" />
         </view>
       </view>
       <!-- Pet select sheet -->
-      <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴形象</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
+      <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴宠物</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
       <!-- 低 Token 提示 -->
       <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:var(--brand-warm,#FFFBEB);border-style:dashed;">
         <view open-type="share" style="width:100%;">
@@ -347,7 +347,49 @@ function onPetBarChange(e: any) {
   uni.setStorageSync('showPetBar', v)
 }
 
+async function canSwitchPet(id: PetId, showPrompt = true) {
+  if (id === 'xiaomi') return true
+  try {
+    const access = await checkFeatureAccess('更换宠物')
+    if (access?.allowed === false) {
+      if (showPrompt) {
+        uni.showModal({
+          title: '功能不可用',
+          content: access.reason || '当前套餐不支持更换宠物，请购买月卡。',
+          confirmText: '去看看',
+          cancelText: '取消',
+          success: (res) => {
+            if (res.confirm) uni.navigateTo({ url: '/pages/subscription/subscription' })
+          }
+        })
+      }
+      return false
+    }
+  } catch (_) {
+    if (showPrompt) uni.showToast({ title: '权限校验失败，请稍后再试', icon: 'none' })
+    return false
+  }
+  return true
+}
+
+async function ensureSelectedPetAllowed() {
+  const selected = getSelectedPetId()
+  if (selected === 'xiaomi') {
+    currentPetId.value = selected
+    return
+  }
+  const allowed = await canSwitchPet(selected, false)
+  if (!allowed) {
+    setSelectedPetId('xiaomi')
+    currentPetId.value = 'xiaomi'
+    return
+  }
+  currentPetId.value = selected
+}
+
 async function choosePet(id: PetId) {
+  const allowed = await canSwitchPet(id)
+  if (!allowed) return
   currentPetId.value = id
   setSelectedPetId(id)
   showPetSheet.value = false
@@ -374,7 +416,7 @@ onShow(() => {
   syncTheme()
   syncAdminState()
   showPetBar.value = uni.getStorageSync('showPetBar') !== false
-  currentPetId.value = getSelectedPetId()
+  void ensureSelectedPetAllowed()
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
   const changed = !userEmail.value || dv > lastDataVersion.value
   if (changed) loadData()

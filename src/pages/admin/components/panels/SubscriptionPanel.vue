@@ -156,7 +156,7 @@ const subForm = reactive({
 const ALL_FEATURES = [
   '记录', '时间轴', '规则分析', '即时反馈', '事件理解',
   '周复盘', '附件识别', '小咪帮你说（单轮）',
-  '小咪多轮策略', '自定义宠物', '自定义AI风格', '命理桃花'
+  '小咪多轮策略', '自定义宠物', '更换宠物', '自定义AI风格', '命理桃花'
 ]
 const SUMMARY_MARKERS = ['免费版全部', 'Pro全部']
 const subSaving = ref(false)

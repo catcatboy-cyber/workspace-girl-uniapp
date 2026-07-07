@@ -30,7 +30,7 @@ export const petOptions = [
   {
     id: 'xiaomi',
     displayName: '小咪',
-    description: '默认陪伴助手，适合轻松提醒和帮你说。',
+    description: '默认陪伴宠物，适合轻松提醒和帮你说。点击陪伴宠物，教你如何和 TA 聊天。',
     renderer: 'spritesheet',
     avatarPath: '/static/pets/xiaomi/avatar.png',
     spritesheetPath: '',

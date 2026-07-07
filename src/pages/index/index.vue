@@ -295,7 +295,6 @@
               <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
             </view>
             <view v-if="latestActionPlanPanel.show" class="action-box">
-              <text class="action-label">{{ selectedPet.displayName }} 帮你看看</text>
               <text v-if="latestActionPlanPanel.missing" class="action-text muted">{{ latestActionPlanPanel.text }}</text>
               <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ petLabel(item.label) }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
             </view>
@@ -371,7 +370,7 @@ import { ref, computed, watch } from 'vue'
 import { onHide, onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
-import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua } from '@/utils/api'
+import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
@@ -1068,6 +1067,22 @@ function syncPetBarPref() {
 }
 async function syncSelectedPet() {
   const nextPetId = getSelectedPetId()
+  if (nextPetId !== 'xiaomi') {
+    try {
+      const access = await checkFeatureAccess('更换宠物')
+      if (access?.allowed === false) {
+        setSelectedPetId('xiaomi')
+        selectedPet.value = getPetById('xiaomi')
+        petAssetsVersion.value++
+        return
+      }
+    } catch {
+      setSelectedPetId('xiaomi')
+      selectedPet.value = getPetById('xiaomi')
+      petAssetsVersion.value++
+      return
+    }
+  }
   selectedPet.value = getPetById(nextPetId)
   if (isCloudPet(selectedPet.value.id) && !isPetCachedLocally(selectedPet.value.id)) {
     try {
