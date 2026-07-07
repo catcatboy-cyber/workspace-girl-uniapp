@@ -97,6 +97,58 @@
 .tab-bar.theme-velvet-diary .crush-btn.active .crush-text {
   color: #5C3020;
 }
+.tab-bar.theme-rose-letter {
+  background: #F7F4FA;
+  border-top-color: #C7BEDA;
+  box-shadow: 0 -4rpx 0 #C7BEDA;
+}
+.tab-bar.theme-rose-letter .tab-text {
+  color: #948CA5;
+}
+.tab-bar.theme-rose-letter .tab-item.active .tab-text {
+  color: #332E46;
+}
+.tab-bar.theme-rose-letter .crush-btn {
+  background: #332E46;
+  border-color: #C7BEDA;
+  box-shadow: 0 6rpx 0 #C9BDE5;
+}
+.tab-bar.theme-rose-letter .crush-btn.active {
+  background: #C9BDE5;
+  box-shadow: 0 6rpx 0 #C7BEDA;
+}
+.tab-bar.theme-rose-letter .crush-text {
+  color: #F0ECFA;
+}
+.tab-bar.theme-rose-letter .crush-btn.active .crush-text {
+  color: #332E46;
+}
+.tab-bar.theme-seafoam-note {
+  background: #F4FAF8;
+  border-top-color: #BFD4D2;
+  box-shadow: 0 -4rpx 0 #BFD4D2;
+}
+.tab-bar.theme-seafoam-note .tab-text {
+  color: #8FA4A8;
+}
+.tab-bar.theme-seafoam-note .tab-item.active .tab-text {
+  color: #24383D;
+}
+.tab-bar.theme-seafoam-note .crush-btn {
+  background: #24383D;
+  border-color: #BFD4D2;
+  box-shadow: 0 6rpx 0 #6BB6AE;
+}
+.tab-bar.theme-seafoam-note .crush-btn.active {
+  background: #6BB6AE;
+  box-shadow: 0 6rpx 0 #BFD4D2;
+}
+.tab-bar.theme-seafoam-note .crush-text {
+  color: #EEF8F5;
+}
+.tab-bar.theme-seafoam-note .crush-btn.active .crush-text {
+  color: #24383D;
+}
 .tab-bar.font-large .tab-text,
 .tab-bar.font-large .crush-text {
   font-size: 29rpx;

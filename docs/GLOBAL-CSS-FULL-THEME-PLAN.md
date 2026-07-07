@@ -5,6 +5,45 @@
 
 ---
 
+## 0. 2026-07-07 复核结论
+
+当前已经可以进入“新增低风险浅色主题”的阶段，但不建议直接进入暗色赛博主题。
+
+已确认：
+- `src/utils/theme.ts` 已完成 `mergeStyleSheet()` 扩展、`campusHard` 硬边基线、`velvet` style sheet、`getThemeClass()` 和 `Velvet Diary` 接入。
+- `token-usage`、`token-recharge` 已补齐 `getThemeStyle()`、`applyThemeChrome()` 和根节点 `:style="themeVars"`。
+- 关键语义 token 已具备：`--placeholder`、`--hero-divider`、`--on-active-muted`、`--timeline-positive-gradient`、`--timeline-risk-gradient`、`--status-ai-bg`、`--status-ai-dot`、`--status-fallback-bg`、`--status-fallback-dot`。
+- `npm.cmd run build:h5` 通过。
+- `npm.cmd run build:mp-weixin` 通过。
+
+当前判断：
+- 可以新增 `Glacier Blue` / `Mint Glass` 这类浅色、低对比风险主题。实现应以 `theme.ts` token 配置为主，必要时只补少量全局样式。
+- `Glacier Blue` 是下一套主题的最低风险选择；它可作为 `Mint Glass` 的正式低风险落地版，优先采用 V4 `Glacier Blue` 的清冷浅色、弱边框、轻阴影和数据感，不强依赖 `backdrop-filter`。
+- `Neon Signal` / `Stardust Telegram` 属于暗色赛博系，仍需要等 P0 页面硬编码和暗色对比风险进一步收敛后再做。
+- `Velvet Diary` 已完成主题变量接入，但仍需要继续做 P0 页面视觉抽查；这不阻塞新增一套浅色低风险主题，但阻塞暗色主题。
+
+执行口径更新：
+- 下一步进入 `Phase 4B-light`：新增 `glacier-blue` 或以 `mint-glass` 名义落地的 Glacier 风格浅色主题。
+- `Phase 5B-light`：只对新浅色主题做 P0 增量抽查，发现穿帮再补丁。
+- `Neon Signal` 和 `Stardust Telegram` 继续后置到暗色专项阶段。
+
+### 0.1 2026-07-07 Velvet Diary 轻量变体补充
+
+在不推进暗色主题、不做页面结构改造的前提下，允许先给 `Velvet Diary` 增加同族轻量变体，模式对齐当前 `Campus Pop` 下的 `Sea Salt Lemon` / `Peach Oolong`：
+
+- `Velvet Diary` 保持原基础风格，面向用户显示为 `暖绒手札`。
+- 新增 `松烟暮紫`：偏雾紫灰蓝、冷紫墨感，作为 Velvet 的差异化冷调轻量变体。
+- 新增 `海沫笔记`：偏海沫蓝绿、清爽中性，作为 Velvet 的中性轻量变体。
+- 两个变体只通过 `src/utils/theme.ts` 的主题 token 接入，复用 `styleSheets.velvet`，不新增逐页面专用样式。
+- 微信小程序 `custom-tab-bar` 只补对应 `theme-rose-letter` / `theme-seafoam-note` 颜色覆盖，避免 tabBar 停留在默认硬边色。
+- 这轮已通过 `npm.cmd run build:h5` 和 `npm.cmd run build:mp-weixin`；构建只剩既有 Sass deprecation warning。
+
+“我”页面主题选择 UI 改为两级分组：
+- `青春硬边`：`原味校园`、`海盐柠檬`、`蜜桃乌龙`
+- `丝绒日记`：`暖绒手札`、`松烟暮紫`、`海沫笔记`
+
+后续如继续做 `Glacier Blue` / `Mint Glass`，仍按 `Phase 4B-light` 单独推进；`Neon Signal` / `Stardust Telegram` 仍不进入本轮。
+
 ## 1. 目标与边界
 
 ### 1.1 最终目标
@@ -273,19 +312,20 @@ export type ThemeId =
 }
 ```
 
-### 4.2 Mint Glass · 薄荷玻璃
+### 4.2 Glacier Blue / Mint Glass · 冰川蓝调 / 薄荷玻璃
 
 定位：中性通用、Apple Health x Notion、数据驱动。
 
 预览参考：
-- 主参考：V4 `Glacier Blue` 的真实 App 页面结构、数据卡片、浅色清冷层级
-- 辅助参考：V3 `Mint Glass` 的半透明 surface、大圆角、弱边框方向
+- 第一落地参考：V4 `Glacier Blue` 的真实 App 页面结构、数据卡片、浅色清冷层级
+- 辅助增强参考：V3 `Mint Glass` 的半透明 surface、大圆角、弱边框方向
 - 实现取舍：正式小程序端更接近 V4 `Glacier Blue`，不追求强毛玻璃；H5 可做 blur 增强
+- 命名取舍：如果希望主题列表更直观，可使用 `glacier-blue` 作为正式 `ThemeId`；如果希望沿用 V3 三主题路线，可使用 `mint-glass`，但视觉实现按 Glacier Blue 降级版落地
 
 全局变量特点：
 
 - 清冷浅灰背景
-- 薄荷绿 / 蓝绿色强调
+- 冰川蓝 / 蓝绿色强调
 - 大圆角
 - 半透明 surface
 - 弱边框、弱阴影、留白更大
@@ -300,7 +340,7 @@ export type ThemeId =
 }
 ```
 
-小程序限制：`backdrop-filter` / `-webkit-backdrop-filter` 不能作为 Mint Glass 的必要能力。H5 可以增强使用 blur，小程序端必须降级为“浅色半透明 + 大圆角 + 弱边框 + 柔和阴影”的无 blur 版本。验收时以降级版本可接受为前提。
+小程序限制：`backdrop-filter` / `-webkit-backdrop-filter` 不能作为 Glacier Blue / Mint Glass 的必要能力。H5 可以增强使用 blur，小程序端必须降级为“浅色半透明 + 大圆角 + 弱边框 + 柔和阴影”的无 blur 版本。验收时以降级版本可接受为前提。
 
 ### 4.3 Neon Signal · 赛博信号
 
@@ -558,18 +598,22 @@ Phase 3 完成后先不要直接接入 V3 三套主题。先清除会阻碍 V3 �
 
 前置条件：
 - Phase 3.5 已完成
-- 用户已在微信开发者工具确认当前默认风格没有明显回退
+- H5 和 mp-weixin 构建通过
+- 用户已在微信开发者工具确认当前默认风格没有明显回退；如尚未完成视觉确认，只允许推进浅色低风险主题，不推进暗色主题
 - `mergeStyleSheet()` 已完成硬边兼容解耦，V3 主题可以独立控制阴影、字重、行高、圆角和边框
-- 第一轮只实现 `Velvet Diary`；`Mint Glass` 和 `Neon Signal` 等 Velvet 闭环验收后再接入
+- `Velvet Diary` 已完成主题变量接入；P0 页面视觉抽查继续作为 Phase 5A 工作
+- 下一轮允许先实现 `Glacier Blue` / `Mint Glass` 这类浅色低风险主题
+- `Neon Signal` 和 `Stardust Telegram` 等暗色赛博主题必须等默认主题、Velvet、浅色主题都通过 P0 抽查后再接入
 - Mint Glass 的小程序无 blur 降级方案必须在接入 Mint Glass 的同一轮内同步实现和验收，不后置到 Phase 6
 
 任务：
 
-- Phase 4A：在 `theme.ts` 只新增 `velvet-diary`
-- Phase 4A：在 `theme-variants.scss` 只增加 `Velvet Diary` 需要的主题修饰类
-- Phase 4A：在“我”页面主题选择 UI 中展示现有 3 套 + `Velvet Diary`
-- Phase 4B：`Velvet Diary` 验收通过后，再按顺序新增 `mint-glass`、`neon-signal`
-- Phase 4B：新增主题展示顺序固定为 `Velvet Diary`、`Mint Glass`、`Neon Signal`
+- Phase 4A：在 `theme.ts` 新增 `velvet-diary`（已完成）
+- Phase 4A：在 `theme-variants.scss` 或现有全局样式中补充 `Velvet Diary` 需要的主题修饰类（按穿帮情况增量补）
+- Phase 4A：在“我”页面主题选择 UI 中展示现有 3 套 + `Velvet Diary`（已完成）
+- Phase 4B-light：新增 `glacier-blue` 或 `mint-glass`；优先采用 Glacier Blue 的浅色清冷实现，不强依赖 blur
+- Phase 4B-light：新增主题展示顺序建议为 `Campus Pop`、`Sea Salt Lemon`、`Peach Oolong`、`Velvet Diary`、`Glacier Blue / Mint Glass`
+- Phase 4C-dark：浅色主题验收通过后，再新增 `neon-signal`；如采用 `Stardust Telegram`，应作为 `neon-signal` 的暗色参考，不与 Neon 同时并列
 - V4 预览中的 `Caramel Pudding`、`Acid Graffiti`、`Ink Zen` 不进入本阶段
 - 样式参考以“V3 命名和方向 + V4 成熟页面结构”为准，不直接照搬任一预览 HTML
 - 每套主题至少覆盖：
@@ -588,10 +632,12 @@ Phase 3 完成后先不要直接接入 V3 三套主题。先清除会阻碍 V3 �
 验收：
 
 - Phase 4A 验收时只要求 `Velvet Diary` 与默认硬边风格都稳定
+- Phase 4B-light 验收时只要求新增浅色主题在 P0 主流程无明显穿帮，允许 H5 有 blur 增强、小程序为无 blur 降级
 - 每新增一套主题都必须做到差异明显，不只是换色
 - 所有主流程页面切换后视觉语言一致
 - 不出现文字低对比、按钮看不出可点击、卡片边界消失
 - 接入 Mint Glass 后，微信小程序端必须显示为可接受的无 blur 降级版本
+- 暗色主题验收必须额外检查 `#111`、`#fff`、`rgba(0,0,0,x)` 语义迁移和正文/次级文字对比度
 
 ---
 
@@ -601,8 +647,9 @@ Phase 3 完成后先不要直接接入 V3 三套主题。先清除会阻碍 V3 �
 
 执行方式：
 - Phase 5A：只用当前默认主题 + `Velvet Diary` 做 P0 页面专项收敛
-- Phase 5B：`Mint Glass`、`Neon Signal` 后续接入时，在同一 P0 顺序上做增量抽查和补丁
-- 不要在 Velvet 还没通过验收前同时修三套主题的页面穿帮问题
+- Phase 5B-light：`Glacier Blue` / `Mint Glass` 接入时，在同一 P0 顺序上做增量抽查和补丁
+- Phase 5C-dark：`Neon Signal` / `Stardust Telegram` 接入前，先完成暗色风险扫描，再在同一 P0 顺序上做专项抽查
+- 不要在浅色主题还没通过验收前同时修暗色主题的页面穿帮问题
 
 优先级 P0：
 
@@ -677,7 +724,8 @@ P0 验收和收敛排序：
 验收：
 
 - Phase 5A：每个 P0 用户端页面切换当前默认主题和 `Velvet Diary` 后无明显穿帮
-- Phase 5B：后续每新增一套主题，必须在 P0 页面上完成增量抽查和补丁
+- Phase 5B-light：新增浅色主题必须在 P0 页面上完成增量抽查和补丁
+- Phase 5C-dark：新增暗色主题必须完成额外暗色对比度和硬编码穿帮检查
 - 页面 scoped 样式不再承担品牌风格
 - 后续新增主题不需要逐页面新增主题 CSS
 
@@ -774,9 +822,9 @@ rg "border:\s*[0-9]+rpx solid #|box-shadow:.*#111" src/pages src/components
 4. 完成 Phase 3.5：清除 V3 阻碍，解耦硬边兼容覆盖，并让用户在微信开发者工具确认当前风格没有明显回退。
 5. 先用当前 Campus Pop / 硬边风作为默认基线，并吸收 Fuzzy Bold 中更成熟的硬边规则。
 6. 只接入 `Velvet Diary`，因为它风险最低，主要验证暖色、圆角、柔和阴影。
-7. 用 `Velvet Diary` 走完 Phase 5A / 6A / 7A，并在微信开发者工具确认默认风格和 Velvet 都稳定。
-8. Velvet 闭环验收通过后，再接入 `Mint Glass`，同时落地小程序无 blur 降级。
-9. Mint Glass 验收通过后，最后接入 `Neon Signal`，因为暗色主题要求最严格，必须等硬编码和 rgba 迁移充分后再做。
+7. 用 `Velvet Diary` 继续跑 Phase 5A / 6A / 7A 的 P0 抽查；这项不阻塞新增浅色低风险主题。
+8. 下一步进入 `Phase 4B-light`：优先接入 `Glacier Blue` / `Mint Glass`，同时落地小程序无 blur 降级。
+9. `Glacier Blue` / `Mint Glass` 验收通过后，再考虑 `Neon Signal` 或 `Stardust Telegram`。暗色主题要求最严格，必须等硬编码和 rgba 迁移充分后再做。
 10. 最后处理分享页、桃花特殊组件和 admin 是否跟随主题。
 
 ---

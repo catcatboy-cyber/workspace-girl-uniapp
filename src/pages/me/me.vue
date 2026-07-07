@@ -83,7 +83,29 @@
         </view>
       </view>
       <!-- Theme picker -->
-      <view class="card-v2"><text class="section-title-v2">界面风格</text><text class="card-text-v2">选择更适合你的视觉氛围。</text><view class="theme-grid-v2"><view v-for="theme in themeOptions" :key="theme.id" :class="['theme-card-v2', currentThemeId === theme.id ? 'active' : '']" @click="chooseTheme(theme.id)"><view class="theme-dot-v2" :style="{ background: theme.vars['--hero-bg'] }"></view><text class="theme-name-v2">{{ theme.name }}</text></view></view></view>
+      <view class="card-v2 theme-picker-v2">
+        <text class="section-title-v2">界面风格</text>
+        <text class="card-text-v2">按风格系列选择具体氛围。</text>
+        <view class="theme-family-list-v2">
+          <view v-for="group in themeGroups" :key="group.title" class="theme-family-v2">
+            <view class="theme-family-head-v2">
+              <text class="theme-family-title-v2">{{ group.title }}</text>
+              <text class="theme-family-desc-v2">{{ group.description }}</text>
+            </view>
+            <view class="theme-grid-v2">
+              <view
+                v-for="themeId in group.ids"
+                :key="themeId"
+                :class="['theme-card-v2', currentThemeId === themeId ? 'active' : '']"
+                @click="chooseTheme(themeId)"
+              >
+                <view class="theme-swatch-v2" :style="themePreviewStyle(themeId)"></view>
+                <text class="theme-name-v2">{{ themeOption(themeId)?.name }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
       <!-- Font size -->
       <view class="card-v2"><text class="section-title-v2">字体大小</text><text class="card-text-v2">调整全应用文字显示大小。</text><view class="font-size-row-v2"><view :class="['font-size-option-v2', fontSizeMode === 'default' ? 'active' : '']" @click="setFontSize('default')"><text class="font-size-label-v2">默认</text><text class="font-size-sample-v2">Crush Master</text></view><view :class="['font-size-option-v2', fontSizeMode === 'large' ? 'active' : '']" @click="setFontSize('large')"><text class="font-size-label-v2">大字体</text><text class="font-size-sample-v2">Crush Master</text></view></view></view>
       <!-- AI analysis style -->
@@ -169,6 +191,32 @@ const subReferralRewardTokens = ref(3000)
 const currentUserIsAdmin = ref(false)
 const hasProfile = computed(() => hasUsableSelfProfile(currentSelfProfile.value))
 const canSaveAIPersona = computed(() => hasProfile.value && !aiSaving.value)
+const themeGroups: Array<{
+  title: string
+  description: string
+  ids: ThemeId[]
+}> = [
+  {
+    title: '青春硬边',
+    description: '明亮活泼，卡片感更强',
+    ids: ['campus-pop', 'sea-salt-lemon', 'peach-oolong']
+  },
+  {
+    title: '丝绒日记',
+    description: '柔和细腻，纸张日记感',
+    ids: ['velvet-diary', 'rose-letter', 'seafoam-note']
+  }
+]
+function themeOption(themeId: ThemeId) {
+  return themeOptions.find((theme) => theme.id === themeId)
+}
+
+function themePreviewStyle(themeId: ThemeId) {
+  const theme = themeOption(themeId)
+  return {
+    background: `linear-gradient(135deg, ${theme?.vars['--hero-bg'] || '#FF6B6B'} 0%, ${theme?.vars['--hero-bg-2'] || '#FFD93D'} 100%)`
+  }
+}
 
 // 次数显示用 computed
 const monthlyRemainingDisplay = computed(() => {
@@ -667,15 +715,19 @@ function goAbout() {
 .v2-mode .account-meta-row + .account-meta-row { margin-top: 0; padding-top: 0; }
 .v2-mode .account-meta-item { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); }
 
-.v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10rpx; margin-top: 12rpx; }
-.v2-mode .theme-card-v2 { padding: 14rpx 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); text-align: center; }
-.v2-mode .theme-card-v2.active { background: var(--text-main, #111); }
-.v2-mode .theme-dot-v2 { width: 32rpx; height: 32rpx; border-radius: 50%; border: var(--border-width, 2rpx) solid var(--border, #111); margin: 0 auto 6rpx; }
-.v2-mode .theme-card-v2.active .theme-dot-v2 { border-color: var(--accent, #FFD93D); }
-.v2-mode .theme-name-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .theme-picker-v2 { display: flex; flex-direction: column; gap: 12rpx; }
+.v2-mode .theme-family-list-v2 { display: flex; flex-direction: column; gap: 14rpx; margin-top: 2rpx; }
+.v2-mode .theme-family-v2 { padding: 14rpx; border: var(--border-width, 2rpx) solid var(--divider-strong, var(--border, #111)); background: var(--surface-soft, var(--surface, #fff)); }
+.v2-mode .theme-family-head-v2 { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; margin-bottom: 12rpx; }
+.v2-mode .theme-family-title-v2 { flex-shrink: 0; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .theme-family-desc-v2 { min-width: 0; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #666); text-align: right; line-height: 1.35; }
+.v2-mode .theme-grid-v2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10rpx; }
+.v2-mode .theme-card-v2 { position: relative; min-height: 116rpx; padding: 12rpx 8rpx 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); text-align: center; box-sizing: border-box; overflow: hidden; }
+.v2-mode .theme-card-v2.active { background: var(--text-main, #111); border-color: var(--text-main, #111); }
+.v2-mode .theme-swatch-v2 { height: 38rpx; border: var(--border-width, 2rpx) solid var(--border, #111); margin-bottom: 10rpx; position: relative; }
+.v2-mode .theme-card-v2.active .theme-swatch-v2 { border-color: var(--accent, #FFD93D); }
+.v2-mode .theme-name-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.2; white-space: nowrap; }
 .v2-mode .theme-card-v2.active .theme-name-v2 { color: var(--accent, #FFD93D); }
-.v2-mode .theme-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 4rpx; line-height: 1.3; }
-.v2-mode .theme-card-v2.active .theme-desc-v2 { color: var(--on-active-muted, rgba(255,255,255,0.6)); }
 
 /* Font size picker */
 .v2-mode .font-size-row-v2 { display: flex; gap: 14rpx; }
