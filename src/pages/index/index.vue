@@ -324,11 +324,37 @@
 
       <!-- Pet bar -->
       <view v-if="showPetBar" class="pet-bar">
-        <view class="pet-sprite-viewport" @click="showSpeakSheet = true">
+        <!-- Floating action button -->
+        <view v-if="showPetActions" class="pet-action-buttons">
+          <view class="pet-action-btn" @click.stop="openSpeakSheet">
+            <text class="pet-action-icon">💬</text>
+            <text class="pet-action-label">聊天</text>
+          </view>
+        </view>
+
+        <view class="pet-sprite-viewport"
+          @touchstart="onPetTouchStart"
+          @touchend="onPetTouchEnd"
+          @touchcancel="onPetTouchCancel"
+        >
+          <!-- Hearts particle layer -->
+          <view class="hearts-layer">
+            <text v-for="h in hearts" :key="h.id"
+              class="heart-particle"
+              :style="{ left: h.x + 'rpx', top: h.y + 'rpx', fontSize: h.size + 'rpx' }"
+            >❤️</text>
+          </view>
           <image v-if="resolvedSpritesheetPath" :key="petSpritesheetKey" :src="resolvedSpritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
           <image v-else :src="selectedPet.avatarPath" class="pet-bar-img" mode="aspectFit" />
         </view>
-        <view v-if="petMsg" class="pet-bubble"><text class="pet-bubble-text">{{ petMsg }}</text></view>
+
+        <!-- Reaction bubble takes priority over system message bubble -->
+        <view v-if="petReactionMsg" class="pet-bubble reaction">
+          <text class="pet-bubble-text">{{ petReactionMsg }}</text>
+        </view>
+        <view v-else-if="petMsg" class="pet-bubble">
+          <text class="pet-bubble-text">{{ petMsg }}</text>
+        </view>
       </view>
 
       <!-- Pet Speak Sheet -->
@@ -1020,6 +1046,137 @@ function applyPetScene(scene: PetScene | null, durationMs?: number, customMessag
   }
 }
 
+// ---- pet petting interaction ----
+const PET_REACTIONS: Record<string, string[]> = {
+  tap1: ['喵~ 来啦', '嗯？叫我吗', '嗨～又见面了', '今天怎么样了？'],
+  tap2: ['嘻嘻', '哈哈好痒', '你喜欢戳我啊', '再来一次？'],
+  tap3: ['别戳啦！好痒！', '啊啊啊你戳到我的笑穴了', '我要告诉其他小咪！'],
+  tap4plus: ['你戳上瘾了是吧', '喵生艰难…', '戳一次十块钱', '我已经麻了'],
+  longPress: ['说吧，我听着', '想聊什么？']
+}
+
+const petTapCount = ref(0)
+const showPetActions = ref(false)
+const petReactionMsg = ref('')
+const hearts = ref<{ id: number; x: number; y: number; size: number }[]>([])
+
+let petTapTimer: ReturnType<typeof setTimeout> | null = null
+let petActionsTimer: ReturnType<typeof setTimeout> | null = null
+let petReactionTimer: ReturnType<typeof setTimeout> | null = null
+let petLongPressTimer: ReturnType<typeof setTimeout> | null = null
+let petTouchStartTime = 0
+let heartIdCounter = 0
+
+function openSpeakSheet() {
+  resetPetInteraction()
+  showSpeakSheet.value = true
+}
+
+function clearPetReaction() {
+  if (petReactionTimer) { clearTimeout(petReactionTimer); petReactionTimer = null }
+  petReactionMsg.value = ''
+  // restore to idle — mood system will re-apply on next cycle if needed
+  if (!petScene.value) startPetAnim('idle')
+}
+
+function showPetReaction(key: string) {
+  const list = PET_REACTIONS[key] || PET_REACTIONS['tap1']
+  const msg = list[Math.floor(Math.random() * list.length)]
+  petReactionMsg.value = formatPetMessage(msg)
+  if (petReactionTimer) clearTimeout(petReactionTimer)
+  petReactionTimer = setTimeout(() => { clearPetReaction() }, 2000)
+}
+
+function spawnHeart() {
+  const id = ++heartIdCounter
+  const x = 20 + Math.random() * 30   // rpx, random horizontal offset within viewport
+  const y = -10 - Math.random() * 30  // rpx, start slightly above center
+  const size = 20 + Math.random() * 8 // rpx
+  hearts.value = [...hearts.value, { id, x, y, size }]
+  setTimeout(() => { hearts.value = hearts.value.filter(h => h.id !== id) }, 1600)
+}
+
+function spawnHeartRain() {
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const id = ++heartIdCounter
+      const x = 5 + Math.random() * 80
+      const y = -5 - Math.random() * 50
+      const size = 16 + Math.random() * 12
+      hearts.value = [...hearts.value, { id, x, y, size }]
+      setTimeout(() => { hearts.value = hearts.value.filter(h => h.id !== id) }, 1600)
+    }, i * 80)
+  }
+}
+
+function resetPetInteraction() {
+  petTapCount.value = 0
+  showPetActions.value = false
+  if (petTapTimer) { clearTimeout(petTapTimer); petTapTimer = null }
+  if (petActionsTimer) { clearTimeout(petActionsTimer); petActionsTimer = null }
+  if (petLongPressTimer) { clearTimeout(petLongPressTimer); petLongPressTimer = null }
+}
+
+function onPetTouchStart() {
+  petTouchStartTime = Date.now()
+  if (petLongPressTimer) clearTimeout(petLongPressTimer)
+  petLongPressTimer = setTimeout(() => {
+    // long press ≥ 500ms → open speak sheet directly
+    openSpeakSheet()
+  }, 500)
+}
+
+function onPetTouchEnd() {
+  if (petLongPressTimer) { clearTimeout(petLongPressTimer); petLongPressTimer = null }
+  const duration = Date.now() - petTouchStartTime
+  if (duration >= 500) return  // long press already handled
+
+  // Don't interrupt active scene animations (ai_loading, insufficient_balance, ai_error, etc.)
+  if (petScene.value) return
+
+  // Tap count with decay
+  if (petTapTimer) clearTimeout(petTapTimer)
+  petTapCount.value++
+  petTapTimer = setTimeout(() => { petTapCount.value = 0 }, 400)
+
+  // Determine reaction
+  if (petTapCount.value >= 3) {
+    spawnHeartRain()
+    showPetReaction('tap3')
+    startPetAnim('jumping')
+    // Alternate to review after jumping finishes (~625ms), then back to idle
+    setTimeout(() => {
+      if (petTapCount.value === 0 && !petScene.value) startPetAnim('review')
+    }, 700)
+    petTapCount.value = 0
+    if (petTapTimer) { clearTimeout(petTapTimer); petTapTimer = null }
+  } else if (petTapCount.value === 2) {
+    spawnHeart()
+    showPetReaction('tap2')
+    startPetAnim('jumping')
+  } else {
+    spawnHeart()
+    showPetReaction('tap1')
+    startPetAnim('waving')
+  }
+
+  // Show action button, reset auto-dismiss timer
+  showPetActions.value = true
+  if (petActionsTimer) clearTimeout(petActionsTimer)
+  petActionsTimer = setTimeout(() => { showPetActions.value = false }, 3000)
+}
+
+function onPetTouchCancel() {
+  if (petLongPressTimer) { clearTimeout(petLongPressTimer); petLongPressTimer = null }
+}
+
+function stopPetInteraction() {
+  resetPetInteraction()
+  clearPetReaction()
+  hearts.value = []
+}
+// ---- end pet petting ----
+
 const showPetBar = ref(true)
 const petAssetsVersion = ref(0)
 
@@ -1285,6 +1442,7 @@ onHide(() => {
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
   stopPetAnim()
+  stopPetInteraction()
   stopShareNudgeTimer()
   statusInfoVisible.value = false
   applyPetScene(null)
@@ -1295,6 +1453,7 @@ onUnload(() => {
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
   stopPetAnim()
+  stopPetInteraction()
   stopShareNudgeTimer()
   statusInfoVisible.value = false
   applyPetScene(null)
@@ -2406,6 +2565,51 @@ function goTaohua() {
   border-right-color: var(--surface, #fff); border-left: 0;
 }
 .v2-mode .pet-bubble-text { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+/* ---- pet petting: floating action buttons ---- */
+.pet-action-buttons {
+  position: absolute;
+  bottom: calc(124rpx + env(safe-area-inset-bottom) + 16rpx);
+  left: 96rpx + 24rpx + 16rpx;
+  display: flex; gap: 16rpx; z-index: 101;
+  animation: pet-actions-in 200ms ease-out;
+}
+@keyframes pet-actions-in {
+  from { opacity: 0; transform: translateY(8rpx); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pet-action-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4rpx;
+  width: 80rpx; height: 80rpx;
+  background: var(--card, #fff); border: 3rpx solid #111;
+  border-radius: 50%;
+  box-shadow: 4rpx 4rpx 0 #111;
+  justify-content: center;
+  pointer-events: auto;
+}
+.pet-action-icon { font-size: 28rpx; line-height: 1; }
+.pet-action-label { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); line-height: 1; }
+
+/* ---- pet petting: hearts particle layer ---- */
+.hearts-layer {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: visible;
+}
+.heart-particle {
+  position: absolute;
+  animation: heart-float 1.5s ease-out forwards;
+  line-height: 1;
+}
+@keyframes heart-float {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  50%  { opacity: 0.8; transform: translateY(-60rpx) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-120rpx) scale(0.8); }
+}
+
+/* pet-bubble reaction variant — warmer background */
+.v2-mode .pet-bubble.reaction {
+  background: var(--accent-soft, #FFFBEB);
+  border-color: var(--accent, #FFD93D);
+}
 
 .v2-mode .voice-recording-btn {
   background: var(--hero-bg, #FF6B6B) !important; color: var(--surface, #fff) !important;
