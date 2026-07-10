@@ -126,6 +126,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { generatePetReplyBundle, generatePetReplyPair, handleInsufficientBalance, loadPetChatHistory, petChatMessage } from '@/utils/api'
+import { feedPet } from '@/utils/helpers'
 import AiLoading from '@/components/AiLoading'
 
 type ToneKey = 'humor' | 'flirty' | 'sincere' | 'literary'
@@ -468,6 +469,8 @@ async function sendMessage() {
       requestedMode: res.requestedMode || modeForRequest,
       suggestedMode: res.suggestedMode
     })
+    const feedAction = modeForRequest === 'chat' ? 'chat' : 'reply'
+    feedPet(feedAction)
     activeChatMode.value = 'chat'
   } catch (e: any) {
     errorMsg.value = getPetChatErrorMessage(e, '网络异常，请稍后重试')

@@ -5,6 +5,7 @@
 import app, { callFunction, auth, storage, ensureCloudAuthReady } from './cloudbase'
 import { resetCloudAuthState } from './cloudbase'
 import { normalizeAvatarValue, resolveAvatarSrc } from './avatar'
+import { feedPet } from './helpers'
 
 function toTimestamp(value: any): number | null {
   if (!value) return null
@@ -664,7 +665,7 @@ export async function createTimeline(data: {
   })
   if (res.result?.success) {
     try {
-      uni.setStorageSync('lastRecordDate', new Date().toISOString())
+      feedPet('record')
       uni.setStorageSync('justRecorded', true)
     } catch {}
   }

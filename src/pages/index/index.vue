@@ -333,6 +333,7 @@
         </view>
 
         <view class="pet-sprite-viewport"
+          :class="petRunPhase === 'right' ? 'pet-run-right' : petRunPhase === 'left' ? 'pet-run-left' : ''"
           @touchstart="onPetTouchStart"
           @touchend="onPetTouchEnd"
           @touchcancel="onPetTouchCancel"
@@ -349,16 +350,16 @@
         </view>
 
         <!-- Reaction bubble takes priority over system message bubble -->
-        <view v-if="petReactionMsg" class="pet-bubble reaction">
+        <view v-if="petReactionMsg && !petIsRunning" class="pet-bubble reaction">
           <text class="pet-bubble-text">{{ petReactionMsg }}</text>
         </view>
-        <view v-else-if="petMsg" class="pet-bubble">
+        <view v-else-if="petMsg && !petIsRunning" class="pet-bubble">
           <text class="pet-bubble-text">{{ petMsg }}</text>
         </view>
       </view>
 
       <!-- Pet Speak Sheet -->
-      <PetSpeakSheet :visible="showSpeakSheet" :pet-name="selectedPet.displayName" :case-id="activeCaseId" @close="showSpeakSheet = false" />
+      <PetSpeakSheet :visible="showSpeakSheet" :pet-name="selectedPet.displayName" :case-id="activeCaseId" @close="onSpeakSheetClose" />
     </block>
     </block>
 
@@ -392,12 +393,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { onHide, onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
-import { bumpDataVersion, combineDateAndTimeToISOString, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
+import { bumpDataVersion, combineDateAndTimeToISOString, decayPetEnergy, feedPet, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, readPetEnergy, setActiveCaseId, setPendingTimelineContext, showError, showSuccess, writePetEnergy } from '@/utils/helpers'
 import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
@@ -420,6 +421,7 @@ const petLines: Record<PetScene, { state: string; message: string }> = {
   risk:                { state: 'failed',   message: '这里要慢一点，别只看甜的部分。' },
   positive:            { state: 'jumping',  message: '这次确实比之前更有动作。' },
   insufficient_balance:{ state: 'failed',   message: '这次我算不动啦，先补一点额度再继续分析。' },
+  ai_error:            { state: 'failed',   message: '后台出错了，等一下再试试。' },
 }
 
 function getPetPresentation(scene: PetScene) {
@@ -504,8 +506,8 @@ function shortId(value: any) {
 }
 
 function indexAILog(stage: string, payload: Record<string, any> = {}) {
-  void stage
-  void payload
+  const ts = new Date().toISOString().slice(11, 23)
+  console.log(`[${ts}][ai] ${stage}`, JSON.stringify(payload))
 }
 
 const subjectRoleOptions = [
@@ -1118,6 +1120,7 @@ function resetPetInteraction() {
 }
 
 function onPetTouchStart() {
+  if (petIsRunning.value) return
   petTouchStartTime = Date.now()
   if (petLongPressTimer) clearTimeout(petLongPressTimer)
   petLongPressTimer = setTimeout(() => {
@@ -1127,6 +1130,7 @@ function onPetTouchStart() {
 }
 
 function onPetTouchEnd() {
+  if (petIsRunning.value) return
   if (petLongPressTimer) { clearTimeout(petLongPressTimer); petLongPressTimer = null }
   const duration = Date.now() - petTouchStartTime
   if (duration >= 500) return  // long press already handled
@@ -1144,10 +1148,15 @@ function onPetTouchEnd() {
     spawnHeartRain()
     showPetReaction('tap3')
     startPetAnim('jumping')
-    // Alternate to review after jumping finishes (~625ms), then back to idle
-    setTimeout(() => {
-      if (petTapCount.value === 0 && !petScene.value) startPetAnim('review')
-    }, 700)
+    feedPet('petting')
+    syncPetScore()
+    const didRun = checkAndRunPet()
+    // Alternate to review after jumping finishes (~625ms), then back to idle — unless running
+    if (!didRun) {
+      setTimeout(() => {
+        if (!petIsRunning.value && petTapCount.value === 0 && !petScene.value) startPetAnim('review')
+      }, 700)
+    }
     petTapCount.value = 0
     if (petTapTimer) { clearTimeout(petTapTimer); petTapTimer = null }
   } else if (petTapCount.value === 2) {
@@ -1176,6 +1185,73 @@ function stopPetInteraction() {
   hearts.value = []
 }
 // ---- end pet petting ----
+
+// ---- pet energy & run animation ----
+const petScore = ref(60)
+const petIsRunning = ref(false)
+const petRunPhase = ref<'right' | 'left' | null>(null)
+
+function syncPetScore() {
+  petScore.value = readPetEnergy().score
+}
+
+function refreshPetMood(force: boolean) {
+  // 临时状态（petScene）不覆盖，除非 force
+  if (!force && petScene.value) return
+  const mood = getPetMood()
+  petMsg.value = mood.message
+  // 新用户提示
+  if (cases.value.length === 0) petMsg.value += ' 点我试试~'
+  petState.value = mood.sprite
+  startPetAnim(mood.sprite)
+}
+
+function checkAndRunPet(): boolean {
+  const energy = readPetEnergy()
+  if (energy.score < 100) return false
+  if (petIsRunning.value) return false
+  if (Date.now() - energy.lastRunAt < 30 * 60 * 1000) return false
+  console.log(`[pet][run] 100→85 lastRunAt=${energy.lastRunAt}`)
+  // 立刻落分值 + 标记，不等动画结束
+  energy.score = 85
+  energy.lastRunAt = Date.now()
+  energy.updatedAt = Date.now()
+  writePetEnergy(energy)
+  petScore.value = 85
+  petIsRunning.value = true
+  startRunAnimation()
+  return true
+}
+
+function startRunAnimation() {
+  petIsRunning.value = true
+  // 第一段：从左跑到右
+  petState.value = 'running-right'
+  startPetAnim('running-right')
+  petRunPhase.value = 'right'
+  setTimeout(async () => {
+    // 清空 class → nextTick 等一帧，让渲染引擎感知重置
+    petRunPhase.value = null
+    await nextTick()
+    // 第二段：从右跑回左
+    petState.value = 'running-left'
+    startPetAnim('running-left')
+    petRunPhase.value = 'left'
+    setTimeout(() => {
+      petIsRunning.value = false
+      petRunPhase.value = null
+      syncPetScore()
+      refreshPetMood(true)
+    }, 1500)
+  }, 1500)
+}
+
+function onSpeakSheetClose() {
+  showSpeakSheet.value = false
+  syncPetScore()
+  if (!checkAndRunPet()) refreshPetMood(false)
+}
+// ---- end pet energy ----
 
 const showPetBar = ref(true)
 const petAssetsVersion = ref(0)
@@ -1348,33 +1424,24 @@ onShow(() => {
   applyThemeChrome()
   syncPetBarPref()
   syncSelectedPet()
-  // 小咪情绪联动：根据 lastRecordDate 显示初始文案
+  // 精力衰减 + 情绪刷新
+  decayPetEnergy()
+  syncPetScore()
   const justRecorded = !!uni.getStorageSync('justRecorded')
-  if (!petMsg.value) {
-    if (justRecorded) {
-      petMsg.value = '记上了！小咪在帮你分析…'
-      petState.value = 'running'
-      startPetAnim('running')
-      uni.removeStorageSync('justRecorded')
-      // 2 秒后切回正常情绪
-      setTimeout(() => {
-        const mood = getPetMood()
-        petMsg.value = mood.message
-        startPetAnim(mood.sprite)
-      }, 2000)
-    } else {
-      const mood = getPetMood()
-      let msg = mood.message
-      // 新用户（无记录）：提示宠物可点击
-      if (cases.value.length === 0) {
-        msg = mood.message + ' 点我试试~'
-      }
-      petMsg.value = msg
-      petState.value = mood.sprite
-      startPetAnim(mood.sprite)
-      // 异步检查是否需要分享提醒（不阻塞主流程）
-      checkShareNudge()
-    }
+  if (justRecorded) {
+    petMsg.value = '记上了！小咪在帮你分析…'
+    petState.value = 'running'
+    startPetAnim('running')
+    uni.removeStorageSync('justRecorded')
+    // 2 秒后检查跑屏，没跑成则强制刷新 mood
+    setTimeout(() => {
+      syncPetScore()
+      if (!checkAndRunPet()) refreshPetMood(false)
+    }, 2000)
+  } else if (!petMsg.value || !petScene.value) {
+    // 非临时状态时强制刷新 mood（处理衰减后的精灵图/文案变化）
+    refreshPetMood(false)
+    checkShareNudge()
   } else {
     startPetAnim(petState.value || 'idle')
   }
@@ -2537,6 +2604,20 @@ function goTaohua() {
   overflow: hidden;
   flex-shrink: 0;
   pointer-events: auto;
+}
+.v2-mode .pet-sprite-viewport.pet-run-right {
+  animation: petRunRight 1.5s ease-in-out forwards;
+}
+.v2-mode .pet-sprite-viewport.pet-run-left {
+  animation: petRunLeft 1.5s ease-in-out forwards;
+}
+@keyframes petRunRight {
+  from { transform: translateX(-100vw); }
+  to   { transform: translateX(100vw); }
+}
+@keyframes petRunLeft {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100vw); }
 }
 .v2-mode .pet-sprite-sheet {
   display: block;

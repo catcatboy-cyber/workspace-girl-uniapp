@@ -333,19 +333,133 @@ export interface PetMood {
   emoji: string; message: string; sprite: string
 }
 
-export function getPetMood(): PetMood {
-  const KEY = 'lastRecordDate'
-  let days = 999
-  try {
-    const v = uni.getStorageSync(KEY)
-    if (v) { const d = new Date(v); if (!isNaN(d.getTime())) days = Math.floor((Date.now() - d.getTime()) / 86400000) }
-  } catch {}
-  if (days === 0) return { emoji: '😄', message: '今天又看清了一点！', sprite: 'jumping' }
-  if (days === 1) return { emoji: '😐', message: '昨天没记哦，今天有新发现吗？', sprite: 'waving' }
-  if (days <= 3) return { emoji: '😞', message: '好几天没记录了，我还醒着呢…', sprite: 'waiting' }
-  return { emoji: '💀', message: '再不来记我就要消失了…', sprite: 'failed' }
+// ====== 宠物精力值系统 ======
+
+const PET_ENERGY_KEY = 'petEnergy'
+const DECAY_INTERVAL_MS = 4 * 60 * 60 * 1000  // 4 小时
+const DECAY_PER_STEP = 5
+
+interface PetEnergy {
+  score: number
+  updatedAt: number
+  lastRunAt: number
+  dailyCounts: {
+    date: string
+    record: number
+    chat: number
+    petting: number
+    reply: number
+  }
 }
 
+function getLocalDateKey(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function defaultPetEnergy(): PetEnergy {
+  return {
+    score: 60,
+    updatedAt: Date.now(),
+    lastRunAt: 0,
+    dailyCounts: { date: getLocalDateKey(), record: 0, chat: 0, petting: 0, reply: 0 }
+  }
+}
+
+export function readPetEnergy(): PetEnergy {
+  try {
+    const raw = uni.getStorageSync(PET_ENERGY_KEY)
+    if (raw && typeof raw === 'object' && typeof raw.score === 'number') {
+      const energy = raw as PetEnergy
+      // 归一化：补齐可能缺失的字段，防止旧版本或损坏数据导致 crash
+      energy.score = Math.max(0, Math.min(100, Math.round(energy.score)))
+      if (typeof energy.updatedAt !== 'number' || !isFinite(energy.updatedAt)) energy.updatedAt = Date.now()
+      if (typeof energy.lastRunAt !== 'number' || !isFinite(energy.lastRunAt)) energy.lastRunAt = 0
+      if (!energy.dailyCounts || typeof energy.dailyCounts !== 'object' || typeof energy.dailyCounts.date !== 'string') {
+        energy.dailyCounts = { date: getLocalDateKey(), record: 0, chat: 0, petting: 0, reply: 0 }
+      }
+      return energy
+    }
+  } catch {}
+  return defaultPetEnergy()
+}
+
+export function writePetEnergy(energy: PetEnergy): void {
+  try { uni.setStorageSync(PET_ENERGY_KEY, energy) } catch {}
+}
+
+// ====== 精力值 → 情绪映射 ======
+
+export function getPetMood(): PetMood {
+  const energy = readPetEnergy()
+  const score = energy.score
+  if (score >= 80) return { emoji: '\u{1F604}', message: '今天状态超好！想记什么？', sprite: 'jumping' }
+  if (score >= 50) return { emoji: '\u{1F642}', message: '嗯，在呢。今天有什么新发现？', sprite: 'idle' }
+  if (score >= 25) return { emoji: '\u{1F615}', message: '有点没精神…来陪陪我吧', sprite: 'waiting' }
+  return { emoji: '\u{1F480}', message: '我有点没精神，来陪我一下吧', sprite: 'failed' }
+}
+
+// ====== 加分 ======
+
+const FEED_BONUS: Record<string, number> = {
+  record: 30,
+  chat: 15,
+  reply: 10,
+  petting: 10
+}
+
+const FEED_DAILY_CAP: Record<string, number> = {
+  record: 3,
+  chat: 3,
+  reply: 3,
+  petting: 2
+}
+
+export function feedPet(action: 'record' | 'chat' | 'petting' | 'reply'): number {
+  const energy = readPetEnergy()
+  const today = getLocalDateKey()
+
+  // 跨天重置
+  if (energy.dailyCounts.date !== today) {
+    energy.dailyCounts = { date: today, record: 0, chat: 0, petting: 0, reply: 0 }
+  }
+
+  const cap = FEED_DAILY_CAP[action] ?? 0
+  if (energy.dailyCounts[action] >= cap) return energy.score
+
+  const bonus = FEED_BONUS[action] ?? 0
+  energy.score = Math.min(100, energy.score + bonus)
+  energy.dailyCounts[action]++
+  energy.updatedAt = Date.now()
+  writePetEnergy(energy)
+  console.log(`[pet][feed] ${action} +${bonus} → score=${energy.score}`)
+  return energy.score
+}
+
+// ====== 衰减 ======
+
+export function decayPetEnergy(): number {
+  const energy = readPetEnergy()
+  const elapsed = Date.now() - energy.updatedAt
+  const decaySteps = Math.floor(elapsed / DECAY_INTERVAL_MS)
+  const decay = decaySteps * DECAY_PER_STEP
+
+  if (decay > 0) {
+    energy.score = Math.max(0, energy.score - decay)
+    // 保留不足 4h 的余量，防止短间隔重复扣分
+    energy.updatedAt = Date.now() - (elapsed % DECAY_INTERVAL_MS)
+    writePetEnergy(energy)
+    console.log(`[pet][decay] -${decay} (${Math.round(elapsed / 3600000)}h elapsed) → score=${energy.score}`)
+  }
+  return energy.score
+}
+
+// ====== 记录事件 ======
+
 export function markLastRecordDate() {
+  feedPet('record')
   try { uni.setStorageSync('lastRecordDate', new Date().toISOString()) } catch {}
 }
