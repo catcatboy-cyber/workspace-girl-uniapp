@@ -358,7 +358,7 @@
       </view>
 
       <!-- Pet Speak Sheet -->
-      <PetSpeakSheet :visible="showSpeakSheet" :pet-name="selectedPet.displayName" @close="showSpeakSheet = false" />
+      <PetSpeakSheet :visible="showSpeakSheet" :pet-name="selectedPet.displayName" :case-id="activeCaseId" @close="showSpeakSheet = false" />
     </block>
     </block>
 

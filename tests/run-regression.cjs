@@ -416,6 +416,82 @@ async function main() {
     assert.equal(result.required, 700)
   })
 
+  await runCase('petLines loadHistory returns owned case and last 20 pet chat messages', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const petLines = loadFunction('petLines')
+
+    asUser(fake, 'user_pet_chat_owner')
+    const users = fake.__store.getCollection('users')
+    Object.assign(users.get('user_pet_chat_owner'), {
+      petChatHistory: Array.from({ length: 24 }, (_, index) => ({
+        id: `m_${index}`,
+        role: index % 2 === 0 ? 'user' : 'pet',
+        caseId: 'case_pet_chat_owned',
+        text: `message ${index}`,
+        time: new Date(2026, 6, 8, 12, index)
+      })).concat([
+        {
+          id: 'other_case_message',
+          role: 'pet',
+          caseId: 'case_pet_chat_other',
+          text: 'other case should not leak',
+          time: new Date(2026, 6, 8, 13, 0)
+        }
+      ])
+    })
+    fake.__store.getCollection('cases').set('case_pet_chat_owned', {
+      _id: 'case_pet_chat_owned',
+      userId: 'user_pet_chat_owner',
+      name: '小王',
+      profile: { constellation: '天蝎座', zodiac: '蛇' }
+    })
+    fake.__store.getCollection('cases').set('case_pet_chat_other', {
+      _id: 'case_pet_chat_other',
+      userId: 'user_other',
+      name: '不该看到的人',
+      profile: {}
+    })
+
+    const owned = await petLines({ action: 'loadhistory', caseId: 'case_pet_chat_owned' })
+    assert.equal(owned.success, true)
+    assert.equal(owned.history.length, 20)
+    assert.equal(owned.history[0].text, 'message 4')
+    assert.equal(owned.activeCase.name, '小王')
+    assert.equal(owned.activeCase.constellation, '天蝎座')
+
+    const forbidden = await petLines({ action: 'loadhistory', caseId: 'case_pet_chat_other' })
+    assert.equal(forbidden.success, true)
+    assert.equal(forbidden.history.length, 0)
+    assert.equal(forbidden.activeCase, null)
+  })
+
+  await runCase('petLines chatMessage uses token gate without featureAccess gate', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const petLines = loadFunction('petLines')
+
+    asUser(fake, 'user_pet_chat_empty')
+    Object.assign(fake.__store.getCollection('users').get('user_pet_chat_empty'), {
+      plan: 'free',
+      monthlyTokensUsed: 30000,
+      extraTokens: 0
+    })
+
+    const result = await petLines({
+      action: 'chatMessage',
+      sessionId: 'session_regression',
+      text: '对方突然冷淡了，我该怎么回？',
+      messages: [{ role: 'user', text: '对方突然冷淡了，我该怎么回？' }]
+    })
+
+    assert.equal(result.success, false)
+    assert.equal(result.code, 'TOKEN_INSUFFICIENT')
+    assert.equal(result.required, 700)
+  })
+
   await runCase('AI settings save and masked readback work', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)
@@ -1049,6 +1125,57 @@ async function main() {
       .filter((item) => item.userId === 'user_refund_owner' && item.source === 'refund')
     assert.equal(records.length, 1)
     assert.equal(records[0].amount, -5000)
+  })
+
+  await runCase('register writes welcome grant to call_usage_records', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const register = loadFunction('register')
+    const result = await register({ email: 'welcometest@example.com', password: 'password123' })
+    assert.equal(result.success, true)
+
+    const grantRecords = fake.__store.dumpCollection('call_usage_records')
+      .filter((item) => item.userId === result.userId && item.type === 'grant' && item.source === 'welcome')
+    assert.equal(grantRecords.length, 1)
+    assert.equal(grantRecords[0].amountTokens, 1000000)
+    assert.equal(grantRecords[0].remark, '新用户首次赠送')
+  })
+
+  await runCase('trial user: checkTokenBalance returns monthlyLimit=0 and consumeTokens deducts extraTokens', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    asUser(fake, 'user_trial_smoke')
+    const now = new Date()
+    const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    Object.assign(fake.__store.getCollection('users').get('user_trial_smoke'), {
+      plan: 'free',
+      trialEndsAt: trialEnd,
+      monthlyTokensUsed: 0,
+      extraTokens: 500000
+    })
+
+    const db = fake.init().database()
+
+    // 1. checkTokenBalance
+    const { checkTokenBalance } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
+    const checkResult = await checkTokenBalance(db, 'user_trial_smoke', 800)
+    assert.equal(checkResult.ok, true)
+    // 试用期 monthlyLimit 应为 0，余额来自 extraTokens
+    const userAfterCheck = fake.__store.getCollection('users').get('user_trial_smoke')
+    assert.equal(userAfterCheck.extraTokens, 500000)
+
+    // 2. consumeTokens — 应该扣 extraTokens 而不是 monthlyTokensUsed
+    const { consumeTokens } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
+    const consumeResult = await consumeTokens(db, 'user_trial_smoke', 800, 'quickRead', 'test-model', { totalTokens: 800, promptTokens: 560, completionTokens: 240 })
+    assert.ok(consumeResult.deducted > 0)
+    assert.equal(consumeResult.fromMonthly, 0)
+    assert.equal(consumeResult.fromExtra, 800)
+
+    const userAfterConsume = fake.__store.getCollection('users').get('user_trial_smoke')
+    assert.equal(userAfterConsume.monthlyTokensUsed, 0)
+    assert.equal(userAfterConsume.extraTokens, 499200)
   })
 
   if (process.exitCode && process.exitCode !== 0) {

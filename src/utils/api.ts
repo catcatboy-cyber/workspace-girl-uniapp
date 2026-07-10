@@ -699,18 +699,40 @@ export async function generateReplyStrategy(content: string, scene?: string) {
   return res.result
 }
 
-export async function generatePetReplyPair(scene: string, content: string, tone?: string) {
+export async function generatePetReplyPair(scene: string, content: string, tone?: string, caseId?: string) {
   const res = await callFunction({
     name: 'petLines',
-    data: { action: 'replyPair', scene, content, tone, ...getBusinessAuthPayload() }
+    data: { action: 'replyPair', scene, content, tone, caseId: caseId || '', ...getBusinessAuthPayload() }
   })
   return res.result
 }
 
-export async function generatePetReplyBundle(scene: string, content: string) {
+export async function generatePetReplyBundle(scene: string, content: string, caseId?: string) {
   const res = await callFunction({
     name: 'petLines',
-    data: { action: 'replyBundle', scene, content, ...getBusinessAuthPayload() }
+    data: { action: 'replyBundle', scene, content, caseId: caseId || '', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function loadPetChatHistory(caseId?: string) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'loadHistory', caseId: caseId || '', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function petChatMessage(data: {
+  sessionId: string
+  text: string
+  messages?: Array<{ role: 'user' | 'pet'; text: string }>
+  caseId?: string
+  mode?: 'chat' | 'reply' | 'initiate' | 'strategy'
+}) {
+  const res = await callFunction({
+    name: 'petLines',
+    data: { action: 'chatMessage', ...data, caseId: data.caseId || '', ...getBusinessAuthPayload() }
   })
   return res.result
 }

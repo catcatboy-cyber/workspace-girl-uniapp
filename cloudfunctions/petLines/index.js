@@ -23,10 +23,15 @@ const PET_QA_USAGE_FEATURE = 'petQaStrategy'
 const PET_STRATEGY_USAGE_FEATURE = 'petReplyStrategy'
 const PET_TAGGING_USAGE_FEATURE = 'petLineTagging'
 const PET_QA_TAGGING_USAGE_FEATURE = 'petQaStrategyTagging'
+const PET_CHAT_USAGE_FEATURE = 'petChat'
+const PET_CHAT_EST_TOKENS = 700
+const PET_CHAT_MAX_HISTORY = 40
+const PET_CHAT_CONTEXT_TTL_MS = 10 * 60 * 1000
 const QA_HISTORY_COLLECTION = 'user_qa_history'
 const QA_MAX_HISTORY = 80
 const QA_AI_TRIGGER_COUNT = 20
 const QA_AI_INTERVAL = 5
+const petChatContextCache = new Map()
 
 function getUsageTotalTokens(usage, fallback = 0) {
   const promptTokens = Number(usage?.prompt_tokens ?? usage?.input_tokens ?? 0)
@@ -134,7 +139,8 @@ async function fetchUserSelfProfile(userId) {
   if (!userId) return null
   try {
     const res = await db.collection('users').doc(userId).get().catch(() => null)
-    return res?.data?.selfProfile || null
+    const user = Array.isArray(res?.data) ? res.data[0] : res?.data
+    return user?.selfProfile || null
   } catch {
     return null
   }
@@ -384,6 +390,19 @@ function aiHttpRequest(urlStr, body, timeoutMs, apiKey) {
   })
 }
 
+function parseJsonObjectFromAI(raw) {
+  const content = String(raw || '').replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
+  if (!content) return null
+  try {
+    return JSON.parse(content)
+  } catch {}
+  const match = content.match(/\{[\s\S]*\}/)
+  if (match) {
+    try { return JSON.parse(match[0]) } catch {}
+  }
+  return null
+}
+
 // ========== reply (单句，兼容旧版) ==========
 
 async function generateReply(eventDesc, eventType, userId, isMinor) {
@@ -540,7 +559,8 @@ async function generateReplyPair(scene, content, userId, tone, safetyContext) {
     ? `{"variants":{"${targetTone}":"一句可直接发送的话"}}`
     : '{"variants":{"humor":"幽默轻松","flirty":"暧昧轻撩","sincere":"真诚直接","literary":"委婉文艺"}}'
   const baseSystemPrompt = cfg.systemPrompt || DEFAULT_PET_SPEAK_CONFIG.reply.systemPrompt
-  const systemPrompt = buildReplySystemPrompt(baseSystemPrompt, jsonShape)
+  const contextPrompt = buildReplyToolContextPrompt(safetyContext?.toolContext)
+  const systemPrompt = [buildReplySystemPrompt(baseSystemPrompt, jsonShape), contextPrompt].filter(Boolean).join('\n\n')
   let userPrompt = ''
   if (scene === 'active') {
     userPrompt = `用户想主动对心仪对象说一句话。\n想表达的意思：${content.slice(0, 200)}\n\n参考话术：\n${inspText}\n\n请按以下语气生成：\n${toneLines}`
@@ -1127,9 +1147,7 @@ async function tagQAStrategies(userId) {
 async function generateReplyStrategy(content, userId, scene = 'reply', safetyContext) {
   const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
   const settings = settingsRes?.data?.[0]
-  const ai = normalizeAISettingsForReply(settings || {})
   const cfg = getPetSpeakConfig(settings || {}, 'replyStrategy', safetyContext)
-  if (!ai.enabled || !ai.apiKey) return { success: false, message: 'AI 配置未启用或缺少 API Key' }
 
   if (userId) {
     const strategyAccess = await checkFeatureAccess(db, userId, PET_STRATEGY_ACCESS_FEATURE)
@@ -1189,47 +1207,817 @@ JSON 格式：
   } else if (safetyContext?.boundarySensitive) {
     systemPrompt = `【边界提醒】当前对话涉及敏感话题。不要替用户同意任何行为，优先提醒尊重、节奏和安全。\n\n` + systemPrompt
   }
+  const contextPrompt = buildReplyToolContextPrompt(safetyContext?.toolContext)
+  if (contextPrompt) systemPrompt += `\n\n${contextPrompt}`
 
   const userPrompt = isActiveScene
     ? `用户想主动表达：${content.slice(0, 300)}\n\n请生成"先冷后甜"和"投石问路"两种多轮策略。`
     : `对方说的话：${content.slice(0, 300)}\n\n请生成"先冷后甜"和"顺水推舟"两种多轮策略。`
 
-  const baseUrl = ai.baseUrl.replace(/\/+$/, '')
-  const urls = [`${baseUrl}/v1/chat/completions`, `${baseUrl}/chat/completions`]
+  return tryWithModelFallback(async (model) => {
+    const baseUrl = model.baseUrl.replace(/\/+$/, '')
+    const urls = [`${baseUrl}/v1/chat/completions`, `${baseUrl}/chat/completions`]
 
-  for (const url of urls) {
-    try {
-      const resp = await aiHttpRequest(url, {
-        model: ai.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: cfg.temperature,
-        max_tokens: cfg.maxTokens,
-        response_format: { type: 'json_object' }
-      }, REPLY_TIMEOUT_MS, ai.apiKey)
+    for (const url of urls) {
+      try {
+        const resp = await aiHttpRequest(url, {
+          model: model.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: cfg.temperature,
+          max_tokens: cfg.maxTokens,
+          response_format: { type: 'json_object' }
+        }, REPLY_TIMEOUT_MS, model.apiKey)
 
-      if (resp.status === 404) continue
-      const data = await resp.json().catch(() => null)
-      const raw = data?.choices?.[0]?.message?.content || ''
-      const parsed = JSON.parse(raw)
-
-      if (parsed?.strategies && Array.isArray(parsed.strategies)) {
-        const valid = parsed.strategies.filter(s =>
-          s.type && s.label && Array.isArray(s.turns) && s.turns.length >= 2
-        )
-        if (valid.length > 0) {
-          if (userId) await recordPetTokenUsage(userId, getUsageTotalTokens(data?.usage, REPLY_STRATEGY_EST_TOKENS), ai.model, data?.usage, PET_STRATEGY_USAGE_FEATURE)
-          return { success: true, strategies: valid }
+        if (resp.status === 404) continue
+        if (!resp.ok) {
+          const errText = await resp.text().catch(() => '')
+          console.error('generateReplyStrategy http error:', resp.status, errText.slice(0, 160))
+          return { success: false, message: `AI 返回 ${resp.status}` }
         }
+        const data = await resp.json().catch(() => null)
+        const raw = data?.choices?.[0]?.message?.content || ''
+        const parsed = parseJsonObjectFromAI(raw)
+
+        if (parsed?.strategies && Array.isArray(parsed.strategies)) {
+          const valid = parsed.strategies.filter(s =>
+            s.type && s.label && Array.isArray(s.turns) && s.turns.length >= 2
+          )
+          if (valid.length > 0) {
+            const realTokens = getUsageTotalTokens(data?.usage, REPLY_STRATEGY_EST_TOKENS)
+            if (userId) await recordPetTokenUsage(userId, realTokens, model.model, data?.usage, PET_STRATEGY_USAGE_FEATURE)
+            await recordModelTokenUsage(model.id, realTokens, data?.usage)
+            return { success: true, strategies: valid }
+          }
+          console.error('generateReplyStrategy invalid strategies:', JSON.stringify(parsed.strategies).slice(0, 200))
+          return { success: false, message: 'AI 生成策略格式无效' }
+        }
+
+        console.error('generateReplyStrategy parse empty:', raw.slice(0, 200))
+        return { success: false, message: 'AI 生成策略解析失败' }
+      } catch (e) {
+        console.error('generateReplyStrategy error:', e?.message?.slice(0, 100))
+        return { success: false, message: e?.message || 'AI 生成策略失败' }
       }
+    }
+
+    return { success: false, message: 'AI 生成策略失败，请重试' }
+  })
+}
+
+function getFallbackReplyStrategies(scene = 'reply') {
+  if (scene === 'active') {
+    return [
+      {
+        type: 'contrast',
+        label: '\u5148\u51b7\u540e\u751c',
+        turns: [
+          {
+            step: 1,
+            say: '\u672c\u6765\u4e0d\u60f3\u8fd9\u4e48\u4e3b\u52a8\u7684\uff0c\u4f46\u60f3\u60f3\u8fd8\u662f\u60f3\u95ee\u4f60\u4e00\u53e5\u3002',
+            note: '\u5148\u628a\u538b\u529b\u653e\u4f4e\uff0c\u8ba9\u5bf9\u65b9\u611f\u89c9\u4f60\u662f\u8f7b\u8f7b\u629b\u51fa\u8bdd\u9898\u3002',
+            expectReactions: ['\u4f60\u60f3\u95ee\u4ec0\u4e48\uff1f', '\u600e\u4e48\u7a81\u7136\u8fd9\u4e48\u8bf4\uff1f']
+          },
+          {
+            step: 2,
+            say: '\u4f60\u6700\u8fd1\u6709\u7a7a\u5417\uff1f\u6211\u60f3\u627e\u4e2a\u8f7b\u677e\u70b9\u7684\u65f6\u95f4\u89c1\u4f60\u3002',
+            note: '\u987a\u52bf\u8bf4\u51fa\u771f\u5b9e\u610f\u56fe\uff0c\u4f46\u4e0d\u7ed9\u5bf9\u65b9\u538b\u529b\u3002',
+            expectReactions: ['\u53ef\u4ee5\u554a', '\u6211\u770b\u770b\u65f6\u95f4', '\u6700\u8fd1\u53ef\u80fd\u6709\u70b9\u5fd9']
+          }
+        ]
+      },
+      {
+        type: 'progressive',
+        label: '\u6295\u77f3\u95ee\u8def',
+        turns: [
+          {
+            step: 1,
+            say: '\u6211\u521a\u597d\u60f3\u5230\u4e00\u4ef6\u4e8b\uff0c\u60f3\u542c\u542c\u4f60\u7684\u770b\u6cd5\u3002',
+            note: '\u5148\u7528\u8f7b\u8bdd\u9898\u8bd5\u63a2\u5bf9\u65b9\u7684\u63a5\u8bdd\u610f\u613f\u3002',
+            expectReactions: ['\u4ec0\u4e48\u4e8b\uff1f', '\u4f60\u8bf4\u8bf4\u770b']
+          },
+          {
+            step: 2,
+            say: '\u5982\u679c\u4f60\u4e5f\u6709\u5174\u8da3\uff0c\u6211\u4eec\u53ef\u4ee5\u627e\u4e2a\u65f6\u95f4\u8fb9\u804a\u8fb9\u8bf4\u3002',
+            note: '\u5728\u5bf9\u65b9\u613f\u610f\u63a5\u8bdd\u540e\uff0c\u628a\u4e92\u52a8\u63a8\u5230\u66f4\u5177\u4f53\u7684\u4e00\u6b65\u3002',
+            expectReactions: ['\u597d\u554a', '\u4ec0\u4e48\u65f6\u5019\uff1f', '\u6211\u518d\u60f3\u60f3']
+          }
+        ]
+      }
+    ]
+  }
+
+  return [
+    {
+      type: 'contrast',
+      label: '\u5148\u51b7\u540e\u751c',
+      turns: [
+        {
+          step: 1,
+          say: '\u4f60\u8fd9\u53e5\u8ba9\u6211\u6709\u70b9\u60f3\u7b11\uff0c\u4f46\u53c8\u786e\u5b9e\u633a\u5728\u610f\u7684\u3002',
+          note: '\u5148\u7528\u8f7b\u677e\u7684\u53cd\u5e94\u63a5\u4f4f\u5bf9\u65b9\uff0c\u4e0d\u4e00\u4e0a\u6765\u5c31\u628a\u60c5\u7eea\u8bf4\u6ee1\u3002',
+          expectReactions: ['\u4f60\u7b11\u4ec0\u4e48\uff1f', '\u4f60\u5728\u610f\u4ec0\u4e48\uff1f']
+        },
+        {
+          step: 2,
+          say: '\u90a3\u6211\u8ba4\u771f\u56de\u4f60\u4e00\u53e5\uff1a\u6211\u5176\u5b9e\u633a\u60f3\u542c\u4f60\u591a\u8bf4\u4e00\u70b9\u3002',
+          note: '\u7b2c\u4e8c\u6b65\u518d\u8868\u8fbe\u771f\u8bda\u5174\u8da3\uff0c\u8ba9\u5bf9\u65b9\u6709\u7ee7\u7eed\u8bf4\u7684\u7a7a\u95f4\u3002',
+          expectReactions: ['\u90a3\u6211\u8ddf\u4f60\u8bf4', '\u4f60\u60f3\u542c\u4ec0\u4e48\uff1f', '\u6211\u4e5f\u4e0d\u77e5\u9053\u600e\u4e48\u8bf4']
+        }
+      ]
+    },
+    {
+      type: 'progressive',
+      label: '\u987a\u6c34\u63a8\u821f',
+      turns: [
+        {
+          step: 1,
+          say: '\u90a3\u6211\u987a\u7740\u4f60\u8fd9\u53e5\u8bdd\u95ee\u4e00\u53e5\uff0c\u4f60\u73b0\u5728\u662f\u600e\u4e48\u60f3\u7684\uff1f',
+          note: '\u987a\u7740\u5bf9\u65b9\u7684\u8bdd\u7ee7\u7eed\u95ee\uff0c\u628a\u4e3b\u52a8\u6743\u8f7b\u8f7b\u4ea4\u7ed9\u5bf9\u65b9\u3002',
+          expectReactions: ['\u6211\u662f\u89c9\u5f97...', '\u6211\u4e5f\u8bf4\u4e0d\u6e05', '\u4f60\u5148\u8bf4\u4f60\u600e\u4e48\u60f3']
+        },
+        {
+          step: 2,
+          say: '\u5982\u679c\u4f60\u613f\u610f\u8bf4\uff0c\u6211\u60f3\u628a\u8fd9\u4ef6\u4e8b\u597d\u597d\u63a5\u4f4f\u3002',
+          note: '\u7ed9\u5bf9\u65b9\u4e00\u4e2a\u5b89\u5fc3\u7684\u53f0\u9636\uff0c\u8ba9\u5bf9\u8bdd\u66f4\u5bb9\u6613\u5f80\u4e0b\u8d70\u3002',
+          expectReactions: ['\u597d\uff0c\u90a3\u6211\u8bf4', '\u6211\u9700\u8981\u60f3\u60f3', '\u8c22\u8c22\u4f60\u8fd9\u4e48\u8bf4']
+        }
+      ]
+    }
+  ]
+}
+
+function resolveReplyStrategies(strategyResult, scene = 'reply') {
+  if (strategyResult?.success && Array.isArray(strategyResult.strategies) && strategyResult.strategies.length) {
+    return strategyResult.strategies
+  }
+  return getFallbackReplyStrategies(scene)
+}
+
+function getReplyStrategySource(strategyResult) {
+  return strategyResult?.success && Array.isArray(strategyResult.strategies) && strategyResult.strategies.length
+    ? 'ai'
+    : 'fallback'
+}
+
+// ========== petChat (对话式宠物聊天) ==========
+
+function firstDoc(res) {
+  if (Array.isArray(res?.data)) return res.data[0] || null
+  return res?.data || null
+}
+
+function cleanChatText(value, max = 800) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max)
+}
+
+function normalizeChatCaseId(caseId) {
+  return cleanChatText(caseId, 80) || 'global'
+}
+
+function normalizeChatMessages(messages) {
+  if (!Array.isArray(messages)) return []
+  return messages
+    .map((item) => {
+      const role = item?.role === 'pet' || item?.role === 'assistant' ? 'pet' : 'user'
+      const text = cleanChatText(item?.text || item?.content, 800)
+      return text ? { role, text } : null
+    })
+    .filter(Boolean)
+    .slice(-6)
+}
+
+function normalizePetHistory(history) {
+  if (!Array.isArray(history)) return []
+  return history
+    .map((item) => {
+      const role = item?.role === 'user' ? 'user' : 'pet'
+      let text = cleanChatText(item?.text || item?.content, 800)
+      if (role === 'pet' && text === '我按旧版多轮策略帮你拆好了，先从第一步低压力开口开始。') {
+        text = '可以参考下面两种推进方式，挑最顺手的一句发。'
+      }
+      if (!text) return null
+      return {
+        id: String(item?.id || `${role}_${Number(new Date(item?.time || item?.createdAt || Date.now()))}_${text.slice(0, 8)}`),
+        role,
+        text,
+        intent: String(item?.intent || '').trim(),
+        mode: String(item?.mode || '').trim(),
+        requestedMode: String(item?.requestedMode || '').trim(),
+        suggestedMode: String(item?.suggestedMode || '').trim(),
+        caseId: cleanChatText(item?.caseId, 80),
+        variants: item?.variants && typeof item.variants === 'object' ? item.variants : undefined,
+        strategies: Array.isArray(item?.strategies) ? item.strategies : undefined,
+        sourceText: cleanChatText(item?.sourceText, 800) || undefined,
+        strategySource: item?.strategySource === 'fallback' ? 'fallback' : (item?.strategySource === 'ai' ? 'ai' : undefined),
+        time: item?.time || item?.createdAt || null
+      }
+    })
+    .filter(Boolean)
+}
+
+function filterPetHistoryByCase(history, caseId) {
+  const targetCaseId = normalizeChatCaseId(caseId)
+  return normalizePetHistory(history).filter((item) => item.caseId === targetCaseId)
+}
+
+async function getUserDoc(userId) {
+  if (!userId) return null
+  const res = await db.collection('users').doc(userId).get().catch(() => null)
+  return firstDoc(res)
+}
+
+function getCaseDisplayName(activeCase) {
+  if (!activeCase) return ''
+  return cleanChatText(activeCase.name || activeCase.profile?.name || activeCase.profile?.nickname || activeCase.profile?.displayName || 'TA', 32)
+}
+
+function getCaseMeta(activeCase) {
+  if (!activeCase) return null
+  const profile = activeCase.profile || {}
+  return {
+    caseId: activeCase._id || activeCase.caseId || '',
+    name: getCaseDisplayName(activeCase),
+    gender: cleanChatText(profile.gender, 12),
+    zodiac: cleanChatText(profile.zodiac, 12),
+    constellation: cleanChatText(profile.constellation, 12),
+    relationType: cleanChatText(profile.relationType, 20)
+  }
+}
+
+function pickProfileFields(profile, fields) {
+  const result = {}
+  fields.forEach((field) => {
+    const value = cleanChatText(profile?.[field], 40)
+    if (value) result[field] = value
+  })
+  return result
+}
+
+function buildReplyToolContext(user, activeCase) {
+  const selfProfile = user?.selfProfile || {}
+  const targetProfile = activeCase?.profile || {}
+  return {
+    self: pickProfileFields(selfProfile, ['gender', 'ageRange', 'identity', 'zodiac', 'constellation']),
+    target: {
+      name: getCaseDisplayName(activeCase),
+      ...pickProfileFields(targetProfile, ['gender', 'age', 'occupation', 'relationType', 'zodiac', 'constellation'])
+    }
+  }
+}
+
+function hasReplyToolContext(context) {
+  return Boolean(
+    context &&
+    ((context.self && Object.keys(context.self).length) ||
+      (context.target && Object.keys(context.target).some((key) => context.target[key])))
+  )
+}
+
+function buildReplyToolContextPrompt(context) {
+  if (!hasReplyToolContext(context)) return ''
+  const lines = ['【轻量人物上下文】']
+  if (context.self && Object.keys(context.self).length) {
+    lines.push(`用户画像：${JSON.stringify(context.self)}`)
+  }
+  if (context.target && Object.keys(context.target).some((key) => context.target[key])) {
+    lines.push(`TA画像：${JSON.stringify(context.target)}`)
+  }
+  lines.push('使用规则：这些信息只用于避免称呼、性别、关系阶段和语气尺度出错；不要主动暴露画像信息；不要编造用户本次输入没有提到的事实；不确定性别时避免使用“他/她/男生/女生”等性别词。')
+  return lines.join('\n')
+}
+
+async function fetchOwnedCase(dbRef, userId, caseId) {
+  const id = cleanChatText(caseId, 80)
+  if (!id || !userId) return null
+
+  try {
+    const { data } = await dbRef.collection('cases').where({ _id: id, userId }).limit(1).get()
+    if (data && data[0]) return data[0]
+  } catch {}
+
+  try {
+    const doc = firstDoc(await dbRef.collection('cases').doc(id).get())
+    if (doc && doc.userId === userId) return doc
+  } catch {}
+
+  return null
+}
+
+async function fetchTimelineForCase(dbRef, userId, activeCase) {
+  if (!activeCase) return []
+  const caseIds = [...new Set([activeCase._id, activeCase.caseId].filter(Boolean))]
+  for (const caseId of caseIds) {
+    try {
+      const { data } = await dbRef.collection('timeline_records')
+        .where({ userId, caseId })
+        .orderBy('occurrenceAt', 'desc')
+        .limit(5)
+        .get()
+      return Array.isArray(data) ? data : []
+    } catch {}
+    try {
+      const { data } = await dbRef.collection('timeline_records')
+        .where({ userId, caseId })
+        .orderBy('createdAt', 'desc')
+        .limit(5)
+        .get()
+      return Array.isArray(data) ? data : []
+    } catch {}
+  }
+  return []
+}
+
+function fetchTodayTaohua(user) {
+  const profile = user?.selfProfile || {}
+  const directionByDay = ['正北', '东北', '正东', '东南', '正南', '西南', '正西', '西北']
+  const today = new Date()
+  const direction = directionByDay[Math.abs(today.getFullYear() * 31 + today.getMonth() * 7 + today.getDate()) % directionByDay.length]
+  return {
+    date: today.toISOString().slice(0, 10),
+    direction,
+    summary: profile?.zodiac || profile?.constellation ? `结合你的${profile.zodiac || ''}${profile.constellation || ''}，今天适合轻松推进。` : '今天适合轻松、低压力地沟通。'
+  }
+}
+
+async function fetchChatContext(dbRef, userId, caseId) {
+  const [user, activeCase] = await Promise.all([
+    getUserDoc(userId),
+    fetchOwnedCase(dbRef, userId, caseId)
+  ])
+  const timeline = await fetchTimelineForCase(dbRef, userId, activeCase)
+  return {
+    profile: user?.selfProfile || null,
+    activeCase: getCaseMeta(activeCase),
+    timeline: timeline.map((item) => ({
+      title: cleanChatText(item.title || item.type || '一条记录', 48),
+      description: cleanChatText(item.description || item.content || item.summary, 160),
+      date: item.occurrenceAt || item.createdAt || item.date || ''
+    })),
+    taohua: fetchTodayTaohua(user)
+  }
+}
+
+function getCachedChatContext(sessionId) {
+  const key = cleanChatText(sessionId, 80)
+  if (!key) return null
+  const cached = petChatContextCache.get(key)
+  if (!cached) return null
+  if (Date.now() - cached.createdAt > PET_CHAT_CONTEXT_TTL_MS) {
+    petChatContextCache.delete(key)
+    return null
+  }
+  return cached.context
+}
+
+function setCachedChatContext(sessionId, context) {
+  const key = cleanChatText(sessionId, 80)
+  if (!key) return
+  petChatContextCache.set(key, { createdAt: Date.now(), context })
+  if (petChatContextCache.size > 200) {
+    const firstKey = petChatContextCache.keys().next().value
+    if (firstKey) petChatContextCache.delete(firstKey)
+  }
+}
+
+function normalizePetChatMode(value) {
+  const mode = String(value || '').trim().toLowerCase()
+  if (['reply', 'initiate', 'strategy'].includes(mode)) return mode
+  return 'chat'
+}
+
+function inferExplicitTaskMode(text) {
+  const content = String(text || '')
+  const replyPatterns = [
+    /怎么回/,
+    /如何回/,
+    /怎么回复/,
+    /帮我回/,
+    /帮我回复/,
+    /替我回/,
+    /替我回复/,
+    /我该回/,
+    /我应该回/,
+    /对方说/,
+    /TA说/i,
+    /他说/,
+    /她说/,
+    /收到.*怎么说/,
+    /这句.*怎么接/
+  ]
+  const initiatePatterns = [
+    /主动.*(说|聊|开口|找|约)/,
+    /(想|要|打算).*(主动|找TA|找他|找她|约TA|约他|约她)/,
+    /开场白/,
+    /怎么找.*聊/,
+    /怎么开口/,
+    /怎么约/,
+    /想说.*不知道怎么说/,
+    /想表达.*不知道怎么说/
+  ]
+  const strategyPatterns = [
+    /多步策略/,
+    /推进策略/,
+    /聊天策略/,
+    /怎么推进/,
+    /下一步/,
+    /下一步.*怎么办/,
+    /接下来.*怎么办/,
+    /怎么发展/,
+    /怎么拉近/,
+    /怎么让.*关系/,
+    /达到.*目的/,
+    /想达到.*目的/,
+    /目标是.*怎么办/,
+    /怎么安排.*步骤/,
+    /分几步/
+  ]
+  if (strategyPatterns.some((pattern) => pattern.test(content))) return 'strategy'
+  if (initiatePatterns.some((pattern) => pattern.test(content))) return 'initiate'
+  if (replyPatterns.some((pattern) => pattern.test(content))) return 'reply'
+  return ''
+}
+
+function resolvePetChatMode(eventMode) {
+  const selectedMode = normalizePetChatMode(eventMode)
+  return selectedMode
+}
+
+function buildChatModeInstruction(mode) {
+  if (mode === 'reply') {
+    return `当前模式：帮用户回复 TA。
+- 把用户输入理解为“对方说了什么/发生了什么”，重点产出可直接发给 TA 的回复。
+- reply 先简短说明判断，再提示可选话术。
+- variants 必须给 humor/sincere/literary 三种可直接发送的话。
+- strategies 可为空，除非用户要求多步推进。`
+  }
+  if (mode === 'initiate') {
+    return `当前模式：帮用户主动开口。
+- 把用户输入理解为“用户想主动表达的意思”，重点产出低压力开场。
+- variants 必须给 humor/sincere/literary 三种可直接发送的话。
+- 话术要能独立作为对话起点，不要像接别人话茬。`
+  }
+  if (mode === 'strategy') {
+    return `当前模式：多步策略。
+- 把用户输入理解为最近互动背景、用户目标和想推进的关系节奏。
+- reply 先安抚用户，再明确推荐哪一种策略，以及为什么。
+- strategies 必须复用旧版多轮策略框架，返回 3 个固定策略：
+  1. type: "contrast"，label: "先冷后甜"：先轻微降温/拉开一点距离，再给出温和正向信号，适合对方忽冷忽热、用户已经偏主动、继续追问会显得压迫的情况。
+  2. type: "probe"，label: "投石问路"：先放一个低风险小信号，看对方是否接住，适合信息不足、不确定对方态度、刚开始熟悉的情况。
+  3. type: "follow"，label: "顺水推舟"：顺着对方已经释放的正向反馈自然推进，适合对方接话积极、已有共同话题或主动回应的情况。
+- 每个策略给 2-3 个 turns；每个 turn 包含 step、say、note、expectReactions。
+- 每个策略至少 2 步：step 1 是当下第一句话，step 2 是根据对方反应的跟进；适合时再给 step 3。
+- 禁止只返回 step 1；如果不确定后续，也要给一个低风险跟进步骤。
+- 每句 say 15-35 字，口语化、接地气、不油腻，能直接复制发送。
+- 不要鼓励试探、PUA、情绪勒索、逼表态或越界。
+- variants 返回空对象，策略话术放到 strategies.turns 里。`
+  }
+  return `当前模式：和用户本人聊天。
+- 默认把用户输入当成“用户在和小咪倾诉/聊天”，先回应用户本人。
+- 不要默认把用户的话改写成发给 TA 的话术。
+- 不要输出 variants，不要输出 strategies；这两个字段返回空对象/空数组。
+- 如果用户只是说“他没回我”“我有点难受”“今天好烦”，就陪用户梳理情绪和判断，不要直接生成可复制话术。
+- 只有用户文本明确要求“怎么回/帮我回复/主动开口/怎么推进/多步策略/想达到某个目的但不知道怎么说”时，才按相应任务理解。`
+}
+
+function buildChatSystemPrompt(context, safetyContext, mode) {
+  const profile = context?.profile || {}
+  const activeCase = context?.activeCase
+  const timeline = Array.isArray(context?.timeline) ? context.timeline : []
+  const taohua = context?.taohua || {}
+  const caseLine = activeCase
+    ? `当前聊天对象：${activeCase.name || 'TA'}${activeCase.constellation ? `，${activeCase.constellation}` : ''}${activeCase.zodiac ? `，属${activeCase.zodiac}` : ''}。`
+    : '当前没有绑定具体聊天对象，按通用关系沟通提供建议。'
+  const timelineLines = timeline.length
+    ? timeline.map((item, index) => `${index + 1}. ${item.title}：${item.description}`).join('\n')
+    : '暂无最近事件。'
+  const minorRule = safetyContext?.isMinor
+    ? '\n【硬性安全规则】用户未满 18 岁，只允许友谊、同学关系、边界感和健康沟通建议，不生成暧昧或亲密升级话术。'
+    : ''
+  const boundaryRule = safetyContext?.boundarySensitive
+    ? '\n【边界提醒】当前话题涉及亲密或私密边界，优先提醒尊重、节奏和安全，不推动越界。'
+    : ''
+
+  return `你是“小咪”，一个克制、聪明、温柔但不油腻的恋爱沟通陪伴宠物。你用中文回复。
+
+目标：
+- 先接住用户情绪，再给可执行建议。
+- intent 只在当前模式下判断：chat（陪聊）、reply（帮回复）、initiate（主动开口）、strategy（多步策略）、vent（倾诉陪伴）。
+- 回复要像聊天，不像报告；默认 60-120 字。
+- 不编造对方想法，不鼓励试探、PUA、情绪勒索或越界。
+
+${buildChatModeInstruction(mode)}
+
+用户画像：${JSON.stringify(profile || {})}
+${caseLine}
+最近事件：
+${timelineLines}
+今日提示：${taohua.summary || ''}${taohua.direction ? ` 桃花方位：${taohua.direction}。` : ''}
+${minorRule}${boundaryRule}
+
+只返回严格 JSON：
+{
+  "reply": "小咪直接对用户说的话",
+  "intent": "chat|reply|initiate|strategy|vent",
+  "variants": {"humor":"可直接发送的话", "sincere":"可直接发送的话", "literary":"可直接发送的话"},
+  "strategies": [{"type":"contrast|probe|follow","label":"策略名","turns":[{"step":1,"say":"用户第一步可以说的话","note":"这一步的目的","expectReactions":["对方可能回应"]},{"step":2,"say":"用户第二步可以接的话","note":"根据对方反应的跟进目的","expectReactions":["对方可能回应"]}]}]
+}`
+}
+
+function parsePetChatAI(raw, mode, suggestedMode = '') {
+  const content = String(raw || '').replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
+  let parsed = null
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    const match = content.match(/\{[\s\S]*\}/)
+    if (match) {
+      try { parsed = JSON.parse(match[0]) } catch {}
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    return {
+      reply: cleanReplyText(content.slice(0, 400)) || '我有点没想好，但我会先陪你把这件事拆开看。',
+      intent: 'vent',
+      variants: {},
+      strategies: []
+    }
+  }
+  const variants = {}
+  ;['humor', 'sincere', 'literary'].forEach((key) => {
+    const text = cleanReplyText(parsed?.variants?.[key] || parsed?.[key])
+    if (text) variants[key] = text
+  })
+  const reply = cleanReplyText(parsed.reply || parsed.text || parsed.answer || Object.values(variants).find(Boolean), 500)
+  const intent = ['chat', 'reply', 'initiate', 'strategy', 'vent'].includes(parsed.intent) ? parsed.intent : mode
+  const strategiesLimit = mode === 'strategy' ? 3 : 2
+  const strategies = Array.isArray(parsed.strategies)
+    ? parsed.strategies.filter((item) => item && Array.isArray(item.turns)).slice(0, strategiesLimit)
+    : []
+  if (mode === 'chat') {
+    return {
+      reply: reply || '我在。先别急，我们把这件事和你的感受分开看。',
+      intent: intent === 'reply' || intent === 'initiate' || intent === 'strategy' ? 'chat' : intent,
+      suggestedMode,
+      variants: {},
+      strategies: []
+    }
+  }
+  return {
+    reply: reply || Object.values(variants).find(Boolean) || '我在，先别急，我们把这句话背后的信号和下一步拆开看。',
+    intent,
+    suggestedMode: '',
+    variants,
+    strategies
+  }
+}
+
+function toLLMMessages(history, incomingMessages, caseId) {
+  const persisted = filterPetHistoryByCase(history, caseId).slice(-20).map((item) => ({
+    role: item.role === 'user' ? 'user' : 'assistant',
+    content: item.text
+  }))
+  const incoming = normalizeChatMessages(incomingMessages).map((item) => ({
+    role: item.role === 'user' ? 'user' : 'assistant',
+    content: item.text
+  }))
+  return [...persisted, ...incoming].slice(-26)
+}
+
+async function savePetChatHistory(userId, userText, petPayload) {
+  const now = new Date()
+  const caseId = normalizeChatCaseId(petPayload.caseId)
+  const userMsg = {
+    id: `u_${now.getTime()}`,
+    role: 'user',
+    caseId,
+    text: cleanChatText(userText, 800),
+    time: now
+  }
+  const petMsg = {
+    id: `p_${now.getTime()}`,
+    role: 'pet',
+    caseId,
+    text: cleanChatText(petPayload.reply, 800),
+    intent: petPayload.intent || 'reply',
+    mode: petPayload.mode || petPayload.intent || 'chat',
+    requestedMode: petPayload.requestedMode || '',
+    suggestedMode: petPayload.suggestedMode || '',
+    variants: petPayload.variants || {},
+    strategies: petPayload.strategies || [],
+    sourceText: cleanChatText(petPayload.sourceText || userText, 800),
+    strategySource: petPayload.strategySource || '',
+    time: now
+  }
+
+  await db.collection('users').doc(userId).update({
+    petChatHistory: _.push([userMsg, petMsg])
+  })
+
+  const freshUser = await getUserDoc(userId)
+  const freshHistory = Array.isArray(freshUser?.petChatHistory) ? freshUser.petChatHistory : []
+  if (freshHistory.length > PET_CHAT_MAX_HISTORY) {
+    await db.collection('users').doc(userId).update({
+      petChatHistory: freshHistory.slice(-PET_CHAT_MAX_HISTORY)
+    })
+  }
+}
+
+async function loadPetChatHistory(event) {
+  let userId
+  try {
+    userId = await requirePetUserId(event)
+  } catch (error) {
+    const authError = buildAuthErrorResponse(error)
+    if (authError) return authError
+    throw error
+  }
+  const [user, activeCase] = await Promise.all([
+    getUserDoc(userId),
+    fetchOwnedCase(db, userId, event.caseId)
+  ])
+  const requestedCaseId = normalizeChatCaseId(event.caseId)
+  const history = requestedCaseId !== 'global' && !activeCase
+    ? []
+    : filterPetHistoryByCase(user?.petChatHistory || [], requestedCaseId).slice(-20)
+  return {
+    success: true,
+    history,
+    activeCase: getCaseMeta(activeCase)
+  }
+}
+
+async function handlePetChatMessage(event) {
+  let userId
+  try {
+    userId = await requirePetUserId(event)
+  } catch (error) {
+    const authError = buildAuthErrorResponse(error)
+    if (authError) return authError
+    throw error
+  }
+
+  const incomingMessages = normalizeChatMessages(event.messages)
+  const userText = cleanChatText(event.text || incomingMessages[incomingMessages.length - 1]?.text, 800)
+  if (!userText) return { success: false, message: '请输入想和小咪聊的内容' }
+
+  const user = await getUserDoc(userId)
+  const persistedHistory = Array.isArray(user?.petChatHistory) ? user.petChatHistory : []
+  const requestedCaseId = normalizeChatCaseId(event.caseId)
+  const activeCase = requestedCaseId === 'global' ? null : await fetchOwnedCase(db, userId, event.caseId)
+  if (requestedCaseId !== 'global' && !activeCase) {
+    return { success: false, code: 'CASE_NOT_FOUND', message: '当前聊天对象不存在或无权访问' }
+  }
+  const currentCaseId = requestedCaseId
+  const safetyContext = resolveSafetyContext(user?.selfProfile, userText)
+  const requestedMode = normalizePetChatMode(event.mode)
+  const rawMode = resolvePetChatMode(event.mode)
+  const mode = rawMode === 'strategy' ? 'reply' : rawMode
+  const suggestedMode = requestedMode === 'chat' ? inferExplicitTaskMode(userText) : ''
+
+  if (mode === 'reply' || mode === 'initiate') {
+    const scene = mode === 'initiate' ? 'active' : 'reply'
+    safetyContext.toolContext = buildReplyToolContext(user, activeCase)
+    const [legacyResult, strategyResult] = await Promise.all([
+      generateReplyPair(scene, userText, userId, '', safetyContext).catch((e) => ({ success: false, message: e?.message || 'reply 失败' })),
+      generateReplyStrategy(userText, userId, scene, safetyContext).catch((e) => ({ success: false, message: e?.message || 'strategy 失败' }))
+    ])
+    if (isTokenBalanceError(legacyResult)) return legacyResult
+    if (isTokenBalanceError(strategyResult)) return strategyResult
+    if (strategyResult && strategyResult.code === 'FEATURE_NOT_AVAILABLE') return strategyResult
+    if (!legacyResult?.success) return legacyResult
+
+    const reply = legacyResult.reply || legacyResult.variants?.sincere || legacyResult.variants?.humor || legacyResult.variants?.literary || ''
+    const strategies = resolveReplyStrategies(strategyResult, scene)
+    const strategySource = getReplyStrategySource(strategyResult)
+    let historySaved = false
+    try {
+      await savePetChatHistory(userId, userText, {
+        reply,
+        intent: mode,
+        mode,
+        requestedMode,
+          suggestedMode: '',
+          variants: legacyResult.variants || {},
+          strategies,
+          caseId: currentCaseId,
+          strategySource
+        })
+      historySaved = true
     } catch (e) {
-      console.error('generateReplyStrategy error:', e?.message?.slice(0, 100))
+      console.error('petChat legacy bundle history save failed', userId, e)
+    }
+
+    return {
+      success: true,
+      reply,
+      intent: mode,
+      variants: legacyResult.variants || {},
+      strategies,
+      strategySource,
+      mode,
+      requestedMode,
+      suggestedMode: '',
+      activeCase: getCaseMeta(activeCase),
+      tokensConsumed: (legacyResult.tokensUsed || REPLY_PAIR_EST_TOKENS) + (strategies.length ? REPLY_STRATEGY_EST_TOKENS : 0),
+      billingRecorded: true,
+      historySaved
     }
   }
 
-  return { success: false, message: 'AI 生成策略失败，请重试' }
+  const tokenCheck = await checkTokenBalance(db, userId, PET_CHAT_EST_TOKENS)
+  if (!tokenCheck.ok) {
+    return {
+      success: false,
+      ...tokenCheck,
+      message: tokenCheck.message || 'Token 不足，请先充值'
+    }
+  }
+
+  const sessionId = cleanChatText(event.sessionId, 80) || `session_${Date.now()}`
+  const rawCaseId = currentCaseId === 'global' ? '' : currentCaseId
+  const contextCacheKey = `${sessionId}:${currentCaseId}`
+  let context = getCachedChatContext(contextCacheKey)
+  if (!context) {
+    context = await fetchChatContext(db, userId, rawCaseId)
+    setCachedChatContext(contextCacheKey, context)
+  }
+
+  const systemPrompt = buildChatSystemPrompt(context, safetyContext, mode)
+  const messages = toLLMMessages(persistedHistory, incomingMessages.length ? incomingMessages : [{ role: 'user', text: userText }], currentCaseId)
+  const responseMaxTokens = mode === 'strategy' ? 1800 : 900
+  const aiResult = await tryWithModelFallback(async (model) => {
+    const baseUrl = model.baseUrl.replace(/\/+$/, '')
+    const urls = [`${baseUrl}/v1/chat/completions`, `${baseUrl}/chat/completions`]
+    let response = null
+    for (const url of urls) {
+      response = await aiHttpRequest(url, {
+        model: model.model,
+        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        temperature: 0.75,
+        max_tokens: responseMaxTokens,
+        response_format: { type: 'json_object' }
+      }, REPLY_TIMEOUT_MS, model.apiKey)
+      if (response.status !== 404) break
+    }
+    if (!response?.ok) {
+      const errText = await response?.text().catch(() => '')
+      return { success: false, message: `AI 返回 ${response?.status || 0}${errText ? ' / ' + errText.slice(0, 100) : ''}` }
+    }
+    const data = await response.json()
+    const raw = data?.choices?.[0]?.message?.content || ''
+    const parsed = parsePetChatAI(raw, mode, suggestedMode)
+    const realTokens = getUsageTotalTokens(data?.usage, PET_CHAT_EST_TOKENS)
+    await recordModelTokenUsage(model.id, realTokens, data?.usage)
+    return {
+      success: true,
+      ...parsed,
+      model: model.model,
+      usage: data?.usage,
+      tokensConsumed: realTokens
+    }
+  })
+
+  if (!aiResult?.success) return aiResult
+
+  let billingRecorded = false
+  try {
+    const billing = await recordTokenUsage(db, {
+      userId,
+      feature: PET_CHAT_USAGE_FEATURE,
+      provider: 'openai-compatible',
+      model: aiResult.model || '',
+      usage: buildUsageWithFallback(aiResult.usage, aiResult.tokensConsumed || PET_CHAT_EST_TOKENS)
+    })
+    billingRecorded = billing?.recordCreated !== false
+  } catch (e) {
+    console.error('petChat billing failed (non-fatal)', userId, e)
+  }
+
+  let historySaved = false
+  try {
+    await savePetChatHistory(userId, userText, { ...aiResult, mode, requestedMode, suggestedMode, caseId: currentCaseId })
+    historySaved = true
+  } catch (e) {
+    console.error('petChat history save failed', userId, e)
+  }
+
+  return {
+    success: true,
+    reply: aiResult.reply,
+    intent: aiResult.intent,
+    variants: aiResult.variants || {},
+    strategies: aiResult.strategies || [],
+    mode,
+    requestedMode,
+    suggestedMode: aiResult.suggestedMode || '',
+    activeCase: context.activeCase || null,
+    tokensConsumed: aiResult.tokensConsumed || PET_CHAT_EST_TOKENS,
+    billingRecorded,
+    historySaved
+  }
 }
 
 // ========== exports ==========
@@ -1238,6 +2026,14 @@ exports.main = async (event = {}) => {
   const action = event.action || 'random'
   try {
     switch (action) {
+      case 'loadHistory':
+      case 'loadhistory': {
+        return await loadPetChatHistory(event)
+      }
+      case 'chatMessage':
+      case 'chatmessage': {
+        return await handlePetChatMessage(event)
+      }
       case 'seed': {
         return { success: false, message: 'seed is disabled' }
       }
@@ -1266,6 +2062,8 @@ exports.main = async (event = {}) => {
         if (userId) { const profile = await fetchUserSelfProfile(userId); isMinor = profile?.ageRange === 'under18' }
         return await generateReply(eventDesc, eventType, userId, isMinor)
       }
+      // Legacy standalone entry points kept for older clients and regression coverage.
+      // New pet chat panel should use action: chatMessage so variants and multi-step strategies return together.
       case 'replyStrategy': {
         const strategyContent = String(event.content || '').trim()
         const strategyScene = event.scene === 'active' ? 'active' : 'reply'
@@ -1279,12 +2077,20 @@ exports.main = async (event = {}) => {
           throw error
         }
         let safetyContext = { isMinor: false, boundarySensitive: false }
+        let sUser = null
         if (sUserId) {
-          const profile = await fetchUserSelfProfile(sUserId)
-          const isMinor = profile?.ageRange === 'under18'
+          sUser = await getUserDoc(sUserId)
+          const isMinor = sUser?.selfProfile?.ageRange === 'under18'
           safetyContext = { isMinor, boundarySensitive: !isMinor && isBoundarySensitivePromptEvent(strategyContent) }
         }
-        return await generateReplyStrategy(strategyContent, sUserId, strategyScene, safetyContext)
+        const strategyResult = await generateReplyStrategy(strategyContent, sUserId, strategyScene, safetyContext)
+        if (isTokenBalanceError(strategyResult)) return strategyResult
+        if (strategyResult && strategyResult.code === 'FEATURE_NOT_AVAILABLE') return strategyResult
+        return {
+          success: true,
+          strategies: resolveReplyStrategies(strategyResult, strategyScene),
+          strategySource: getReplyStrategySource(strategyResult)
+        }
       }
       case 'replyPair': {
         const scene = event.scene === 'active' ? 'active' : 'reply'
@@ -1300,10 +2106,18 @@ exports.main = async (event = {}) => {
           throw error
         }
         let safetyContext = { isMinor: false, boundarySensitive: false }
+        let user = null
+        let activeCase = null
         if (userId) {
-          const profile = await fetchUserSelfProfile(userId)
-          const isMinor = profile?.ageRange === 'under18'
-          safetyContext = { isMinor, boundarySensitive: !isMinor && isBoundarySensitivePromptEvent(content) }
+          ;[user, activeCase] = await Promise.all([
+            getUserDoc(userId),
+            fetchOwnedCase(db, userId, event.caseId)
+          ])
+          if (normalizeChatCaseId(event.caseId) !== 'global' && !activeCase) {
+            return { success: false, code: 'CASE_NOT_FOUND', message: '当前聊天对象不存在或无权访问' }
+          }
+          safetyContext = resolveSafetyContext(user?.selfProfile, content)
+          safetyContext.toolContext = buildReplyToolContext(user, activeCase)
         }
         return await generateReplyPair(scene, content, userId, tone, safetyContext)
       }
@@ -1320,10 +2134,18 @@ exports.main = async (event = {}) => {
           throw error
         }
         let safetyContext = { isMinor: false, boundarySensitive: false }
+        let user = null
+        let activeCase = null
         if (userId) {
-          const profile = await fetchUserSelfProfile(userId)
-          const isMinor = profile?.ageRange === 'under18'
-          safetyContext = { isMinor, boundarySensitive: !isMinor && isBoundarySensitivePromptEvent(content) }
+          ;[user, activeCase] = await Promise.all([
+            getUserDoc(userId),
+            fetchOwnedCase(db, userId, event.caseId)
+          ])
+          if (normalizeChatCaseId(event.caseId) !== 'global' && !activeCase) {
+            return { success: false, code: 'CASE_NOT_FOUND', message: '当前聊天对象不存在或无权访问' }
+          }
+          safetyContext = resolveSafetyContext(user?.selfProfile, content)
+          safetyContext.toolContext = buildReplyToolContext(user, activeCase)
         }
         const [pairRes, stratRes] = await Promise.all([
           generateReplyPair(scene, content, userId, '', safetyContext).catch((e) => ({ success: false, message: e?.message || 'reply 失败' })),
@@ -1335,6 +2157,28 @@ exports.main = async (event = {}) => {
         if (!pairRes?.success) {
           return { success: false, ...pairRes, message: pairRes?.message || '生成失败，请重试' }
         }
+        const strategies = resolveReplyStrategies(stratRes, scene)
+        const strategySource = getReplyStrategySource(stratRes)
+        const mode = scene === 'active' ? 'initiate' : 'reply'
+        const currentCaseId = normalizeChatCaseId(event.caseId)
+        let historySaved = false
+        try {
+          await savePetChatHistory(userId, content, {
+            reply: pairRes.reply,
+            intent: mode,
+            mode,
+            requestedMode: mode,
+            suggestedMode: '',
+            variants: pairRes.variants || {},
+            strategies,
+            sourceText: content,
+            caseId: currentCaseId,
+            strategySource
+          })
+          historySaved = true
+        } catch (e) {
+          console.error('replyBundle history save failed', userId, e)
+        }
         return {
           success: true,
           variants: pairRes.variants || {},
@@ -1342,7 +2186,12 @@ exports.main = async (event = {}) => {
           alternative: pairRes.alternative,
           inspirations: pairRes.inspirations,
           tokensUsed: pairRes.tokensUsed,
-          strategies: stratRes?.success ? (stratRes.strategies || []) : []
+          strategies,
+          strategySource,
+          mode,
+          requestedMode: mode,
+          activeCase: getCaseMeta(activeCase),
+          historySaved
         }
       }
       case 'pickQA': {

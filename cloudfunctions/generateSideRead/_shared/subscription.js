@@ -82,7 +82,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
       monthlyTokens: 30000,
       maxCrushes: 1,
       features: ['记录', '时间轴', '规则分析', '即时反馈', '事件理解', '周复盘', '附件识别', '小咪帮你说（单轮）'],
-      excludedFeatures: ['自定义宠物', '自定义AI风格', '小咪多轮策略', '命理桃花', '更换宠物']
+      excludedFeatures: ['自定义宠物', '自定义AI风格', '更换宠物', '小咪多轮策略', '命理桃花']
     },
     pro: {
       name: 'Pro 月卡',
@@ -321,10 +321,12 @@ async function checkTokenBalance(db, userId, estTokens) {
   if (planConfig && planConfig.monthlyTokens === -1) {
     return { ok: true, source: 'unlimited' }
   }
-  const monthlyLimit = planConfig.monthlyTokens
-  if (monthlyLimit === -1) return { ok: true, source: 'monthly_unlimited' }
-
   const now = new Date()
+
+  // 试用期（仅免费版）：月额为 0，只靠 extraTokens
+  const isTrial = effectivePlan === 'free' && user.trialEndsAt && now < new Date(user.trialEndsAt)
+  const monthlyLimit = isTrial ? 0 : planConfig.monthlyTokens
+  if (monthlyLimit === -1) return { ok: true, source: 'monthly_unlimited' }
   const monthStart = getMonthStart(now)
   let monthlyUsed = user.monthlyTokensUsed || 0
 
@@ -402,14 +404,20 @@ async function consumeTokens(db, userId, actualModelTokens, feature, model, usag
   const toConsume = Math.ceil(actualModelTokens * rate)
   if (toConsume <= 0) return { deducted: 0 }
 
+  // 试用期（仅免费版）：月额为 0，全从 extraTokens 扣
+  const now = new Date()
+  const isTrialC = effectivePlan === 'free' && user.trialEndsAt && now < new Date(user.trialEndsAt)
+  const monthlyLimit = isTrialC ? 0 : (planConfig.monthlyTokens === -1 ? Infinity : (planConfig.monthlyTokens || 0))
+
   // 先扣月度，不够扣 extra
-  const monthStart = getMonthStart(new Date())
+  const monthStart = getMonthStart(now)
   let monthlyUsed = user.monthlyTokensUsed || 0
   if (!user.monthlyTokensReset || new Date(user.monthlyTokensReset) < monthStart) {
     monthlyUsed = 0
-    await db.collection(USERS).doc(userId).update({ monthlyTokensUsed: 0, monthlyTokensReset: monthStart })
+    if (!isTrialC) {
+      await db.collection(USERS).doc(userId).update({ monthlyTokensUsed: 0, monthlyTokensReset: monthStart })
+    }
   }
-  const monthlyLimit = planConfig.monthlyTokens === -1 ? Infinity : (planConfig.monthlyTokens || 0)
   const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed)
 
   let fromMonthly = 0

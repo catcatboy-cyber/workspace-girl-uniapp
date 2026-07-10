@@ -100,25 +100,48 @@ exports.main = async (event) => {
     if (user.trialEndsAt) {
       const trialEnd = new Date(user.trialEndsAt)
       if (now < trialEnd) {
-        isTrial = true
-        trialDaysLeft = Math.ceil((trialEnd - now) / (24 * 60 * 60 * 1000))
+        isTrial = effectivePlan === 'free'
+        if (isTrial) {
+          trialDaysLeft = Math.ceil((trialEnd - now) / (24 * 60 * 60 * 1000))
+        }
       }
     }
 
     // 试用期不叠加 free 月额 —— 只靠 welcomeTokens 赠送额度
     const monthlyLimit = isTrial ? 0 : planConfig.monthlyTokens
 
-    // 老试用用户迁移：extraTokens 为 0 → 补上 welcomeTokens
+    // 老试用用户迁移：extraTokens 为 0 → 补上 welcomeTokens（幂等：查是否已补过）
     if (isTrial && extraTokens === 0) {
+      let alreadyGranted = false
       try {
-        const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => null)
-        const billing = billingRes?.data?.[0] || {}
-        if (billing.firstGiftEnabled !== false) {
-          extraTokens = billing.welcomeTokens ?? 100000
-        }
+        const { data: existing } = await db.collection('call_usage_records')
+          .where({ userId, type: 'grant', source: 'welcome' })
+          .limit(1).get()
+        alreadyGranted = existing && existing.length > 0
       } catch (_) {}
-      if (extraTokens > 0) {
-        await db.collection('users').doc(userId).update({ extraTokens })
+      if (!alreadyGranted) {
+        try {
+          const billingRes = await db.collection('system_settings').doc('settings_billing').get().catch(() => null)
+          const billing = billingRes?.data?.[0] || {}
+          if (billing.firstGiftEnabled !== false) {
+            extraTokens = billing.welcomeTokens ?? 100000
+          }
+        } catch (_) {}
+        if (extraTokens > 0) {
+          await db.collection('users').doc(userId).update({ extraTokens })
+          // 补写充值记录
+          try {
+            await db.collection('call_usage_records').add({
+              userId,
+              type: 'grant',
+              source: 'welcome',
+              amountTokens: extraTokens,
+              balanceAfter: extraTokens,
+              remark: '新用户首次赠送',
+              createdAt: new Date()
+            })
+          } catch (_) {}
+        }
       }
     }
 

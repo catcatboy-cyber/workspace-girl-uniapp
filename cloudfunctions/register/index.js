@@ -151,8 +151,20 @@ exports.main = async (event) => {
       referralWeekCount: subFields.referralWeekCount
     })
 
-    // grantFirstGift 已不再需要 —— extraTokens 已由 welcomeTokens 直接设定
-    // 旧体系 token_accounts 的首次赠送保留为后备，但不再对 users.extraTokens 做 inc
+    // 首次赠送写 call_usage_records，前端"充值记录"可查
+    if (subFields.extraTokens > 0) {
+      try {
+        await db.collection('call_usage_records').add({
+          userId,
+          type: 'grant',
+          source: 'welcome',
+          amountTokens: subFields.extraTokens,
+          balanceAfter: subFields.extraTokens,
+          remark: '新用户首次赠送',
+          createdAt: now
+        })
+      } catch (_) {}
+    }
 
     // 新用户邀请奖励结算
     let referral = null

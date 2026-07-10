@@ -146,6 +146,8 @@ class FakeDocument {
     for (const [key, value] of Object.entries(cloned)) {
       if (value && typeof value === 'object' && value.__op === 'inc') {
         cloned[key] = (current[key] || 0) + value.amount
+      } else if (value && typeof value === 'object' && value.__op === 'push') {
+        cloned[key] = [...(Array.isArray(current[key]) ? current[key] : []), ...value.values]
       }
     }
 
@@ -286,6 +288,9 @@ function createFakeCloudbase() {
         },
         inc(amount) {
           return { __op: 'inc', amount }
+        },
+        push(values) {
+          return { __op: 'push', values: Array.isArray(values) ? [...values] : [values] }
         }
       },
       collection(name) {
