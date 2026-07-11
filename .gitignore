@@ -8,13 +8,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+/node_modules
 .DS_Store
 dist
 *.local
 audit/cloudbase/
 .claude/
-cloudbaserc.json
 
 # Editor directories and files
 .idea

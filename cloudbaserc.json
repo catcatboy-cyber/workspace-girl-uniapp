@@ -1,0 +1,358 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "cloud1-d0gvhqu2c8a2b61fd",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "register",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "login",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "wechatLogin",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "adminManage",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "userProfile",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "initDb",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "createCase",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getCases",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getCaseDetail",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "deleteCase",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "updateCaseProfile",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getTimeline",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "createTimeline",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "deleteTimeline",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "reassess",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getAISettings",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "updateAISettings",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "testAIConnection",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "weeklyReview",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "generateSideRead",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "generateAssessmentAI",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "analyzeAttachment",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "speechToText",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getTokenUsage",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getVoiceUsage",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getTokenAccount",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "recharge",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "petLines",
+      "timeout": 300,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "submitFeedback",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "customPet",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getSubscriptionConfig",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getSubscriptionStatus",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "redeemInviteCode",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getCallUsageHistory",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "queryTaohua",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "generatePairRead",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "quickRead",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "trackShareVisit",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getLoginLogs",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    }
+  ]
+}
