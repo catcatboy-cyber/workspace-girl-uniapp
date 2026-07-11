@@ -666,7 +666,8 @@ export async function createTimeline(data: {
   if (res.result?.success) {
     try {
       feedPet('record')
-      uni.setStorageSync('justRecorded', true)
+      // P2: 加时间戳用于 TTL 过期判断
+      uni.setStorageSync('justRecorded', { ts: Date.now() })
     } catch {}
   }
   return res.result

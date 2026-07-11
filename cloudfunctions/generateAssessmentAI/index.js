@@ -512,6 +512,19 @@ exports.main = async (event = {}) => {
     const authError = buildAuthErrorResponse(error)
     if (authError) return authError
     console.error('generateAssessmentAI error:', error)
+    // P0: 错误路径也要清除 aiPending，防止下次访问时空跑 AI
+    if (assessmentId && caseId) {
+      try {
+        const failUpdate = { aiPending: _.set(false), aiFailed: _.set(true), aiGeneratedAt: _.set(new Date()) }
+        await db.collection('assessments').doc(assessmentId).update(failUpdate)
+        console.log('[generateAssessmentAI trace]', JSON.stringify({
+          traceId, stage: 'error_cleanup', assessmentIdTail: shortId(assessmentId),
+          message: 'cleared aiPending flag on error'
+        }))
+      } catch (cleanupErr) {
+        console.warn('[generateAssessmentAI] failed to clear aiPending on error:', cleanupErr?.message || cleanupErr)
+      }
+    }
     return { success: false, message: mapError(error) }
   }
 }

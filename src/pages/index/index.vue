@@ -483,6 +483,21 @@ const showQuickCreate = ref(false)
 const aiFeedbackLoading = ref(false)
 const aiFeedbackSeconds = ref(0)
 const pendingAIInFlightKey = ref('')
+// P1b: 持久化重试计数器，跨 session 累计，避免无限重试
+const AI_RETRY_PREFIX = 'aiRetry:'
+const AI_RETRY_MAX = 3
+const AI_RETRY_TTL_MS = 24 * 60 * 60 * 1000 // 24h
+function getPersistedRetryCount(key: string): number {
+  try {
+    const raw = uni.getStorageSync(AI_RETRY_PREFIX + key)
+    if (!raw || typeof raw !== 'object') return 0
+    if (Date.now() - (raw.ts || 0) > AI_RETRY_TTL_MS) return 0
+    return typeof raw.count === 'number' ? raw.count : 0
+  } catch { return 0 }
+}
+function setPersistedRetryCount(key: string, count: number) {
+  try { uni.setStorageSync(AI_RETRY_PREFIX + key, { count, ts: Date.now() }) } catch {}
+}
 const pendingAIRetryCounts = new Map<string, number>()
 let aiFeedbackTimer: any = null
 const petScene = ref<PetScene | null>(null)
@@ -1427,7 +1442,11 @@ onShow(() => {
   // 精力衰减 + 情绪刷新
   decayPetEnergy()
   syncPetScore()
-  const justRecorded = !!uni.getStorageSync('justRecorded')
+  // P2: justRecorded TTL 5分钟，过期自动清除
+  const justRecordedRaw = uni.getStorageSync('justRecorded')
+  const justRecorded = typeof justRecordedRaw === 'object' && justRecordedRaw?.ts
+    ? (Date.now() - justRecordedRaw.ts < 5 * 60 * 1000)
+    : !!justRecordedRaw
   if (justRecorded) {
     petMsg.value = '记上了！小咪在帮你分析…'
     petState.value = 'running'
@@ -1990,6 +2009,8 @@ function applyPendingQuickFeedback(params: {
   })
 }
 
+const AI_PENDING_STALE_MS = 10 * 60 * 1000 // P1a: 10分钟未完成视为过期
+
 function getPendingAssessmentPayload() {
   const current = latestCase.value || {}
   const result = current.latestResult || {}
@@ -2000,7 +2021,17 @@ function getPendingAssessmentPayload() {
   const recordId = String(result.triggerEventId || result.recordId || '').trim()
   if (!caseId || !assessmentId) return null
 
-  return { caseId, assessmentId, recordId: recordId || undefined }
+  // P1a: 解析 createdAt 用于过期判断
+  let createdAt = 0
+  try {
+    const raw = result.createdAt
+    if (raw) {
+      const d = new Date(raw)
+      if (!isNaN(d.getTime())) createdAt = d.getTime()
+    }
+  } catch {}
+
+  return { caseId, assessmentId, recordId: recordId || undefined, createdAt }
 }
 
 function maybeResumePendingAssessmentAI(reason = '') {
@@ -2025,13 +2056,23 @@ function maybeResumePendingAssessmentAI(reason = '') {
     return
   }
 
-  const retryCount = pendingAIRetryCounts.get(key) || 0
-  if (retryCount >= 2) {
+  // P1a: 超过 10 分钟的待处理评估视为过期，跳过并只清理内存标记
+  if (payload.createdAt > 0 && Date.now() - payload.createdAt > AI_PENDING_STALE_MS) {
+    indexAILog('resume_skip_stale', {
+      reason, keyTail: shortId(key),
+      ageMinutes: Math.round((Date.now() - payload.createdAt) / 60000)
+    })
+    return
+  }
+
+  // P1b: 持久化重试计数，跨 session 累计
+  const retryCount = getPersistedRetryCount(key)
+  if (retryCount >= AI_RETRY_MAX) {
     indexAILog('resume_skip_retry_limit', { reason, keyTail: shortId(key), retryCount })
     return
   }
 
-  pendingAIRetryCounts.set(key, retryCount + 1)
+  setPersistedRetryCount(key, retryCount + 1)
   pendingAIInFlightKey.value = key
   indexAILog('resume_start', {
     reason,
