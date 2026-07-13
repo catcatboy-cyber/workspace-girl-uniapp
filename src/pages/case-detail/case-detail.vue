@@ -301,7 +301,8 @@ import { ref, computed } from 'vue'
 import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, generateMonthlyReview, handleInsufficientBalance } from '@/utils/api'
 import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
-import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments, buildTimelineStats, getTimelineRecordTags } from '@/utils/insights'
+import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments, buildTimelineStats, getTimelineRecordTags } from '@/utils/insights.js'
+import { clamp, confidenceAdjust, computeInitiative, computeResponsive, computeCommitment, computeTemperature, buildRadarDims, buildSignalCards, buildDivergingBars, buildBalanceCallout } from '@/utils/insights.ts'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType } from '@/utils/crush-type.js'
@@ -590,134 +591,45 @@ const signalData = computed(() => result.value?.signalSummary || null)
 const radarSampleCount = computed(() => thisMoStats.value.totalCount)
 const radarAssessmentCount = computed(() => trendDataPanel.value?.sampleCount || 0)
 
-// 样本不足时向 50 收敛：score × 0.6 + 50 × 0.4
-function confidenceAdjust(score, samples) {
-  if (samples >= 3 || score === 50) return score
-  return Math.round(score * 0.6 + 50 * 0.4)
-}
-function clamp(v) { return Math.max(0, Math.min(100, Math.round(v))) }
+// 样本不足时向 50 收敛（委托给 insights.ts）
+// clamp, confidenceAdjust 从 @/utils/insights.ts 导入
 
 // 1. 主动性：50 + (TA主动 - 你主动) / 总数 × 50
-const radarInitiative = computed(() => {
-  var t = thisMoStats.value.targetInitiatedCount
-  var s = thisMoStats.value.selfInitiatedCount
-  if (t + s === 0) return 50
-  return clamp(50 + (t - s) / (t + s) * 50)
-})
+const radarInitiative = computed(() => computeInitiative(thisMoStats.value.targetInitiatedCount, thisMoStats.value.selfInitiatedCount))
 
 // 2. 回应度：加权正向回应 / 总回应权重 × 100
-// 权重：fulfilled=1, planned=0.7, target_committed=0.7, pending=0.45, cancelled_delayed=0.2, rejected=0, cold=0
-const radarResponsive = computed(() => {
-  var recs = thisMonthRecs.value
-  var weighted = 0, total = 0
-  for (var i = 0; i < recs.length; i++) {
-    var tags = getTimelineRecordTags(recs[i])
-    if (tags.all.includes('fulfilled')) weighted += 1
-    if (tags.all.includes('planned')) weighted += 0.7
-    if (tags.all.includes('target_committed')) weighted += 0.7
-    if (tags.all.includes('pending')) weighted += 0.45
-    if (tags.all.includes('cancelled_delayed')) weighted += 0.2
-    if (tags.all.includes('rejected')) weighted += 0
-    if (tags.all.includes('cold')) weighted += 0
-    var hasAny = tags.all.some(function(t) { return ['fulfilled','planned','target_committed','pending','cancelled_delayed','rejected','cold'].indexOf(t) >= 0 })
-    if (hasAny) total += 1
-  }
-  if (total === 0) return 50
-  return confidenceAdjust(clamp(weighted / total * 100), total)
-})
+const radarResponsive = computed(() => computeResponsive(thisMonthRecs.value))
 
 // 3. 承诺度：(fulfilled×1 + pending×0.45 + cancelledDelayed×0.15) / total × 100
-const radarCommitment = computed(() => {
-  var f = thisMoStats.value.fulfilledCount
-  var c = thisMoStats.value.cancelledDelayedCount
-  // count pending tag separately
-  var pending = 0
-  for (var i = 0; i < thisMonthRecs.value.length; i++) {
-    if (getTimelineRecordTags(thisMonthRecs.value[i]).all.includes('pending')) pending++
-  }
-  var total = f + pending + c
-  if (total === 0) return 50
-  var raw = (f * 1 + pending * 0.45 + c * 0.15) / total * 100
-  return confidenceAdjust(clamp(raw), total)
-})
+const radarCommitment = computed(() => computeCommitment(thisMoStats.value.fulfilledCount, thisMoStats.value.cancelledDelayedCount, thisMonthRecs.value))
 
 // 4. 情绪温度：50 + intentDelta×1.2 + positiveRatio×25 - riskRatio×25
-const radarTemperature = computed(() => {
-  var delta = trendDataPanel.value?.intentDelta14 || 0
-  var recs = thisMonthRecs.value
-  var posCount = 0, riskCount = 0, totalTagged = 0
-  for (var i = 0; i < recs.length; i++) {
-    var tags = getTimelineRecordTags(recs[i]).all
-    var isPos = tags.some(function(t) { return ['fulfilled','target_initiated','planned'].indexOf(t) >= 0 })
-    var isRisk = tags.some(function(t) { return ['rejected','cancelled_delayed','cold','risk_event'].indexOf(t) >= 0 })
-    if (isPos || isRisk) totalTagged++
-    if (isPos) posCount++
-    if (isRisk) riskCount++
-  }
-  var posRatio = totalTagged > 0 ? posCount / totalTagged : 0.5
-  var riskRatio = totalTagged > 0 ? riskCount / totalTagged : 0.25
-  return clamp(50 + delta * 1.2 + posRatio * 25 - riskRatio * 25)
-})
+const radarTemperature = computed(() => computeTemperature(trendDataPanel.value?.intentDelta14 || 0, thisMonthRecs.value))
 
-// 5. 稳定性：100 - avgVolatility × 2.5（直接复用 trendDataPanel.stability 微调）
-const radarStability = computed(() => {
-  return trendDataPanel.value?.stability != null ? trendDataPanel.value.stability : 50
-})
+// 5. 稳定性：直接复用 trendDataPanel.stability
+const radarStability = computed(() => trendDataPanel.value?.stability != null ? trendDataPanel.value.stability : 50)
 
 const radarDims = computed(() => {
   try {
-    function desc(v) { if (v >= 70) return '强'; if (v >= 58) return '偏强'; if (v >= 43) return '中性'; if (v >= 30) return '偏弱'; return '弱' }
-    function color(v) {
-      if (v >= 58) return 'var(--dot-positive, #4ECDC4)'
-      if (v >= 43) return 'var(--accent, #FFD93D)'
-      return 'var(--risk, #FF6B6B)'
-    }
-    return [
-      { key: 'initiative',  label: '主动性',  score: radarInitiative.value,  desc: '谁更常发起互动 · ' + desc(radarInitiative.value),  color: color(radarInitiative.value) },
-      { key: 'responsive',  label: '回应度',  score: radarResponsive.value,  desc: '对方是否接得住你的信号 · ' + desc(radarResponsive.value),  color: color(radarResponsive.value) },
-      { key: 'commitment',  label: '承诺度',  score: radarCommitment.value,  desc: '说过的话有没有兑现 · ' + desc(radarCommitment.value),  color: color(radarCommitment.value) },
-      { key: 'temperature', label: '情绪温度', score: radarTemperature.value, desc: '升温、平淡还是回避 · ' + desc(radarTemperature.value), color: color(radarTemperature.value) },
-      { key: 'stability',   label: '稳定性',  score: radarStability.value,   desc: '最近波动大不大 · ' + desc(radarStability.value),   color: color(radarStability.value) },
-    ]
+    return buildRadarDims({
+      initiative: radarInitiative.value,
+      responsive: radarResponsive.value,
+      commitment: radarCommitment.value,
+      temperature: radarTemperature.value,
+      stability: radarStability.value
+    })
   } catch(e) { void e; return [] }
 })
 
 // ===== 信号解释卡 =====
-const warmingSignal = computed(() => {
-  var tps = trendDataPanel.value?.turningPoints || []
-  var positive = tps.filter(function(tp) { return tp.intentDelta > 0 })
-  if (positive.length === 0) return null
-  positive.sort(function(a, b) { return b.impact - a.impact })
-  var best = positive[0]
-  return { title: best.title || '关系出现积极变化', detail: '本次意向 +' + best.intentDelta + '，属本月最显著的升温信号。', evidence: '分析节点：' + best.key }
-})
-const riskSignal2 = computed(() => {
-  if (!riskFocusData.value) return null
-  var f = riskFocusData.value
-  return { title: f.label, detail: f.meaning, evidence: '承诺兑现率 ' + f.commitmentRatio }
-})
-const anomalySignal = computed(() => {
-  var s = thisMoStats.value
-  if (s.totalCount < 3) return null
-  var initiativeGood = radarInitiative.value >= 55
-  var commitmentBad = radarCommitment.value < 45
-  if (initiativeGood && commitmentBad) {
-    return { title: 'TA 更主动了，但兑现没跟上', detail: 'TA 本月主动 ' + s.targetInitiatedCount + ' 次，但承诺兑现率偏低。主动性可能是表面升温，建议继续观察后续行动。', evidence: 'TA 主动 ' + s.targetInitiatedCount + ' 次 · 兑现 ' + s.fulfilledCount + '/' + s.targetCommittedCount }
-  }
-  var stabilityLow = radarStability.value < 45
-  var intentHigh = (trendDataPanel.value?.latestIntent || 0) >= 60
-  if (stabilityLow && intentHigh) {
-    return { title: '分数不错，但波动偏大', detail: '本月意向分较高但走势不稳定。单一高分不构成确认信号，建议等多几次分析再下判断。', evidence: '稳定性 ' + radarStability.value + ' · 意向 ' + (trendDataPanel.value?.latestIntent || 0) }
-  }
-  return null
-})
-const signalCards = computed(() => {
-  var cards = []
-  if (warmingSignal.value) cards.push({ type: 'warming', icon: '??', label: '升温信号', data: warmingSignal.value })
-  if (riskSignal2.value) cards.push({ type: 'risk', icon: '??', label: '风险信号', data: riskSignal2.value })
-  if (anomalySignal.value) cards.push({ type: 'anomaly', icon: '??', label: '反常信号', data: anomalySignal.value })
-  return cards
-})
+const signalCards = computed(() => buildSignalCards({
+  thisMoStats: thisMoStats.value,
+  trendDataPanel: trendDataPanel.value,
+  radarInitiative: radarInitiative.value,
+  radarCommitment: radarCommitment.value,
+  radarStability: radarStability.value,
+  riskFocusData: riskFocusData.value
+}))
 
 const riskFocusData = computed(() => {
   const items = focusItems.value
@@ -874,32 +786,8 @@ const fulfillStats = computed(() => ({
   broken: thisMoStats.value.cancelledDelayedCount + thisMoStats.value.rejectedCount
 }))
 // 发散条形图数据（你｜TA）
-const divergingBars = computed(() => {
-  var s = thisMoStats.value
-  var maxVal = Math.max(s.selfInitiatedCount, s.targetInitiatedCount, s.fulfilledCount, s.targetCommittedCount, s.cancelledDelayedCount + s.rejectedCount, 1)
-  function pct(v) { return Math.round(v / maxVal * 100) }
-  return [
-    { label: '主动', you: s.selfInitiatedCount, ta: s.targetInitiatedCount, youPct: pct(s.selfInitiatedCount), taPct: pct(s.targetInitiatedCount), taClass: '' },
-    { label: '回应', you: s.fulfilledCount, ta: s.targetCommittedCount, youPct: pct(s.fulfilledCount), taPct: pct(s.targetCommittedCount), taClass: '' },
-    { label: '兑现', you: s.fulfilledCount, ta: s.targetCommittedCount, youPct: pct(s.fulfilledCount), taPct: pct(s.targetCommittedCount), taClass: '' },
-    { label: '受阻', you: s.rejectedCount, ta: s.cancelledDelayedCount, youPct: pct(s.rejectedCount), taPct: pct(s.cancelledDelayedCount), taClass: 'risk' },
-  ]
-})
-const balanceCallout = computed(() => {
-  var s = thisMoStats.value
-  var t = s.targetInitiatedCount, f = s.fulfilledCount, c = s.targetCommittedCount
-  if (t + s.selfInitiatedCount === 0) return '暂无足够互动数据形成判断。'
-  var parts = []
-  if (t > s.selfInitiatedCount) parts.push('TA 的主动性更强')
-  else if (t < s.selfInitiatedCount) parts.push('你更主动')
-  else parts.push('双方主动性持平')
-  var ratio = c > 0 ? f + '/' + c : '--'
-  if (c > 0 && f < c) parts.push('承诺兑现率 ' + ratio + '，兑现落后于承诺')
-  else if (c > 0) parts.push('承诺兑现率 ' + ratio + '，兑现尚可')
-  if (s.cancelledDelayedCount > 0) parts.push('存在拖延/取消信号')
-  parts.push('下一步重点观察是否主动确认时间地点。')
-  return parts.join('，')
-})
+const divergingBars = computed(() => buildDivergingBars(thisMoStats.value))
+const balanceCallout = computed(() => buildBalanceCallout(thisMoStats.value))
 
 const balanceConclusion = computed(() => {
   var r = taInitiativeRatio.value, f = fulfillStats.value, parts = []
