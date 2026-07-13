@@ -113,9 +113,10 @@
           :risk-score="latestCase.latestResult?.consistencyRiskScore ?? '暂无'"
           :pending-verification-label="pendingVerificationLabel"
           :latest-signal="quickFeedbackSignal"
-          :interaction-balance="null"
+          :interaction-balance="latestTimelineStats"
           :taohua-teaser-data="taohuaTeaserData"
           :pair-match="null"
+          :balance-callout="balanceCalloutForHome"
           :has-self-profile="hasUsableSelfProfile(selfProfile)"
           @open-case-detail="goCaseDetail(latestCase.caseId || latestCase._id)"
           @open-latest-signal="goCaseDetail(latestCase.caseId || latestCase._id)"
@@ -859,6 +860,16 @@ const pendingVerificationLabel = computed(() => {
     const bullets = lp?.bullets || []
     return bullets.length > 0 ? `${bullets.length}` : '暂无'
   } catch { return '暂无' }
+})
+
+// Campus Signal: 互动天平摘要
+const balanceCalloutForHome = computed(() => {
+  const s = latestTimelineStats.value
+  const t = s.targetInitiatedCount, self = s.selfInitiatedCount
+  if (t + self === 0) return '暂无足够互动数据'
+  if (t > self) return `TA 更主动 · ${t}/${self}`
+  if (self > t) return `你更主动 · ${self}/${t}`
+  return '双方平衡'
 })
 
 const quickSubjectRoleHint = computed(() => {

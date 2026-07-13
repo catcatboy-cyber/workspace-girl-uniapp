@@ -66,16 +66,16 @@
 
         <!-- 节点：最新信号 -->
         <view class="cs-node cs-node-signal" @click="$emit('open-latest-signal')">
-          <text class="cs-node-icon">🔥</text>
-          <text class="cs-node-label">最新信号</text>
-          <text class="cs-node-hint">{{ latestSignal ? '查看' : '记录后解锁' }}</text>
+          <text class="cs-node-icon">{{ latestSignal?.emoji || '🔍' }}</text>
+          <text class="cs-node-label">{{ latestSignal?.label || '最新信号' }}</text>
+          <text class="cs-node-hint">{{ latestSignal ? '查看详情' : '记录后解锁' }}</text>
         </view>
 
         <!-- 节点：互动天平 -->
         <view class="cs-node cs-node-balance" @click="$emit('open-interaction-balance')">
           <text class="cs-node-icon">⚖️</text>
           <text class="cs-node-label">互动天平</text>
-          <text class="cs-node-hint">{{ interactionBalance ? '查看' : '记录更多互动后解锁' }}</text>
+          <text class="cs-node-hint">{{ balanceCallout || '记录更多互动后解锁' }}</text>
         </view>
 
         <!-- 节点：今日桃花 -->
@@ -155,7 +155,8 @@ const props = defineProps({
   riskScore: { type: [Number, String], default: '暂无' },
   pendingVerificationLabel: { type: String, default: '暂无' },
   latestSignal: { type: Object as any, default: null },
-  interactionBalance: { type: Array as any, default: null },
+  interactionBalance: { type: Object as any, default: null },
+  balanceCallout: { type: String, default: '' },
   taohuaTeaserData: { type: Object as any, default: null },
   pairMatch: { type: Object as any, default: null },
   hasSelfProfile: { type: Boolean, default: false },
