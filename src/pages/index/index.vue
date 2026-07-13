@@ -100,6 +100,32 @@
       </template>
 
       <template v-else>
+        <!-- Campus Signal 雷达首页 -->
+        <CampusSignalHome
+          :page-style="pageStyle"
+          :loading="loading"
+          :has-case="true"
+          :case-name="latestCase.name || '--'"
+          :case-avatar="latestCase.profile?.avatarUrl || latestCase.profile?.avatar || ''"
+          :case-type-label="latestHeroTypeLabel"
+          :has-latest-result="!!latestCase.latestResult"
+          :intent-score="latestCase.latestResult?.intentScore ?? '暂无'"
+          :risk-score="latestCase.latestResult?.consistencyRiskScore ?? '暂无'"
+          :pending-verification-label="pendingVerificationLabel"
+          :latest-signal="quickFeedbackSignal"
+          :interaction-balance="null"
+          :taohua-teaser-data="taohuaTeaserData"
+          :pair-match="null"
+          :has-self-profile="hasUsableSelfProfile(selfProfile)"
+          @open-case-detail="goCaseDetail(latestCase.caseId || latestCase._id)"
+          @open-latest-signal="goCaseDetail(latestCase.caseId || latestCase._id)"
+          @open-interaction-balance="goCaseDetail(latestCase.caseId || latestCase._id)"
+          @open-taohua="goTaohua"
+          @open-pair-match="goTaohua"
+          @open-quick-record="onQuickRecordAction"
+          @start-assessment="showFullAssessment = true"
+          @quick-create="showQuickCreate = true"
+        />
         <!-- Hero -->
         <view class="hero-block-v2 anim-hero">
           <text class="hero-tag-v2">TODAY</text>
@@ -397,6 +423,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { onHide, onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
+import CampusSignalHome from '@/components/CampusSignalHome.vue'
 import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, decayPetEnergy, feedPet, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, readPetEnergy, setActiveCaseId, setPendingTimelineContext, showError, showSuccess, writePetEnergy } from '@/utils/helpers'
 import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
@@ -824,6 +851,15 @@ const statusInfoProblemItems = computed(() => {
 const showProfileReminder = computed(() =>
   !hasUsableSelfProfile(selfProfile.value)
 )
+
+// Campus Signal: 待验证标签（来自最新分析）
+const pendingVerificationLabel = computed(() => {
+  try {
+    const lp = latestCase.value?.latestResult?.explanation
+    const bullets = lp?.bullets || []
+    return bullets.length > 0 ? `${bullets.length}` : '暂无'
+  } catch { return '暂无' }
+})
 
 const quickSubjectRoleHint = computed(() => {
   const label = mapSubjectRoleLabel(quickSubjectRole.value)
@@ -1837,6 +1873,13 @@ async function handleVoiceRecordStop(res: any) {
   } finally {
     voiceUploading.value = false
   }
+}
+
+// Campus Signal: 快速记录 dock 入口分发
+function onQuickRecordAction(mode: string) {
+  if (mode === 'image') { chooseQuickImages(); return }
+  if (mode === 'voice') { toggleVoiceRecord(); return }
+  // mode === 'text': 滚动到快速记录表单
 }
 
 async function chooseQuickImages() {
