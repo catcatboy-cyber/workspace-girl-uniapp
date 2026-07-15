@@ -221,14 +221,14 @@ const statusLabel = computed(() => {
   padding: 42rpx 22rpx 0;
 }
 .cs-brand-label {
-  font-size: 18rpx;
+  font-size: 22rpx;
   letter-spacing: 0.22em;
   color: var(--text-muted, #666);
   font-weight: 800;
   display: block;
 }
 .cs-brand-name {
-  font-size: 36rpx;
+  font-size: 38rpx;
   font-weight: 900;
   color: var(--text-main, #111);
 }
@@ -269,7 +269,7 @@ const statusLabel = computed(() => {
   color: #fff;
 }
 .cs-empty-sub {
-  font-size: 28rpx;
+  font-size: 34rpx;
   color: rgba(255,255,255,0.85);
   margin-top: 16rpx;
   display: block;
@@ -303,7 +303,7 @@ const statusLabel = computed(() => {
   padding: 28rpx 22rpx 8rpx;
 }
 .cs-headline-title {
-  font-size: 48rpx;
+  font-size: 50rpx;
   font-weight: 900;
   line-height: 1.1;
   color: var(--text-main, #111);
@@ -357,7 +357,7 @@ const statusLabel = computed(() => {
   left: 50%;
   top: 42%;
   transform: translate(-50%, 52rpx);
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: 800;
   color: var(--text-main, #111);
   text-align: center;
@@ -368,7 +368,7 @@ const statusLabel = computed(() => {
   left: 50%;
   top: 42%;
   transform: translate(-50%, 88rpx);
-  font-size: 20rpx;
+  font-size: 22rpx;
   font-weight: 700;
   background: var(--hero-tag-bg, #111);
   color: var(--hero-tag-color, #FFD93D);
@@ -388,7 +388,7 @@ const statusLabel = computed(() => {
   z-index: 4;
 }
 .cs-center-tag {
-  font-size: 18rpx;
+  font-size: 22rpx;
   font-weight: 700;
   color: var(--text-soft, #999);
   border: 1rpx solid var(--border, #111);
@@ -483,9 +483,9 @@ const statusLabel = computed(() => {
   gap: 4rpx;
   z-index: 2;
 }
-.cs-node-icon { font-size: 28rpx; }
+.cs-node-icon { font-size: 24rpx; }
 .cs-node-label { font-size: 22rpx; font-weight: 900; color: var(--text-main, #111); }
-.cs-node-hint { font-size: 16rpx; color: var(--text-muted, #666); font-weight: 700; }
+.cs-node-hint { font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; }
 
 /* 节点光束扫过闪烁：7s 周期与 cs-beam 同步，每个节点在光束扫过其象限时持续发光约 1.5s */
 .cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 5.25s; }
@@ -521,7 +521,7 @@ const statusLabel = computed(() => {
   color: var(--text-main, #111);
 }
 .cs-metric-label {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--text-muted, #666);
   font-weight: 700;
   margin-top: 4rpx;
@@ -556,13 +556,13 @@ const statusLabel = computed(() => {
   margin-right: 10rpx;
 }
 .cs-dock-title-text {
-  font-size: 26rpx;
+  font-size: 32rpx;
   font-weight: 900;
   color: var(--text-main, #111);
   display: block;
 }
 .cs-dock-title-sub {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--text-muted, #666);
   font-weight: 800;
 }
@@ -597,22 +597,22 @@ const statusLabel = computed(() => {
 }
 
 /* ═══ 大字体模式 ═══ */
-.font-large .cs-brand-label { font-size: 22rpx; }
-.font-large .cs-brand-name { font-size: 44rpx; }
-.font-large .cs-status-chip { font-size: 26rpx; }
+.font-large .cs-brand-label { font-size: 24rpx; }
+.font-large .cs-brand-name { font-size: 42rpx; }
+.font-large .cs-status-chip { font-size: 24rpx; }
 .font-large .cs-headline-title { font-size: 56rpx; }
 .font-large .cs-empty-title { font-size: 50rpx; }
-.font-large .cs-empty-sub { font-size: 34rpx; }
-.font-large .cs-empty-card-title { font-size: 40rpx; }
+.font-large .cs-empty-sub { font-size: 38rpx; }
+.font-large .cs-empty-card-title { font-size: 38rpx; }
 .font-large .cs-empty-card-sub { font-size: 28rpx; }
-.font-large .cs-center-name { font-size: 34rpx; }
+.font-large .cs-center-name { font-size: 38rpx; }
 .font-large .cs-center-type { font-size: 24rpx; }
-.font-large .cs-center-tag { font-size: 22rpx; }
-.font-large .cs-node-label { font-size: 26rpx; }
-.font-large .cs-node-hint { font-size: 18rpx; }
+.font-large .cs-center-tag { font-size: 24rpx; }
+.font-large .cs-node-label { font-size: 24rpx; }
+.font-large .cs-node-hint { font-size: 24rpx; }
 .font-large .cs-metric-value { font-size: 38rpx; }
 .font-large .cs-metric-label { font-size: 24rpx; }
-.font-large .cs-dock-title-text { font-size: 30rpx; }
+.font-large .cs-dock-title-text { font-size: 38rpx; }
 .font-large .cs-dock-title-sub { font-size: 24rpx; }
 .font-large .cs-dock-btn { font-size: 28rpx; }
 

@@ -195,7 +195,7 @@ function petalStyle(i: number) {
 /* ═══ TOPBAR ═══ */
 .ags-topbar{display:flex;justify-content:space-between;align-items:center;padding:20rpx 28rpx 12rpx}
 .ags-topbar-title{font-size:38rpx;font-weight:900;color:var(--text-main,#111)}
-.ags-topbar-close{width:56rpx;height:56rpx;border-radius:50%;border:2rpx solid var(--border,#111);display:flex;align-items:center;justify-content:center;font-size:36rpx;color:var(--text-muted,#666)}
+.ags-topbar-close{width:56rpx;height:56rpx;border-radius:50%;border:2rpx solid var(--border,#111);display:flex;align-items:center;justify-content:center;font-size:38rpx;color:var(--text-muted,#666)}
 
 /* ═══ STAGE ═══ */
 .ags-stage{position:relative;min-height:920rpx;margin:0 24rpx 24rpx;padding-bottom:20rpx;background:var(--surface-soft,#f5ead6);border:2rpx solid var(--border,#111);border-radius:var(--shape-radius-card,0);overflow:hidden}
@@ -208,10 +208,10 @@ function petalStyle(i: number) {
 .ags-compass:after{content:"";position:absolute;left:50%;top:12rpx;width:1px;height:calc(100% - 24rpx);background:rgba(24,21,20,.08);transform:translateX(-50%)}
 
 /* N/S/E/W */
-.ags-mc-n{position:absolute;top:-28rpx;left:50%;transform:translateX(-50%);font-size:18rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
-.ags-mc-s{position:absolute;bottom:-28rpx;left:50%;transform:translateX(-50%);font-size:18rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
-.ags-mc-e{position:absolute;right:-28rpx;top:50%;transform:translateY(-50%);font-size:18rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
-.ags-mc-w{position:absolute;left:-28rpx;top:50%;transform:translateY(-50%);font-size:18rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
+.ags-mc-n{position:absolute;top:-28rpx;left:50%;transform:translateX(-50%);font-size:22rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
+.ags-mc-s{position:absolute;bottom:-28rpx;left:50%;transform:translateX(-50%);font-size:22rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
+.ags-mc-e{position:absolute;right:-28rpx;top:50%;transform:translateY(-50%);font-size:22rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
+.ags-mc-w{position:absolute;left:-28rpx;top:50%;transform:translateY(-50%);font-size:22rpx;font-weight:900;color:rgba(24,21,20,.3);z-index:4}
 
 /* Needles — base */
 .ags-mc-needle{position:absolute;left:50%;top:50%;width:4rpx;height:36rpx;transform-origin:bottom center;border-radius:2rpx;z-index:2}
@@ -230,7 +230,7 @@ function petalStyle(i: number) {
 .ags-mc-needle-xi{background:var(--accent,#FFD93D);box-shadow:0 0 10rpx rgba(196,155,74,.35)}
 .ags-mc-needle-xi:after{position:absolute;top:-22rpx;left:50%;transform:translateX(-50%);font-size:22rpx;line-height:1;animation:needle-pulse 2s ease-in-out infinite;content:"⭐"}
 
-.ags-mc-label{position:absolute;bottom:-60rpx;left:50%;transform:translateX(-50%);font-size:14rpx;font-weight:900;white-space:nowrap}
+.ags-mc-label{position:absolute;bottom:-60rpx;left:50%;transform:translateX(-50%);font-size:22rpx;font-weight:900;white-space:nowrap}
 .ags-compass-peach .ags-mc-label{color:var(--hero,#FF6B6B)}
 .ags-compass-luan .ags-mc-label{color:var(--risk,#FF5252)}
 .ags-compass-xi .ags-mc-label{color:var(--accent,#FFD93D)}
@@ -238,9 +238,9 @@ function petalStyle(i: number) {
 /* ═══ BALLOON CARDS ═══ */
 .ags-card{position:absolute;z-index:4;border-radius:var(--shape-radius-card,0);padding:28rpx 32rpx;border:2rpx solid var(--card-border,#111);box-shadow:inset 0 -12rpx 28rpx rgba(0,0,0,.06),inset 0 6rpx 20rpx rgba(255,255,255,.5),0 12rpx 40rpx rgba(0,0,0,.1);display:flex;flex-direction:column;gap:8rpx;animation:card-float var(--fd,5s) ease-in-out infinite;animation-delay:var(--fdl,0s)}
 @keyframes card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8rpx)}}
-.ags-card-kicker{font-size:20rpx;font-weight:900;color:var(--card-accent,#ef7669);letter-spacing:.05em}
-.ags-card-main{font-size:26rpx;font-weight:800;color:var(--text-main,#111);line-height:1.3}
-.ags-card-sub{font-size:18rpx;color:var(--text-muted,#666);line-height:1.4}
+.ags-card-kicker{font-size:22rpx;font-weight:900;color:var(--card-accent,#ef7669);letter-spacing:.05em}
+.ags-card-main{font-size:32rpx;font-weight:800;color:var(--text-main,#111);line-height:1.3}
+.ags-card-sub{font-size:22rpx;color:var(--text-muted,#666);line-height:1.4}
 .ags-color-dots{display:flex;gap:12rpx;margin-top:4rpx}
 .ags-color-dot{width:32rpx;height:32rpx;border-radius:50%;border:3rpx solid rgba(24,21,20,.2)}
 
@@ -250,14 +250,14 @@ function petalStyle(i: number) {
 
 /* ═══ SCORE ═══ */
 .ags-score{position:absolute;right:32rpx;bottom:108rpx;z-index:4;display:flex;align-items:baseline;gap:4rpx;animation:card-float 5s ease-in-out infinite}
-.ags-score-num{font-size:60rpx;font-weight:900;color:var(--hero,#FF6B6B);line-height:1}
-.ags-score-div{font-size:30rpx;color:#ddd;font-weight:700}
-.ags-score-unit{font-size:30rpx;color:#aaa;font-weight:700}
-.ags-score-label{font-size:18rpx;color:#bbb;font-weight:700;margin-left:16rpx}
+.ags-score-num{font-size:50rpx;font-weight:900;color:var(--hero,#FF6B6B);line-height:1}
+.ags-score-div{font-size:32rpx;color:#ddd;font-weight:700}
+.ags-score-unit{font-size:32rpx;color:#aaa;font-weight:700}
+.ags-score-label{font-size:22rpx;color:#bbb;font-weight:700;margin-left:16rpx}
 
 /* ═══ DONT CHIPS ═══ */
 .ags-donts{position:absolute;right:20rpx;bottom:28rpx;z-index:4;display:flex;gap:8rpx}
-.ags-dont-chip{padding:8rpx 20rpx;border-radius:28rpx;font-size:18rpx;font-weight:700;background:rgba(239,118,105,.06);border:3rpx solid rgba(239,118,105,.2);color:#b87068;animation:chip-float 4s ease-in-out infinite;animation-delay:var(--cd,0s)}
+.ags-dont-chip{padding:8rpx 20rpx;border-radius:28rpx;font-size:22rpx;font-weight:700;background:rgba(239,118,105,.06);border:3rpx solid rgba(239,118,105,.2);color:#b87068;animation:chip-float 4s ease-in-out infinite;animation-delay:var(--cd,0s)}
 .ags-dont-chip:nth-child(1){--cd:0s}.ags-dont-chip:nth-child(2){--cd:.3s}.ags-dont-chip:nth-child(3){--cd:.6s}
 @keyframes chip-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6rpx)}}
 
@@ -273,5 +273,5 @@ function petalStyle(i: number) {
 @keyframes petal-fall{0%{opacity:0;transform:translate(0,-16rpx)rotate(0deg)scale(.5)}8%{opacity:.7}60%{opacity:.35}100%{opacity:0;transform:translate(var(--drift,36rpx),440rpx)rotate(var(--spin,360deg))scale(.2)}}
 
 /* ═══ EMPTY STATE ═══ */
-.ags-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted,#666);font-size:28rpx;font-weight:700}
+.ags-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted,#666);font-size:32rpx;font-weight:700}
 </style>
