@@ -238,15 +238,15 @@ function petalStyle(i: number) {
 /* ═══ BALLOON CARDS ═══ */
 .ags-card{position:absolute;z-index:4;border-radius:var(--shape-radius-card,0);padding:28rpx 32rpx;border:2rpx solid var(--card-border,#111);box-shadow:inset 0 -12rpx 28rpx rgba(0,0,0,.06),inset 0 6rpx 20rpx rgba(255,255,255,.5),0 12rpx 40rpx rgba(0,0,0,.1);display:flex;flex-direction:column;gap:8rpx;animation:card-float var(--fd,5s) ease-in-out infinite;animation-delay:var(--fdl,0s)}
 @keyframes card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8rpx)}}
-.ags-card-kicker{font-size:22rpx;font-weight:700;color:var(--card-accent,#ef7669);letter-spacing:.05em}
-.ags-card-main{font-size:32rpx;font-weight:400;color:var(--text-main,#111);line-height:1.3}
-.ags-card-sub{font-size:22rpx;color:var(--text-muted,#666);line-height:1.4;font-weight:400}
+.ags-card-kicker{font-size:32rpx;font-weight:700;color:var(--card-accent,#ef7669);letter-spacing:.05em}
+.ags-card-main{font-size:34rpx;font-weight:400;color:var(--text-main,#111);line-height:1.35}
+.ags-card-sub{font-size:24rpx;color:var(--text-muted,#666);line-height:1.4;font-weight:400}
 .ags-color-dots{display:flex;gap:12rpx;margin-top:4rpx}
 .ags-color-dot{width:32rpx;height:32rpx;border-radius:50%;border:3rpx solid rgba(24,21,20,.2)}
 
-.ags-card-wear{background:linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 50%,#FFD8BC 100%);--card-accent:var(--hero,#ef7669);--card-border:#e0b090;top:28rpx;right:20rpx;width:390rpx;min-height:160rpx;--fd:4.8s;--fdl:0s}
-.ags-card-venue{background:linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 50%,#C0E8D4 100%);--card-accent:#2d6a4f;--card-border:#a0d0b8;top:310rpx;right:20rpx;width:390rpx;min-height:140rpx;--fd:5.2s;--fdl:.4s}
-.ags-card-do{background:linear-gradient(160deg,#F5FFFD 0%,#D8F8F0 50%,#C0ECE4 100%);--card-accent:#1a6b5a;--card-border:#90d0c4;top:550rpx;right:20rpx;width:390rpx;min-height:140rpx;--fd:4.5s;--fdl:.8s}
+.ags-card-wear{background:linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 50%,#FFD8BC 100%);--card-accent:var(--hero,#ef7669);--card-border:#e0b090;top:28rpx;right:20rpx;width:390rpx;min-height:180rpx;--fd:4.8s;--fdl:0s}
+.ags-card-venue{background:linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 50%,#C0E8D4 100%);--card-accent:#2d6a4f;--card-border:#a0d0b8;top:330rpx;right:20rpx;width:390rpx;min-height:160rpx;--fd:5.2s;--fdl:.4s}
+.ags-card-do{background:linear-gradient(160deg,#F5FFFD 0%,#D8F8F0 50%,#C0ECE4 100%);--card-accent:#1a6b5a;--card-border:#90d0c4;top:580rpx;right:20rpx;width:390rpx;min-height:160rpx;--fd:4.5s;--fdl:.8s}
 
 /* ═══ SCORE ═══ */
 .ags-score{position:absolute;right:32rpx;bottom:108rpx;z-index:4;display:flex;align-items:baseline;gap:4rpx;animation:card-float 5s ease-in-out infinite}
