@@ -137,82 +137,28 @@
           </view>
         </view>
 
-        <!-- 本次分析面板（最新信号节点打开 / AI 分析中自动弹出，指标不与雷达重复展示） -->
-        <view v-if="analysisSheetVisible && showQuickFeedback && latestCase.latestResult && latestTrend" class="qr-sheet-mask" @click="closeAnalysisSheet">
-          <view class="qr-sheet" @click.stop>
-            <view class="qr-sheet-topbar">
-              <text class="qr-sheet-close" @click="closeAnalysisSheet">×</text>
-            </view>
-        <view :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']" style="margin:0;">
-          <button class="btn-share-sm analysis-share-btn" open-type="share">
-            <image class="analysis-share-icon" src="/static/icons/taohua/share-2.svg" mode="aspectFit" />
-          </button>
-          <view class="block-head analysis-head"><text class="block-title">本次分析</text></view>
-          <text v-if="latestCase.latestResult?.userQuestion?.label" class="question-context-v2">你问：{{ latestCase.latestResult.userQuestion.label }}</text>
-          <text class="feedback-desc">{{ latestOriginalRecordText }}</text>
-          <view v-if="aiFeedbackLoading" class="action-box">
-            <text class="action-label">{{ aiLabel() }} 分析中...</text>
-            <view class="ai-row"><view class="ai-dot"></view><text class="action-text muted">后台分析中，已用时 {{ aiFeedbackSeconds }} 秒</text></view>
-          </view>
-          <view v-else-if="latestCase.latestResult.aiPending" class="action-box">
-            <text class="action-label">等待中</text>
-            <text class="action-text muted">{{ aiLabel() }} 分析尚未开始，请稍候。</text>
-          </view>
-          <template v-else>
-            <view class="score-grid">
-              <view class="score-item">
-                <text class="score-label-v2">意向</text><text class="score-num-v2">{{ clampScore(latestCase.latestResult.intentScore) }}</text>
-                <text class="score-bucket-v2">{{ mapIntentLabel(latestCase.latestResult?.intentBucket) }}</text>
-                <view class="bar-track-v2"><view class="bar-fill-v2" :style="{ width: clampScore(latestCase.latestResult.intentScore) + '%' }"></view></view>
-                <text class="score-delta-v2"><text class="score-delta-label">变化</text><text :class="['score-delta-val', deltaClass(latestTrend.intentDelta)]">{{ formatDelta(latestTrend.intentDelta) }}</text></text>
-              </view>
-              <view class="score-item">
-                <text class="score-label-v2">风险</text><text class="score-num-v2 risk">{{ clampScore(latestCase.latestResult.consistencyRiskScore) }}</text>
-                <text class="score-bucket-v2">{{ mapRiskLabel(latestCase.latestResult?.riskBucket) }}</text>
-                <view class="bar-track-v2"><view class="bar-fill-v2 risk" :style="{ width: clampScore(latestCase.latestResult.consistencyRiskScore) + '%' }"></view></view>
-                <text class="score-delta-v2"><text class="score-delta-label">变化</text><text :class="['score-delta-val', deltaClass(latestTrend.riskDelta)]">{{ formatDelta(latestTrend.riskDelta) }}</text></text>
-              </view>
-            </view>
-            <view v-if="quickFeedbackSignal" class="tag-row-v2" style="margin-top:12px;">
-              <text class="tag-v2 black quick-feedback-signal-v2">{{ quickFeedbackSignal.emoji }} {{ quickFeedbackSignal.label }}</text>
-            </view>
-            <view v-if="quickReasonBullets.length > 0" class="reason-box">
-              <text v-for="reason in quickReasonBullets" :key="reason" class="reason-line">• {{ reason }}</text>
-            </view>
-            <view v-if="latestActionPlanPanel.show" class="action-box">
-              <text v-if="latestActionPlanPanel.missing" class="action-text muted">{{ latestActionPlanPanel.text }}</text>
-              <view v-else><view v-for="item in latestActionPlanPanel.sections" :key="item.label" class="action-item"><text class="action-item-label">{{ petLabel(item.label) }}</text><text class="action-item-text">{{ item.text }}</text></view></view>
-            </view>
-          </template>
-        </view>
-          </view>
-        </view>
+        <!-- 本次分析面板 -->
+        <AnalysisSheet
+          :visible="analysisSheetVisible && showQuickFeedback && !!latestCase.latestResult && !!latestTrend"
+          :ai-state="analysisAiState"
+          :scores="analysisScores"
+          :signal="analysisSignal"
+          :meta="analysisMeta"
+          :reason-bullets="quickReasonBullets"
+          :action-sections="latestActionPlanPanel.sections"
+          :action-missing="latestActionPlanPanel.missing"
+          :action-missing-text="latestActionPlanPanel.text"
+          @close="closeAnalysisSheet"
+        />
 
       <!-- 互动天平面板 -->
-      <view v-if="balanceSheetVisible" class="qr-sheet-mask" @click="closeBalanceSheet">
-        <view class="qr-sheet" @click.stop>
-          <view class="qr-sheet-topbar">
-            <text class="qr-sheet-close" @click="closeBalanceSheet">×</text>
-          </view>
-          <view class="panel-card">
-            <text class="panel-card-title">⚖️ 互动天平</text>
-            <text class="panel-card-sub">本月你与 TA 的互动对比</text>
-            <view v-for="bar in balanceSheetData" :key="bar.label" class="balance-row-new">
-              <view class="balance-row-head">
-                <text class="balance-row-label">{{ bar.label }}</text>
-                <view class="balance-row-nums"><text class="brn-you">你 {{ bar.you }}</text><text class="brn-vs">:</text><text class="brn-ta">TA {{ bar.ta }}</text></view>
-              </view>
-              <view class="balance-row-bar">
-                <view class="brb-you" :style="{ flex: bar.you || 0.1 }"></view>
-                <view class="brb-sep"></view>
-                <view class="brb-ta" :class="bar.taClass" :style="{ flex: bar.ta || 0.1 }"></view>
-              </view>
-            </view>
-            <view class="panel-callout">{{ balanceCalloutForHome }}</view>
-            <view class="panel-link" @click="closeBalanceSheet(); goCaseDetail(latestCase.caseId || latestCase._id)">查看完整分析 →</view>
-          </view>
-        </view>
-      </view>
+      <BalanceSheet
+        :visible="balanceSheetVisible"
+        :bars="balanceSheetData"
+        :callout="balanceCalloutForHome"
+        @close="closeBalanceSheet"
+        @open-case-detail="goCaseDetail(latestCase.caseId || latestCase._id)"
+      />
 
       <!-- 行动指南面板 -->
       <ActionGuideSheet
@@ -339,6 +285,8 @@ import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import CampusSignalHome from '@/components/CampusSignalHome.vue'
 import ActionGuideSheet from '@/components/ActionGuideSheet.vue'
+import AnalysisSheet from '@/components/AnalysisSheet.vue'
+import BalanceSheet from '@/components/BalanceSheet.vue'
 import { normalizeActionGuideData } from '@/utils/taohua'
 import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, decayPetEnergy, feedPet, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, readPetEnergy, setActiveCaseId, setPendingTimelineContext, showError, showSuccess, writePetEnergy } from '@/utils/helpers'
@@ -714,6 +662,35 @@ const quickFeedbackSignal = computed(() => {
   if (!insight && !trend) return null
   return mapEventSignal(insight, trend)
 })
+
+// AnalysisSheet computed props
+const analysisAiState = computed(() => {
+  const r = latestCase.value?.latestResult
+  const aiFailed = Boolean(r?.aiFailed || (r?.source === 'event_recalculation' && r?.aiUsed === false))
+  return {
+    loading: aiFeedbackLoading.value,
+    pending: Boolean(r?.aiPending && !aiFeedbackLoading.value),
+    seconds: aiFeedbackSeconds.value,
+    error: Boolean(!aiFeedbackLoading.value && !r?.aiPending && aiFailed),
+    errorMsg: aiFailed ? '本次 AI 返回超时或格式不完整，系统先用了规则兜底。' : '',
+  }
+})
+const analysisScores = computed(() => ({
+  intentScore: clampScore(latestCase.value?.latestResult?.intentScore),
+  riskScore: clampScore(latestCase.value?.latestResult?.consistencyRiskScore),
+  intentBucket: mapIntentLabel(latestCase.value?.latestResult?.intentBucket),
+  riskBucket: mapRiskLabel(latestCase.value?.latestResult?.riskBucket),
+  intentDelta: latestTrend.value?.intentDelta ?? 0,
+  riskDelta: latestTrend.value?.riskDelta ?? 0,
+}))
+const analysisSignal = computed(() => ({
+  emoji: quickFeedbackSignal.value?.emoji || '',
+  label: quickFeedbackSignal.value?.label || '',
+}))
+const analysisMeta = computed(() => ({
+  questionLabel: latestCase.value?.latestResult?.userQuestion?.label || '',
+  rawDescription: latestOriginalRecordText.value || '',
+}))
 
 const shareTitle = computed(() => {
   const r = latestCase.value?.latestResult
