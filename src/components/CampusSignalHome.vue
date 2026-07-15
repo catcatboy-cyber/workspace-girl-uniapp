@@ -485,7 +485,7 @@ const statusLabel = computed(() => {
 }
 .cs-node-icon { font-size: 24rpx; }
 .cs-node-label { font-size: 22rpx; font-weight: 900; color: var(--text-main, #111); }
-.cs-node-hint { font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; }
+.cs-node-hint { font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; max-width: 110rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* 节点光束扫过闪烁：7s 周期与 cs-beam 同步，每个节点在光束扫过其象限时持续发光约 1.5s */
 .cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 5.25s; }

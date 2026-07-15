@@ -781,9 +781,9 @@ function closeGuidanceSheet() { guidanceSheetVisible.value = false }
 const balanceCalloutForHome = computed(() => {
   const s = latestTimelineStats.value
   const t = s.targetInitiatedCount, self = s.selfInitiatedCount
-  if (t + self === 0) return '暂无足够互动数据'
-  if (t > self) return `TA 更主动 · ${t}/${self}`
-  if (self > t) return `你更主动 · ${self}/${t}`
+  if (t + self === 0) return '暂无数据'
+  if (t > self) return `TA更主动 ${t}/${self}`
+  if (self > t) return `你更主动 ${self}/${t}`
   return '双方平衡'
 })
 
