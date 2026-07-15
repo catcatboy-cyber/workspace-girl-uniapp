@@ -36,7 +36,7 @@
 
     <template v-else>
       <view class="cs-headline">
-        <text class="cs-headline-title">今天的关系信号图</text>
+        <text class="cs-headline-title">今日心动雷达</text>
       </view>
 
       <!-- ===== 3. 关系雷达 ===== -->
