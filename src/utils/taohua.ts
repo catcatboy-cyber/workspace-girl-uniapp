@@ -824,3 +824,29 @@ export function buildPairMatchPayload(
     partnerStyle: partnerMatch.western.personality,
   }
 }
+
+/** 标准化云函数返回的行动指南数据，供首页和命理桃花页面共享 */
+export function normalizeActionGuideData(practical: Record<string, any>) {
+  const guide = practical?.约会指南 || {}
+  const wear = practical?.穿戴建议 || {}
+  return {
+    venue: guide.场所建议 || '',
+    venueActivities: (guide.建议活动 || []) as string[],
+    doList: (guide.宜做 || []) as string[],
+    dontList: (guide.避开 || []) as string[],
+    aura: guide.今日气场 || '',
+    guideSummary: guide.解读 || '',
+    oneliner: guide.一句话 || '',
+    isLow: Boolean(guide.isLow),
+    liuheDir: guide.六合方位 || '',
+    liuheDay: Boolean(guide.六合助缘),
+    wearColors: (wear.桃花颜色 || []) as string[],
+    wearMaterial: wear.桃花材质 || '',
+    wearHighlight: wear.桃花点睛 || '',
+    wearOneLiner: wear.一句话 || '',
+    taohuaWuxing: wear.桃花五行 || '',
+    benmingWuxing: wear.本命五行 || '',
+    fiveElementRelation: wear.五行关系 || '',
+  }
+}
+

@@ -2,9 +2,10 @@
   CampusSignalHome — 关系信号雷达首页（纯展示组件）
   数据通过 props 传入，事件通过 emits 传出。
   不调用 API，不修改状态，不写本地存储。
+  视觉完全走主题 CSS 变量（丝绒日记 / 青春硬边），不硬编码黑边黑硬阴影。
 -->
 <template>
-  <view class="campus-signal" :style="pageStyle">
+  <view :class="['campus-signal', fontSizeMode === 'large' ? 'font-large' : '']" :style="pageStyle">
     <!-- ===== 1. 顶部状态条 ===== -->
     <view class="cs-top-bar">
       <view class="cs-brand">
@@ -49,20 +50,20 @@
         </view>
         <view class="cs-center-name">{{ caseName }}</view>
         <view class="cs-center-type">{{ caseTypeLabel }}</view>
+        <view v-if="profileItems && profileItems.length > 0" class="cs-center-tags">
+          <text v-for="item in profileItems" :key="item" class="cs-center-tag">{{ item }}</text>
+        </view>
 
-        <!-- 光环（纯装饰） -->
+        <!-- 扫描光束 -->
+        <view class="cs-beam"></view>
+
+        <!-- 光环 -->
         <view class="cs-halo cs-halo-h1"></view>
         <view class="cs-halo cs-halo-h2"></view>
         <view class="cs-halo cs-halo-h3"></view>
 
         <!-- 脉冲 -->
         <view v-if="hasLatestResult" class="cs-pulse"></view>
-
-        <!-- 连线（从中心到节点） -->
-        <view class="cs-line cs-line-record"></view>
-        <view class="cs-line cs-line-voice"></view>
-        <view class="cs-line cs-line-ai"></view>
-        <view class="cs-line cs-line-taohua"></view>
 
         <!-- 节点：最新信号 -->
         <view class="cs-node cs-node-signal" @click="$emit('open-latest-signal')">
@@ -85,27 +86,27 @@
           <text class="cs-node-hint">{{ taohuaTeaserData ? taohuaTeaserData.direction : '加载中' }}</text>
         </view>
 
-        <!-- 节点：桃花匹配 -->
-        <view class="cs-node cs-node-pair" @click="$emit('open-pair-match')">
-          <text class="cs-node-icon">💞</text>
-          <text class="cs-node-label">桃花匹配</text>
-          <text class="cs-node-hint">{{ pairMatch ? '查看匹配' : hasSelfProfile ? '开始匹配' : '完善画像后解锁' }}</text>
+        <!-- 节点：行动指南 -->
+        <view class="cs-node cs-node-pair" @click="$emit('open-guidance')">
+          <text class="cs-node-icon">🧭</text>
+          <text class="cs-node-label">行动指南</text>
+          <text class="cs-node-hint">{{ guidanceHint }}</text>
         </view>
+      </view>
 
-        <!-- ===== 4. 指标区 ===== -->
-        <view class="cs-metrics">
-          <view class="cs-metric cs-metric-intent">
-            <text class="cs-metric-value">{{ intentScore }}</text>
-            <text class="cs-metric-label">意向</text>
-          </view>
-          <view class="cs-metric cs-metric-risk">
-            <text class="cs-metric-value">{{ riskScore }}</text>
-            <text class="cs-metric-label">风险</text>
-          </view>
-          <view class="cs-metric cs-metric-verify">
-            <text class="cs-metric-value">{{ pendingVerificationLabel }}</text>
-            <text class="cs-metric-label">待验证</text>
-          </view>
+      <!-- ===== 4. 指标区 ===== -->
+      <view class="cs-metrics">
+        <view class="cs-metric cs-metric-intent">
+          <text class="cs-metric-value">{{ intentScore }}</text>
+          <text class="cs-metric-label">意向分</text>
+        </view>
+        <view class="cs-metric cs-metric-risk">
+          <text class="cs-metric-value">{{ riskScore }}</text>
+          <text class="cs-metric-label">风险分</text>
+        </view>
+        <view class="cs-metric cs-metric-taohua">
+          <text class="cs-metric-value">{{ taohuaScore }}</text>
+          <text class="cs-metric-label">桃花运</text>
         </view>
       </view>
 
@@ -115,19 +116,22 @@
           <view class="cs-dock-title">
             <view class="cs-dock-live"></view>
             <view>
-              <text class="cs-dock-title-text">小咪正在读信号</text>
-              <text class="cs-dock-title-sub">截图 / 对话 / 语音都可投喂</text>
+              <text class="cs-dock-title-text">记录互动证据</text>
+              <text class="cs-dock-title-sub">截图 / 对话 / 语音 投喂给 {{ petName }} 分析</text>
             </view>
           </view>
         </view>
         <view class="cs-dock-actions">
           <view class="cs-dock-btn cs-dock-btn-main" @click="$emit('open-quick-record', 'text')">
+            <text class="cs-dock-btn-icon">✎</text>
             <text>记一条</text>
           </view>
           <view class="cs-dock-btn" @click="$emit('open-quick-record', 'image')">
+            <text class="cs-dock-btn-icon">🖼</text>
             <text>截图</text>
           </view>
           <view class="cs-dock-btn" @click="$emit('open-quick-record', 'voice')">
+            <text class="cs-dock-btn-icon">🎤</text>
             <text>语音</text>
           </view>
         </view>
@@ -153,13 +157,16 @@ const props = defineProps({
   hasLatestResult: { type: Boolean, default: false },
   intentScore: { type: [Number, String], default: '暂无' },
   riskScore: { type: [Number, String], default: '暂无' },
-  pendingVerificationLabel: { type: String, default: '暂无' },
+  taohuaScore: { type: [Number, String], default: '--' },
+  profileItems: { type: Array as any, default: () => [] },
   latestSignal: { type: Object as any, default: null },
   interactionBalance: { type: Object as any, default: null },
   balanceCallout: { type: String, default: '' },
   taohuaTeaserData: { type: Object as any, default: null },
-  pairMatch: { type: Object as any, default: null },
+  petName: { type: String, default: '小咪' },
+  guidanceText: { type: String, default: '' },
   hasSelfProfile: { type: Boolean, default: false },
+  fontSizeMode: { type: String, default: 'default' },
 })
 
 // ---- Emits ----
@@ -168,13 +175,17 @@ defineEmits([
   'open-latest-signal',
   'open-interaction-balance',
   'open-taohua',
-  'open-pair-match',
+  'open-guidance',
   'open-quick-record',
   'start-assessment',
   'quick-create',
 ])
 
 // ---- Computed ----
+const guidanceHint = computed(() => {
+  if (props.taohuaTeaserData?.summary) return props.taohuaTeaserData.summary
+  return '完善画像后解锁'
+})
 const avatarInitial = computed(() => {
   const name = props.caseName?.trim?.()
   return name ? name.slice(0, 1) : 'TA'
@@ -227,18 +238,19 @@ const statusLabel = computed(() => {
   gap: 8rpx;
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  border: 2rpx solid var(--text-main, #111);
-  background: var(--card, #fff);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
   font-size: 22rpx;
   font-weight: 800;
+  color: var(--text-main, #111);
 }
 .cs-status-dot {
   width: 14rpx;
   height: 14rpx;
   border-radius: 50%;
-  border: 2rpx solid var(--text-main, #111);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
 }
-.cs-status-active { background: var(--mint, #4ECDC4); }
+.cs-status-active { background: var(--accent-cool, #4ECDC4); }
 .cs-status-idle { background: var(--text-muted, #666); }
 .cs-status-empty { background: var(--text-soft, #999); }
 
@@ -246,10 +258,10 @@ const statusLabel = computed(() => {
 .cs-empty-hero {
   margin: 40rpx 28rpx;
   padding: 40rpx 28rpx;
-  border: 3rpx solid #111;
-  box-shadow: 8rpx 8rpx 0 #111;
-  background: var(--hero, #FF6B6B);
-  transform: rotate(-0.5deg);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-card, 0);
+  box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111);
+  background: var(--hero-bg, #FF6B6B);
 }
 .cs-empty-title {
   font-size: 42rpx;
@@ -270,13 +282,15 @@ const statusLabel = computed(() => {
 }
 .cs-empty-card {
   padding: 24rpx;
-  background: #fff;
-  border: 3rpx solid #111;
-  box-shadow: 4rpx 4rpx 0 #111;
+  background: var(--surface, #fff);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-card, 0);
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
 }
 .cs-empty-card-title {
   font-size: 34rpx;
   font-weight: 800;
+  color: var(--text-main, #111);
 }
 .cs-empty-card-sub {
   font-size: 24rpx;
@@ -309,9 +323,9 @@ const statusLabel = computed(() => {
   height: 140rpx;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 3rpx solid #111;
-  background: var(--hero, #FF6B6B);
-  box-shadow: 6rpx 6rpx 0 #111;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--hero-bg, #FF6B6B);
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,8 +335,8 @@ const statusLabel = computed(() => {
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
-  border: 3rpx solid #111;
-  background: #fff;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -356,12 +370,48 @@ const statusLabel = computed(() => {
   transform: translate(-50%, 88rpx);
   font-size: 20rpx;
   font-weight: 700;
-  color: var(--text-muted, #666);
-  background: #111;
-  color: #FFD93D;
+  background: var(--hero-tag-bg, #111);
+  color: var(--hero-tag-color, #FFD93D);
   padding: 2rpx 12rpx;
-  border-radius: 4rpx;
+  border-radius: var(--shape-radius-control, 4rpx);
   z-index: 4;
+}
+.cs-center-tags {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, 120rpx);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6rpx;
+  z-index: 4;
+}
+.cs-center-tag {
+  font-size: 18rpx;
+  font-weight: 700;
+  color: var(--text-soft, #999);
+  border: 1rpx solid var(--border, #111);
+  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+  white-space: nowrap;
+}
+
+/* 扫描光束 */
+.cs-beam {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 320rpx;
+  height: 320rpx;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(from -20deg, transparent, var(--accent-cool, #4ECDC4), transparent 32%);
+  opacity: 0.18;
+  animation: cs-beam-spin 7s linear infinite;
+}
+@keyframes cs-beam-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* 光环 */
@@ -375,20 +425,28 @@ const statusLabel = computed(() => {
 .cs-halo-h1 {
   width: 320rpx;
   height: 320rpx;
-  border: 2rpx solid var(--text-main, #111);
+  border: 2rpx solid var(--border, #111);
   opacity: 0.15;
 }
 .cs-halo-h2 {
   width: 260rpx;
   height: 260rpx;
-  border: 2rpx dashed var(--text-main, #111);
+  border: 2rpx dashed var(--border, #111);
   opacity: 0.1;
+  animation: cs-halo-spin 28s linear infinite;
 }
 .cs-halo-h3 {
   width: 190rpx;
   height: 190rpx;
-  border: 2rpx solid var(--mint, #4ECDC4);
+  border: 2rpx solid var(--accent-cool, #4ECDC4);
   opacity: 0.12;
+  animation: cs-halo-spin-rev 18s linear infinite;
+}
+@keyframes cs-halo-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes cs-halo-spin-rev {
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 
 /* 脉冲 */
@@ -400,7 +458,7 @@ const statusLabel = computed(() => {
   height: 140rpx;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  border: 2rpx solid var(--hero, #FF6B6B);
+  border: 2rpx solid var(--hero-bg, #FF6B6B);
   opacity: 0;
   animation: cs-pulse-anim 2.6s ease-out infinite;
 }
@@ -409,28 +467,15 @@ const statusLabel = computed(() => {
   100% { width: 260rpx; height: 260rpx; opacity: 0; }
 }
 
-/* 连线 */
-.cs-line {
-  position: absolute;
-  height: 1rpx;
-  background: var(--text-main, #111);
-  opacity: 0.2;
-  transform-origin: left center;
-}
-.cs-line-record { left: 180rpx; top: 210rpx; width: 120rpx; transform: rotate(25deg); }
-.cs-line-voice { right: 180rpx; top: 216rpx; width: 120rpx; transform: rotate(155deg); }
-.cs-line-ai { left: 176rpx; top: 370rpx; width: 128rpx; transform: rotate(-28deg); }
-.cs-line-taohua { right: 176rpx; top: 360rpx; width: 128rpx; transform: rotate(208deg); }
-
 /* 节点 */
 .cs-node {
   position: absolute;
   width: 130rpx;
   height: 100rpx;
-  border-radius: 20rpx;
-  border: 3rpx solid #111;
-  box-shadow: 4rpx 4rpx 0 #111;
-  background: #fff;
+  border-radius: var(--shape-radius-inner, 20rpx);
+  /* border: var(--border-width-strong, 3rpx) solid var(--border, #111); */
+  /* box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); */
+  background: var(--surface, #fff);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -442,60 +487,66 @@ const statusLabel = computed(() => {
 .cs-node-label { font-size: 22rpx; font-weight: 900; color: var(--text-main, #111); }
 .cs-node-hint { font-size: 16rpx; color: var(--text-muted, #666); font-weight: 700; }
 
-.cs-node-signal { left: 12rpx; top: 130rpx; }
-.cs-node-balance { right: 12rpx; top: 140rpx; }
-.cs-node-ai { left: 12rpx; top: 340rpx; }
-.cs-node-taohua { right: 12rpx; top: 330rpx; }
+/* 节点光束扫过闪烁：7s 周期与 cs-beam 同步，每个节点在光束扫过其象限时持续发光约 1.5s */
+.cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 5.25s; }
+.cs-node-balance { right: 12rpx; top: 140rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 0s; }
+.cs-node-taohua { right: 12rpx; top: 330rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 1.75s; }
+.cs-node-pair { left: 12rpx; top: 340rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 3.5s; }
+@keyframes cs-node-hit {
+  0%, 100% { box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
+  3%, 23% { box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111), 0 0 28rpx var(--accent-cool, #4ECDC4); }
+}
 
 /* 指标区 */
 .cs-metrics {
-  position: absolute;
-  left: 50%;
-  bottom: 12rpx;
-  width: 420rpx;
-  transform: translateX(-50%);
+  margin: 16rpx 18rpx 0;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12rpx;
 }
 .cs-metric {
-  height: 80rpx;
-  border-radius: 12rpx;
-  border: 3rpx solid #111;
-  background: #fff;
+  height: 96rpx;
+  border-radius: var(--shape-radius-inner, 12rpx);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
+  background: var(--surface, #fff);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 .cs-metric-value {
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: 900;
   color: var(--text-main, #111);
 }
 .cs-metric-label {
-  font-size: 18rpx;
+  font-size: 20rpx;
   color: var(--text-muted, #666);
   font-weight: 700;
-  margin-top: 2rpx;
+  margin-top: 4rpx;
 }
-.cs-metric-intent .cs-metric-value { color: var(--mint, #4ECDC4); }
+.cs-metric-intent .cs-metric-value { color: var(--accent-cool, #4ECDC4); }
 .cs-metric-risk .cs-metric-value { color: var(--risk, #FF5252); }
-.cs-metric-verify .cs-metric-value { font-size: 24rpx; }
+.cs-metric-taohua .cs-metric-value { color: var(--accent, #FFD93D); }
 
 /* ---- dock ---- */
 .cs-dock {
   margin: 20rpx 18rpx;
   padding: 20rpx;
-  border: 3rpx solid #111;
-  box-shadow: 4rpx 4rpx 0 #111;
-  background: #fff;
-  border-radius: 16rpx;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
+  background: var(--surface, #fff);
+  border-radius: var(--shape-radius-card, 16rpx);
 }
 .cs-dock-row {
   display: flex;
   align-items: center;
   margin-bottom: 16rpx;
+}
+.cs-dock-title {
+  display: flex;
+  align-items: center;
 }
 .cs-dock-live {
   width: 14rpx;
@@ -522,21 +573,22 @@ const statusLabel = computed(() => {
 }
 .cs-dock-btn {
   height: 64rpx;
-  border-radius: 12rpx;
-  border: 3rpx solid #111;
-  background: #fff;
+  border-radius: var(--shape-radius-control, 12rpx);
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26rpx;
+  gap: 6rpx;
+  font-size: 24rpx;
   font-weight: 900;
   color: var(--text-main, #111);
 }
+.cs-dock-btn-icon { font-size: 22rpx; }
 .cs-dock-btn-main {
-  background: var(--hero, #FF6B6B);
-  color: #fff;
-  border-color: #111;
-  box-shadow: 4rpx 4rpx 0 #111;
+  background: var(--accent-cool, #4ECDC4);
+  color: var(--text-main, #111);
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
 }
 
 /* ---- tabbar spacer ---- */
@@ -544,7 +596,28 @@ const statusLabel = computed(() => {
   height: 120rpx;
 }
 
+/* ═══ 大字体模式 ═══ */
+.font-large .cs-brand-label { font-size: 22rpx; }
+.font-large .cs-brand-name { font-size: 44rpx; }
+.font-large .cs-status-chip { font-size: 26rpx; }
+.font-large .cs-headline-title { font-size: 56rpx; }
+.font-large .cs-empty-title { font-size: 50rpx; }
+.font-large .cs-empty-sub { font-size: 34rpx; }
+.font-large .cs-empty-card-title { font-size: 40rpx; }
+.font-large .cs-empty-card-sub { font-size: 28rpx; }
+.font-large .cs-center-name { font-size: 34rpx; }
+.font-large .cs-center-type { font-size: 24rpx; }
+.font-large .cs-center-tag { font-size: 22rpx; }
+.font-large .cs-node-label { font-size: 26rpx; }
+.font-large .cs-node-hint { font-size: 18rpx; }
+.font-large .cs-metric-value { font-size: 38rpx; }
+.font-large .cs-metric-label { font-size: 24rpx; }
+.font-large .cs-dock-title-text { font-size: 30rpx; }
+.font-large .cs-dock-title-sub { font-size: 24rpx; }
+.font-large .cs-dock-btn { font-size: 28rpx; }
+
 @media (prefers-reduced-motion: reduce) {
-  .cs-pulse { animation: none; }
+  .cs-pulse, .cs-beam, .cs-halo-h2, .cs-halo-h3,
+  .cs-node-signal, .cs-node-balance, .cs-node-taohua, .cs-node-pair { animation: none; }
 }
 </style>

@@ -13,82 +13,38 @@
         <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ indexInviteeNoticeAmount }} Credits →</text>
       </view>
       <block v-else>
-      <template v-if="cases.length === 0">
-        <view class="hero-block-v2 anim-hero">
-          <text class="hero-tag-v2">TODAY</text>
-          <text class="hero-title-v2">先做一次<text class="hl-v2">初次</text>分析</text>
-          <text class="hero-copy-v2">完成一轮结构化问答，然后补记录、看往事、重新分析。</text>
-        </view>
-        <!-- 命理 · 今日桃花 -->
-        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.1s;" @click="goTaohua">
-          <view class="taohua-teaser-head">
-            <text class="taohua-teaser-head-title">🌸 今日桃花运势</text>
-            <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
-          </view>
-          <view v-if="taohuaTeaserData">
-            <!-- 气场进度条 -->
-            <view class="taohua-bar-wrap">
-              <text class="taohua-bar-label">气场</text>
-              <view class="taohua-bar-track"><view class="taohua-bar-fill" :style="{ width: taohuaTeaserData.score + '%' }"></view></view>
-              <text class="taohua-bar-label">行动</text>
-            </view>
-            <!-- 方位竖排 -->
-            <view class="taohua-dirs-v">
-              <view class="taohua-dir-v">
-                <text class="taohua-dir-v-emoji">🌸</text>
-                <view class="taohua-dir-v-info">
-                  <text class="taohua-dir-v-name">桃花方位 · {{ taohuaTeaserData.direction }}</text>
-                  <text class="taohua-dir-v-desc">{{ taohuaTeaserData.directionZhi }}位 · 今日邂逅气场最强方向</text>
-                </view>
-                <text class="taohua-dir-v-arrow">↗</text>
-              </view>
-              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-dir-v">
-                <text class="taohua-dir-v-emoji">🔴</text>
-                <view class="taohua-dir-v-info">
-                  <text class="taohua-dir-v-name">本命红鸾 · {{ taohuaTeaserData.hongluanDir }}方</text>
-                  <text class="taohua-dir-v-desc">姻缘开端星 · 关系突破从此起</text>
-                </view>
-                <text class="taohua-dir-v-arrow">↗</text>
-              </view>
-              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-dir-v">
-                <text class="taohua-dir-v-emoji">🕊️</text>
-                <view class="taohua-dir-v-info">
-                  <text class="taohua-dir-v-name">本命天喜 · {{ taohuaTeaserData.tianxiDir }}方</text>
-                  <text class="taohua-dir-v-desc">婚庆落地星 · 长期发展守护位</text>
-                </view>
-                <text class="taohua-dir-v-arrow">↗</text>
-              </view>
-            </view>
-            <!-- 引导语 -->
-            <text class="taohua-quote">"{{ taohuaTeaserData.guidance }}"</text>
-            <!-- 建除 + 概要 -->
-            <text class="taohua-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
-          </view>
-          <view v-else class="taohua-teaser-body-loading">
-            <text class="taohua-meta">加载中...</text>
-          </view>
-          <!-- CTA -->
-          <view class="taohua-cta">展开查看完整命理分析 ✦</view>
-          <!-- 出处 -->
-          <view class="taohua-cite">📖 咸池桃花 · 《三命通会》三合沐浴算法</view>
-        </view>
-        <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.15s" @click="goSelfProfile">
-          <text class="remind-card-title-v2">你的画像未完善</text>
-          <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
-        </view>
+        <!-- Campus Signal 雷达首页（含空状态） -->
+        <CampusSignalHome
+          :page-style="pageStyle"
+          :loading="loading"
+          :has-case="cases.length > 0"
+          :case-name="latestCase.name || '--'"
+          :case-avatar="latestCase.profile?.avatarUrl || latestCase.profile?.avatar || ''"
+          :case-type-label="latestHeroTypeLabel"
+          :profile-items="latestProfileItems"
+          :has-latest-result="!!latestCase.latestResult"
+          :intent-score="latestCase.latestResult?.intentScore ?? '暂无'"
+          :risk-score="latestCase.latestResult?.consistencyRiskScore ?? '暂无'"
+          :taohua-score="taohuaTeaserData?.score ?? '--'"
+          :latest-signal="quickFeedbackSignal"
+          :interaction-balance="latestTimelineStats"
+          :taohua-teaser-data="taohuaTeaserData"
+          :guidance-text="taohuaTeaserData?.guidance || ''"
+          :balance-callout="balanceCalloutForHome"
+          :pet-name="selectedPet.displayName"
+          :has-self-profile="hasUsableSelfProfile(selfProfile)"
+          :font-size-mode="fontSizeMode"
+          @open-case-detail="goCaseDetail(latestCase.caseId || latestCase._id)"
+          @open-latest-signal="openAnalysisSheet"
+          @open-interaction-balance="openBalanceSheet"
+          @open-taohua="goTaohua"
+          @open-guidance="openGuidanceSheet"
+          @open-quick-record="onQuickRecordAction"
+          @start-assessment="showFullAssessment = true"
+          @quick-create="showQuickCreate = true"
+        />
 
-        <!-- 两条路径选择 -->
-        <view v-if="!showFullAssessment && !showQuickCreate" class="onboard-options-v2">
-          <view class="onboard-card-v2 primary anim-card" style="animation-delay:0.2s" @click="showFullAssessment = true">
-            <text class="onboard-card-title-v2">开始初评</text>
-            <text class="onboard-card-desc-v2">填Crush画像 + 回答 14 题 → {{ aiLabel() }} 分析结果</text>
-          </view>
-          <view class="onboard-card-v2 anim-card" style="animation-delay:0.3s" @click="showQuickCreate = true">
-            <text class="onboard-card-title-v2">快速创建</text>
-            <text class="onboard-card-desc-v2">只填Crush画像 → 30 秒建好，后续可补分析</text>
-          </view>
-        </view>
-
+        <!-- 评估表单（全屏） -->
         <view v-if="showFullAssessment">
           <text class="back-link-v2" @click="showFullAssessment = false">← 返回选择</text>
           <AssessmentForm @submit="onCreateCase" />
@@ -97,120 +53,15 @@
           <text class="back-link-v2" @click="showQuickCreate = false">← 返回选择</text>
           <AssessmentForm profileOnly @submit="onCreateCase" />
         </view>
-      </template>
 
-      <template v-else>
-        <!-- Campus Signal 雷达首页 -->
-        <CampusSignalHome
-          :page-style="pageStyle"
-          :loading="loading"
-          :has-case="true"
-          :case-name="latestCase.name || '--'"
-          :case-avatar="latestCase.profile?.avatarUrl || latestCase.profile?.avatar || ''"
-          :case-type-label="latestHeroTypeLabel"
-          :has-latest-result="!!latestCase.latestResult"
-          :intent-score="latestCase.latestResult?.intentScore ?? '暂无'"
-          :risk-score="latestCase.latestResult?.consistencyRiskScore ?? '暂无'"
-          :pending-verification-label="pendingVerificationLabel"
-          :latest-signal="quickFeedbackSignal"
-          :interaction-balance="latestTimelineStats"
-          :taohua-teaser-data="taohuaTeaserData"
-          :pair-match="null"
-          :balance-callout="balanceCalloutForHome"
-          :has-self-profile="hasUsableSelfProfile(selfProfile)"
-          @open-case-detail="goCaseDetail(latestCase.caseId || latestCase._id)"
-          @open-latest-signal="goCaseDetail(latestCase.caseId || latestCase._id)"
-          @open-interaction-balance="goCaseDetail(latestCase.caseId || latestCase._id)"
-          @open-taohua="goTaohua"
-          @open-pair-match="goTaohua"
-          @open-quick-record="onQuickRecordAction"
-          @start-assessment="showFullAssessment = true"
-          @quick-create="showQuickCreate = true"
-        />
-        <!-- Hero -->
-        <view class="hero-block-v2 anim-hero">
-          <text class="hero-tag-v2">TODAY</text>
-          <text class="hero-title-v2">今天他<text class="hl-v2">有戏</text>吗？</text>
-          <text class="hero-copy-v2">基于最新互动记录的即时分析。越记越准。</text>
-          <hr class="hero-divider">
-          <view class="hero-bottom">
-            <view class="hero-avatar-lg"><image v-if="latestCase.profile?.avatar" :src="latestCase.profile.avatarUrl || latestCase.profile.avatar" mode="aspectFill" class="hero-avatar-img" /><text v-else>{{ avatarLabel(latestCase.name) }}</text></view>
-            <view class="hero-info-col">
-              <view class="hero-main-row">
-                <view class="hero-main-left">
-                  <text class="hero-name-v2">{{ latestCase.name || '--' }}</text>
-                  <text class="hero-chip primary">{{ latestHeroTypeLabel }}</text>
-                </view>
-              </view>
-              <view class="hero-meta-row">
-                <text v-if="latestProfileItems.length === 0" class="hero-chip muted">暂无画像</text>
-                <text v-for="item in latestProfileItems" :key="item" class="hero-chip">{{ item }}</text>
-              </view>
+
+        <!-- Quick record 面板（dock 的记一条 / 截图 / 语音都打开这同一个面板） -->
+        <view v-if="quickSheetVisible" class="qr-sheet-mask" @click="closeQuickSheet">
+          <view class="qr-sheet" @click.stop>
+            <view class="qr-sheet-topbar">
+              <text class="qr-sheet-close" @click="closeQuickSheet">×</text>
             </view>
-          </view>
-        </view>
-
-        <!-- 命理 · 今日桃花 -->
-        <view v-if="showTaohuaTeaser" class="taohua-teaser-v2 anim-card" style="animation-delay:0.05s;" @click="goTaohua">
-          <view class="taohua-teaser-head">
-            <text class="taohua-teaser-head-title">🌸 今日桃花运势</text>
-            <text v-if="taohuaTeaserData" class="taohua-teaser-head-score">{{ taohuaTeaserData.score }}<text class="taohua-teaser-head-unit">/100</text></text>
-          </view>
-          <view v-if="taohuaTeaserData">
-            <!-- 气场进度条 -->
-            <view class="taohua-bar-wrap">
-              <text class="taohua-bar-label">气场</text>
-              <view class="taohua-bar-track"><view class="taohua-bar-fill" :style="{ width: taohuaTeaserData.score + '%' }"></view></view>
-              <text class="taohua-bar-label">行动</text>
-            </view>
-            <!-- 方位竖排 -->
-            <view class="taohua-dirs-v">
-              <view class="taohua-dir-v">
-                <text class="taohua-dir-v-emoji">🌸</text>
-                <view class="taohua-dir-v-info">
-                  <text class="taohua-dir-v-name">桃花方位 · {{ taohuaTeaserData.direction }}</text>
-                  <text class="taohua-dir-v-desc">{{ taohuaTeaserData.directionZhi }}位 · 今日邂逅气场最强方向</text>
-                </view>
-                <text class="taohua-dir-v-arrow">↗</text>
-              </view>
-              <view v-if="taohuaTeaserData.hongluanDir" class="taohua-dir-v">
-                <text class="taohua-dir-v-emoji">🔴</text>
-                <view class="taohua-dir-v-info">
-                  <text class="taohua-dir-v-name">本命红鸾 · {{ taohuaTeaserData.hongluanDir }}方</text>
-                  <text class="taohua-dir-v-desc">姻缘开端星 · 关系突破从此起</text>
-                </view>
-                <text class="taohua-dir-v-arrow">↗</text>
-              </view>
-              <view v-if="taohuaTeaserData.tianxiDir" class="taohua-dir-v">
-                <text class="taohua-dir-v-emoji">🕊️</text>
-                <view class="taohua-dir-v-info">
-                  <text class="taohua-dir-v-name">本命天喜 · {{ taohuaTeaserData.tianxiDir }}方</text>
-                  <text class="taohua-dir-v-desc">婚庆落地星 · 长期发展守护位</text>
-                </view>
-                <text class="taohua-dir-v-arrow">↗</text>
-              </view>
-            </view>
-            <!-- 引导语 -->
-            <text class="taohua-quote">"{{ taohuaTeaserData.guidance }}"</text>
-            <!-- 建除 + 概要 -->
-            <text class="taohua-meta">{{ taohuaTeaserData.jianchu }}日 · {{ taohuaTeaserData.summary }}</text>
-          </view>
-          <view v-else class="taohua-teaser-body-loading">
-            <text class="taohua-meta">加载中...</text>
-          </view>
-          <!-- CTA -->
-          <view class="taohua-cta">展开查看完整命理分析 ✦</view>
-          <!-- 出处 -->
-          <view class="taohua-cite">📖 咸池桃花 · 《三命通会》三合沐浴算法</view>
-        </view>
-
-        <view v-if="showProfileReminder" class="remind-card-v2 anim-card" style="animation-delay:0.1s" @click="goSelfProfile">
-          <text class="remind-card-title-v2">你的画像未完善</text>
-          <text class="remind-card-text-v2">完善画像能让分析更准，花 30 秒补一下。点击前往 →</text>
-        </view>
-
-        <!-- Quick record -->
-        <view class="record-block anim-card" style="animation-delay:0.15s">
+        <view class="record-block" style="border:none;box-shadow:none;margin:0;background:transparent;">
           <view class="block-head"><text class="block-title">快速记录</text><text class="block-badge">别脑补</text></view>
           <view class="role-row">
             <view class="role-main-v2">
@@ -283,9 +134,16 @@
           </view>
           <button class="btn btn-primary btn-md btn-full anim-pulse" style="margin-top:16rpx;" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记上！' }}</button>
         </view>
+          </view>
+        </view>
 
-        <!-- Feedback -->
-        <view v-if="showQuickFeedback && latestCase.latestResult && latestTrend" :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']">
+        <!-- 本次分析面板（最新信号节点打开 / AI 分析中自动弹出，指标不与雷达重复展示） -->
+        <view v-if="analysisSheetVisible && showQuickFeedback && latestCase.latestResult && latestTrend" class="qr-sheet-mask" @click="closeAnalysisSheet">
+          <view class="qr-sheet" @click.stop>
+            <view class="qr-sheet-topbar">
+              <text class="qr-sheet-close" @click="closeAnalysisSheet">×</text>
+            </view>
+        <view :class="['feedback-block', latestFeedbackEventType === 'risk' ? 'warn' : 'ok']" style="margin:0;">
           <button class="btn-share-sm analysis-share-btn" open-type="share">
             <image class="analysis-share-icon" src="/static/icons/taohua/share-2.svg" mode="aspectFit" />
           </button>
@@ -327,7 +185,62 @@
             </view>
           </template>
         </view>
-      </template>
+          </view>
+        </view>
+
+      <!-- 互动天平面板 -->
+      <view v-if="balanceSheetVisible" class="qr-sheet-mask" @click="closeBalanceSheet">
+        <view class="qr-sheet" @click.stop>
+          <view class="qr-sheet-topbar">
+            <text class="qr-sheet-close" @click="closeBalanceSheet">×</text>
+          </view>
+          <view class="panel-card">
+            <text class="panel-card-title">⚖️ 互动天平</text>
+            <text class="panel-card-sub">本月你与 TA 的互动对比</text>
+            <view v-for="bar in balanceSheetData" :key="bar.label" class="balance-row-new">
+              <view class="balance-row-head">
+                <text class="balance-row-label">{{ bar.label }}</text>
+                <view class="balance-row-nums"><text class="brn-you">你 {{ bar.you }}</text><text class="brn-vs">:</text><text class="brn-ta">TA {{ bar.ta }}</text></view>
+              </view>
+              <view class="balance-row-bar">
+                <view class="brb-you" :style="{ flex: bar.you || 0.1 }"></view>
+                <view class="brb-sep"></view>
+                <view class="brb-ta" :class="bar.taClass" :style="{ flex: bar.ta || 0.1 }"></view>
+              </view>
+            </view>
+            <view class="panel-callout">{{ balanceCalloutForHome }}</view>
+            <view class="panel-link" @click="closeBalanceSheet(); goCaseDetail(latestCase.caseId || latestCase._id)">查看完整分析 →</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 行动指南面板 -->
+      <ActionGuideSheet
+        :visible="guidanceSheetVisible"
+        :score="taohuaTeaserData?.score ?? 0"
+        :direction="taohuaTeaserData?.direction ?? ''"
+        :hongluan-dir="taohuaTeaserData?.hongluanDir ?? ''"
+        :tianxi-dir="taohuaTeaserData?.tianxiDir ?? ''"
+        :jianchu="taohuaTeaserData?.jianchu ?? ''"
+        :rating="taohuaTeaserData?.summary ?? ''"
+        :oneliner="actionGuideData?.oneliner ?? ''"
+        :venue="actionGuideData?.venue ?? ''"
+        :venue-activities="actionGuideData?.venueActivities ?? []"
+        :do-list="actionGuideData?.doList ?? []"
+        :dont-list="actionGuideData?.dontList ?? []"
+        :aura="actionGuideData?.aura ?? ''"
+        :guide-summary="actionGuideData?.guideSummary ?? ''"
+        :is-low="actionGuideData?.isLow ?? false"
+        :liuhe-dir="actionGuideData?.liuheDir ?? ''"
+        :wear-colors="actionGuideData?.wearColors ?? []"
+        :wear-material="actionGuideData?.wearMaterial ?? ''"
+        :wear-highlight="actionGuideData?.wearHighlight ?? ''"
+        :wear-one-liner="actionGuideData?.wearOneLiner ?? ''"
+        :taohua-wuxing="actionGuideData?.taohuaWuxing ?? ''"
+        :benming-wuxing="actionGuideData?.benmingWuxing ?? ''"
+        :five-element-relation="actionGuideData?.fiveElementRelation ?? ''"
+        @close="closeGuidanceSheet"
+      />
 
       <!-- Status info modal -->
       <view v-if="statusInfoVisible" class="info-mask" @click="statusInfoVisible = false">
@@ -376,11 +289,11 @@
           <image v-else :src="selectedPet.avatarPath" class="pet-bar-img" mode="aspectFit" />
         </view>
 
-        <!-- Reaction bubble takes priority over system message bubble -->
-        <view v-if="petReactionMsg && !petIsRunning" class="pet-bubble reaction">
+        <!-- Reaction bubble takes priority over system message bubble; 弹面板时闭嘴不遮挡 -->
+        <view v-if="petReactionMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible" class="pet-bubble reaction">
           <text class="pet-bubble-text">{{ petReactionMsg }}</text>
         </view>
-        <view v-else-if="petMsg && !petIsRunning" class="pet-bubble">
+        <view v-else-if="petMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible" class="pet-bubble">
           <text class="pet-bubble-text">{{ petMsg }}</text>
         </view>
       </view>
@@ -425,9 +338,12 @@ import { onHide, onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, 
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import CampusSignalHome from '@/components/CampusSignalHome.vue'
+import ActionGuideSheet from '@/components/ActionGuideSheet.vue'
+import { normalizeActionGuideData } from '@/utils/taohua'
 import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, decayPetEnergy, feedPet, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, readPetEnergy, setActiveCaseId, setPendingTimelineContext, showError, showSuccess, writePetEnergy } from '@/utils/helpers'
-import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal } from '@/utils/insights'
+import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal, buildTimelineStats } from '@/utils/insights'
+import { buildDivergingBars } from '@/utils/insights.ts'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
@@ -503,6 +419,8 @@ const quickChatSelfName = ref('')
 const quickChatTargetName = ref('')
 const quickSubmitting = ref(false)
 const quickUploading = ref(false)
+const quickSheetVisible = ref(false)
+const analysisSheetVisible = ref(false)
 const voiceUploading = ref(false)
 const recording = ref(false)
 const voiceStatus = ref('')
@@ -606,20 +524,17 @@ const latestHeroTypeLabel = computed(() => {
   return 'Crush 档案'
 })
 
-const latestTimelineStats = computed(() => {
+// 过滤本月记录，与 case-detail 页面保持一致
+function getTimelineRecordTs(r: any): number {
+  return new Date(r?.occurrenceAt || r?.createdAt || r?.date || 0).getTime()
+}
+const thisMonthTimeline = computed(() => {
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
   const timeline = Array.isArray(latestCase.value?.timeline) ? latestCase.value.timeline : []
-  const hasTag = (item: any, tag: string) => JSON.stringify(item?.semanticTags || {}).includes(tag)
-  const textOf = (item: any) => `${item?.title || ''} ${item?.description || ''}`
-  const count = (predicate: (item: any) => boolean) => timeline.filter(predicate).length
-  return {
-    totalCount: timeline.length,
-    fulfilledCount: count((item) => hasTag(item, 'fulfilled') || textOf(item).includes('兑现')),
-    targetCommittedCount: count((item) => hasTag(item, 'target_committed') || textOf(item).includes('约我')),
-    cancelledDelayedCount: count((item) => hasTag(item, 'cancelled_delayed') || hasTag(item, 'vague_delay')),
-    targetInitiatedCount: count((item) => hasTag(item, 'target_initiated')),
-    selfInitiatedCount: count((item) => hasTag(item, 'self_initiated'))
-  }
+  return timeline.filter((r: any) => getTimelineRecordTs(r) >= monthStart)
 })
+const latestTimelineStats = computed(() => buildTimelineStats(thisMonthTimeline.value))
 
 const latestCrushType = computed(() => deriveCrushType({
   ...(latestCase.value?.latestResult || {}),
@@ -853,14 +768,14 @@ const showProfileReminder = computed(() =>
   !hasUsableSelfProfile(selfProfile.value)
 )
 
-// Campus Signal: 待验证标签（来自最新分析）
-const pendingVerificationLabel = computed(() => {
-  try {
-    const lp = latestCase.value?.latestResult?.explanation
-    const bullets = lp?.bullets || []
-    return bullets.length > 0 ? `${bullets.length}` : '暂无'
-  } catch { return '暂无' }
-})
+// Campus Signal: 互动天平面板
+const balanceSheetVisible = ref(false)
+const balanceSheetData = computed(() => buildDivergingBars(latestTimelineStats.value))
+function openBalanceSheet() { balanceSheetVisible.value = true }
+function closeBalanceSheet() { balanceSheetVisible.value = false }
+const guidanceSheetVisible = ref(false)
+function openGuidanceSheet() { guidanceSheetVisible.value = true }
+function closeGuidanceSheet() { guidanceSheetVisible.value = false }
 
 // Campus Signal: 互动天平摘要
 const balanceCalloutForHome = computed(() => {
@@ -1888,9 +1803,23 @@ async function handleVoiceRecordStop(res: any) {
 
 // Campus Signal: 快速记录 dock 入口分发
 function onQuickRecordAction(mode: string) {
+  // dock 的三个入口都打开同一个快速记录面板；输入逻辑只有这一份
+  quickSheetVisible.value = true
   if (mode === 'image') { chooseQuickImages(); return }
   if (mode === 'voice') { toggleVoiceRecord(); return }
-  // mode === 'text': 滚动到快速记录表单
+  // mode === 'text': 仅打开面板，聚焦文字输入
+}
+
+function closeQuickSheet() {
+  quickSheetVisible.value = false
+}
+
+function openAnalysisSheet() {
+  analysisSheetVisible.value = true
+}
+
+function closeAnalysisSheet() {
+  analysisSheetVisible.value = false
 }
 
 async function chooseQuickImages() {
@@ -2198,6 +2127,8 @@ async function submitQuickRecord() {
     })
     if (res.success) {
       showSuccess('已记录，AI分析中')
+      quickSheetVisible.value = false
+      analysisSheetVisible.value = true
       quickDesc.value = ''
       quickQuestionKey.value = 'like'
       quickCustomQuestion.value = ''
@@ -2356,6 +2287,7 @@ const showTaohuaTeaser = ref(true)
 const statusInfoVisible = ref(false)
 const showTaohuaInfo = ref(false)
 const taohuaTeaserData = ref<{ score: number; direction: string; directionZhi: string; hongluanDir: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
+const actionGuideData = ref<ReturnType<typeof normalizeActionGuideData> | null>(null)
 
 async function loadTaohuaTeaser() {
   const profile = selfProfile.value || {}
@@ -2373,7 +2305,8 @@ async function loadTaohuaTeaser() {
     const taohua = xianchiAlgorithm(dayZhi)
     const hongluan = profile.zodiac ? hongluanTianxi(profile.zodiac) : null
     const scoreData = result.data.score || {}
-    const guide = result.data.practical?.约会指南 || {}
+    const practical = result.data.practical || {}
+    const guide = practical.约会指南 || {}
     const score = Number(scoreData.分数 ?? 50)
     const jianchu = daily.yiji?.jianchu || guide.建除 || '--'
     const summary = scoreData.评级 || (score >= 70 ? '气场佳，适合行动' : score >= 50 ? '平常心，顺其自然' : '宜观望，改天再约')
@@ -2389,6 +2322,7 @@ async function loadTaohuaTeaser() {
       summary,
       guidance,
     }
+    actionGuideData.value = normalizeActionGuideData(practical)
     showTaohuaTeaser.value = true
   } catch (_) {
     taohuaTeaserData.value = null
@@ -2701,10 +2635,10 @@ function goTaohua() {
   pointer-events: auto;
 }
 .v2-mode .pet-sprite-viewport.pet-run-right {
-  animation: petRunRight 1.5s ease-in-out forwards;
+  animation: petRunRight 4s ease-in-out forwards;
 }
 .v2-mode .pet-sprite-viewport.pet-run-left {
-  animation: petRunLeft 1.5s ease-in-out forwards;
+  animation: petRunLeft 4s ease-in-out forwards;
 }
 @keyframes petRunRight {
   from { transform: translateX(-100vw); }
@@ -2895,5 +2829,34 @@ function goTaohua() {
 /* Merged card: side read section */
 .referral-notice { margin: 0 20rpx 20rpx; padding: 22rpx 24rpx; background: var(--accent, #FFD93D); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
 .referral-notice-text { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); text-align: center; }
+
+/* 快速记录 / 本次分析 统一底部面板 */
+.qr-sheet-mask { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 50; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; }
+.qr-sheet { width: 100%; max-height: 88vh; overflow-y: auto; padding: 20rpx 20rpx calc(140rpx + env(safe-area-inset-bottom)); background: var(--surface-dim, #f9f9f9); border-top-left-radius: var(--shape-radius-card, 24rpx); border-top-right-radius: var(--shape-radius-card, 24rpx); border-top: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hero, 0 -8rpx 0 #111); box-sizing: border-box; }
+.qr-sheet-topbar { display: flex; align-items: center; justify-content: flex-end; height: 56rpx; }
+.qr-sheet-close { font-size: 44rpx; font-weight: 900; line-height: 1; color: var(--text-main, #111); padding: 0 8rpx; }
+
+/* 面板通用卡片 */
+.panel-card { padding: 0 8rpx 16rpx; }
+.panel-card-title { font-size: 36rpx; font-weight: 900; color: var(--text-main, #111); display: block; margin-bottom: 6rpx; }
+.panel-card-sub { font-size: 24rpx; color: var(--text-muted, #666); display: block; margin-bottom: 24rpx; }
+.panel-callout { font-size: 24rpx; color: var(--text-main, #111); display: block; margin: 20rpx 0 12rpx; padding: 16rpx; background: var(--accent-soft, #FFFBEB); border-radius: 8rpx; line-height: 1.6; }
+.panel-link { font-size: 26rpx; font-weight: 800; color: var(--accent-cool, #4ECDC4); text-align: center; padding: 16rpx 0 8rpx; }
+.panel-empty { font-size: 28rpx; color: var(--text-muted, #666); padding: 40rpx 0; text-align: center; display: block; }
+
+/* 互动天平 */
+.balance-row-new { margin-bottom: 24rpx; }
+.balance-row-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10rpx; }
+.balance-row-label { font-size: 28rpx; font-weight: 800; color: var(--text-main, #111); }
+.balance-row-nums { display: flex; align-items: center; gap: 6rpx; }
+.brn-you { font-size: 22rpx; font-weight: 700; color: var(--text-main, #111); }
+.brn-vs { font-size: 18rpx; color: var(--text-soft, #999); }
+.brn-ta { font-size: 22rpx; font-weight: 700; color: var(--accent-cool, #4ECDC4); }
+.balance-row-bar { display: flex; align-items: center; height: 28rpx; border-radius: 6rpx; overflow: hidden; }
+.brb-you { height: 100%; background: var(--text-main, #111); border-radius: 6rpx 0 0 6rpx; min-width: 8rpx; }
+.brb-sep { width: 4rpx; height: 100%; background: var(--surface-dim, #f9f9f9); flex-shrink: 0; }
+.brb-ta { height: 100%; background: var(--accent-cool, #4ECDC4); border-radius: 0 6rpx 6rpx 0; min-width: 8rpx; }
+.brb-ta.risk { background: var(--risk, #FF5252); }
+
 </style>
 
