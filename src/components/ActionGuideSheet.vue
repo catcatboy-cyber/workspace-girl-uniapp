@@ -239,7 +239,7 @@ function petalStyle(i: number) {
 .ags-card{position:absolute;z-index:4;border-radius:var(--shape-radius-card,0);padding:28rpx 32rpx;border:2rpx solid var(--card-border,#111);box-shadow:inset 0 -12rpx 28rpx rgba(0,0,0,.06),inset 0 6rpx 20rpx rgba(255,255,255,.5),0 12rpx 40rpx rgba(0,0,0,.1);display:flex;flex-direction:column;gap:8rpx;animation:card-float var(--fd,5s) ease-in-out infinite;animation-delay:var(--fdl,0s)}
 @keyframes card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8rpx)}}
 .ags-card-kicker{font-size:32rpx;font-weight:700;color:var(--card-accent,#ef7669);letter-spacing:.05em}
-.ags-card-main{font-size:34rpx;font-weight:400;color:var(--text-main,#111);line-height:1.35}
+.ags-card-main{font-size:32rpx;font-weight:400;color:var(--text-main,#111);line-height:1.35}
 .ags-card-sub{font-size:24rpx;color:var(--text-muted,#666);line-height:1.4;font-weight:400}
 .ags-color-dots{display:flex;gap:12rpx;margin-top:4rpx}
 .ags-color-dot{width:32rpx;height:32rpx;border-radius:50%;border:3rpx solid rgba(24,21,20,.2)}
