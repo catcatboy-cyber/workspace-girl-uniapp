@@ -15,7 +15,7 @@
       <block v-else>
         <!-- Campus Signal 雷达首页（含空状态） -->
         <CampusSignalHome
-          :page-style="pageStyle"
+          :page-style="themeVars"
           :loading="loading"
           :has-case="cases.length > 0"
           :case-name="latestCase.name || '--'"
@@ -2613,6 +2613,13 @@ function goTaohua() {
   background: var(--app-bg, #f4ede2);
   padding: var(--spacing-page, 24rpx);
   box-sizing: border-box;
+}
+
+/* 首页已经通过 pageStyle 预留底部导航安全区，免责声明不再重复制造大段空白。 */
+.page > .ai-disclaimer {
+  margin-top: 8rpx;
+  padding-top: 8rpx;
+  padding-bottom: 8rpx;
 }
 
 /* pet floating bar */

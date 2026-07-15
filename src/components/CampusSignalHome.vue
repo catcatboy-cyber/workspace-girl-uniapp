@@ -116,8 +116,8 @@
           <view class="cs-dock-title">
             <view class="cs-dock-live"></view>
             <view>
-              <text class="cs-dock-title-text">记录互动证据</text>
-              <text class="cs-dock-title-sub">截图 / 对话 / 语音 投喂给 {{ petName }} 分析</text>
+              <text class="cs-dock-title-text">把今天的心动，留下一点线索</text>
+              <text class="cs-dock-title-sub">一句话、一个画面，或一段声音，都值得被记住。</text>
             </view>
           </view>
         </view>
@@ -139,7 +139,6 @@
     </template>
 
     <!-- ===== 6. 底部导航占位（由 tabBar 管理） ===== -->
-    <view class="cs-tabbar-spacer"></view>
   </view>
 </template>
 
@@ -209,7 +208,6 @@ const statusLabel = computed(() => {
 <style scoped>
 .campus-signal {
   position: relative;
-  min-height: 100vh;
   overflow: hidden;
 }
 
@@ -592,9 +590,6 @@ const statusLabel = computed(() => {
 }
 
 /* ---- tabbar spacer ---- */
-.cs-tabbar-spacer {
-  height: 120rpx;
-}
 
 /* ═══ 大字体模式 ═══ */
 .font-large .cs-brand-label { font-size: 24rpx; }
