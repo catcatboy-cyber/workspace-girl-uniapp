@@ -9,7 +9,7 @@
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">{{ aiLabel() }} 配置</text>
-          <view :class="['sidebar-item', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'">🤖 AI 设置</view>
+          <view :class="['sidebar-item', activeTab === 'ai' ? 'active' : '']" @click="activeTab = 'ai'"><image class="sidebar-icon" src="/static/icons/taohua/robot.svg" mode="aspectFit" /><text>AI 设置</text></view>
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">计费管理</text>
@@ -19,13 +19,13 @@
         <view class="sidebar-group">
           <text class="sidebar-group-title">数据中心</text>
           <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Credits 消耗</view>
-          <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'">📋 订单管理</view>
+          <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'"><image class="sidebar-icon" src="/static/icons/taohua/clipboard.svg" mode="aspectFit" /><text>订单管理</text></view>
           <view :class="['sidebar-item', activeTab === 'loginLogs' ? 'active' : '']" @click="activeTab = 'loginLogs'">🔐 登录日志</view>
-          <view :class="['sidebar-item', activeTab === 'referralClaims' ? 'active' : '']" @click="activeTab = 'referralClaims'">💎 邀请奖励</view>
+          <view :class="['sidebar-item', activeTab === 'referralClaims' ? 'active' : '']" @click="activeTab = 'referralClaims'"><image class="sidebar-icon" src="/static/icons/taohua/gem.svg" mode="aspectFit" /><text>邀请奖励</text></view>
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">运营工具</text>
-          <view :class="['sidebar-item', activeTab === 'feedback' ? 'active' : '']" @click="activeTab = 'feedback'">💬 反馈管理</view>
+          <view :class="['sidebar-item', activeTab === 'feedback' ? 'active' : '']" @click="activeTab = 'feedback'"><image class="sidebar-icon" src="/static/icons/taohua/bubble.svg" mode="aspectFit" /><text>反馈管理</text></view>
           <view :class="['sidebar-item', activeTab === 'customPet' ? 'active' : '']" @click="activeTab = 'customPet'">🐾 宠物需求</view>
         </view>
       </view>
@@ -1672,7 +1672,7 @@ function formatDate(value: string) {
   font-size: 12px;
   font-weight: 700;
 }
-.sidebar-item {
+.sidebar-icon { width: 24rpx; height: 24rpx; margin-right: 8rpx; flex-shrink: 0; } .sidebar-item { display: flex; align-items: center; 
   padding: 10px 12px;
   border-radius: 6px;
   color: #cfe3dc;

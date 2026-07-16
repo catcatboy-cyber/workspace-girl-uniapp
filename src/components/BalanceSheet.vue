@@ -3,7 +3,7 @@
     <view class="bs-sheet" @click.stop>
       <!-- Topbar -->
       <view class="bs-topbar">
-        <text class="bs-topbar-title">⚖️ 互动天平</text>
+        <view class="bs-topbar-title"><image class="bs-topbar-title-icon" src="/static/icons/taohua/scale.svg" mode="aspectFit" /><text>互动天平</text></view>
         <view class="bs-topbar-close" @click.stop="$emit('close')"><text>×</text></view>
       </view>
 
@@ -24,7 +24,7 @@
           </view>
         </view>
 
-        <view v-if="callout" class="bs-callout">💬 {{ callout }}</view>
+        <view v-if="callout" class="bs-callout"><image class="bs-callout-icon" src="/static/icons/taohua/bubble.svg" mode="aspectFit" /><text>{{ callout }}</text></view>
 
         <view class="bs-link" @click="$emit('close'); $emit('openCaseDetail')">查看完整分析 →</view>
       </view>
@@ -50,7 +50,7 @@ defineEmits<{ close: []; openCaseDetail: [] }>()
 
 /* ═══ TOPBAR ═══ */
 .bs-topbar { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 28rpx 12rpx; }
-.bs-topbar-title { font-size: 38rpx; font-weight: 900; color: var(--text-main, #111); }
+.bs-topbar-title { display: flex; align-items: center; gap: 8rpx; font-size: 38rpx; font-weight: 900; color: var(--text-main, #111); } .bs-topbar-title-icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
 .bs-topbar-close { width: 56rpx; height: 56rpx; border-radius: 50%; border: var(--border-width, 2rpx) solid var(--border, #111); display: flex; align-items: center; justify-content: center; font-size: 38rpx; color: var(--text-muted, #666); }
 
 /* ═══ BODY ═══ */
@@ -71,6 +71,6 @@ defineEmits<{ close: []; openCaseDetail: [] }>()
 .bs-bar-sep { width: var(--border-width, 3rpx); height: 100%; background: var(--border, #111); flex-shrink: 0; }
 
 /* ═══ FOOTER ═══ */
-.bs-callout { font-size: 24rpx; color: var(--text-muted, #666); font-weight: 400; margin-top: 16rpx; line-height: 1.5; }
+.bs-callout-icon { width: 24rpx; height: 24rpx; flex-shrink: 0; } .bs-callout { display: flex; align-items: center; gap: 6rpx; font-size: 24rpx; color: var(--text-muted, #666); font-weight: 400; margin-top: 16rpx; line-height: 1.5; }
 .bs-link { font-size: 28rpx; font-weight: 700; color: var(--text-main, #111); text-align: center; margin-top: 16rpx; padding: 12rpx; }
 </style>

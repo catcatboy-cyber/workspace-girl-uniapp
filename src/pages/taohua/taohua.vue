@@ -220,21 +220,21 @@
             <text class="persona-sub-v2">{{ crossData.chinese.name }} · {{ crossData.chinese.zhi }} · {{ crossData.chinese.wuxing }} · {{ crossData.chinese.yinyang }}</text>
           </view>
           <view class="persona-avatar-stack-v2">
-            <view class="persona-avatar-v2">{{ zodiacEmoji }}</view>
-            <view class="persona-avatar-v2 sign">{{ signEmoji }}</view>
+            <image v-if="zodiacSvg" class="persona-avatar-icon-v2" :src="zodiacSvg" mode="aspectFit" />
+            <image v-if="signEmojiSvg" class="persona-avatar-icon-v2" :src="signEmojiSvg" mode="aspectFit" />
           </view>
         </view>
 
         <view class="persona-identity-strip-v2">
           <view class="persona-identity-item-v2">
-            <text class="persona-identity-symbol-v2">{{ zodiacEmoji }}</text>
+            <image v-if="zodiacSvg" class="persona-identity-symbol-icon-v2" :src="zodiacSvg" mode="aspectFit" />
             <view class="persona-identity-copy-v2">
               <text class="persona-identity-label-v2">我的生肖</text>
               <text class="persona-identity-value-v2">{{ userZodiac }}</text>
             </view>
           </view>
           <view class="persona-identity-item-v2 alt">
-            <text class="persona-identity-symbol-v2">{{ signEmoji }}</text>
+            <image v-if="signEmojiSvg" class="persona-identity-symbol-icon-v2" :src="signEmojiSvg" mode="aspectFit" />
             <view class="persona-identity-copy-v2">
               <text class="persona-identity-label-v2">我的星座</text>
               <text class="persona-identity-value-v2">{{ userSign }}</text>
@@ -311,7 +311,7 @@
         <view class="pair-party-card-v2">
           <text class="pair-role-v2">{{ pairParticipants.selfLabel }}</text>
           <view class="pair-token-v2">
-            <text class="pair-token-symbol-v2">{{ getZodiacEmoji(pairParticipants.selfZodiac) }}</text>
+            <image class="pair-token-symbol-icon-v2" :src="getZodiacSvg(pairParticipants.selfZodiac)" mode="aspectFit" />
             <text class="pair-token-text-v2">{{ pairParticipants.selfZodiac }}</text>
           </view>
           <view class="pair-token-v2 alt">
@@ -336,7 +336,7 @@
           <text class="pair-role-v2">{{ pairParticipants.partnerLabel }}</text>
           <picker class="pair-token-picker-v2" :range="zodiacNames" :value="currentPairPartnerZodiacIdx" @change="onPreviewPairZodiacChange">
             <view class="pair-token-v2 clickable">
-              <text class="pair-token-symbol-v2">{{ getZodiacEmoji(pairParticipants.partnerZodiac) }}</text>
+              <image class="pair-token-symbol-icon-v2" :src="getZodiacSvg(pairParticipants.partnerZodiac)" mode="aspectFit" />
               <text class="pair-token-text-v2">{{ pairParticipants.partnerZodiac }}</text>
               <view class="pair-token-edit-v2">
                 <image class="taohua-icon-img" :style="iconStyle(16)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
@@ -582,6 +582,7 @@ import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
 import { aiLabel } from '@/utils/labels'
+import { getZodiacSvg, getConstellationSvg } from '@/utils/zodiac-icons'
 
 // ============================================================
 // 用户画像
@@ -597,21 +598,21 @@ const lastDataVersion = ref(0)
 const useTaohuaLineIcons = true
 
 const taohuaIconMap: Record<string, string> = {
-  bookOpen: '/static/icons/taohua/book-open.svg',
-  listChecks: '/static/icons/taohua/list-checks.svg',
+  bookOpen: '/static/icons/taohua/book.svg',
+  listChecks: '/static/icons/taohua/clipboard.svg',
   compass: '/static/icons/taohua/compass.svg',
   target: '/static/icons/taohua/target.svg',
-  checkCircle: '/static/icons/taohua/check-circle.svg',
-  alertTriangle: '/static/icons/taohua/alert-triangle.svg',
+  checkCircle: '/static/icons/taohua/check.svg',
+  alertTriangle: '/static/icons/taohua/warning.svg',
   shirt: '/static/icons/taohua/shirt.svg',
   landmark: '/static/icons/taohua/landmark.svg',
-  stars: '/static/icons/taohua/stars.svg',
-  heart: '/static/icons/taohua/heart.svg',
-  share2: '/static/icons/taohua/share-2.svg',
+  stars: '/static/icons/taohua/sparkles.svg',
+  heart: '/static/icons/taohua/heart-filled.svg',
+  share2: '/static/icons/taohua/share.svg',
   lock: '/static/icons/taohua/lock.svg',
   bell: '/static/icons/taohua/bell.svg',
   search: '/static/icons/taohua/search.svg',
-  x: '/static/icons/taohua/x.svg',
+  x: '/static/icons/taohua/cross.svg',
   sparkles: '/static/icons/taohua/sparkles.svg'
 }
 
@@ -869,13 +870,7 @@ const natalTianxiDir = computed(() => {
   try { return hongluanTianxi(z).tianxi.direction || '' } catch { return '' }
 })
 
-function getZodiacEmoji(zodiac = '') {
-  const map: Record<string, string> = {
-    '鼠':'🐭','牛':'🐮','虎':'🐯','兔':'🐇','龙':'🐲','蛇':'🐍',
-    '马':'🐴','羊':'🐑','猴':'🐵','鸡':'🐔','狗':'🐶','猪':'🐷',
-  }
-  return map[zodiac] || '✦'
-}
+// getZodiacEmoji migrated to getZodiacSvg from @/utils/zodiac-icons
 
 function getSignEmoji(sign = '') {
   const map: Record<string, string> = {
@@ -886,8 +881,8 @@ function getSignEmoji(sign = '') {
   return map[sign] || '✦'
 }
 
-const zodiacEmoji = computed(() => getZodiacEmoji(userZodiac.value))
-const signEmoji = computed(() => getSignEmoji(userSign.value))
+const zodiacSvg = computed(() => getZodiacSvg(userZodiac.value))
+const signEmojiSvg = computed(() => getConstellationSvg(userSign.value))
 
 function relationToneClass(relation = '') {
   if (relation.includes('六合')) return 'great'
@@ -1822,7 +1817,7 @@ async function saveShareImage() {
 .persona-main-v2 { display: block; margin-top: 10rpx; font-size: $fs-body; font-weight: var(--font-weight-heading, $fw-heading); color: var(--text-main, #111); line-height: $lh-label; }
 .persona-sub-v2 { display: block; margin-top: 6rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); line-height: $lh-label; }
 .persona-avatar-stack-v2 { display: flex; align-items: center; justify-content: flex-end; min-width: 118rpx; }
-.persona-avatar-v2 { width: 72rpx; height: 72rpx; border-radius: 50%; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--accent, #FFD93D); display: flex; align-items: center; justify-content: center; font-size: $fs-heading; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); line-height: 1; flex-shrink: 0; box-sizing: border-box; }
+.persona-avatar-icon-v2 { width: 48rpx; height: 48rpx; } .persona-identity-symbol-icon-v2 { width: 32rpx; height: 32rpx; } .pair-token-symbol-icon-v2 { width: 36rpx; height: 36rpx; } .persona-avatar-v2 { width: 72rpx; height: 72rpx; border-radius: 50%; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--accent, #FFD93D); display: flex; align-items: center; justify-content: center; font-size: $fs-heading; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); line-height: 1; flex-shrink: 0; box-sizing: border-box; }
 .persona-avatar-v2.sign { margin-left: -12rpx; background: var(--brand-cool, #EAF7FF); }
 .persona-identity-strip-v2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10rpx; margin-top: 16rpx; }
 .persona-identity-item-v2 { min-width: 0; min-height: 76rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--brand-warm, #FFFBEA); display: flex; align-items: center; gap: 10rpx; padding: 10rpx; box-sizing: border-box; }

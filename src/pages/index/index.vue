@@ -95,7 +95,7 @@
           </view>
           <textarea :value="quickDesc" @blur="onQuickDescBlur" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
           <view v-if="quickSubjectRole === 'both'" class="quick-paste-warn-v2">
-            <text class="quick-paste-warn-icon-v2">⚠️</text>
+            <image class="quick-paste-warn-icon-v2-img" src="/static/icons/taohua/warning.svg" mode="aspectFit" />
             <text class="quick-paste-warn-text-v2">部分手机粘贴多行聊天记录时可能被截断，只显示第一条。如遇此情况，请先将聊天记录粘贴到<text class="quick-paste-warn-bold-v2">备忘录</text>或<text class="quick-paste-warn-bold-v2">文件传输助手</text>的输入框，再重新复制后粘贴到此处即可完整导入。</text>
           </view>
           <view class="datetime-row-v2">
@@ -116,7 +116,7 @@
                 <text v-if="quickQuestionKey === item.value" class="quick-question-check-v2">✓</text>
               </view>
             </view>
-            <text v-if="quickQuestionKey === 'reply'" class="quick-question-hint-v2">💡 也可以直接点下方 {{ selectedPet.displayName }}，让 ta 帮你想怎么回～</text>
+            <text v-if="quickQuestionKey === 'reply'" class="quick-question-hint-v2"><image class="inline-icon" src="/static/icons/taohua/bulb.svg" mode="aspectFit" style="width:28rpx;height:28rpx;vertical-align:middle;display:inline-block;margin-right:4rpx" />也可以直接点下方 {{ selectedPet.displayName }}，让 ta 帮你想怎么回～</text>
             <input
               v-if="quickQuestionKey === 'custom'"
               v-model="quickCustomQuestion"
@@ -144,6 +144,7 @@
           :scores="analysisScores"
           :signal="analysisSignal"
           :meta="analysisMeta"
+          :pet-name="selectedPet.displayName"
           :reason-bullets="quickReasonBullets"
           :action-sections="latestActionPlanPanel.sections"
           :action-missing="latestActionPlanPanel.missing"
@@ -213,7 +214,7 @@
         <!-- Floating action button -->
         <view v-if="showPetActions" class="pet-action-buttons">
           <view class="pet-action-btn" @click.stop="openSpeakSheet">
-            <text class="pet-action-icon">💬</text>
+            <image class="pet-action-icon-img" src="/static/icons/taohua/bubble.svg" mode="aspectFit" />
             <text class="pet-action-label">聊天</text>
           </view>
         </view>
@@ -224,12 +225,16 @@
           @touchend="onPetTouchEnd"
           @touchcancel="onPetTouchCancel"
         >
-          <!-- Hearts particle layer -->
+          <!-- Hearts particle layer：动画放在 view 上，避免真机对 text+transform 的 emoji 丢色/消失 -->
           <view class="hearts-layer">
-            <text v-for="h in hearts" :key="h.id"
+            <view
+              v-for="h in hearts"
+              :key="h.id"
               class="heart-particle"
-              :style="{ left: h.x + 'rpx', top: h.y + 'rpx', fontSize: h.size + 'rpx' }"
-            >❤️</text>
+              :style="{ left: h.x + 'rpx', top: h.y + 'rpx' }"
+            >
+              <text class="heart-particle-emoji" :style="{ fontSize: h.size + 'rpx' }"><image class="heart-particle-img" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" /></text>
+            </view>
           </view>
           <image v-if="resolvedSpritesheetPath" :key="petSpritesheetKey" :src="resolvedSpritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
           <image v-else :src="selectedPet.avatarPath" class="pet-bar-img" mode="aspectFit" />
@@ -260,7 +265,7 @@
       </view>
       <view class="taohua-info-body">
         <view class="taohua-info-item">
-          <text class="taohua-info-q">🪷 桃花（每日变）</text>
+          <view class="taohua-info-q"><image class="taohua-info-q-icon" src="/static/icons/taohua/lotus.svg" mode="aspectFit" /><text>桃花（每日变）</text></view>
           <text class="taohua-info-a">日支 → 三合局 → 沐浴位。仅落正东/南/西/北四正位，每天不同。管邂逅、暧昧、日常约会气场。</text>
         </view>
         <view class="taohua-info-item">
@@ -405,6 +410,7 @@ const quickFeedback = ref<{
   recordId?: string
   assessmentId?: string
   description?: string
+  userQuestion?: { key: string; label: string }
 } | null>(null)
 let recorderManager: any = null
 let recordStartedAt = 0
@@ -688,8 +694,8 @@ const analysisSignal = computed(() => ({
   label: quickFeedbackSignal.value?.label || '',
 }))
 const analysisMeta = computed(() => ({
-  questionLabel: latestCase.value?.latestResult?.userQuestion?.label || '',
-  rawDescription: latestOriginalRecordText.value || '',
+  questionLabel: quickFeedback.value?.userQuestion?.label || latestCase.value?.latestResult?.userQuestion?.label || '',
+  rawDescription: quickFeedback.value?.description || latestOriginalRecordText.value || '',
 }))
 
 const shareTitle = computed(() => {
@@ -2121,7 +2127,8 @@ async function submitQuickRecord() {
         eventType: res.eventType || latestCase.value?.latestResult?.triggerEventType || 'note',
         recordId: res.recordId,
         assessmentId: res.assessmentId,
-        description: desc
+        description: desc,
+        userQuestion: currentUserQuestion || undefined
       }
       if (res.recordId) {
         setPendingTimelineContext({
@@ -2372,7 +2379,7 @@ function goTaohua() {
   border-radius: var(--shape-radius-inner, 0);
   border-left: 10rpx solid var(--accent, #FFD93D);
 }
-.v2-mode .quick-paste-warn-icon-v2 { font-size: $fs-body; flex-shrink: 0; line-height: 1.4; }
+.v2-mode .quick-paste-warn-icon-v2-img { width: 28rpx; height: 28rpx; flex-shrink: 0; } .quick-paste-warn-icon-v2 { font-size: $fs-body; flex-shrink: 0; line-height: 1.4; }
 .v2-mode .quick-paste-warn-text-v2 { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.5; }
 .v2-mode .quick-paste-warn-bold-v2 { font-weight: $fw-heading; color: var(--text-main, #111); }
 
@@ -2681,16 +2688,19 @@ function goTaohua() {
   justify-content: center;
   pointer-events: auto;
 }
-.pet-action-icon { font-size: 28rpx; line-height: 1; }
+.pet-action-icon-img { width: 36rpx; height: 36rpx; }
 .pet-action-label { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); line-height: 1; }
 
 /* ---- pet petting: hearts particle layer ---- */
 .hearts-layer {
   position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: visible;
 }
-.heart-particle {
+.heart-particle-img { width: 28rpx; height: 28rpx; } .heart-particle {
   position: absolute;
   animation: heart-float 1.5s ease-out forwards;
+  line-height: 1;
+}
+.heart-particle-emoji {
   line-height: 1;
 }
 @keyframes heart-float {

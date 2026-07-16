@@ -1,6 +1,6 @@
 <template>
   <view class="pm-card">
-    <text class="pm-title">📊 已记录 {{ countNum }} 条 · {{ hint }}</text>
+    <view class="pm-title"><image class="pm-title-icon" src="/static/icons/taohua/chart.svg" mode="aspectFit" /><text>已记录 {{ countNum }} 条 · {{ hint }}</text></view>
     <view class="pm-track">
       <view class="pm-fill" :style="{ width: pct + '%' }"></view>
     </view>
@@ -41,7 +41,7 @@ const pct = computed(() => Math.min(100, Math.round((countNum.value / 30) * 100)
 @import "@/styles/campus-pop.scss";
 
 .pm-card { @include card-v2; padding: 20rpx 28rpx; margin-bottom: 24rpx; background: var(--surface, #fff); }
-.pm-title { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); margin-bottom: 12rpx; }
+.pm-title-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; } .pm-title { display: flex; align-items: center; gap: 6rpx;  display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); margin-bottom: 12rpx; }
 .pm-track { height: 12rpx; background: var(--surface-dim, #f0f0f0); border: 1rpx solid var(--border, #111); overflow: hidden; }
 .pm-fill { height: 100%; background: var(--dot-positive, var(--accent-cool, #4ECDC4)); transition: width 0.5s ease; }
 .pm-ticks { display: flex; justify-content: space-between; margin-top: 10rpx; gap: 8rpx; }

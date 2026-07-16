@@ -67,28 +67,28 @@
 
         <!-- 节点：最新信号 -->
         <view class="cs-node cs-node-signal" @click="$emit('open-latest-signal')">
-          <text class="cs-node-icon">{{ latestSignal?.emoji || '🔍' }}</text>
+          <image class="cs-node-icon-img" :src="signalIconSrc" mode="aspectFit" />
           <text class="cs-node-label">{{ latestSignal?.label || '最新信号' }}</text>
           <text class="cs-node-hint">{{ latestSignal ? '查看详情' : '记录后解锁' }}</text>
         </view>
 
         <!-- 节点：互动天平 -->
         <view class="cs-node cs-node-balance" @click="$emit('open-interaction-balance')">
-          <text class="cs-node-icon">⚖️</text>
+          <image class="cs-node-icon-img" src="/static/icons/taohua/scale.svg" mode="aspectFit" />
           <text class="cs-node-label">互动天平</text>
           <text class="cs-node-hint">{{ balanceCallout || '记录更多互动后解锁' }}</text>
         </view>
 
         <!-- 节点：今日桃花 -->
         <view class="cs-node cs-node-taohua" @click="$emit('open-taohua')">
-          <text class="cs-node-icon">🌸</text>
+          <image class="cs-node-icon-img" src="/static/icons/taohua/flower.svg" mode="aspectFit" />
           <text class="cs-node-label">今日桃花</text>
           <text class="cs-node-hint">{{ taohuaTeaserData ? taohuaTeaserData.direction : '加载中' }}</text>
         </view>
 
         <!-- 节点：行动指南 -->
         <view class="cs-node cs-node-pair" @click="$emit('open-guidance')">
-          <text class="cs-node-icon">🧭</text>
+          <image class="cs-node-icon-img" src="/static/icons/taohua/compass.svg" mode="aspectFit" />
           <text class="cs-node-label">行动指南</text>
           <text class="cs-node-hint">{{ guidanceHint }}</text>
         </view>
@@ -123,15 +123,15 @@
         </view>
         <view class="cs-dock-actions">
           <view class="cs-dock-btn cs-dock-btn-main" @click="$emit('open-quick-record', 'text')">
-            <text class="cs-dock-btn-icon">✎</text>
+            <image class="cs-dock-btn-icon-img" src="/static/icons/taohua/pencil.svg" mode="aspectFit" />
             <text>记一条</text>
           </view>
           <view class="cs-dock-btn" @click="$emit('open-quick-record', 'image')">
-            <text class="cs-dock-btn-icon">🖼</text>
+            <image class="cs-dock-btn-icon-img" src="/static/icons/taohua/image.svg" mode="aspectFit" />
             <text>截图</text>
           </view>
           <view class="cs-dock-btn" @click="$emit('open-quick-record', 'voice')">
-            <text class="cs-dock-btn-icon">🎤</text>
+            <image class="cs-dock-btn-icon-img" src="/static/icons/taohua/mic.svg" mode="aspectFit" />
             <text>语音</text>
           </view>
         </view>
@@ -471,9 +471,9 @@ const statusLabel = computed(() => {
   width: 130rpx;
   height: 100rpx;
   border-radius: var(--shape-radius-inner, 20rpx);
-  /* border: var(--border-width-strong, 3rpx) solid var(--border, #111); */
-  /* box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); */
+  border: 3rpx solid var(--border, #111);
   background: var(--surface, #fff);
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -481,11 +481,12 @@ const statusLabel = computed(() => {
   gap: 4rpx;
   z-index: 2;
 }
-.cs-node-icon { font-size: 24rpx; }
+/* 不写 color：真机继承正文色时，彩色 emoji 易降成黑色文本符号 */
+.cs-node-icon-img { width: 32rpx; height: 32rpx; flex-shrink: 0; }
 .cs-node-label { font-size: 22rpx; font-weight: 900; color: var(--text-main, #111); }
 .cs-node-hint { font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; max-width: 110rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* 节点光束扫过闪烁：7s 周期与 cs-beam 同步，每个节点在光束扫过其象限时持续发光约 1.5s */
+/* 节点光束扫过：只动阴影/边框，不动 opacity（真机 emoji 遇 opacity 易丢色/变黑） */
 .cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 5.25s; }
 .cs-node-balance { right: 12rpx; top: 140rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 0s; }
 .cs-node-taohua { right: 12rpx; top: 330rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 1.75s; }
@@ -582,7 +583,7 @@ const statusLabel = computed(() => {
   font-weight: 900;
   color: var(--text-main, #111);
 }
-.cs-dock-btn-icon { font-size: 22rpx; }
+.cs-dock-btn-icon-img { width: 26rpx; height: 26rpx; flex-shrink: 0; }
 .cs-dock-btn-main {
   background: var(--accent-cool, #4ECDC4);
   color: var(--text-main, #111);

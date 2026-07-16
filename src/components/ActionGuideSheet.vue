@@ -13,43 +13,55 @@
         <view class="ags-compasses">
           <view class="ags-compass ags-compass-peach">
             <text class="ags-mc-n">N</text><text class="ags-mc-s">S</text><text class="ags-mc-e">E</text><text class="ags-mc-w">W</text>
-            <view class="ags-mc-needle ags-mc-needle-peach" :style="peachNeedleStyle" />
+            <view class="ags-mc-needle ags-mc-needle-peach" :style="peachNeedleStyle">
+              <view class="ags-mc-needle-tip">
+                <image class="ags-mc-needle-icon-img" src="/static/icons/taohua/flower.svg" mode="aspectFit" />
+              </view>
+            </view>
             <text class="ags-mc-label">桃花·{{ direction }}</text>
           </view>
           <view class="ags-compass ags-compass-luan">
             <text class="ags-mc-n">N</text><text class="ags-mc-s">S</text><text class="ags-mc-e">E</text><text class="ags-mc-w">W</text>
-            <view class="ags-mc-needle ags-mc-needle-luan" :style="luanNeedleStyle" />
+            <view class="ags-mc-needle ags-mc-needle-luan" :style="luanNeedleStyle">
+              <view class="ags-mc-needle-tip" :style="luanEmojiStyle">
+                <image class="ags-mc-needle-icon-img" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" />
+              </view>
+            </view>
             <text class="ags-mc-label">红鸾·{{ hongluanDir }}</text>
           </view>
           <view class="ags-compass ags-compass-xi">
             <text class="ags-mc-n">N</text><text class="ags-mc-s">S</text><text class="ags-mc-e">E</text><text class="ags-mc-w">W</text>
-            <view class="ags-mc-needle ags-mc-needle-xi" :style="xiNeedleStyle" />
+            <view class="ags-mc-needle ags-mc-needle-xi" :style="xiNeedleStyle">
+              <view class="ags-mc-needle-tip">
+                <image class="ags-mc-needle-icon-img" src="/static/icons/taohua/star-filled.svg" mode="aspectFit" />
+              </view>
+            </view>
             <text class="ags-mc-label">天喜·{{ tianxiDir }}</text>
           </view>
         </view>
 
-        <!-- Card 1: Wear -->
-        <view v-if="wearColors.length" class="ags-card ags-card-wear">
-          <text class="ags-card-kicker">👗 穿什么 · 戴什么</text>
-          <text class="ags-card-main">{{ wearOneLiner || wearColors.join(' + ') }}</text>
-          <view class="ags-color-dots">
-            <view v-for="(c, i) in dotColors" :key="i" class="ags-color-dot" :style="{ background: c }" />
+        <!-- Cards -->
+        <view class="ags-cards">
+          <view v-if="wearColors.length" class="ags-card ags-card-wear">
+            <view class="ags-card-kicker"><image class="ags-card-kicker-icon" src="/static/icons/taohua/shirt.svg" mode="aspectFit" /><text>穿什么 · 戴什么</text></view>
+            <text class="ags-card-main">{{ wearOneLiner || wearColors.join(' + ') }}</text>
+            <view class="ags-color-dots">
+              <view v-for="(c, i) in dotColors" :key="i" class="ags-color-dot" :style="{ background: c }" />
+            </view>
+            <view v-if="wearHighlight" class="ags-card-sub"><image class="ags-card-sub-icon" src="/static/icons/taohua/gem.svg" mode="aspectFit" /><text>{{ wearHighlight }} · {{ wearMaterial }}</text></view>
           </view>
-          <text v-if="wearHighlight" class="ags-card-sub">💎 {{ wearHighlight }} · {{ wearMaterial }}</text>
-        </view>
 
-        <!-- Card 2: Venue -->
-        <view v-if="venue" class="ags-card ags-card-venue">
-          <text class="ags-card-kicker">📍 去哪儿 · 做什么</text>
-          <text class="ags-card-main">{{ venue }}</text>
-          <text v-if="venueActivities.length" class="ags-card-sub">🌿 {{ venueActivities.slice(0, 3).join(' · ') }}</text>
-        </view>
+          <view v-if="venue" class="ags-card ags-card-venue">
+            <view class="ags-card-kicker"><image class="ags-card-kicker-icon" src="/static/icons/taohua/pin.svg" mode="aspectFit" /><text>去哪儿 · 做什么</text></view>
+            <text class="ags-card-main">{{ venue }}</text>
+            <view v-if="venueActivities.length" class="ags-card-sub"><image class="ags-card-sub-icon" src="/static/icons/taohua/leaf.svg" mode="aspectFit" /><text>{{ venueActivities.slice(0, 3).join(' · ') }}</text></view>
+          </view>
 
-        <!-- Card 3: Do -->
-        <view v-if="doList.length" class="ags-card ags-card-do">
-          <text class="ags-card-kicker">✅ 今日宜</text>
-          <text class="ags-card-main">{{ doList.slice(0, 4).join(' · ') }}</text>
-          <text v-if="guideSummary" class="ags-card-sub">{{ guideSummary }}</text>
+          <view v-if="doList.length" class="ags-card ags-card-do">
+            <view class="ags-card-kicker"><image class="ags-card-kicker-icon" src="/static/icons/taohua/check.svg" mode="aspectFit" /><text>今日宜</text></view>
+            <text class="ags-card-main">{{ doList.slice(0, 4).join(' · ') }}</text>
+            <text v-if="guideSummary" class="ags-card-sub">{{ guideSummary }}</text>
+          </view>
         </view>
 
         <!-- Score -->
@@ -57,12 +69,12 @@
           <text class="ags-score-num">{{ score }}</text>
           <text class="ags-score-div">/</text>
           <text class="ags-score-unit">100</text>
-          <text class="ags-score-label">今日气场</text>
+          <text class="ags-score-label">今日气场{{ aura ? ' · ' + aura : '' }}</text>
         </view>
 
         <!-- Dont chips -->
         <view v-if="dontList.length" class="ags-donts">
-          <text v-for="(d, i) in dontList.slice(0, 3)" :key="i" class="ags-dont-chip">❌ {{ d }}</text>
+          <view v-for="(d, i) in dontList.slice(0, 3)" :key="i" class="ags-dont-chip"><image class="ags-dont-chip-icon" src="/static/icons/taohua/cross.svg" mode="aspectFit" /><text>{{ d }}</text></view>
         </view>
 
         <!-- Xiaomi -->
@@ -126,8 +138,11 @@ const peachNeedleStyle = computed(() => ({
   transform: `translate(-50%,-100%) rotate(${dirAngle(props.direction)}deg)`
 }))
 const luanNeedleStyle = computed(() => ({
-  transform: `translate(-50%,-100%) rotate(${dirAngle(props.hongluanDir)}deg)`,
-  '--luan-deg': String(-dirAngle(props.hongluanDir))
+  transform: `translate(-50%,-100%) rotate(${dirAngle(props.hongluanDir)}deg)`
+}))
+/** 红鸾针反向旋转，让爱心始终正向 */
+const luanEmojiStyle = computed(() => ({
+  transform: `translateX(-50%) rotate(${-dirAngle(props.hongluanDir)}deg)`
 }))
 const xiNeedleStyle = computed(() => ({
   transform: `translate(-50%,-100%) rotate(${dirAngle(props.tianxiDir)}deg)`
@@ -218,35 +233,34 @@ function petalStyle(i: number) {
 .ags-mc-needle:before{content:"";position:absolute;left:50%;bottom:0;width:12rpx;height:12rpx;background:inherit;border-radius:50%;transform:translate(-50%,50%);box-shadow:0 0 8rpx currentColor}
 @keyframes needle-pulse{0%,100%{transform:translateX(-50%)scale(1)}50%{transform:translateX(-50%)scale(1.15)}}
 
-/* 桃花 needle */
+/* 桃花 / 红鸾 / 天喜 needle — emoji 用真实节点，避免真机伪元素 content 丢失 */
 .ags-mc-needle-peach{background:var(--hero,#FF6B6B);box-shadow:0 0 12rpx rgba(239,118,105,.4)}
-.ags-mc-needle-peach:after{position:absolute;top:-22rpx;left:50%;transform:translateX(-50%);font-size:22rpx;line-height:1;animation:needle-pulse 2s ease-in-out infinite;content:"🌸"}
-
-/* 红鸾 needle — ::after 爱心反向旋转保持正向 */
 .ags-mc-needle-luan{background:var(--risk,#FF5252);box-shadow:0 0 10rpx rgba(212,121,110,.35)}
-.ags-mc-needle-luan:after{position:absolute;top:-22rpx;left:50%;font-size:22rpx;line-height:1;animation:needle-pulse 2s ease-in-out infinite;content:"❤️";transform:translateX(-50%)rotate(var(--luan-deg,0deg))}
-
-/* 天喜 needle */
 .ags-mc-needle-xi{background:var(--accent,#FFD93D);box-shadow:0 0 10rpx rgba(196,155,74,.35)}
-.ags-mc-needle-xi:after{position:absolute;top:-22rpx;left:50%;transform:translateX(-50%);font-size:22rpx;line-height:1;animation:needle-pulse 2s ease-in-out infinite;content:"⭐"}
+.ags-mc-needle-tip{position:absolute;top:-22rpx;left:50%;transform:translateX(-50%);line-height:1;animation:needle-pulse 2s ease-in-out infinite}
+.ags-mc-needle-emoji{font-size:22rpx;line-height:1}
+.ags-mc-needle-icon-img{width:28rpx;height:28rpx;display:block}
 
 .ags-mc-label{position:absolute;bottom:-60rpx;left:50%;transform:translateX(-50%);font-size:22rpx;font-weight:900;white-space:nowrap}
 .ags-compass-peach .ags-mc-label{color:var(--hero,#FF6B6B)}
 .ags-compass-luan .ags-mc-label{color:var(--risk,#FF5252)}
 .ags-compass-xi .ags-mc-label{color:var(--accent,#FFD93D)}
 
+/* ═══ CARDS FLEX CONTAINER ═══ */
+.ags-cards { display: flex; flex-direction: column; align-items: flex-end; gap: 32rpx; padding: 28rpx 20rpx 240rpx 160rpx; }
+
 /* ═══ BALLOON CARDS ═══ */
-.ags-card{position:absolute;z-index:4;border-radius:var(--shape-radius-card,0);padding:28rpx 32rpx;border:2rpx solid var(--card-border,#111);box-shadow:inset 0 -12rpx 28rpx rgba(0,0,0,.06),inset 0 6rpx 20rpx rgba(255,255,255,.5),0 12rpx 40rpx rgba(0,0,0,.1);display:flex;flex-direction:column;gap:8rpx;animation:card-float var(--fd,5s) ease-in-out infinite;animation-delay:var(--fdl,0s)}
+.ags-card{z-index:4;border-radius:var(--shape-radius-card,0);padding:28rpx 32rpx;border:2rpx solid var(--card-border,#111);box-shadow:inset 0 -12rpx 28rpx rgba(0,0,0,.06),inset 0 6rpx 20rpx rgba(255,255,255,.5),0 12rpx 40rpx rgba(0,0,0,.1);display:flex;flex-direction:column;gap:8rpx;animation:card-float var(--fd,5s) ease-in-out infinite;animation-delay:var(--fdl,0s);width:390rpx;box-sizing:border-box}
 @keyframes card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8rpx)}}
-.ags-card-kicker{font-size:28rpx;font-weight:700;color:var(--card-accent,#ef7669);letter-spacing:.05em}
+.ags-card-kicker-icon{width:28rpx;height:28rpx;flex-shrink:0}.ags-card-sub-icon{width:24rpx;height:24rpx;flex-shrink:0}.ags-dont-chip-icon{width:22rpx;height:22rpx;flex-shrink:0}.ags-card-kicker{display:flex;align-items:center;gap:6rpx;font-size:28rpx;font-weight:700;color:var(--card-accent,#ef7669);letter-spacing:.05em}
 .ags-card-main{font-size:24rpx;font-weight:400;color:var(--text-main,#111);line-height:1.35}
-.ags-card-sub{font-size:24rpx;color:var(--text-muted,#666);line-height:1.4;font-weight:400}
+.ags-card-sub{display:flex;align-items:center;gap:6rpx;font-size:24rpx;color:var(--text-muted,#666);line-height:1.4;font-weight:400}
 .ags-color-dots{display:flex;gap:12rpx;margin-top:4rpx}
 .ags-color-dot{width:32rpx;height:32rpx;border-radius:50%;border:3rpx solid rgba(24,21,20,.2)}
 
-.ags-card-wear{background:linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 50%,#FFD8BC 100%);--card-accent:var(--hero,#ef7669);--card-border:#e0b090;top:28rpx;right:20rpx;width:390rpx;min-height:180rpx;--fd:4.8s;--fdl:0s}
-.ags-card-venue{background:linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 50%,#C0E8D4 100%);--card-accent:#2d6a4f;--card-border:#a0d0b8;top:328rpx;right:20rpx;width:390rpx;min-height:160rpx;--fd:5.2s;--fdl:.4s}
-.ags-card-do{background:linear-gradient(160deg,#F5FFFD 0%,#D8F8F0 50%,#C0ECE4 100%);--card-accent:#1a6b5a;--card-border:#90d0c4;top:608rpx;right:20rpx;width:390rpx;min-height:160rpx;--fd:4.5s;--fdl:.8s}
+.ags-card-wear{background:linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 50%,#FFD8BC 100%);--card-accent:var(--hero,#ef7669);--card-border:#e0b090;--fd:4.8s;--fdl:0s}
+.ags-card-venue{background:linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 50%,#C0E8D4 100%);--card-accent:#2d6a4f;--card-border:#a0d0b8;--fd:5.2s;--fdl:.4s}
+.ags-card-do{background:linear-gradient(160deg,#F5FFFD 0%,#D8F8F0 50%,#C0ECE4 100%);--card-accent:#1a6b5a;--card-border:#90d0c4;--fd:4.5s;--fdl:.8s}
 
 /* ═══ SCORE ═══ */
 .ags-score{position:absolute;right:32rpx;bottom:140rpx;z-index:4;display:flex;align-items:baseline;gap:4rpx;animation:card-float 5s ease-in-out infinite}
@@ -257,7 +271,7 @@ function petalStyle(i: number) {
 
 /* ═══ DONT CHIPS ═══ */
 .ags-donts{position:absolute;right:20rpx;bottom:60rpx;z-index:4;display:flex;gap:8rpx}
-.ags-dont-chip{padding:8rpx 20rpx;border-radius:28rpx;font-size:22rpx;font-weight:700;background:rgba(239,118,105,.06);border:3rpx solid rgba(239,118,105,.2);color:#b87068;animation:chip-float 4s ease-in-out infinite;animation-delay:var(--cd,0s)}
+.ags-dont-chip{display:flex;align-items:center;gap:4rpx;padding:8rpx 20rpx;border-radius:28rpx;font-size:22rpx;font-weight:700;background:rgba(239,118,105,.06);border:3rpx solid rgba(239,118,105,.2);color:#b87068;animation:chip-float 4s ease-in-out infinite;animation-delay:var(--cd,0s)}
 .ags-dont-chip:nth-child(1){--cd:0s}.ags-dont-chip:nth-child(2){--cd:.3s}.ags-dont-chip:nth-child(3){--cd:.6s}
 @keyframes chip-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6rpx)}}
 

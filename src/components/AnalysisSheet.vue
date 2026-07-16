@@ -26,7 +26,7 @@
 
         <!-- State B: pending -->
         <view v-else-if="aiState.pending" class="as-state-card as-state-pending">
-          <text class="as-state-emoji">⏳</text>
+          <image class="as-state-emoji-img" src="/static/icons/taohua/hourglass.svg" mode="aspectFit" />
           <text class="as-state-text">AI 分析尚未开始，请稍候</text>
         </view>
 
@@ -46,14 +46,14 @@
           <!-- Score cards: side by side -->
           <view class="as-score-row-cards">
             <view class="as-card as-card-intent">
-              <text class="as-card-kicker">📊 意向</text>
+              <view class="as-card-kicker"><image class="as-card-kicker-icon" src="/static/icons/taohua/chart.svg" mode="aspectFit" /><text>意向</text></view>
               <text class="as-score-num">{{ clampScore(scores.intentScore) }}</text>
               <text :class="['as-score-delta', deltaClass(scores.intentDelta)]">{{ formatDelta(scores.intentDelta) }}</text>
               <view class="as-bar-track"><view class="as-bar-fill as-bar-intent" :style="{ width: clampScore(scores.intentScore) + '%' }" /></view>
               <text class="as-card-sub">{{ scores.intentBucket }}</text>
             </view>
             <view class="as-card as-card-risk">
-              <text class="as-card-kicker">⚠️ 风险</text>
+              <view class="as-card-kicker"><image class="as-card-kicker-icon" src="/static/icons/taohua/warning.svg" mode="aspectFit" /><text>风险</text></view>
               <text class="as-score-num risk">{{ clampScore(scores.riskScore) }}</text>
               <text :class="['as-score-delta', deltaClass(scores.riskDelta)]">{{ formatDelta(scores.riskDelta) }}</text>
               <view class="as-bar-track"><view class="as-bar-fill as-bar-risk" :style="{ width: clampScore(scores.riskScore) + '%' }" /></view>
@@ -63,13 +63,13 @@
 
           <!-- Reason bullets -->
           <view v-if="reasonBullets.length > 0" class="as-card as-card-reason">
-            <text class="as-card-kicker">📋 原因分析</text>
+            <view class="as-card-kicker"><image class="as-card-kicker-icon" src="/static/icons/taohua/clipboard.svg" mode="aspectFit" /><text>原因分析</text></view>
             <text v-for="(r, i) in reasonBullets" :key="i" class="as-bullet">• {{ r }}</text>
           </view>
 
           <!-- Action plan -->
           <view v-if="actionMissing || actionSections.length > 0" class="as-card as-card-action">
-            <text class="as-card-kicker">💡 小咪建议</text>
+            <view class="as-card-kicker"><image class="as-card-kicker-icon" src="/static/icons/taohua/bulb.svg" mode="aspectFit" /><text>{{ props.petName }}建议</text></view>
             <text v-if="actionMissing" class="as-action-missing">{{ actionMissingText }}</text>
             <template v-else>
               <view v-for="(item, i) in actionSections" :key="i" class="as-action-item">
@@ -85,17 +85,18 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = withDefaults(defineProps<{
   visible: boolean
   aiState: { loading: boolean; pending: boolean; seconds: number; error: boolean; errorMsg: string }
   scores: { intentScore: number; riskScore: number; intentBucket: string; riskBucket: string; intentDelta: number; riskDelta: number }
   signal: { emoji: string; label: string }
   meta: { questionLabel?: string; rawDescription?: string }
+  petName?: string
   reasonBullets: string[]
   actionSections: { label: string; text: string }[]
   actionMissing: boolean
   actionMissingText: string
-}>()
+}>(), { petName: '小咪' })
 
 defineEmits<{ close: [] }>()
 
@@ -138,7 +139,7 @@ function deltaClass(d: number) { return d > 0 ? 'up' : d < 0 ? 'down' : 'flat' }
 
 /* ═══ CONTENT CARDS ═══ */
 .as-card { border-radius: var(--shape-radius-card, 0); padding: 20rpx 24rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); display: flex; flex-direction: column; gap: 6rpx; }
-.as-card-kicker { font-size: 28rpx; font-weight: 700; color: var(--card-accent, var(--text-main, #111)); }
+.as-card-kicker { display: flex; align-items: center; gap: 6rpx; font-size: 28rpx; font-weight: 700; color: var(--card-accent, var(--text-main, #111)); } .as-card-kicker-icon { width: 26rpx; height: 26rpx; flex-shrink: 0; }
 .as-card-sub { font-size: 22rpx; color: var(--text-muted, #666); }
 
 /* intent card */

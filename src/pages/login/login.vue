@@ -19,11 +19,11 @@
         <text class="landing-feat-text">记录互动，{{ aiLabel() }} 实时分析 TA 的态度变化</text>
       </view>
       <view class="landing-feat">
-        <text class="landing-feat-icon">🔍</text>
+        <image class="landing-feat-icon-img" src="/static/icons/taohua/search.svg" mode="aspectFit" />
         <text class="landing-feat-text">解读 TA 的真实意图，看清关系信号</text>
       </view>
       <view class="landing-feat">
-        <text class="landing-feat-icon">💡</text>
+        <image class="landing-feat-icon-img" src="/static/icons/taohua/bulb.svg" mode="aspectFit" />
         <text class="landing-feat-text">判断关系走向，给你下一步行动建议</text>
       </view>
     </view>
@@ -234,7 +234,7 @@ function waitForUserId(timeoutMs: number): Promise<string | null> {
   margin-bottom: 18rpx;
   &:last-child { margin-bottom: 0; }
 }
-.landing-feat-icon {
+.landing-feat-icon-img { width: 48rpx; height: 48rpx; } .landing-feat-icon {
   font-size: $fs-body-lg;
   flex-shrink: 0;
   line-height: 1.4;

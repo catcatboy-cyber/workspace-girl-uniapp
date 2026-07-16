@@ -20,7 +20,7 @@
       </view>
 
       <view class="card-v2 warn-card">
-        <text class="section-title-v2 warn-title-v2">⚠️ 重新分析说明</text>
+        <view class="section-title-v2 warn-title-v2"><image class="warn-title-icon" src="/static/icons/taohua/warning.svg" mode="aspectFit" /><text>重新分析说明</text></view>
         <text class="card-text-v2">本次分析仅基于下方问卷答案计算，与已有事件记录无关。新分数将完全重新生成，不会在现有分数上加减。</text>
         <text class="card-text-v2" style="margin-top:8rpx;">历史事件和之前的评估仍会保留，新结果将追加为一条新的评估记录。</text>
       </view>
@@ -181,7 +181,7 @@ function goTimeline() {
 .v2-mode .card-v2 { @include card-v2; }
 .v2-mode .warn-card { border-color: var(--warning, #e67e22); background: var(--warning-soft, #fff8f0); }
 .v2-mode .section-title-v2 { @include section-title-v2; }
-.v2-mode .warn-title-v2 { color: var(--warning, #e67e22); }
+.v2-mode .warn-title-icon { width: 32rpx; height: 32rpx; flex-shrink: 0; } .warn-title-v2 { display: flex; align-items: center; gap: 6rpx;  color: var(--warning, #e67e22); }
 .v2-mode .card-text-v2 {
   display: block;
   font-size: $fs-body-lg;
