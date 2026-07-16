@@ -19,9 +19,13 @@
         <text v-if="meta.rawDescription" class="as-desc">{{ meta.rawDescription }}</text>
 
         <!-- State A: loading -->
-        <view v-if="aiState.loading" class="as-state-card">
-          <text class="as-state-emoji">🤖</text>
-          <text class="as-state-text">AI 分析中，已用时 {{ aiState.seconds }} 秒</text>
+        <view v-if="aiState.loading" class="as-loading-card">
+          <text class="as-loading-pet">{{ props.petName }}分析中</text>
+          <view class="as-loading-dots">
+            <view class="as-loading-dot" />
+            <view class="as-loading-dot" />
+            <view class="as-loading-dot" />
+          </view>
         </view>
 
         <!-- State B: pending -->
@@ -39,7 +43,9 @@
         <template v-else>
           <!-- Signal tag -->
           <view v-if="signal.label" class="as-signal-tag">
-            <text>{{ signal.emoji }} {{ signal.label }}</text>
+            <image v-if="signal.svg" class="as-signal-icon" :src="signal.svg" mode="aspectFit" />
+            <text v-else>{{ signal.emoji }}</text>
+            <text>{{ signal.label }}</text>
           </view>
 
           <!-- Score cards -->
@@ -89,7 +95,7 @@ const props = withDefaults(defineProps<{
   visible: boolean
   aiState: { loading: boolean; pending: boolean; seconds: number; error: boolean; errorMsg: string }
   scores: { intentScore: number; riskScore: number; intentBucket: string; riskBucket: string; intentDelta: number; riskDelta: number }
-  signal: { emoji: string; label: string }
+  signal: { emoji: string; label: string; svg?: string }
   meta: { questionLabel?: string; rawDescription?: string }
   petName?: string
   reasonBullets: string[]
@@ -131,8 +137,18 @@ function deltaClass(d: number) { return d > 0 ? 'up' : d < 0 ? 'down' : 'flat' }
 .as-state-emoji { font-size: 64rpx; }
 .as-state-text { font-size: 28rpx; font-weight: 700; color: var(--text-main, #111); }
 
+/* Loading card */
+.as-loading-card { display: flex; flex-direction: column; align-items: center; gap: 16rpx; padding: 28rpx 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); background: var(--surface, #fff); }
+.as-loading-pet { font-size: 32rpx; font-weight: 800; color: var(--text-main, #111); }
+.as-loading-dots { display: flex; align-items: center; gap: 8rpx; }
+.as-loading-dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: var(--text-main, #111); animation: as-dot-flicker 1s ease-in-out infinite; }
+.as-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.as-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes as-dot-flicker { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.15; transform: scale(0.5); } }
+
 /* ═══ SIGNAL TAG ═══ */
-.as-signal-tag { display: inline-block; padding: 8rpx 20rpx; margin-bottom: 12rpx; border-radius: 999rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 24rpx; font-weight: 800; color: var(--text-main, #111); }
+.as-signal-tag { display: inline-flex; align-items: center; gap: 6rpx; padding: 8rpx 20rpx; margin-bottom: 12rpx; border-radius: 999rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: 24rpx; font-weight: 800; color: var(--text-main, #111); }
+.as-signal-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
 
 /* ═══ SCORE ROW ═══ */
 .as-score-row-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; margin-bottom: 16rpx; }

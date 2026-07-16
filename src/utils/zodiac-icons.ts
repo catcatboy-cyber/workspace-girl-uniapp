@@ -38,3 +38,73 @@ export function getZodiacSvg(zodiac: string): string {
 export function getConstellationSvg(sign: string): string {
   return CONSTELLATION_SVG[sign] || '';
 }
+
+
+// ── 文本中 emoji → SVG 图标替换 ──
+const EMOJI_SVG: Record<string, string> = {
+  '➖': BASE + '/minus.svg',
+  '⚠️': BASE + '/warning.svg',
+  '❄️': BASE + '/snowflake.svg',
+  '🔥': BASE + '/fire.svg',
+  '🌸': BASE + '/flower.svg',
+  '❤️': BASE + '/heart-filled.svg',
+  '⭐': BASE + '/star-filled.svg',
+  '🔍': BASE + '/search.svg',
+  '⚖️': BASE + '/scale.svg',
+  '🧭': BASE + '/compass.svg',
+  '✎': BASE + '/pencil.svg',
+  '🖼': BASE + '/image.svg',
+  '🎤': BASE + '/mic.svg',
+  '✅': BASE + '/check.svg',
+  '❌': BASE + '/cross.svg',
+  '📊': BASE + '/chart.svg',
+  '📋': BASE + '/clipboard.svg',
+  '💡': BASE + '/bulb.svg',
+  '💬': BASE + '/bubble.svg',
+  '⏳': BASE + '/hourglass.svg',
+  '🤖': BASE + '/robot.svg',
+  '🪷': BASE + '/lotus.svg',
+  '👗': BASE + '/shirt.svg',
+  '💎': BASE + '/gem.svg',
+  '📍': BASE + '/pin.svg',
+  '🌿': BASE + '/leaf.svg',
+  '🎯': BASE + '/target.svg',
+  '🔔': BASE + '/bell.svg',
+  '🔒': BASE + '/lock.svg',
+}
+
+export type TextSegment =
+  | { type: 'text'; value: string }
+  | { type: 'icon'; src: string }
+
+export function parseEmojiText(text: string): TextSegment[] {
+  if (!text) return []
+  // 按 emoji 最长优先排序
+  const emojis = Object.keys(EMOJI_SVG).sort((a, b) => b.length - a.length)
+  const segments: TextSegment[] = []
+  let remaining = text
+  while (remaining.length > 0) {
+    let matched = false
+    for (const emoji of emojis) {
+      if (remaining.startsWith(emoji)) {
+        segments.push({ type: 'icon', src: EMOJI_SVG[emoji] })
+        remaining = remaining.slice(emoji.length)
+        matched = true
+        break
+      }
+    }
+    if (!matched) {
+      // 找下一个 emoji 出现的位置
+      let nextIdx = remaining.length
+      for (const emoji of emojis) {
+        const idx = remaining.indexOf(emoji)
+        if (idx !== -1 && idx < nextIdx) nextIdx = idx
+      }
+      if (nextIdx > 0) {
+        segments.push({ type: 'text', value: remaining.slice(0, nextIdx) })
+      }
+      remaining = remaining.slice(nextIdx)
+    }
+  }
+  return segments
+}

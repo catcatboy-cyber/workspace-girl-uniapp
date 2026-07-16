@@ -692,6 +692,7 @@ const analysisScores = computed(() => ({
 const analysisSignal = computed(() => ({
   emoji: quickFeedbackSignal.value?.emoji || '',
   label: quickFeedbackSignal.value?.label || '',
+  svg: quickFeedbackSignal.value?.svg || '',
 }))
 const analysisMeta = computed(() => ({
   questionLabel: quickFeedback.value?.userQuestion?.label || latestCase.value?.latestResult?.userQuestion?.label || '',

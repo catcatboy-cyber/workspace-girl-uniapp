@@ -606,14 +606,14 @@ const taohuaIconMap: Record<string, string> = {
   alertTriangle: '/static/icons/taohua/warning.svg',
   shirt: '/static/icons/taohua/shirt.svg',
   landmark: '/static/icons/taohua/landmark.svg',
-  stars: '/static/icons/taohua/sparkles.svg',
+  stars: '/static/icons/taohua/star-filled.svg',
   heart: '/static/icons/taohua/heart-filled.svg',
   share2: '/static/icons/taohua/share.svg',
   lock: '/static/icons/taohua/lock.svg',
   bell: '/static/icons/taohua/bell.svg',
   search: '/static/icons/taohua/search.svg',
   x: '/static/icons/taohua/cross.svg',
-  sparkles: '/static/icons/taohua/sparkles.svg'
+  sparkles: '/static/icons/taohua/fire.svg'
 }
 
 function taohuaIcon(name: string) {

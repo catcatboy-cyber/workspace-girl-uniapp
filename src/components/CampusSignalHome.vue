@@ -42,7 +42,7 @@
       <!-- ===== 3. 关系雷达 ===== -->
       <view class="cs-radar-map">
         <!-- 中心 Crush -->
-        <view class="cs-center-orb" @click="$emit('open-case-detail')">
+        <view class="cs-center-orb" @click="onAvatarClick">
           <view class="cs-avatar-ring">
             <image v-if="caseAvatar" :src="caseAvatar" mode="aspectFill" class="cs-avatar-img" />
             <text v-else class="cs-avatar-text">{{ avatarInitial }}</text>
@@ -67,7 +67,7 @@
 
         <!-- 节点：最新信号 -->
         <view class="cs-node cs-node-signal" @click="$emit('open-latest-signal')">
-          <image class="cs-node-icon-img" :src="signalIconSrc" mode="aspectFit" />
+          <image v-if="signalIconSrc" class="cs-node-icon-img" :src="signalIconSrc" mode="aspectFit" />
           <text class="cs-node-label">{{ latestSignal?.label || '最新信号' }}</text>
           <text class="cs-node-hint">{{ latestSignal ? '查看详情' : '记录后解锁' }}</text>
         </view>
@@ -90,8 +90,18 @@
         <view class="cs-node cs-node-pair" @click="$emit('open-guidance')">
           <image class="cs-node-icon-img" src="/static/icons/taohua/compass.svg" mode="aspectFit" />
           <text class="cs-node-label">行动指南</text>
-          <text class="cs-node-hint">{{ guidanceHint }}</text>
+          <view class="cs-node-hint"><block v-for="(seg, si) in guidanceHint" :key="si"><image v-if="seg.type === 'icon'" class="cs-hint-icon" :src="seg.src" mode="aspectFit" /><text v-else>{{ seg.value }}</text></block></view>
         </view>
+
+        <!-- 花瓣飘落 -->
+        <view class="cs-petals">
+          <view v-for="i in 8" :key="i" class="cs-petal" :style="petalStyle(i)" />
+        </view>
+      </view>
+
+      <!-- 头像放大预览 -->
+      <view v-if="showPhotoPreview" class="cs-photo-overlay" @click="showPhotoPreview = false">
+        <image :src="caseAvatar" mode="aspectFit" class="cs-photo-full" />
       </view>
 
       <!-- ===== 4. 指标区 ===== -->
@@ -143,8 +153,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { parseEmojiText } from '@/utils/zodiac-icons'
 
+  // 信号图标：直接用 mapEventSignal 返回的 svg 路径
+  const signalIconSrc = computed(() => props.latestSignal?.svg || '')
 // ---- Props ----
 const props = defineProps({
   pageStyle: { type: Object, default: () => ({}) },
@@ -169,7 +182,7 @@ const props = defineProps({
 })
 
 // ---- Emits ----
-defineEmits([
+const emit = defineEmits([
   'open-case-detail',
   'open-latest-signal',
   'open-interaction-balance',
@@ -180,10 +193,38 @@ defineEmits([
   'quick-create',
 ])
 
+// ---- 头像点击：有照片放大预览，无照片进详情 ----
+const showPhotoPreview = ref(false)
+function onAvatarClick() {
+  if (props.caseAvatar) { showPhotoPreview.value = true }
+  else { emit('open-case-detail') }
+}
+
+// ---- 花瓣动画 ----
+const petalPresets = [
+  { top: '2%',  left: '10%', dur: '4.5s', delay: '0s',   drift: '40rpx', spin: '360deg',  size: 22 },
+  { top: '5%',  left: '25%', dur: '3.8s', delay: '0.6s', drift: '-30rpx',spin: '-320deg', size: 28 },
+  { top: '1%',  left: '45%', dur: '5s',   delay: '1.2s', drift: '50rpx', spin: '400deg',  size: 18 },
+  { top: '8%',  left: '60%', dur: '4.2s', delay: '1.8s', drift: '-35rpx',spin: '-350deg', size: 24 },
+  { top: '3%',  left: '75%', dur: '3.5s', delay: '0.3s', drift: '30rpx', spin: '280deg',  size: 32 },
+  { top: '6%',  left: '88%', dur: '4.8s', delay: '2.1s', drift: '-45rpx',spin: '-380deg', size: 20 },
+  { top: '4%',  left: '15%', dur: '4s',   delay: '2.7s', drift: '25rpx', spin: '310deg',  size: 26 },
+  { top: '7%',  left: '52%', dur: '5.2s', delay: '3.3s', drift: '-30rpx',spin: '-420deg', size: 16 },
+]
+function petalStyle(i: number) {
+  const p = petalPresets[i - 1] || petalPresets[0]
+  return {
+    top: p.top, left: p.left,
+    '--d': p.dur, '--delay': p.delay,
+    '--drift': p.drift, '--spin': p.spin,
+    '--sz': p.size + 'rpx',
+  }
+}
+
 // ---- Computed ----
 const guidanceHint = computed(() => {
-  if (props.taohuaTeaserData?.summary) return props.taohuaTeaserData.summary
-  return '完善画像后解锁'
+  if (props.taohuaTeaserData?.summary) return parseEmojiText(props.taohuaTeaserData.summary)
+  return parseEmojiText('完善画像后解锁')
 })
 const avatarInitial = computed(() => {
   const name = props.caseName?.trim?.()
@@ -345,6 +386,26 @@ const statusLabel = computed(() => {
   height: 100%;
   object-fit: cover;
 }
+
+/* 头像放大预览 */
+.cs-photo-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  animation: cs-fade-in 0.25s ease;
+}
+.cs-photo-full {
+  width: 80vw; height: 80vw; max-width: 600rpx; max-height: 600rpx;
+  border-radius: 24rpx;
+  border: 4rpx solid var(--surface, #fff);
+  box-shadow: 0 16rpx 48rpx rgba(0,0,0,.4);
+  animation: cs-photo-zoom 0.35s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes cs-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cs-photo-zoom {
+  from { transform: scale(0.3); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 .cs-avatar-text {
   font-size: 42rpx;
   font-weight: 900;
@@ -465,6 +526,12 @@ const statusLabel = computed(() => {
   100% { width: 260rpx; height: 260rpx; opacity: 0; }
 }
 
+/* 花瓣飘落 */
+.cs-petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.cs-petal { position: absolute; width: var(--sz, 22rpx); height: var(--sz, 22rpx); background: var(--hero, #FF6B6B); border-radius: 50% 0 50% 50%; opacity: 0; animation: cs-petal-fall var(--d, 4s) var(--delay, 0s) ease-in infinite; }
+.cs-petal:nth-child(odd) { background: #f08c80; border-radius: 50% 50% 0 50%; }
+@keyframes cs-petal-fall { 0% { opacity: 0; transform: translate(0, -16rpx) rotate(0deg) scale(.5); } 8% { opacity: .7; } 60% { opacity: .35; } 100% { opacity: 0; transform: translate(var(--drift, 36rpx), 440rpx) rotate(var(--spin, 360deg)) scale(.2); } }
+
 /* 节点 */
 .cs-node {
   position: absolute;
@@ -484,7 +551,7 @@ const statusLabel = computed(() => {
 /* 不写 color：真机继承正文色时，彩色 emoji 易降成黑色文本符号 */
 .cs-node-icon-img { width: 32rpx; height: 32rpx; flex-shrink: 0; }
 .cs-node-label { font-size: 22rpx; font-weight: 900; color: var(--text-main, #111); }
-.cs-node-hint { font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; max-width: 110rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-node-hint { display: flex; align-items: center; gap: 2rpx; font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; max-width: 110rpx; overflow: hidden; } .cs-hint-icon { width: 20rpx; height: 20rpx; flex-shrink: 0; }
 
 /* 节点光束扫过：只动阴影/边框，不动 opacity（真机 emoji 遇 opacity 易丢色/变黑） */
 .cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 5.25s; }
