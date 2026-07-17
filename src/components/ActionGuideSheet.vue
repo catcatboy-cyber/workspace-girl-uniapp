@@ -135,7 +135,7 @@ const DIR_ANGLE: Record<string, number> = {
   '西北偏西': 293, '西北偏北': 338,
 }
 function dirAngle(dir: string): number {
-  return DIR_ANGLE[dir] ?? 0
+  return DIR_ANGLE[dir] !== undefined ? DIR_ANGLE[dir] : 0
 }
 
 const peachNeedleStyle = computed(() => ({

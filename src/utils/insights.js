@@ -2279,24 +2279,24 @@ export function mapEventSignal(eventInsight, trend) {
 
   // ⚠️ 矛盾
   if (commitment === 'broken' || riskDelta >= 10) {
-    return { signal: 'contradiction', emoji: '⚠️', label: '矛盾',
+    return { signal: 'contradiction', emoji: '⚠️', svg: '/static/icons/taohua/warning.svg', label: '矛盾',
       summary: commitment === 'broken' ? '对方言行不一致，有承诺未兑现' : '风险显著上升，信号矛盾',
       detail }
   }
   // ❄️ 降温
   if ((actor === 'target' && (interaction === 'rejected' || interaction === 'delayed')) || intentDelta <= -8) {
-    return { signal: 'cooling', emoji: '❄️', label: '降温',
+    return { signal: 'cooling', emoji: '❄️', svg: '/static/icons/taohua/snowflake.svg', label: '降温',
       summary: intentDelta <= -8 ? '近期对方积极信号在减少' : '对方出现退缩或回避行为',
       detail }
   }
   // 🔥 好感
   if ((actor === 'target' && interaction && interaction !== 'rejected' && interaction !== 'delayed' && interaction !== 'unclear') || intentDelta >= 8) {
-    return { signal: 'warming', emoji: '🔥', label: '好感',
+    return { signal: 'warming', emoji: '🔥', svg: '/static/icons/taohua/fire.svg', label: '好感',
       summary: actor === 'target' ? '对方有主动积极投入信号' : '近期意向趋势上升',
       detail }
   }
   // ➖ 平稳
-  return { signal: 'stable', emoji: '➖', label: '平稳',
+  return { signal: 'stable', emoji: '➖', svg: '/static/icons/taohua/minus.svg', label: '平稳',
     summary: '无明显变化信号，保持观察',
     detail }
 }

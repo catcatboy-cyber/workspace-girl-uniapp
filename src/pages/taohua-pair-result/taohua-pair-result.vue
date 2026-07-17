@@ -13,7 +13,7 @@
         <view class="pair-grid">
           <view class="party">
             <text class="role">我</text>
-            <text class="symbol">{{ getZodiacEmoji(payload.self.zodiac) }}</text>
+            <image class="symbol-icon" :src="getZodiacSvg(payload.self.zodiac)" mode="aspectFit" />
             <text class="token">{{ payload.self.zodiac }}</text>
             <text class="token sign">{{ payload.self.sign }}</text>
           </view>
@@ -26,7 +26,7 @@
 
           <view class="party">
             <text class="role">{{ partnerLabel }}</text>
-            <text class="symbol">{{ getZodiacEmoji(payload.partner.zodiac) }}</text>
+            <image class="symbol-icon" :src="getZodiacSvg(payload.partner.zodiac)" mode="aspectFit" />
             <text class="token">{{ payload.partner.zodiac }}</text>
             <text class="token sign">{{ payload.partner.sign }}</text>
           </view>
@@ -79,6 +79,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCachedSelfProfile, getCaseDetail, getCurrentUserId, getSelfProfile } from '@/utils/api'
 import { SIGN_NAMES, ZODIAC_NAMES, buildPairMatchPayload, type PairMatchPayload } from '@/utils/taohua'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
+import { getZodiacSvg } from '@/utils/zodiac-icons'
 import { aiLabel } from '@/utils/labels'
 
 const ready = ref(false)
@@ -157,13 +158,7 @@ function relationTone(relation = '') {
   return 'neutral'
 }
 
-function getZodiacEmoji(zodiac = '') {
-  const map: Record<string, string> = {
-    '鼠': '🐭', '牛': '🐮', '虎': '🐯', '兔': '🐇', '龙': '🐲', '蛇': '🐍',
-    '马': '🐴', '羊': '🐑', '猴': '🐵', '鸡': '🐔', '狗': '🐶', '猪': '🐷',
-  }
-  return map[zodiac] || '✦'
-}
+// migrated to getZodiacSvg
 
 function goHome() {
   uni.switchTab({ url: '/pages/index/index' })
@@ -243,7 +238,7 @@ function goTaohua() {
   font-size: $fs-caption;
   font-weight: var(--font-weight-hero, $fw-hero);
 }
-.symbol {
+.symbol-icon { width: 48rpx; height: 48rpx; } .symbol {
   display: block;
   margin-top: 8rpx;
   font-size: 52rpx;

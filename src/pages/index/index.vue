@@ -233,7 +233,7 @@
               class="heart-particle"
               :style="{ left: h.x + 'rpx', top: h.y + 'rpx' }"
             >
-              <text class="heart-particle-emoji" :style="{ fontSize: h.size + 'rpx' }"><image class="heart-particle-img" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" /></text>
+              <image class="heart-particle-img" :src="'/static/icons/taohua/heart-filled.svg'" :style="{ width: h.size + 'rpx', height: h.size + 'rpx' }" mode="aspectFit" />
             </view>
           </view>
           <image v-if="resolvedSpritesheetPath" :key="petSpritesheetKey" :src="resolvedSpritesheetPath" class="pet-sprite-sheet" mode="widthFix" :style="petSpritesheetStyle" />
@@ -766,8 +766,8 @@ const balanceCalloutForHome = computed(() => {
   const s = latestTimelineStats.value
   const t = s.targetInitiatedCount, self = s.selfInitiatedCount
   if (t + self === 0) return '暂无数据'
-  if (t > self) return `TA更主动 ${t}/${self}`
-  if (self > t) return `你更主动 ${self}/${t}`
+  if (t > self) return 'TA更主动'
+  if (self > t) return '你更主动'
   return '双方平衡'
 })
 
@@ -2696,7 +2696,7 @@ function goTaohua() {
 .hearts-layer {
   position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: visible;
 }
-.heart-particle-img { width: 28rpx; height: 28rpx; } .heart-particle {
+.heart-particle-img { display: block; } .heart-particle {
   position: absolute;
   animation: heart-float 1.5s ease-out forwards;
   line-height: 1;

@@ -12,7 +12,7 @@
       <view class="persona-card anim-card">
         <view class="persona-head">
           <view class="avatar-stack">
-            <view class="avatar">{{ getZodiacEmoji(selfZodiac) }}</view>
+            <image class="avatar-icon" :src="getZodiacSvg(selfZodiac)" mode="aspectFit" />
             <view class="avatar sign">{{ getSignEmoji(selfSign) }}</view>
           </view>
           <view class="persona-copy">
@@ -75,6 +75,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCachedSelfProfile, getCurrentUserId, getSelfProfile } from '@/utils/api'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { SIGN_NAMES, ZODIAC_NAMES, zodiacSignMatch, type CrossMatchResult } from '@/utils/taohua'
+import { getZodiacSvg } from '@/utils/zodiac-icons'
 import { aiLabel } from '@/utils/labels'
 
 const ready = ref(false)
@@ -153,13 +154,7 @@ function normalizeOption(value: any, options: string[]) {
   return options.includes(source) ? source : ''
 }
 
-function getZodiacEmoji(zodiac = '') {
-  const map: Record<string, string> = {
-    '鼠': '🐭', '牛': '🐮', '虎': '🐯', '兔': '🐇', '龙': '🐲', '蛇': '🐍',
-    '马': '🐴', '羊': '🐑', '猴': '🐵', '鸡': '🐔', '狗': '🐶', '猪': '🐷',
-  }
-  return map[zodiac] || '✦'
-}
+// migrated to getZodiacSvg
 
 function getSignEmoji(sign = '') {
   const map: Record<string, string> = {
@@ -241,7 +236,7 @@ function goProfile() {
   flex-shrink: 0;
   position: relative;
 }
-.avatar {
+.avatar-icon { width: 64rpx; height: 64rpx; } .avatar {
   width: 88rpx;
   height: 88rpx;
   border: var(--border-width-strong, 3rpx) solid var(--border, #111);
