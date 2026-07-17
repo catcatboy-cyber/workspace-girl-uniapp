@@ -25,22 +25,27 @@
             </view>
           </view>
         </view>
-        <view v-if="activeTimelineView === 'events'">
-          <view class="card-v2 anim-card" style="animation-delay:0.15s;border-color:var(--accent-cool,#4ECDC4);">
+        <view>
+          <view class="timeline-tools-v2 anim-card" style="animation-delay:0.15s">
   <view class="search-row-v2"><input class="search-input-v2" v-model="searchQuery" placeholder="搜索事件标题或描述..." confirm-type="search" /><view v-if="searchQuery" class="search-clear-v2" @click="searchQuery = ''">✕</view></view>
-  <view v-if="topFilterOptions.length > 0" class="filter-row-v2" style="flex-wrap:wrap;"><view v-for="item in topFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view><view v-if="timelineFilterOptions.length > topFilterOptions.length" :class="['filter-chip-v2', showAllFilters ? 'active' : '']" @click="showAllFilters = !showAllFilters">更多 ▽</view></view>
-  <view v-if="showAllFilters" class="filter-row-v2" style="flex-wrap:wrap;margin-top:4rpx;"><view v-for="item in remainingFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view>
+  <view v-if="topFilterOptions.length > 0" class="filter-row-v2"><view v-for="item in topFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view><view v-if="timelineFilterOptions.length > topFilterOptions.length" :class="['filter-chip-v2', showAllFilters ? 'active' : '']" @click="showAllFilters = !showAllFilters">更多 ▽</view></view>
+  <view v-if="showAllFilters" class="filter-row-v2 more"><view v-for="item in remainingFilterOptions" :key="item.key" :class="['filter-chip-v2', activeTimelineFilter === item.key ? 'active' : '']" @click="setTimelineFilter(item.key)">{{ item.label }} {{ item.count }}</view></view>
 </view>
-          <view class="card-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text><view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2">当前筛选下还没有记录。</view><view v-else class="event-list-v2"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view class="event-time-v2"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text><view :class="['event-dot-v2', toneClass(item.type)]"></view></view><view class="event-body-v2"><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.subjectRole || getTimelineRecordTags(item).scene.length > 0" class="tag-row-v2" style="margin-top:4rpx;"><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-for="tag in getTimelineRecordTags(item).scene" :key="tag" class="tag-v2 sm">{{ sceneLabel(tag) }}</text></view><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · {{ aiLabel() }} 提取</view><view v-else class="img-analysis-label">图片 · {{ aiLabel() }} 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
+          <view class="timeline-section-head-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text></view>
+          <view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2 anim-card" style="animation-delay:0.25s">当前筛选下还没有记录。</view>
+          <view v-else class="event-list-v2 anim-card" style="animation-delay:0.25s"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view :class="['event-axis-v2', toneClass(item.type)]"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text></view><view class="event-body-v2"><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.subjectRole || getTimelineRecordTags(item).scene.length > 0" class="tag-row-v2" style="margin-top:4rpx;"><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-for="tag in getTimelineRecordTags(item).scene" :key="tag" class="tag-v2 sm">{{ sceneLabel(tag) }}</text></view><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · {{ aiLabel() }} 提取</view><view v-else class="img-analysis-label">图片 · {{ aiLabel() }} 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
                 <view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view>
                 <view v-if="getLinkedAssessment(item)" class="analysis-summary-v2" @click="toggleExpandedAnalysis(getLinkedAssessmentKey(item))">
-                  <view class="summary-mini-bar"><view class="summary-mini-fill" :style="{ width: clampScore(getLinkedAssessment(item).intentScore) + '%' }"></view></view>
-                  <text class="summary-score-v2">意向<text class="summary-score-num-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text></text>
-                  <text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).intentDelta)">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text>
-                  <text class="summary-split-v2">|</text>
-                  <view class="summary-mini-bar risk"><view class="summary-mini-fill risk" :style="{ width: clampScore(getLinkedAssessment(item).consistencyRiskScore) + '%' }"></view></view>
-                  <text class="summary-score-v2 risk">风险<text class="summary-score-num-v2 risk">{{ clampScore(getLinkedAssessment(item).consistencyRiskScore) }}</text></text>
-                  <text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).riskDelta)">{{ formatDelta(getAssessmentTrendForItem(item).riskDelta) }}</text>
+                  <view class="summary-line-v2">
+                    <text class="summary-score-v2">意向<text class="summary-score-num-v2">{{ clampScore(getLinkedAssessment(item).intentScore) }}</text></text>
+                    <text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).intentDelta)">{{ formatDelta(getAssessmentTrendForItem(item).intentDelta) }}</text>
+                    <view class="summary-mini-bar"><view class="summary-mini-fill" :style="{ width: clampScore(getLinkedAssessment(item).intentScore) + '%' }"></view></view>
+                  </view>
+                  <view class="summary-line-v2">
+                    <text class="summary-score-v2 risk">风险<text class="summary-score-num-v2 risk">{{ clampScore(getLinkedAssessment(item).consistencyRiskScore) }}</text></text>
+                    <text :class="'summary-delta-v2 ' + deltaClass(getAssessmentTrendForItem(item).riskDelta)">{{ formatDelta(getAssessmentTrendForItem(item).riskDelta) }}</text>
+                    <view class="summary-mini-bar risk"><view class="summary-mini-fill risk" :style="{ width: clampScore(getLinkedAssessment(item).consistencyRiskScore) + '%' }"></view></view>
+                  </view>
                   <text class="summary-expand-v2">{{ isAnalysisExpanded(getLinkedAssessmentKey(item)) ? '收起' : '展开' }}</text>
                 </view>
                 <view v-if="isAnalysisExpanded(getLinkedAssessmentKey(item))" class="expanded-analysis-v2">
@@ -59,45 +64,7 @@
                     </view>
                   </view>
                 </view>
-              </view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view></view>
-        </view>
-        <view v-if="activeTimelineView === 'monthlyReviews'">
-          <view class="card-v2 anim-card" style="animation-delay:0.25s">
-            <text class="section-title-v2">月度复盘 · 按自然月归档</text>
-            <text class="section-hint-v2">按自然月划分，每周期仅保留最新生成记录。</text>
-            <view v-if="weeklyReviewTimeline.length === 0" class="empty-sub-v2">还没有月度复盘记录。先在月度复盘页生成一次，本页会自动沉淀到这里。</view>
-            <view v-else class="event-list-v2">
-              <view v-for="item in weeklyReviewTimeline" :key="item._id || item.id" class="event-row-v2 system">
-                <view class="event-time-v2 week-range">
-                  <text class="week-range-start">{{ formatAxisWeekRange(item).start }}</text>
-                  <text v-if="formatAxisWeekRange(item).end" class="week-range-connector">↓</text>
-                  <text v-if="formatAxisWeekRange(item).end" class="week-range-end">{{ formatAxisWeekRange(item).end }}</text>
-                  <view :class="['event-dot-v2', isWeeklySideReadRecord(item) ? 'note' : 'trend']"></view>
-                </view>
-                <view class="event-body-v2 assessment-card-v2">
-                  <text class="event-title-v2">{{ item.title || '本月复盘' }}</text>
-                  <view class="tag-row-v2" style="margin:6rpx 0;">
-                    <text class="tag-v2 black sm">月度复盘</text>
-                    <text v-if="!isWeeklySideReadRecord(item) && item.trendLabel" class="tag-v2 sm">{{ mapWeeklyTrendLabel(item.trendLabel) }}</text>
-                    <text v-if="item.aiUsed" class="tag-v2 sm">{{ aiLabel() + ' 复盘' }}</text>
-                  </view>
-                  <text class="event-desc-v2">{{ item.description }}</text>
-                  <view v-if="!isWeeklySideReadRecord(item) && (item.eventCount || item.assessmentCount || item.intentDelta || item.riskDelta)" class="tag-row-v2" style="margin-top:8rpx;">
-                    <text v-if="item.eventCount" class="tag-v2 sm">事件 {{ item.eventCount }}</text>
-                    <text v-if="item.assessmentCount" class="tag-v2 sm">分析 {{ item.assessmentCount }}</text>
-                    <text v-if="item.intentDelta !== undefined" class="tag-v2 sm">意向 {{ item.intentDelta > 0 ? '+' : '' }}{{ item.intentDelta }}</text>
-                    <text v-if="item.riskDelta !== undefined" class="tag-v2 sm">风险 {{ item.riskDelta > 0 ? '+' : '' }}{{ item.riskDelta }}</text>
-                  </view>
-                  <view v-if="item.keyChanges && item.keyChanges.length" class="review-block-v2"><text class="section-title-v2">本月关键变化</text><text v-for="change in item.keyChanges" :key="change" class="bullet-v2">• {{ change }}</text></view>
-                  <view v-if="item.keyEvents && item.keyEvents.length" class="review-block-v2 events"><text class="section-title-v2">关键事件</text><text v-for="evt in item.keyEvents" :key="evt" class="bullet-v2">• {{ evt }}</text></view>
-                  <view v-if="item.nextWeekFocus && item.nextWeekFocus.length" class="review-block-v2 focus"><text class="section-title-v2">下月观察重点</text><text v-for="focus in item.nextWeekFocus" :key="focus" class="bullet-v2">• {{ focus }}</text></view>
-                  <view v-if="item.avoidMisread && item.avoidMisread.length" class="review-block-v2 avoid"><text class="section-title-v2">本月避免误判</text><text v-for="avoid in item.avoidMisread" :key="avoid" class="bullet-v2">• {{ avoid }}</text></view>
-                  <view v-if="item.sections && item.sections.length" class="review-block-v2 sideread"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view>
-                  <text v-if="formatRecordedAt(item)" class="event-meta-recorded">{{ formatRecordedAt(item) }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
+              </view></view></view><view v-if="filteredManualTimeline.length > 5" class="expand-row-v2 anim-card" style="animation-delay:0.3s"><view class="tag-v2" @click="toggleManualTimelineExpanded">{{ manualTimelineExpanded ? '收起' : '展开更多（还有 ' + (filteredManualTimeline.length - 5) + ' 条）' }}</view></view>
         </view>
         <view v-if="selectedStatusInfo" class="info-mask-v2" @click="selectedStatusInfo = null"><view class="info-modal-v2" @click.stop><view class="info-head-v2"><text class="info-title-v2">当前状态怎么看</text><text class="info-close-v2" @click="selectedStatusInfo = null">X</text></view><scroll-view scroll-y class="info-body-v2"><view v-if="selectedStatusInfo.summary || selectedStatusInfo.caution" class="info-section-v2 ylw"><text class="info-sec-title-v2">这次状态说明</text><text v-if="selectedStatusInfo.summary" class="info-sec-copy-v2 strong">{{ selectedStatusInfo.summary }}</text><text v-if="selectedStatusInfo.caution" class="info-sec-copy-v2">{{ selectedStatusInfo.caution }}</text></view><view class="info-section-v2"><text class="info-sec-title-v2">状态标签</text><view v-for="item in selectedStatusStateItems" :key="`${item.group}-${item.tag}`" class="info-tag-row-v2"><text class="info-chip-v2">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">{{ item.group }}</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view><view class="info-section-v2"><text class="info-sec-title-v2">问题类型</text><view v-for="item in selectedProblemItems" :key="item.tag" class="info-tag-row-v2"><text class="info-chip-v2 muted">{{ item.tag }}</text><view class="info-chip-copy-v2"><text class="info-chip-title-v2">问题类型</text><text class="info-chip-desc-v2">{{ item.description }}</text></view></view></view></scroll-view></view></view>
       </template>
@@ -142,7 +109,6 @@ onPullDownRefresh(async () => {
 })
 
 const manualTimelineExpanded = ref(false)
-const activeTimelineView = ref<'events' | 'monthlyReviews' | 'assessments'>('events')
 const activeTimelineFilter = ref('all')
 const activeAssessmentFilter = ref('all')
 const searchQuery = ref('')
@@ -193,11 +159,6 @@ const timelineById = computed(() => {
 const manualTimeline = computed(() => {
   const timeline = caseFile.value?.timeline || []
   return sortTimelineRecordsDesc(timeline.filter((item: any) => !isSystemTimelineRecord(item) && !isWeeklyReviewTimelineRecord(item) && !isEventSideReadRecord(item)))
-})
-
-const weeklyReviewTimeline = computed(() => {
-  const timeline = caseFile.value?.timeline || []
-  return sortTimelineRecordsDesc(timeline.filter((item: any) => isWeeklyReviewTimelineRecord(item)))
 })
 
 const timelineStats = computed(() => buildTimelineStats(manualTimeline.value))
@@ -514,23 +475,6 @@ function mapSourceLabel(source?: string) {
     case 'event_recalculation': return '事件重算'
     default: return source || '分析'
   }
-}
-
-function mapWeeklyTrendLabel(label: any) {
-  const normalized = String(label || '').trim()
-  const map: Record<string, string> = {
-    持续向好: '本月回暖',
-    持续走低: '本月转弱',
-    风险抬头: '本月承压',
-    起伏不定: '本月波动',
-    基本持平: '本月平稳',
-    稳定观察: '本月观察',
-    升温期: '本月回暖',
-    升温中: '本月回暖',
-    走弱期: '本月转弱',
-    暂时平稳: '本月平稳'
-  }
-  return map[normalized] || (normalized ? `本月${normalized.replace(/^本月/, '')}` : '本月复盘')
 }
 
 function mapIntentLabel(bucket?: string) {
@@ -981,10 +925,6 @@ function toggleManualTimelineExpanded() {
   manualTimelineExpanded.value = !manualTimelineExpanded.value
 }
 
-function setTimelineView(key: 'events' | 'monthlyReviews' | 'assessments') {
-  activeTimelineView.value = key
-}
-
 function setTimelineFilter(key: string) {
   activeTimelineFilter.value = key
   manualTimelineExpanded.value = false
@@ -1015,26 +955,6 @@ function toggleAssessmentStatFilter(key: string) {
     activeAssessmentFilter.value = key
   }
   assessmentVisibleMax.value = 7
-}
-
-function formatAxisWeekRange(record: any) {
-  // 锚点：优先 monthStart（新数据），否则用 monthEnd/weekEnd（复盘结束日代表归属月份）
-  const anchor = record?.monthStart || record?.monthEnd || record?.weekEnd || record?.weekStart
-    || record?.occurrenceAt || record?.createdAt
-  if (!anchor) return { start: formatAxisDate(record), end: '' }
-  // 解析出年/月
-  let year: number, monthIdx: number
-  const parts = String(anchor).split('-')
-  if (parts.length >= 2 && /^\d{4}$/.test(parts[0])) {
-    year = Number(parts[0]); monthIdx = Number(parts[1]) - 1
-  } else {
-    const d = new Date(anchor)
-    if (Number.isNaN(d.getTime())) return { start: formatAxisDate(record), end: '' }
-    year = d.getFullYear(); monthIdx = d.getMonth()
-  }
-  // 强制归一化到该月的自然起止日：1 日 → 月末
-  const lastDay = new Date(year, monthIdx + 1, 0).getDate()
-  return { start: `${monthIdx + 1}月1日`, end: `${monthIdx + 1}月${lastDay}日` }
 }
 
 function formatAxisDate(record: any) {
@@ -1083,7 +1003,6 @@ function goCaseDetail() {
 }
 
 function goTimelineEvent(eventId: string) {
-  activeTimelineView.value = 'events'
   targetEventId.value = String(eventId || '').trim()
   manualTimelineExpanded.value = Boolean(targetEventId.value)
   nextTick(() => {
@@ -1105,7 +1024,6 @@ function applyEntryContext(options?: Record<string, any>) {
       || ''
   ).trim()
   if (targetEventId.value) {
-    activeTimelineView.value = 'events'
     activeTimelineFilter.value = 'all'
   }
   if (caseId.value) setActiveCaseId(caseId.value)
@@ -1289,148 +1207,87 @@ async function syncSemanticTags() {
 .v2-mode .empty-title-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 8rpx; }
 .v2-mode .empty-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.5; }
 
-.v2-mode .notice-v2 { padding: 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); margin-bottom: 18rpx; }
-.v2-mode .notice-v2.ok { background: var(--success-soft, #E0FFF0); }
-.v2-mode .notice-v2.warn { background: var(--risk-soft, #FFEEEC); }
-.v2-mode .notice-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 6rpx; }
-.v2-mode .notice-sub-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); }
-
-.v2-mode .hero-block-v2 { background: var(--hero-bg, #FF6B6B); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-hero, 0); box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 32rpx; margin-bottom: 24rpx; transform: rotate(-0.5deg); }
-.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
-.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
-.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; }
-.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, rgba(0,0,0,0.7)); line-height: 1.5; }
+.v2-mode .hero-block-v2 { @include hero-block-v2; }
+.v2-mode .hero-tag-v2 { display: inline-block; background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 6rpx 16rpx; border-radius: var(--radius-xs, 0); font-size: $fs-caption; font-weight: $fw-hero; letter-spacing: 4rpx; margin-bottom: 16rpx; }
+.v2-mode .hero-title-v2 { display: block; font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--hero-text-color, #111); line-height: $lh-hero; letter-spacing: -2rpx; text-transform: uppercase; }
+.v2-mode .hl-v2 { display: inline-block; background: var(--accent, #FFD93D); padding: 0 8rpx; border-radius: var(--radius-xs, 0); }
+.v2-mode .hero-copy-v2 { display: block; margin-top: 14rpx; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--hero-text-color, #111); opacity: 0.78; line-height: 1.5; }
 .v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }
-.v2-mode .tag-v2.black { background: var(--text-main, #111); color: var(--surface, #fff); }
-.v2-mode .tag-v2.sm { min-height: 28rpx; padding: 2rpx 10rpx; font-size: $fs-caption; }
-.v2-mode .linked-assessment-tag-v2 { background: var(--hero-tag-bg, #111); color: var(--text-muted, #666); }
+.v2-mode .tag-v2.sm { min-height: 32rpx; padding: 2rpx 12rpx; font-size: $fs-caption; border: none; background: var(--surface-soft, #f4f4f4); color: var(--text-muted, #666); border-radius: var(--radius-xs, 0); }
+.v2-mode .linked-assessment-tag-v2 { background: var(--surface-dim, #f0f0f0); color: var(--text-muted, #666); }
 
-.v2-mode .card-v2 { @include card-v2; }
 .v2-mode .section-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 10rpx; }
-.v2-mode .section-hint-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-bottom: 14rpx; }
 
-.v2-mode .feedback-title-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.3; }
-.v2-mode .feedback-desc-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.5; margin-top: 6rpx; }
-
-.v2-mode .trend-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; }
-.v2-mode .trend-item-v2 { padding: 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); text-align: center; background: var(--surface-dim, #f9f9f9); }
-.v2-mode .trend-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
-.v2-mode .trend-num-v2.risk { color: var(--risk, #FF5252); }
-.v2-mode .trend-unit-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 4rpx; }
 .v2-mode .trend-summary-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.5; margin-top: 10rpx; }
-.v2-mode .trend-warn-v2 { display: block; font-size: $fs-body; font-weight: $fw-label; color: var(--risk, #FF5252); margin-top: 6rpx; }
 
-.v2-mode .side-inline-v2 { margin-top: 12rpx; padding: 14rpx; border-left: 3rpx dashed var(--text-main, #111); background: var(--brand-warm, #FFFBEB); border-radius: 0 4rpx 4rpx 0; }
+.v2-mode .side-inline-v2 { margin-top: 12rpx; padding: 12rpx 16rpx; border-left: 1rpx dashed var(--divider-strong, #111); background: var(--accent-soft, #FFFBEB); border-radius: 0 var(--radius-xs, 0) var(--radius-xs, 0) 0; }
 .v2-mode .focus-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-muted, #666); text-transform: uppercase; letter-spacing: 1rpx; }
 .v2-mode .weekly-desc-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.5; margin-top: 4rpx; }
 
-.v2-mode .action-box-v2 { margin-top: 12rpx; padding: 14rpx; border-left: 3rpx solid var(--accent-cool, #4ECDC4); background: var(--brand-cool, #f5f5ff); border-radius: 0 4rpx 4rpx 0; }
+.v2-mode .action-box-v2 { margin-top: 12rpx; padding: 12rpx 16rpx; border-left: 1rpx solid var(--accent-cool, #4ECDC4); background: var(--surface-soft, #f5f5ff); border-radius: 0 var(--radius-xs, 0) var(--radius-xs, 0) 0; }
 .v2-mode .action-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); text-transform: uppercase; letter-spacing: 2rpx; margin-bottom: 8rpx; }
-.v2-mode .action-item-v2 { padding: 12rpx 0; border-bottom: 2rpx solid var(--divider, rgba(0,0,0,0.08)); background: transparent; margin-top: 0; }
+.v2-mode .action-item-v2 { padding: 12rpx 0; border-bottom: 1rpx solid var(--divider, rgba(0,0,0,0.08)); background: transparent; margin-top: 0; }
 .v2-mode .action-item-v2:last-child { border-bottom: none; padding-bottom: 0; }
 .v2-mode .action-item-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .action-item-text-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); margin-top: 4rpx; }
 
-.v2-mode .tab-switch-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8rpx; margin-bottom: 24rpx; }
-.v2-mode .tab-btn-v2 { text-align: center; padding: 16rpx 8rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .tab-btn-v2.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
+.v2-mode .timeline-tools-v2 { margin: 4rpx 0 24rpx; }
+.v2-mode .search-row-v2 { display: flex; align-items: center; gap: 12rpx; }
+.v2-mode .search-input-v2 { flex: 1; height: 72rpx; padding: 0 24rpx; box-sizing: border-box; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-body-lg; color: var(--text-main, #111); }
+.v2-mode .search-clear-v2 { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--shape-radius-control, 0); background: var(--surface-dim, #f0f0f0); font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-muted, #666); flex-shrink: 0; }
+.v2-mode .filter-row-v2 { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 16rpx; }
+.v2-mode .filter-row-v2.more { margin-top: 10rpx; }
+.v2-mode .filter-chip-v2 { display: inline-flex; align-items: center; min-height: 52rpx; padding: 0 20rpx; border-radius: var(--shape-radius-control, 0); background: var(--surface-soft, #f4f4f4); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); }
+.v2-mode .filter-chip-v2.active { background: var(--primary, #111); color: var(--primary-contrast, #fff); }
 
-.v2-mode .stats-grid-v2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8rpx; margin-bottom: 14rpx; }
-.v2-mode .stat-box-v2 { padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #f9f9f9); text-align: center; }
-.v2-mode .stat-num-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
-.v2-mode .stat-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); margin-top: 2rpx; }
+.v2-mode .timeline-section-head-v2 { margin: 0 4rpx; }
+.v2-mode .timeline-section-head-v2 .section-title-v2 { margin-bottom: 0; }
 
-.v2-mode .search-row-v2 { display: flex; align-items: center; gap: 12rpx; margin-top: 12rpx; }
-.v2-mode .search-input-v2 { flex: 1; height: 64rpx; padding: 0 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: 34rpx; font-weight: 600; color: var(--text-main, #111); }
-.v2-mode .search-clear-v2 { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: 34rpx; font-weight: 900; color: var(--text-soft, #999); }
-.v2-mode .filter-scroll-v2 { width: 100%; margin-top: 8rpx; white-space: nowrap; }
-.v2-mode .filter-row-v2 { display: flex; gap: 8rpx; margin-top: 12rpx; }
-.v2-mode .filter-chip-v2 { display: inline-flex; align-items: center; min-height: 48rpx; padding: 0 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); }
-.v2-mode .filter-chip-v2.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
+/* === 时间轴几何：竖线中心 = 日期方块中心 = 事件卡左边框，同一 X（44rpx） === */
+.v2-mode .event-list-v2 { position: relative; margin-top: 4rpx; }
+.v2-mode .event-list-v2::before { content: ''; position: absolute; left: 44rpx; top: 20rpx; bottom: 20rpx; width: 1rpx; background: var(--divider-strong, #111); }
+.v2-mode .event-row-v2 { position: relative; margin: 64rpx 0 0 44rpx; padding: 24rpx 24rpx 24rpx 68rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); background: var(--surface, #fff); box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111); }
+.v2-mode .event-axis-v2 { position: absolute; left: -44rpx; top: -44rpx; width: 88rpx; height: 88rpx; box-sizing: border-box; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rpx; overflow: hidden; background: var(--primary, #111); border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
+.v2-mode .event-axis-v2.risk { background: var(--risk, #FF5252); }
+.v2-mode .event-date-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: var(--primary-contrast, #fff); line-height: 1.1; }
+.v2-mode .event-clock-v2 { font-size: $fs-micro; font-weight: $fw-body; color: var(--primary-contrast, #fff); opacity: 0.8; line-height: 1.1; }
 
-.v2-mode .event-list-v2 { display: flex; flex-direction: column; gap: 14rpx; margin-top: 14rpx; }
-.v2-mode .event-row-v2 { display: flex; gap: 14rpx; padding: 18rpx; border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #f9f9f9); }
-.v2-mode .event-row-v2.system { background: var(--surface, #fff); border-style: dashed; }
-.v2-mode .event-time-v2 { display: flex; flex-direction: column; align-items: center; width: 80rpx; flex-shrink: 0; }
-.v2-mode .event-date-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .event-clock-v2 { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); }
-.v2-mode .week-range-start,
-.v2-mode .week-range-end { font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-heading; }
-.v2-mode .week-range-connector { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #bbb); line-height: 1; padding: 2rpx 0; }
-.v2-mode .event-dot-v2 { width: 14rpx; height: 14rpx; border-radius: 50%; margin-top: 6rpx; border: var(--border-width, 2rpx) solid var(--border, #111); }
-.v2-mode .event-dot-v2.positive { background: var(--accent-cool, #4ECDC4); }
-.v2-mode .event-dot-v2.risk { background: var(--risk, #FF5252); }
-.v2-mode .event-dot-v2.verification { background: var(--accent, #FFD93D); }
-.v2-mode .event-dot-v2.assessment { background: var(--text-main, #111); }
-.v2-mode .event-dot-v2.trend { background: var(--text-muted, #666); }
-.v2-mode .event-dot-v2.note { background: var(--text-main, #111); }
-.v2-mode .event-dot-v2.weekly { background: var(--accent-cool, #4ECDC4); }
-
-.v2-mode .review-block-v2 { margin-top: 12rpx; padding: 14rpx; border-left: 3rpx solid var(--accent, #FFD93D); background: var(--brand-warm, #FFFBEB); border-radius: 0 4rpx 4rpx 0; }
-.v2-mode .review-block-v2.events { border-left-color: var(--text-main, #111); background: var(--surface-dim, #f9f9f9); }
-.v2-mode .review-block-v2.focus { border-left-color: var(--accent-cool, #4ECDC4); background: var(--brand-cool, #f5f5ff); }
-.v2-mode .review-block-v2.avoid { border-left-color: var(--hero-bg, #FF6B6B); background: var(--brand-warm, #FFFBEB); }
-.v2-mode .review-block-v2.sideread { border-left: 3rpx dashed var(--text-main, #111); background: var(--brand-warm, #FFFBEB); }
-.v2-mode .bullet-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); line-height: $lh-loose; margin-top: 4rpx; }
-
-.v2-mode .side-body-v2 { margin-top: 10rpx; padding: 12rpx 14rpx; background: var(--surface-dim, #f9f9f9); border-radius: 4rpx; }
-.v2-mode .side-item-v2 { padding: 10rpx 0; border-bottom: 2rpx dashed var(--divider, rgba(0,0,0,0.08)); }
+.v2-mode .side-body-v2 { margin-top: 10rpx; padding: 12rpx 16rpx; background: var(--surface-dim, #f9f9f9); border-left: 1rpx solid var(--accent, #FFD93D); border-radius: 0 var(--radius-xs, 0) var(--radius-xs, 0) 0; }
+.v2-mode .side-item-v2 { padding: 10rpx 0; border-bottom: 1rpx dashed var(--divider, rgba(0,0,0,0.08)); }
 .v2-mode .side-item-v2:last-child { border-bottom: none; }
 .v2-mode .side-label-v2 { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .side-text-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); margin-top: 4rpx; }
-.v2-mode .event-body-v2 { flex: 1; min-width: 0; }
+.v2-mode .event-body-v2 { min-width: 0; }
 .v2-mode .event-meta-v2 { display: flex; flex-direction: column; gap: 2rpx; margin-top: 10rpx; }
 .v2-mode .event-meta-v2 text { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); }
-.v2-mode .event-meta-recorded { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 10rpx; }
-.v2-mode .event-title-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.4; }
 .v2-mode .event-desc-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.5; margin-top: 4rpx; }
 
-.v2-mode .assessment-card-v2 { background: var(--surface, #fff); border-radius: var(--shape-radius-inner, 0); padding: 16rpx; }
-.v2-mode .score-block-v2 { margin-top: 10rpx; padding: 14rpx; background: var(--surface-dim, #f9f9f9); border-radius: var(--shape-radius-inner, 0); }
-.v2-mode .score-row-v2 { display: flex; align-items: center; gap: 8rpx; margin-top: 8rpx; }
-.v2-mode .score-row-v2:first-child { margin-top: 0; }
-.v2-mode .score-lbl-v2 { width: 40rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); }
-.v2-mode .score-val-v2 { width: 44rpx; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .score-val-v2.risk { color: var(--risk, #FF5252); }
-.v2-mode .score-tag-v2 { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-right: 6rpx; }
-.v2-mode .score-bar-v2 { flex: 1; height: 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-xs, 0); background: var(--surface, #fff); overflow: hidden; }
-.v2-mode .score-fill-v2 { height: 10rpx; background: var(--accent-cool, #4ECDC4); }
-.v2-mode .score-fill-v2.risk { background: var(--risk, #FF5252); }
-
-.v2-mode .delta-row-v2 { display: flex; align-items: center; margin-top: 10rpx; padding-top: 10rpx; border-top: 1rpx solid var(--divider, rgba(0,0,0,0.08)); }
-.v2-mode .delta-lbl-v2 { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-right: 4rpx; }
-.v2-mode .delta-val-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .delta-val-v2.up { color: var(--accent-cool, #4ECDC4); }
-.v2-mode .delta-val-v2.down { color: var(--risk, #FF5252); }
-.v2-mode .delta-val-v2.flat { color: var(--text-soft, #999); }
-
-.v2-mode .reason-box-v2 { margin-top: 10rpx; padding: 14rpx; border-left: 3rpx solid var(--accent, #FFD93D); background: var(--brand-warm, #FFFBEB); border-radius: 0 4rpx 4rpx 0; }
+.v2-mode .reason-box-v2 { margin-top: 10rpx; padding: 12rpx 16rpx; border-left: 1rpx solid var(--accent, #FFD93D); background: var(--accent-soft, #FFFBEB); border-radius: 0 var(--radius-xs, 0) var(--radius-xs, 0) 0; }
 .v2-mode .reason-line-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #555); line-height: $lh-loose; margin-top: 2rpx; }
 
-.v2-mode .status-box-v2 { margin-top: 10rpx; padding: 14rpx; border-left: 3rpx solid var(--text-main, #111); background: var(--surface-dim, #f9f9f9); border-radius: 0 4rpx 4rpx 0; }
-.v2-mode .status-head-v2 { display: flex; align-items: center; gap: 8rpx; margin-bottom: 8rpx; }
-.v2-mode .info-icon-v2 { width: 44rpx; height: 44rpx; line-height: 42rpx; text-align: center; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .tag-v2.muted { background: var(--text-main, #111); color: var(--text-muted, #666); }
+.v2-mode .status-box-v2 { margin-top: 10rpx; padding: 12rpx 16rpx; border-left: 1rpx solid var(--divider-strong, #111); background: var(--surface-dim, #f9f9f9); border-radius: 0 var(--radius-xs, 0) var(--radius-xs, 0) 0; }
 
 
-.v2-mode .expand-row-v2 { margin-top: 12rpx; text-align: center; }
+.v2-mode .expand-row-v2 { margin-top: 24rpx; text-align: center; }
+.v2-mode .expand-row-v2 .tag-v2 { min-height: 64rpx; padding: 0 32rpx; }
+.v2-mode .empty-sub-v2.anim-card { padding: 24rpx 8rpx; }
 
 /* Image thumbnail grid */
 .v2-mode .img-grid-v2 { display: flex; flex-wrap: wrap; gap: 14rpx; }
-.v2-mode .img-box-v2 { width: 160rpx; height: 160rpx; position: relative; }
-.v2-mode .img-preview-v2 { width: 100%; height: 100%; border-radius: 4rpx; }
+.v2-mode .img-box-v2 { width: 160rpx; height: 160rpx; position: relative; border-radius: var(--radius-xs, 0); overflow: hidden; }
+.v2-mode .img-preview-v2 { width: 100%; height: 100%; border-radius: var(--radius-xs, 0); }
 .v2-mode .img-chat-badge { position: absolute; top: 0; left: 0; padding: 2rpx 10rpx; background: var(--accent, #FFD93D); color: var(--text-main, #111); font-size: $fs-caption; font-weight: $fw-hero; }
 
 /* Image analysis cards */
 .v2-mode .img-analysis-list { display: flex; flex-direction: column; gap: 10rpx; margin-top: 10rpx; }
-.v2-mode .img-analysis-card { padding: 14rpx 16rpx; border-left: 3rpx solid var(--text-soft, #999); background: var(--surface-dim, #f9f9f9); border-radius: 0 4rpx 4rpx 0; }
+.v2-mode .img-analysis-card { padding: 12rpx 16rpx; border-left: 1rpx solid var(--accent, #FFD93D); background: var(--accent-soft, #FFFBEB); border-radius: 0 var(--radius-xs, 0) var(--radius-xs, 0) 0; }
 .v2-mode .img-analysis-label { display: block; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 8rpx; text-transform: uppercase; letter-spacing: 1rpx; }
-.v2-mode .img-analysis-extracted { display: block; padding: 12rpx; border: 2rpx dashed var(--text-main, #111); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #333); line-height: $lh-loose; white-space: pre-wrap; word-break: break-all; margin-bottom: 8rpx; }
+.v2-mode .img-analysis-extracted { display: block; padding: 12rpx; background: var(--surface, #fff); border-radius: var(--radius-xs, 0); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #333); line-height: $lh-loose; white-space: pre-wrap; word-break: break-all; margin-bottom: 8rpx; }
 .v2-mode .img-analysis-summary { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.5; }
 .v2-mode .img-analysis-footer { display: flex; justify-content: flex-end; margin-top: 8rpx; }
-.v2-mode .tag-v2.sm.conf-high { background: var(--success-soft, #E0FFF0); color: var(--text-main, #111); border-color: var(--accent-cool, #4ECDC4); }
-.v2-mode .tag-v2.sm.conf-low { background: var(--surface, #fff); color: var(--text-soft, #999); border-color: var(--text-soft, #999); }
+.v2-mode .tag-v2.sm.conf-high { background: var(--success-soft, #E0FFF0); color: var(--text-main, #111); }
+.v2-mode .tag-v2.sm.conf-low { background: var(--surface-dim, #f0f0f0); color: var(--text-soft, #999); }
 
 .v2-mode .info-mask-v2 { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999; background: var(--overlay, rgba(0,0,0,0.6)); display: flex; align-items: center; justify-content: center; padding: 40rpx; box-sizing: border-box; }
 .v2-mode .info-modal-v2 { width: 100%; max-height: 80vh; overflow: hidden; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 10rpx 10rpx 0 #111); }
@@ -1450,55 +1307,40 @@ async function syncSemanticTags() {
 .v2-mode .info-chip-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .info-chip-desc-v2 { display: block; font-size: $fs-caption; color: var(--text-muted, #666); line-height: 1.5; margin-top: 4rpx; }
 
-.v2-mode .bottom-action-v2 { text-align: center; margin: 10rpx 0 24rpx; }
-.v2-mode .btn-v2-bottom { display: inline-block; padding: 14rpx 40rpx; background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
 .sync-bar { position: fixed; top: 0; left: 0; height: 3rpx; z-index: 9999; background: var(--sync-gradient, linear-gradient(90deg, transparent, var(--hero-bg, #FF6B6B), transparent)); animation: sync-slide 0.8s ease-in-out infinite; }
 @keyframes sync-slide {
   0% { width: 30%; left: -30%; }
   100% { width: 30%; left: 130%; }
 }
 
-/* stat pair layout */
-.v2-mode .stat-pair-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; margin-bottom: 14rpx; }
-.v2-mode .stat-pair-box-v2 { padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface-dim, #f9f9f9); cursor: pointer; }
-.v2-mode .stat-pair-box-v2.active { background: var(--text-main, #111); }
-.v2-mode .stat-pair-box-v2.active .section-title-v2 { color: var(--accent, #FFD93D); }
-.v2-mode .stat-pair-row-v2 { display: flex; gap: 8rpx; }
-.v2-mode .stat-pair-item-v2 { flex: 1; text-align: center; padding: 10rpx 4rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
-.v2-mode .stat-pair-item-v2.hl { background: var(--accent, #FFD93D); }
-.v2-mode .stat-pair-num-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
-.v2-mode .stat-pair-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); margin-top: 2rpx; }
-
-/* stats grid clickable */
-.v2-mode .stats-grid-4col-v2 { grid-template-columns: repeat(4, 1fr); }
-.v2-mode .stat-box-v2.active { background: var(--text-main, #111); }
-.v2-mode .stat-box-v2.active .stat-num-v2 { color: var(--accent, #FFD93D); }
-.v2-mode .stat-box-v2.active .stat-lbl-v2 { color: var(--on-active-muted, rgba(255,255,255,0.7)); }
-
-/* === Analysis summary bar (merged events+assessments) === */
+/* === Analysis summary（意向/风险各一行，轻底色 + 细色条 + 细进度条） === */
 .v2-mode .analysis-summary-v2 {
-  margin-top: 8rpx; padding: 6rpx 12rpx;
-  background: var(--brand-warm, #FFFBEB);
-  display: inline-flex; align-items: center; gap: 8rpx;
-  cursor: pointer; max-width: 100%; flex-wrap: wrap;
+  position: relative; margin-top: 12rpx; padding: 14rpx 104rpx 14rpx 16rpx;
+  background: var(--surface-soft, #FFFBEB);
+  border-left: 1rpx solid var(--accent, #FFD93D);
+  border-radius: 0 var(--radius-xs, 0) var(--radius-xs, 0) 0;
+  display: flex; flex-direction: column; gap: 8rpx;
+  cursor: pointer;
 }
-.v2-mode .analysis-summary-v2:active { background: var(--accent-soft, #eee8d5); }
-.v2-mode .summary-score-v2 { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); }
+.v2-mode .analysis-summary-v2:active { background: var(--surface-dim, #eee8d5); }
+.v2-mode .summary-line-v2 { display: flex; align-items: center; gap: 10rpx; min-height: 36rpx; }
+.v2-mode .summary-score-v2 { flex-shrink: 0; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); }
 .v2-mode .summary-score-num-v2 { font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); margin-left: 4rpx; }
 .v2-mode .summary-score-num-v2.risk { color: var(--risk, #FF5252); }
 .v2-mode .summary-score-v2.risk { color: var(--text-muted, #666); }
-.v2-mode .summary-delta-v2 { font-size: $fs-caption; font-weight: $fw-hero; margin-left: 2rpx; }
+.v2-mode .summary-delta-v2 { flex-shrink: 0; font-size: $fs-caption; font-weight: $fw-hero; }
 .v2-mode .summary-delta-v2.up { color: var(--accent-cool, #4ECDC4); }
 .v2-mode .summary-delta-v2.down { color: var(--risk, #FF5252); }
 .v2-mode .summary-delta-v2.flat { color: var(--text-soft, #999); }
-.v2-mode .summary-label-v2 { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); }
-.v2-mode .summary-expand-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); margin-left: 4rpx; }
-.v2-mode .summary-mini-bar { width: 56rpx; height: 8rpx; background: var(--surface, #fff); border: var(--border-width, 2rpx) solid var(--border, #111); overflow: hidden; flex-shrink: 0; }
-.v2-mode .summary-mini-bar .summary-mini-fill { height: 100%; background: var(--accent-cool, #4ECDC4); }
-.v2-mode .summary-mini-bar.risk .summary-mini-fill { background: var(--risk, #FF5252); }
-.v2-mode .summary-split-v2 { color: var(--divider, #ddd); font-size: $fs-caption; }
-.v2-mode .expanded-analysis-v2 {
-  margin-top: 10rpx; padding: 14rpx;
-  background: var(--surface-dim, #f9f9f9);
+.v2-mode .summary-expand-v2 { position: absolute; right: 16rpx; top: 50%; transform: translateY(-50%); padding: 12rpx 8rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .summary-mini-bar { flex: 1; max-width: 240rpx; height: 8rpx; background: var(--surface-dim, #eee); border-radius: var(--radius-xs, 0); overflow: hidden; }
+.v2-mode .summary-mini-bar .summary-mini-fill { height: 100%; background: var(--chart-intent, #111); border-radius: var(--radius-xs, 0); }
+.v2-mode .summary-mini-bar.risk .summary-mini-fill { background: var(--chart-risk, #FF5252); }
+.v2-mode .expanded-analysis-v2 { margin-top: 14rpx; padding-top: 14rpx; border-top: 1rpx solid var(--divider, rgba(0,0,0,0.08)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-mode.anim-ready .anim-hero,
+  .v2-mode.anim-ready .anim-card { animation-duration: 0.01s; }
+  .sync-bar { animation: none; }
 }
 </style>
