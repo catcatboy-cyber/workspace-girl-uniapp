@@ -532,35 +532,64 @@ const statusLabel = computed(() => {
 .cs-petal:nth-child(odd) { background: #f08c80; border-radius: 50% 50% 0 50%; }
 @keyframes cs-petal-fall { 0% { opacity: 0; transform: translate(0, -16rpx) rotate(0deg) scale(.5); } 8% { opacity: .7; } 60% { opacity: .35; } 100% { opacity: 0; transform: translate(var(--drift, 36rpx), 440rpx) rotate(var(--spin, 360deg)) scale(.2); } }
 
-/* 节点 */
+/* 节点 — 幽灵模式：平时透明无边框，雷达扫到才亮起 */
 .cs-node {
   position: absolute;
   width: 130rpx;
   height: 100rpx;
   border-radius: var(--shape-radius-inner, 20rpx);
-  border: 3rpx solid var(--border, #111);
-  background: var(--surface, #fff);
-  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
+  border: 3rpx solid transparent;
+  background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4rpx;
   z-index: 2;
+  transition: box-shadow 0.6s ease, border-color 0.6s ease;
 }
-/* 不写 color：真机继承正文色时，彩色 emoji 易降成黑色文本符号 */
-.cs-node-icon-img { width: 32rpx; height: 32rpx; flex-shrink: 0; }
-.cs-node-label { font-size: 22rpx; font-weight: 900; color: var(--text-main, #111); }
-.cs-node-hint { display: flex; align-items: center; gap: 2rpx; font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; max-width: 110rpx; overflow: hidden; } .cs-hint-icon { width: 20rpx; height: 20rpx; flex-shrink: 0; }
+.cs-node-icon-img { width: 32rpx; height: 32rpx; flex-shrink: 0; opacity: 0.65; transition: opacity 0.6s ease; }
+.cs-node-label { font-size: 22rpx; font-weight: 900; color: var(--text-main, #111); opacity: 0.7; transition: opacity 0.6s ease; }
+.cs-node-hint { display: flex; align-items: center; gap: 2rpx; font-size: 22rpx; color: var(--text-muted, #666); font-weight: 700; max-width: 110rpx; overflow: hidden; opacity: 0.65; transition: opacity 0.6s ease; } .cs-hint-icon { width: 20rpx; height: 20rpx; flex-shrink: 0; }
 
-/* 节点光束扫过：只动阴影/边框，不动 opacity（真机 emoji 遇 opacity 易丢色/变黑） */
-.cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 5.25s; }
-.cs-node-balance { right: 12rpx; top: 140rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 0s; }
-.cs-node-taohua { right: 12rpx; top: 330rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 1.75s; }
-.cs-node-pair { left: 12rpx; top: 340rpx; animation: cs-node-hit 7s linear infinite; animation-delay: 3.5s; }
+/* 节点光束扫过：渐亮渐暗 */
+.cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 5.25s; }
+.cs-node-balance { right: 12rpx; top: 140rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 0s; }
+.cs-node-taohua { right: 12rpx; top: 330rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 1.75s; }
+.cs-node-pair { left: 12rpx; top: 340rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 3.5s; }
 @keyframes cs-node-hit {
-  0%, 100% { box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
-  3%, 23% { box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111), 0 0 28rpx var(--accent-cool, #4ECDC4); }
+  0%, 100% { box-shadow: 0 0 0 transparent; border-color: transparent; }
+  15% { box-shadow: 0 0 44rpx var(--accent-cool, #4ECDC4); border-color: var(--accent-cool, #4ECDC4); }
+  30% { box-shadow: 0 0 0 transparent; border-color: transparent; }
+}
+.cs-node-signal .cs-node-icon-img,
+.cs-node-signal .cs-node-label,
+.cs-node-signal .cs-node-hint {
+  animation: cs-node-text-glow 7s ease-in-out infinite;
+  animation-delay: 5.25s;
+}
+.cs-node-balance .cs-node-icon-img,
+.cs-node-balance .cs-node-label,
+.cs-node-balance .cs-node-hint {
+  animation: cs-node-text-glow 7s ease-in-out infinite;
+  animation-delay: 0s;
+}
+.cs-node-taohua .cs-node-icon-img,
+.cs-node-taohua .cs-node-label,
+.cs-node-taohua .cs-node-hint {
+  animation: cs-node-text-glow 7s ease-in-out infinite;
+  animation-delay: 1.75s;
+}
+.cs-node-pair .cs-node-icon-img,
+.cs-node-pair .cs-node-label,
+.cs-node-pair .cs-node-hint {
+  animation: cs-node-text-glow 7s ease-in-out infinite;
+  animation-delay: 3.5s;
+}
+@keyframes cs-node-text-glow {
+  0%, 100% { opacity: 0.65; }
+  15% { opacity: 1; }
+  30% { opacity: 0.65; }
 }
 
 /* 指标区 */
