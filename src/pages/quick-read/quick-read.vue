@@ -67,6 +67,7 @@
         <text class="cta-title">需要微信授权</text>
         <text class="cta-desc">请点击下方按钮完成登录后继续。</text>
         <button class="btn btn-primary btn-lg btn-full" @click="retryLogin">重新登录</button>
+        <text class="qr-skip-link light" @click="onCTA">{{ ctaLoading ? '进入中...' : '先去首页看看' }}</text>
       </view>
 
       <view v-else-if="loggedIn && hasSnapshot && !started" class="cta-card anim-card" style="animation-delay:0.3s">
@@ -80,11 +81,13 @@
         <text class="cta-title">TA 这一句，到底怎么理解？</text>
         <text class="cta-desc">把关系和原话丢给小咪，先生成一条属于你的本次分析。</text>
         <button class="btn btn-primary btn-lg btn-full" @click="startMine">我也想让小咪分析</button>
+        <text class="qr-skip-link light" @click="onCTA">{{ ctaLoading ? '进入中...' : '先去首页看看' }}</text>
       </view>
 
       <view v-else-if="loggedIn && started && !targetProfileMode" class="card-v2 anim-card" style="animation-delay:0.3s">
         <view class="qr-form-head">
           <text class="section-title-v2">让小咪看我的这条</text>
+          <text class="qr-skip-link inline" @click="onCTA">{{ ctaLoading ? '进入中...' : '先逛逛' }}</text>
         </view>
 
         <view class="qr-field-block">
@@ -151,6 +154,7 @@
           <button class="btn btn-secondary btn-md btn-auto" :disabled="quickLoading" @click="targetProfileMode = false">上一步</button>
           <button class="btn btn-primary btn-md btn-auto" :disabled="quickLoading" @click="confirmTargetProfile">{{ quickLoading ? '生成中...' : '生成本次分析' }}</button>
         </view>
+        <text class="qr-skip-link" @click="onCTA">{{ ctaLoading ? '进入中...' : '先逛逛，回头再测' }}</text>
       </view>
 
       <text class="page-disclaimer">小咪辅助分析 · 仅供参考，不构成专业意见</text>
@@ -529,6 +533,7 @@ async function onCTA() {
 .qr-form-actions, .qr-result-actions { display: flex; gap: 12rpx; margin-top: 18rpx; }
 .qr-form-actions .btn, .qr-result-actions .btn { flex: 1; }
 .qr-skip-link { display: block; margin-top: 16rpx; text-align: center; font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #666); text-decoration: underline; }
+.qr-skip-link.inline { display: inline; margin-top: 0; font-size: $fs-caption; flex-shrink: 0; }
 .qr-skip-link.light { color: var(--on-active-muted, rgba(255,255,255,0.72)); text-decoration-color: var(--on-active-muted, rgba(255,255,255,0.45)); }
 .qr-chat-row { display: flex; align-items: flex-start; gap: 14rpx; margin: 18rpx 0 8rpx; }
 .qr-chat-avatar { width: 76rpx; height: 76rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: 50%; background: var(--accent, #FFD93D); color: var(--text-main, #111); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: $fs-caption; font-weight: $fw-hero; }

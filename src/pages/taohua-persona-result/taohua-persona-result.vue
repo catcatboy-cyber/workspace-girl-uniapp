@@ -65,6 +65,7 @@
       <text class="empty-title">还不能生成桃花人设</text>
       <text class="empty-copy">{{ errorMessage || '请先补齐你的本人画像。' }}</text>
       <button class="btn-v2 primary" @click="goProfile">补齐本人画像</button>
+      <button class="btn-v2 ghost" @click="goHome">先逛逛</button>
     </view>
   </view>
 </template>

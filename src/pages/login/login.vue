@@ -58,6 +58,7 @@ const themeVars = ref(getThemeStyle())
 const petAvatar = getPetById(getSelectedPetId()).avatarPath
 const entering = ref(false)
 const skipNext = ref(false)
+const pendingRedirect = ref('')
 
 let loginCheckTimer: ReturnType<typeof setInterval> | null = null
 
@@ -66,6 +67,7 @@ onLoad((options: any) => {
   if (code && typeof code === 'string' && code.trim()) {
     uni.setStorageSync(INVITE_CODE_KEY, code.trim().toUpperCase())
   }
+  pendingRedirect.value = normalizeRedirect(options?.redirect || '')
   themeVars.value = getThemeStyle()
   applyThemeChrome()
 })
@@ -107,7 +109,30 @@ function stopLoginCheck() {
   if (loginCheckTimer) { clearInterval(loginCheckTimer); loginCheckTimer = null }
 }
 
+const TAB_PAGES = ['/pages/index/index', '/pages/case-detail/case-detail', '/pages/cases/cases', '/pages/timeline/timeline', '/pages/me/me']
+
+function normalizeRedirect(value: string) {
+  const decoded = decodeURIComponent(String(value || '')).trim()
+  if (!decoded.startsWith('/pages/')) return ''
+  if (decoded.includes('://') || decoded.includes('\\')) return ''
+  return decoded
+}
+
+// redirectTo 不能打开 tab 页（会 fail 且页面不动），tab 页必须走 switchTab
+function jumpTo(url: string) {
+  const path = url.split('?')[0]
+  if (TAB_PAGES.includes(path)) {
+    uni.switchTab({ url: path })
+    return
+  }
+  uni.redirectTo({ url })
+}
+
 function goHome() {
+  if (pendingRedirect.value) {
+    jumpTo(pendingRedirect.value)
+    return
+  }
   uni.switchTab({ url: '/pages/index/index' })
 }
 
@@ -128,7 +153,10 @@ async function handleEnter() {
   }
 
   if (uid && shouldCompleteSelfProfile()) {
-    uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
+    const suffix = pendingRedirect.value ? `&redirect=${encodeURIComponent(pendingRedirect.value)}` : ''
+    uni.redirectTo({ url: `/pages/self-profile/self-profile?mode=onboarding${suffix}` })
+  } else if (uid && pendingRedirect.value) {
+    jumpTo(pendingRedirect.value)
   } else {
     uni.switchTab({ url: '/pages/index/index' })
   }
