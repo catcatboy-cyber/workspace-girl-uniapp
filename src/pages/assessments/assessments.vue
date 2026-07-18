@@ -104,7 +104,7 @@
               <text class="ai-panel-label">Crush 状态</text>
               <view class="status-tags">
                 <text class="status-chip">{{ statusSnapshots[index].phase }}</text>
-                <text class="status-chip">{{ statusSnapshots[index].vibe }}</text>
+                <view class="status-chip status-chip-mix"><block v-for="(seg, si) in parseEmojiText(statusSnapshots[index].vibe)" :key="si"><image v-if="seg.type === 'icon'" class="status-chip-icon" :src="seg.src" mode="aspectFit" /><text v-else>{{ seg.value }}</text></block></view>
               </view>
             </view>
             <text class="status-summary" user-select>{{ statusSnapshots[index].summary }}</text>
@@ -158,6 +158,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getCachedSelfProfile, getCaseDetail, getCurrentUserId, getSelfProfile, getTempFileURL } from '@/utils/api'
 import { setActiveCaseId, setPendingTimelineContext, showError } from '@/utils/helpers'
 import { buildObjectStatusCard, buildProfileSideRead, compareAssessments } from '@/utils/insights'
+import { parseEmojiText } from '@/utils/zodiac-icons'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { aiLabel } from '@/utils/labels'
 
@@ -512,6 +513,8 @@ function goTimelineEvent(eventId: string) {
 .v2-mode .label-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 12rpx; }
 .v2-mode .label-chip,
 .v2-mode .status-chip { display: inline-block; min-height: 38rpx; padding: 0 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-caption; line-height: 38rpx; font-weight: $fw-label; color: var(--text-main, #111); }
+.v2-mode .status-chip-mix { display: inline-flex; align-items: center; gap: 4rpx; }
+.v2-mode .status-chip-icon { width: 26rpx; height: 26rpx; flex-shrink: 0; }
 .v2-mode .event-actions { margin-top: 14rpx; }
 .v2-mode .mini-link { display: inline-flex; align-items: center; justify-content: center; height: 48rpx; line-height: 48rpx; margin: 0; padding: 0 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); color: var(--text-main, #111); font-size: $fs-body; font-weight: $fw-hero; }
 .v2-mode .mini-link::after { border: 0; }

@@ -73,7 +73,7 @@
           <text class="ags-score-num">{{ score }}</text>
           <text class="ags-score-div">/</text>
           <text class="ags-score-unit">100</text>
-          <text class="ags-score-label">今日气场{{ aura ? ' · ' + aura : '' }}</text>
+          <view class="ags-score-label"><text>今日气场</text><block v-if="aura"><text> · </text><block v-for="(seg, si) in auraSegs" :key="si"><image v-if="seg.type === 'icon'" class="ags-emoji-icon" :src="seg.src" mode="aspectFit" /><text v-else>{{ seg.value }}</text></block></block></view>
         </view>
 
         <!-- Dont chips -->
@@ -97,6 +97,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { parseEmojiText } from '@/utils/zodiac-icons'
 
 const props = defineProps<{
   visible: boolean
@@ -125,6 +126,9 @@ const props = defineProps<{
 }>()
 
 defineEmits<{ close: [] }>()
+
+// 气场文本含后端 emoji（真机渲染不稳），走 SVG 混排
+const auraSegs = computed(() => parseEmojiText(props.aura))
 
 // ── 方位 → 角度 ──
 const DIR_ANGLE: Record<string, number> = {
@@ -273,7 +277,8 @@ function petalStyle(i: number) {
 .ags-score-num{font-size:50rpx;font-weight:900;color:var(--hero,#FF6B6B);line-height:1}
 .ags-score-div{font-size:32rpx;color:#ddd;font-weight:700}
 .ags-score-unit{font-size:32rpx;color:#aaa;font-weight:700}
-.ags-score-label{font-size:22rpx;color:#bbb;font-weight:700;margin-left:16rpx}
+.ags-score-label{display:flex;align-items:center;gap:2rpx;font-size:22rpx;color:#bbb;font-weight:700;margin-left:16rpx}
+.ags-emoji-icon{width:26rpx;height:26rpx;flex-shrink:0}
 
 /* ═══ DONT CHIPS ═══ */
 .ags-donts{position:absolute;right:20rpx;bottom:60rpx;z-index:4;display:flex;gap:8rpx}

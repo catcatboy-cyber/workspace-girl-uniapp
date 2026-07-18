@@ -71,6 +71,28 @@ const EMOJI_SVG: Record<string, string> = {
   '🎯': BASE + '/target.svg',
   '🔔': BASE + '/bell.svg',
   '🔒': BASE + '/lock.svg',
+  // queryTaohua 评级/文案 emoji（🔥⚠️❄️ 已在上方）
+  '🌤️': BASE + '/sun-cloud.svg',
+  '😐': BASE + '/face-neutral.svg',
+  '🌧️': BASE + '/rain.svg',
+  '✨': BASE + '/sparkles.svg',
+  '🌕': BASE + '/moon.svg',
+  '⚓': BASE + '/anchor.svg',
+  '📝': BASE + '/memo.svg',
+  '🔇': BASE + '/mute.svg',
+  '🧹': BASE + '/broom.svg',
+  '🌱': BASE + '/seedling.svg',
+  // insights.js 关系氛围 vibe emoji（部分不带 FE0F 变体选择符，两种写法都映射）
+  '🌤': BASE + '/sun-cloud.svg',
+  '☁️': BASE + '/cloud.svg',
+  '☁': BASE + '/cloud.svg',
+  '☀️': BASE + '/sun.svg',
+  '☀': BASE + '/sun.svg',
+  '⛈️': BASE + '/storm.svg',
+  '⛈': BASE + '/storm.svg',
+  '🌬️': BASE + '/wind.svg',
+  '🌬': BASE + '/wind.svg',
+  '📉': BASE + '/chart-down.svg',
 }
 
 export type TextSegment =

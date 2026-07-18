@@ -106,7 +106,7 @@
       </view>
 
       <view class="action-guide-hero-v2">
-        <text class="action-guide-main-v2">{{ guideOneliner || computedReport.桃花指数?.一句话 || '今天先用低压力方式靠近。' }}</text>
+        <view class="action-guide-main-v2 emoji-mix-v2"><block v-for="(seg, si) in guideMainSegs" :key="si"><image v-if="seg.type === 'icon'" class="emoji-icon-v2" :src="seg.src" mode="aspectFit" /><text v-else>{{ seg.value }}</text></block></view>
         <view v-if="computedReport.桃花指数" class="action-score-v2">
           <view class="action-score-head-v2">
             <text class="score-num-v2">{{ computedReport.桃花指数?.分数 || '--' }}</text>
@@ -115,7 +115,7 @@
           <view class="score-track-v2">
             <view class="score-fill-v2" :style="{ width: (computedReport.桃花指数?.分数 || 50) + '%' }"></view>
           </view>
-          <text v-if="computedReport.桃花指数?.一句话" class="action-score-note-v2">{{ computedReport.桃花指数?.一句话 }}</text>
+          <view v-if="computedReport.桃花指数?.一句话" class="action-score-note-v2 emoji-mix-v2"><block v-for="(seg, si) in scoreNoteSegs" :key="si"><image v-if="seg.type === 'icon'" class="emoji-icon-v2" :src="seg.src" mode="aspectFit" /><text v-else>{{ seg.value }}</text></block></view>
         </view>
         <view v-if="(computedReport.桃花指数?.加分项 || []).some((r:string)=>r.includes('六合') || r.includes('天喜'))" class="action-boost-v2">
           <image v-if="useTaohuaLineIcons" class="taohua-icon-img" :style="iconStyle(20)" :src="taohuaIcon('sparkles')" mode="aspectFit" />
@@ -150,7 +150,7 @@
         </view>
         <view class="action-vibe-v2">
           <text class="action-vibe-label-v2">今日气场</text>
-          <text class="action-vibe-text-v2">{{ guideVibeLabel }}</text>
+          <view class="action-vibe-text-v2 emoji-mix-v2"><block v-for="(seg, si) in vibeSegs" :key="si"><image v-if="seg.type === 'icon'" class="emoji-icon-v2" :src="seg.src" mode="aspectFit" /><text v-else>{{ seg.value }}</text></block></view>
         </view>
         <text class="cite-inline-v2">《协纪辨方书》《三命通会》</text>
         </view>
@@ -582,7 +582,7 @@ import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
 import { aiLabel } from '@/utils/labels'
-import { getZodiacSvg, getConstellationSvg } from '@/utils/zodiac-icons'
+import { getZodiacSvg, getConstellationSvg, parseEmojiText } from '@/utils/zodiac-icons'
 
 // ============================================================
 // 用户画像
@@ -853,6 +853,10 @@ const guide = computed(() => {
 })
 const guideVibeLabel = computed(() => guide.value.今日气场 || guide.value.解读 || '今日感情运势')
 const guideOneliner = computed(() => guide.value.一句话 || '')
+// 后端文本可能含 emoji（评级/气场），真机 emoji 渲染不稳，统一走 SVG 混排
+const guideMainSegs = computed(() => parseEmojiText(guideOneliner.value || computedReport.value.桃花指数?.一句话 || '今天先用低压力方式靠近。'))
+const scoreNoteSegs = computed(() => parseEmojiText(computedReport.value.桃花指数?.一句话 || ''))
+const vibeSegs = computed(() => parseEmojiText(guideVibeLabel.value))
 const guideActivities = computed(() => guide.value.建议活动 || [])
 const guideDos = computed(() => guide.value.宜做 || [])
 const guideDonts = computed(() => guide.value.避开 || [])
@@ -1923,6 +1927,9 @@ async function saveShareImage() {
 .action-guide-card-v2 { background: var(--brand-warm, #FFFBEB); }
 .action-guide-hero-v2 { padding: 20rpx 0 18rpx; border-bottom: var(--border-width-strong, 3rpx) dashed var(--divider-strong, #111); }
 .action-guide-main-v2 { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.45; }
+/* 后端文本 emoji → SVG 混排 */
+.emoji-mix-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 2rpx; }
+.emoji-icon-v2 { width: 32rpx; height: 32rpx; flex-shrink: 0; }
 .action-score-v2 { margin-top: 14rpx; }
 .action-score-head-v2 { display: flex; align-items: baseline; gap: 8rpx; }
 .action-score-note-v2 { display: block; margin-top: 8rpx; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.45; }
