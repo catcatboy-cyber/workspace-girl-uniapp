@@ -38,67 +38,68 @@
         </view>
 
         <view v-else class="case-list-v2">
-          <view v-for="(item, idx) in cases" :key="item.caseId" :class="['case-block-v2', idx === 0 ? 'anim-card' : '']" :style="idx === 0 ? 'animation-delay:0.15s' : ''">
-            <!-- Case head -->
-            <view class="case-head-v2">
-              <view class="case-identity-v2">
-                <view class="avatar-v2">
-                  <image v-if="item.profile?.avatar" :src="item.profile.avatarUrl || item.profile.avatar" mode="aspectFill" />
-                  <text v-else class="avatar-placeholder-v2">{{ avatarLabel(item.name) }}</text>
+          <view
+            v-for="(item, idx) in cases"
+            :key="item.caseId"
+            :class="['case-block-v2', isActiveCase(item.caseId) ? 'is-active' : '', idx === 0 ? 'anim-card' : '']"
+            :style="idx === 0 ? 'animation-delay:0.15s' : ''"
+          >
+            <!-- Card header: avatar + info -->
+            <view class="case-card-head">
+              <view class="case-card-avatar">
+                <image v-if="item.profile?.avatarUrl || item.profile?.avatar" :src="item.profile.avatarUrl || item.profile.avatar" mode="aspectFill" />
+                <text v-else class="case-card-avatar-text">{{ avatarLabel(item.name) }}</text>
+              </view>
+              <view class="case-card-info">
+                <view class="case-card-name-row">
+                  <text class="case-card-name">{{ item.name }}</text>
+                  <text v-if="item.cardTypeLabel" class="tag-v2 black">{{ item.cardTypeLabel }}</text>
                 </view>
-                <view>
-                  <text class="case-name-v2">{{ item.name }}</text>
-                  <text class="case-id-v2">{{ item.caseId }}</text>
+                <view v-if="item.crushType" class="case-card-type">
+                  <text class="case-card-type-label">{{ item.crushType.label }}</text>
+                </view>
+                <view v-if="item.cardProfileItems.length" class="case-card-tags">
+                  <text v-for="p in item.cardProfileItems" :key="p" class="tag-v2">{{ p }}</text>
                 </view>
               </view>
-              <text class="case-updated-v2">更新于 {{ formatDateTime(item.updatedAt) }}</text>
-            </view>
-
-            <!-- Tags -->
-            <view v-if="item.crushType" class="type-summary-v2">
-              <text class="type-label-v2">{{ item.crushType.label }}</text>
-              <text class="type-copy-v2">{{ item.crushType.summary }}</text>
-            </view>
-            <view v-if="item.cardTypeLabel" class="tag-row-v2">
-              <text v-if="item.cardTypeLabel" class="tag-v2 black">{{ item.cardTypeLabel }}</text>
-            </view>
-            <view v-if="item.cardProfileItems.length > 0" class="tag-row-v2">
-              <text v-for="p in item.cardProfileItems" :key="p" class="tag-v2">{{ p }}</text>
+              <text class="case-card-updated">{{ formatDateTime(item.updatedAt) }}</text>
             </view>
 
             <!-- KPI strip -->
-            <view class="kpi-strip-v2">
-              <view class="kpi-cell-v2">
-                <text class="kpi-num-v2">{{ item.latestResult?.intentScore ?? '--' }}</text>
-                <text class="kpi-lbl-v2">意向 · {{ mapIntentLabel(item.latestResult?.intentBucket) }}</text>
+            <view class="case-card-kpis">
+              <view class="case-card-kpi">
+                <text class="case-card-kpi-num">{{ item.latestResult?.intentScore ?? '--' }}</text>
+                <text class="case-card-kpi-lbl">意向 · {{ mapIntentLabel(item.latestResult?.intentBucket) }}</text>
+                <view class="case-card-bar"><view class="case-card-fill intent" :style="{ width: (item.latestResult?.intentScore || 0) + '%' }" /></view>
               </view>
-              <view class="kpi-cell-v2">
-                <text class="kpi-num-v2 risk">{{ item.latestResult?.consistencyRiskScore ?? '--' }}</text>
-                <text class="kpi-lbl-v2">风险 · {{ mapRiskLabel(item.latestResult?.riskBucket) }}</text>
+              <view class="case-card-kpi">
+                <text class="case-card-kpi-num risk">{{ item.latestResult?.consistencyRiskScore ?? '--' }}</text>
+                <text class="case-card-kpi-lbl">风险 · {{ mapRiskLabel(item.latestResult?.riskBucket) }}</text>
+                <view class="case-card-bar"><view class="case-card-fill risk" :style="{ width: (item.latestResult?.consistencyRiskScore || 0) + '%' }" /></view>
               </view>
-              <view class="kpi-cell-v2">
-                <text class="kpi-num-v2">{{ item.latestResult?.evidenceLevel ?? '--' }}</text>
-                <text class="kpi-lbl-v2">记录 · {{ item.timelineCount ?? item.timeline?.length ?? 0 }} 条</text>
+              <view class="case-card-kpi">
+                <text class="case-card-kpi-num">{{ item.timelineCount ?? item.timeline?.length ?? 0 }}</text>
+                <text class="case-card-kpi-lbl">记录条数</text>
+                <view class="case-card-bar"><view class="case-card-fill records" :style="{ width: Math.min((item.timelineCount || 0) * 3, 100) + '%' }" /></view>
               </view>
             </view>
 
+            <!-- Summary -->
+            <text v-if="item.crushType?.summary" class="case-card-summary">{{ item.crushType.summary }}</text>
+
             <!-- Actions -->
-            <view class="case-actions-v2">
+            <view class="case-card-actions">
               <button class="btn btn-secondary btn-sm btn-auto" @click="goEditCase(item.caseId)">编辑</button>
               <button
                 :class="['btn btn-danger btn-sm btn-auto', deletingCaseId === item.caseId ? 'disabled' : '']"
                 :disabled="!!deletingCaseId"
                 @click="confirmDeleteCase(item)"
-              >
-                {{ deletingCaseId === item.caseId ? '删除中' : '删除' }}
-              </button>
+              >{{ deletingCaseId === item.caseId ? '删除中' : '删除' }}</button>
               <button
                 :class="['btn btn-primary btn-sm btn-auto', isActiveCase(item.caseId) ? 'disabled' : '']"
                 :disabled="isActiveCase(item.caseId) || !!deletingCaseId"
                 @click="switchActiveCase(item.caseId)"
-              >
-                {{ isActiveCase(item.caseId) ? '当前 Crush' : '切换到首页' }}
-              </button>
+              >{{ isActiveCase(item.caseId) ? '当前 Crush ✓' : '切换到首页' }}</button>
             </view>
           </view>
         </view>
@@ -404,36 +405,146 @@ async function confirmDeleteCase(item: any) {
   border-radius: var(--shape-radius-card, 0);
   box-shadow: var(--shadow-hard, 6rpx 6rpx 0 #111); padding: 28rpx;
 }
-.v2-mode .case-head-v2 {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  padding-bottom: 16rpx; border-bottom: 3rpx solid var(--text-main, #111); margin-bottom: 14rpx;
-}
-.v2-mode .case-identity-v2 { display: flex; align-items: center; gap: 14rpx; flex: 1; min-width: 0; }
-.v2-mode .avatar-v2 {
-  width: 68rpx; height: 68rpx; border-radius: 50%; overflow: hidden;
-  border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--accent, #FFD93D);
-  display: flex; align-items: center; justify-content: center;
-}
-.v2-mode .avatar-v2 image { width: 100%; height: 100%; }
-.v2-mode .avatar-placeholder-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .case-name-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .case-id-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 2rpx; }
-.v2-mode .case-updated-v2 { font-size: $fs-micro; font-weight: $fw-body; color: var(--text-soft, #999); text-align: right; }
-
-.v2-mode .tag-row-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
 .v2-mode .tag-v2 { @include tag-v2; }
 .v2-mode .tag-v2.black { background: var(--text-main, #111); color: var(--surface, #fff); }
-.v2-mode .type-summary-v2 { margin-bottom: 12rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--brand-warm, #FFFBEB); }
-.v2-mode .type-label-v2 { display: block; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.25; }
-.v2-mode .type-copy-v2 { display: block; margin-top: 6rpx; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: 1.45; }
 
-.v2-mode .kpi-strip-v2 { display: flex; margin-bottom: 16rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #f9f9f9); overflow: hidden; }
-.v2-mode .kpi-cell-v2 { flex: 1; text-align: center; padding: 18rpx 8rpx; border-right: 3rpx solid var(--text-main, #111); }
-.v2-mode .kpi-cell-v2:last-child { border-right: none; }
-.v2-mode .kpi-num-v2 { display: block; font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
-.v2-mode .kpi-num-v2.risk { color: var(--risk, #FF5252); }
-.v2-mode .kpi-lbl-v2 { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); margin-top: 4rpx; text-transform: uppercase; letter-spacing: 2rpx; }
+.v2-mode .case-block-v2.is-active {
+  box-shadow: var(--shadow-hard, 6rpx 6rpx 0 var(--border, #111));
+}
 
+.v2-mode .case-card-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  min-width: 0;
+  margin-bottom: 24rpx;
+  padding-right: 116rpx;
+}
 
-.v2-mode .case-actions-v2 { display: flex; gap: 12rpx; margin-top: 16rpx; }
+.v2-mode .case-card-avatar {
+  display: flex;
+  flex: 0 0 128rpx;
+  align-items: center;
+  justify-content: center;
+  width: 128rpx;
+  height: 128rpx;
+  overflow: hidden;
+  border: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  border-radius: 50%;
+  background: var(--hero-bg, #FF6B6B);
+}
+
+.v2-mode .case-card-avatar image { width: 100%; height: 100%; }
+.v2-mode .case-card-avatar-text { font-size: $fs-display; font-weight: $fw-hero; color: var(--surface, #fff); }
+
+.v2-mode .case-card-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2rpx;
+}
+
+.v2-mode .case-card-name-row,
+.v2-mode .case-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.v2-mode .case-card-name { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); line-height: $lh-heading; }
+.v2-mode .case-card-type { margin: 10rpx 0 8rpx; }
+.v2-mode .case-card-type-label {
+  display: inline-block;
+  padding: 6rpx 16rpx;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-inner, 0);
+  background: var(--accent, #FFD93D);
+  color: var(--text-main, #111);
+  font-size: $fs-body;
+  font-weight: $fw-heading;
+  line-height: $lh-label;
+}
+
+.v2-mode .case-card-updated {
+  position: absolute;
+  top: 4rpx;
+  right: 0;
+  max-width: 108rpx;
+  color: var(--text-soft, #999);
+  font-size: $fs-micro;
+  font-weight: $fw-body;
+  line-height: $lh-label;
+  text-align: right;
+}
+
+.v2-mode .case-card-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-bottom: 18rpx;
+  padding: 24rpx;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-inner, 0);
+  background: var(--surface-dim, #FFFDF5);
+}
+
+.v2-mode .case-card-kpi { min-width: 0; }
+.v2-mode .case-card-kpi-num { display: block; color: var(--text-main, #111); font-size: $fs-kpi; font-weight: $fw-hero; line-height: $lh-tight; }
+.v2-mode .case-card-kpi-num.risk { color: var(--risk, #FF5252); }
+.v2-mode .case-card-kpi-lbl {
+  display: block;
+  min-height: 62rpx;
+  margin-top: 8rpx;
+  overflow-wrap: anywhere;
+  color: var(--text-muted, #666);
+  font-size: $fs-caption;
+  font-weight: $fw-label;
+  line-height: $lh-label;
+}
+
+.v2-mode .case-card-bar {
+  width: 100%;
+  height: 10rpx;
+  margin-top: 8rpx;
+  overflow: hidden;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: 0;
+  background: var(--surface, #fff);
+  box-sizing: border-box;
+}
+
+.v2-mode .case-card-fill { height: 100%; background: var(--text-main, #111); }
+.v2-mode .case-card-fill.intent { background: var(--accent-cool, #4ECDC4); }
+.v2-mode .case-card-fill.risk { background: var(--risk, #FF5252); }
+.v2-mode .case-card-fill.records { background: var(--accent, #FFD93D); }
+
+.v2-mode .case-card-summary {
+  display: block;
+  margin-bottom: 18rpx;
+  padding: 18rpx 0 0;
+  border-top: var(--border-width, 2rpx) dashed var(--border-soft, rgba(17, 17, 17, 0.22));
+  color: var(--text-muted, #666);
+  font-size: $fs-body;
+  font-weight: $fw-body;
+  line-height: $lh-body;
+}
+
+.v2-mode .case-card-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 12rpx;
+}
+
+.v2-mode .case-card-actions .btn { min-width: 112rpx; margin: 0; }
+.v2-mode .case-card-actions .btn:last-child { flex: 1; }
+
+@media (max-width: 360px) {
+  .v2-mode .case-card-head { gap: 16rpx; padding-right: 0; }
+  .v2-mode .case-card-avatar { flex-basis: 108rpx; width: 108rpx; height: 108rpx; }
+  .v2-mode .case-card-updated { position: static; align-self: flex-start; max-width: 92rpx; }
+  .v2-mode .case-card-kpis { gap: 12rpx; padding: 20rpx 16rpx; }
+  .v2-mode .case-card-actions { flex-wrap: wrap; }
+  .v2-mode .case-card-actions .btn:last-child { flex-basis: 100%; }
+}
 </style>
