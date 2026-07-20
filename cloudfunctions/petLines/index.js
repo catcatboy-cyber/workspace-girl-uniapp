@@ -366,7 +366,7 @@ async function tryWithModelFallback(fn) {
   return lastError || { success: false, message: '所有 AI 模型均不可用' }
 }
 
-function aiHttpRequest(urlStr, body, timeoutMs, apiKey) {
+function aiHttpRequest(urlStr, body, timeoutMs, apiKey, extraHeaders) {
   return new Promise((resolve, reject) => {
     const u = new URL(urlStr)
     const transport = u.protocol === 'http:' ? http : https
@@ -374,7 +374,7 @@ function aiHttpRequest(urlStr, body, timeoutMs, apiKey) {
     const req = transport.request({
       protocol: u.protocol, hostname: u.hostname, port: u.port || undefined,
       path: `${u.pathname}${u.search}`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload), Authorization: `Bearer ${apiKey}` }
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload), Authorization: `Bearer ${apiKey}`, ...(extraHeaders || {}) }
     }, (res) => {
       const chunks = []
       res.on('data', c => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)))
@@ -473,7 +473,7 @@ async function checkPetTokenBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, a
     }
   } catch (e) {
     console.error('checkPetTokenBalance error:', e)
-    return { ok: false, code: 'TOKEN_CHECK_FAILED', message: 'Token 校验失败，请稍后重试', balance: 0, required: estTokens }
+    return { ok: false, code: 'TOKEN_CHECK_FAILED', message: 'Crush Credits 校验失败，请稍后重试', balance: 0, required: estTokens }
   }
 }
 
@@ -1700,12 +1700,8 @@ function buildChatSystemPrompt(context, safetyContext, mode) {
     ? '\n【边界提醒】当前话题涉及亲密或私密边界，优先提醒尊重、节奏和安全，不推动越界。'
     : ''
 
-  return `你是“小咪”，一个克制、聪明、温柔但不油腻的恋爱沟通陪伴宠物。你用中文回复。
-
-目标：
-- 先接住用户情绪，再给可执行建议。
-- intent 只在当前模式下判断：chat（陪聊）、reply（帮回复）、initiate（主动开口）、strategy（多步策略）、vent（倾诉陪伴）。
-- 回复要像聊天，不像报告；默认 60-120 字。
+  const basePrompt = `你是”小咪”，一个克制、聪明、温柔但不油腻的恋爱沟通陪伴宠物。你用中文回复。
+- 先接住用户情绪，再给可执行建议。回复像聊天不像报告，默认 60-120 字。
 - 不编造对方想法，不鼓励试探、PUA、情绪勒索或越界。
 
 ${buildChatModeInstruction(mode)}
@@ -1715,14 +1711,23 @@ ${caseLine}
 最近事件：
 ${timelineLines}
 今日提示：${taohua.summary || ''}${taohua.direction ? ` 桃花方位：${taohua.direction}。` : ''}
-${minorRule}${boundaryRule}
+${minorRule}${boundaryRule}`
+
+  // chat 模式只返回简单 JSON，不输出 variants/strategies（省 ~500 字提示词）
+  if (mode === 'chat') {
+    return `${basePrompt}
+
+只返回 JSON：{“reply”:”小咪说的话”,”intent”:”chat|vent”}`
+  }
+
+  return `${basePrompt}
 
 只返回严格 JSON：
 {
-  "reply": "小咪直接对用户说的话",
-  "intent": "chat|reply|initiate|strategy|vent",
-  "variants": {"humor":"可直接发送的话", "sincere":"可直接发送的话", "literary":"可直接发送的话"},
-  "strategies": [{"type":"contrast|probe|follow","label":"策略名","turns":[{"step":1,"say":"用户第一步可以说的话","note":"这一步的目的","expectReactions":["对方可能回应"]},{"step":2,"say":"用户第二步可以接的话","note":"根据对方反应的跟进目的","expectReactions":["对方可能回应"]}]}]
+  “reply”: “小咪直接对用户说的话”,
+  “intent”: “chat|reply|initiate|strategy|vent”,
+  “variants”: {“humor”:”可直接发送的话”, “sincere”:”可直接发送的话”, “literary”:”可直接发送的话”},
+  “strategies”: [{“type”:”contrast|probe|follow”,”label”:”策略名”,”turns”:[{“step”:1,”say”:”用户第一步可以说的话”,”note”:”这一步的目的”,”expectReactions”:[“对方可能回应”]},{“step”:2,”say”:”用户第二步可以接的话”,”note”:”根据对方反应的跟进目的”,”expectReactions”:[“对方可能回应”]}]}]
 }`
 }
 
@@ -1775,6 +1780,7 @@ function parsePetChatAI(raw, mode, suggestedMode = '') {
 }
 
 function toLLMMessages(history, incomingMessages, caseId) {
+  const MAX_TOTAL_CHARS = 3000  // 限制总字符数，避免聊天历史撑爆系统提示词
   const persisted = filterPetHistoryByCase(history, caseId).slice(-20).map((item) => ({
     role: item.role === 'user' ? 'user' : 'assistant',
     content: item.text
@@ -1783,7 +1789,17 @@ function toLLMMessages(history, incomingMessages, caseId) {
     role: item.role === 'user' ? 'user' : 'assistant',
     content: item.text
   }))
-  return [...persisted, ...incoming].slice(-26)
+  const merged = [...persisted, ...incoming]
+  // 从最新消息倒推，累加到上限
+  const selected = []
+  let totalChars = 0
+  for (let i = merged.length - 1; i >= 0; i--) {
+    const chars = merged[i].content.length
+    if (totalChars + chars > MAX_TOTAL_CHARS && selected.length >= 2) break
+    selected.unshift(merged[i])
+    totalChars += chars
+  }
+  return selected
 }
 
 async function savePetChatHistory(userId, userText, petPayload) {
@@ -1932,7 +1948,7 @@ async function handlePetChatMessage(event) {
     return {
       success: false,
       ...tokenCheck,
-      message: tokenCheck.message || 'Token 不足，请先充值'
+      message: tokenCheck.message || 'Crush Credits 不足，请先充值'
     }
   }
 
@@ -1958,8 +1974,9 @@ async function handlePetChatMessage(event) {
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
         temperature: 0.75,
         max_tokens: responseMaxTokens,
-        response_format: { type: 'json_object' }
-      }, REPLY_TIMEOUT_MS, model.apiKey)
+        response_format: { type: 'json_object' },
+        prompt_cache_key: sessionId
+      }, REPLY_TIMEOUT_MS, model.apiKey, { 'X-Session-ID': sessionId })
       if (response.status !== 404) break
     }
     if (!response?.ok) {

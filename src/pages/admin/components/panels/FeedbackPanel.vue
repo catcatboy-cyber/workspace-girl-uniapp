@@ -18,7 +18,7 @@
           <text v-if="fb.contact" class="feedback-contact">{{ fb.contact }}</text>
         </view>
         <text class="feedback-content">{{ fb.content }}</text>
-        <view v-if="fb.resolved" class="feedback-resolved-badge">已采纳 · 奖励 {{ fb.rewardTokens || 0 }} Credits</view>
+        <view v-if="fb.resolved" class="feedback-resolved-badge">已采纳 · 奖励 {{ fb.rewardTokens || 0 }} Crush Credits</view>
         <view v-else class="feedback-actions">
           <input v-if="!fb.userId" :value="targetUserIds[fb._id] || ''" class="reward-input" placeholder="用户ID" @input="onTargetUserInput(fb._id, $event)" />
           <input :value="rewardInputs[fb._id] || ''" type="number" class="reward-input" placeholder="奖励 token" @input="onRewardInput(fb._id, $event)" />

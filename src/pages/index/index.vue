@@ -6,11 +6,11 @@
     <block v-if="!loading">
       <!-- 邀请到账通知 -->
       <view v-if="showIndexReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissIndexReferralNotice">
-        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ indexReferralNoticeAmount }} Credits →</text>
+        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ indexReferralNoticeAmount }} Crush Credits →</text>
       </view>
       <!-- 受邀奖励通知 -->
       <view v-if="showIndexInviteeNotice" class="referral-notice" @click="dismissIndexInviteeNotice">
-        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ indexInviteeNoticeAmount }} Credits →</text>
+        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ indexInviteeNoticeAmount }} Crush Credits →</text>
       </view>
       <block v-else>
         <!-- Campus Signal 雷达首页（含空状态） -->
@@ -293,7 +293,7 @@ import ActionGuideSheet from '@/components/ActionGuideSheet.vue'
 import AnalysisSheet from '@/components/AnalysisSheet.vue'
 import BalanceSheet from '@/components/BalanceSheet.vue'
 import { normalizeActionGuideData } from '@/utils/taohua'
-import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
+import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, decayPetEnergy, feedPet, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, readPetEnergy, setActiveCaseId, setPendingTimelineContext, showError, showSuccess, writePetEnergy } from '@/utils/helpers'
 import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal, buildTimelineStats } from '@/utils/insights'
 import { buildDivergingBars } from '@/utils/insights.ts'
@@ -1217,7 +1217,7 @@ function onSpeakSheetClose() {
 const showPetBar = ref(true)
 const petAssetsVersion = ref(0)
 
-// 分享提醒：试用期或 Token 不足时，每天最多 1 次、50% 概率提醒
+// 分享提醒：试用期或 Crush Credits 不足时，每天最多 1 次、50% 概率提醒
 let shareNudgeTimer: ReturnType<typeof setTimeout> | null = null
 let shareNudgeRestoreTimer: ReturnType<typeof setTimeout> | null = null
 const SHARE_NUDGE_KEY = 'lastShareNudgeDate'
@@ -1231,13 +1231,13 @@ async function checkShareNudge() {
     if (!sub?.success) return
     const tokens = Number(sub.subscription?.extraTokens || 0) + Number(sub.subscription?.monthlyRemaining || 0)
     const isTrial = Boolean(sub.subscription?.isTrial)
-    if (!isTrial && tokens >= 20000) return
+    if (!isTrial && tokens >= 200) return
     // 延迟 4 秒展示，不抢 mood 消息的首屏注意力
     shareNudgeTimer = setTimeout(() => {
       uni.setStorageSync(SHARE_NUDGE_KEY, today)
       const msg = isTrial
-        ? '🎁 试用福利：邀请好友一起用，双方都能得 Token～'
-        : '📢 Token 余额不多了，邀请好友注册立得 Token →'
+        ? '🎁 试用福利：邀请好友一起用，双方都能得 Crush Credits～'
+        : '📢 Crush Credits 余额不多了，邀请好友注册立得 Crush Credits →'
       petMsg.value = msg
       petState.value = 'waving'
       startPetAnim('waving')
@@ -1828,11 +1828,21 @@ async function chooseQuickImages() {
       uni.showLoading({ title: '上传图片...' })
       try {
         const uploaded = []
+        let skippedCount = 0
         for (let i = 0; i < files.length; i += 1) {
           const file = files[i]
           const filePath = file.path || file.tempFilePath
           if (!filePath) continue
           const fileID = await uploadFile(filePath, buildQuickCloudPath(filePath, i))
+
+          // 内容安全检测
+          const { pass } = await contentSecCheck(fileID)
+          if (!pass) {
+            // 跳过违规图片
+            skippedCount++
+            continue
+          }
+
           const url = await getTempFileURL(fileID).catch(() => '')
           uploaded.push({
             type: 'image',
@@ -1843,6 +1853,9 @@ async function chooseQuickImages() {
           })
         }
         quickAttachments.value = [...quickAttachments.value, ...uploaded]
+        if (skippedCount > 0) {
+          uni.showToast({ title: '部分图片内容含违规信息，已自动过滤', icon: 'none', duration: 2000 })
+        }
       } catch (error: any) {
         showError(error?.message || '图片上传失败')
       } finally {

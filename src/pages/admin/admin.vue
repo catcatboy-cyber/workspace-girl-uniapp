@@ -13,12 +13,12 @@
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">计费管理</text>
-          <view :class="['sidebar-item', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">🪙 Credits 额度</view>
+          <view :class="['sidebar-item', activeTab === 'billing' ? 'active' : '']" @click="activeTab = 'billing'">🪙 Crush Credits 额度</view>
           <view :class="['sidebar-item', activeTab === 'subscription' ? 'active' : '']" @click="activeTab = 'subscription'">📦 订阅配置</view>
         </view>
         <view class="sidebar-group">
           <text class="sidebar-group-title">数据中心</text>
-          <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Credits 消耗</view>
+          <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Crush Credits 消耗</view>
           <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'"><image class="sidebar-icon" src="/static/icons/taohua/clipboard.svg" mode="aspectFit" /><text>订单管理</text></view>
           <view :class="['sidebar-item', activeTab === 'loginLogs' ? 'active' : '']" @click="activeTab = 'loginLogs'">🔐 登录日志</view>
           <view :class="['sidebar-item', activeTab === 'referralClaims' ? 'active' : '']" @click="activeTab = 'referralClaims'"><image class="sidebar-icon" src="/static/icons/taohua/gem.svg" mode="aspectFit" /><text>邀请奖励</text></view>
@@ -154,11 +154,11 @@
                   </picker>
                 </view>
                 <view class="field">
-                  <text>加油包 Credits</text>
+                  <text>加油包 Crush Credits</text>
                   <input v-model.number="userEditForm.extraTokens" type="number" placeholder="0" />
                 </view>
                 <view class="field">
-                  <text>本月已用 Credits</text>
+                  <text>本月已用 Crush Credits</text>
                   <input v-model.number="userEditForm.monthlyTokensUsed" type="number" placeholder="0" />
                 </view>
                 <view class="field">
@@ -298,7 +298,7 @@
                   :placeholder="String(petSpeakDefaults[petSpeakActiveKey]?.temperature ?? 0.8)" />
               </view>
               <view class="field">
-                <text>Max Credits</text>
+                <text>Max Crush Credits</text>
                 <input v-model.number="petSpeakForm.maxTokens" type="number" step="50" min="50" max="4000"
                   :placeholder="String(petSpeakDefaults[petSpeakActiveKey]?.maxTokens ?? 400)" />
               </view>

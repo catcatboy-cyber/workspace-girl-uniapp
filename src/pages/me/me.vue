@@ -4,7 +4,7 @@
       <view class="hero-block-v2 anim-hero">
         <text class="hero-tag-v2">PROFILE</text>
         <text class="hero-title-v2"><text class="hl-v2">我的</text>主页</text>
-        <text class="hero-copy-v2">管理画像、Credits 和偏好设置。</text>
+        <text class="hero-copy-v2">管理画像、Crush Credits 和偏好设置。</text>
         <hr class="hero-divider">
         <view class="hero-bottom">
           <view class="hero-avatar-lg hero-self-avatar">我</view>
@@ -25,7 +25,7 @@
       <!-- Credits -->
       <view class="card-v2 anim-card" style="animation-delay:0.15s">
         <view style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16rpx;">
-          <text class="section-title-v2" style="margin-bottom:0;">Credits</text>
+          <text class="section-title-v2" style="margin-bottom:0;">Crush Credits</text>
           <view :class="['plan-badge', planBadgeClass]">
             <text v-if="isTrial" class="plan-badge-text">✦ 试用期 · 剩{{ trialDaysLeft }}天</text>
             <text v-else class="plan-badge-text">{{ planBadgeLabel }}</text>
@@ -33,7 +33,7 @@
         </view>
         <view class="balance-hero-v2">
             <text class="balance-num-v2">{{ totalAvailableDisplay }}</text>
-            <text class="balance-unit-v2">Credits 可用</text>
+            <text class="balance-unit-v2">Crush Credits 可用</text>
           </view>
           <view class="stats-grid-v2" style="margin-top:16rpx;">
             <view class="stat-box-v2">
@@ -64,11 +64,11 @@
       </view>
       <!-- 邀请到账通知 -->
       <view v-if="showReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissReferralNotice">
-        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Credits →</text>
+        <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Crush Credits →</text>
       </view>
       <!-- 受邀奖励通知 -->
       <view v-if="showInviteeNotice" class="referral-notice" @click="dismissInviteeNotice">
-        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Credits →</text>
+        <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ inviteeNoticeAmount }} Crush Credits →</text>
       </view>
       <!-- 陪伴宠物 -->
       <view class="card-v2 anim-card" style="animation-delay:0.25s">
@@ -84,8 +84,8 @@
       <!-- 低 Token 提示 -->
       <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:var(--brand-warm,#FFFBEB);border-style:dashed;">
         <view open-type="share" style="width:100%;">
-          <text class="section-title-v2" style="color:var(--warning,#e67e22);">Credits 快不够了</text>
-          <text class="card-text-v2">邀请好友注册，双方各得 Credits →</text>
+          <text class="section-title-v2" style="color:var(--warning,#e67e22);">Crush Credits 快不够了</text>
+          <text class="card-text-v2">邀请好友注册，双方各得 Crush Credits →</text>
           <button class="btn btn-secondary btn-sm" open-type="share" style="margin-top:12rpx;">+{{ referralRewardTokens }}</button>
         </view>
       </view>
@@ -118,7 +118,7 @@
       <!-- AI analysis style -->
       <view class="card-v2 ai-style-panel-v2"><text class="section-title-v2">{{ aiLabel() }} 分析风格</text><text class="card-text-v2">你在这里选风格，后台提示词会真正跟着变，不是只改文案皮肤。</text><view class="chip-grid-v2"><view v-for="item in aiStyleOptions" :key="item.value" :class="['chip-v2', aiStyle === item.value ? 'active' : '', aiSaving ? 'disabled' : '']" @click="chooseAIStyle(item.value)"><text class="chip-label-v2">{{ item.label }}</text><text class="chip-desc-v2">{{ item.description }}</text></view></view><text class="sub-title-v2">建议力度</text><view class="chip-grid-v2 cols3"><view v-for="item in aiBoldnessOptions" :key="item.value" :class="['chip-v2', aiBoldness === item.value ? 'active' : '', aiSaving ? 'disabled' : '']" @click="chooseAIBoldness(item.value)"><text class="chip-label-v2">{{ item.label }}</text></view></view></view>
       <!-- #ifdef H5 -->
-      <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、{{ aiLabel() }}、Credits 和反馈管理 →</text></view>
+      <view v-if="currentUserIsAdmin" class="card-v2 admin-entry-v2" @click="goAdmin"><text class="section-title-v2">后台管理</text><text class="card-text-v2">进入用户、{{ aiLabel() }}、Crush Credits 和反馈管理 →</text></view>
       <!-- #endif -->
       <view class="card-v2">
         <text class="section-title-v2">系统说明</text>

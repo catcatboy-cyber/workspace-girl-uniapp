@@ -446,7 +446,7 @@ async function sendMessage() {
           mode: modeForRequest
         })
     if (handleInsufficientBalance(res)) {
-      errorMsg.value = 'Token 不足，补一点能量再来'
+      errorMsg.value = 'Crush Credits 不足，补一点能量再来'
       return
     }
     if (!res?.success) {
@@ -493,7 +493,7 @@ async function refreshTone(message: ChatMessage) {
     const scene = message.mode === 'initiate' ? 'active' : 'reply'
     const res = await generatePetReplyPair(scene, sourceText, tone, props.caseId || '')
     if (handleInsufficientBalance(res)) {
-      errorMsg.value = 'Token 不足，补一点能量再来'
+      errorMsg.value = 'Crush Credits 不足，补一点能量再来'
       return
     }
     if (!res?.success) {

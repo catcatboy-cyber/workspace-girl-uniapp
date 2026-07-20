@@ -173,8 +173,8 @@ export function handleInsufficientBalance(result: any): boolean {
     const required = (result.required || 0).toLocaleString()
 
     uni.showModal({
-      title: 'Token 不足',
-      content: `本月套餐剩余 ${monthlyRemaining} Token，加油包剩余 ${extraTokens} Token。本次预估消耗 ${required} Token。`,
+      title: 'Crush Credits 不足',
+      content: `本月套餐剩余 ${monthlyRemaining} Crush Credits，加油包剩余 ${extraTokens} Crush Credits。本次预估消耗 ${required} Crush Credits。`,
       confirmText: '去充值',
       cancelText: '取消',
       success(res: any) {
@@ -190,7 +190,7 @@ export function handleInsufficientBalance(result: any): boolean {
   if (result?.code === 'QUOTA_EXCEEDED') {
     uni.showModal({
       title: '次数不足',
-      content: result.message || '次数已用完，请购买月卡或加油包。',
+      content: result.message || '次数已用完，请购买月卡或 Crush Credits 加油包。',
       confirmText: '去充值',
       cancelText: '取消',
       success(res: any) {
@@ -205,8 +205,8 @@ export function handleInsufficientBalance(result: any): boolean {
     const balance = (result.balance || 0).toLocaleString()
     const required = (result.required || 0).toLocaleString()
     uni.showModal({
-      title: '额度不足',
-      content: `当前可用 ${balance} token，本次预估消耗 ${required} token。请充值后再试。`,
+      title: 'Crush Credits 不足',
+      content: `当前可用 ${balance} Crush Credits，本次预估消耗 ${required} Crush Credits。请充值后再试。`,
       confirmText: '去充值',
       cancelText: '取消',
       success(res: any) {
@@ -1373,6 +1373,26 @@ export async function testAIConnection(data: {
     data: payload
   })
   return res.result
+}
+
+// ==================== 内容安全 ====================
+
+/**
+ * 检测图片内容安全（调用微信 msgSecCheck）
+ * 应在图片上传到云存储后、业务使用前调用。
+ * @returns pass=true 表示安全，pass=false 表示违规
+ */
+export async function contentSecCheck(fileID: string): Promise<{ pass: boolean }> {
+  try {
+    const res = await callFunction({
+      name: 'contentSecCheck',
+      data: { action: 'checkImage', fileID }
+    })
+    return res.result || { pass: true }
+  } catch {
+    // API 不可用时降级放行
+    return { pass: true }
+  }
 }
 
 // ==================== 云存储 ====================

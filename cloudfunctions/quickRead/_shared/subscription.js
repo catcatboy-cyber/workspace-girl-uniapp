@@ -352,14 +352,14 @@ async function checkTokenBalance(db, userId, estTokens) {
     return {
       ok: false,
       code: 'TOKEN_INSUFFICIENT',
-      message: 'Token 余额不足',
+      message: 'Crush Credits 余额不足',
       monthlyTokensUsed: monthlyUsed,
       monthlyTokensLimit: monthlyLimit,
       monthlyRemaining,
       extraTokens: extraRemaining,
       required,
       actions: [
-        { type: 'upgrade', label: user.plan === 'free' ? '升级 Pro（300,000 Token/月）' : '升级 Ultra（不限）' },
+        { type: 'upgrade', label: user.plan === 'free' ? '升级 Pro（3,000 Crush Credits/月）' : '升级 Ultra（不限）' },
         { type: 'recharge', label: '买个加油包' }
       ]
     }

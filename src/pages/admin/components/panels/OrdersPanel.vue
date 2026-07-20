@@ -22,7 +22,7 @@
         <text style="width:90rpx;">金额</text>
         <text style="width:70rpx;">类型</text>
         <text style="width:70rpx;">状态</text>
-        <text style="width:100rpx;">Credits</text>
+        <text style="width:100rpx;">Crush</text>
         <text style="flex:0.8;">用户ID</text>
         <text style="flex:1;">创建时间</text>
       </view>
@@ -50,7 +50,7 @@
           <text>商品：{{ expandedOrder?.planName }}</text>
           <text>类型：{{ expandedOrder?.productType === 'subscription' ? '会员升级' : '加油包充值' }}</text>
           <text>金额：¥{{ expandedOrder?.amountYuan }}（{{ expandedOrder?.amountFen || 0 }}分）</text>
-          <text>Credits：{{ (expandedOrder?.grantTokens || 0).toLocaleString() }}</text>
+          <text>Crush Credits：{{ (expandedOrder?.grantTokens || 0).toLocaleString() }}</text>
           <text>状态：{{ orderStatusLabel(expandedOrder?.status) }}</text>
           <text>创建时间：{{ formatDateTime(expandedOrder?.createdAt) }}</text>
           <text v-if="expandedOrder?.paidAt">支付时间：{{ formatDateTime(expandedOrder.paidAt) }}</text>

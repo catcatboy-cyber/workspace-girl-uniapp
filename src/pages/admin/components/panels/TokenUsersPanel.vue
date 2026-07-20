@@ -2,7 +2,7 @@
   <view class="panel">
     <view class="panel-head">
       <view>
-        <text class="panel-title">各用户 Credits 消耗</text>
+        <text class="panel-title">各用户 Crush Credits 消耗</text>
         <text class="panel-meta">{{ tokenUserRows.length }} 个用户 · 点击展开明细</text>
       </view>
       <button class="ghost-btn wide-btn" :disabled="tokenUsersLoading" @click="loadTokenUsers">{{ tokenUsersLoading ? '加载中' : '刷新' }}</button>
@@ -13,8 +13,8 @@
         <view class="table-row table-header">
           <text style="width:40rpx;"></text>
           <text style="flex:1;">用户</text>
-          <text style="width:130rpx;text-align:right;">平台 Credits</text>
-          <text style="width:130rpx;text-align:right;">模型 Credits</text>
+          <text style="width:130rpx;text-align:right;">平台 Crush</text>
+          <text style="width:130rpx;text-align:right;">模型 Crush</text>
           <text style="width:80rpx;text-align:right;">次数</text>
           <text style="width:140rpx;text-align:right;">最近使用</text>
         </view>
@@ -38,9 +38,9 @@
           <view class="table-row table-header" style="font-size:18rpx;">
             <text style="flex:1.2;">功能</text>
             <text style="width:80rpx;text-align:center;">模型</text>
-            <text style="width:100rpx;text-align:right;">入 Credits</text>
-            <text style="width:100rpx;text-align:right;">出 Credits</text>
-            <text style="width:100rpx;text-align:right;">平台 Credits</text>
+            <text style="width:100rpx;text-align:right;">入 Crush</text>
+            <text style="width:100rpx;text-align:right;">出 Crush</text>
+            <text style="width:100rpx;text-align:right;">平台 Crush</text>
             <text style="width:120rpx;text-align:right;">时间</text>
           </view>
           <view v-for="rec in tokenDetailRecords" :key="rec._id" class="table-row" style="font-size:20rpx;">

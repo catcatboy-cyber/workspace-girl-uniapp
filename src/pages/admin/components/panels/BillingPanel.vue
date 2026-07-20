@@ -2,7 +2,7 @@
   <view class="panel">
     <view class="panel-head">
       <view>
-        <text class="panel-title">Credits 额度配置</text>
+        <text class="panel-title">Crush Credits 额度配置</text>
         <text class="panel-meta">管理首次赠送、充值档位、模型扣费倍率等计费规则。</text>
       </view>
     </view>
@@ -15,12 +15,12 @@
       <switch :checked="billingForm.firstGiftEnabled" @change="onFirstGiftEnabledChange" />
     </view>
     <view v-if="billingForm.firstGiftEnabled" class="field">
-      <text>赠送额度 (credits)</text>
+      <text>赠送额度 (Crush Credits)</text>
       <input v-model.number="billingForm.welcomeTokens" type="number" placeholder="1000000" />
     </view>
 
     <view class="field">
-      <text>1 元兑换额度 (Credits)</text>
+      <text>1 元兑换额度 (Crush Credits)</text>
       <input v-model.number="billingForm.tokensPerYuan" type="number" placeholder="100000" />
     </view>
 

@@ -42,7 +42,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { callFunction } from '@/utils/cloudbase'
-import { checkFeatureAccess, getCurrentUserId } from '@/utils/api'
+import { checkFeatureAccess, getCurrentUserId, contentSecCheck } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { aiLabel } from '@/utils/labels'
 
@@ -117,7 +117,16 @@ async function submit() {
     for (const path of images.value) {
       const cloudPath = `custom-pets/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
       const res: any = await uni.cloud.uploadFile({ cloudPath, filePath: path })
-      if (res.fileID) uploadedUrls.push(res.fileID)
+      if (res.fileID) {
+        // 内容安全检测
+        const { pass } = await contentSecCheck(res.fileID)
+        if (!pass) {
+          submitting.value = false
+          uni.showToast({ title: '内容含违规信息，请重新选择', icon: 'none', duration: 2000 })
+          return
+        }
+        uploadedUrls.push(res.fileID)
+      }
     }
 
     const uid = getCurrentUserId()

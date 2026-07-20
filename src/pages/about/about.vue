@@ -19,8 +19,8 @@
     <view class="card-v2">
       <text class="section-title-v2">技术说明</text>
       <text class="card-text-v2">基于微信云开发构建。{{ aiLabel() }} 能力由 DeepSeek / 腾讯混元等国内大模型驱动，通过 CloudBase 云函数代理调用。</text>
-      <text class="card-text-v2" style="margin-top:14rpx">Credits 额度用于 {{ aiLabel() }} 调用计费，每次生成分析、月度复盘等均会消耗对应 token。</text>
-      <text class="card-text-v2" style="margin-top:14rpx">语音识别由腾讯云 ASR 单独计费，不消耗 Credits 能量。</text>
+      <text class="card-text-v2" style="margin-top:14rpx">Crush Credits 额度用于 {{ aiLabel() }} 调用计费，每次生成分析、月度复盘等均会消耗对应 token。</text>
+      <text class="card-text-v2" style="margin-top:14rpx">语音识别由腾讯云 ASR 单独计费，不消耗 Crush Credits。</text>
     </view>
     <view class="card-v2">
       <text class="section-title-v2">隐私政策</text>

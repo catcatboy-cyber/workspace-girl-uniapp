@@ -3,7 +3,7 @@
     <view class="panel-head">
       <view>
         <text class="panel-title">邀请奖励</text>
-        <text class="panel-meta">{{ rows.length }} 条 · 发出 {{ totalInviter.toLocaleString() }} Credits · 收到 {{ totalInvitee.toLocaleString() }} Credits</text>
+        <text class="panel-meta">{{ rows.length }} 条 · 发出 {{ totalInviter.toLocaleString() }} Crush · 收到 {{ totalInvitee.toLocaleString() }} Crush</text>
       </view>
       <button class="ghost-btn wide-btn" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
     </view>

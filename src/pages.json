@@ -88,13 +88,13 @@
     {
       "path": "pages/token-usage/token-usage",
       "style": {
-        "navigationBarTitleText": "Token 消费明细"
+        "navigationBarTitleText": "Crush Credits 消费明细"
       }
     },
     {
       "path": "pages/token-recharge/token-recharge",
       "style": {
-        "navigationBarTitleText": "Token 加油包"
+        "navigationBarTitleText": "Crush Credits 加油包"
       }
     },
     {

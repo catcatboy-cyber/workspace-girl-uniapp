@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { presetAvatarOptions, isPresetAvatar } from '@/utils/avatar-options'
-import { uploadFile } from '@/utils/api'
+import { uploadFile, contentSecCheck } from '@/utils/api'
 import { createAvatarCloudPath, resolveAvatarSrc } from '@/utils/avatar'
 import { aiLabel } from '@/utils/labels'
 
@@ -131,6 +131,15 @@ async function chooseImage() {
               // #endif
 
               const fileID = await uploadFile(uploadSource, createAvatarCloudPath(tempFilePath))
+
+              // 内容安全检测
+              const { pass } = await contentSecCheck(fileID)
+              if (!pass) {
+                uploadError.value = '内容含违规信息，请重新选择'
+                uploading.value = false
+                return
+              }
+
               avatarValue.value = fileID
               avatarPreviewSrc.value = await resolveAvatarSrc(fileID)
             } catch (error) {

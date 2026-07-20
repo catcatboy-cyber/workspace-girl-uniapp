@@ -9,8 +9,8 @@
       <view class="reward-card-inner">
         <text class="reward-emoji">🎁</text>
         <view class="reward-text-wrap">
-          <text class="reward-title">反馈被采纳，奖励 Credits</text>
-          <text class="reward-desc">提出有价值的建议或 bug，一经采纳即赠 Credits 到账。认真写，采纳率更高。</text>
+          <text class="reward-title">反馈被采纳，奖励 Crush Credits</text>
+          <text class="reward-desc">提出有价值的建议或 bug，一经采纳即赠 Crush Credits 到账。认真写，采纳率更高。</text>
         </view>
       </view>
     </view>

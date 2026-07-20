@@ -1,7 +1,7 @@
 /**
  * 前端展示文案工具
  * - aiLabel(): 受后台开关控制，返回 "AI" 或 "Crush算法"
- * - tokenLabel(): 返回 "Credits"（Token 前端展示名称）
+ * - tokenLabel(): 返回 "Crush Credits"（Token 前端展示名称）
  */
 
 const AI_LABEL_KEY = 'displayAILabel'
@@ -29,10 +29,10 @@ export function aiLabel(): string {
 
 /** Token 的前端展示名称 */
 export function tokenLabel(): string {
-  return 'Credits'
+  return 'Crush Credits'
 }
 
 /** 带单位的 Token 展示 */
 export function tokenUnit(): string {
-  return 'Credits'
+  return 'Crush Credits'
 }

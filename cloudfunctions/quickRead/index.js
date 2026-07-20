@@ -111,7 +111,7 @@ async function checkQuickReadAccess(userId) {
     return {
       ok: false,
       code: tokenCheck.code || 'TOKEN_INSUFFICIENT',
-      message: tokenCheck.message || 'Token 余额不足',
+      message: tokenCheck.message || 'Crush Credits 余额不足',
       ...tokenCheck
     }
   }

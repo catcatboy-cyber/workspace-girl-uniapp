@@ -65,7 +65,7 @@
 
     <view class="sub-bottom-links">
       <view class="sub-bottom-link" @click="goRecharge">
-        <text class="sub-bottom-link-text">只需临时补 Credits？买加油包 →</text>
+        <text class="sub-bottom-link-text">只需临时补 Crush Credits？买加油包 →</text>
       </view>
     </view>
   </view>
@@ -123,8 +123,8 @@ const normalizeFeature = (name: string) => FEATURE_DISPLAY[name] || name
 function buildPlanCards(config: any, status: any) {
   const s = status?.subscription || {}
   const planDefs: any[] = [
-    { key: 'free', name: '免费版', monthlyTokens: 30000, priceText: '￥0', priceSub: '永久', callsText: '30K Credits/30天' },
-    { key: 'pro', name: 'Pro 月卡', monthlyTokens: 300000, priceText: '￥19', priceSub: '/月 · 年付 ￥168', callsText: '300K Credits/30天' },
+    { key: 'free', name: '免费版', monthlyTokens: 300, priceText: '￥0', priceSub: '永久', callsText: '300 Crush Credits/30天' },
+    { key: 'pro', name: 'Pro 月卡', monthlyTokens: 3000, priceText: '￥19', priceSub: '/月 · 年付 ￥168', callsText: '3,000 Crush Credits/30天' },
     { key: 'ultra', name: 'Ultra 月卡', monthlyTokens: -1, priceText: '￥39', priceSub: '/月 · 年付 ￥298', callsText: '不限' }
   ]
   planDefs.forEach((d) => {
@@ -141,7 +141,7 @@ function buildPlanCards(config: any, status: any) {
         d.name = pc.name || d.name
         const mt = pc.monthlyTokens ?? pc.monthlyCalls
         d.monthlyTokens = mt
-        d.callsText = mt === -1 ? '不限' : `${(mt / 1000).toFixed(0)}K Credits/30天`
+        d.callsText = mt === -1 ? '不限' : `${mt.toLocaleString()} Crush Credits/30天`
         if (d.key !== 'free' && pc.priceYuan !== undefined && pc.priceYuan !== null) {
           d.priceText = `￥${pc.priceYuan}`
           if (pc.priceYuanAnnual !== undefined && pc.priceYuanAnnual !== null) d.priceSub = `/月 · 年付 ￥${pc.priceYuanAnnual}`

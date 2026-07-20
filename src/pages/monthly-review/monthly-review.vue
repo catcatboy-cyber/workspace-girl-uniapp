@@ -179,7 +179,7 @@ async function generateCurrentReview() {
     showSuccess('本月复盘已生成')
   } catch (error: any) {
     if (error?.code === 'INSUFFICIENT_BALANCE') {
-      showError(error?.message || 'Token 不足')
+      showError(error?.message || 'Crush Credits 不足')
     } else {
       showError(error?.message || '生成失败')
     }

@@ -39,7 +39,7 @@
     </view>
 
     <view class="note-text" style="padding:12rpx 0;color:#999;font-size:22rpx;">
-      倍率 → 「Credits 额度」tab 的模型扣费倍率 · 新用户赠送 → 「Credits 额度」tab 的首次赠送额度 · 加油包 → 「Credits 额度」tab 的充值档位
+      倍率 → 「Crush Credits 额度」tab 的模型扣费倍率 · 新用户赠送 → 「Crush Credits 额度」tab 的首次赠送额度 · 加油包 → 「Crush Credits 额度」tab 的充值档位
     </view>
 
     <!-- 三档套餐 -->
@@ -57,7 +57,7 @@
             <input v-model="subForm.plans[planKey].name" />
           </view>
           <view class="field">
-            <text>月度Credits（-1=不限）</text>
+            <text>月度 Crush Credits（-1=不限）</text>
             <input v-model.number="subForm.plans[planKey].monthlyTokens" type="number" placeholder="30000" />
           </view>
           <view class="field">
@@ -104,17 +104,17 @@
       <view class="switch-row">
         <view>
           <text class="field-title">启用邀请奖励</text>
-          <text class="field-desc">双方均获得额外 Credits。被邀请人需创建 Crush 并记录事件后才发放。</text>
+          <text class="field-desc">双方均获得额外 Crush Credits。被邀请人需创建 Crush 并记录事件后才发放。</text>
         </view>
         <switch :checked="subForm.referralEnabled" @change="subForm.referralEnabled = $event.detail.value" />
       </view>
       <view v-if="subForm.referralEnabled" class="form-grid" style="margin-top:16rpx;">
         <view class="field">
-          <text>邀请人奖励（Credits）</text>
+          <text>邀请人奖励（Crush Credits）</text>
           <input v-model.number="subForm.inviterRewardTokens" type="number" placeholder="3000" />
         </view>
         <view class="field">
-          <text>被邀请人奖励（Credits）</text>
+          <text>被邀请人奖励（Crush Credits）</text>
           <input v-model.number="subForm.inviteeRewardTokens" type="number" placeholder="5000" />
         </view>
         <view class="field">

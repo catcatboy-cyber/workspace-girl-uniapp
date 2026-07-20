@@ -8,7 +8,7 @@
       <!-- 金币 -->
       <view class="coin-body">
         <view class="coin-shine"></view>
-        <text class="coin-label">Credits</text>
+        <text class="coin-label">Crush</text>
       </view>
       <!-- 到账数量 -->
       <text class="coin-amount">+{{ displayAmount.toLocaleString() }}</text>

@@ -2,8 +2,8 @@
   <view :class="['page v2-mode', uni.getStorageSync('fontSizeMode') === 'large' ? 'font-large' : '']" :style="themeVars">
       <view class="hero-block-v2">
         <text class="hero-tag-v2">BOOST</text>
-        <text class="hero-title-v2">Credits<text class="hl-v2">加油包</text></text>
-        <text class="hero-copy-v2">套餐 Credits 不够？买加油包，不过期。当前额外 Credits：{{ extraTokens.toLocaleString() }}</text>
+        <text class="hero-title-v2">Crush Credits<text class="hl-v2">加油包</text></text>
+        <text class="hero-copy-v2">套餐 Crush Credits 不够？买加油包，不过期。当前额外 Crush Credits：{{ extraTokens.toLocaleString() }}</text>
       </view>
 
       <view v-if="plansLoading" class="card-v2">
@@ -15,11 +15,11 @@
       </view>
 
       <view v-else class="recharge-plan-card" v-for="plan in plans" :key="plan.id">
-        <view class="plan-card-badge" v-if="plan.bonusTokens > 0">赠 {{ plan.bonusTokens.toLocaleString() }} Credits</view>
+        <view class="plan-card-badge" v-if="plan.bonusTokens > 0">赠 {{ plan.bonusTokens.toLocaleString() }} Crush Credits</view>
         <text class="plan-card-name">{{ plan.name }}</text>
         <view class="plan-card-token-row">
           <text class="plan-card-token-num">+{{ totalTokens(plan).toLocaleString() }}</text>
-          <text class="plan-card-token-unit">Credits</text>
+          <text class="plan-card-token-unit">Crush Credits</text>
         </view>
         <text v-if="plan.tagline" class="plan-card-tagline">{{ plan.tagline }}</text>
         <button class="plan-card-btn" :disabled="orderingId === plan.id" @click="createOrder(plan.id)">
