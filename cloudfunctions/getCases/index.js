@@ -103,6 +103,71 @@ async function getCaseListData(caseId, latestResultId) {
   }
 }
 
+// ── v6: 首页 Swiper 滑动批量预加载 ──
+async function getHomeData(cases, detailCaseId) {
+  if (!cases || cases.length === 0) return {}
+
+  const caseIds = cases.map(c => c._id).filter(Boolean)
+  const detailId = caseIds.includes(detailCaseId) ? detailCaseId : caseIds[0]
+  const nonDetailCases = cases.filter(c => c._id !== detailId)
+
+  const detailDashboard = await getCaseDashboardData(detailId,
+    cases.find(c => c._id === detailId)?.latestResultId)
+
+  const lookbackStart = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
+
+  const monthTimelineRes = await db.collection('timeline_records')
+    .where({
+      caseId: db.command.in(caseIds),
+      occurrenceAt: db.command.gte(lookbackStart)
+    })
+    .orderBy('occurrenceAt', 'desc')
+    .limit(1000)
+    .get()
+
+  const assessmentsByCase = {}
+  if (nonDetailCases.length > 0) {
+    const entries = await Promise.all(
+      nonDetailCases.map(async c => {
+        const res = await db.collection('assessments')
+          .where({ caseId: c._id })
+          .orderBy('createdAt', 'desc')
+          .limit(2)
+          .get()
+        return [c._id, res.data || []]
+      })
+    )
+    for (const [id, list] of entries) {
+      assessmentsByCase[id] = list
+    }
+  }
+
+  const timelineByCase = {}
+  for (const r of (monthTimelineRes.data || [])) {
+    (timelineByCase[r.caseId] = timelineByCase[r.caseId] || []).push(r)
+  }
+
+  function sortAsc(list) {
+    return (list || []).sort((a, b) => toTime(a.createdAt) - toTime(b.createdAt))
+  }
+
+  const result = {}
+  for (const c of cases) {
+    const id = c._id
+    const recentTimeline = timelineByCase[id] || []
+    if (id === detailId) {
+      result[id] = { ...detailDashboard, recentTimeline }
+    } else {
+      const assessments = sortAsc(assessmentsByCase[id] || [])
+      const latestAssessment = c.latestResultId
+        ? assessments.find(a => a._id === c.latestResultId) || assessments[assessments.length - 1] || null
+        : assessments[assessments.length - 1] || null
+      result[id] = { assessments, latestResult: latestAssessment, recentTimeline }
+    }
+  }
+  return result
+}
+
 exports.main = async (event) => {
   try {
     const userId = await requireAuthenticatedUserId(app, event)
@@ -115,13 +180,18 @@ exports.main = async (event) => {
       .get()
 
     const caseIds = cases.map((item) => item._id).filter(Boolean)
-    const detailCaseIds = mode === 'home'
-      ? (caseIds.includes(detailCaseId) ? [detailCaseId] : caseIds.slice(0, 1))
-      : mode === 'full'
-        ? caseIds
-        : []
 
-    if (detailCaseIds.length > 0) {
+    if (mode === 'home') {
+      const homeData = await getHomeData(cases, detailCaseId)
+      cases.forEach((item) => {
+        const data = homeData[item._id] || {}
+        item.assessments = data.assessments || []
+        item.timeline = data.timeline || []
+        item.latestResult = data.latestResult || null
+        item.recentTimeline = data.recentTimeline || []
+      })
+    } else if (mode === 'full') {
+      const detailCaseIds = caseIds
       const caseDataEntries = await Promise.all(
         cases
           .filter((item) => detailCaseIds.includes(item._id))

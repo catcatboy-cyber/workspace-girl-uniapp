@@ -100,7 +100,10 @@
       </view>
 
       <!-- 头像放大预览 -->
-      <view v-if="showPhotoPreview" class="cs-photo-overlay" @click="showPhotoPreview = false">
+      <view v-if="showPhotoPreview" class="cs-photo-overlay"
+        @click="showPhotoPreview = false"
+        @touchmove.stop.prevent="() => {}"
+      >
         <image :src="caseAvatar" mode="aspectFit" class="cs-photo-full" />
       </view>
 

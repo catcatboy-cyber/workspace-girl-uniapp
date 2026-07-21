@@ -13,36 +13,154 @@
         <text class="referral-notice-text">🎉 受邀奖励！已获得 +{{ indexInviteeNoticeAmount }} Crush Credits →</text>
       </view>
       <block v-else>
-        <!-- Campus Signal 雷达首页（含空状态） -->
+        <!-- 首次多 crush 滑动提示 -->
+        <view v-if="showSwipeHint" class="swipe-hint">
+          <text class="swipe-hint-text">← 左右滑动切换 →</text>
+        </view>
+
+        <!-- Campus Signal 雷达首页 -->
         <CampusSignalHome
+          v-if="cases.length === 0"
           :page-style="themeVars"
           :loading="loading"
-          :has-case="cases.length > 0"
-          :case-name="latestCase.name || '--'"
-          :case-avatar="latestCase.profile?.avatarUrl || latestCase.profile?.avatar || ''"
-          :case-type-label="latestHeroTypeLabel"
-          :profile-items="latestProfileItems"
-          :has-latest-result="!!latestCase.latestResult"
-          :intent-score="latestCase.latestResult?.intentScore ?? '暂无'"
-          :risk-score="latestCase.latestResult?.consistencyRiskScore ?? '暂无'"
-          :taohua-score="taohuaTeaserData?.score ?? '--'"
-          :latest-signal="quickFeedbackSignal"
-          :interaction-balance="latestTimelineStats"
+          :has-case="false"
+          case-name="--"
+          case-avatar=""
+          case-type-label="Crush"
+          :profile-items="[]"
+          :has-latest-result="false"
+          intent-score="暂无"
+          risk-score="暂无"
+          taohua-score="--"
+          :latest-signal="null"
+          :interaction-balance="null"
           :taohua-teaser-data="taohuaTeaserData"
-          :guidance-text="taohuaTeaserData?.guidance || ''"
-          :balance-callout="balanceCalloutForHome"
+          guidance-text=""
+          balance-callout=""
           :pet-name="selectedPet.displayName"
           :has-self-profile="hasUsableSelfProfile(selfProfile)"
           :font-size-mode="fontSizeMode"
-          @open-case-detail="goCaseDetail(latestCase.caseId || latestCase._id)"
-          @open-latest-signal="openAnalysisSheet"
-          @open-interaction-balance="openBalanceSheet"
-          @open-taohua="goTaohua"
-          @open-guidance="openGuidanceSheet"
-          @open-quick-record="onQuickRecordAction"
           @start-assessment="showFullAssessment = true"
           @quick-create="showQuickCreate = true"
         />
+
+        <view v-else-if="cases.length === 1" id="crush-slide-0" class="crush-slide-measure">
+          <CampusSignalHome
+            :page-style="themeVars"
+            :loading="false"
+            :has-case="true"
+            :case-name="cases[0].name || '--'"
+            :case-avatar="cases[0].profile?.avatarUrl || cases[0].profile?.avatar || ''"
+            :case-type-label="getHeroTypeLabel(cases[0])"
+            :profile-items="getProfileItems(cases[0])"
+            :has-latest-result="!!cases[0].latestResult"
+            :intent-score="cases[0].latestResult?.intentScore ?? '暂无'"
+            :risk-score="cases[0].latestResult?.consistencyRiskScore ?? '暂无'"
+            :taohua-score="taohuaTeaserData?.score ?? '--'"
+            :latest-signal="getQuickSignal(cases[0])"
+            :interaction-balance="getTimelineStats(cases[0])"
+            :taohua-teaser-data="taohuaTeaserData"
+            :guidance-text="taohuaTeaserData?.guidance || ''"
+            :balance-callout="getBalanceCallout(cases[0])"
+            :pet-name="selectedPet.displayName"
+            :has-self-profile="hasUsableSelfProfile(selfProfile)"
+            :font-size-mode="fontSizeMode"
+            @open-case-detail="goCaseDetail(cases[0].caseId || cases[0]._id)"
+            @open-latest-signal="openAnalysisSheet"
+            @open-interaction-balance="openBalanceSheet"
+            @open-taohua="goTaohua"
+            @open-guidance="openGuidanceSheet"
+            @open-quick-record="onQuickRecordAction"
+            @start-assessment="showFullAssessment = true"
+            @quick-create="showQuickCreate = true"
+          />
+        </view>
+
+        <template v-else>
+          <swiper
+            :style="{ height: swiperHeight }"
+            :current="currentCrushIndex"
+            :circular="cases.length > 2"
+            :duration="300"
+            :disable-touch="swipeDisabled"
+            @change="onSwiperChange"
+          >
+            <swiper-item v-for="(c, i) in cases" :key="c.caseId || c._id">
+              <view :id="'crush-slide-' + i" class="crush-slide-measure">
+                <CampusSignalHome
+                  :class="{ 'crush-slide-paused': i !== currentCrushIndex }"
+                  :page-style="themeVars"
+                  :loading="false"
+                  :has-case="true"
+                  :case-name="c.name || '--'"
+                  :case-avatar="c.profile?.avatarUrl || c.profile?.avatar || ''"
+                  :case-type-label="getHeroTypeLabel(c)"
+                  :profile-items="getProfileItems(c)"
+                  :has-latest-result="!!c.latestResult"
+                  :intent-score="c.latestResult?.intentScore ?? '暂无'"
+                  :risk-score="c.latestResult?.consistencyRiskScore ?? '暂无'"
+                  :taohua-score="taohuaTeaserData?.score ?? '--'"
+                  :latest-signal="getQuickSignal(c)"
+                  :interaction-balance="getTimelineStats(c)"
+                  :taohua-teaser-data="taohuaTeaserData"
+                  :guidance-text="taohuaTeaserData?.guidance || ''"
+                  :balance-callout="getBalanceCallout(c)"
+                  :pet-name="selectedPet.displayName"
+                  :has-self-profile="hasUsableSelfProfile(selfProfile)"
+                  :font-size-mode="fontSizeMode"
+                  @open-case-detail="goCaseDetail(c.caseId || c._id)"
+                  @open-latest-signal="openAnalysisSheet"
+                  @open-interaction-balance="openBalanceSheet"
+                  @open-taohua="goTaohua"
+                  @open-guidance="openGuidanceSheet"
+                  @open-quick-record="onQuickRecordAction"
+                  @start-assessment="showFullAssessment = true"
+                  @quick-create="showQuickCreate = true"
+                />
+              </view>
+            </swiper-item>
+          </swiper>
+
+          <view class="swipe-indicator" aria-label="Crush 滑动指示器">
+            <view class="swipe-dots-row">
+              <template v-if="cases.length <= 5">
+                <view
+                  v-for="(c, i) in cases"
+                  :key="c.caseId || c._id"
+                  :class="['swipe-dot-hit', i === currentCrushIndex ? 'active' : '']"
+                  :aria-label="'切换到 ' + (c.name || 'Crush')"
+                  @click.stop="onDotClick(i)"
+                >
+                  <view class="swipe-dot" />
+                </view>
+              </template>
+              <template v-else>
+                <view v-if="currentCrushIndex > 2" class="swipe-dot-hit" @click.stop="onDotClick(0)">
+                  <view class="swipe-dot" />
+                </view>
+                <text v-if="currentCrushIndex > 2" class="swipe-dots-more">…</text>
+                <view
+                  v-for="i in 5"
+                  :key="'dot-' + i"
+                  v-show="(currentCrushIndex + i - 3) >= 0 && (currentCrushIndex + i - 3) < cases.length"
+                  :class="['swipe-dot-hit', (currentCrushIndex + i - 3) === currentCrushIndex ? 'active' : '']"
+                  @click.stop="onDotClick(currentCrushIndex + i - 3)"
+                >
+                  <view class="swipe-dot" />
+                </view>
+                <text v-if="currentCrushIndex < cases.length - 3" class="swipe-dots-more">…</text>
+                <view
+                  v-if="currentCrushIndex < cases.length - 3"
+                  class="swipe-dot-hit"
+                  @click.stop="onDotClick(cases.length - 1)"
+                >
+                  <view class="swipe-dot" />
+                </view>
+              </template>
+            </view>
+            <text class="swipe-label">{{ cases[currentCrushIndex]?.name || '--' }} · {{ currentCrushIndex + 1 }}/{{ cases.length }}</text>
+          </view>
+        </template>
 
         <!-- 评估表单（全屏） -->
         <view v-if="showFullAssessment">
@@ -61,6 +179,7 @@
             <view class="qr-sheet-topbar">
               <text class="qr-sheet-close" @click="closeQuickSheet">×</text>
             </view>
+            <text v-if="hasQuickDraft" class="qr-draft-hint">有未保存草稿，请先提交或清空后再切换 Crush</text>
         <view class="record-block" style="border:none;box-shadow:none;margin:0;background:transparent;">
           <view class="block-head"><text class="block-title">快速记录</text><text class="block-badge">别脑补</text></view>
           <view class="role-row">
@@ -450,6 +569,81 @@ function getQuickQuestionPayload() {
   return { key: item.value, label: item.label }
 }
 
+// ── Crush 滑动：单 case 数据源 helpers（swiper + Sheet 共用）──
+const SWIPE_TAG = '[swipe]'
+
+function getTimelineRecordTs(r: any): number {
+  return new Date(r?.occurrenceAt || r?.createdAt || r?.date || 0).getTime()
+}
+
+function filterUserTimelineRecords(records: any[]): any[] {
+  return (records || []).filter((r) => {
+    const type = String(r?.type || '')
+    return type !== 'assessment' && type !== 'trend' && type !== 'system'
+      && type !== 'weekly_review' && type !== 'monthly_review'
+  })
+}
+
+function getThisMonthRecords(c: any): any[] {
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+  const source = c?.recentTimeline?.length
+    ? c.recentTimeline
+    : (Array.isArray(c?.timeline) ? c.timeline : [])
+  return filterUserTimelineRecords(source).filter((r) => getTimelineRecordTs(r) >= monthStart)
+}
+
+function getTimelineStats(c: any) {
+  return buildTimelineStats(getThisMonthRecords(c))
+}
+
+function getProfileItems(c: any): string[] {
+  const p = c?.profile
+  if (!p) return []
+  const items: string[] = []
+  if (p.age) items.push(`${p.age} 岁`)
+  if (p.gender) items.push(p.gender)
+  if (p.zodiac) items.push(`属${p.zodiac}`)
+  if (p.constellation) items.push(p.constellation)
+  if (p.occupation) items.push(p.occupation)
+  return items
+}
+
+function getHeroTypeLabel(c: any): string {
+  const relationType = String(c?.profile?.relationType || '').trim()
+  if (relationType === 'close_friend') return 'Friend Crush'
+  if (relationType === 'romantic') return 'Crush'
+  return 'Crush 档案'
+}
+
+function getLatestTrend(c: any) {
+  if (!c?.latestResult) return null
+  const sorted = [...(c.assessments || [])].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  )
+  if (!sorted.length) return null
+  const previous = sorted.length > 1 ? sorted[sorted.length - 2] : null
+  return compareAssessments(previous, c.latestResult)
+}
+
+function getQuickSignal(c: any) {
+  if (!c?.latestResult) return null
+  const insight = c.latestResult.eventInsight
+  const trend = getLatestTrend(c)
+  if (!insight && !trend) return null
+  return mapEventSignal(insight, trend)
+}
+
+function getBalanceCallout(c: any): string {
+  const s = getTimelineStats(c)
+  const t = s?.targetInitiatedCount || 0
+  const self = s?.selfInitiatedCount || 0
+  if (t + self === 0) return '暂无数据'
+  if (t > self) return 'TA更主动'
+  if (self > t) return '你更主动'
+  return '双方平衡'
+}
+
 const latestCase = computed(() => {
   const active = activeCaseId.value
   if (active) {
@@ -459,36 +653,11 @@ const latestCase = computed(() => {
   return cases.value[0] || {} as any
 })
 
-const latestProfileItems = computed(() => {
-  const p = latestCase.value?.profile
-  if (!p) return []
-  const items: string[] = []
-  if (p.age) items.push(`${p.age} 岁`)
-  if (p.gender) items.push(p.gender)
-  if (p.zodiac) items.push(`属${p.zodiac}`)
-  if (p.constellation) items.push(p.constellation)
-  if (p.occupation) items.push(p.occupation)
-  return items
-})
+const latestProfileItems = computed(() => getProfileItems(latestCase.value))
 
-const latestHeroTypeLabel = computed(() => {
-  const relationType = String(latestCase.value?.profile?.relationType || '').trim()
-  if (relationType === 'close_friend') return 'Friend Crush'
-  if (relationType === 'romantic') return 'Crush'
-  return 'Crush 档案'
-})
+const latestHeroTypeLabel = computed(() => getHeroTypeLabel(latestCase.value))
 
-// 过滤本月记录，与 case-detail 页面保持一致
-function getTimelineRecordTs(r: any): number {
-  return new Date(r?.occurrenceAt || r?.createdAt || r?.date || 0).getTime()
-}
-const thisMonthTimeline = computed(() => {
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
-  const timeline = Array.isArray(latestCase.value?.timeline) ? latestCase.value.timeline : []
-  return timeline.filter((r: any) => getTimelineRecordTs(r) >= monthStart)
-})
-const latestTimelineStats = computed(() => buildTimelineStats(thisMonthTimeline.value))
+const latestTimelineStats = computed(() => getTimelineStats(latestCase.value))
 
 const latestCrushType = computed(() => deriveCrushType({
   ...(latestCase.value?.latestResult || {}),
@@ -524,13 +693,7 @@ const latestResultKey = computed(() => {
     || ''
 })
 
-const latestTrend = computed(() => {
-  if (!latestCase.value?.latestResult || !latestCase.value?.assessments?.length) return null
-  const previous = latestCase.value.assessments.length > 1
-    ? latestCase.value.assessments[latestCase.value.assessments.length - 2]
-    : null
-  return compareAssessments(previous, latestCase.value.latestResult)
-})
+const latestTrend = computed(() => getLatestTrend(latestCase.value))
 
 const latestStatusCard = computed(() => {
   if (!latestCase.value?.latestResult) return null
@@ -661,13 +824,7 @@ const eventInsightTags = computed(() => {
   return [...new Set(tags)].slice(0, 4)
 })
 
-const quickFeedbackSignal = computed(() => {
-  if (!latestCase.value?.latestResult) return null
-  const insight = latestCase.value.latestResult.eventInsight
-  const trend = latestTrend.value
-  if (!insight && !trend) return null
-  return mapEventSignal(insight, trend)
-})
+const quickFeedbackSignal = computed(() => getQuickSignal(latestCase.value))
 
 // AnalysisSheet computed props
 const analysisAiState = computed(() => {
@@ -752,6 +909,123 @@ const showProfileReminder = computed(() =>
   !hasUsableSelfProfile(selfProfile.value)
 )
 
+// ── Crush 滑动：Swiper 状态 ──
+const swiperHeight = ref('1200rpx')
+const currentCrushIndex = ref(0)
+const showSwipeHint = ref(false)
+// 防循环：watch 程序化设置 currentCrushIndex 时跳过 onSwiperChange
+const swiperProgrammatic = ref(false)
+let measureTimer: ReturnType<typeof setTimeout> | null = null
+
+function measureSwiperHeight() {
+  if (cases.value.length === 0) return
+  // 节流：200ms 内只执行一次，避免渲染循环
+  if (measureTimer) return
+  measureTimer = setTimeout(() => {
+    measureTimer = null
+    const id = `#crush-slide-${currentCrushIndex.value}`
+    uni.createSelectorQuery()
+      .select(id)
+      .boundingClientRect((rect: any) => {
+        if (rect?.height) {
+          const h = Math.ceil(rect.height + uni.upx2px(24))
+          swiperHeight.value = h + 'px'
+          console.log(SWIPE_TAG, 'measureSwiperHeight', { id, rectH: rect.height, finalH: h, currentIndex: currentCrushIndex.value })
+        } else {
+          console.log(SWIPE_TAG, 'measureSwiperHeight MISS', { id, currentIndex: currentCrushIndex.value })
+        }
+      }).exec()
+  }, 200)
+}
+
+watch(activeCaseId, (id) => {
+  console.log(SWIPE_TAG, 'watch activeCaseId', { id, casesLen: cases.value.length })
+  if (!id || cases.value.length === 0) {
+    currentCrushIndex.value = 0
+    return
+  }
+  const idx = cases.value.findIndex(c => (c.caseId || c._id) === id)
+  console.log(SWIPE_TAG, 'watch activeCaseId idx', { idx, current: currentCrushIndex.value })
+  if (idx >= 0) {
+    swiperProgrammatic.value = true
+    currentCrushIndex.value = idx
+    nextTick(() => { swiperProgrammatic.value = false })
+  }
+  nextTick(() => measureSwiperHeight())
+})
+
+watch([() => cases.value.length, fontSizeMode], () => {
+  console.log(SWIPE_TAG, 'watch cases.length|fontSizeMode', { len: cases.value.length, fontSizeMode: fontSizeMode.value })
+  nextTick(() => measureSwiperHeight())
+})
+
+const hasQuickDraft = computed(() =>
+  !!quickDesc.value
+  || !!quickChatSelfName.value
+  || !!quickChatTargetName.value
+  || quickAttachments.value.length > 0
+  || recording.value
+)
+
+const swipeDisabled = computed(() => {
+  const v = quickSheetVisible.value
+    || analysisSheetVisible.value
+    || balanceSheetVisible.value
+    || guidanceSheetVisible.value
+    || showFullAssessment.value
+    || showQuickCreate.value
+    || showSpeakSheet.value
+    || hasQuickDraft.value
+  return v
+})
+
+function onSwiperChange(e: any) {
+  const newIndex = e.detail.current
+  console.log(SWIPE_TAG, 'onSwiperChange', { newIndex, oldIndex: currentCrushIndex.value, programmatic: swiperProgrammatic.value, casesLen: cases.value.length, source: e.detail.source })
+  // 防止与 watch(activeCaseId) 形成循环：用 flag 阻断程序化触发的 change
+  if (swiperProgrammatic.value) {
+    console.log(SWIPE_TAG, 'onSwiperChange SKIP (programmatic)')
+    return
+  }
+  currentCrushIndex.value = newIndex
+  const target = cases.value[newIndex]
+  const nextId = target?.caseId || target?._id
+  console.log(SWIPE_TAG, 'onSwiperChange target', { nextId, activeCaseId: activeCaseId.value, name: target?.name })
+  if (!nextId || nextId === activeCaseId.value) return
+  setActiveCaseId(nextId)
+  activeCaseId.value = nextId
+  closeAllSheets()
+}
+
+function onDotClick(index: number) {
+  console.log(SWIPE_TAG, 'onDotClick', { index, current: currentCrushIndex.value, disabled: swipeDisabled.value, casesLen: cases.value.length })
+  if (swipeDisabled.value) {
+    if (hasQuickDraft.value) onSwipeAttemptWithDraft()
+    return
+  }
+  if (index === currentCrushIndex.value) return
+  const target = cases.value[index]
+  const nextId = target?.caseId || target?._id
+  console.log(SWIPE_TAG, 'onDotClick target', { nextId, name: target?.name })
+  if (!nextId) return
+  currentCrushIndex.value = index
+  setActiveCaseId(nextId)
+  activeCaseId.value = nextId
+  closeAllSheets()
+}
+
+function onSwipeAttemptWithDraft() {
+  uni.showToast({ title: '请先完成或清空草稿', icon: 'none', duration: 2000 })
+}
+
+function closeAllSheets() {
+  quickSheetVisible.value = false
+  analysisSheetVisible.value = false
+  balanceSheetVisible.value = false
+  guidanceSheetVisible.value = false
+  showSpeakSheet.value = false
+}
+
 // Campus Signal: 互动天平面板
 const balanceSheetVisible = ref(false)
 const balanceSheetData = computed(() => buildDivergingBars(latestTimelineStats.value))
@@ -762,14 +1036,7 @@ function openGuidanceSheet() { guidanceSheetVisible.value = true }
 function closeGuidanceSheet() { guidanceSheetVisible.value = false }
 
 // Campus Signal: 互动天平摘要
-const balanceCalloutForHome = computed(() => {
-  const s = latestTimelineStats.value
-  const t = s.targetInitiatedCount, self = s.selfInitiatedCount
-  if (t + self === 0) return '暂无数据'
-  if (t > self) return 'TA更主动'
-  if (self > t) return '你更主动'
-  return '双方平衡'
-})
+const balanceCalloutForHome = computed(() => getBalanceCallout(latestCase.value))
 
 const quickSubjectRoleHint = computed(() => {
   const label = mapSubjectRoleLabel(quickSubjectRole.value)
@@ -943,6 +1210,15 @@ function avatarLabel(name?: string) {
 // ---- pet animation ----
 const petFrame = ref(0)
 const showSpeakSheet = ref(false)
+// swipeDisabled watch 放这里确保所有依赖 ref 已声明
+watch(swipeDisabled, (v) => {
+  console.log(SWIPE_TAG, 'swipeDisabled changed', {
+    v, quickSheet: quickSheetVisible.value, analysis: analysisSheetVisible.value,
+    balance: balanceSheetVisible.value, guidance: guidanceSheetVisible.value,
+    fullAssessment: showFullAssessment.value, quickCreate: showQuickCreate.value,
+    speak: showSpeakSheet.value, hasDraft: hasQuickDraft.value
+  })
+})
 const petMsg = ref('')
 const petState = ref('idle')
 const selectedPet = ref(getPetById(getSelectedPetId()))
@@ -1305,7 +1581,7 @@ const feedbackPetScene = computed<PetScene | null>(() => {
 
 const dataReady = ref(false)
 const lastDataVersion = ref(0)
-const HOME_CASES_CACHE_KEY = 'homeCasesCache:v1'
+const HOME_CASES_CACHE_KEY = 'homeCasesCache:v2'
 
 function hasCaseInList(caseId: string) {
   return Boolean(caseId && cases.value.some((item: any) => item.caseId === caseId || item._id === caseId))
@@ -1361,6 +1637,7 @@ onLoad((options: any) => {
   if (options?.inviteCode) {
     uni.setStorageSync('pendingInviteCode', options.inviteCode)
   }
+  uni.removeStorageSync('homeCasesCache:v1')
 })
 
 onShow(() => {
@@ -1512,6 +1789,16 @@ async function loadData() {
       mode: 'home',
       detailCaseId: getActiveCaseId() || activeCaseId.value
     })
+    console.log(SWIPE_TAG, 'getCases response', {
+      len: list?.length,
+      items: (list || []).map((c: any) => ({
+        id: (c.caseId || c._id || '').slice(-12),
+        name: c.name,
+        hasLatestResult: !!c.latestResult,
+        recentTimelineLen: c.recentTimeline?.length || 0,
+        assessmentsLen: c.assessments?.length || 0,
+      }))
+    })
     applyCasesList(list)
     writeHomeCasesCache(uid, cases.value)
     indexAILog('loadData_applied', {
@@ -1532,6 +1819,25 @@ async function loadData() {
     indexAILog('loadData_finally')
     loading.value = false
     applyPendingOnboardingAction()
+    console.log(SWIPE_TAG, 'loadData done', { casesLen: cases.value.length, activeCaseId: activeCaseId.value, fontSizeMode: fontSizeMode.value })
+    nextTick(() => measureSwiperHeight())
+    if (cases.value.length > 1 && !uni.getStorageSync('swipeHintShown')) {
+      showSwipeHint.value = true
+      uni.setStorageSync('swipeHintShown', true)
+      console.log(SWIPE_TAG, 'showSwipeHint YES')
+      setTimeout(() => { showSwipeHint.value = false }, 3000)
+    }
+    // 打印每个 case 的关键字段
+    cases.value.forEach((c: any, i: number) => {
+      console.log(SWIPE_TAG, `case[${i}]`, {
+        id: c.caseId || c._id,
+        name: c.name,
+        hasLatestResult: !!c.latestResult,
+        hasRecentTimeline: !!(c.recentTimeline && c.recentTimeline.length),
+        recentTimelineLen: c.recentTimeline?.length || 0,
+        assessmentsLen: c.assessments?.length || 0,
+      })
+    })
   }
 }
 
@@ -2865,6 +3171,91 @@ function goTaohua() {
 .brb-sep { width: 4rpx; height: 100%; background: var(--surface-dim, #f9f9f9); flex-shrink: 0; }
 .brb-ta { height: 100%; background: var(--accent-cool, #4ECDC4); border-radius: 0 6rpx 6rpx 0; min-width: 8rpx; }
 .brb-ta.risk { background: var(--risk, #FF5252); }
+
+/* ── Crush Swiper ── */
+.v2-mode swiper { width: 100%; }
+
+.crush-slide-paused :deep(.cs-beam),
+.crush-slide-paused :deep(.cs-halo),
+.crush-slide-paused :deep(.cs-petal),
+.crush-slide-paused :deep(.cs-node) {
+  animation-play-state: paused;
+}
+
+.swipe-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 0;
+}
+.swipe-dots-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+}
+.swipe-dot-hit {
+  width: 88rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.swipe-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--border, #111);
+  background: var(--surface, #fff);
+  transition: all 0.2s ease;
+}
+.swipe-dot-hit.active .swipe-dot {
+  background: var(--hero, #FF6B6B);
+  border-color: var(--hero, #FF6B6B);
+  transform: scale(1.3);
+}
+.swipe-dots-more {
+  width: 48rpx;
+  text-align: center;
+  font-size: $fs-caption;
+  color: var(--text-muted, #666);
+}
+.swipe-label {
+  font-size: $fs-caption;
+  color: var(--text-muted, #666);
+}
+
+.swipe-hint {
+  position: fixed;
+  top: 200rpx;
+  left: 50%;
+  z-index: 200;
+  background: var(--accent, #FFD93D);
+  color: var(--ink, #111);
+  border: 3rpx solid var(--ink, #111);
+  box-shadow: 6rpx 6rpx 0 var(--ink, #111);
+  padding: 16rpx 32rpx;
+  transform: translateX(-50%) rotate(-0.5deg);
+  animation: swipe-hint-fade 3s ease-out forwards;
+}
+.swipe-hint-text {
+  font-size: $fs-body;
+  font-weight: $fw-heading;
+}
+@keyframes swipe-hint-fade {
+  0% { opacity: 0; transform: translateX(-50%) rotate(-0.5deg) translateY(10rpx); }
+  15% { opacity: 1; transform: translateX(-50%) rotate(-0.5deg) translateY(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.qr-draft-hint {
+  display: block;
+  padding: 8rpx 24rpx;
+  font-size: $fs-caption;
+  color: var(--text-muted, #666);
+}
 
 </style>
 
