@@ -75,7 +75,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getSubscriptionConfig, getSubscriptionStatus, getRechargePlans, unifiedOrder, queryOrder, confirmPayment, createVirtualPayOrder, confirmVirtualPay } from '@/utils/api'
+import { getSubscriptionConfig, getSubscriptionStatus, getRechargePlans, createVirtualPayOrder, confirmVirtualPay } from '@/utils/api'
 import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { getCurrentThemeId, getFontSizeMode, getThemeStyle, applyThemeChrome } from '@/utils/theme'
 import { bumpDataVersion } from '@/utils/helpers'
@@ -258,7 +258,7 @@ async function loadSubscriptionData() {
       currentPlan.value = statusRes.subscription
     }
     if (plansRes?.success) {
-      useVirtualPay.value = plansRes.useVirtualPay === true
+      // virtual pay always on for WeChat
     }
   } catch (_) {
     // 静默降级 — 页面显示空状态即可
@@ -277,7 +277,6 @@ onShow(() => {
 const upgradingPlan = ref('')
 const upgradeMessage = ref('')
 const upgradeOk = ref(false)
-const useVirtualPay = ref(false)
 const showCoin = ref(false)
 const coinAmount = ref(0)
 const coinSubtitle = ref('')
@@ -293,11 +292,13 @@ async function doVirtualSubscribe(planKey: string, priceOpt: { billingCycle: str
     const { paySig, signature, signData, outTradeNo, mode } = result
 
     const payResult: any = await new Promise((resolve, reject) => {
-      uni.requestVirtualPayment({
+      // #ifdef MP-WEIXIN
+      wx.requestVirtualPayment({
         mode, paySig, signature,
         signData,
         success: resolve, fail: reject
       })
+      // #endif
     })
     // payResult.orderId 就是微信内部订单号 wx_order_id，query_order 必须用它查单
     const wxOrderId = payResult?.orderId || ''
@@ -342,118 +343,11 @@ async function onUpgrade(planKey: string) {
   try {
     const priceOpt = getSelectedPriceOption(planKey)
     // #ifdef MP-WEIXIN
-    if (useVirtualPay.value) {
-      await doVirtualSubscribe(planKey, priceOpt)
-      return
-    }
+    await doVirtualSubscribe(planKey, priceOpt)
     // #endif
-    // 1. 服务端统一下单（创建DB订单 + 微信V3下单 + 生成支付参数，一站式）
-    // #ifdef MP-WEIXIN
-    const res = await unifiedOrder({
-      productType: 'subscription',
-      planKey,
-      billingCycle: priceOpt.billingCycle,
-      priceVariant: priceOpt.priceVariant
-    })
-    if (!res?.success) {
-      upgradeMessage.value = res?.message || '创建订单失败'
-      return
-    }
-    const payParams = res.payParams
-    const orderNo = res.order?.orderNo
-
-    if (!payParams?.timeStamp) {
-      upgradeMessage.value = '支付参数缺失，请重试'
-      return
-    }
-
-    // 2. 调起微信支付（payParams 直接来自服务端，无需穿透 data）
-    try {
-      await new Promise((resolve, reject) => {
-        wx.requestPayment({
-          timeStamp: String(payParams.timeStamp || ''),
-          nonceStr: String(payParams.nonceStr || ''),
-          package: payParams.package || '',
-          signType: payParams.signType || 'RSA',
-          paySign: String(payParams.paySign || ''),
-          success: resolve,
-          fail: reject
-        })
-      })
-    } catch (payErr: any) {
-      if (payErr?.errMsg?.includes('cancel')) {
-        upgradeMessage.value = '已取消支付'
-      } else {
-        upgradeMessage.value = '支付失败: ' + (payErr?.errMsg || '')
-      }
-      return
-    }
-    // #endif
-
     // #ifdef H5
     upgradeMessage.value = '请在小程序中完成支付'
-    return
     // #endif
-
-    // 3. 支付成功 → 确认发货 + 轮询双保险
-    let paid = false
-    let pendingFulfillment = false
-
-    // 3a. 立即调云函数确认发货（wx.requestPayment success = 微信已扣款）
-    try {
-      const confirmed = await confirmPayment({ orderNo })
-      if (confirmed?.order?.status === 'paid' && confirmed.order.fulfillmentStatus === 'succeeded') {
-        paid = true
-        upgradeOk.value = true
-        const targetPlan = plans.value.find((p: any) => p.key === planKey)
-        const limit = targetPlan?.monthlyTokens
-        coinAmount.value = limit === -1 ? 99999 : (Number.isFinite(limit) && limit > 0 ? limit : 0)
-        coinSubtitle.value = `已升级至 ${res.order?.planName || planKey}`
-        showCoin.value = true
-        bumpDataVersion()
-        await loadSubscriptionData()
-        return
-      }
-    } catch (e: any) {
-    }
-
-    // 3b. 轮询兜底（30s 窗口，直接调微信 V3 查单）
-    for (let i = 0; i < 20; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      let confirm: any
-      try {
-        confirm = await queryOrder({ orderNo })
-      } catch (e) { continue }
-      if (confirm?.order?.status === 'paid') {
-        if (confirm.order.fulfillmentStatus === 'succeeded') {
-          paid = true
-          break
-        }
-        paid = true
-        pendingFulfillment = true
-        break
-      }
-    }
-    if (paid) {
-      if (pendingFulfillment) {
-        upgradeOk.value = true
-        upgradeMessage.value = '支付成功，权益生效处理中（约 1 分钟），可稍后刷新查看'
-        bumpDataVersion()
-      } else {
-        upgradeOk.value = true
-        const targetPlan = plans.value.find((p: any) => p.key === planKey)
-        const limit = targetPlan?.monthlyTokens
-        coinAmount.value = limit === -1 ? 99999 : (Number.isFinite(limit) && limit > 0 ? limit : 0)
-        coinSubtitle.value = `已升级至 ${res.order?.planName || planKey}`
-        showCoin.value = true
-        bumpDataVersion()
-        await loadSubscriptionData()
-      }
-    } else {
-      upgradeOk.value = true
-      upgradeMessage.value = '支付成功，权益生效处理中（约 1 分钟），可稍后刷新查看'
-      bumpDataVersion()
-    }
   } catch (e: any) {
     upgradeMessage.value = e?.message || '网络错误，请稍后重试'
   } finally {

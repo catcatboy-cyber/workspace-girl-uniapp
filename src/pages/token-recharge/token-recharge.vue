@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId, getRechargePlans, unifiedOrder, queryOrder, confirmPayment, getSubscriptionStatus, createVirtualPayOrder, confirmVirtualPay } from '@/utils/api'
+import { getCurrentUserId, getRechargePlans, getSubscriptionStatus, createVirtualPayOrder, confirmVirtualPay } from '@/utils/api'
 import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { bumpDataVersion } from '@/utils/helpers'
 import { aiLabel } from '@/utils/labels'
@@ -52,7 +52,6 @@ const plansLoading = ref(false)
 const plansError = ref('')
 const orderingId = ref('')
 const orderMessage = ref('')
-const useVirtualPay = ref(false) // 后台开关
 const orderOk = ref(false)
 const createdOrderId = ref('')
 const showCoin = ref(false)
@@ -91,7 +90,6 @@ async function loadPlans() {
     const result = await getRechargePlans()
     if (result?.success) {
       plans.value = Array.isArray(result.tiers) ? result.tiers : []
-      useVirtualPay.value = result.useVirtualPay === true
       if (plans.value.length === 0) plansError.value = '暂无启用的充值档位，请联系管理员配置。'
     } else {
       plansError.value = result?.message || '加载充值档位失败'
@@ -154,113 +152,12 @@ async function createOrder(planId: string) {
   orderOk.value = false
   createdOrderId.value = ''
   try {
-    // 0. 虚拟支付通道：后台开启
     // #ifdef MP-WEIXIN
-    if (useVirtualPay.value) {
-      await doVirtualRecharge(planId)
-      return
-    }
+    await doVirtualRecharge(planId)
     // #endif
-    // 1. 服务端统一下单（创建DB订单 + 微信V3下单 + 生成支付参数，一站式）
-    // #ifdef MP-WEIXIN
-    const result = await unifiedOrder({ productType: 'recharge', productId: planId })
-    if (!result?.success) {
-      orderMessage.value = result?.message || '创建订单失败'
-      return
-    }
-    createdOrderId.value = result.order?._id || ''
-    const payParams = result.payParams
-    const orderNo = result.order?.orderNo
-
-    if (!payParams?.timeStamp) {
-      orderMessage.value = '支付参数缺失，请重试'
-      return
-    }
-
-    // 2. 调起微信支付（payParams 直接来自服务端，无需穿透 data）
-    try {
-      await new Promise((resolve, reject) => {
-        wx.requestPayment({
-          timeStamp: String(payParams.timeStamp || ''),
-          nonceStr: String(payParams.nonceStr || ''),
-          package: payParams.package || '',
-          signType: payParams.signType || 'RSA',
-          paySign: String(payParams.paySign || ''),
-          success: resolve,
-          fail: reject
-        })
-      })
-    } catch (payErr: any) {
-      if (payErr?.errMsg?.includes('cancel')) {
-        orderMessage.value = '已取消支付'
-      } else {
-        orderMessage.value = '支付失败: ' + (payErr?.errMsg || '')
-      }
-      return
-    }
-    // #endif
-
     // #ifdef H5
     orderMessage.value = '请在小程序中完成支付'
-    return
     // #endif
-
-    // 3. 支付成功 → 确认发货 + 轮询双保险
-    let paid = false
-    let pendingFulfillment = false
-
-    // 3a. 立即调云函数确认发货（wx.requestPayment success = 微信已扣款）
-    try {
-      const confirmed = await confirmPayment({ orderNo })
-      if (confirmed?.order?.status === 'paid' && confirmed.order.fulfillmentStatus === 'succeeded') {
-        paid = true
-        orderOk.value = true
-        coinAmount.value = result.order?.grantTokens || 0
-        coinSubtitle.value = result.order?.planName || ''
-        showCoin.value = true
-        bumpDataVersion()
-        await loadStatus()
-        return
-      }
-    } catch (e: any) {
-    }
-
-    // 3b. 轮询兜底（30s 窗口，直接调微信 V3 查单）
-    for (let i = 0; i < 20; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      let confirm: any
-      try {
-        confirm = await queryOrder({ orderNo })
-      } catch (e) { continue }
-      if (confirm?.order?.status === 'paid') {
-        // 检查是否已成功发货
-        if (confirm.order.fulfillmentStatus === 'succeeded') {
-          paid = true; break
-        }
-        // 已支付但未完成发货 → 状态为"到账处理中"
-        paid = true
-        pendingFulfillment = true
-        break
-      }
-    }
-    if (paid) {
-      const grantTokens = result.order?.grantTokens || 0
-      if (pendingFulfillment) {
-        orderOk.value = true
-        orderMessage.value = `支付成功，到账处理中… 请稍后在"我"页确认余额`
-      } else {
-        orderOk.value = true
-        coinAmount.value = grantTokens
-        coinSubtitle.value = result.order?.planName || ''
-        showCoin.value = true
-        await loadStatus()
-      }
-      bumpDataVersion()
-    } else {
-      orderOk.value = true
-      orderMessage.value = '支付确认中，可稍后在"我"页查看余额'
-      bumpDataVersion()
-    }
   } catch (error: any) {
     orderMessage.value = error?.message || '操作失败'
   } finally {
