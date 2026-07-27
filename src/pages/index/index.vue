@@ -75,6 +75,7 @@
             @open-latest-signal="openAnalysisSheet"
             @open-taohua="goTaohua"
             @open-guidance="openGuidanceSheet"
+            @open-ta-daily="taDailySheetVisible = true"
             @open-quick-record="onQuickRecordAction"
             @start-assessment="showFullAssessment = true"
             @quick-create="showQuickCreate = true"
@@ -118,6 +119,7 @@
                   @open-interaction-balance="openBalanceSheet"
                   @open-taohua="goTaohua"
                   @open-guidance="openGuidanceSheet"
+                  @open-ta-daily="taDailySheetVisible = true"
                   @open-quick-record="onQuickRecordAction"
                   @start-assessment="showFullAssessment = true"
                   @quick-create="showQuickCreate = true"
@@ -286,6 +288,18 @@
         />
 
       <!-- 互动天平面板 -->
+      <TaDailySheet
+        :visible="taDailySheetVisible"
+        :day-zhi="taohuaTeaserData?.dayZhi || ''"
+        :self-zhi="ZODIAC_TO_ZHI[selfProfile?.zodiac] || ''"
+        :crush-zhi="ZODIAC_TO_ZHI[latestCase?.profile?.zodiac] || ''"
+        :self-rel="getTaDailyRel(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi)"
+        :crush-rel="getTaDailyRel(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi)"
+        :self-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi)"
+        :crush-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi)"
+        @close="taDailySheetVisible = false"
+      />
+
       <BalanceSheet
         :visible="balanceSheetVisible"
         :bars="balanceSheetData"
@@ -425,6 +439,7 @@ import CampusSignalHome from '@/components/CampusSignalHome.vue'
 import ActionGuideSheet from '@/components/ActionGuideSheet.vue'
 import AnalysisSheet from '@/components/AnalysisSheet.vue'
 import BalanceSheet from '@/components/BalanceSheet.vue'
+import TaDailySheet from '@/components/TaDailySheet.vue'
 import { normalizeActionGuideData } from '@/utils/taohua'
 import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
 import { bumpDataVersion, combineDateAndTimeToISOString, decayPetEnergy, feedPet, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, readPetEnergy, setActiveCaseId, setPendingTimelineContext, showError, showSuccess, writePetEnergy } from '@/utils/helpers'
@@ -1045,6 +1060,7 @@ const balanceSheetVisible = ref(false)
 const balanceSheetData = computed(() => buildDivergingBars(latestTimelineStats.value))
 function openBalanceSheet() { balanceSheetVisible.value = true }
 function closeBalanceSheet() { balanceSheetVisible.value = false }
+const taDailySheetVisible = ref(false)
 const guidanceSheetVisible = ref(false)
 function openGuidanceSheet() { guidanceSheetVisible.value = true }
 function closeGuidanceSheet() { guidanceSheetVisible.value = false }
