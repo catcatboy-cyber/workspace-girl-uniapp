@@ -388,7 +388,7 @@
         </view>
 
         <!-- Reaction bubble takes priority over system message bubble; 弹面板时闭嘴不遮挡 -->
-        <view v-if="petReactionMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible" class="pet-bubble reaction">
+        <view v-if="petReactionMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible" class="pet-bubble reaction">
           <text class="pet-bubble-text">{{ petReactionMsg }}</text>
         </view>
         <view v-else-if="petMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible" class="pet-bubble">
