@@ -144,6 +144,7 @@ import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { showError, showSuccess } from '@/utils/helpers'
 import { getPetById, getSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
+import { normalizeSelfIdentity } from '@/utils/identity'
 import { createAvatarCloudPath } from '@/utils/avatar'
 
 const petAvatar = getPetById(getSelectedPetId()).avatarPath
@@ -335,7 +336,7 @@ function applyProfile(value?: SelfProfile | null) {
   if (!value) return
   profile.gender = value.gender || ''
   profile.ageRange = value.ageRange || ''
-  profile.identity = value.identity || ''
+  profile.identity = normalizeSelfIdentity(value.identity)
   profile.zodiac = value.zodiac || ''
   profile.constellation = value.constellation || ''
   profile.mbtiCode = value.mbtiCode || ''

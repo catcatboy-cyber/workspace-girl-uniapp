@@ -109,8 +109,8 @@ check('non-MP uses type="text"', idx.includes('type="text"'))
 
 // Hint stays inside v-if
 const hintIdx = idx.indexOf('贴对话后标注')
-const vifMatch = idx.slice(Math.max(0, hintIdx - 200)).indexOf('v-if="quickSubjectRole')
-check('hint is inside v-if="both"', vifMatch > 0 && hintIdx - vifMatch < 200)
+const nearHint = idx.slice(Math.max(0, hintIdx - 200), hintIdx)
+check('hint is inside v-if="both"', hintIdx > 0 && nearHint.includes('v-if="quickSubjectRole'))
 
 // Auto-fill logic
 check('onQuickRecordAction auto-fills quickChatSelfName',

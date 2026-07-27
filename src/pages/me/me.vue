@@ -158,6 +158,7 @@ import { applyThemeChrome, getCurrentThemeId, getFontSizeMode, getThemeStyle, se
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { downloadPetAssets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, setSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
+import { normalizeSelfIdentity } from '@/utils/identity'
 
 type PetId = 'xiaomi' | 'doggo'
 
@@ -596,7 +597,7 @@ function syncSelfProfileSummary(profile: any) {
   const parts = [
     genderMap[profile.gender] || profile.gender,
     ageMap[profile.ageRange] || profile.ageRange,
-    identityMap[profile.identity] || profile.identity,
+    identityMap[normalizeSelfIdentity(profile.identity)] || normalizeSelfIdentity(profile.identity),
     profile.zodiac ? `属${profile.zodiac}` : '',
     profile.constellation || '',
     profile.mbtiCode ? `MBTI ${profile.mbtiCode}` : ''

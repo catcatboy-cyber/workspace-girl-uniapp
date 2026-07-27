@@ -240,7 +240,7 @@ async function loadResult() {
       errorMessage.value = '双方生肖和星座还不完整。'
       return
     }
-    payload.value = buildPairMatchPayload(selfZodiac, selfSign, taZodiac, taSign)
+    payload.value = buildPairMatchPayload(selfZodiac, selfSign, taZodiac, taSign, self?.mbtiCode, profile?.mbtiCode)
   } catch (error: any) {
     errorMessage.value = error?.message || '匹配结果生成失败。'
   } finally {

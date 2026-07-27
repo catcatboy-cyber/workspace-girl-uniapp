@@ -6,6 +6,7 @@ import app, { callFunction, auth, storage, ensureCloudAuthReady } from './cloudb
 import { resetCloudAuthState } from './cloudbase'
 import { normalizeAvatarValue, resolveAvatarSrc } from './avatar'
 import { feedPet } from './helpers'
+import { normalizeSelfIdentity } from './identity'
 
 function toTimestamp(value: any): number | null {
   if (!value) return null
@@ -124,7 +125,8 @@ function safeSetStorageAny(key: string, value: any) {
 
 function cacheSelfProfile(profile: any) {
   if (!profile || typeof profile !== 'object') return
-  safeSetStorageAny('selfProfile', profile)
+  const normalized = { ...profile, identity: normalizeSelfIdentity(profile.identity) }
+  safeSetStorageAny('selfProfile', normalized)
 }
 
 function resolveLoginDisplayName(result: any) {

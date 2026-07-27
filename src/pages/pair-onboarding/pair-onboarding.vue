@@ -170,7 +170,7 @@ onLoad((options: any) => {
   const cached = getCachedSelfProfile()
   selfForm.gender = normalizeSelfValue(options?.selfGender || cached?.gender, selfGenderOptions)
   selfForm.ageRange = normalizeSelfValue(options?.selfAgeRange || cached?.ageRange, selfAgeOptions)
-  selfForm.identity = normalizeSelfValue(options?.selfIdentity || cached?.identity, identityOptions)
+  undefined
   selfForm.zodiac = normalizeOption(options?.selfZodiac, zodiacOptions, cached?.zodiac || zodiacOptions[0])
   selfForm.constellation = normalizeOption(options?.selfSign, signOptions, cached?.constellation || signOptions[0])
   taForm.name = decodeURIComponent(String(options?.taName || 'TA')).trim() || 'TA'
