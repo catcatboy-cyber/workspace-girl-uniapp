@@ -32,24 +32,12 @@ function buildTimelineRecordTitle(input) {
   return `${firstChunk.slice(0, 20).trim()}...`
 }
 
-function mapRelationType(value) {
-  const map = { romantic: 'Crush', close_friend: 'Friend Crush' }
-  return map[value] || value || ''
-}
+// mapRelationType 已从 case-profile.js 导入，不再本地定义
+
+const { serializeCaseProfileForAI: _serializeCaseProfileForAI, mapRelationType } = require('./case-profile')
 
 function serializeCaseProfile(profile) {
-  if (!profile) return '未提供'
-
-  const normalized = {
-    relationType: mapRelationType(profile.relationType),
-    age: profile.age,
-    gender: profile.gender,
-    occupation: profile.occupation,
-    zodiac: profile.zodiac,
-    constellation: profile.constellation
-  }
-
-  return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'
+  return _serializeCaseProfileForAI(profile)
 }
 
 function describeSubjectRole(role) {

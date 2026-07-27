@@ -9,6 +9,42 @@
 //   data/signs.json — 星座知识数据
 // ============================================================
 
+// ── MBTI 性格类型选项 ──
+export const MBTI_OPTIONS: string[] = [
+  '', 'INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP',
+  'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP'
+]
+
+// ── TA 身份标签（Crush identityLabel） ──
+export const IDENTITY_LABEL_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '', label: '请选择' },
+  { value: 'ex', label: '前男友/前女友' },
+  { value: 'crush_secret', label: '暗恋对象' },
+  { value: 'classmate', label: '同学' },
+  { value: 'colleague', label: '同事' },
+  { value: 'online_friend', label: '网友' },
+  { value: 'arranged', label: '相亲对象' },
+  { value: '__custom__', label: '自定义' },
+]
+
+/** 解析 identityLabel → 中文展示文本 */
+export function resolveIdentityLabel(profile: { identityLabel?: string; identityLabelCustom?: string } | null | undefined): string {
+  if (!profile) return ''
+  const map: Record<string, string> = {
+    'ex': '前男友/前女友',
+    'crush_secret': '暗恋对象',
+    'classmate': '同学',
+    'colleague': '同事',
+    'online_friend': '网友',
+    'arranged': '相亲对象',
+  }
+  const label = profile.identityLabel || ''
+  if (label === '__custom__') {
+    return String(profile.identityLabelCustom || '').trim().slice(0, 20) || '自定义'
+  }
+  return map[label] || ''
+}
+
 // ── 十二生肖 ↔ 地支 ──
 export const ZODIAC_TO_ZHI: Record<string, string> = {
   '鼠': '子', '牛': '丑', '虎': '寅', '兔': '卯',

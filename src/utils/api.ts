@@ -450,6 +450,7 @@ export type SelfProfile = {
   constellation?: string
   aiStyle?: AIStyleValue
   aiBoldness?: AIBoldnessValue
+  mbtiCode?: string
   completedAt?: string
   updatedAt?: string
 }

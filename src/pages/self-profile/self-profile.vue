@@ -79,6 +79,13 @@
             <view class="picker-v2">{{ constellationLabel }}</view>
           </picker>
         </view>
+        <view class="field-v2">
+          <text class="field-label-v2">MBTI 性格类型</text>
+          <picker :range="mbtiLabels" :value="mbtiIndex" @change="onMbtiChange">
+            <view class="picker-v2">{{ mbtiLabel }}</view>
+          </picker>
+          <text class="card-text-v2" style="margin-top:8rpx;">可选，用于调整沟通语气，不参与核心判断。</text>
+        </view>
       </view>
       <view class="card-v2" style="display:flex;flex-direction:column;gap:14rpx;">
         <button class="btn btn-primary btn-lg btn-full" :disabled="saving" @click="onSave">{{ saving ? '保存中...' : '保存并进入' }}</button>
@@ -155,6 +162,7 @@ const identityMap: Record<string, string> = {
 
 const zodiacChips = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
 const constellationChips = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座']
+const mbtiOptions = ['', 'INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP']
 
 // ====== State ======
 const themeVars = ref(getThemeStyle())
@@ -166,12 +174,13 @@ const typing = ref(false)
 const scrollTarget = ref('')
 const messages = ref<Msg[]>([])
 
-const profile = reactive<SelfProfile>({
+const profile = reactive<SelfProfile & { mbtiCode?: string }>({
   gender: '',
   ageRange: '',
   identity: '',
   zodiac: '',
-  constellation: ''
+  constellation: '',
+  mbtiCode: ''
 })
 
 type Msg =
@@ -184,15 +193,18 @@ const ageLabels = ageOptions.map((item) => item.label)
 const identityLabels = identityOptions.map((item) => item.label)
 const zodiacLabels = zodiacOptions.map((item) => item || '不选择')
 const constellationLabels = constellationOptions.map((item) => item || '不选择')
+const mbtiLabels = mbtiOptions.map((item) => item || '不限')
 
 const ageIndex = computed(() => Math.max(0, ageOptions.findIndex((item) => item.value === profile.ageRange)))
 const identityIndex = computed(() => Math.max(0, identityOptions.findIndex((item) => item.value === profile.identity)))
 const zodiacIndex = computed(() => Math.max(0, zodiacOptions.indexOf(profile.zodiac || '')))
 const constellationIndex = computed(() => Math.max(0, constellationOptions.indexOf(profile.constellation || '')))
+const mbtiIndex = computed(() => Math.max(0, mbtiOptions.indexOf(profile.mbtiCode || '')))
 const ageLabel = computed(() => ageOptions[ageIndex.value]?.label || '请选择')
 const identityLabel = computed(() => identityOptions[identityIndex.value]?.label || '请选择')
 const zodiacLabel = computed(() => profile.zodiac || '不选择')
 const constellationLabel = computed(() => profile.constellation || '不选择')
+const mbtiLabel = computed(() => profile.mbtiCode || '不限')
 
 // ====== Onboarding questions ======
 const questions = [
@@ -292,6 +304,7 @@ function applyProfile(value?: SelfProfile | null) {
   profile.identity = value.identity || ''
   profile.zodiac = value.zodiac || ''
   profile.constellation = value.constellation || ''
+  profile.mbtiCode = value.mbtiCode || ''
 }
 
 async function loadExistingProfile() {
@@ -385,6 +398,10 @@ function onZodiacChange(event: any) {
 
 function onConstellationChange(event: any) {
   profile.constellation = constellationOptions[event.detail.value] || ''
+}
+
+function onMbtiChange(event: any) {
+  profile.mbtiCode = mbtiOptions[event.detail.value] || ''
 }
 
 // ====== Actions ======

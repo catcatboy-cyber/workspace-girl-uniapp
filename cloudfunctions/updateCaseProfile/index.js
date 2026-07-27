@@ -1,5 +1,6 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
+const { normalizeCaseProfilePatch } = require('./_shared/case-profile')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
@@ -18,9 +19,10 @@ exports.main = async (event) => {
       update.name = name.trim()
     }
     if (profile && typeof profile === 'object') {
+      const patch = normalizeCaseProfilePatch(profile)
       const merged = { ...(caseDoc.profile || {}) }
-      for (const k of Object.keys(profile)) {
-        merged[k] = profile[k]
+      for (const k of Object.keys(patch)) {
+        merged[k] = patch[k]
       }
       update.profile = merged
     }

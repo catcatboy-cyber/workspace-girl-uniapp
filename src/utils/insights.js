@@ -434,6 +434,21 @@ export function buildProfileItems(profile) {
   if (profile.occupation) items.push(`工作 ${profile.occupation}`)
   if (profile.zodiac) items.push(`属相 ${profile.zodiac}`)
   if (profile.constellation) items.push(`星座 ${profile.constellation}`)
+  if (profile.mbtiCode) items.push(`MBTI ${profile.mbtiCode}`)
+  if (profile.identityLabel) {
+    const IDENTITY_MAP = {
+      'ex': '前男友/前女友',
+      'crush_secret': '暗恋对象',
+      'classmate': '同学',
+      'colleague': '同事',
+      'online_friend': '网友',
+      'arranged': '相亲对象',
+    }
+    const label = profile.identityLabel === '__custom__'
+      ? (profile.identityLabelCustom || '自定义')
+      : (IDENTITY_MAP[profile.identityLabel] || profile.identityLabel)
+    items.push(`TA身份 ${label}`)
+  }
 
   return items.filter(Boolean)
 }

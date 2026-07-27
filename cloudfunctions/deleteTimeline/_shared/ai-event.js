@@ -108,19 +108,10 @@ function mapRelationType(value) {
   return map[value] || value || ''
 }
 
+const { serializeCaseProfileForAI } = require('./case-profile')
+
 function serializeCaseProfile(profile) {
-  if (!profile) return '未提供'
-
-  const normalized = {
-    relationType: mapRelationType(profile.relationType),
-    age: profile.age,
-    gender: profile.gender,
-    occupation: profile.occupation,
-    zodiac: profile.zodiac,
-    constellation: profile.constellation
-  }
-
-  return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'
+  return serializeCaseProfileForAI(profile)
 }
 
 function describeSubjectRole(role) {
@@ -227,6 +218,11 @@ function serializeSelfProfile(profile) {
     constellation: profile.constellation,
     aiStyle: profile.aiStyle,
     aiBoldness: profile.aiBoldness
+  }
+
+  // MBTI 性格类型
+  if (profile.mbtiCode) {
+    normalized.mbti = profile.mbtiCode
   }
 
   return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'

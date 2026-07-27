@@ -90,6 +90,30 @@
       </view>
 
       <view class="card-v2">
+        <text class="section-title-v2">性格与身份</text>
+        <text class="card-text-v2">帮助 AI 更精准理解 TA，不参与核心评分。</text>
+
+        <view class="field-v2">
+          <text class="field-label-v2">MBTI 性格类型</text>
+          <picker :range="mbtiLabels" :value="mbtiIndex" @change="onMbtiChange">
+            <view class="picker-v2">{{ mbtiDisplay }}</view>
+          </picker>
+        </view>
+
+        <view class="field-v2">
+          <text class="field-label-v2">TA 的身份</text>
+          <picker :range="identityLabelLabels" :value="identityLabelIndex" @change="onIdentityLabelChange">
+            <view class="picker-v2">{{ identityLabelDisplay }}</view>
+          </picker>
+        </view>
+
+        <view v-if="profile.identityLabel === '__custom__'" class="field-v2">
+          <text class="field-label-v2">自定义身份</text>
+          <input v-model="profile.identityLabelCustom" class="input-v2" placeholder="例如：前同事、学长" maxlength="20" />
+        </view>
+      </view>
+
+      <view class="card-v2">
         <button class="btn btn-primary btn-lg btn-full" :disabled="saving" @click="onSave">
           {{ saving ? '保存中...' : '保存画像信息' }}
         </button>
@@ -125,6 +149,17 @@ const constellationOptions = [
   '白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座',
   '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'
 ]
+const identityLabelValues = ['', 'ex', 'crush_secret', 'classmate', 'colleague', 'online_friend', 'arranged', '__custom__']
+const identityLabelLabels = ['请选择', '前男友/前女友', '暗恋对象', '同学', '同事', '网友', '相亲对象', '自定义']
+const IDENTITY_LABEL_MAP: Record<string, string> = {
+  'ex': '前男友/前女友',
+  'crush_secret': '暗恋对象',
+  'classmate': '同学',
+  'colleague': '同事',
+  'online_friend': '网友',
+  'arranged': '相亲对象',
+}
+const mbtiOptions = ['', 'INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP']
 
 const profile = reactive({
   relationType: 'romantic',
@@ -134,7 +169,10 @@ const profile = reactive({
   zodiac: '',
   constellation: '',
   avatar: '',
-  avatarPreviewUrl: ''
+  avatarPreviewUrl: '',
+  mbtiCode: '',
+  identityLabel: '',
+  identityLabelCustom: ''
 })
 
 const relationTypeIndex = computed(() => Math.max(0, relationTypeOptions.indexOf(profile.relationType)))
@@ -142,6 +180,15 @@ const relationTypeLabel = computed(() => relationTypeLabels[relationTypeIndex.va
 const genderIndex = computed(() => Math.max(0, genderOptions.indexOf(profile.gender)))
 const zodiacIndex = computed(() => Math.max(0, zodiacOptions.indexOf(profile.zodiac)))
 const constellationIndex = computed(() => Math.max(0, constellationOptions.indexOf(profile.constellation)))
+const identityLabelIndex = computed(() => {
+  if (!profile.identityLabel) return 0
+  const idx = identityLabelValues.indexOf(profile.identityLabel)
+  return idx >= 0 ? idx : 0
+})
+const identityLabelDisplay = computed(() => {
+  if (profile.identityLabel === '__custom__') return '自定义'
+  return IDENTITY_LABEL_MAP[profile.identityLabel] || '请选择'
+})
 const previewProfile = computed(() => ({
   relationType: profile.relationType,
   age: profile.age,
@@ -149,14 +196,27 @@ const previewProfile = computed(() => ({
   occupation: profile.occupation,
   zodiac: profile.zodiac,
   constellation: profile.constellation,
-  avatar: profile.avatar
+  avatar: profile.avatar,
+  mbtiCode: profile.mbtiCode,
+  identityLabel: profile.identityLabel,
+  identityLabelCustom: profile.identityLabelCustom
 }))
+const mbtiLabels = mbtiOptions.map((item) => item || '不限')
+const mbtiIndex = computed(() => Math.max(0, mbtiOptions.indexOf(profile.mbtiCode || '')))
+const mbtiDisplay = computed(() => profile.mbtiCode || '不限')
 const profileItems = computed(() => buildProfileItems(previewProfile.value))
 
 function onRelationTypeChange(e: any) { profile.relationType = relationTypeOptions[e.detail.value] }
 function onGenderChange(e: any) { profile.gender = genderOptions[e.detail.value] }
 function onZodiacChange(e: any) { profile.zodiac = zodiacOptions[e.detail.value] }
 function onConstellationChange(e: any) { profile.constellation = constellationOptions[e.detail.value] }
+function onIdentityLabelChange(e: any) {
+  profile.identityLabel = identityLabelValues[e.detail.value] || ''
+  if (profile.identityLabel !== '__custom__') {
+    profile.identityLabelCustom = ''
+  }
+}
+function onMbtiChange(e: any) { profile.mbtiCode = mbtiOptions[e.detail.value] || '' }
 function onAvatarPreviewChange(value: string) { profile.avatarPreviewUrl = value }
 
 function avatarLabel(name?: string) {
@@ -202,6 +262,9 @@ async function loadData() {
       profile.constellation = p.constellation || ''
       profile.avatar = p.avatar || ''
       profile.avatarPreviewUrl = p.avatarUrl || p.avatar || ''
+      profile.mbtiCode = p.mbtiCode || ''
+      profile.identityLabel = p.identityLabel || ''
+      profile.identityLabelCustom = p.identityLabelCustom || ''
     }
   } catch (e: any) {
     showError(e?.message || '加载失败')
@@ -353,6 +416,14 @@ function goTimeline() {
   font-size: $fs-body-lg;
   font-weight: $fw-body;
   color: var(--text-main, #111);
+}
+.v2-mode .field-hint-v2 {
+  display: block;
+  margin-top: 8rpx;
+  font-size: $fs-caption;
+  font-weight: $fw-body;
+  color: var(--text-soft, #999);
+  line-height: 1.4;
 }
 
 /* Buttons */

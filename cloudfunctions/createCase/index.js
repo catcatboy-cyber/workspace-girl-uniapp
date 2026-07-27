@@ -6,6 +6,8 @@ const { checkFeatureAccess, checkTokenBalance, getSubscriptionConfig } = require
 const { recordTokenUsage } = require('./_shared/token-usage')
 const { analyzeTextSignals } = require('./_shared/ai-text-analyzer')
 
+const { normalizeCaseProfile } = require('./_shared/case-profile')
+
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
@@ -183,7 +185,7 @@ exports.main = async (event) => {
       _id: caseId,
       userId,
       name: name.trim(),
-      profile: profile || {},
+      profile: normalizeCaseProfile(profile),
       createdAt: now,
       updatedAt: now
     }

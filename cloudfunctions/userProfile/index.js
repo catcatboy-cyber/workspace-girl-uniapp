@@ -34,6 +34,10 @@ const AI_STYLES = new Set([
   'careful_guardian'
 ])
 const AI_BOLDNESS = new Set(['', 'conservative', 'balanced', 'bold'])
+const VALID_MBTI = new Set([
+  '', 'INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP',
+  'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP'
+])
 
 function normalizeProfile(input = {}) {
   const profile = input && typeof input === 'object' ? input : {}
@@ -45,6 +49,8 @@ function normalizeProfile(input = {}) {
   const aiStyle = String(profile.aiStyle || '').trim()
   const aiBoldness = String(profile.aiBoldness || '').trim()
 
+  const mbtiCode = String(profile.mbtiCode || '').trim()
+
   return {
     gender: GENDERS.has(gender) ? gender : '',
     ageRange: AGE_RANGES.has(ageRange) ? ageRange : '',
@@ -52,7 +58,8 @@ function normalizeProfile(input = {}) {
     zodiac: ZODIACS.has(zodiac) ? zodiac : '',
     constellation: CONSTELLATIONS.has(constellation) ? constellation : '',
     aiStyle: AI_STYLES.has(aiStyle) ? aiStyle : '',
-    aiBoldness: AI_BOLDNESS.has(aiBoldness) ? aiBoldness : ''
+    aiBoldness: AI_BOLDNESS.has(aiBoldness) ? aiBoldness : '',
+    mbtiCode: VALID_MBTI.has(mbtiCode) ? mbtiCode : ''
   }
 }
 
@@ -80,6 +87,10 @@ function normalizeProfilePatch(input = {}) {
   }
   if (Object.prototype.hasOwnProperty.call(profile, 'aiBoldness')) {
     patch.aiBoldness = AI_BOLDNESS.has(String(profile.aiBoldness || '').trim()) ? String(profile.aiBoldness || '').trim() : ''
+  }
+  if (Object.prototype.hasOwnProperty.call(profile, 'mbtiCode')) {
+    const v = String(profile.mbtiCode || '').trim()
+    patch.mbtiCode = VALID_MBTI.has(v) ? v : ''
   }
 
   return patch

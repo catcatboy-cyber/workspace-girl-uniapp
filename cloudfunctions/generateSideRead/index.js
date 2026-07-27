@@ -409,6 +409,15 @@ function serializeProfile(profile) {
     aiStyle: profile.aiStyle,
     aiBoldness: profile.aiBoldness
   }
+  // MBTI 性格类型
+  if (profile.mbtiCode) {
+    result.mbti = profile.mbtiCode
+  }
+  // TA 身份标签（仅 target profile 会有此字段）
+  if (profile.identityLabel) {
+    const { resolveIdentityLabel } = require('./_shared/case-profile')
+    result.identityLabel = resolveIdentityLabel(profile)
+  }
   return Object.values(result).some(Boolean) ? JSON.stringify(result) : '未提供'
 }
 

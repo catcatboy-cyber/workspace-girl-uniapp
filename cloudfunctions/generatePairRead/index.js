@@ -13,6 +13,7 @@ const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = req
 const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
 const { postChatCompletions, parseJSONContent, AI_REQUEST_TIMEOUT_MS } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
+const { resolveIdentityLabel } = require('./_shared/case-profile')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -172,7 +173,16 @@ exports.main = async (event = {}) => {
   "advice": "结合今日桃花方位和日支关系给出的具体建议（60字以内）"
 }`
 
-        const userPrompt = `本人：属${selfProfile.zodiac}（${match.self.zhi}），${selfProfile.constellation}\n对方：属${caseProfile.zodiac}（${match.partner.zhi}），${caseProfile.constellation}\n地支关系：${match.relation}（${match.relationDesc}）\n今日：日支${dayCtx.dayZhi}，桃花在${dayCtx.taohuaDir}，日支与本人${dayCtx.selfDayRel}，与对方${dayCtx.partnerDayRel}`
+        const personalityContext = {}
+        if (selfProfile.mbtiCode) personalityContext.selfMbti = selfProfile.mbtiCode
+        if (caseProfile.mbtiCode) personalityContext.partnerMbti = caseProfile.mbtiCode
+        const identityResolved = resolveIdentityLabel(caseProfile)
+        if (identityResolved) personalityContext.partnerIdentity = identityResolved
+        const personalityContextStr = Object.keys(personalityContext).length > 0
+          ? `\n性格与关系参考（可选，用于调整沟通语气，不据此断言对方意图）：${JSON.stringify(personalityContext)}`
+          : ''
+
+        const userPrompt = `本人：属${selfProfile.zodiac}（${match.self.zhi}），${selfProfile.constellation}\n对方：属${caseProfile.zodiac}（${match.partner.zhi}），${caseProfile.constellation}\n地支关系：${match.relation}（${match.relationDesc}）\n今日：日支${dayCtx.dayZhi}，桃花在${dayCtx.taohuaDir}，日支与本人${dayCtx.selfDayRel}，与对方${dayCtx.partnerDayRel}${personalityContextStr}`
 
         const response = await postChatCompletions({
           provider: settings.provider,

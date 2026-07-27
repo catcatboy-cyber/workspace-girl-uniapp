@@ -554,6 +554,9 @@ function serializeSelfProfile(profile) {
     aiStyle: profile.aiStyle,
     aiBoldness: profile.aiBoldness
   }
+  if (profile.mbtiCode) {
+    normalized.mbti = profile.mbtiCode
+  }
   return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'
 }
 
@@ -571,6 +574,15 @@ function serializeCaseProfile(profile) {
     occupation: profile.occupation,
     zodiac: profile.zodiac,
     constellation: profile.constellation
+  }
+  // MBTI 性格类型
+  if (profile.mbtiCode) {
+    normalized.mbti = profile.mbtiCode
+  }
+  // TA 身份标签
+  if (profile.identityLabel) {
+    const { resolveIdentityLabel } = require('./_shared/case-profile')
+    normalized.identityLabel = resolveIdentityLabel(profile)
   }
   return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'
 }

@@ -1437,7 +1437,7 @@ function getCaseDisplayName(activeCase) {
 function getCaseMeta(activeCase) {
   if (!activeCase) return null
   const profile = activeCase.profile || {}
-  return {
+  const meta = {
     caseId: activeCase._id || activeCase.caseId || '',
     name: getCaseDisplayName(activeCase),
     gender: cleanChatText(profile.gender, 12),
@@ -1445,6 +1445,16 @@ function getCaseMeta(activeCase) {
     constellation: cleanChatText(profile.constellation, 12),
     relationType: cleanChatText(profile.relationType, 20)
   }
+  // MBTI 性格类型
+  const mbti = cleanChatText(profile.mbtiCode, 4)
+  if (mbti) meta.mbti = mbti
+  // TA 身份标签
+  if (profile.identityLabel) {
+    const { resolveIdentityLabel } = require('./_shared/case-profile')
+    const resolved = resolveIdentityLabel(profile)
+    if (resolved) meta.identityLabel = cleanChatText(resolved, 30)
+  }
+  return meta
 }
 
 function pickProfileFields(profile, fields) {
@@ -1459,12 +1469,26 @@ function pickProfileFields(profile, fields) {
 function buildReplyToolContext(user, activeCase) {
   const selfProfile = user?.selfProfile || {}
   const targetProfile = activeCase?.profile || {}
+  const targetFields = { name: getCaseDisplayName(activeCase) }
+  // 基础字段
+  const baseFields = pickProfileFields(targetProfile, ['gender', 'age', 'occupation', 'relationType', 'zodiac', 'constellation'])
+  Object.assign(targetFields, baseFields)
+  // MBTI 性格类型
+  const mbti = cleanChatText(targetProfile.mbtiCode, 4)
+  if (mbti) targetFields.mbti = mbti
+  // TA 身份标签
+  if (targetProfile.identityLabel) {
+    const { resolveIdentityLabel } = require('./_shared/case-profile')
+    const resolved = resolveIdentityLabel(targetProfile)
+    if (resolved) targetFields.identityLabel = cleanChatText(resolved, 30)
+  }
+  const selfFields = pickProfileFields(selfProfile, ['gender', 'ageRange', 'identity', 'zodiac', 'constellation'])
+  // 本人 MBTI
+  const selfMbti = cleanChatText(selfProfile.mbtiCode, 4)
+  if (selfMbti) selfFields.mbti = selfMbti
   return {
-    self: pickProfileFields(selfProfile, ['gender', 'ageRange', 'identity', 'zodiac', 'constellation']),
-    target: {
-      name: getCaseDisplayName(activeCase),
-      ...pickProfileFields(targetProfile, ['gender', 'age', 'occupation', 'relationType', 'zodiac', 'constellation'])
-    }
+    self: selfFields,
+    target: targetFields
   }
 }
 
@@ -1688,7 +1712,7 @@ function buildChatSystemPrompt(context, safetyContext, mode) {
   const timeline = Array.isArray(context?.timeline) ? context.timeline : []
   const taohua = context?.taohua || {}
   const caseLine = activeCase
-    ? `当前聊天对象：${activeCase.name || 'TA'}${activeCase.constellation ? `，${activeCase.constellation}` : ''}${activeCase.zodiac ? `，属${activeCase.zodiac}` : ''}。`
+    ? `当前聊天对象：${activeCase.name || 'TA'}${activeCase.constellation ? `，${activeCase.constellation}` : ''}${activeCase.zodiac ? `，属${activeCase.zodiac}` : ''}${activeCase.mbti ? `，MBTI ${activeCase.mbti}` : ''}${activeCase.identityLabel ? `，${activeCase.identityLabel}` : ''}。`
     : '当前没有绑定具体聊天对象，按通用关系沟通提供建议。'
   const timelineLines = timeline.length
     ? timeline.map((item, index) => `${index + 1}. ${item.title}：${item.description}`).join('\n')

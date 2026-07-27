@@ -355,6 +355,10 @@
         </view>
       </view>
       <text v-if="pairParticipants" class="pair-basis-v2">匹配依据：生肖 + 星座</text>
+      <view v-if="(crushMbtiDisplay || crushIdentityDisplay) && !isPairPreviewing" class="pair-extra-tags-v2">
+        <text v-if="crushMbtiDisplay" class="pair-extra-tag-v2 mbti">MBTI {{ crushMbtiDisplay }}</text>
+        <text v-if="crushIdentityDisplay" class="pair-extra-tag-v2 identity">{{ crushIdentityDisplay }}</text>
+      </view>
       <text v-if="isPairPreviewing" class="pair-preview-note-v2">当前是临时预览组合，仅在本页生效，不会修改 TA 档案。</text>
       <text class="pair-summary-desc-v2">{{ pairMatch.combinedRelationDesc || pairMatch.relationDesc }}</text>
 
@@ -573,7 +577,7 @@ import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import {
   zodiacPairMatch, zodiacSignMatch, zodiacToTaohua, hongluanTianxi, xianchiAlgorithm,
   getTodayStr, ZODIAC_NAMES, SIGN_NAMES, ZODIAC_TO_ZHI,
-  generatePairInsight, buildPairMatchPayload
+  generatePairInsight, buildPairMatchPayload, resolveIdentityLabel
 } from '@/utils/taohua'
 import type { CrossMatchResult, PairInsight } from '@/utils/taohua'
 import TaohuaCompass from '@/components/TaohuaCompass.vue'
@@ -1057,6 +1061,9 @@ const pairParticipants = ref<{
 const pairReadLoading = ref(false)
 const pairAIResult = ref<any>(null)
 const pairPartnerStyle = ref('')
+const crushProfile = ref<any>(null)
+const crushMbtiDisplay = computed(() => crushProfile.value?.mbtiCode || '')
+const crushIdentityDisplay = computed(() => resolveIdentityLabel(crushProfile.value || null))
 const showPairReadGuide = ref(false)
 const isPairPreviewing = ref(false)
 const canRestoreCurrentPair = computed(() => !!defaultPairState.value)
@@ -1078,6 +1085,7 @@ async function loadPairMatch() {
     if (!uid) return
     const detail = await getCaseDetail(uid, boundCaseId.value)
     const crush = detail?.profile
+    crushProfile.value = crush || null
     let self = getCachedSelfProfile()
     if (!self?.zodiac || !self?.constellation) {
       const profileRes = await getSelfProfile().catch(() => null)
@@ -1873,6 +1881,11 @@ async function saveShareImage() {
 .pair-summary-desc-v2 { display: block; margin-top: 12rpx; text-align: left; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: $lh-body; }
 .pair-preview-note-v2 { display: block; margin-top: 10rpx; padding: 12rpx 14rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); line-height: 1.45; }
 .pair-preview-hint-v2 { display: block; margin-top: 16rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #888); text-align: center; line-height: 1.45; }
+
+.pair-extra-tags-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; justify-content: center; margin-top: 8rpx; }
+.pair-extra-tag-v2 { display: inline-block; padding: 4rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); background: var(--surface, #fff); }
+.pair-extra-tag-v2.mbti { background: var(--mint-soft, #E0FFF0); }
+.pair-extra-tag-v2.identity { background: var(--accent-soft, #FFFBEB); }
 
 /* 全览表格 */
 .overview-table-v2 { margin-top: 12rpx; }

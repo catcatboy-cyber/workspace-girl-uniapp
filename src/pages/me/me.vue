@@ -595,7 +595,8 @@ function syncSelfProfileSummary(profile: any) {
     ageMap[profile.ageRange] || profile.ageRange,
     identityMap[profile.identity] || profile.identity,
     profile.zodiac ? `属${profile.zodiac}` : '',
-    profile.constellation || ''
+    profile.constellation || '',
+    profile.mbtiCode ? `MBTI ${profile.mbtiCode}` : ''
   ].filter(Boolean)
 
   selfProfileSummary.value = parts.join(' · ')
