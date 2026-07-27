@@ -73,7 +73,7 @@
         </view>
 
         <!-- 节点：今日的TA -->
-        <view class="cs-node cs-node-ta-daily">
+        <view class="cs-node cs-node-ta-daily" @click.stop="showTaDailySheet = true">
           <image class="cs-node-icon-img" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" />
           <text class="cs-node-label">今日的TA</text>
           <view class="cs-node-hint">
@@ -159,6 +159,37 @@
 
     <!-- ===== 6. 底部导航占位（由 tabBar 管理） ===== -->
   </view>
+
+  <!-- 今日的TA · 详情弹窗 -->
+  <view v-if="showTaDailySheet" class="cs-sheet-mask" @click.stop="showTaDailySheet = false">
+    <view class="cs-sheet-panel" @click.stop>
+      <view class="cs-sheet-head">
+        <text class="cs-sheet-title">🌡️ 今日的TA</text>
+        <text class="cs-sheet-close" @click.stop="showTaDailySheet = false">×</text>
+      </view>
+      <view class="cs-sheet-body">
+        <view class="cs-ta-info-row">
+          <text class="cs-ta-info-label">今日日支</text>
+          <text class="cs-ta-info-val">{{ taDayZhi || '--' }}{{ taDayZhi ? '位' : '' }}</text>
+        </view>
+        <view class="cs-ta-columns">
+          <view class="cs-ta-col-detail">
+            <text class="cs-ta-col-head">我</text>
+            <text class="cs-ta-col-zhi">{{ taSelfZhi || '--' }}</text>
+            <text :class="['cs-ta-col-tag', taSelfRel === 'good' ? 'good' : taSelfRel === 'bad' ? 'bad' : 'mid']">{{ taSelfRelText || '平' }}</text>
+            <text class="cs-ta-col-desc">{{ taSelfRel === 'good' ? '今天气场支持你主动推进，状态在线。' : taSelfRel === 'bad' ? '今天日支冲你的地支，容易敏感，别把小事放大。' : '今天能量平稳，按平常节奏就好。' }}</text>
+          </view>
+          <text class="cs-ta-col-divider">×</text>
+          <view class="cs-ta-col-detail">
+            <text class="cs-ta-col-head">TA</text>
+            <text class="cs-ta-col-zhi">{{ taCrushZhi || '--' }}</text>
+            <text :class="['cs-ta-col-tag', taCrushRel === 'good' ? 'good' : taCrushRel === 'bad' ? 'bad' : 'mid']">{{ taCrushRelText || '平' }}</text>
+            <text class="cs-ta-col-desc">{{ taCrushRel === 'bad' ? 'TA今天可能比较冷淡或回避，别逼太紧，给TA空间。' : taCrushRel === 'good' ? 'TA今天气场顺，适合轻松互动。' : 'TA今天状态平稳，正常相处就好。' }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -209,6 +240,7 @@ const emit = defineEmits([
 
 // ---- 头像点击：有照片放大预览，无照片进详情 ----
 const showPhotoPreview = ref(false)
+const showTaDailySheet = ref(false)
 function onAvatarClick() {
   if (props.caseAvatar) { showPhotoPreview.value = true }
   else { emit('open-case-detail') }
@@ -734,4 +766,25 @@ const statusLabel = computed(() => {
   .cs-pulse, .cs-beam, .cs-halo-h2, .cs-halo-h3,
   .cs-node-signal, .cs-node-ta-daily, .cs-node-taohua, .cs-node-pair { animation: none; }
 }
+
+/* ── TA 详情弹窗 ── */
+.cs-sheet-mask { position: fixed; inset: 0; z-index: 900; background: rgba(0,0,0,.35); display: flex; align-items: flex-end; justify-content: center; }
+.cs-sheet-panel { width: 100%; max-width: 600rpx; max-height: 75vh; background: var(--card, #fff); border-top: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0) var(--shape-radius-card, 0) 0 0; padding: 24rpx 28rpx calc(28rpx + env(safe-area-inset-bottom)); overflow-y: auto; }
+.cs-sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; }
+.cs-sheet-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
+.cs-sheet-close { font-size: 40rpx; line-height: 1; color: var(--text-soft, #999); padding: 0 8rpx; }
+.cs-sheet-body { display: flex; flex-direction: column; gap: 16rpx; }
+.cs-ta-info-row { text-align: center; padding: 12rpx; background: var(--brand-warm, #FFFBEB); border: var(--border-width, 2rpx) solid var(--border, #111); }
+.cs-ta-info-label { font-size: $fs-caption; color: var(--text-muted, #666); display: block; }
+.cs-ta-info-val { font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); }
+.cs-ta-columns { display: flex; gap: 16rpx; align-items: stretch; }
+.cs-ta-col-detail { flex: 1; text-align: center; padding: 16rpx 10rpx; border: var(--border-width, 2rpx) solid var(--border, #111); }
+.cs-ta-col-head { font-size: $fs-caption; color: var(--text-muted, #666); margin-bottom: 6rpx; }
+.cs-ta-col-zhi { font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); }
+.cs-ta-col-tag { display: inline-block; margin-top: 4rpx; padding: 4rpx 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body; font-weight: $fw-label; }
+.cs-ta-col-tag.good { background: var(--mint-soft, #E0FFF0); color: var(--relation-good, #4ECDC4); }
+.cs-ta-col-tag.bad { background: var(--risk-soft, #FFEEEC); color: var(--relation-bad, #D33F49); }
+.cs-ta-col-tag.mid { background: var(--surface, #fff); color: var(--text-muted, #666); }
+.cs-ta-col-desc { margin-top: 10rpx; font-size: $fs-caption; color: var(--text-muted, #666); line-height: 1.5; }
+.cs-ta-col-divider { display: flex; align-items: center; font-size: $fs-heading; color: var(--text-soft, #ccc); flex-shrink: 0; }
 </style>
