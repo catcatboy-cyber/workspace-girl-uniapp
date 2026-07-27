@@ -12,7 +12,10 @@
       <view class="persona-card anim-card">
         <view class="persona-head">
           <view class="avatar-stack">
-            <image class="avatar-icon" :src="getZodiacSvg(selfZodiac)" mode="aspectFit" />
+            <view class="avatar-photo" v-if="avatarUrl">
+              <image :src="avatarUrl" mode="aspectFill" style="width:100%;height:100%;border-radius:50%;" />
+            </view>
+            <image v-else class="avatar-icon" :src="getZodiacSvg(selfZodiac)" mode="aspectFit" />
             <view class="avatar sign">{{ getSignEmoji(selfSign) }}</view>
           </view>
           <view class="persona-copy">
@@ -84,6 +87,7 @@ const loading = ref(true)
 const errorMessage = ref('')
 const selfZodiac = ref('')
 const selfSign = ref('')
+const avatarUrl = ref('')
 const fontSizeMode = ref(getFontSizeMode())
 const pageStyle = ref(getThemeStyle())
 
@@ -134,6 +138,7 @@ async function loadProfile() {
       const profileRes = await getSelfProfile().catch(() => null)
       profile = profileRes?.selfProfile || getCachedSelfProfile()
     }
+    avatarUrl.value = profile?.avatarUrl || ''
     const zodiac = normalizeOption(profile?.zodiac, ZODIAC_NAMES)
     const sign = normalizeOption(profile?.constellation, SIGN_NAMES)
     if (!zodiac || !sign) {
@@ -237,7 +242,7 @@ function goProfile() {
   flex-shrink: 0;
   position: relative;
 }
-.avatar-icon { width: 64rpx; height: 64rpx; } .avatar {
+.avatar-icon { width: 64rpx; height: 64rpx; } .avatar-photo { width: 64rpx; height: 64rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: 50%; overflow: hidden; } .avatar {
   width: 88rpx;
   height: 88rpx;
   border: var(--border-width-strong, 3rpx) solid var(--border, #111);

@@ -66,28 +66,28 @@
         <view v-if="hasLatestResult" class="cs-pulse"></view>
 
         <!-- 节点：最新信号 -->
-        <view class="cs-node cs-node-signal" @click="$emit('open-latest-signal')">
+        <view class="cs-node cs-node-signal" @click.stop="$emit('open-latest-signal')">
           <image v-if="signalIconSrc" class="cs-node-icon-img" :src="signalIconSrc" mode="aspectFit" />
           <text class="cs-node-label">{{ latestSignal?.label || '最新信号' }}</text>
           <text class="cs-node-hint">{{ latestSignal ? '查看详情' : '记录后解锁' }}</text>
         </view>
 
         <!-- 节点：互动天平 -->
-        <view class="cs-node cs-node-balance" @click="$emit('open-interaction-balance')">
+        <view class="cs-node cs-node-balance" @click.stop="$emit('open-interaction-balance')">
           <image class="cs-node-icon-img" src="/static/icons/taohua/scale.svg" mode="aspectFit" />
           <text class="cs-node-label">互动天平</text>
           <text class="cs-node-hint">{{ balanceCallout || '记录更多互动后解锁' }}</text>
         </view>
 
         <!-- 节点：今日桃花 -->
-        <view class="cs-node cs-node-taohua" @click="$emit('open-taohua')">
+        <view class="cs-node cs-node-taohua" @click.stop="$emit('open-taohua')">
           <image class="cs-node-icon-img" src="/static/icons/taohua/flower.svg" mode="aspectFit" />
           <text class="cs-node-label">今日桃花</text>
           <text class="cs-node-hint">{{ taohuaTeaserData ? taohuaTeaserData.direction : '加载中' }}</text>
         </view>
 
         <!-- 节点：行动指南 -->
-        <view class="cs-node cs-node-pair" @click="$emit('open-guidance')">
+        <view class="cs-node cs-node-pair" @click.stop="$emit('open-guidance')">
           <image class="cs-node-icon-img" src="/static/icons/taohua/compass.svg" mode="aspectFit" />
           <text class="cs-node-label">行动指南</text>
           <view class="cs-node-hint"><block v-for="(seg, si) in guidanceHint" :key="si"><image v-if="seg.type === 'icon'" class="cs-hint-icon" :src="seg.src" mode="aspectFit" /><text v-else>{{ seg.value }}</text></block></view>

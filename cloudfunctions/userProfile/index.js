@@ -8,7 +8,9 @@ const _ = db.command
 
 const GENDERS = new Set(['male', 'female', 'private'])
 const AGE_RANGES = new Set(['under18', '18_22', '23_26', '27_plus'])
-const IDENTITIES = new Set(['high_school', 'college', 'graduate', 'worker', 'other'])
+const IDENTITIES = new Set(['student', 'worker', 'other'])
+// 旧值兼容映射（简化前：按学历细分；简化后：只分学生/已工作）
+const IDENTITY_REMAP = { high_school: 'student', college: 'student', graduate: 'student' }
 const ZODIACS = new Set(['', '鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'])
 const CONSTELLATIONS = new Set([
   '',
@@ -39,18 +41,31 @@ const VALID_MBTI = new Set([
   'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP'
 ])
 
+// selfProfile.avatarUrl 只允许 cloud:// 或内置头像路径，拒绝任意 HTTPS URL
+const ALLOWED_AVATAR_PREFIXES = ['cloud://']
+const ALLOWED_AVATAR_PATTERNS = [/^\/static\/avatars\//]
+
+function isAllowedAvatarUrl(url) {
+  if (!url) return true
+  if (ALLOWED_AVATAR_PREFIXES.some(p => url.startsWith(p))) return true
+  if (ALLOWED_AVATAR_PATTERNS.some(r => r.test(url))) return true
+  return false
+}
+
 function normalizeProfile(input = {}) {
   const profile = input && typeof input === 'object' ? input : {}
   const gender = String(profile.gender || '').trim()
   const ageRange = String(profile.ageRange || '').trim()
-  const identity = String(profile.identity || '').trim()
+  const identityRaw = String(profile.identity || '').trim()
+  const identity = IDENTITY_REMAP[identityRaw] || identityRaw
   const zodiac = String(profile.zodiac || '').trim()
   const constellation = String(profile.constellation || '').trim()
   const aiStyle = String(profile.aiStyle || '').trim()
   const aiBoldness = String(profile.aiBoldness || '').trim()
+  const nickname = String(profile.nickname || '').trim().slice(0, 30)
+  const avatarUrl = String(profile.avatarUrl || '').trim().slice(0, 500)
 
-  const mbtiCode = String(profile.mbtiCode || '').trim()
-
+  // 返回值是「规范化后的画像子集」，completedAt / updatedAt 由调用方补充
   return {
     gender: GENDERS.has(gender) ? gender : '',
     ageRange: AGE_RANGES.has(ageRange) ? ageRange : '',
@@ -59,7 +74,9 @@ function normalizeProfile(input = {}) {
     constellation: CONSTELLATIONS.has(constellation) ? constellation : '',
     aiStyle: AI_STYLES.has(aiStyle) ? aiStyle : '',
     aiBoldness: AI_BOLDNESS.has(aiBoldness) ? aiBoldness : '',
-    mbtiCode: VALID_MBTI.has(mbtiCode) ? mbtiCode : ''
+    nickname: nickname || '',
+    avatarUrl: avatarUrl || '',
+    mbtiCode: VALID_MBTI.has(String(profile.mbtiCode || '').trim()) ? String(profile.mbtiCode || '').trim() : ''
   }
 }
 
@@ -74,7 +91,9 @@ function normalizeProfilePatch(input = {}) {
     patch.ageRange = AGE_RANGES.has(String(profile.ageRange || '').trim()) ? String(profile.ageRange || '').trim() : ''
   }
   if (Object.prototype.hasOwnProperty.call(profile, 'identity')) {
-    patch.identity = IDENTITIES.has(String(profile.identity || '').trim()) ? String(profile.identity || '').trim() : ''
+    const raw = String(profile.identity || '').trim()
+    const mapped = IDENTITY_REMAP[raw] || raw
+    patch.identity = IDENTITIES.has(mapped) ? mapped : ''
   }
   if (Object.prototype.hasOwnProperty.call(profile, 'zodiac')) {
     patch.zodiac = ZODIACS.has(String(profile.zodiac || '').trim()) ? String(profile.zodiac || '').trim() : ''
@@ -93,7 +112,27 @@ function normalizeProfilePatch(input = {}) {
     patch.mbtiCode = VALID_MBTI.has(v) ? v : ''
   }
 
-  return patch
+  // ===== nickname / avatarUrl =====
+  // topPatch 收集需要同步到 user 文档顶层的字段（displayName / 头像）
+  const topPatch = {}
+
+  if (Object.prototype.hasOwnProperty.call(profile, 'nickname')) {
+    const v = String(profile.nickname || '').trim().slice(0, 30)
+    patch.nickname = v
+    topPatch.nickName = v
+    topPatch.nickname = v
+  }
+  if (Object.prototype.hasOwnProperty.call(profile, 'avatarUrl')) {
+    const v = String(profile.avatarUrl || '').trim().slice(0, 500)
+    if (v && !isAllowedAvatarUrl(v)) {
+      // 拒绝非法值：不写入 patch，不写入 topPatch
+    } else {
+      patch.avatarUrl = v
+      topPatch.avatarUrl = v
+    }
+  }
+
+  return { patch, topPatch }
 }
 
 function validateRequired(profile) {
@@ -139,7 +178,7 @@ exports.main = async (event = {}) => {
         }
       }
 
-      const submittedProfile = normalizeProfilePatch(event.profile)
+      const { patch: submittedProfile, topPatch } = normalizeProfilePatch(event.profile)
       const now = new Date()
       const user = await getUser(userId)
       const mergedProfile = {
@@ -158,10 +197,20 @@ exports.main = async (event = {}) => {
         updatedAt: now
       }
 
-      await db.collection('users').doc(userId).update({
+      // 单次 update：selfProfile + 顶层字段在同一对象中，原子写入
+      const updateData = {
         selfProfile: _.set(nextProfile),
         updatedAt: now
-      })
+      }
+
+      // 只把 topPatch 中真正存在的字段写入顶层，避免用 undefined 覆盖已有值
+      for (const key of Object.keys(topPatch)) {
+        if (topPatch[key] !== undefined && topPatch[key] !== null) {
+          updateData[key] = _.set(topPatch[key])
+        }
+      }
+
+      await db.collection('users').doc(userId).update(updateData)
 
       return {
         success: true,

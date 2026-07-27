@@ -43,6 +43,39 @@
         <text class="hero-copy-v2">这些信息只用于调整用词和后续分析语气，不会公开展示。</text>
       </view>
       <view class="card-v2">
+        <text class="section-title-v2">个人展示</text>
+        <!-- 头像区：复用 ProfileAvatarPicker（预设头像 + 相册上传 + 内容安全） -->
+        <ProfileAvatarPicker v-model="profile.avatarUrl" />
+
+        <!-- 微信授权头像快捷入口（仅小程序端） -->
+        <!-- #ifdef MP-WEIXIN -->
+        <view class="field-v2">
+          <text class="field-label-v2">微信头像</text>
+          <button class="btn btn-secondary btn-sm" open-type="chooseAvatar"
+            @chooseavatar="onChooseAvatar">使用微信头像</button>
+          <text class="minor-note-v2">点击后从微信头像中选择，上传至云存储。</text>
+        </view>
+        <!-- #endif -->
+
+        <!-- 昵称 -->
+        <view class="field-v2">
+          <text class="field-label-v2">昵称</text>
+          <!-- #ifdef MP-WEIXIN -->
+          <input v-model="profile.nickname"
+            type="nickname"
+            @change="onNicknameChange"
+            placeholder="给自己起个名字（选填）" maxlength="30"
+            class="field-input-v2" />
+          <!-- #endif -->
+          <!-- #ifndef MP-WEIXIN -->
+          <input v-model="profile.nickname"
+            type="text"
+            placeholder="给自己起个名字（选填）" maxlength="30"
+            class="field-input-v2" />
+          <!-- #endif -->
+        </view>
+      </view>
+      <view class="card-v2">
         <text class="section-title-v2">基础画像</text>
         <view class="field-v2">
           <text class="field-label-v2">我是</text>
@@ -84,7 +117,6 @@
           <picker :range="mbtiLabels" :value="mbtiIndex" @change="onMbtiChange">
             <view class="picker-v2">{{ mbtiLabel }}</view>
           </picker>
-          <text class="card-text-v2" style="margin-top:8rpx;">可选，用于调整沟通语气，不参与核心判断。</text>
         </view>
       </view>
       <view class="card-v2" style="display:flex;flex-direction:column;gap:14rpx;">
@@ -103,12 +135,16 @@ import {
   getSelfProfile,
   markSelfProfileSkipped,
   updateSelfProfile,
+  uploadFile,
+  contentSecCheck,
   type SelfProfile
 } from '@/utils/api'
+import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { showError, showSuccess } from '@/utils/helpers'
 import { getPetById, getSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
+import { createAvatarCloudPath } from '@/utils/avatar'
 
 const petAvatar = getPetById(getSelectedPetId()).avatarPath
 
@@ -129,9 +165,7 @@ const ageOptions = [
 
 const identityOptions = [
   { value: '', label: '请选择' },
-  { value: 'high_school', label: '高中 / 中专' },
-  { value: 'college', label: '大学生' },
-  { value: 'graduate', label: '研究生' },
+  { value: 'student', label: '学生' },
   { value: 'worker', label: '已工作' },
   { value: 'other', label: '其他' }
 ]
@@ -151,11 +185,9 @@ const ageMap: Record<string, string> = {
 const genderChips = genderOptions.map(o => o.label)
 const genderMap: Record<string, string> = { '男生': 'male', '女生': 'female', '暂不说': 'private' }
 
-const identityChips = ['高中/中专', '大学生', '研究生', '已工作', '其他']
+const identityChips = ['学生', '已工作', '其他']
 const identityMap: Record<string, string> = {
-  '高中/中专': 'high_school',
-  '大学生': 'college',
-  '研究生': 'graduate',
+  '学生': 'student',
   '已工作': 'worker',
   '其他': 'other'
 }
@@ -180,7 +212,9 @@ const profile = reactive<SelfProfile & { mbtiCode?: string }>({
   identity: '',
   zodiac: '',
   constellation: '',
-  mbtiCode: ''
+  mbtiCode: '',
+  nickname: '',
+  avatarUrl: ''
 })
 
 type Msg =
@@ -305,6 +339,8 @@ function applyProfile(value?: SelfProfile | null) {
   profile.zodiac = value.zodiac || ''
   profile.constellation = value.constellation || ''
   profile.mbtiCode = value.mbtiCode || ''
+  profile.nickname = value.nickname || ''
+  profile.avatarUrl = value.avatarUrl || ''
 }
 
 async function loadExistingProfile() {
@@ -400,6 +436,14 @@ function onConstellationChange(event: any) {
   profile.constellation = constellationOptions[event.detail.value] || ''
 }
 
+function onNicknameChange(event: any) {
+  // WeChat type="nickname" 弹窗选择后触发 change 事件（非 input）
+  const value = event?.detail?.value
+  if (typeof value === 'string' && value.trim()) {
+    profile.nickname = value.trim()
+  }
+}
+
 function onMbtiChange(event: any) {
   profile.mbtiCode = mbtiOptions[event.detail.value] || ''
 }
@@ -441,6 +485,31 @@ async function onSave() {
   }
 }
 
+// ===== WeChat chooseAvatar =====
+async function onChooseAvatar(e: any) {
+  const tempFilePath = e.detail?.avatarUrl
+  if (!tempFilePath) return
+
+  uni.showLoading({ title: '上传中...' })
+  try {
+    const fileID = await uploadFile(tempFilePath, createAvatarCloudPath(tempFilePath))
+
+    // 内容安全检测
+    const { pass } = await contentSecCheck(fileID)
+    if (!pass) {
+      uni.showToast({ title: '内容含违规信息，请重新选择', icon: 'none' })
+      return
+    }
+
+    profile.avatarUrl = fileID
+    uni.showToast({ title: '头像已更新', icon: 'success' })
+  } catch {
+    uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
 function onSkip() {
   markSelfProfileSkipped()
   goNext()
@@ -464,6 +533,7 @@ function onSkip() {
 .v2-mode .field-v2 { padding: 20rpx 0; border-bottom: var(--border-width-strong, 3rpx) solid var(--border, #111); }
 .v2-mode .field-v2:last-child { border-bottom: 0; }
 .v2-mode .field-label-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); margin-bottom: 10rpx; }
+.v2-mode .field-input-v2 { width: 100%; height: 72rpx; padding: 0 20rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); box-sizing: border-box; }
 .v2-mode .segmented-v2 { display: flex; gap: 10rpx; }
 .v2-mode .segment-v2 { flex: 1; height: 68rpx; line-height: 68rpx; text-align: center; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); }
 .v2-mode .segment-v2.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }

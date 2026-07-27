@@ -764,12 +764,69 @@ export interface PairInsight {
   chineseWatchOut: string[]    // new: 地支关系注意事项
   westernWatchOut: string[]    // new: 元素冲突注意事项
   classicalNote: string   // 古籍依据
+  mbtiCompatibility?: string   // new: MBTI 性格匹配分析
+  mbtiAdvice?: string          // new: MBTI 沟通建议
+}
+
+/**
+ * MBTI 兼容性分析
+ * 基于认知功能理论：相同类型=镜像，共享前3字母=高兼容，E/I互补+N/S相同=经典吸引
+ */
+function getMbtiCompatibility(selfMbti?: string, partnerMbti?: string): { compatibility: string; advice: string } | null {
+  if (!selfMbti || !partnerMbti || selfMbti.length !== 4 || partnerMbti.length !== 4) return null
+  const s = selfMbti.toUpperCase()
+  const p = partnerMbti.toUpperCase()
+  if (!MBTI_OPTIONS.includes(s) || !MBTI_OPTIONS.includes(p)) return null
+
+  const sameCount = [0, 1, 2, 3].filter(i => s[i] === p[i]).length
+
+  if (s === p) {
+    return {
+      compatibility: `${s} × ${p}：镜像组合。你们是同一种性格类型，彼此像照镜子一样互相理解。优势是极度默契、不需要解释，你们会用同样的方式处理信息、做决定、表达感情。风险是两个人的盲点也完全相同——可能一起陷入相同的思维陷阱，或者因为太像而缺乏新鲜感。`,
+      advice: '给你们的建议：偶尔给彼此一点"惊喜"，主动做对方不擅长的事。如果都是内向型，轮流负责推动社交计划；如果都是直觉型，偶尔也关注一下眼前的实际细节。',
+    }
+  }
+
+  if (sameCount === 3) {
+    return {
+      compatibility: `${s} × ${p}：高度契合。你们在四个维度中有三个一致，沟通和理解非常顺畅。那一个不同点恰好是互补——它让你们在关键时刻能给对方全新的视角。`,
+      advice: '给你们的建议：珍惜这种"几乎一样但差一点"的微妙平衡。不要让相似变成互相消耗——当你们都倾向于同样的应对方式时，记得留一个人"站远一步"看问题。',
+    }
+  }
+
+  if (s[0] !== p[0] && s[1] === p[1]) {
+    return {
+      compatibility: `${s} × ${p}：经典吸引力。E/I互补搭配相同的感知方式——一个向外汲取能量，一个向内沉淀，但你们看世界的底层逻辑相似。这是经典的"互补又理解"组合，容易产生浪漫火花。`,
+      advice: '给你们的建议：尊重彼此的能量节奏。外向的那位不要觉得内向的那位"不够热情"，内向的那位不要觉得外向的那位"太吵太累"。约会在中间——一次热闹的，一次安静的，轮流来。',
+    }
+  }
+
+  if (sameCount >= 2) {
+    return {
+      compatibility: `${s} × ${p}：稳定合拍。你们在多数维度上一致，相处自然舒服，很少有大冲突。关系容易进入稳定的节奏，适合长线发展。`,
+      advice: '给你们的建议：稳定是好事，但偶尔也需要一点"刻意的新鲜感"。试试一起去探索对方不一样的兴趣领域——你可能会发现 TA 的另一面。',
+    }
+  }
+
+  if (sameCount === 1) {
+    return {
+      compatibility: `${s} × ${p}：差异组合。你们两个性格差异较大，看问题的角度经常不同。这不是坏事——如果愿意倾听，你们能从对方身上学到最多。关系有挑战，但也有成长空间。`,
+      advice: '给你们的建议：差异不是障碍，是对彼此盲区的补充。注意沟通方式——当意见不合时，先问"你为什么这么想"，再解释"我为什么这么想"（不要只说"你想错了"）。',
+    }
+  }
+
+  return {
+    compatibility: `${s} × ${p}：截然不同。你们几乎是完全相反的性格类型——这既可能是强烈吸引力（"TA和我完全不一样，好新鲜"），也可能导致深层误解。关系质量取决于你们对差异的包容程度。`,
+    advice: '给你们的建议：如果你们已经很亲密，恭喜——你们学会了超越性格差异的真正沟通。如果还在磨合，记住：TA 不是故意和你对着干，只是 TA 的世界运行规则和你的完全不同。',
+  }
 }
 
 export function generatePairInsight(
   selfMatch: CrossMatchResult,
   partnerMatch: CrossMatchResult,
   pairMatch?: PairZodiacMatchResult,
+  selfMbti?: string,
+  partnerMbti?: string,
 ): PairInsight {
   const relation = pairMatch?.relation || selfMatch.relation
   const signRelationDesc = pairMatch?.signRelationDesc || ''
@@ -837,7 +894,14 @@ export function generatePairInsight(
   }
   const classicalNote = classicalNoteMap[relation] || '地支无特殊关系，能量独立运行。'
 
-  return { styleClash, activities, chineseActivities, westernActivities, watchOut, chineseWatchOut, westernWatchOut, classicalNote }
+  // MBTI 兼容性分析
+  const mbtiCompat = getMbtiCompatibility(selfMbti, partnerMbti)
+
+  return {
+    styleClash, activities, chineseActivities, westernActivities,
+    watchOut, chineseWatchOut, westernWatchOut, classicalNote,
+    ...(mbtiCompat ? { mbtiCompatibility: mbtiCompat.compatibility, mbtiAdvice: mbtiCompat.advice } : {}),
+  }
 }
 
 // ── 元素组合映射（有序，非 Unicode 默认） ──
@@ -891,6 +955,8 @@ export interface PairMatchPayload {
     classicalNote: string
     source: string
   }
+  mbtiCompatibility?: string
+  mbtiAdvice?: string
 }
 
 export function buildPairMatchPayload(
@@ -898,11 +964,13 @@ export function buildPairMatchPayload(
   selfSign: string,
   partnerZodiac: string,
   partnerSign: string,
+  selfMbti?: string,
+  partnerMbti?: string,
 ): PairMatchPayload {
   const selfMatch = zodiacSignMatch(selfZodiac, selfSign)
   const partnerMatch = zodiacSignMatch(partnerZodiac, partnerSign)
   const match = zodiacPairMatch(selfZodiac, partnerZodiac, selfSign, partnerSign)
-  const insight = generatePairInsight(selfMatch, partnerMatch, match)
+  const insight = generatePairInsight(selfMatch, partnerMatch, match, selfMbti, partnerMbti)
   return {
     self: { zodiac: selfZodiac, sign: selfSign },
     partner: { zodiac: partnerZodiac, sign: partnerSign },
@@ -925,6 +993,8 @@ export function buildPairMatchPayload(
       classicalNote: partnerMatch.western.classicalNote,
       source: partnerMatch.western.source,
     },
+    mbtiCompatibility: insight.mbtiCompatibility,
+    mbtiAdvice: insight.mbtiAdvice,
   }
 }
 

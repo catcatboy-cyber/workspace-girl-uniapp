@@ -211,6 +211,7 @@ function serializeSelfProfile(profile) {
   if (!profile) return '未提供'
 
   const normalized = {
+    nickname: profile.nickname,
     gender: profile.gender,
     ageRange: profile.ageRange,
     identity: profile.identity,
@@ -237,6 +238,8 @@ function compactRecentTimeline(items, currentEventId, limit = 3) {
       type: item.type,
       subjectRole: item.subjectRole,
       description: typeof item.description === 'string' ? item.description.slice(0, 160) : '',
+      chatSelfName: item.chatSelfName || '',
+      chatTargetName: item.chatTargetName || '',
       occurrenceAt: item.occurrenceAt
     }))
 }
@@ -458,6 +461,7 @@ async function analyzeTimelineEvent(params) {
       `基线分: intent=${params.latestResult?.intentScore ?? '--'} risk=${params.latestResult?.consistencyRiskScore ?? '--'}`,
       `Self profile: ${serializeSelfProfile(params.selfProfile)}`,
       `Target profile: ${serializeCaseProfile(params.caseProfile)}`,
+      `Identity: The USER is "${params.event?.chatSelfName || params.selfProfile?.nickname || '用户'}". The CRUSH is "${params.event?.chatTargetName || params.caseName || 'TA'}". When reading chat transcripts, match these names to identify who said what.`,
       `Recent timeline: ${JSON.stringify(compactRecentTimeline(params.recentTimeline, params.event?.id, settings.eventContextLimit))}`,
       `Current event: ${JSON.stringify(params.event)}`
     ].filter(Boolean)

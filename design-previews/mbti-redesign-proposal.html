@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBTI 卡片重构方案 · 效果图</title>
+<style>
+:root {
+  --app-bg: #FFFDF5;
+  --ink: #111;
+  --hero: #FF6B6B;
+  --accent: #FFD93D;
+  --mint: #4ECDC4;
+  --risk: #FF5252;
+  --card: #FFFFFF;
+  --accent-soft: #FFFBEB;
+  --risk-soft: #FFEEEC;
+  --mint-soft: #E0FFF0;
+  --text-muted: #666;
+  --text-soft: #999;
+  --border-width: 2px;
+  --border-width-strong: 3px;
+  --hero-tag-bg: #111;
+  --hero-tag-color: #FFD93D;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--app-bg);
+  padding: 20px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* 卡片基础 */
+.card-v2 {
+  background: var(--card);
+  border: var(--border-width-strong) solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 28px;
+  margin-bottom: 18px;
+}
+.section-title-v2 {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 18px; font-weight: 800; color: var(--ink);
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+/* ── MBTI 人设卡片 ── */
+.persona-mbti-card .mbti-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.mbti-badge {
+  background: var(--hero-tag-bg); color: var(--hero-tag-color);
+  padding: 4px 14px; font-size: 16px; font-weight: 900;
+  border: var(--border-width) solid var(--ink);
+}
+.mbti-role {
+  font-size: 16px; font-weight: 800; color: var(--ink);
+}
+.mbti-desc {
+  font-size: 15px; line-height: 1.6; color: var(--ink);
+  margin-bottom: 12px;
+}
+.mbti-dating-box {
+  border: var(--border-width) solid var(--ink);
+  background: var(--mint-soft);
+  padding: 14px 16px;
+}
+.mbti-dating-label {
+  font-size: 13px; font-weight: 800; color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.mbti-dating-text {
+  font-size: 14px; line-height: 1.5; color: var(--ink);
+}
+
+/* ── 桃花匹配卡片内的 MBTI 子块 ── */
+.pair-mbti-block {
+  margin-top: 14px;
+  border: var(--border-width) solid var(--ink);
+  border-left: 10px solid var(--mint);
+  background: var(--mint-soft);
+  padding: 18px;
+}
+.pair-mbti-title {
+  font-size: 15px; font-weight: 800; color: var(--ink);
+  margin-bottom: 6px;
+}
+.pair-mbti-body {
+  font-size: 14px; line-height: 1.5; color: var(--ink);
+}
+.pair-mbti-advice {
+  margin-top: 8px;
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ── 配对页面中的 MBTI 标签 ── */
+.pair-extra-tags-v2 {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px;
+}
+.pair-extra-tag-v2 {
+  padding: 3px 12px; border: var(--border-width) solid var(--ink);
+  font-size: 12px; font-weight: 700; color: var(--ink);
+}
+.pair-extra-tag-v2.mbti { background: var(--mint-soft); }
+.pair-extra-tag-v2.identity { background: var(--accent-soft); }
+
+/* 其他卡片模拟 */
+.fake-persona-row { display: flex; gap: 10px; }
+.fake-persona-col {
+  flex: 1; border: var(--border-width) solid var(--ink);
+  padding: 14px; background: var(--card);
+  font-size: 13px; color: var(--text-muted);
+  text-align: center;
+}
+.fake-match-header { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.fake-avatars { display: flex; gap: 10px; justify-content: center; margin: 10px 0; }
+.fake-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--card); border: var(--border-width) solid var(--ink); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+
+/* 页面标题 */
+.page-label {
+  display: inline-block;
+  background: var(--hero-tag-bg); color: var(--hero-tag-color);
+  padding: 6px 16px; font-size: 12px; font-weight: 900;
+  letter-spacing: 4px; margin-bottom: 16px;
+}
+.page-title {
+  display: block; font-size: 22px; font-weight: 900; color: var(--ink);
+  line-height: 1.3; margin-bottom: 4px;
+}
+.page-title .hl { background: var(--accent); padding: 0 6px; }
+.page-sub { font-size: 15px; color: var(--text-muted); margin-bottom: 20px; display: block; }
+</style>
+</head>
+<body>
+
+<!-- ═══ PAGE HEADER ═══ -->
+<div style="margin-bottom: 20px;">
+  <span class="page-label">TAOHUA</span>
+  <span class="page-title">你的<strong class="hl">MBTI 性格</strong></span>
+  <span class="page-sub">性格类型只作为沟通风格参考，不参与命理评分。</span>
+</div>
+
+<!-- ═══ ④ 桃花人设卡片（保留不变） ═══ -->
+<div class="card-v2">
+  <div class="section-title-v2">你的桃花人设</div>
+  <div class="fake-persona-row">
+    <div class="fake-persona-col">🏮 星次 · 大火<br><small>卯宫 · 木 · 阳</small></div>
+    <div class="fake-persona-col">♐ 射手座<br><small>木星 · 火象 · 变动</small></div>
+  </div>
+</div>
+
+<!-- ═══ NEW: ⑤ MBTI 性格人设（独立卡片） ═══ -->
+<div class="card-v2 persona-mbti-card">
+  <div class="section-title-v2">MBTI 性格人设</div>
+  <div class="mbti-head">
+    <span class="mbti-badge">INTP</span>
+    <span class="mbti-role">逻辑家</span>
+  </div>
+  <div class="mbti-desc">
+    好奇心驱动、爱分析，重视智识契合。不擅长表达情绪，但会通过"帮你解决问题"表达关心。有点笨拙但真诚。
+  </div>
+  <div class="mbti-dating-box">
+    <div class="mbti-dating-label">🕐 约会风格</div>
+    <div class="mbti-dating-text">偏好新奇能激发思考的地方。建议：科技馆、书店、密室逃脱。</div>
+  </div>
+</div>
+
+<!-- ═══ ⑥ 桃花匹配度卡片 ═══ -->
+<div class="card-v2">
+  <div class="section-title-v2" style="margin-bottom:6px;">桃花匹配度</div>
+  <div class="fake-match-header">匹配依据：生肖 + 星座</div>
+
+  <!-- MBTI 标签（微型展示） -->
+  <div class="pair-extra-tags-v2">
+    <span class="pair-extra-tag-v2 mbti">MBTI INTJ</span>
+    <span class="pair-extra-tag-v2 identity">暗恋对象</span>
+  </div>
+
+  <div class="fake-avatars">
+    <div class="fake-avatar">🐰</div>
+    <div class="fake-avatar">🐲</div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:var(--text-muted);margin:6px 0;">
+    兔 ← 六合（大吉） → 龙
+  </div>
+
+  <div style="font-size:13px; line-height:1.6; color:var(--text-muted); margin:10px 0;">
+    双方生肖六合，阴阳互补… 星座层面，火象与火象同频共振，天然默契强。
+  </div>
+
+  <!-- 西方分析 -->
+  <div style="border:var(--border-width) solid var(--ink); padding:12px; margin-top:10px; background:var(--card);">
+    <strong>西方星座</strong><br>
+    <small style="color:var(--text-muted);">火/火 · 变动/固定 · 木星/木星 · 人格外向/人格外向</small>
+    <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+      <span style="padding:2px 8px;border:2px solid #111;background:var(--accent-soft);font-size:12px;font-weight:700;">一起运动、看演出</span>
+      <span style="padding:2px 8px;border:2px solid #111;background:var(--accent-soft);font-size:12px;font-weight:700;">深度交流</span>
+    </div>
+    <div style="margin-top:4px; font-size:11px; color:var(--text-soft);">出处：Ptolemy《Tetrabiblos》</div>
+  </div>
+
+  <!-- MBTI 兼容性子块（卡片内，提示卡片样式） -->
+  <div class="pair-mbti-block">
+    <div class="pair-mbti-title">🧠 MBTI 性格匹配</div>
+    <div class="pair-mbti-body">
+      INTP × INTJ：高度契合。共享三个维度的思维方式，N+T 的组合让你们能进行深度智识对话。
+      一个偏探索（P），一个偏决策（J），恰好互补——TA 帮你落地想法，你帮 TA 打开思路。
+    </div>
+    <div class="pair-mbti-advice">
+      💡 给你们的建议：珍惜这种"几乎一样但差一点"的微妙平衡。不要让相似变成互相消耗，偶尔给彼此一点惊喜。
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:12px;">
+    <button style="
+      width:100%; height:44px;
+      background:var(--mint); color:var(--ink);
+      border:var(--border-width-strong) solid var(--ink);
+      box-shadow:4px 4px 0 var(--ink);
+      font-size:15px; font-weight:800; cursor:pointer;
+    ">🔍 深度解读</button>
+  </div>
+</div>
+
+</body>
+</html>

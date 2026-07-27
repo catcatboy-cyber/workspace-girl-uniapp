@@ -7,11 +7,16 @@
         <text class="hero-copy-v2">管理画像、Crush Credits 和偏好设置。</text>
         <hr class="hero-divider">
         <view class="hero-bottom">
-          <view class="hero-avatar-lg hero-self-avatar">我</view>
+          <view class="hero-avatar-lg hero-self-avatar">
+            <image v-if="currentSelfProfile?.avatarUrl"
+              :src="currentSelfProfile.avatarUrl" mode="aspectFill"
+              style="width:100%;height:100%;border-radius:50%;" />
+            <text v-else>我</text>
+          </view>
           <view class="hero-info-col">
             <view class="hero-main-row">
               <view class="hero-main-left">
-                <text class="hero-name-v2">{{ hasProfile ? '个人画像' : '画像未完善' }}</text>
+                <text class="hero-name-v2">{{ currentSelfProfile?.nickname || (hasProfile ? '个人画像' : '画像未完善') }}</text>
                 <text :class="['hero-chip', hasProfile ? 'primary' : 'muted']">{{ hasProfile ? '已同步' : '待补充' }}</text>
               </view>
               <view class="hero-action-pill" @click.stop="goSelfProfile">编辑</view>
@@ -583,9 +588,7 @@ function syncSelfProfileSummary(profile: any) {
     '27_plus': '27 岁以上'
   }
   const identityMap: Record<string, string> = {
-    high_school: '高中 / 中专',
-    college: '大学生',
-    graduate: '研究生',
+    student: '学生',
     worker: '已工作',
     other: '其他'
   }

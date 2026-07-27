@@ -398,6 +398,7 @@ function fallbackSideRead(caseProfile, latest) {
 function serializeProfile(profile) {
   if (!profile) return '未提供'
   const result = {
+    nickname: profile.nickname,
     gender: profile.gender,
     age: profile.age,
     ageRange: profile.ageRange,

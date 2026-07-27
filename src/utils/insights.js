@@ -1869,9 +1869,7 @@ function getAgeRangeLabel(value) {
 
 function getIdentityLabel(value) {
   switch (value) {
-    case 'high_school': return '高中 / 中专'
-    case 'college': return '大学生'
-    case 'graduate': return '研究生'
+    case 'student': return '学生'
     case 'worker': return '已工作'
     case 'other': return '其他身份'
     default: return value || ''

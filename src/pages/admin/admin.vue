@@ -76,7 +76,7 @@
             <view class="table-row table-header">
               <text>账号</text>
               <text>OpenID</text>
-              <text>方式</text>
+              <text>注册时间</text>
               <text>套餐</text>
               <text>Crush</text>
               <text>权限</text>
@@ -89,7 +89,7 @@
             >
               <text class="mono">{{ user.email || user.phone || user.id }}</text>
               <text class="mono" style="font-size:20rpx;word-break:break-all;">{{ user.openid || '-' }}</text>
-              <text>{{ user.loginType || 'email' }}</text>
+              <text style="font-size:22rpx;color:#999;">{{ formatDateTime(user.createdAt) }}</text>
               <text :class="['plan-tag', planTagClass(user)]">{{ user.planLabel || '免费版' }}</text>
               <text>{{ user.caseCount }}</text>
               <text>{{ user.id === effectiveCurrentUserId ? '当前' : (user.isAdmin ? '管理员' : '用户') }}</text>
@@ -1615,6 +1615,13 @@ function formatDate(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function formatDateTime(value: string) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 </script>
 

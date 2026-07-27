@@ -20,7 +20,27 @@ function patchMpWeixin() {
         fs.copyFileSync(privacySrc, privacyDest)
       }
 
-      // 2. Patch app.json: 移除非法 permission 字段
+      // 2. Copy static/icons to output (dev:mp-weixin 不走 postbuild，需在此补齐)
+      const iconsSrc = path.join(__dirname, 'static', 'icons')
+      const iconsDest = path.join(outDir, 'static', 'icons')
+      if (fs.existsSync(iconsSrc)) {
+        fs.mkdirSync(iconsDest, { recursive: true })
+        function copyDir(src, dest) {
+          if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true })
+          for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+            const srcPath = path.join(src, entry.name)
+            const destPath = path.join(dest, entry.name)
+            if (entry.isDirectory()) {
+              copyDir(srcPath, destPath)
+            } else {
+              fs.copyFileSync(srcPath, destPath)
+            }
+          }
+        }
+        copyDir(iconsSrc, iconsDest)
+      }
+
+      // 3. Patch app.json: 移除非法 permission 字段
       //    注意：scope.record / scope.writePhotosAlbum 属于隐私接口，
       //    必须通过管理后台（设置→服务内容声明）声明，不可写在 app.json 中。
       const appJsonPath = path.join(outDir, 'app.json')

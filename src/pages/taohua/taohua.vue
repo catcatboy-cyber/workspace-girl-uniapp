@@ -289,6 +289,20 @@
       </view>
     </view>
 
+    <!-- MBTI 性格人设（独立卡片） -->
+    <view v-if="personaMbti" class="card-v2">
+      <text class="section-title-v2">MBTI 性格人设</text>
+      <view class="persona-mbti-head">
+        <text class="persona-mbti-code">{{ personaMbti.code }}</text>
+        <text class="persona-mbti-label">{{ personaMbti.label }}</text>
+      </view>
+      <text class="persona-mbti-desc">{{ personaMbti.desc }}</text>
+      <view class="persona-mbti-dating">
+        <text class="persona-mbti-dating-label">🕐 约会风格</text>
+        <text class="persona-mbti-dating-text">{{ personaMbti.dating }}</text>
+      </view>
+    </view>
+
     <!-- 画像引导卡（无画像时） -->
     <view v-else class="card-v2 guide-card-v2" @click="goSelfProfile">
       <view class="section-title-row-v2">
@@ -312,8 +326,6 @@
         </view>
       </view>
       <view class="action-guide-body-v2">
-      <text v-if="pairParticipants" class="pair-basis-v2">匹配依据：生肖 + 星座</text>
-      <text v-if="isPairPreviewing" class="pair-preview-note-v2">当前是临时预览组合，仅在本页生效，不会修改 TA 档案。</text>
 
       <!-- 双人头像（无文字、无边框） -->
       <view v-if="pairParticipants" class="pair-avatars">
@@ -352,6 +364,13 @@
           </picker>
         </view>
       </view>
+      <text v-if="pairParticipants" class="pair-basis-v2">匹配依据：生肖 + 星座</text>
+      <view v-if="(crushMbtiDisplay || crushIdentityDisplay) && !isPairPreviewing" class="pair-extra-tags-v2">
+        <text v-if="crushMbtiDisplay" class="pair-extra-tag-v2 mbti">MBTI {{ crushMbtiDisplay }}</text>
+        <text v-if="crushIdentityDisplay" class="pair-extra-tag-v2 identity">{{ crushIdentityDisplay }}</text>
+      </view>
+      <text v-if="isPairPreviewing" class="pair-preview-note-v2">当前是临时预览组合，仅在本页生效，不会修改 TA 档案。</text>
+      <text class="pair-summary-desc-v2">{{ pairMatch.combinedRelationDesc || pairMatch.relationDesc }}</text>
 
       <!-- 星座关系行 -->
       <view class="pair-rel-row">
@@ -438,8 +457,14 @@
 
         <view v-if="pairSelfWestern?.element || pairPartnerWestern?.element" class="pair-cmp-row">
           <text class="pair-cmp-key">元素</text>
-          <text class="pair-cmp-val">{{ pairSelfWestern?.element || '' }}</text>
-          <text class="pair-cmp-val">{{ pairPartnerWestern?.element || '' }}</text>
+          <view class="pair-cmp-cell">
+            <image v-if="pairAttrIcon(pairSelfWestern?.element, ELEMENT_ICON)" class="pair-cmp-icon" :src="pairAttrIcon(pairSelfWestern?.element, ELEMENT_ICON)" mode="aspectFit" />
+            <text class="pair-cmp-val">{{ pairSelfWestern?.element || '' }}</text>
+          </view>
+          <view class="pair-cmp-cell">
+            <image v-if="pairAttrIcon(pairPartnerWestern?.element, ELEMENT_ICON)" class="pair-cmp-icon" :src="pairAttrIcon(pairPartnerWestern?.element, ELEMENT_ICON)" mode="aspectFit" />
+            <text class="pair-cmp-val">{{ pairPartnerWestern?.element || '' }}</text>
+          </view>
         </view>
         <view v-if="pairSelfWestern?.mode || pairPartnerWestern?.mode" class="pair-cmp-row">
           <text class="pair-cmp-key">模式</text>
@@ -448,8 +473,14 @@
         </view>
         <view v-if="pairSelfWestern?.planet || pairPartnerWestern?.planet" class="pair-cmp-row">
           <text class="pair-cmp-key">守护星</text>
-          <text class="pair-cmp-val">{{ pairSelfWestern?.planet || '' }}</text>
-          <text class="pair-cmp-val">{{ pairPartnerWestern?.planet || '' }}</text>
+          <view class="pair-cmp-cell">
+            <image v-if="pairAttrIcon(pairSelfWestern?.planet, PLANET_ICON)" class="pair-cmp-icon" :src="pairAttrIcon(pairSelfWestern?.planet, PLANET_ICON)" mode="aspectFit" />
+            <text class="pair-cmp-val">{{ pairSelfWestern?.planet || '' }}</text>
+          </view>
+          <view class="pair-cmp-cell">
+            <image v-if="pairAttrIcon(pairPartnerWestern?.planet, PLANET_ICON)" class="pair-cmp-icon" :src="pairAttrIcon(pairPartnerWestern?.planet, PLANET_ICON)" mode="aspectFit" />
+            <text class="pair-cmp-val">{{ pairPartnerWestern?.planet || '' }}</text>
+          </view>
         </view>
         <view v-if="pairSelfWestern?.personality || pairPartnerWestern?.personality" class="pair-cmp-row">
           <text class="pair-cmp-key">人格</text>
@@ -470,6 +501,13 @@
         </view>
 
         <text class="pair-src">出处：Ptolemy《Tetrabiblos》</text>
+      </view>
+
+      <!-- MBTI 性格匹配 -->
+      <view v-if="pairMbtiCompatibility" class="pair-mbti">
+        <text class="pair-mbti-title">🧠 MBTI 性格匹配</text>
+        <text class="pair-mbti-body">{{ pairMbtiCompatibility }}</text>
+        <text v-if="pairMbtiAdvice" class="pair-mbti-advice">💡 {{ pairMbtiAdvice }}</text>
       </view>
 
       <!-- 共享 -->
@@ -657,7 +695,7 @@ import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import {
   zodiacPairMatch, zodiacSignMatch, zodiacToTaohua, hongluanTianxi, xianchiAlgorithm,
   getTodayStr, ZODIAC_NAMES, SIGN_NAMES, ZODIAC_TO_ZHI,
-  generatePairInsight, buildPairMatchPayload, getElementComboText
+  generatePairInsight, buildPairMatchPayload, resolveIdentityLabel, getElementComboText
 } from '@/utils/taohua'
 import type { CrossMatchResult, PairInsight } from '@/utils/taohua'
 import TaohuaCompass from '@/components/TaohuaCompass.vue'
@@ -697,7 +735,23 @@ const taohuaIconMap: Record<string, string> = {
   bell: '/static/icons/taohua/bell.svg',
   search: '/static/icons/taohua/search.svg',
   x: '/static/icons/taohua/cross.svg',
-  sparkles: '/static/icons/taohua/fire.svg'
+  sparkles: '/static/icons/taohua/fire.svg',
+  // 元素 & 行星
+  fire: '/static/icons/taohua/fire.svg',
+  water: '/static/icons/taohua/rain.svg',
+  wind: '/static/icons/taohua/wind.svg',
+  earth: '/static/icons/taohua/leaf.svg',
+  sun: '/static/icons/taohua/sun.svg',
+  moon: '/static/icons/taohua/moon.svg',
+}
+
+const ELEMENT_ICON: Record<string, string> = { '火': 'fire', '水': 'water', '风': 'wind', '土': 'earth' }
+const PLANET_ICON: Record<string, string> = { '太阳': 'sun', '月亮': 'moon', '火星': 'fire' }
+
+function pairAttrIcon(val: string | undefined, map: Record<string, string>): string {
+  if (!val) return ''
+  const key = map[val]
+  return key ? taohuaIcon(key) : ''
 }
 
 function taohuaIcon(name: string) {
@@ -750,11 +804,12 @@ async function loadData() {
   try {
     let queryError: any = null
     try {
-      const result = await queryTaohua(userZodiac.value, userSign.value, selfProfile.value?.gender)
+      const result = await queryTaohua(userZodiac.value, userSign.value, selfProfile.value?.gender, selfProfile.value?.mbtiCode)
       if (result?.success) {
         dailyData.value = result.data.daily
         practicalData.value = result.data.practical || null
         scoreData.value = result.data.score || null
+        personaMbti.value = result.data.mbti || null
       } else {
         queryError = result
       }
@@ -1047,8 +1102,8 @@ function handlePairGuideClick() {
   goSelfProfile()
 }
 
-function buildPairState(partnerZodiac: string, partnerSign: string, partnerLabel = '预览 TA') {
-  const pairPayload = buildPairMatchPayload(userZodiac.value, userSign.value, partnerZodiac, partnerSign)
+function buildPairState(partnerZodiac: string, partnerSign: string, partnerLabel = '预览 TA', partnerMbti?: string) {
+  const pairPayload = buildPairMatchPayload(userZodiac.value, userSign.value, partnerZodiac, partnerSign, selfProfile.value?.mbtiCode, partnerMbti)
   const pair = pairPayload.match
   return {
     match: {
@@ -1071,6 +1126,8 @@ function buildPairState(partnerZodiac: string, partnerSign: string, partnerLabel
     partnerStyle: pairPayload.partnerStyle,
     selfWestern: pairPayload.selfWestern,
     partnerWestern: pairPayload.partnerWestern,
+    mbtiCompatibility: pairPayload.mbtiCompatibility,
+    mbtiAdvice: pairPayload.mbtiAdvice,
   }
 }
 
@@ -1086,6 +1143,8 @@ function doMatchCheck() {
     pairPartnerStyle.value = previewPairState.value.partnerStyle || ''
     pairSelfWestern.value = previewPairState.value.selfWestern
     pairPartnerWestern.value = previewPairState.value.partnerWestern
+    pairMbtiCompatibility.value = previewPairState.value.mbtiCompatibility || ''
+    pairMbtiAdvice.value = previewPairState.value.mbtiAdvice || ''
     pairAIResult.value = null
     isPairPreviewing.value = true
     showMatchSheet.value = false
@@ -1151,6 +1210,9 @@ const pairParticipants = ref<{
 const pairReadLoading = ref(false)
 const pairAIResult = ref<any>(null)
 const pairPartnerStyle = ref('')
+const crushProfile = ref<any>(null)
+const crushMbtiDisplay = computed(() => crushProfile.value?.mbtiCode || '')
+const crushIdentityDisplay = computed(() => resolveIdentityLabel(crushProfile.value || null))
 const pairElementComboText = computed(() => {
   const selfEl = pairSelfWestern.value?.element
   const partnerEl = pairPartnerWestern.value?.element
@@ -1165,6 +1227,9 @@ const partnerChineseZhi = computed(() => {
 })
 const pairSelfWestern = ref<{ element: string; mode: string; planet: string; personality: string; classicalNote: string; source: string } | null>(null)
 const pairPartnerWestern = ref<{ element: string; mode: string; planet: string; personality: string; classicalNote: string; source: string } | null>(null)
+const pairMbtiCompatibility = ref('')
+const pairMbtiAdvice = ref('')
+const personaMbti = ref<{ code: string; label: string; desc: string; dating: string } | null>(null)
 const showPairReadGuide = ref(false)
 const isPairPreviewing = ref(false)
 const canRestoreCurrentPair = computed(() => !!defaultPairState.value)
@@ -1186,6 +1251,7 @@ async function loadPairMatch() {
     if (!uid) return
     const detail = await getCaseDetail(uid, boundCaseId.value)
     const crush = detail?.profile
+    crushProfile.value = crush || null
     let self = getCachedSelfProfile()
     if (!self?.zodiac || !self?.constellation) {
       const profileRes = await getSelfProfile().catch(() => null)
@@ -1209,7 +1275,8 @@ async function loadPairMatch() {
     defaultPairState.value = buildPairState(
       crush.zodiac,
       crush.constellation,
-      String(detail?.name || 'TA').trim() || 'TA'
+      String(detail?.name || 'TA').trim() || 'TA',
+      crush.mbtiCode
     )
     previewPairState.value = null
     pairMatch.value = defaultPairState.value.match
@@ -1218,6 +1285,8 @@ async function loadPairMatch() {
     pairPartnerStyle.value = defaultPairState.value.partnerStyle || ''
     pairSelfWestern.value = defaultPairState.value.selfWestern
     pairPartnerWestern.value = defaultPairState.value.partnerWestern
+    pairMbtiCompatibility.value = defaultPairState.value.mbtiCompatibility || ''
+    pairMbtiAdvice.value = defaultPairState.value.mbtiAdvice || ''
     showPairReadGuide.value = false
     isPairPreviewing.value = false
   } catch {
@@ -1245,6 +1314,8 @@ function restoreCurrentPair() {
   pairPartnerStyle.value = defaultPairState.value.partnerStyle || ''
   pairSelfWestern.value = defaultPairState.value.selfWestern
   pairPartnerWestern.value = defaultPairState.value.partnerWestern
+  pairMbtiCompatibility.value = defaultPairState.value.mbtiCompatibility || ''
+  pairMbtiAdvice.value = defaultPairState.value.mbtiAdvice || ''
   pairAIResult.value = null
   isPairPreviewing.value = false
 }
@@ -2006,6 +2077,26 @@ async function saveShareImage() {
 .pair-preview-note-v2 { display: block; margin-top: 10rpx; padding: 12rpx 14rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); line-height: 1.45; }
 .pair-preview-hint-v2 { display: block; margin-top: 16rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #888); text-align: center; line-height: 1.45; }
 
+.pair-extra-tags-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; justify-content: center; margin-top: 8rpx; }
+.pair-extra-tag-v2 { display: inline-block; padding: 4rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); background: var(--surface, #fff); }
+.pair-extra-tag-v2.mbti { background: var(--mint-soft, #E0FFF0); }
+.pair-extra-tag-v2.identity { background: var(--accent-soft, #FFFBEB); }
+
+/* MBTI 匹配（提示卡片模式：左边框 + 柔和底） */
+.pair-mbti { margin-top: 14rpx; padding: 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-left: 10rpx solid var(--mint, #4ECDC4); background: var(--brand-cool, #f5f5ff); }
+.pair-mbti-title { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); margin-bottom: 6rpx; }
+.pair-mbti-body { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.5; }
+.pair-mbti-advice { display: block; margin-top: 8rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); line-height: 1.4; }
+
+/* MBTI 人设（独立 card-v2，内部组件） */
+.persona-mbti-head { display: flex; align-items: center; gap: 10rpx; }
+.persona-mbti-code { display: inline-block; padding: 4rpx 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); font-size: $fs-body; font-weight: $fw-hero; }
+.persona-mbti-label { font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); }
+.persona-mbti-desc { display: block; font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.5; margin-top: 8rpx; }
+.persona-mbti-dating { margin-top: 10rpx; padding: 12rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.persona-mbti-dating-label { display: block; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); margin-bottom: 4rpx; }
+.persona-mbti-dating-text { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.4; }
+
 /* 全览表格 */
 .overview-table-v2 { margin-top: 12rpx; }
 .ov-row-v2 { display: flex; align-items: center; padding: 10rpx 0; border-bottom: 1rpx dashed var(--divider, #ccc); }
@@ -2125,6 +2216,8 @@ async function saveShareImage() {
   border-bottom: 1rpx solid var(--divider, #ddd);
 }
 .pair-cmp-key { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); min-width: 0; }
+.pair-cmp-cell { display: flex; align-items: center; gap: 6rpx; min-width: 0; }
+.pair-cmp-icon { width: 24rpx; height: 24rpx; flex-shrink: 0; display: block; }
 .pair-cmp-val { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.45; min-width: 0; }
 
 // 整行解读
@@ -2153,6 +2246,7 @@ async function saveShareImage() {
   .pair-mini-avatar { width: 44rpx; height: 44rpx; }
   .pair-mini-avatar-img { width: 44rpx; height: 44rpx; }
   .pair-cmp-key { font-size: $fs-caption * 1.2; }
+  .pair-cmp-icon { width: 30rpx; height: 30rpx; }
   .pair-cmp-val { font-size: $fs-body * 1.2; }
   .pair-full-text { font-size: $fs-body * 1.2; }
   .pair-tag { font-size: $fs-caption * 1.2; }

@@ -160,6 +160,8 @@ function compactTimelineItem(item) {
     userQuestion: sanitizeUserQuestion(item.userQuestion),
     dateLabel: item.dateLabel || '',
     description: item.description || '',
+    chatSelfName: typeof item.chatSelfName === 'string' ? item.chatSelfName.trim().slice(0, 30) : '',
+    chatTargetName: typeof item.chatTargetName === 'string' ? item.chatTargetName.trim().slice(0, 30) : '',
     semanticTags: item.semanticTags,
     occurrenceAt: toISOStringOrUndefined(item.occurrenceAt),
     createdAt: toISOStringOrUndefined(item.createdAt)
@@ -310,6 +312,7 @@ exports.main = async (event = {}) => {
     const ownedCase = await getOwnedCase(db, caseId, userId)
     if (ownedCase.error) return ownedCase.error
     const caseDoc = ownedCase.caseDoc
+    const caseName = caseDoc.name || ''
     markPerf('case_loaded')
 
     const assessment = normalizeDoc(await db.collection('assessments').doc(assessmentId).get())
@@ -408,6 +411,7 @@ exports.main = async (event = {}) => {
         assessmentId,
         recentTimeline: recentTimeline.slice(0, 8),
         caseProfile: caseDoc.profile,
+        caseName,
         selfProfile,
         aiSettings,
         traceId
@@ -420,6 +424,7 @@ exports.main = async (event = {}) => {
         assessmentId,
         recentTimeline: recentTimeline.slice(0, 8),
         caseProfile: caseDoc.profile,
+        caseName,
         selfProfile,
         aiSettings: { aiEnabled: false, aiFallbackToRules: true },
         traceId

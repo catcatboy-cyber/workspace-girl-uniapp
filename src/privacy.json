@@ -14,6 +14,10 @@
     ],
     "privacy_interface": [
       {
+        "name": "chooseAvatar",
+        "desc": "用于从微信头像中选择并上传，仅在你主动点击后获取，用于个人画像展示"
+      },
+      {
         "name": "chooseImage",
         "desc": "用于选择图片作为附件、头像或自定义形象"
       },
@@ -22,12 +26,16 @@
         "desc": "用于选择图片或视频作为附件"
       },
       {
-        "name": "saveImageToPhotosAlbum",
-        "desc": "用于将分享图或结果图保存到本地相册"
+        "name": "getUserInfo",
+        "desc": "用于获取微信昵称，仅在你主动聚焦昵称输入框时获取，用于个人画像展示"
       },
       {
         "name": "record",
         "desc": "用于语音输入，将录音转换为文字"
+      },
+      {
+        "name": "saveImageToPhotosAlbum",
+        "desc": "用于将分享图或结果图保存到本地相册"
       }
     ]
   }

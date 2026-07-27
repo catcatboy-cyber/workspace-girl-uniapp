@@ -59,6 +59,17 @@ function normalizeWechatProfile(event) {
   return { nickName, avatarUrl }
 }
 
+// ===== avatarUrl 白名单校验（与 userProfile/index.js 保持同步） =====
+const ALLOWED_AVATAR_PREFIXES = ['cloud://']
+const ALLOWED_AVATAR_PATTERNS = [/^\/static\/avatars\//]
+
+function isAllowedAvatarUrl(url) {
+  if (!url) return true
+  if (ALLOWED_AVATAR_PREFIXES.some(p => url.startsWith(p))) return true
+  if (ALLOWED_AVATAR_PATTERNS.some(r => r.test(url))) return true
+  return false
+}
+
 function buildWechatProfilePatch(profile, user = {}, force = false) {
   const patch = {}
   if (profile.nickName && (force || !String(user.nickName || '').trim())) {
@@ -67,14 +78,22 @@ function buildWechatProfilePatch(profile, user = {}, force = false) {
   if (profile.nickName && (force || !String(user.nickname || '').trim())) {
     patch.nickname = profile.nickName
   }
+  // avatarUrl: 只写入通过白名单校验的值（cloud:// 或内置路径）
+  // 拒绝 https:// 微信头像 URL，防止覆盖用户已上传的 cloud:// 头像
   if (profile.avatarUrl && (force || !String(user.avatarUrl || '').trim())) {
-    patch.avatarUrl = profile.avatarUrl
+    if (isAllowedAvatarUrl(profile.avatarUrl)) {
+      patch.avatarUrl = profile.avatarUrl
+    }
+    // 如果 profile.avatarUrl 是 HTTPS URL（如 thirdwx.qlogo.cn），静默跳过
   }
   return patch
 }
 
 function resolveDisplayName(user, phoneMasked) {
-  return user.nickName || user.nickname || user.email || (phoneMasked ? `微信用户 ${phoneMasked}` : '微信用户')
+  return user.nickName || user.nickname
+    || (user.selfProfile && user.selfProfile.nickname)
+    || user.email
+    || (phoneMasked ? `微信用户 ${phoneMasked}` : '微信用户')
 }
 
 function extractOpenId(event) {
@@ -392,7 +411,7 @@ exports.main = async (event = {}) => {
       phone: effectivePhone,
       phoneMasked,
       nickName: user.nickName || user.nickname || '',
-      avatarUrl: user.avatarUrl || '',
+      avatarUrl: user.avatarUrl || (user.selfProfile && user.selfProfile.avatarUrl) || '',
       displayName: resolveDisplayName(user, phoneMasked),
       loginType: user.loginType || 'wechat_phone',
       selfProfile: user.selfProfile || null,

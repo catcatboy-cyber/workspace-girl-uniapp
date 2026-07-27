@@ -135,7 +135,7 @@ exports.main = async (event) => {
         lastLogin: { $max: '$createdAt' },
         email: { $last: '$email' }
       })
-      .sort({ totalLogins: -1 })
+      .sort({ lastLogin: -1 })
       .limit(200)
       .end()
 

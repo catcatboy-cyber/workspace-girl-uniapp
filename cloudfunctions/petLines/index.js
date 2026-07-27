@@ -1445,10 +1445,8 @@ function getCaseMeta(activeCase) {
     constellation: cleanChatText(profile.constellation, 12),
     relationType: cleanChatText(profile.relationType, 20)
   }
-  // MBTI 性格类型
   const mbti = cleanChatText(profile.mbtiCode, 4)
   if (mbti) meta.mbti = mbti
-  // TA 身份标签
   if (profile.identityLabel) {
     const { resolveIdentityLabel } = require('./_shared/case-profile')
     const resolved = resolveIdentityLabel(profile)
@@ -1469,23 +1467,20 @@ function pickProfileFields(profile, fields) {
 function buildReplyToolContext(user, activeCase) {
   const selfProfile = user?.selfProfile || {}
   const targetProfile = activeCase?.profile || {}
-  const targetFields = { name: getCaseDisplayName(activeCase) }
-  // 基础字段
-  const baseFields = pickProfileFields(targetProfile, ['gender', 'age', 'occupation', 'relationType', 'zodiac', 'constellation'])
-  Object.assign(targetFields, baseFields)
-  // MBTI 性格类型
+  const selfFields = pickProfileFields(selfProfile, ['nickname', 'gender', 'ageRange', 'identity', 'zodiac', 'constellation'])
+  const selfMbti = cleanChatText(selfProfile.mbtiCode, 4)
+  if (selfMbti) selfFields.mbti = selfMbti
+  const targetFields = {
+    name: getCaseDisplayName(activeCase),
+    ...pickProfileFields(targetProfile, ['gender', 'age', 'occupation', 'relationType', 'zodiac', 'constellation'])
+  }
   const mbti = cleanChatText(targetProfile.mbtiCode, 4)
   if (mbti) targetFields.mbti = mbti
-  // TA 身份标签
   if (targetProfile.identityLabel) {
     const { resolveIdentityLabel } = require('./_shared/case-profile')
     const resolved = resolveIdentityLabel(targetProfile)
     if (resolved) targetFields.identityLabel = cleanChatText(resolved, 30)
   }
-  const selfFields = pickProfileFields(selfProfile, ['gender', 'ageRange', 'identity', 'zodiac', 'constellation'])
-  // 本人 MBTI
-  const selfMbti = cleanChatText(selfProfile.mbtiCode, 4)
-  if (selfMbti) selfFields.mbti = selfMbti
   return {
     self: selfFields,
     target: targetFields

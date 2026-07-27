@@ -242,8 +242,28 @@ function buildPracticalGuide(wuxing, taohuaDir, yiji, xishenDir, zodiac, jianchu
  * 主入口
  * @param {object} event — { zodiac: string, sign: string }
  */
+// ── MBTI 性格简释 ──
+const MBTI_FLAVORS = {
+  'INTJ': { label: '建筑师', desc: '理性、独立、注重系统性，重视深度和质量胜过数量。不喜表面寒暄，倾向于用行动和规划表达关心。感情节奏偏慢热，一旦确定全力以赴。', dating: '偏好安静有深度的环境，喜欢计划好的约会。建议：咖啡厅深度聊天、参观博物馆。' },
+  'INTP': { label: '逻辑家', desc: '好奇心驱动、爱分析，重视智识契合。不擅长表达情绪，但会通过"帮你解决问题"表达关心。有点笨拙但真诚。', dating: '偏好新奇能激发思考的地方。建议：科技馆、书店、密室逃脱。' },
+  'ENTJ': { label: '指挥官', desc: '自信、果断、目标导向，主动且直接。重视伴侣的能力和潜力，喜欢一起成长的伙伴关系。温柔不足但绝对可靠。', dating: '偏好高质量高效的活动，会主动安排。建议：高品质晚餐、红酒品鉴。' },
+  'ENTP': { label: '辩论家', desc: '聪明、幽默、热爱智力挑战，喜欢"你来我往"的思维碰撞。撩人于无形，但有时因太爱抬杠让对方迷惑。', dating: '偏好新鲜有趣的非常规活动。建议：喜剧俱乐部、辩论活动、即兴戏剧。' },
+  'INFJ': { label: '提倡者', desc: '深思熟虑、有洞察力、理想主义，追求灵魂连接。善解人意但内心难打开，一旦信任会给出极深的情感投入。', dating: '偏好有意义能深度交流的场合。建议：艺术画廊、安静书店咖啡馆、日落散步。' },
+  'INFP': { label: '调停者', desc: '温柔、有创造力、价值观驱动，追求真实和灵魂共鸣。极富同理心，易被故事和情感打动。有时过于理想化对方。', dating: '偏好浪漫有故事感的地方。建议：花园散步、手作工坊、独立电影。' },
+  'ENFJ': { label: '主人公', desc: '温暖、有感染力、善于激励，热情而体贴。天生擅长把握关系节奏，主动照顾对方情绪。注意别因太想帮助而忽略了倾听。', dating: '偏好社交性强的活动，喜欢制造惊喜。建议：小型聚会、音乐会、一日游。' },
+  'ENFP': { label: '竞选家', desc: '热情、好奇、充满可能性，天真又热烈。容易被新鲜的人和想法吸引，感情直接而迷人。需警惕注意力过于分散。', dating: '偏好即兴快乐的体验，讨厌按部就班。建议：节日市集、街头美食之旅、即兴公路旅行。' },
+  'ISTJ': { label: '物流师', desc: '务实、负责、极其可靠，用行动表达爱非语言。重视承诺和稳定，可能不够浪漫但默默记住每件小事并兑现。', dating: '偏好传统可靠经验证的经典方案。建议：经典晚餐+电影、参观当地历史地标。' },
+  'ISFJ': { label: '守卫者', desc: '温暖、细心、默默付出，极致温柔。善察对方微小需求并提前满足。感情深沉表达含蓄，需对方主动才能打开。', dating: '偏好温馨私密有意义的小确幸。建议：一起做饭、逛古董店或手工艺市集、温暖咖啡馆。' },
+  'ESTJ': { label: '总经理', desc: '果断、有条理、有责任心，重视秩序和清晰承诺。喜欢明确边界和可预期互动。需在效率和情绪间找平衡。', dating: '偏好高效有成果的活动。建议：运动健身、高级餐厅晚餐。' },
+  'ESFJ': { label: '执政官', desc: '社交高手、重视和谐、极具责任心，非常投入且乐于付出。重视传统关系模式和社交圈认可。需懂得感恩的伴侣。', dating: '偏好经典浪漫有社交元素的场合。建议：餐厅+朋友一起活动、社区活动。' },
+  'ISTP': { label: '鉴赏家', desc: '冷静、务实、行动派，用行动多于言语。重视个人空间和自由，不太适应过于情绪化表达。吸引人的是自在感。', dating: '偏好有动手参与感的实践活动。建议：攀岩、骑行、DIY工作坊。' },
+  'ISFP': { label: '探险家', desc: '感性、有艺术气质、活在当下，追求美的体验和真实瞬间。温柔但有自己的节奏。表达爱的方式是和你一起体验美好。', dating: '偏好充满美感有创造性的体验。建议：艺术创作体验课、户外野餐音乐会、拍照徒步。' },
+  'ESTP': { label: '企业家', desc: '大胆、适应力强、喜欢即兴行动，充满活力和激情。擅长制造刺激惊喜，可能对长期承诺不耐。吸引人的是冒险感。', dating: '偏好激动人心有肾上腺素的活动。建议：极限运动、卡丁车、演唱会。' },
+  'ESFP': { label: '表演家', desc: '热情、社交、享受当下，像阳光一样温暖。天生人群焦点，轻易让对方感到特别。需学会区分好感与持续投入。', dating: '偏好热闹有趣能展现魅力的场合。建议：主题派对、KTV、游乐园。' },
+}
+
 exports.main = async (event) => {
-  let { zodiac, sign, gender } = event || {}
+  let { zodiac, sign, gender, mbtiCode } = event || {}
 
   try {
     const userId = await requireAuthenticatedUserId(app, event)
@@ -301,13 +321,25 @@ exports.main = async (event) => {
     const score = calcTaohuaScore(daily.yiji.jianchu, taohuaDir, xishenDir, isLiuheDay, daily.yiji)
     const practical = buildPracticalGuide(wuxing, taohuaDir, daily.yiji, xishenDir, zodiac, daily.yiji.jianchu, score, isLiuheDay, liuheDir, gender)
 
+    // MBTI 性格简释
+    const validMbti = new Set(['','INTJ','INTP','ENTJ','ENTP','INFJ','INFP','ENFJ','ENFP','ISTJ','ISFJ','ESTJ','ESFJ','ISTP','ISFP','ESTP','ESFP'])
+    const mbtiData = (mbtiCode && validMbti.has(mbtiCode) && MBTI_FLAVORS[mbtiCode])
+      ? {
+          code: mbtiCode,
+          label: MBTI_FLAVORS[mbtiCode].label,
+          desc: MBTI_FLAVORS[mbtiCode].desc,
+          dating: MBTI_FLAVORS[mbtiCode].dating,
+        }
+      : null
+
     return {
       success: true,
       data: {
         daily,
         practical,
         score,
-        input: { zodiac: zodiac || '', sign: sign || '' },
+        input: { zodiac: zodiac || '', sign: sign || '', mbtiCode: mbtiCode || '' },
+        mbti: mbtiData,
       },
     }
   } catch (error) {

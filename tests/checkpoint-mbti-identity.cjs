@@ -41,8 +41,8 @@ check('__custom__ falls back to identityLabelCustom',
 check('identityLabelCustom slice(0, 20)',
   cp.includes('.slice(0, 20)'))
 
-check('normalizeCaseProfile hasOwnProperty pattern for update',
-  cp.includes('hasOwnProperty.call(input, \'mbtiCode\')'))
+check('normalizeCaseProfilePatch uses hasOwnProperty.cal',
+  cp.includes('hasOwnProperty.call(input') || cp.includes('hasOwnProperty.call(input, key)'))
 
 check('serializeCaseProfileForAI exports',
   cp.includes('module.exports') && cp.includes('serializeCaseProfileForAI'))
@@ -169,13 +169,13 @@ check('case-profile is required',
   gp.includes("require('./_shared/case-profile')"))
 
 check('mbtiCode injected into userPrompt',
-  gp.includes('mbtiCode') && gp.includes('MBTI'))
+  gp.includes('selfProfile.mbtiCode') && gp.includes('caseProfile.mbtiCode') && gp.includes('personalityContext'))
 
 check('identityLabel resolved in prompt context',
   gp.includes('resolveIdentityLabel(caseProfile)'))
 
-check('personalityContext built conditionally',
-  gp.includes('personalityContext') && gp.includes('mbtiLines'))
+check('personalityContext built (JSON object, no mbtiLines)',
+  gp.includes('personalityContext') && gp.includes('personalityContextStr'))
 
 console.log('  Result: %d/%d PASS', pass, pass + fail)
 const c8ok = fail === 0

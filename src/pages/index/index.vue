@@ -206,16 +206,25 @@
             </view>
           </view>
           <text class="role-hint-v2">{{ quickSubjectRoleHint }}</text>
-          <view v-if="quickSubjectRole === 'both'" class="quick-chat-names-v2">
-            <input v-model="quickChatSelfName" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
-            <text class="quick-chat-name-sep-v2">和</text>
-            <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="latestCase?.name || 'TA的微信昵称'" />
-            <text class="quick-chat-name-hint-v2">贴对话后标注，帮小咪分清谁说了什么</text>
+          <view class="quick-chat-names-v2">
+            <template v-if="quickSubjectRole === 'self' || quickSubjectRole === 'both'">
+              <!-- #ifdef MP-WEIXIN -->
+              <input v-model="quickChatSelfName" type="nickname" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
+              <!-- #endif -->
+              <!-- #ifndef MP-WEIXIN -->
+              <input v-model="quickChatSelfName" type="text" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
+              <!-- #endif -->
+            </template>
+            <template v-if="quickSubjectRole === 'target' || quickSubjectRole === 'both'">
+              <text v-if="quickSubjectRole === 'both'" class="quick-chat-name-sep-v2">和</text>
+              <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="latestCase?.name || 'TA的微信昵称'" />
+            </template>
+            <text v-if="quickSubjectRole === 'both'" class="quick-chat-name-hint-v2">贴对话后标注，帮小咪分清谁说了什么</text>
           </view>
           <textarea :value="quickDesc" @blur="onQuickDescBlur" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
           <view v-if="quickSubjectRole === 'both'" class="quick-paste-warn-v2">
             <image class="quick-paste-warn-icon-v2-img" src="/static/icons/taohua/warning.svg" mode="aspectFit" />
-            <text class="quick-paste-warn-text-v2">部分手机粘贴多行聊天记录时可能被截断，只显示第一条。如遇此情况，请先将聊天记录粘贴到<text class="quick-paste-warn-bold-v2">备忘录</text>或<text class="quick-paste-warn-bold-v2">文件传输助手</text>的输入框，再重新复制后粘贴到此处即可完整导入。</text>
+            <text class="quick-paste-warn-text-v2">部分手机粘贴多行聊天记录时可能被截断，只显示第一条。如遇此情况，请先将聊天记录粘贴到<text class="quick-paste-warn-bold-v2">备忘录</text>的输入框，再重新复制后粘贴到此处即可完整导入。</text>
           </view>
           <view class="datetime-row-v2">
             <picker mode="date" :value="quickDate" @change="onQuickDateChange"><view class="picker-v2">{{ quickDate }}</view></picker>
@@ -981,7 +990,7 @@ const swipeDisabled = computed(() => {
 
 function onSwiperChange(e: any) {
   const newIndex = e.detail.current
-  console.log(SWIPE_TAG, 'onSwiperChange', { newIndex, oldIndex: currentCrushIndex.value, programmatic: swiperProgrammatic.value, casesLen: cases.value.length, source: e.detail.source })
+  console.log(SWIPE_TAG, 'onSwiperChange', { newIndex, oldIndex: currentCrushIndex.value, programmatic: swiperProgrammatic.value, disabled: swipeDisabled.value, casesLen: cases.value.length, source: e.detail.source })
   // 防止与 watch(activeCaseId) 形成循环：用 flag 阻断程序化触发的 change
   if (swiperProgrammatic.value) {
     console.log(SWIPE_TAG, 'onSwiperChange SKIP (programmatic)')
@@ -1158,6 +1167,19 @@ function mapSubjectRoleLabel(role?: string) {
 function setQuickSubjectRole(role: 'target' | 'self' | 'both') {
   quickSubjectRole.value = role
   quickSubjectRoleConfidence.value = 'user_selected'
+  const cached = getCachedSelfProfile()
+  // 按角色自动填入对应的昵称
+  if (role === 'target') {
+    quickChatTargetName.value = latestCase.value?.name || ''
+    quickChatSelfName.value = ''
+  } else if (role === 'self') {
+    quickChatSelfName.value = cached?.nickname || ''
+    quickChatTargetName.value = ''
+  } else {
+    // both: 两个都填入
+    if (!quickChatSelfName.value && cached?.nickname) quickChatSelfName.value = cached.nickname
+    if (!quickChatTargetName.value) quickChatTargetName.value = latestCase.value?.name || ''
+  }
 }
 
 // 用 :value + @input 替代 v-model，绕过微信 textarea 粘贴截断 bug
@@ -2095,6 +2117,10 @@ async function handleVoiceRecordStop(res: any) {
 function onQuickRecordAction(mode: string) {
   // dock 的三个入口都打开同一个快速记录面板；输入逻辑只有这一份
   quickSheetVisible.value = true
+  const cached = getCachedSelfProfile()
+  if (cached?.nickname && !quickChatSelfName.value) {
+    quickChatSelfName.value = cached.nickname
+  }
   if (mode === 'image') { chooseQuickImages(); return }
   if (mode === 'voice') { toggleVoiceRecord(); return }
   // mode === 'text': 仅打开面板，聚焦文字输入

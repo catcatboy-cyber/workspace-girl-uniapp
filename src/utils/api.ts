@@ -451,6 +451,8 @@ export type SelfProfile = {
   aiStyle?: AIStyleValue
   aiBoldness?: AIBoldnessValue
   mbtiCode?: string
+  nickname?: string
+  avatarUrl?: string
   completedAt?: string
   updatedAt?: string
 }
@@ -1039,10 +1041,10 @@ export async function generatePairRead(caseId: string) {
 }
 
 /** 获取平台 Token 消费明细（已乘倍率） */
-export async function queryTaohua(zodiac: string, sign: string, gender?: string) {
+export async function queryTaohua(zodiac: string, sign: string, gender?: string, mbtiCode?: string) {
   const res = await callFunction({
     name: 'queryTaohua',
-    data: { zodiac, sign, gender, ...getBusinessAuthPayload() }
+    data: { zodiac, sign, gender, mbtiCode, ...getBusinessAuthPayload() }
   })
   return res.result
 }

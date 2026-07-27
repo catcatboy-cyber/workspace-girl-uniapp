@@ -132,9 +132,7 @@ const selfAgeOptions = [
 ]
 const identityOptions = [
   { value: '', label: '请选择' },
-  { value: 'high_school', label: '高中 / 中专' },
-  { value: 'college', label: '大学生' },
-  { value: 'graduate', label: '研究生' },
+  { value: 'student', label: '学生' },
   { value: 'worker', label: '已工作' },
   { value: 'other', label: '其他' },
 ]

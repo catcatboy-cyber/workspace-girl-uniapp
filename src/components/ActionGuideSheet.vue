@@ -86,10 +86,6 @@
           <image class="ags-pet-img" src="/static/pets/xiaomi/avatar.png" mode="aspectFit" />
         </view>
 
-        <!-- Petals -->
-        <view class="ags-petals">
-          <view v-for="i in 4" :key="i" class="ags-petal" :style="petalStyle(i)" />
-        </view>
       </view>
     </view>
   </view>
@@ -192,21 +188,6 @@ const dotColors = computed(() => {
     return CN_COLOR[name.trim()] || '#ddd'
   })
 })
-
-const petalPresets = [
-  { top: '4%', left: '50%', dur: '4s', delay: '0s', drift: '18px', spin: '360deg' },
-  { top: '8%', left: '55%', dur: '3.5s', delay: '0.6s', drift: '-10px', spin: '-320deg' },
-  { top: '2%', left: '60%', dur: '4.2s', delay: '1.2s', drift: '25px', spin: '400deg' },
-  { top: '6%', left: '48%', dur: '3.8s', delay: '1.8s', drift: '-14px', spin: '-350deg' },
-]
-function petalStyle(i: number) {
-  const p = petalPresets[i - 1] || petalPresets[0]
-  return {
-    top: p.top, left: p.left,
-    '--d': p.dur, '--delay': p.delay,
-    '--drift': p.drift, '--spin': p.spin,
-  }
-}
 </script>
 
 <style scoped>
@@ -258,8 +239,7 @@ function petalStyle(i: number) {
 .ags-cards { display: flex; flex-direction: column; align-items: flex-end; gap: 32rpx; padding: 28rpx 20rpx 240rpx 160rpx; }
 
 /* ═══ BALLOON CARDS ═══ */
-.ags-card{z-index:4;border-radius:var(--shape-radius-card,0);padding:28rpx 32rpx;border:2rpx solid var(--card-border,#111);box-shadow:inset 0 -12rpx 28rpx rgba(0,0,0,.06),inset 0 6rpx 20rpx rgba(255,255,255,.5),0 12rpx 40rpx rgba(0,0,0,.1);display:flex;flex-direction:column;gap:8rpx;animation:card-float var(--fd,5s) ease-in-out infinite;animation-delay:var(--fdl,0s);width:390rpx;box-sizing:border-box}
-@keyframes card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8rpx)}}
+.ags-card{z-index:4;border-radius:var(--shape-radius-card,0);padding:28rpx 32rpx;border:2rpx solid var(--card-border,#111);box-shadow:inset 0 -12rpx 28rpx rgba(0,0,0,.06),inset 0 6rpx 20rpx rgba(255,255,255,.5),0 12rpx 40rpx rgba(0,0,0,.1);display:flex;flex-direction:column;gap:8rpx;width:390rpx;box-sizing:border-box}
 .ags-card-kicker-icon{width:28rpx;height:28rpx;flex-shrink:0}.ags-card-sub-icon{width:24rpx;height:24rpx;flex-shrink:0}.ags-dont-chip-icon{width:22rpx;height:22rpx;flex-shrink:0}.ags-card-kicker{display:flex;align-items:center;gap:6rpx;font-size:28rpx;font-weight:700;color:var(--card-accent,#ef7669);letter-spacing:.05em}
 .ags-card-main{font-size:24rpx;font-weight:400;color:var(--text-main,#111);line-height:1.35}
 .ags-card-sub{display:flex;align-items:center;gap:6rpx;font-size:24rpx;color:var(--text-muted,#666);line-height:1.4;font-weight:400}
@@ -268,12 +248,12 @@ function petalStyle(i: number) {
 .ags-color-dots{display:flex;gap:12rpx;margin-top:4rpx}
 .ags-color-dot{width:32rpx;height:32rpx;border-radius:50%;border:3rpx solid rgba(24,21,20,.2)}
 
-.ags-card-wear{background:linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 50%,#FFD8BC 100%);--card-accent:var(--hero,#ef7669);--card-border:#e0b090;--fd:4.8s;--fdl:0s}
-.ags-card-venue{background:linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 50%,#C0E8D4 100%);--card-accent:#2d6a4f;--card-border:#a0d0b8;--fd:5.2s;--fdl:.4s}
-.ags-card-do{background:linear-gradient(160deg,#F5FFFD 0%,#D8F8F0 50%,#C0ECE4 100%);--card-accent:#1a6b5a;--card-border:#90d0c4;--fd:4.5s;--fdl:.8s}
+.ags-card-wear{background:linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 50%,#FFD8BC 100%);--card-accent:var(--hero,#ef7669);--card-border:#e0b090}
+.ags-card-venue{background:linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 50%,#C0E8D4 100%);--card-accent:#2d6a4f;--card-border:#a0d0b8}
+.ags-card-do{background:linear-gradient(160deg,#F5FFFD 0%,#D8F8F0 50%,#C0ECE4 100%);--card-accent:#1a6b5a;--card-border:#90d0c4}
 
 /* ═══ SCORE ═══ */
-.ags-score{position:absolute;right:32rpx;bottom:140rpx;z-index:4;display:flex;align-items:baseline;gap:4rpx;animation:card-float 5s ease-in-out infinite}
+.ags-score{position:absolute;right:32rpx;bottom:140rpx;z-index:4;display:flex;align-items:baseline;gap:4rpx}
 .ags-score-num{font-size:50rpx;font-weight:900;color:var(--hero,#FF6B6B);line-height:1}
 .ags-score-div{font-size:32rpx;color:#ddd;font-weight:700}
 .ags-score-unit{font-size:32rpx;color:#aaa;font-weight:700}
@@ -282,20 +262,12 @@ function petalStyle(i: number) {
 
 /* ═══ DONT CHIPS ═══ */
 .ags-donts{position:absolute;right:20rpx;bottom:60rpx;z-index:4;display:flex;gap:8rpx}
-.ags-dont-chip{display:flex;align-items:center;gap:4rpx;padding:8rpx 20rpx;border-radius:28rpx;font-size:22rpx;font-weight:700;background:rgba(239,118,105,.06);border:3rpx solid rgba(239,118,105,.2);color:#b87068;animation:chip-float 4s ease-in-out infinite;animation-delay:var(--cd,0s)}
-.ags-dont-chip:nth-child(1){--cd:0s}.ags-dont-chip:nth-child(2){--cd:.3s}.ags-dont-chip:nth-child(3){--cd:.6s}
-@keyframes chip-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6rpx)}}
+.ags-dont-chip{display:flex;align-items:center;gap:4rpx;padding:8rpx 20rpx;border-radius:28rpx;font-size:22rpx;font-weight:700;background:rgba(239,118,105,.06);border:3rpx solid rgba(239,118,105,.2);color:#b87068}
 
 /* ═══ XIAOMI ═══ */
 .ags-pet{position:absolute;z-index:5;left:16rpx;bottom:16rpx;width:140rpx;height:170rpx;animation:pet-bob 3s ease-in-out infinite}
 @keyframes pet-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8rpx)}}
 .ags-pet-img{width:130rpx;height:auto;filter:drop-shadow(6rpx 10rpx 0 rgba(24,21,20,.12))}
-
-/* ═══ PETALS ═══ */
-.ags-petals{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
-.ags-petal{position:absolute;width:12rpx;height:14rpx;background:var(--hero,#FF6B6B);border-radius:50% 0 50% 50%;opacity:0;animation:petal-fall var(--d,4s) var(--delay,0s) ease-in infinite}
-.ags-petal:nth-child(odd){background:#f08c80;border-radius:0 50% 50% 50%}
-@keyframes petal-fall{0%{opacity:0;transform:translate(0,-16rpx)rotate(0deg)scale(.5)}8%{opacity:.7}60%{opacity:.35}100%{opacity:0;transform:translate(var(--drift,36rpx),440rpx)rotate(var(--spin,360deg))scale(.2)}}
 
 /* ═══ EMPTY STATE ═══ */
 .ags-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted,#666);font-size:32rpx;font-weight:700}

@@ -970,7 +970,7 @@ async function persistPromptAdminViewIfNeeded(settings) {
 
 async function getOverview(currentUserId = '', currentUser = null) {
   const [usersRes, casesRes, settings] = await Promise.all([
-    db.collection('users').limit(100).get(),
+    db.collection('users').orderBy('createdAt', 'desc').limit(100).get(),
     db.collection('cases').limit(1000).get(),
     getGlobalAISettingsRaw()
   ])

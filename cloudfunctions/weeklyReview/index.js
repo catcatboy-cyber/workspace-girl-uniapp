@@ -99,6 +99,7 @@ function mapRelationTypeLabel(value) {
 
 function serializeSelfProfile(profile) {
   const payload = {
+    nickname: cleanText(profile?.nickname, 24),
     gender: cleanText(profile?.gender, 24),
     ageRange: cleanText(profile?.ageRange, 24),
     identity: cleanText(profile?.identity, 24),

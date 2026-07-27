@@ -202,6 +202,7 @@ async function recalculateAssessmentFromEvent(params) {
     assessmentId,
     recentTimeline = [],
     caseProfile,
+    caseName,
     selfProfile,
     aiSettings,
     traceId
@@ -211,6 +212,7 @@ async function recalculateAssessmentFromEvent(params) {
     event,
     recentTimeline,
     caseProfile,
+    caseName,
     selfProfile,
     settings: aiSettings,
     traceId
