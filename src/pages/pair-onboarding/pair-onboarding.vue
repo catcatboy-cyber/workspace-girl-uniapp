@@ -111,6 +111,7 @@ import { bumpDataVersion, setActiveCaseId } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildPairMatchPayload, SIGN_NAMES, ZODIAC_NAMES } from '@/utils/taohua'
 import { aiLabel } from '@/utils/labels'
+import { normalizeSelfIdentity } from '@/utils/identity'
 
 const fontSizeMode = ref(getFontSizeMode())
 const pageStyle = ref(getThemeStyle())
@@ -170,7 +171,7 @@ onLoad((options: any) => {
   const cached = getCachedSelfProfile()
   selfForm.gender = normalizeSelfValue(options?.selfGender || cached?.gender, selfGenderOptions)
   selfForm.ageRange = normalizeSelfValue(options?.selfAgeRange || cached?.ageRange, selfAgeOptions)
-  undefined
+  selfForm.identity = normalizeSelfValue(normalizeSelfIdentity(options?.selfIdentity || cached?.identity), identityOptions)
   selfForm.zodiac = normalizeOption(options?.selfZodiac, zodiacOptions, cached?.zodiac || zodiacOptions[0])
   selfForm.constellation = normalizeOption(options?.selfSign, signOptions, cached?.constellation || signOptions[0])
   taForm.name = decodeURIComponent(String(options?.taName || 'TA')).trim() || 'TA'

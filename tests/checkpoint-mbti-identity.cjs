@@ -276,11 +276,37 @@ const c13ok = fail === 0
 pass = 0; fail = 0
 
 // ==========================================
+// ==========================================
+// C14: pair-onboarding — identity init + normalizeSelfIdentity
+// ==========================================
+console.log('\n=== C14: pair-onboarding.vue identity init ===')
+const po = fs.readFileSync('src/pages/pair-onboarding/pair-onboarding.vue', 'utf8')
+
+check('identityOptions uses new enum (student/worker/other)',
+  po.includes("value: 'student'") && po.includes("value: 'worker'") && !po.includes("high_school"))
+
+check('selfForm.identity initialized with normalizeSelfIdentity',
+  po.includes('normalizeSelfIdentity(options?.selfIdentity || cached?.identity)'))
+
+check('normalizeSelfIdentity imported',
+  po.includes("import { normalizeSelfIdentity } from '@/utils/identity'"))
+
+check('template loops over identityOptions',
+  po.includes('v-for="item in identityOptions"'))
+
+check('identity field in reactive selfForm',
+  po.includes("identity: ''"))
+
+console.log('  Result: %d/%d PASS', pass, pass + fail)
+const c14ok = fail === 0
+pass = 0; fail = 0
+
+// ==========================================
 // SUMMARY
 // ==========================================
 console.log('\n=== SMOKE TEST SUMMARY ===')
-const allPass = c1ok && c2ok && c3ok && c4ok && c5ok && c6ok && c7ok && c8ok && c9ok && c10ok && c11ok && c12ok && c13ok
-const failedChecks = [c1ok, c2ok, c3ok, c4ok, c5ok, c6ok, c7ok, c8ok, c9ok, c10ok, c11ok, c12ok, c13ok]
+const allPass = c1ok && c2ok && c3ok && c4ok && c5ok && c6ok && c7ok && c8ok && c9ok && c10ok && c11ok && c12ok && c13ok && c14ok
+const failedChecks = [c1ok, c2ok, c3ok, c4ok, c5ok, c6ok, c7ok, c8ok, c9ok, c10ok, c11ok, c12ok, c13ok, c14ok]
   .map((ok, i) => ok ? null : `C${i + 1}`).filter(Boolean)
 
 if (allPass) {
