@@ -757,8 +757,12 @@ export const SIGN_NAMES = Object.keys(SIGN_DUAL)
 
 export interface PairInsight {
   styleClash: string      // 风格碰撞
-  activities: string[]    // 适合一起做的事
-  watchOut: string[]      // 要注意什么
+  activities: string[]    // 适合一起做的事（保留向后兼容，= western + chinese）
+  chineseActivities: string[]  // new: 地支关系驱动的推荐
+  westernActivities: string[]  // new: 元素驱动的推荐
+  watchOut: string[]      // 要注意什么（保留向后兼容）
+  chineseWatchOut: string[]    // new: 地支关系注意事项
+  westernWatchOut: string[]    // new: 元素冲突注意事项
   classicalNote: string   // 古籍依据
 }
 
@@ -786,34 +790,42 @@ export function generatePairInsight(
     ? `${baseStyleClash} 星座层面，${signRelationDesc}`
     : baseStyleClash
 
-  // 适合一起做的事
-  const activities: string[] = []
+  // 适合一起做的事（拆分：元素驱动 → western，关系驱动 → chinese）
+  const westernActivities: string[] = []
+  const chineseActivities: string[] = []
   const elements = [selfElement, partnerElement]
-  if (elements.includes('火')) activities.push('一起运动、看演出、去热闹的地方')
-  if (elements.includes('水')) activities.push('安静的深度约会、海边湖边散步、一起看电影')
-  if (elements.includes('风')) activities.push('一起旅行、逛展览、聊哲学人生')
-  if (elements.includes('土')) activities.push('一起做饭、逛超市、打理家居')
+  if (elements.includes('火')) westernActivities.push('一起运动、看演出、去热闹的地方')
+  if (elements.includes('水')) westernActivities.push('安静的深度约会、海边湖边散步、一起看电影')
+  if (elements.includes('风')) westernActivities.push('一起旅行、逛展览、聊哲学人生')
+  if (elements.includes('土')) westernActivities.push('一起做饭、逛超市、打理家居')
 
-  if (relation.includes('六合')) activities.push('任何事——六合的默契让做什么都愉快')
-  if (relation.includes('三合')) activities.push('一起去探索新事物，你们的节奏天然合拍')
-  if (relation.includes('冲')) activities.push('需要刺激性活动来释放张力——密室逃脱、攀岩、竞技运动')
+  if (relation.includes('六合')) chineseActivities.push('任何事——六合的默契让做什么都愉快')
+  if (relation.includes('三合')) chineseActivities.push('一起去探索新事物，你们的节奏天然合拍')
+  if (relation.includes('冲')) chineseActivities.push('需要刺激性活动来释放张力——密室逃脱、攀岩、竞技运动')
 
-  // 要注意什么
-  const watchOut: string[] = []
+  const activities: string[] = [...westernActivities, ...chineseActivities]
+
+  // 要注意什么（拆分：关系驱动 → chinese，元素冲突 → western）
+  const chineseWatchOut: string[] = []
+  const westernWatchOut: string[] = []
   if (relation.includes('冲')) {
-    watchOut.push('情绪爆发时别互相伤害——冷静24小时再谈')
-    watchOut.push('不要在小事上争对错，六冲容易把小事放大')
+    chineseWatchOut.push('情绪爆发时别互相伤害——冷静24小时再谈')
+    chineseWatchOut.push('不要在小事上争对错，六冲容易把小事放大')
   }
   if (relation.includes('六合')) {
-    watchOut.push('太合拍了反而容易忽视问题——定期坦诚交流')
+    chineseWatchOut.push('太合拍了反而容易忽视问题——定期坦诚交流')
   }
   if (relation.includes('三合')) {
-    watchOut.push('舒适区太舒服可能导致关系停滞——偶尔给点新鲜感')
+    chineseWatchOut.push('舒适区太舒服可能导致关系停滞——偶尔给点新鲜感')
   }
-  if (selfElement === '火' && partnerElement === '水') watchOut.push('她的感性和你的冲动需要互相适应——她需要安全感，你需要自由')
-  if (selfElement === '水' && partnerElement === '火') watchOut.push('你的细腻和她的热烈需要节奏磨合——别催她，也别说他慢')
-  if (selfElement === '风' && partnerElement === '土') watchOut.push('你爱自由她求安稳——约好"你的冒险时间"和"我们的安静时光"')
-  if (selfElement === '土' && partnerElement === '风') watchOut.push('别嫌她飘忽不定——她的灵活正是你需要的调味剂')
+  if (selfElement === '火' && partnerElement === '水') westernWatchOut.push('她的感性和你的冲动需要互相适应——她需要安全感，你需要自由')
+  if (selfElement === '水' && partnerElement === '火') westernWatchOut.push('你的细腻和她的热烈需要节奏磨合——别催她，也别说他慢')
+  if (selfElement === '风' && partnerElement === '土') westernWatchOut.push('你爱自由她求安稳——约好"你的冒险时间"和"我们的安静时光"')
+  if (selfElement === '土' && partnerElement === '风') westernWatchOut.push('别嫌她飘忽不定——她的灵活正是你需要的调味剂')
+
+  const watchOut: string[] = chineseWatchOut.length > 0 || westernWatchOut.length > 0
+    ? [...chineseWatchOut, ...westernWatchOut]
+    : ['顺其自然，真诚相待最重要']
 
   // 古籍依据
   const classicalNoteMap: Record<string, string> = {
@@ -825,7 +837,30 @@ export function generatePairInsight(
   }
   const classicalNote = classicalNoteMap[relation] || '地支无特殊关系，能量独立运行。'
 
-  return { styleClash, activities, watchOut: watchOut.length ? watchOut : ['顺其自然，真诚相待最重要'], classicalNote }
+  return { styleClash, activities, chineseActivities, westernActivities, watchOut, chineseWatchOut, westernWatchOut, classicalNote }
+}
+
+// ── 元素组合映射（有序，非 Unicode 默认） ──
+const ELEMENT_ORDER: Record<string, number> = { '火': 0, '水': 1, '风': 2, '土': 3 }
+
+const ELEMENT_COMBO_TEXT: Record<string, string> = {
+  '火+火': '火 + 火 → 热烈强势，激情四射但需注意节奏',
+  '火+水': '火 + 水 → 蒸汽效应，感性融化冲动，互补又拉扯',
+  '火+风': '火 + 风 → 风助火势，自由不羁、一拍即合',
+  '火+土': '火 + 土 → 熔岩凝华，热烈被沉稳收束成形状',
+  '水+水': '水 + 水 → 深海共鸣，情感丰沛但需防漩涡',
+  '水+风': '水 + 风 → 波澜共振，感性流动遇见理性自由',
+  '水+土': '水 + 土 → 润泽沃土，细腻滋养安定',
+  '风+风': '风 + 风 → 对流共振，精神契合但需锚点',
+  '风+土': '风 + 土 → 沙尘飞扬或落地生根，自由与稳定需要约定边界',
+  '土+土': '土 + 土 → 大地相依，稳重坚实但需灵动调味',
+}
+
+export function getElementComboText(selfElement: string, partnerElement: string): string {
+  const key = [selfElement, partnerElement]
+    .sort((a, b) => (ELEMENT_ORDER[a] ?? 99) - (ELEMENT_ORDER[b] ?? 99))
+    .join('+')
+  return ELEMENT_COMBO_TEXT[key] || `${selfElement} + ${partnerElement} → 元素平衡`
 }
 
 export interface PairMatchPayload {
@@ -840,6 +875,22 @@ export interface PairMatchPayload {
   match: PairZodiacMatchResult
   insight: PairInsight
   partnerStyle: string
+  selfWestern: {
+    element: string
+    mode: string
+    planet: string
+    personality: string
+    classicalNote: string
+    source: string
+  }
+  partnerWestern: {
+    element: string
+    mode: string
+    planet: string
+    personality: string
+    classicalNote: string
+    source: string
+  }
 }
 
 export function buildPairMatchPayload(
@@ -858,6 +909,22 @@ export function buildPairMatchPayload(
     match,
     insight,
     partnerStyle: partnerMatch.western.personality,
+    selfWestern: {
+      element: selfMatch.western.element,
+      mode: selfMatch.western.mode,
+      planet: selfMatch.western.planet,
+      personality: selfMatch.western.personality,
+      classicalNote: selfMatch.western.classicalNote,
+      source: selfMatch.western.source,
+    },
+    partnerWestern: {
+      element: partnerMatch.western.element,
+      mode: partnerMatch.western.mode,
+      planet: partnerMatch.western.planet,
+      personality: partnerMatch.western.personality,
+      classicalNote: partnerMatch.western.classicalNote,
+      source: partnerMatch.western.source,
+    },
   }
 }
 
