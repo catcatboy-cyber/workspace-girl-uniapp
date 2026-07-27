@@ -364,13 +364,7 @@
           </picker>
         </view>
       </view>
-      <text v-if="pairParticipants" class="pair-basis-v2">匹配依据：生肖 + 星座</text>
-      <view v-if="(crushMbtiDisplay || crushIdentityDisplay) && !isPairPreviewing" class="pair-extra-tags-v2">
-        <text v-if="crushMbtiDisplay" class="pair-extra-tag-v2 mbti">MBTI {{ crushMbtiDisplay }}</text>
-        <text v-if="crushIdentityDisplay" class="pair-extra-tag-v2 identity">{{ crushIdentityDisplay }}</text>
-      </view>
       <text v-if="isPairPreviewing" class="pair-preview-note-v2">当前是临时预览组合，仅在本页生效，不会修改 TA 档案。</text>
-      <text class="pair-summary-desc-v2">{{ pairMatch.combinedRelationDesc || pairMatch.relationDesc }}</text>
 
       <!-- 星座关系行 -->
       <view class="pair-rel-row">
@@ -391,6 +385,21 @@
               <image class="pair-pick-arrow" :style="iconStyle(14)" :src="taohuaIcon('listChecks')" mode="aspectFit" />
             </view>
           </picker>
+        </view>
+      </view>
+
+      <!-- MBTI 关系行 -->
+      <view v-if="pairSelfMbti && pairPartnerMbti" class="pair-rel-row">
+        <view class="pair-rel-cell">
+          <text class="pair-rel-token">{{ pairSelfMbti }}</text>
+        </view>
+        <view class="pair-rel-cell pair-rel-mid">
+          <view :class="['pair-badge', pairMbtiBadgeTone]">
+            <text>{{ pairMbtiBadge }}</text>
+          </view>
+        </view>
+        <view class="pair-rel-cell">
+          <text class="pair-rel-token">{{ pairPartnerMbti }}</text>
         </view>
       </view>
 
@@ -1227,6 +1236,21 @@ const partnerChineseZhi = computed(() => {
 })
 const pairSelfWestern = ref<{ element: string; mode: string; planet: string; personality: string; classicalNote: string; source: string } | null>(null)
 const pairPartnerWestern = ref<{ element: string; mode: string; planet: string; personality: string; classicalNote: string; source: string } | null>(null)
+const pairSelfMbti = computed(() => selfProfile.value?.mbtiCode || '')
+const pairPartnerMbti = computed(() => crushProfile.value?.mbtiCode || '')
+function getMbtiBadgeLabel(selfMbti: string, partnerMbti: string): { label: string; tone: string } {
+  if (!selfMbti || !partnerMbti || selfMbti.length !== 4 || partnerMbti.length !== 4) return { label: '', tone: 'mid' }
+  const s = selfMbti.toUpperCase(), p = partnerMbti.toUpperCase()
+  const sameCount = [0, 1, 2, 3].filter(i => s[i] === p[i]).length
+  if (s === p) return { label: '镜像组合', tone: 'great' }
+  if (sameCount >= 3) return { label: '高度契合', tone: 'great' }
+  if (s[0] !== p[0] && s[1] === p[1]) return { label: '经典吸引', tone: 'good' }
+  if (sameCount >= 2) return { label: '稳定合拍', tone: 'good' }
+  if (sameCount >= 1) return { label: '差异互补', tone: 'mid' }
+  return { label: '截然不同', tone: 'mid' }
+}
+const pairMbtiBadge = computed(() => getMbtiBadgeLabel(pairSelfMbti.value, pairPartnerMbti.value).label)
+const pairMbtiBadgeTone = computed(() => getMbtiBadgeLabel(pairSelfMbti.value, pairPartnerMbti.value).tone)
 const pairMbtiCompatibility = ref('')
 const pairMbtiAdvice = ref('')
 const personaMbti = ref<{ code: string; label: string; desc: string; dating: string } | null>(null)
@@ -2065,7 +2089,6 @@ async function saveShareImage() {
 .pair-token-symbol-v2 { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1; flex-shrink: 0; }
 .pair-token-text-v2 { min-width: 0; font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pair-token-edit-v2 { position: absolute; right: 6rpx; top: 6rpx; width: 28rpx; height: 28rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-xs, 0); background: var(--surface, #fff); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-.pair-basis-v2 { display: block; margin-top: 10rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #888); text-align: center; }
 .pair-relation-cell-v2 { min-width: 0; min-height: 66rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rpx 2rpx; box-sizing: border-box; }
 .pair-relation-cell-v2.great { color: var(--relation-good, #0A8F86); }
 .pair-relation-cell-v2.good { color: var(--relation-mid, #A87600); }
@@ -2076,11 +2099,6 @@ async function saveShareImage() {
 .pair-summary-desc-v2 { display: block; margin-top: 12rpx; text-align: left; font-size: $fs-body; font-weight: $fw-body; color: var(--text-muted, #666); line-height: $lh-body; }
 .pair-preview-note-v2 { display: block; margin-top: 10rpx; padding: 12rpx 14rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-muted, #666); line-height: 1.45; }
 .pair-preview-hint-v2 { display: block; margin-top: 16rpx; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #888); text-align: center; line-height: 1.45; }
-
-.pair-extra-tags-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; justify-content: center; margin-top: 8rpx; }
-.pair-extra-tag-v2 { display: inline-block; padding: 4rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); background: var(--surface, #fff); }
-.pair-extra-tag-v2.mbti { background: var(--mint-soft, #E0FFF0); }
-.pair-extra-tag-v2.identity { background: var(--accent-soft, #FFFBEB); }
 
 /* MBTI 匹配（提示卡片模式：左边框 + 柔和底） */
 .pair-mbti { margin-top: 14rpx; padding: 18rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-left: 10rpx solid var(--mint, #4ECDC4); background: var(--brand-cool, #f5f5ff); }
@@ -2169,6 +2187,11 @@ async function saveShareImage() {
 .pair-rel-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; display: block; }
 .pair-rel-icon-emoji { font-size: 22rpx; line-height: 1; flex-shrink: 0; }
 .pair-rel-text { font-size: $fs-body; font-weight: $fw-label; color: var(--text-main, #111); }
+.pair-rel-token {
+  font-size: $fs-body-lg; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111);
+  padding: 6rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
+}
 .pair-pick-inline {
   display: flex; align-items: center; gap: 4rpx;
   padding: 4rpx 8rpx;
