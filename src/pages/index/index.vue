@@ -61,13 +61,18 @@
             :interaction-balance="getTimelineStats(cases[0])"
             :taohua-teaser-data="taohuaTeaserData"
             :guidance-text="taohuaTeaserData?.guidance || ''"
-            :balance-callout="getBalanceCallout(cases[0])"
+            :ta-day-zhi="taohuaTeaserData?.dayZhi || ''"
+            :ta-self-zhi="ZODIAC_TO_ZHI[selfProfile?.zodiac] || ''"
+            :ta-crush-zhi="ZODIAC_TO_ZHI[cases[0].profile?.zodiac] || ''"
+            :ta-self-rel="getTaDailyRel(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi)"
+            :ta-crush-rel="getTaDailyRel(ZODIAC_TO_ZHI[cases[0].profile?.zodiac], taohuaTeaserData?.dayZhi)"
+            :ta-self-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi)"
+            :ta-crush-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[cases[0].profile?.zodiac], taohuaTeaserData?.dayZhi)"
             :pet-name="selectedPet.displayName"
             :has-self-profile="hasUsableSelfProfile(selfProfile)"
             :font-size-mode="fontSizeMode"
             @open-case-detail="goCaseDetail(cases[0].caseId || cases[0]._id)"
             @open-latest-signal="openAnalysisSheet"
-            @open-interaction-balance="openBalanceSheet"
             @open-taohua="goTaohua"
             @open-guidance="openGuidanceSheet"
             @open-quick-record="onQuickRecordAction"
@@ -428,7 +433,7 @@ import { buildDivergingBars } from '@/utils/insights.ts'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
-import { xianchiAlgorithm, hongluanTianxi } from '@/utils/taohua'
+import { xianchiAlgorithm, hongluanTianxi, ZODIAC_TO_ZHI } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
 
@@ -1044,7 +1049,26 @@ const guidanceSheetVisible = ref(false)
 function openGuidanceSheet() { guidanceSheetVisible.value = true }
 function closeGuidanceSheet() { guidanceSheetVisible.value = false }
 
-// Campus Signal: 互动天平摘要
+// Campus Signal: TA的今日 日支关系
+const LIUHE: Record<string, string> = { '子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午' }
+const LIUCHONG: Record<string, string> = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' }
+const SANHE_SETS: Record<string, string[]> = { '申':['子','辰'],'子':['申','辰'],'辰':['申','子'],'亥':['卯','未'],'卯':['亥','未'],'未':['亥','卯'],'寅':['午','戌'],'午':['寅','戌'],'戌':['寅','午'],'巳':['酉','丑'],'酉':['巳','丑'],'丑':['巳','酉'] }
+
+function getTaDailyRel(zhi: string, dayZhi: string): string {
+  if (!zhi || !dayZhi) return ''
+  if (zhi === dayZhi) return 'good'
+  if (LIUHE[dayZhi] === zhi) return 'good'
+  if ((SANHE_SETS[dayZhi] || []).includes(zhi)) return 'good'
+  if (LIUCHONG[dayZhi] === zhi) return 'bad'
+  return 'mid'
+}
+function getTaDailyRelText(zhi: string, dayZhi: string): string {
+  const rel = getTaDailyRel(zhi, dayZhi)
+  if (rel === 'good') return '三合'
+  if (rel === 'bad') return '六冲'
+  return '平'
+}
+// 兼容旧 prop，保留接口不动
 const balanceCalloutForHome = computed(() => getBalanceCallout(latestCase.value))
 
 const quickSubjectRoleHint = computed(() => {
@@ -2616,7 +2640,7 @@ function goSelfProfile() {
 const showTaohuaTeaser = ref(true)
 const statusInfoVisible = ref(false)
 const showTaohuaInfo = ref(false)
-const taohuaTeaserData = ref<{ score: number; direction: string; directionZhi: string; hongluanDir: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
+const taohuaTeaserData = ref<{ score: number; dayZhi: string; direction: string; directionZhi: string; hongluanDir: string; tianxiDir: string; jianchu: string; summary: string; guidance: string } | null>(null)
 const actionGuideData = ref<ReturnType<typeof normalizeActionGuideData> | null>(null)
 
 async function loadTaohuaTeaser() {
@@ -2644,6 +2668,7 @@ async function loadTaohuaTeaser() {
 
     taohuaTeaserData.value = {
       score,
+      dayZhi,
       direction: taohua.direction,
       directionZhi: taohua.taohua_zhi,
       hongluanDir: hongluan?.hongluan?.direction || '',

@@ -72,11 +72,17 @@
           <text class="cs-node-hint">{{ latestSignal ? '查看详情' : '记录后解锁' }}</text>
         </view>
 
-        <!-- 节点：互动天平 -->
-        <view class="cs-node cs-node-balance" @click.stop="$emit('open-interaction-balance')">
-          <image class="cs-node-icon-img" src="/static/icons/taohua/scale.svg" mode="aspectFit" />
-          <text class="cs-node-label">互动天平</text>
-          <text class="cs-node-hint">{{ balanceCallout || '记录更多互动后解锁' }}</text>
+        <!-- 节点：今日的TA -->
+        <view class="cs-node cs-node-ta-daily">
+          <image class="cs-node-icon-img" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" />
+          <text class="cs-node-label">今日的TA</text>
+          <view class="cs-node-hint">
+            <view v-if="taSelfZhi && taCrushZhi" class="cs-ta-daily-inner">
+              <text :class="['cs-ta-chip', taSelfRel === 'good' ? 'good' : taSelfRel === 'bad' ? 'bad' : '']">我 {{ taSelfRelText }}</text>
+              <text :class="['cs-ta-chip', taCrushRel === 'good' ? 'good' : taCrushRel === 'bad' ? 'bad' : '']">TA {{ taCrushRelText }}</text>
+            </view>
+            <text v-else>{{ taDayZhi ? '今日日支 ' + taDayZhi : '完善画像后解锁' }}</text>
+          </view>
         </view>
 
         <!-- 节点：今日桃花 -->
@@ -176,7 +182,13 @@ const props = defineProps({
   profileItems: { type: Array as any, default: () => [] },
   latestSignal: { type: Object as any, default: null },
   interactionBalance: { type: Object as any, default: null },
-  balanceCallout: { type: String, default: '' },
+  taDayZhi: { type: String, default: '' },
+  taSelfZhi: { type: String, default: '' },
+  taCrushZhi: { type: String, default: '' },
+  taSelfRel: { type: String, default: '' },
+  taCrushRel: { type: String, default: '' },
+  taSelfRelText: { type: String, default: '' },
+  taCrushRelText: { type: String, default: '' },
   taohuaTeaserData: { type: Object as any, default: null },
   petName: { type: String, default: '小咪' },
   guidanceText: { type: String, default: '' },
@@ -188,7 +200,6 @@ const props = defineProps({
 const emit = defineEmits([
   'open-case-detail',
   'open-latest-signal',
-  'open-interaction-balance',
   'open-taohua',
   'open-guidance',
   'open-quick-record',
@@ -557,7 +568,7 @@ const statusLabel = computed(() => {
 
 /* 节点光束扫过：渐亮渐暗 */
 .cs-node-signal { left: 12rpx; top: 130rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 5.25s; }
-.cs-node-balance { right: 12rpx; top: 140rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 0s; }
+.cs-node-ta-daily { right: 12rpx; top: 140rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 0s; }
 .cs-node-taohua { right: 12rpx; top: 330rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 1.75s; }
 .cs-node-pair { left: 12rpx; top: 340rpx; animation: cs-node-hit 7s ease-in-out infinite; animation-delay: 3.5s; }
 @keyframes cs-node-hit {
@@ -571,12 +582,20 @@ const statusLabel = computed(() => {
   animation: cs-node-text-glow 7s ease-in-out infinite;
   animation-delay: 5.25s;
 }
-.cs-node-balance .cs-node-icon-img,
-.cs-node-balance .cs-node-label,
-.cs-node-balance .cs-node-hint {
+.cs-node-ta-daily .cs-node-icon-img,
+.cs-node-ta-daily .cs-node-label,
+.cs-node-ta-daily .cs-node-hint {
   animation: cs-node-text-glow 7s ease-in-out infinite;
   animation-delay: 0s;
 }
+.cs-ta-daily-inner { display: flex; gap: 6rpx; flex-wrap: wrap; justify-content: center; }
+.cs-ta-chip {
+  display: inline-block; padding: 2rpx 10rpx;
+  border: 1.5rpx solid var(--border, #111);
+  background: var(--surface, #fff); font-size: 20rpx; font-weight: 700;
+}
+.cs-ta-chip.good { background: var(--mint-soft, #E0FFF0); color: var(--relation-good, #4ECDC4); }
+.cs-ta-chip.bad { background: var(--risk-soft, #FFEEEC); color: var(--relation-bad, #D33F49); }
 .cs-node-taohua .cs-node-icon-img,
 .cs-node-taohua .cs-node-label,
 .cs-node-taohua .cs-node-hint {
@@ -713,6 +732,6 @@ const statusLabel = computed(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .cs-pulse, .cs-beam, .cs-halo-h2, .cs-halo-h3,
-  .cs-node-signal, .cs-node-balance, .cs-node-taohua, .cs-node-pair { animation: none; }
+  .cs-node-signal, .cs-node-ta-daily, .cs-node-taohua, .cs-node-pair { animation: none; }
 }
 </style>
