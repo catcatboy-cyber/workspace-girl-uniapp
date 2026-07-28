@@ -604,8 +604,6 @@ function getQuickQuestionPayload() {
 }
 
 // ── Crush 滑动：单 case 数据源 helpers（swiper + Sheet 共用）──
-const SWIPE_TAG = '[swipe]'
-
 function getTimelineRecordTs(r: any): number {
   return new Date(r?.occurrenceAt || r?.createdAt || r?.date || 0).getTime()
 }
@@ -964,22 +962,18 @@ function measureSwiperHeight() {
         if (rect?.height) {
           const h = Math.ceil(rect.height + uni.upx2px(24))
           swiperHeight.value = h + 'px'
-          console.log(SWIPE_TAG, 'measureSwiperHeight', { id, rectH: rect.height, finalH: h, currentIndex: currentCrushIndex.value })
         } else {
-          console.log(SWIPE_TAG, 'measureSwiperHeight MISS', { id, currentIndex: currentCrushIndex.value })
         }
       }).exec()
   }, 200)
 }
 
 watch(activeCaseId, (id) => {
-  console.log(SWIPE_TAG, 'watch activeCaseId', { id, casesLen: cases.value.length })
   if (!id || cases.value.length === 0) {
     currentCrushIndex.value = 0
     return
   }
   const idx = cases.value.findIndex(c => (c.caseId || c._id) === id)
-  console.log(SWIPE_TAG, 'watch activeCaseId idx', { idx, current: currentCrushIndex.value })
   if (idx >= 0) {
     swiperProgrammatic.value = true
     currentCrushIndex.value = idx
@@ -989,8 +983,6 @@ watch(activeCaseId, (id) => {
 })
 
 watch([() => cases.value.length, fontSizeMode], () => {
-  console.log(SWIPE_TAG, 'watch cases.length|fontSizeMode', { len: cases.value.length, fontSizeMode: fontSizeMode.value })
-  nextTick(() => measureSwiperHeight())
 })
 
 const hasQuickDraft = computed(() =>
@@ -1015,16 +1007,13 @@ const swipeDisabled = computed(() => {
 
 function onSwiperChange(e: any) {
   const newIndex = e.detail.current
-  console.log(SWIPE_TAG, 'onSwiperChange', { newIndex, oldIndex: currentCrushIndex.value, programmatic: swiperProgrammatic.value, disabled: swipeDisabled.value, casesLen: cases.value.length, source: e.detail.source })
   // 防止与 watch(activeCaseId) 形成循环：用 flag 阻断程序化触发的 change
   if (swiperProgrammatic.value) {
-    console.log(SWIPE_TAG, 'onSwiperChange SKIP (programmatic)')
     return
   }
   currentCrushIndex.value = newIndex
   const target = cases.value[newIndex]
   const nextId = target?.caseId || target?._id
-  console.log(SWIPE_TAG, 'onSwiperChange target', { nextId, activeCaseId: activeCaseId.value, name: target?.name })
   if (!nextId || nextId === activeCaseId.value) return
   setActiveCaseId(nextId)
   activeCaseId.value = nextId
@@ -1032,7 +1021,6 @@ function onSwiperChange(e: any) {
 }
 
 function onDotClick(index: number) {
-  console.log(SWIPE_TAG, 'onDotClick', { index, current: currentCrushIndex.value, disabled: swipeDisabled.value, casesLen: cases.value.length })
   if (swipeDisabled.value) {
     if (hasQuickDraft.value) onSwipeAttemptWithDraft()
     return
@@ -1040,7 +1028,6 @@ function onDotClick(index: number) {
   if (index === currentCrushIndex.value) return
   const target = cases.value[index]
   const nextId = target?.caseId || target?._id
-  console.log(SWIPE_TAG, 'onDotClick target', { nextId, name: target?.name })
   if (!nextId) return
   currentCrushIndex.value = index
   setActiveCaseId(nextId)
@@ -1294,11 +1281,6 @@ const petFrame = ref(0)
 const showSpeakSheet = ref(false)
 // swipeDisabled watch 放这里确保所有依赖 ref 已声明
 watch(swipeDisabled, (v) => {
-  console.log(SWIPE_TAG, 'swipeDisabled changed', {
-    v, quickSheet: quickSheetVisible.value, analysis: analysisSheetVisible.value,
-    balance: balanceSheetVisible.value, guidance: guidanceSheetVisible.value,
-    fullAssessment: showFullAssessment.value, quickCreate: showQuickCreate.value,
-    speak: showSpeakSheet.value, hasDraft: hasQuickDraft.value
   })
 })
 const petMsg = ref('')
@@ -1871,14 +1853,6 @@ async function loadData() {
       mode: 'home',
       detailCaseId: getActiveCaseId() || activeCaseId.value
     })
-    console.log(SWIPE_TAG, 'getCases response', {
-      len: list?.length,
-      items: (list || []).map((c: any) => ({
-        id: (c.caseId || c._id || '').slice(-12),
-        name: c.name,
-        hasLatestResult: !!c.latestResult,
-        recentTimelineLen: c.recentTimeline?.length || 0,
-        assessmentsLen: c.assessments?.length || 0,
       }))
     })
     applyCasesList(list)
@@ -1901,23 +1875,12 @@ async function loadData() {
     indexAILog('loadData_finally')
     loading.value = false
     applyPendingOnboardingAction()
-    console.log(SWIPE_TAG, 'loadData done', { casesLen: cases.value.length, activeCaseId: activeCaseId.value, fontSizeMode: fontSizeMode.value })
-    nextTick(() => measureSwiperHeight())
     if (cases.value.length > 1 && !uni.getStorageSync('swipeHintShown')) {
       showSwipeHint.value = true
       uni.setStorageSync('swipeHintShown', true)
-      console.log(SWIPE_TAG, 'showSwipeHint YES')
-      setTimeout(() => { showSwipeHint.value = false }, 3000)
     }
     // 打印每个 case 的关键字段
     cases.value.forEach((c: any, i: number) => {
-      console.log(SWIPE_TAG, `case[${i}]`, {
-        id: c.caseId || c._id,
-        name: c.name,
-        hasLatestResult: !!c.latestResult,
-        hasRecentTimeline: !!(c.recentTimeline && c.recentTimeline.length),
-        recentTimelineLen: c.recentTimeline?.length || 0,
-        assessmentsLen: c.assessments?.length || 0,
       })
     })
   }
