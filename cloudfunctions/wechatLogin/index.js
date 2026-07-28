@@ -59,8 +59,9 @@ function normalizeWechatProfile(event) {
   return { nickName, avatarUrl }
 }
 
-// ===== avatarUrl 白名单校验（与 userProfile/index.js 保持同步） =====
-const ALLOWED_AVATAR_PREFIXES = ['cloud://']
+// 登录接口不承担头像上传。用户自定义 cloud:// 头像必须先通过内容安全检测，
+// 再由 userProfile 云函数写入；这里仅接受随包发布的内置头像。
+const ALLOWED_AVATAR_PREFIXES = []
 const ALLOWED_AVATAR_PATTERNS = [/^\/static\/avatars\//]
 
 function isAllowedAvatarUrl(url) {
@@ -78,8 +79,7 @@ function buildWechatProfilePatch(profile, user = {}, force = false) {
   if (profile.nickName && (force || !String(user.nickname || '').trim())) {
     patch.nickname = profile.nickName
   }
-  // avatarUrl: 只写入通过白名单校验的值（cloud:// 或内置路径）
-  // 拒绝 https:// 微信头像 URL，防止覆盖用户已上传的 cloud:// 头像
+  // 登录阶段拒绝微信 HTTPS 头像和客户端伪造的 cloud:// 地址，防止绕过检测。
   if (profile.avatarUrl && (force || !String(user.avatarUrl || '').trim())) {
     if (isAllowedAvatarUrl(profile.avatarUrl)) {
       patch.avatarUrl = profile.avatarUrl

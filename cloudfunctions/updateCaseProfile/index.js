@@ -1,6 +1,7 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 const { normalizeCaseProfilePatch } = require('./_shared/case-profile')
+const { verifyAvatarForPublish } = require('./_shared/avatar-security')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
@@ -19,6 +20,20 @@ exports.main = async (event) => {
       update.name = name.trim()
     }
     if (profile && typeof profile === 'object') {
+      if (Object.prototype.hasOwnProperty.call(profile, 'avatar')) {
+        const userResult = await db.collection('users').doc(userId).get()
+        const user = Array.isArray(userResult?.data) ? userResult.data[0] : userResult?.data
+        const avatarSecurity = verifyAvatarForPublish(user, profile.avatar, caseDoc.profile?.avatar)
+        if (!avatarSecurity.ok) {
+          return {
+            success: false,
+            code: avatarSecurity.code,
+            message: avatarSecurity.code === 'INVALID_AVATAR'
+              ? '所发布内容含违规信息'
+              : '头像暂时无法验证，请重新选择'
+          }
+        }
+      }
       const patch = normalizeCaseProfilePatch(profile)
       const merged = { ...(caseDoc.profile || {}) }
       for (const k of Object.keys(patch)) {

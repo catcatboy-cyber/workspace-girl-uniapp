@@ -43,8 +43,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { presetAvatarOptions, isPresetAvatar } from '@/utils/avatar-options'
-import { uploadFile, contentSecCheck } from '@/utils/api'
-import { createAvatarCloudPath, resolveAvatarSrc } from '@/utils/avatar'
+import { uploadFile, contentSecCheck, getContentSecurityMessage } from '@/utils/api'
+import { createAvatarCloudPath, getLocalFileInfo, resolveAvatarSrc } from '@/utils/avatar'
 import { aiLabel } from '@/utils/labels'
 
 const props = defineProps<{
@@ -91,6 +91,8 @@ function selectPreset(value: string) {
 }
 
 async function chooseImage() {
+  if (uploading.value) return
+
   // 先确保隐私协议已同意（微信 2023.09 起要求）
   try {
     const wxApi = (globalThis as any)?.wx
@@ -108,51 +110,41 @@ async function chooseImage() {
     count: 1,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
-    success: (res: any = {}) => {
+    success: async (res: any = {}) => {
       const tempFilePath = res?.tempFilePaths?.[0] || res?.tempFiles?.[0]?.path || res?.tempFiles?.[0]?.tempFilePath
       if (!tempFilePath) return
 
-      uni.getFileInfo({
-        filePath: tempFilePath,
-        success: (fileInfo: any = {}) => {
-          if (Number(fileInfo?.size || 0) > 2 * 1024 * 1024) {
-            uploadError.value = '图片请控制在 2MB 以内。'
-            return
-          }
+      try {
+        uploading.value = true
+        uploadError.value = ''
 
-          ;(async () => {
-            try {
-              uploading.value = true
-              uploadError.value = ''
-
-              let uploadSource: any = tempFilePath
-              // #ifdef H5
-              uploadSource = (res.tempFiles && (res.tempFiles[0] as any)?.file) || (res.tempFiles && res.tempFiles[0]) || tempFilePath
-              // #endif
-
-              const fileID = await uploadFile(uploadSource, createAvatarCloudPath(tempFilePath))
-
-              // 内容安全检测
-              const { pass } = await contentSecCheck(fileID)
-              if (!pass) {
-                uploadError.value = '内容含违规信息，请重新选择'
-                uploading.value = false
-                return
-              }
-
-              avatarValue.value = fileID
-              avatarPreviewSrc.value = await resolveAvatarSrc(fileID)
-            } catch (error) {
-              uploadError.value = '上传图片失败'
-            } finally {
-              uploading.value = false
-            }
-          })()
-        },
-        fail: () => {
-          uploadError.value = '获取文件信息失败'
+        const fileInfo = await getLocalFileInfo(tempFilePath)
+        if (Number(fileInfo?.size || 0) > 1024 * 1024) {
+          uploadError.value = '图片请控制在 1MB 以内'
+          return
         }
-      })
+
+        let uploadSource: any = tempFilePath
+        // #ifdef H5
+        uploadSource = (res.tempFiles && (res.tempFiles[0] as any)?.file) || (res.tempFiles && res.tempFiles[0]) || tempFilePath
+        // #endif
+
+        const fileID = await uploadFile(uploadSource, createAvatarCloudPath(tempFilePath))
+
+        // 内容安全检测
+        const securityResult = await contentSecCheck(fileID, 'avatar')
+        if (!securityResult.pass) {
+          uploadError.value = getContentSecurityMessage(securityResult, '头像')
+          return
+        }
+
+        avatarValue.value = fileID
+        avatarPreviewSrc.value = await resolveAvatarSrc(fileID)
+      } catch (error) {
+        uploadError.value = '上传图片失败'
+      } finally {
+        uploading.value = false
+      }
     },
     fail: (err: any) => {
       const msg = String(err?.errMsg || '')

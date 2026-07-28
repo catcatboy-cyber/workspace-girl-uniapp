@@ -248,9 +248,9 @@ const dotColors = computed(() => {
 .ags-color-dots{display:flex;gap:12rpx;margin-top:4rpx}
 .ags-color-dot{width:32rpx;height:32rpx;border-radius:50%;border:3rpx solid rgba(24,21,20,.2)}
 
-.ags-card-wear{background:linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 50%,#FFD8BC 100%);--card-accent:var(--hero,#ef7669);--card-border:#e0b090}
-.ags-card-venue{background:linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 50%,#C0E8D4 100%);--card-accent:#2d6a4f;--card-border:#a0d0b8}
-.ags-card-do{background:linear-gradient(160deg,#F5FFFD 0%,#D8F8F0 50%,#C0ECE4 100%);--card-accent:#1a6b5a;--card-border:#90d0c4}
+.ags-card-wear{background:var(--insight-gradient-peach,linear-gradient(160deg,#FFF8F0 0%,#FFE8D0 52%,#FFD8BC 100%));--card-accent:var(--insight-accent-peach,#B85D46);--card-border:#e0b090}
+.ags-card-venue{background:var(--insight-gradient-cool,linear-gradient(160deg,#F7F4FF 0%,#E9E2FA 52%,#DDD3F3 100%));--card-accent:var(--insight-accent-cool,#66539A);--card-border:#bdb0df}
+.ags-card-do{background:var(--insight-gradient-mint,linear-gradient(160deg,#F5FFFA 0%,#D8F0E4 52%,#C0E8D4 100%));--card-accent:var(--insight-accent-mint,#1A6B5A);--card-border:#90d0c4}
 
 /* ═══ SCORE ═══ */
 .ags-score{position:absolute;right:32rpx;bottom:140rpx;z-index:4;display:flex;align-items:baseline;gap:4rpx}

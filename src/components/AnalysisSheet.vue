@@ -159,10 +159,10 @@ function deltaClass(d: number) { return d > 0 ? 'up' : d < 0 ? 'down' : 'flat' }
 .as-card-sub { font-size: 22rpx; color: var(--text-muted, #666); }
 
 /* intent card */
-.as-card-intent { background: linear-gradient(160deg, #E0FFF0 0%, #C8F0E0 100%); --card-accent: var(--mint, #4ECDC4); }
-.as-card-risk { background: linear-gradient(160deg, #FFEEEC 0%, #FFD8D4 100%); --card-accent: var(--risk, #FF5252); }
-.as-card-reason { background: linear-gradient(160deg, #FFFBEA 0%, #FFF3D0 100%); --card-accent: var(--accent, #FFD93D); margin-bottom: 16rpx; }
-.as-card-action { background: linear-gradient(160deg, #FFF8E0 0%, #FFE8B0 100%); --card-accent: var(--accent, #FFD93D); }
+.as-card-intent { background: var(--insight-gradient-mint, linear-gradient(160deg, #F5FFFA 0%, #D8F0E4 52%, #C0E8D4 100%)); --card-accent: var(--insight-accent-mint, #1A6B5A); }
+.as-card-risk { background: var(--insight-gradient-risk, linear-gradient(160deg, #FFEEEC 0%, #FFD8D4 100%)); --card-accent: var(--risk, #FF5252); }
+.as-card-reason { background: var(--insight-gradient-warm, linear-gradient(160deg, #FFFBEA 0%, #FFF3D0 100%)); --card-accent: var(--insight-accent-warm, #9A7200); margin-bottom: 16rpx; }
+.as-card-action { background: var(--insight-gradient-peach, linear-gradient(160deg, #FFF8F0 0%, #FFE8D0 52%, #FFD8BC 100%)); --card-accent: var(--insight-accent-peach, #B85D46); }
 
 /* score */
 .as-score-num { font-size: 50rpx; font-weight: 900; color: var(--text-main, #111); line-height: 1; }

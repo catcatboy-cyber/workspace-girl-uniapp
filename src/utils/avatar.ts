@@ -42,6 +42,23 @@ export function createAvatarCloudPath(filePath: string): string {
   return `avatars/${Date.now()}-${random}${ext}`
 }
 
+export function getLocalFileInfo(filePath: string): Promise<{ size?: number }> {
+  return new Promise((resolve, reject) => {
+    // #ifdef MP-WEIXIN
+    const fileSystemManager = (globalThis as any)?.wx?.getFileSystemManager?.()
+    if (fileSystemManager?.getFileInfo) {
+      fileSystemManager.getFileInfo({ filePath, success: resolve, fail: reject })
+      return
+    }
+    reject(new Error('FileSystemManager.getFileInfo is unavailable'))
+    // #endif
+
+    // #ifndef MP-WEIXIN
+    uni.getFileInfo({ filePath, success: resolve, fail: reject })
+    // #endif
+  })
+}
+
 export async function resolveAvatarSrc(value?: string | null): Promise<string> {
   const avatar = normalizeAvatarValue(value)
   if (!avatar || !isCloudAvatar(avatar)) {

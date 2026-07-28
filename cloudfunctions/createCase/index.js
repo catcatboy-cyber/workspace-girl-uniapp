@@ -5,6 +5,7 @@ const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_share
 const { checkFeatureAccess, checkTokenBalance, getSubscriptionConfig } = require('./_shared/subscription')
 const { recordTokenUsage } = require('./_shared/token-usage')
 const { analyzeTextSignals } = require('./_shared/ai-text-analyzer')
+const { verifyAvatarForPublish } = require('./_shared/avatar-security')
 
 const { normalizeCaseProfile } = require('./_shared/case-profile')
 
@@ -104,6 +105,19 @@ exports.main = async (event) => {
     const userId = await requireAuthenticatedUserId(app, event)
     if (!name || typeof name !== 'string' || !name.trim()) {
       return { success: false, message: '名称不能为空' }
+    }
+
+    const userResult = await db.collection('users').doc(userId).get()
+    const user = Array.isArray(userResult?.data) ? userResult.data[0] : userResult?.data
+    const avatarSecurity = verifyAvatarForPublish(user, profile?.avatar, '')
+    if (!avatarSecurity.ok) {
+      return {
+        success: false,
+        code: avatarSecurity.code,
+        message: avatarSecurity.code === 'INVALID_AVATAR'
+          ? '所发布内容含违规信息'
+          : '头像暂时无法验证，请重新选择'
+      }
     }
 
     const recordAccess = await checkFeatureAccess(db, userId, '记录')

@@ -330,26 +330,103 @@ export function consumePendingTimelineContext(): PendingTimelineContext | null {
 /* ====== 小咪情绪联动 ====== */
 
 export interface PetMood {
-  emoji: string; message: string; sprite: string
+  emoji: string
+  message: string
+  sprite: string
+  level: PetMoodLevel
+  label: string
+}
+
+export type PetMoodLevel = 'full' | 'good' | 'tired' | 'low'
+export type PetEnergyAction = 'record' | 'chat' | 'petting' | 'reply'
+
+export interface PetEnergyDailyCounts {
+  date: string
+  record: number
+  chat: number
+  petting: number
+  reply: number
+}
+
+export interface PetEnergy {
+  score: number
+  updatedAt: number
+  lastRunAt: number
+  dailyCounts: PetEnergyDailyCounts
+}
+
+export interface PetFeedResult {
+  action: PetEnergyAction
+  previousScore: number
+  score: number
+  bonus: number
+  configuredBonus: number
+  applied: boolean
+  dailyCount: number
+  dailyCap: number
+  previousMood: PetMoodLevel
+  mood: PetMoodLevel
+  crossedMoodBoundary: boolean
+  reachedFull: boolean
+}
+
+export interface PetEnergyActionSnapshot {
+  action: PetEnergyAction
+  label: string
+  count: number
+  cap: number
+  bonus: number
+}
+
+export interface PetEnergySnapshot {
+  score: number
+  level: PetMoodLevel
+  label: string
+  sprite: string
+  message: string
+  nextTarget: number
+  pointsToNext: number
+  runCooldownRemainingMs: number
+  actions: PetEnergyActionSnapshot[]
+}
+
+export interface PendingPetEnergyFeedback {
+  type: 'gain' | 'level-change' | 'full' | 'cap'
+  bonus: number
+  score: number
+  action?: PetEnergyAction | 'multiple'
+  level: PetMoodLevel
+  createdAt: number
 }
 
 // ====== 宠物精力值系统 ======
 
 const PET_ENERGY_KEY = 'petEnergy'
+const PET_ENERGY_FEEDBACK_KEY = 'pendingPetEnergyFeedback'
+const PET_ENERGY_CAP_NOTICE_KEY = 'petEnergyCapNotice'
 const DECAY_INTERVAL_MS = 4 * 60 * 60 * 1000  // 4 小时
 const DECAY_PER_STEP = 5
+export const PET_RUN_COOLDOWN_MS = 30 * 60 * 1000
 
-interface PetEnergy {
-  score: number
-  updatedAt: number
-  lastRunAt: number
-  dailyCounts: {
-    date: string
-    record: number
-    chat: number
-    petting: number
-    reply: number
-  }
+export const PET_FEED_BONUS: Record<PetEnergyAction, number> = {
+  record: 30,
+  chat: 15,
+  reply: 10,
+  petting: 10
+}
+
+export const PET_FEED_DAILY_CAP: Record<PetEnergyAction, number> = {
+  record: 3,
+  chat: 3,
+  reply: 3,
+  petting: 2
+}
+
+const PET_ACTION_LABEL: Record<PetEnergyAction, string> = {
+  record: '记录事件',
+  chat: '和宠物聊',
+  reply: '帮回复 / 主动开口',
+  petting: '陪伴宠物'
 }
 
 function getLocalDateKey(): string {
@@ -369,56 +446,130 @@ function defaultPetEnergy(): PetEnergy {
   }
 }
 
+function normalizePetCount(value: unknown): number {
+  const count = Number(value)
+  if (!Number.isFinite(count)) return 0
+  return Math.max(0, Math.floor(count))
+}
+
+function normalizePetEnergy(raw: any): PetEnergy {
+  const today = getLocalDateKey()
+  const rawCounts = raw?.dailyCounts && typeof raw.dailyCounts === 'object' ? raw.dailyCounts : {}
+  const sameDay = String(rawCounts.date || '') === today
+  return {
+    score: Math.max(0, Math.min(100, Math.round(Number(raw?.score) || 0))),
+    updatedAt: typeof raw?.updatedAt === 'number' && isFinite(raw.updatedAt) ? raw.updatedAt : Date.now(),
+    lastRunAt: typeof raw?.lastRunAt === 'number' && isFinite(raw.lastRunAt) ? raw.lastRunAt : 0,
+    dailyCounts: {
+      date: today,
+      record: sameDay ? normalizePetCount(rawCounts.record) : 0,
+      chat: sameDay ? normalizePetCount(rawCounts.chat) : 0,
+      petting: sameDay ? normalizePetCount(rawCounts.petting) : 0,
+      reply: sameDay ? normalizePetCount(rawCounts.reply) : 0
+    }
+  }
+}
+
 export function readPetEnergy(): PetEnergy {
   try {
     const raw = uni.getStorageSync(PET_ENERGY_KEY)
     if (raw && typeof raw === 'object' && typeof raw.score === 'number') {
-      const energy = raw as PetEnergy
-      // 归一化：补齐可能缺失的字段，防止旧版本或损坏数据导致 crash
-      energy.score = Math.max(0, Math.min(100, Math.round(energy.score)))
-      if (typeof energy.updatedAt !== 'number' || !isFinite(energy.updatedAt)) energy.updatedAt = Date.now()
-      if (typeof energy.lastRunAt !== 'number' || !isFinite(energy.lastRunAt)) energy.lastRunAt = 0
-      if (!energy.dailyCounts || typeof energy.dailyCounts !== 'object' || typeof energy.dailyCounts.date !== 'string') {
-        energy.dailyCounts = { date: getLocalDateKey(), record: 0, chat: 0, petting: 0, reply: 0 }
-      }
-      return energy
+      return normalizePetEnergy(raw)
     }
   } catch {}
   return defaultPetEnergy()
 }
 
 export function writePetEnergy(energy: PetEnergy): void {
-  try { uni.setStorageSync(PET_ENERGY_KEY, energy) } catch {}
+  try { uni.setStorageSync(PET_ENERGY_KEY, normalizePetEnergy(energy)) } catch {}
 }
 
 // ====== 精力值 → 情绪映射 ======
 
+export function getPetMoodForScore(value: number): PetMood {
+  const score = Math.max(0, Math.min(100, Math.round(Number(value) || 0)))
+  if (score >= 80) return { emoji: '\u{1F604}', message: '今天状态超好！想记什么？', sprite: 'jumping', level: 'full', label: '活力充沛' }
+  if (score >= 50) return { emoji: '\u{1F642}', message: '嗯，在呢。今天有什么新发现？', sprite: 'idle', level: 'good', label: '状态不错' }
+  if (score >= 25) return { emoji: '\u{1F615}', message: '有点没精神…来陪陪我吧', sprite: 'waiting', level: 'tired', label: '有点疲惫' }
+  return { emoji: '\u{1F615}', message: '我有点没精神，来陪我一下吧', sprite: 'failed', level: 'low', label: '需要陪伴' }
+}
+
 export function getPetMood(): PetMood {
+  return getPetMoodForScore(readPetEnergy().score)
+}
+
+export function getPetEnergySnapshot(): PetEnergySnapshot {
   const energy = readPetEnergy()
-  const score = energy.score
-  if (score >= 80) return { emoji: '\u{1F604}', message: '今天状态超好！想记什么？', sprite: 'jumping' }
-  if (score >= 50) return { emoji: '\u{1F642}', message: '嗯，在呢。今天有什么新发现？', sprite: 'idle' }
-  if (score >= 25) return { emoji: '\u{1F615}', message: '有点没精神…来陪陪我吧', sprite: 'waiting' }
-  return { emoji: '\u{1F480}', message: '我有点没精神，来陪我一下吧', sprite: 'failed' }
+  const mood = getPetMoodForScore(energy.score)
+  const nextTarget = energy.score < 25 ? 25 : energy.score < 50 ? 50 : energy.score < 80 ? 80 : 100
+  return {
+    score: energy.score,
+    level: mood.level,
+    label: mood.label,
+    sprite: mood.sprite,
+    message: mood.message,
+    nextTarget,
+    pointsToNext: Math.max(0, nextTarget - energy.score),
+    runCooldownRemainingMs: Math.max(0, PET_RUN_COOLDOWN_MS - (Date.now() - energy.lastRunAt)),
+    actions: (Object.keys(PET_FEED_BONUS) as PetEnergyAction[]).map(action => ({
+      action,
+      label: PET_ACTION_LABEL[action],
+      count: energy.dailyCounts[action],
+      cap: PET_FEED_DAILY_CAP[action],
+      bonus: PET_FEED_BONUS[action]
+    }))
+  }
+}
+
+function storePendingPetEnergyFeedback(feedback: PendingPetEnergyFeedback): void {
+  try {
+    const previous = uni.getStorageSync(PET_ENERGY_FEEDBACK_KEY) as PendingPetEnergyFeedback | null
+    if (
+      previous && previous.type === 'gain' && feedback.type === 'gain'
+      && Date.now() - Number(previous.createdAt || 0) < 5 * 60 * 1000
+    ) {
+      uni.setStorageSync(PET_ENERGY_FEEDBACK_KEY, {
+        ...feedback,
+        bonus: Math.max(0, Number(previous.bonus || 0)) + feedback.bonus,
+        action: previous.action === feedback.action ? feedback.action : 'multiple'
+      })
+      return
+    }
+    uni.setStorageSync(PET_ENERGY_FEEDBACK_KEY, feedback)
+  } catch {}
+}
+
+function shouldShowCapNotice(action: PetEnergyAction): boolean {
+  try {
+    const today = getLocalDateKey()
+    const raw = uni.getStorageSync(PET_ENERGY_CAP_NOTICE_KEY)
+    const current = raw && raw.date === today && raw.actions && typeof raw.actions === 'object'
+      ? raw
+      : { date: today, actions: {} }
+    if (current.actions[action]) return false
+    current.actions[action] = true
+    uni.setStorageSync(PET_ENERGY_CAP_NOTICE_KEY, current)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function takePendingPetEnergyFeedback(maxAgeMs = 5 * 60 * 1000): PendingPetEnergyFeedback | null {
+  try {
+    const feedback = uni.getStorageSync(PET_ENERGY_FEEDBACK_KEY) as PendingPetEnergyFeedback | null
+    uni.removeStorageSync(PET_ENERGY_FEEDBACK_KEY)
+    if (!feedback || !feedback.type) return null
+    if (Date.now() - Number(feedback.createdAt || 0) > maxAgeMs) return null
+    return feedback
+  } catch {
+    return null
+  }
 }
 
 // ====== 加分 ======
 
-const FEED_BONUS: Record<string, number> = {
-  record: 30,
-  chat: 15,
-  reply: 10,
-  petting: 10
-}
-
-const FEED_DAILY_CAP: Record<string, number> = {
-  record: 3,
-  chat: 3,
-  reply: 3,
-  petting: 2
-}
-
-export function feedPet(action: 'record' | 'chat' | 'petting' | 'reply'): number {
+export function feedPet(action: PetEnergyAction): PetFeedResult {
   const energy = readPetEnergy()
   const today = getLocalDateKey()
 
@@ -427,16 +578,63 @@ export function feedPet(action: 'record' | 'chat' | 'petting' | 'reply'): number
     energy.dailyCounts = { date: today, record: 0, chat: 0, petting: 0, reply: 0 }
   }
 
-  const cap = FEED_DAILY_CAP[action] ?? 0
-  if (energy.dailyCounts[action] >= cap) return energy.score
+  const cap = PET_FEED_DAILY_CAP[action] ?? 0
+  const previousScore = energy.score
+  const previousMood = getPetMoodForScore(previousScore).level
+  if (energy.dailyCounts[action] >= cap) {
+    const result: PetFeedResult = {
+      action,
+      previousScore,
+      score: previousScore,
+      bonus: 0,
+      configuredBonus: PET_FEED_BONUS[action] ?? 0,
+      applied: false,
+      dailyCount: energy.dailyCounts[action],
+      dailyCap: cap,
+      previousMood,
+      mood: previousMood,
+      crossedMoodBoundary: false,
+      reachedFull: previousScore >= 100
+    }
+    if (shouldShowCapNotice(action)) {
+      storePendingPetEnergyFeedback({ type: 'cap', bonus: 0, score: previousScore, action, level: previousMood, createdAt: Date.now() })
+    }
+    return result
+  }
 
-  const bonus = FEED_BONUS[action] ?? 0
-  energy.score = Math.min(100, energy.score + bonus)
+  const configuredBonus = PET_FEED_BONUS[action] ?? 0
+  energy.score = Math.min(100, energy.score + configuredBonus)
   energy.dailyCounts[action]++
   energy.updatedAt = Date.now()
   writePetEnergy(energy)
+  const bonus = Math.max(0, energy.score - previousScore)
+  const mood = getPetMoodForScore(energy.score).level
+  const reachedFull = previousScore < 100 && energy.score >= 100
+  const crossedMoodBoundary = mood !== previousMood
+  const result: PetFeedResult = {
+    action,
+    previousScore,
+    score: energy.score,
+    bonus,
+    configuredBonus,
+    applied: true,
+    dailyCount: energy.dailyCounts[action],
+    dailyCap: cap,
+    previousMood,
+    mood,
+    crossedMoodBoundary,
+    reachedFull
+  }
+  storePendingPetEnergyFeedback({
+    type: reachedFull ? 'full' : crossedMoodBoundary ? 'level-change' : 'gain',
+    bonus,
+    score: energy.score,
+    action,
+    level: mood,
+    createdAt: Date.now()
+  })
   console.log(`[pet][feed] ${action} +${bonus} → score=${energy.score}`)
-  return energy.score
+  return result
 }
 
 // ====== 衰减 ======

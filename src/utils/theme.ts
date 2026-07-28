@@ -197,6 +197,17 @@ function mergeStyleSheet(vars: Record<string, string>, sheet: StyleSheet): Recor
     '--accent-cool': cool,
     '--brand-warm': accentSoft,
     '--brand-cool': '#f5f5ff',
+    // Shared insight-sheet palette: content type owns the base gradient;
+    // green/red remain reserved for positive/risk states.
+    '--insight-gradient-warm': 'linear-gradient(var(--card-gradient-angle, 160deg), #FFFBEA 0%, #FFF3D0 100%)',
+    '--insight-gradient-peach': 'linear-gradient(var(--card-gradient-angle, 160deg), #FFF8F0 0%, #FFE8D0 52%, #FFD8BC 100%)',
+    '--insight-gradient-mint': 'linear-gradient(var(--card-gradient-angle, 160deg), #F5FFFA 0%, #D8F0E4 52%, #C0E8D4 100%)',
+    '--insight-gradient-risk': 'linear-gradient(var(--card-gradient-angle, 160deg), #FFEEEC 0%, #FFD8D4 100%)',
+    '--insight-gradient-cool': 'linear-gradient(var(--card-gradient-angle, 160deg), #F7F4FF 0%, #E9E2FA 52%, #DDD3F3 100%)',
+    '--insight-accent-warm': '#9A7200',
+    '--insight-accent-peach': '#B85D46',
+    '--insight-accent-mint': '#1A6B5A',
+    '--insight-accent-cool': '#66539A',
     '--success-soft': '#E0FFF0',
     '--success-text': '#0F6B45',
     '--dot-positive': cool,

@@ -42,7 +42,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { callFunction } from '@/utils/cloudbase'
-import { checkFeatureAccess, getCurrentUserId, contentSecCheck } from '@/utils/api'
+import { checkFeatureAccess, getCurrentUserId, contentSecCheck, getContentSecurityMessage } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { aiLabel } from '@/utils/labels'
 
@@ -119,10 +119,10 @@ async function submit() {
       const res: any = await uni.cloud.uploadFile({ cloudPath, filePath: path })
       if (res.fileID) {
         // 内容安全检测
-        const { pass } = await contentSecCheck(res.fileID)
-        if (!pass) {
+        const securityResult = await contentSecCheck(res.fileID, 'custom_pet')
+        if (!securityResult.pass) {
           submitting.value = false
-          uni.showToast({ title: '内容含违规信息，请重新选择', icon: 'none', duration: 2000 })
+          uni.showToast({ title: getContentSecurityMessage(securityResult), icon: 'none', duration: 2000 })
           return
         }
         uploadedUrls.push(res.fileID)

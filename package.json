@@ -5,6 +5,8 @@
     "postinstall": "node scripts/fix-cloudbase-app-build.cjs",
     "sync:shared": "node scripts/sync-shared.js",
     "sync:shared:dry": "node scripts/sync-shared.js --dry-run",
+    "test:pet-energy": "node tests/run-pet-energy.cjs",
+    "test:content-security": "node tests/run-content-security.cjs",
     "test:regression": "node tests/run-regression.cjs",
     "dev:custom": "uni -p",
     "dev:h5": "uni",

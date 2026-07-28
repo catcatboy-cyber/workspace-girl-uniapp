@@ -1,90 +1,135 @@
 /**
- * 内容安全检测（微信小程序 msgSecCheck）
+ * 微信内容安全 2.0：图片/音频使用 security.mediaCheckAsync。
  *
- * 封装 cloud.openapi.security.msgSecCheck，用于检查用户上传的图片内容是否违规。
- * 调用方应在图片上传到云存储后、业务使用前调用。
- *
- * 注意：
- *   - 本模块需要 wx-server-sdk（仅微信小程序云环境可用），非 MP 环境不适用
- *   - API 自身调用失败时不阻塞用户（降级放行），避免 API 故障导致正常功能不可用
+ * mediaCheckAsync 只受理任务，最终结论由 wxa_media_check 消息异步推送。
+ * 调用方必须在收到 pass 结论前保持内容未发布状态。
  */
-let _cloud = null
+const MEDIA_TYPE_IMAGE = 2
+const MEDIA_CHECK_VERSION = 2
+
+const SCENE_NUMBERS = Object.freeze({
+  image: 1,
+  avatar: 1,
+  custom_pet: 1,
+  timeline: 4
+})
+
+let cachedCloud = null
 
 function getCloud() {
-  if (!_cloud) {
+  if (!cachedCloud) {
     try {
       const wxCloud = require('wx-server-sdk')
       wxCloud.init({ env: wxCloud.DYNAMIC_CURRENT_ENV })
-      _cloud = wxCloud
-    } catch (_) {
-      // 非微信环境（H5 / CloudBase 独立模式）没有 wx-server-sdk
-      _cloud = null
+      cachedCloud = wxCloud
+    } catch (error) {
+      console.error('content security sdk unavailable:', error)
+      cachedCloud = null
     }
   }
-  return _cloud
+  return cachedCloud
 }
 
-/**
- * 检测图片内容是否安全
- * @param {string} fileID - 云存储 fileID，如 "cloud://xxx.xxx/path/to/image.jpg"
- * @returns {Promise<{pass: boolean}>}
- *   - pass=true: 内容安全，或检测不可用时降级放行
- *   - pass=false: 内容违规
- */
-async function checkImageSafety(fileID) {
-  const cloud = getCloud()
-  if (!cloud) {
-    // 非微信环境降级放行
-    return { pass: true }
+function readNumber(value, ...keys) {
+  for (const key of keys) {
+    const raw = value?.[key]
+    if (raw === undefined || raw === null || raw === '') continue
+    const number = Number(raw)
+    if (Number.isFinite(number)) return number
+  }
+  return null
+}
+
+function readString(value, ...keys) {
+  for (const key of keys) {
+    const text = String(value?.[key] || '').trim()
+    if (text) return text
+  }
+  return ''
+}
+
+function getSceneNumber(scene) {
+  return SCENE_NUMBERS[String(scene || '').trim()] || SCENE_NUMBERS.image
+}
+
+function rejected(code) {
+  return { accepted: false, code }
+}
+
+async function resolveMediaUrl(cloud, fileID) {
+  if (!cloud?.getTempFileURL) return ''
+  const result = await cloud.getTempFileURL({ fileList: [fileID] })
+  const item = Array.isArray(result?.fileList) ? result.fileList[0] : null
+  const status = readNumber(item, 'status', 'errCode', 'errcode')
+  if (status !== null && status !== 0) return ''
+  return readString(item, 'tempFileURL', 'tempFileUrl', 'download_url', 'downloadUrl')
+}
+
+async function requestImageSafetyCheck(fileID, options = {}) {
+  const normalizedFileID = String(fileID || '').trim()
+  const openid = String(options.openid || '').trim()
+  if (!normalizedFileID.startsWith('cloud://')) return rejected('INVALID_FILE')
+  if (!openid) return rejected('AUTH_REQUIRED')
+
+  const cloud = options.cloud || getCloud()
+  if (!cloud?.openapi?.security?.mediaCheckAsync) {
+    return rejected('SECURITY_CHECK_UNAVAILABLE')
   }
 
-  let buffer = null
-  let contentType = 'image/jpeg'
+  let mediaUrl = ''
+  try {
+    mediaUrl = await resolveMediaUrl(cloud, normalizedFileID)
+  } catch (error) {
+    console.error('content security getTempFileURL failed:', error)
+    return rejected('SECURITY_CHECK_UNAVAILABLE')
+  }
+  if (!mediaUrl) return rejected('INVALID_FILE')
 
   try {
-    const downloadResult = await cloud.downloadFile({ fileID })
-    buffer = downloadResult.fileContent
-  } catch (downloadError) {
-    // 下载失败（文件不存在/已删除等），放行
-    console.error('contentSecCheck downloadFile error:', downloadError)
-    return { pass: true }
-  }
-
-  if (!buffer || buffer.length === 0) {
-    return { pass: true }
-  }
-
-  // 根据文件头推断 contentType（简单判断：PNG 头 0x89 0x50）
-  if (buffer[0] === 0x89 && buffer[1] === 0x50) {
-    contentType = 'image/png'
-  } else if (buffer[0] === 0x47 && buffer[1] === 0x49) {
-    contentType = 'image/gif'
-  } else if (buffer[0] === 0x52 && buffer[1] === 0x49) {
-    contentType = 'image/webp'
-  }
-
-  try {
-    const result = await cloud.openapi.security.msgSecCheck({
-      media: {
-        contentType,
-        value: buffer
-      }
+    const result = await cloud.openapi.security.mediaCheckAsync({
+      mediaUrl,
+      mediaType: MEDIA_TYPE_IMAGE,
+      version: MEDIA_CHECK_VERSION,
+      scene: getSceneNumber(options.scene),
+      openid
     })
-
-    // errCode === 0 表示内容安全
-    // errCode === 87014 表示内容违规
-    const pass = result.errCode === 0
-    if (!pass) {
-      console.warn('contentSecCheck: content flagged as risky, errCode:', result.errCode)
+    const errCode = readNumber(result, 'errCode', 'errcode', 'code')
+    const traceId = readString(result, 'traceId', 'trace_id')
+    if (errCode === 0 && traceId) {
+      return { accepted: true, pending: true, code: 'SECURITY_CHECK_PENDING', traceId }
     }
-    return { pass }
-  } catch (apiError) {
-    // msgSecCheck API 自身故障，降级放行（不阻塞正常用户操作）
-    console.error('contentSecCheck msgSecCheck API error:', apiError)
-    return { pass: true }
+    console.error('content security mediaCheckAsync unexpected result:', { errCode, hasTraceId: Boolean(traceId) })
+    return rejected('SECURITY_CHECK_UNAVAILABLE')
+  } catch (error) {
+    console.error('content security mediaCheckAsync failed:', error)
+    return rejected('SECURITY_CHECK_UNAVAILABLE')
   }
+}
+
+function normalizeMediaCheckCallback(payload = {}) {
+  const traceId = readString(payload, 'trace_id', 'traceId')
+  const errCode = readNumber(payload, 'errcode', 'errCode', 'code')
+  const suggest = readString(payload?.result, 'suggest').toLowerCase()
+  const label = readNumber(payload?.result, 'label')
+
+  if (!traceId) return { valid: false, code: 'INVALID_CALLBACK' }
+  if (errCode !== 0) {
+    return { valid: true, traceId, status: 'failed', code: 'SECURITY_CHECK_UNAVAILABLE', errCode, suggest, label }
+  }
+  if (suggest === 'pass') {
+    return { valid: true, traceId, status: 'pass', code: 'OK', errCode, suggest, label }
+  }
+  if (suggest === 'risky' || suggest === 'review') {
+    return { valid: true, traceId, status: 'rejected', code: 'CONTENT_RISK', errCode, suggest, label }
+  }
+  return { valid: true, traceId, status: 'failed', code: 'SECURITY_CHECK_UNAVAILABLE', errCode, suggest, label }
 }
 
 module.exports = {
-  checkImageSafety
+  MEDIA_TYPE_IMAGE,
+  MEDIA_CHECK_VERSION,
+  SCENE_NUMBERS,
+  getSceneNumber,
+  requestImageSafetyCheck,
+  normalizeMediaCheckCallback
 }

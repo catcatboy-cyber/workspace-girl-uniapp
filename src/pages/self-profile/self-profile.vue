@@ -52,7 +52,9 @@
         <view class="field-v2">
           <text class="field-label-v2">微信头像</text>
           <button class="btn btn-secondary btn-sm" open-type="chooseAvatar"
-            @chooseavatar="onChooseAvatar">使用微信头像</button>
+            :disabled="avatarChooseLocked || avatarUploading"
+            @tap="lockAvatarChooser"
+            @chooseavatar="onChooseAvatar">{{ avatarUploading ? '上传中...' : '使用微信头像' }}</button>
           <text class="minor-note-v2">点击后从微信头像中选择，上传至云存储。</text>
         </view>
         <!-- #endif -->
@@ -137,6 +139,7 @@ import {
   updateSelfProfile,
   uploadFile,
   contentSecCheck,
+  getContentSecurityMessage,
   type SelfProfile
 } from '@/utils/api'
 import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
@@ -145,7 +148,7 @@ import { showError, showSuccess } from '@/utils/helpers'
 import { getPetById, getSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
 import { normalizeSelfIdentity } from '@/utils/identity'
-import { createAvatarCloudPath } from '@/utils/avatar'
+import { createAvatarCloudPath, getLocalFileInfo } from '@/utils/avatar'
 
 const petAvatar = getPetById(getSelectedPetId()).avatarPath
 
@@ -200,6 +203,8 @@ const mbtiOptions = ['', 'INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ',
 // ====== State ======
 const themeVars = ref(getThemeStyle())
 const saving = ref(false)
+const avatarChooseLocked = ref(false)
+const avatarUploading = ref(false)
 const isOnboarding = ref(false)
 const pendingRedirect = ref('')
 const step = ref(0)
@@ -487,27 +492,54 @@ async function onSave() {
 }
 
 // ===== WeChat chooseAvatar =====
+let avatarChooseUnlockTimer: ReturnType<typeof setTimeout> | null = null
+
+function lockAvatarChooser() {
+  if (avatarChooseLocked.value || avatarUploading.value) return
+  avatarChooseLocked.value = true
+  if (avatarChooseUnlockTimer) clearTimeout(avatarChooseUnlockTimer)
+  avatarChooseUnlockTimer = setTimeout(() => {
+    avatarChooseLocked.value = false
+    avatarChooseUnlockTimer = null
+  }, 1200)
+}
+
 async function onChooseAvatar(e: any) {
   const tempFilePath = e.detail?.avatarUrl
-  if (!tempFilePath) return
+  if (!tempFilePath || avatarUploading.value) return
 
+  avatarUploading.value = true
   uni.showLoading({ title: '上传中...' })
+  let toast: { title: string; icon: 'none' | 'success' } | null = null
   try {
+    const fileInfo = await getLocalFileInfo(tempFilePath)
+    if (Number(fileInfo?.size || 0) > 1024 * 1024) {
+      toast = { title: '头像请控制在 1MB 以内', icon: 'none' }
+      return
+    }
+
     const fileID = await uploadFile(tempFilePath, createAvatarCloudPath(tempFilePath))
 
     // 内容安全检测
-    const { pass } = await contentSecCheck(fileID)
-    if (!pass) {
-      uni.showToast({ title: '内容含违规信息，请重新选择', icon: 'none' })
+    const securityResult = await contentSecCheck(fileID, 'avatar')
+    if (!securityResult.pass) {
+      toast = { title: getContentSecurityMessage(securityResult, '头像'), icon: 'none' }
       return
     }
 
     profile.avatarUrl = fileID
-    uni.showToast({ title: '头像已更新', icon: 'success' })
+    toast = { title: '头像已更新', icon: 'success' }
   } catch {
-    uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+    toast = { title: '上传失败，请重试', icon: 'none' }
   } finally {
     uni.hideLoading()
+    avatarUploading.value = false
+    avatarChooseLocked.value = false
+    if (avatarChooseUnlockTimer) {
+      clearTimeout(avatarChooseUnlockTimer)
+      avatarChooseUnlockTimer = null
+    }
+    if (toast) uni.showToast(toast)
   }
 }
 

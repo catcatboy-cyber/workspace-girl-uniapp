@@ -1,6 +1,7 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
 const { checkFeatureAccess } = require('./_shared/subscription')
+const { verifyAvatarForPublish } = require('./_shared/avatar-security')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -181,6 +182,22 @@ exports.main = async (event = {}) => {
       const { patch: submittedProfile, topPatch } = normalizeProfilePatch(event.profile)
       const now = new Date()
       const user = await getUser(userId)
+
+      if (Object.prototype.hasOwnProperty.call(profileInput, 'avatarUrl')) {
+        const avatarValue = String(profileInput.avatarUrl || '').trim().slice(0, 500)
+        const existingAvatar = String(user?.selfProfile?.avatarUrl || user?.avatarUrl || '').trim()
+        const avatarSecurity = verifyAvatarForPublish(user, avatarValue, existingAvatar)
+        if (!avatarSecurity.ok) {
+          return {
+            success: false,
+            code: avatarSecurity.code,
+            message: avatarSecurity.code === 'INVALID_AVATAR'
+              ? '所发布内容含违规信息'
+              : '头像暂时无法验证，请重新选择'
+          }
+        }
+      }
+
       const mergedProfile = {
         ...(user?.selfProfile || {}),
         ...submittedProfile

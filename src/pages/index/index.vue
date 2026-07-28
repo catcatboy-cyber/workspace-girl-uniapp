@@ -362,11 +362,31 @@
 
       <!-- Pet bar -->
       <view v-if="showPetBar" class="pet-bar">
+        <view
+          v-if="petEnergyToast.visible && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible && !petEnergySheetVisible"
+          :class="['pet-energy-toast', `tone-${petEnergyToast.level}`]"
+          aria-label="查看宠物活力详情"
+          hover-class="pet-energy-toast-pressed"
+          @click.stop="openPetEnergySheet"
+        >
+          <view class="pet-energy-toast-head">
+            <image class="pet-energy-toast-icon" src="/static/icons/taohua/star-filled.svg" mode="aspectFit" />
+            <text class="pet-energy-toast-title">{{ petEnergyToast.title }}</text>
+            <text class="pet-energy-toast-score">{{ petEnergyToast.score }}/100</text>
+          </view>
+          <view class="pet-energy-toast-progress"><view class="pet-energy-toast-fill" :style="{ width: `${petEnergyToast.score}%` }" /></view>
+          <text v-if="petEnergyToast.detail" class="pet-energy-toast-detail">{{ petEnergyToast.detail }}</text>
+        </view>
+
         <!-- Floating action button -->
         <view v-if="showPetActions" class="pet-action-buttons">
-          <view class="pet-action-btn" @click.stop="openSpeakSheet">
+          <view class="pet-action-btn" hover-class="pet-action-btn-pressed" @click.stop="openSpeakSheet">
             <image class="pet-action-icon-img" src="/static/icons/taohua/bubble.svg" mode="aspectFit" />
             <text class="pet-action-label">聊天</text>
+          </view>
+          <view class="pet-action-btn" aria-label="查看宠物活力" hover-class="pet-action-btn-pressed" @click.stop="openPetEnergySheet">
+            <image class="pet-action-icon-img" src="/static/icons/taohua/star-filled.svg" mode="aspectFit" />
+            <text class="pet-action-label">活力</text>
           </view>
         </view>
 
@@ -392,16 +412,22 @@
         </view>
 
         <!-- Reaction bubble takes priority over system message bubble; 弹面板时闭嘴不遮挡 -->
-        <view v-if="petReactionMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible" class="pet-bubble reaction">
+        <view v-if="petReactionMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible && !petEnergySheetVisible" class="pet-bubble reaction">
           <text class="pet-bubble-text">{{ petReactionMsg }}</text>
         </view>
-        <view v-else-if="petMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible" class="pet-bubble">
+        <view v-else-if="petMsg && !petEnergyToast.visible && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible && !petEnergySheetVisible" class="pet-bubble">
           <text class="pet-bubble-text">{{ petMsg }}</text>
         </view>
       </view>
 
       <!-- Pet Speak Sheet -->
       <PetSpeakSheet :visible="showSpeakSheet" :pet-name="selectedPet.displayName" :case-id="activeCaseId" @close="onSpeakSheetClose" />
+      <PetEnergySheet
+        :visible="petEnergySheetVisible"
+        :snapshot="petEnergySnapshot"
+        :pet-name="selectedPet.displayName"
+        @close="closePetEnergySheet"
+      />
     </block>
     </block>
 
@@ -444,9 +470,29 @@ import ActionGuideSheet from '@/components/ActionGuideSheet.vue'
 import AnalysisSheet from '@/components/AnalysisSheet.vue'
 import BalanceSheet from '@/components/BalanceSheet.vue'
 import TaDailySheet from '@/components/TaDailySheet.vue'
+import PetEnergySheet from '@/components/PetEnergySheet.vue'
 import { normalizeActionGuideData } from '@/utils/taohua'
-import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
-import { bumpDataVersion, combineDateAndTimeToISOString, decayPetEnergy, feedPet, getActiveCaseId, getDateInputValue, getPetMood, getTimeInputValue, readPetEnergy, setActiveCaseId, setPendingTimelineContext, showError, showSuccess, writePetEnergy } from '@/utils/helpers'
+import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, getContentSecurityMessage, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
+import {
+  bumpDataVersion,
+  combineDateAndTimeToISOString,
+  decayPetEnergy,
+  feedPet,
+  getActiveCaseId,
+  getDateInputValue,
+  getPetEnergySnapshot,
+  getPetMood,
+  getTimeInputValue,
+  readPetEnergy,
+  setActiveCaseId,
+  setPendingTimelineContext,
+  showError,
+  showSuccess,
+  takePendingPetEnergyFeedback,
+  writePetEnergy,
+  PET_RUN_COOLDOWN_MS
+} from '@/utils/helpers'
+import type { PendingPetEnergyFeedback, PetEnergySnapshot, PetMoodLevel } from '@/utils/helpers'
 import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal, buildTimelineStats } from '@/utils/insights'
 import { buildDivergingBars } from '@/utils/insights.ts'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
@@ -478,10 +524,10 @@ function getPetPresentation(scene: PetScene) {
   return { ...item, message: formatPetMessage(item.message) }
 }
 
-function mapResultToScene(params: { latestFeedbackEventType: string; intentDelta: number }): PetScene {
-  const { latestFeedbackEventType, intentDelta } = params
+function mapResultToScene(params: { latestFeedbackEventType: string; intentDelta: number; riskDelta: number }): PetScene {
+  const { latestFeedbackEventType, intentDelta, riskDelta } = params
   if (latestFeedbackEventType === 'risk') return 'risk'
-  if (intentDelta > 0) return 'positive'
+  if (intentDelta > 0 && riskDelta <= 2) return 'positive'
   return 'ai_success'
 }
 
@@ -1044,6 +1090,10 @@ function closeAllSheets() {
   balanceSheetVisible.value = false
   guidanceSheetVisible.value = false
   showSpeakSheet.value = false
+  petEnergySheetVisible.value = false
+  setTimeout(() => {
+    if (!checkAndRunPet()) tryShowQueuedPetEnergyFeedback()
+  }, 100)
 }
 
 // Campus Signal: 互动天平面板
@@ -1281,8 +1331,158 @@ const showSpeakSheet = ref(false)
 const petMsg = ref('')
 const petState = ref('idle')
 const selectedPet = ref(getPetById(getSelectedPetId()))
+const petEnergySheetVisible = ref(false)
+const petEnergySnapshot = ref<PetEnergySnapshot>(getPetEnergySnapshot())
+const petEnergyToast = ref<{ visible: boolean; title: string; detail: string; score: number; level: PetMoodLevel }>({
+  visible: false,
+  title: '',
+  detail: '',
+  score: petEnergySnapshot.value.score,
+  level: petEnergySnapshot.value.level
+})
 const PET_SPRITE_SCALE = 0.5
+const PET_ENERGY_LAST_PEEK_KEY = 'petEnergyLastPeekAt'
+const PET_ENERGY_PEEK_INTERVAL_MS = 30 * 60 * 1000
 let petTimer: ReturnType<typeof setInterval> | null = null
+let petEnergyToastTimer: ReturnType<typeof setTimeout> | null = null
+let petEnergyRetryTimer: ReturnType<typeof setTimeout> | null = null
+let petEnergyIntroTimer: ReturnType<typeof setTimeout> | null = null
+let queuedPetEnergyFeedback: PendingPetEnergyFeedback | null = null
+let queuedPetEnergyIntro = false
+let indexPageVisible = false
+
+function refreshPetEnergySnapshot() {
+  petEnergySnapshot.value = getPetEnergySnapshot()
+  return petEnergySnapshot.value
+}
+
+function hidePetEnergyToast() {
+  if (petEnergyToastTimer) { clearTimeout(petEnergyToastTimer); petEnergyToastTimer = null }
+  petEnergyToast.value.visible = false
+}
+
+function stopPetEnergyFeedbackTimers(clearQueue = false) {
+  hidePetEnergyToast()
+  if (petEnergyRetryTimer) { clearTimeout(petEnergyRetryTimer); petEnergyRetryTimer = null }
+  if (petEnergyIntroTimer) { clearTimeout(petEnergyIntroTimer); petEnergyIntroTimer = null }
+  if (clearQueue) {
+    queuedPetEnergyFeedback = null
+    queuedPetEnergyIntro = false
+  }
+}
+
+function petEnergyDisplayBlocked() {
+  return !indexPageVisible
+    || Boolean(petScene.value)
+    || Boolean(petReactionMsg.value)
+    || petIsRunning.value
+    || showPetActions.value
+    || showSpeakSheet.value
+    || petEnergySheetVisible.value
+    || quickSheetVisible.value
+    || analysisSheetVisible.value
+    || balanceSheetVisible.value
+    || guidanceSheetVisible.value
+    || taDailySheetVisible.value
+}
+
+function showPetEnergyToast(title: string, detail: string, score: number, level: PetMoodLevel, durationMs = 3000) {
+  hidePetEnergyToast()
+  petEnergyToast.value = {
+    visible: true,
+    title,
+    detail,
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    level
+  }
+  try { uni.setStorageSync(PET_ENERGY_LAST_PEEK_KEY, Date.now()) } catch {}
+  petEnergyToastTimer = setTimeout(() => {
+    petEnergyToast.value.visible = false
+    petEnergyToastTimer = null
+  }, durationMs)
+}
+
+function petActionFeedbackTitle(action?: PendingPetEnergyFeedback['action']) {
+  switch (action) {
+    case 'record': return '记录完成'
+    case 'chat': return '陪伴成功'
+    case 'reply': return '一起想办法'
+    case 'petting': return '陪伴成功'
+    default: return '本次互动'
+  }
+}
+
+function tryShowQueuedPetEnergyFeedback() {
+  if (!queuedPetEnergyFeedback && !queuedPetEnergyIntro) return
+  if (petEnergyDisplayBlocked()) {
+    if (petEnergyRetryTimer) clearTimeout(petEnergyRetryTimer)
+    petEnergyRetryTimer = setTimeout(tryShowQueuedPetEnergyFeedback, 500)
+    return
+  }
+
+  const snapshot = refreshPetEnergySnapshot()
+  const feedback = queuedPetEnergyFeedback
+  queuedPetEnergyFeedback = null
+  petEnergyRetryTimer = null
+
+  if (feedback) {
+    queuedPetEnergyIntro = false
+    if (feedback.type === 'cap') {
+      showPetEnergyToast('今天已经很满足啦', '明天还可以继续获得活力', feedback.score, feedback.level, 3000)
+      return
+    }
+    if (feedback.type === 'full') {
+      const detail = snapshot.runCooldownRemainingMs > 0 ? '休息一下再出发' : `${selectedPet.value.displayName}准备出去跑一圈啦`
+      showPetEnergyToast('活力满格！', detail, feedback.score, feedback.level, 3200)
+      return
+    }
+    if (feedback.type === 'level-change') {
+      const recovered = feedback.level === 'full' || feedback.level === 'good'
+      const title = recovered ? `${selectedPet.value.displayName}恢复精神啦` : `${selectedPet.value.displayName}有点累了`
+      const detail = feedback.bonus > 0 ? `${snapshot.label} · 活力 +${feedback.bonus}` : snapshot.label
+      showPetEnergyToast(title, detail, feedback.score, feedback.level, 3000)
+      return
+    }
+    const bonusCopy = feedback.bonus > 0 ? `活力 +${feedback.bonus}` : '活力已满'
+    showPetEnergyToast(`${petActionFeedbackTitle(feedback.action)} · ${bonusCopy}`, snapshot.label, feedback.score, feedback.level, 2400)
+    return
+  }
+
+  queuedPetEnergyIntro = false
+  const detail = snapshot.level === 'low' ? `和${selectedPet.value.displayName}聊聊，它会慢慢恢复精神` : ''
+  showPetEnergyToast(snapshot.label, detail, snapshot.score, snapshot.level, snapshot.level === 'low' ? 4000 : 3000)
+}
+
+function queuePetEnergyFeedback(feedback: PendingPetEnergyFeedback | null, delayMs = 0) {
+  if (!feedback) return
+  queuedPetEnergyFeedback = feedback
+  if (petEnergyRetryTimer) clearTimeout(petEnergyRetryTimer)
+  petEnergyRetryTimer = setTimeout(tryShowQueuedPetEnergyFeedback, delayMs)
+}
+
+function queuePetEnergyIntroIfDue() {
+  let lastPeekAt = 0
+  try { lastPeekAt = Number(uni.getStorageSync(PET_ENERGY_LAST_PEEK_KEY) || 0) } catch {}
+  if (Date.now() - lastPeekAt < PET_ENERGY_PEEK_INTERVAL_MS) return
+  queuedPetEnergyIntro = true
+  if (petEnergyIntroTimer) clearTimeout(petEnergyIntroTimer)
+  petEnergyIntroTimer = setTimeout(tryShowQueuedPetEnergyFeedback, 600)
+}
+
+function openPetEnergySheet() {
+  resetPetInteraction()
+  hidePetEnergyToast()
+  refreshPetEnergySnapshot()
+  petEnergySheetVisible.value = true
+}
+
+function closePetEnergySheet() {
+  petEnergySheetVisible.value = false
+  refreshPetMood(true)
+  setTimeout(() => {
+    if (!checkAndRunPet()) tryShowQueuedPetEnergyFeedback()
+  }, 100)
+}
 
 const resolvedSpritesheetPath = computed(() => {
   void petAssetsVersion.value
@@ -1332,15 +1532,31 @@ function startPetAnim(state: string) {
   }, ms)
 }
 
-function applyPetScene(scene: PetScene | null, durationMs?: number, customMessage?: string) {
+function restorePetMoodAfterScene() {
+  syncPetScore()
+  refreshPetMood(true)
+  setTimeout(() => {
+    if (!checkAndRunPet()) tryShowQueuedPetEnergyFeedback()
+  }, 100)
+}
+
+function clearPetScene(restoreMood = true) {
   if (petSceneTimer) { clearTimeout(petSceneTimer); petSceneTimer = null }
-  if (!scene) { petMsg.value = ''; petScene.value = null; startPetAnim('idle'); return }
+  petMsg.value = ''
+  petScene.value = null
+  if (restoreMood) restorePetMoodAfterScene()
+}
+
+function applyPetScene(scene: PetScene | null, durationMs?: number, customMessage?: string) {
+  if (!scene) { clearPetScene(true); return }
+  if (petSceneTimer) { clearTimeout(petSceneTimer); petSceneTimer = null }
+  hidePetEnergyToast()
   const p = getPetPresentation(scene)
   petMsg.value = customMessage ? formatPetMessage(customMessage) : p.message
   petScene.value = scene
   startPetAnim(p.state)
   if (durationMs && durationMs > 0) {
-    petSceneTimer = setTimeout(() => { petMsg.value = ''; petScene.value = null; startPetAnim('idle') }, durationMs)
+    petSceneTimer = setTimeout(() => { clearPetScene(true) }, durationMs)
   }
 }
 
@@ -1367,14 +1583,14 @@ let heartIdCounter = 0
 
 function openSpeakSheet() {
   resetPetInteraction()
+  hidePetEnergyToast()
   showSpeakSheet.value = true
 }
 
-function clearPetReaction() {
+function clearPetReaction(restoreMood = true) {
   if (petReactionTimer) { clearTimeout(petReactionTimer); petReactionTimer = null }
   petReactionMsg.value = ''
-  // restore to idle — mood system will re-apply on next cycle if needed
-  if (!petScene.value) startPetAnim('idle')
+  if (!petScene.value && restoreMood) restorePetMoodAfterScene()
 }
 
 function showPetReaction(key: string) {
@@ -1417,6 +1633,7 @@ function resetPetInteraction() {
 
 function onPetTouchStart() {
   if (petIsRunning.value) return
+  hidePetEnergyToast()
   petTouchStartTime = Date.now()
   if (petLongPressTimer) clearTimeout(petLongPressTimer)
   petLongPressTimer = setTimeout(() => {
@@ -1445,8 +1662,10 @@ function onPetTouchEnd() {
     showPetReaction('tap3')
     startPetAnim('jumping')
     feedPet('petting')
+    const energyFeedback = takePendingPetEnergyFeedback()
     syncPetScore()
     const didRun = checkAndRunPet()
+    if (!didRun) queuePetEnergyFeedback(energyFeedback)
     // Alternate to review after jumping finishes (~625ms), then back to idle — unless running
     if (!didRun) {
       setTimeout(() => {
@@ -1465,19 +1684,24 @@ function onPetTouchEnd() {
     startPetAnim('waving')
   }
 
-  // Show action button, reset auto-dismiss timer
-  showPetActions.value = true
-  if (petActionsTimer) clearTimeout(petActionsTimer)
-  petActionsTimer = setTimeout(() => { showPetActions.value = false }, 3000)
+  // Show action buttons only while the pet stays in its normal interaction state.
+  // Reaching full energy can start a run above, in which case the menu must stay hidden.
+  if (!petIsRunning.value) {
+    showPetActions.value = true
+    if (petActionsTimer) clearTimeout(petActionsTimer)
+    petActionsTimer = setTimeout(() => { showPetActions.value = false }, 3000)
+  } else {
+    showPetActions.value = false
+  }
 }
 
 function onPetTouchCancel() {
   if (petLongPressTimer) { clearTimeout(petLongPressTimer); petLongPressTimer = null }
 }
 
-function stopPetInteraction() {
+function stopPetInteraction(restoreMood = true) {
   resetPetInteraction()
-  clearPetReaction()
+  clearPetReaction(restoreMood)
   hearts.value = []
 }
 // ---- end pet petting ----
@@ -1486,6 +1710,8 @@ function stopPetInteraction() {
 const petScore = ref(60)
 const petIsRunning = ref(false)
 const petRunPhase = ref<'right' | 'left' | null>(null)
+let petRunOutTimer: ReturnType<typeof setTimeout> | null = null
+let petRunBackTimer: ReturnType<typeof setTimeout> | null = null
 
 function syncPetScore() {
   petScore.value = readPetEnergy().score
@@ -1506,8 +1732,13 @@ function checkAndRunPet(): boolean {
   const energy = readPetEnergy()
   if (energy.score < 100) return false
   if (petIsRunning.value) return false
-  if (Date.now() - energy.lastRunAt < 30 * 60 * 1000) return false
+  if (petScene.value || quickSheetVisible.value || analysisSheetVisible.value || balanceSheetVisible.value || guidanceSheetVisible.value || taDailySheetVisible.value || showSpeakSheet.value || petEnergySheetVisible.value) return false
+  if (Date.now() - energy.lastRunAt < PET_RUN_COOLDOWN_MS) return false
   console.log(`[pet][run] 100→85 lastRunAt=${energy.lastRunAt}`)
+  queuedPetEnergyFeedback = null
+  queuedPetEnergyIntro = false
+  clearPetReaction(false)
+  showPetEnergyToast('活力满格！', `${selectedPet.value.displayName}出去跑一圈啦`, 100, 'full', 3000)
   // 立刻落分值 + 标记，不等动画结束
   energy.score = 85
   energy.lastRunAt = Date.now()
@@ -1520,32 +1751,49 @@ function checkAndRunPet(): boolean {
 }
 
 function startRunAnimation() {
+  stopPetRunAnimation()
   petIsRunning.value = true
   // 第一段：从左跑到右
   petState.value = 'running-right'
   startPetAnim('running-right')
   petRunPhase.value = 'right'
-  setTimeout(async () => {
+  petRunOutTimer = setTimeout(async () => {
+    petRunOutTimer = null
     // 清空 class → nextTick 等一帧，让渲染引擎感知重置
     petRunPhase.value = null
     await nextTick()
+    if (!indexPageVisible || !petIsRunning.value) return
     // 第二段：从右跑回左
     petState.value = 'running-left'
     startPetAnim('running-left')
     petRunPhase.value = 'left'
-    setTimeout(() => {
+    petRunBackTimer = setTimeout(() => {
+      petRunBackTimer = null
       petIsRunning.value = false
       petRunPhase.value = null
       syncPetScore()
       refreshPetMood(true)
+      const snapshot = refreshPetEnergySnapshot()
+      showPetEnergyToast('跑完回来啦', '完成一次活力散步', snapshot.score, snapshot.level, 2400)
     }, 1500)
   }, 1500)
+}
+
+function stopPetRunAnimation() {
+  if (petRunOutTimer) { clearTimeout(petRunOutTimer); petRunOutTimer = null }
+  if (petRunBackTimer) { clearTimeout(petRunBackTimer); petRunBackTimer = null }
+  petIsRunning.value = false
+  petRunPhase.value = null
 }
 
 function onSpeakSheetClose() {
   showSpeakSheet.value = false
   syncPetScore()
-  if (!checkAndRunPet()) refreshPetMood(false)
+  const energyFeedback = takePendingPetEnergyFeedback()
+  if (!checkAndRunPet()) {
+    refreshPetMood(false)
+    queuePetEnergyFeedback(energyFeedback, 200)
+  }
 }
 // ---- end pet energy ----
 
@@ -1634,7 +1882,8 @@ const feedbackPetScene = computed<PetScene | null>(() => {
   if (latestCase.value.latestResult.aiPending) return null
   return mapResultToScene({
     latestFeedbackEventType: latestFeedbackEventType.value,
-    intentDelta: latestTrend.value?.intentDelta ?? 0
+    intentDelta: latestTrend.value?.intentDelta ?? 0,
+    riskDelta: latestTrend.value?.riskDelta ?? 0
   })
 })
 
@@ -1700,6 +1949,7 @@ onLoad((options: any) => {
 })
 
 onShow(() => {
+  indexPageVisible = true
   // 检查邀请到账通知
   if (uni.getStorageSync('showReferralNotice')) {
     showIndexReferralNotice.value = true
@@ -1722,26 +1972,47 @@ onShow(() => {
   syncPetBarPref()
   syncSelectedPet()
   // 精力衰减 + 情绪刷新
+  const energyBeforeDecay = getPetEnergySnapshot()
   decayPetEnergy()
   syncPetScore()
+  const energyAfterDecay = refreshPetEnergySnapshot()
+  const storedEnergyFeedback = takePendingPetEnergyFeedback()
+  const decayFeedback: PendingPetEnergyFeedback | null = !storedEnergyFeedback && energyBeforeDecay.level !== energyAfterDecay.level
+    ? {
+        type: 'level-change',
+        bonus: 0,
+        score: energyAfterDecay.score,
+        level: energyAfterDecay.level,
+        createdAt: Date.now()
+      }
+    : null
+  const energyFeedback = storedEnergyFeedback || decayFeedback
   // P2: justRecorded TTL 5分钟，过期自动清除
   const justRecordedRaw = uni.getStorageSync('justRecorded')
   const justRecorded = typeof justRecordedRaw === 'object' && justRecordedRaw?.ts
     ? (Date.now() - justRecordedRaw.ts < 5 * 60 * 1000)
     : !!justRecordedRaw
   if (justRecorded) {
-    petMsg.value = '记上了！小咪在帮你分析…'
+    petMsg.value = formatPetMessage('记上了！我在帮你分析…')
     petState.value = 'running'
     startPetAnim('running')
     uni.removeStorageSync('justRecorded')
     // 2 秒后检查跑屏，没跑成则强制刷新 mood
     setTimeout(() => {
       syncPetScore()
-      if (!checkAndRunPet()) refreshPetMood(false)
+      if (!checkAndRunPet()) {
+        refreshPetMood(false)
+        if (energyFeedback) queuePetEnergyFeedback(energyFeedback, 200)
+        else queuePetEnergyIntroIfDue()
+      }
     }, 2000)
   } else if (!petMsg.value || !petScene.value) {
     // 非临时状态时强制刷新 mood（处理衰减后的精灵图/文案变化）
-    refreshPetMood(false)
+    if (!checkAndRunPet()) {
+      refreshPetMood(false)
+      if (energyFeedback) queuePetEnergyFeedback(energyFeedback, 200)
+      else queuePetEnergyIntroIfDue()
+    }
     checkShareNudge()
   } else {
     startPetAnim(petState.value || 'idle')
@@ -1806,25 +2077,33 @@ onPullDownRefresh(async () => {
 })
 
 onHide(() => {
+  indexPageVisible = false
   if (recording.value && recorderManager?.stop) recorderManager.stop()
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
+  stopPetRunAnimation()
   stopPetAnim()
-  stopPetInteraction()
+  stopPetInteraction(false)
+  stopPetEnergyFeedbackTimers(false)
   stopShareNudgeTimer()
   statusInfoVisible.value = false
-  applyPetScene(null)
+  petEnergySheetVisible.value = false
+  clearPetScene(false)
 })
 
 onUnload(() => {
+  indexPageVisible = false
   if (recording.value && recorderManager?.stop) recorderManager.stop()
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null }
   stopAIFeedbackTimer()
+  stopPetRunAnimation()
   stopPetAnim()
-  stopPetInteraction()
+  stopPetInteraction(false)
+  stopPetEnergyFeedbackTimers(true)
   stopShareNudgeTimer()
   statusInfoVisible.value = false
-  applyPetScene(null)
+  petEnergySheetVisible.value = false
+  clearPetScene(false)
 })
 
 async function loadData() {
@@ -2148,6 +2427,9 @@ function openAnalysisSheet() {
 
 function closeAnalysisSheet() {
   analysisSheetVisible.value = false
+  setTimeout(() => {
+    if (!checkAndRunPet()) tryShowQueuedPetEnergyFeedback()
+  }, 100)
 }
 
 async function chooseQuickImages() {
@@ -2177,14 +2459,19 @@ async function chooseQuickImages() {
           const file = files[i]
           const filePath = file.path || file.tempFilePath
           if (!filePath) continue
+          if (Number(file.size || 0) > 1024 * 1024) {
+            throw new Error('图片请控制在 1MB 以内')
+          }
           const fileID = await uploadFile(filePath, buildQuickCloudPath(filePath, i))
 
           // 内容安全检测
-          const { pass } = await contentSecCheck(fileID)
-          if (!pass) {
-            // 跳过违规图片
-            skippedCount++
-            continue
+          const securityResult = await contentSecCheck(fileID, 'timeline')
+          if (!securityResult.pass) {
+            if (securityResult.code === 'CONTENT_RISK') {
+              skippedCount++
+              continue
+            }
+            throw new Error(getContentSecurityMessage(securityResult))
           }
 
           const url = await getTempFileURL(fileID).catch(() => '')
@@ -2198,7 +2485,7 @@ async function chooseQuickImages() {
         }
         quickAttachments.value = [...quickAttachments.value, ...uploaded]
         if (skippedCount > 0) {
-          uni.showToast({ title: '部分图片内容含违规信息，已自动过滤', icon: 'none', duration: 2000 })
+          uni.showToast({ title: '所发布内容含违规信息', icon: 'none', duration: 2000 })
         }
       } catch (error: any) {
         showError(error?.message || '图片上传失败')
@@ -2467,6 +2754,10 @@ async function submitQuickRecord() {
       assessmentIdTail: shortId(res?.assessmentId)
     })
     if (res.success) {
+      const recordEnergyFeedback = takePendingPetEnergyFeedback()
+      uni.removeStorageSync('justRecorded')
+      syncPetScore()
+      queuePetEnergyFeedback(recordEnergyFeedback)
       showSuccess('已记录，AI分析中')
       quickSheetVisible.value = false
       analysisSheetVisible.value = true
@@ -2985,10 +3276,10 @@ function goTaohua() {
   pointer-events: auto;
 }
 .v2-mode .pet-sprite-viewport.pet-run-right {
-  animation: petRunRight 4s ease-in-out forwards;
+  animation: petRunRight 1.5s ease-in-out forwards;
 }
 .v2-mode .pet-sprite-viewport.pet-run-left {
-  animation: petRunLeft 4s ease-in-out forwards;
+  animation: petRunLeft 1.5s ease-in-out forwards;
 }
 @keyframes petRunRight {
   from { transform: translateX(-100vw); }
@@ -3026,11 +3317,45 @@ function goTaohua() {
 }
 .v2-mode .pet-bubble-text { font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
+/* ---- pet energy: transient feedback ---- */
+.pet-energy-toast {
+  position: absolute;
+  left: 136rpx;
+  bottom: 16rpx;
+  z-index: 102;
+  width: 440rpx;
+  max-width: calc(100vw - 176rpx);
+  box-sizing: border-box;
+  padding: 14rpx 18rpx;
+  background: var(--surface, #fff);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  border-radius: var(--shape-radius-inner, 0);
+  box-shadow: var(--shadow-hard, 3rpx 3rpx 0 #111);
+  pointer-events: auto;
+  animation: pet-energy-in 200ms ease-out;
+}
+.pet-energy-toast.tone-full { border-left: 8rpx solid var(--accent, #FFD93D); }
+.pet-energy-toast.tone-good { border-left: 8rpx solid var(--accent-cool, #4ECDC4); }
+.pet-energy-toast.tone-tired { border-left: 8rpx solid var(--text-muted, #666); }
+.pet-energy-toast.tone-low { border-left: 8rpx solid var(--risk, #FF5252); }
+.pet-energy-toast-pressed { opacity: .86; }
+.pet-energy-toast-head { display: flex; align-items: center; gap: 6rpx; min-width: 0; }
+.pet-energy-toast-icon { width: 26rpx; height: 26rpx; flex-shrink: 0; }
+.pet-energy-toast-title { min-width: 0; flex: 1; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pet-energy-toast-score { flex-shrink: 0; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); font-variant-numeric: tabular-nums; }
+.pet-energy-toast-progress { height: 10rpx; margin-top: 8rpx; overflow: hidden; border-radius: 999rpx; background: rgba(0,0,0,.08); }
+.pet-energy-toast-fill { height: 100%; border-radius: inherit; background: var(--accent-cool, #4ECDC4); transition: width 250ms ease-out; }
+.pet-energy-toast-detail { display: block; margin-top: 6rpx; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #666); line-height: $lh-label; }
+@keyframes pet-energy-in {
+  from { opacity: 0; transform: translateY(8rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ---- pet petting: floating action buttons ---- */
 .pet-action-buttons {
   position: absolute;
   bottom: calc(124rpx + env(safe-area-inset-bottom) + 16rpx);
-  left: 96rpx + 24rpx + 16rpx;
+  left: calc(96rpx + 24rpx + 16rpx);
   display: flex; gap: 16rpx; z-index: 101;
   animation: pet-actions-in 200ms ease-out;
 }
@@ -3040,15 +3365,29 @@ function goTaohua() {
 }
 .pet-action-btn {
   display: flex; flex-direction: column; align-items: center; gap: 4rpx;
-  width: 80rpx; height: 80rpx;
-  background: var(--card, #fff); border: 3rpx solid #111;
+  width: 88rpx; height: 88rpx;
+  background: var(--surface, #fff); border: var(--border-width-strong, 3rpx) solid var(--border, #111);
   border-radius: 50%;
-  box-shadow: 4rpx 4rpx 0 #111;
+  box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111);
   justify-content: center;
   pointer-events: auto;
 }
 .pet-action-icon-img { width: 36rpx; height: 36rpx; }
 .pet-action-label { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); line-height: 1; }
+.pet-action-btn-pressed { opacity: .82; transform: scale(.97); }
+
+.font-large .pet-energy-toast-title,
+.font-large .pet-energy-toast-score,
+.font-large .pet-energy-toast-detail,
+.font-large .pet-action-label { font-size: $fs-body-sm; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-energy-toast,
+  .pet-action-buttons,
+  .v2-mode .pet-sprite-viewport.pet-run-right,
+  .v2-mode .pet-sprite-viewport.pet-run-left { animation: none; }
+  .pet-energy-toast-fill { transition: none; }
+}
 
 /* ---- pet petting: hearts particle layer ---- */
 .hearts-layer {

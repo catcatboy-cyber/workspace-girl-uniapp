@@ -65,6 +65,50 @@
       {
         "value": "static/app-icon.png",
         "type": "file"
+      },
+      {
+        "value": "static/tabbar",
+        "type": "folder"
+      },
+      {
+        "value": "static/icons/taohua/needle-flower.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/stars.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/needle-heart.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/heart.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/list-checks.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/book-open.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/share-2.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/alert-triangle.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/needle-star.svg",
+        "type": "file"
+      },
+      {
+        "value": "static/icons/taohua/check-circle.svg",
+        "type": "file"
       }
     ],
     "include": []

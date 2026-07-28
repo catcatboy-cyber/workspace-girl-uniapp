@@ -362,6 +362,14 @@
       "memorySize": 128,
       "handler": "index.main",
       "installDependency": true
+    },
+    {
+      "name": "contentSecCallback",
+      "timeout": 15,
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
     }
   ]
 }

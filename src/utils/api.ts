@@ -1382,21 +1382,62 @@ export async function testAIConnection(data: {
 
 // ==================== 内容安全 ====================
 
+export type ContentSecurityResult = {
+  pass: boolean
+  code: string
+  pending?: boolean
+  checkId?: string
+  traceId?: string
+}
+
+export function getContentSecurityMessage(result?: Partial<ContentSecurityResult>, subject = '图片') {
+  if (result?.code === 'CONTENT_RISK' || result?.code === 'INVALID_AVATAR') {
+    return '所发布内容含违规信息'
+  }
+  if (result?.code === 'SECURITY_CHECK_PENDING') return `${subject}正在进行安全审核，请稍后重试`
+  if (result?.code === 'IMAGE_TOO_LARGE') return `${subject}请控制在 1MB 以内`
+  if (result?.code === 'UNSUPPORTED_IMAGE') return `${subject}仅支持 JPG、PNG 或 GIF 格式`
+  return `${subject}暂时无法验证，请稍后重试`
+}
+
 /**
- * 检测图片内容安全（调用微信 msgSecCheck）
- * 应在图片上传到云存储后、业务使用前调用。
- * @returns pass=true 表示安全，pass=false 表示违规
+ * 使用微信内容安全 2.0 mediaCheckAsync 检测图片。
+ * 云端先提交异步任务，客户端短轮询最终结果；未获得 pass 前不允许发布。
  */
-export async function contentSecCheck(fileID: string): Promise<{ pass: boolean }> {
+export async function contentSecCheck(fileID: string, scene: 'image' | 'avatar' | 'timeline' | 'custom_pet' = 'image'): Promise<ContentSecurityResult> {
   try {
-    const res = await callFunction({
+    const startResponse = await callFunction({
       name: 'contentSecCheck',
-      data: { action: 'checkImage', fileID }
+      data: { action: 'checkImage', fileID, scene }
     })
-    return res.result || { pass: true }
+    let result = startResponse.result || {}
+
+    const normalize = (value: any): ContentSecurityResult => ({
+      pass: value?.pass === true,
+      pending: value?.pending === true,
+      code: String(value?.code || (value?.pass === true ? 'OK' : 'SECURITY_CHECK_UNAVAILABLE')),
+      checkId: String(value?.checkId || ''),
+      traceId: String(value?.traceId || '')
+    })
+
+    let normalized = normalize(result)
+    if (!normalized.pending || !normalized.checkId) return normalized
+
+    // 微信通常会在数秒内推送结果；最多等待 20 秒，超时仍按未通过处理。
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const statusResponse = await callFunction({
+        name: 'contentSecCheck',
+        data: { action: 'getImageCheckResult', checkId: normalized.checkId }
+      })
+      result = statusResponse.result || {}
+      normalized = normalize(result)
+      if (!normalized.pending) return normalized
+    }
+
+    return normalized
   } catch {
-    // API 不可用时降级放行
-    return { pass: true }
+    return { pass: false, pending: false, code: 'SECURITY_CHECK_UNAVAILABLE' }
   }
 }
 
