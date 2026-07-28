@@ -76,13 +76,7 @@
         <view class="cs-node cs-node-ta-daily" @click.stop="$emit('open-ta-daily')">
           <image class="cs-node-icon-img" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" />
           <text class="cs-node-label">今日的TA</text>
-          <view class="cs-node-hint">
-            <view v-if="taSelfZhi && taCrushZhi" class="cs-ta-daily-inner">
-              <text :class="['cs-ta-chip', taSelfRel === 'good' ? 'good' : taSelfRel === 'bad' ? 'bad' : '']">我 {{ taSelfRelText }}</text>
-              <text :class="['cs-ta-chip', taCrushRel === 'good' ? 'good' : taCrushRel === 'bad' ? 'bad' : '']">TA {{ taCrushRelText }}</text>
-            </view>
-            <text v-else>{{ taDayZhi ? '今日日支 ' + taDayZhi : '完善画像后解锁' }}</text>
-          </view>
+          <text class="cs-node-hint">{{ taAuraLabel || (taDayZhi ? '今日日支 ' + taDayZhi : '完善画像后解锁') }}</text>
         </view>
 
         <!-- 节点：今日桃花 -->
@@ -189,6 +183,7 @@ const props = defineProps({
   taCrushRel: { type: String, default: '' },
   taSelfRelText: { type: String, default: '' },
   taCrushRelText: { type: String, default: '' },
+  taAuraLabel: { type: String, default: '' },
   taohuaTeaserData: { type: Object as any, default: null },
   petName: { type: String, default: '小咪' },
   guidanceText: { type: String, default: '' },

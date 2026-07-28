@@ -68,6 +68,7 @@
             :ta-crush-rel="getTaDailyRel(ZODIAC_TO_ZHI[cases[0].profile?.zodiac], taohuaTeaserData?.dayZhi)"
             :ta-self-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi)"
             :ta-crush-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[cases[0].profile?.zodiac], taohuaTeaserData?.dayZhi)"
+            :ta-aura-label="(taohuaTeaserData?.jianchu || '') + (taohuaTeaserData?.jianchu ? ' · ' : '') + (taohuaTeaserData?.summary || '')"
             :pet-name="selectedPet.displayName"
             :has-self-profile="hasUsableSelfProfile(selfProfile)"
             :font-size-mode="fontSizeMode"
