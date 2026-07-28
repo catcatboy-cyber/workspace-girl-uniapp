@@ -73,6 +73,7 @@ defineEmits<{ close: [] }>()
   border-radius: 24rpx 24rpx 0 0;
   border-top: var(--border-width-strong, 3rpx) solid var(--border, #111);
   box-shadow: var(--shadow-hero, 0 -8rpx 0 #111);
+  animation: tds-slide-up .3s ease-out;
   box-sizing: border-box;
 }
 @keyframes tds-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -94,7 +95,7 @@ defineEmits<{ close: [] }>()
 .tds-subtitle { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-muted, #666); margin-bottom: 20rpx; }
 
 /* ❶ 今日气场 */
-.tds-aura-card { padding: 20rpx 24rpx; margin-bottom: 20rpx; background: var(--accent-soft, #FFFBEB); @include border-soft; }
+.tds-aura-card { padding: 20rpx 24rpx; margin-bottom: 20rpx; background: var(--accent-soft, #FFFBEB); border-radius: var(--shape-radius-card, 0); @include border-soft; }
 .tds-aura-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6rpx; }
 .tds-aura-label { font-size: $fs-caption; color: var(--text-muted, #666); }
 .tds-aura-badge { @include tag-v2-black; font-size: $fs-caption; padding: 2rpx 12rpx; }
@@ -102,7 +103,7 @@ defineEmits<{ close: [] }>()
 
 /* ❷ 日支关系 */
 .tds-ta-row { display: flex; gap: $sp-section-gap; }
-.tds-ta-col { flex: 1; text-align: center; padding: 24rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.tds-ta-col { flex: 1; text-align: center; padding: 24rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); background: var(--surface, #fff); }
 .tds-ta-col-head { font-size: $fs-caption; color: var(--text-muted, #666); margin-bottom: 8rpx; }
 .tds-ta-chip { display: inline-block; margin-top: 8rpx; padding: 6rpx 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body; font-weight: $fw-heading; }
 .tds-ta-chip.good { background: var(--mint-soft, #E0FFF0); color: var(--relation-good, #4ECDC4); }
@@ -111,7 +112,7 @@ defineEmits<{ close: [] }>()
 .tds-ta-col-desc { margin-top: 12rpx; font-size: $fs-caption; color: var(--text-muted, #666); line-height: 1.5; }
 
 /* ❸ 综合建议 */
-.tds-advice { margin-top: 20rpx; padding: 20rpx 24rpx; background: var(--brand-cool, #f5f5ff); @include border-soft; }
+.tds-advice { margin-top: 20rpx; padding: 20rpx 24rpx; background: var(--brand-cool, #f5f5ff); border-radius: var(--shape-radius-card, 0); @include border-soft; }
 .tds-advice-label { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); margin-bottom: 6rpx; }
 .tds-advice-text { display: block; font-size: $fs-body; color: var(--text-main, #111); line-height: 1.5; }
 
