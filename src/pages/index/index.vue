@@ -298,7 +298,7 @@
         :crush-rel="getTaDailyRel(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi)"
         :self-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi)"
         :crush-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi)"
-        :aura="actionGuideData?.aura || ''"
+        :aura="(actionGuideData?.aura || '') + (actionGuideData?.oneliner ? '——' + actionGuideData.oneliner : '') || taohuaTeaserData?.guidance || ''"
         :jianchu="taohuaTeaserData?.jianchu || ''"
         :advice="getTaDailyAdvice(getTaDailyRel(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi), getTaDailyRel(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi))"
         @close="taDailySheetVisible = false"
