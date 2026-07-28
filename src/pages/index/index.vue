@@ -297,6 +297,8 @@
         :crush-rel="getTaDailyRel(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi)"
         :self-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi)"
         :crush-rel-text="getTaDailyRelText(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi)"
+        :aura="actionGuideData?.oneliner || taohuaTeaserData?.guidance || ''"
+        :advice="getTaDailyAdvice(getTaDailyRel(ZODIAC_TO_ZHI[selfProfile?.zodiac], taohuaTeaserData?.dayZhi), getTaDailyRel(ZODIAC_TO_ZHI[latestCase?.profile?.zodiac], taohuaTeaserData?.dayZhi))"
         @close="taDailySheetVisible = false"
       />
 
@@ -1083,6 +1085,21 @@ function getTaDailyRelText(zhi: string, dayZhi: string): string {
   if (rel === 'good') return '三合'
   if (rel === 'bad') return '六冲'
   return '平'
+}
+function getTaDailyAdvice(selfRel: string, crushRel: string): string {
+  const k = `${selfRel}-${crushRel}`
+  const map: Record<string, string> = {
+    'good-good': '今天你俩气场都对——适合约见面、深入交流，做什么都顺。行动指南的建议可以全用。',
+    'good-bad': '你状态在线，但TA今天不对。建议线上轻聊保持温度，不要推约会或重要话题。行动指南的建议减半执行。',
+    'good-mid': '你这边没问题，TA持平。可以主动，但别一下子推太猛。',
+    'bad-good': 'TA今天愿意回应，但你容易说错话或敏感。稳一点——用TA的好气场来接你，别自己冲。',
+    'bad-bad': '今天不适合任何感情大动作。双方都容易情绪波动，自己待着最安全，明天再约。',
+    'bad-mid': '你状态不太好，TA也一般。保持现状就好，别试探、别追问。',
+    'mid-good': 'TA气场不错，你正常发挥即可。适合轻松互动，不用刻意。',
+    'mid-bad': 'TA今天可能冷淡，但你不受影响。给TA空间就是最好的策略。',
+    'mid-mid': '双方都平稳。按行动指南的日常建议走，不强求、不逃避。',
+  }
+  return map[k] || '双方气场平稳，按日常节奏互动即可。'
 }
 // 兼容旧 prop，保留接口不动
 const balanceCalloutForHome = computed(() => getBalanceCallout(latestCase.value))

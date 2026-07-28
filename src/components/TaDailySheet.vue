@@ -9,21 +9,31 @@
 
       <!-- Body -->
       <view class="bs-body">
-        <text class="bs-subtitle">今日日支 {{ dayZhi }} 对你们的影响</text>
+        <!-- ❶ 今日气场 -->
+        <view class="bs-aura-card">
+          <text class="bs-aura-label">今日气场</text>
+          <text class="bs-aura-text">{{ aura || '加载中...' }}</text>
+        </view>
 
+        <!-- ❷ 日支关系 -->
+        <text class="bs-subtitle">日支 {{ dayZhi }} · 对你们的影响</text>
         <view class="bs-ta-row">
           <view class="bs-ta-col">
-            <text class="bs-ta-col-head">我</text>
-            <text class="bs-ta-col-zhi">{{ selfZhi || '--' }}</text>
+            <text class="bs-ta-col-head">我 · {{ selfZhi || '--' }}</text>
             <text :class="['bs-ta-chip', selfRel === 'good' ? 'good' : selfRel === 'bad' ? 'bad' : 'mid']">{{ selfRelText || '平' }}</text>
             <text class="bs-ta-col-desc">{{ selfRel === 'good' ? '今天气场支持你主动推进，状态在线。' : selfRel === 'bad' ? '今天日支冲你的地支，容易敏感，别把小事放大。' : '今天能量平稳，按平常节奏就好。' }}</text>
           </view>
           <view class="bs-ta-col">
-            <text class="bs-ta-col-head">TA</text>
-            <text class="bs-ta-col-zhi">{{ crushZhi || '--' }}</text>
+            <text class="bs-ta-col-head">TA · {{ crushZhi || '--' }}</text>
             <text :class="['bs-ta-chip', crushRel === 'good' ? 'good' : crushRel === 'bad' ? 'bad' : 'mid']">{{ crushRelText || '平' }}</text>
             <text class="bs-ta-col-desc">{{ crushRel === 'bad' ? 'TA今天可能比较冷淡或回避，别逼太紧，给TA空间。' : crushRel === 'good' ? 'TA今天气场顺，适合轻松互动。' : 'TA今天状态平稳，正常相处就好。' }}</text>
           </view>
+        </view>
+
+        <!-- ❸ 综合建议 -->
+        <view v-if="advice" class="bs-advice">
+          <text class="bs-advice-label">💡 综合建议</text>
+          <text class="bs-advice-text">{{ advice }}</text>
         </view>
       </view>
     </view>
@@ -40,6 +50,8 @@ defineProps<{
   crushRel: string
   selfRelText: string
   crushRelText: string
+  aura: string
+  advice: string
 }>()
 
 defineEmits<{ close: [] }>()
@@ -57,15 +69,25 @@ defineEmits<{ close: [] }>()
 .bs-topbar-close { font-size: 44rpx; line-height: 1; color: var(--text-soft, #999); padding: 0 8rpx; }
 
 .bs-body { padding: 24rpx 32rpx; }
-.bs-subtitle { display: block; font-size: var(--fs-body-lg, 34rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-muted, #666); margin-bottom: 20rpx; }
+.bs-subtitle { display: block; font-size: var(--fs-body-lg, 34rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-muted, #666); margin-bottom: 16rpx; }
 
+/* ❶ 今日气场 */
+.bs-aura-card { padding: 18rpx 22rpx; background: var(--accent-soft, #FFFBEB); border: var(--border-width, 2rpx) solid var(--border, #111); margin-bottom: 20rpx; }
+.bs-aura-label { display: block; font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); margin-bottom: 4rpx; }
+.bs-aura-text { display: block; font-size: var(--fs-body, 32rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-main, #111); line-height: 1.4; }
+
+/* ❷ 日支关系 */
 .bs-ta-row { display: flex; gap: 20rpx; }
 .bs-ta-col { flex: 1; text-align: center; padding: 24rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
 .bs-ta-col-head { font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); margin-bottom: 8rpx; }
-.bs-ta-col-zhi { font-size: var(--fs-kpi, 40rpx); font-weight: var(--font-weight-hero, 900); color: var(--text-main, #111); }
 .bs-ta-chip { display: inline-block; margin-top: 8rpx; padding: 6rpx 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: var(--fs-body, 32rpx); font-weight: var(--font-weight-heading, 800); }
 .bs-ta-chip.good { background: var(--mint-soft, #E0FFF0); color: var(--relation-good, #4ECDC4); }
 .bs-ta-chip.bad { background: var(--risk-soft, #FFEEEC); color: var(--relation-bad, #D33F49); }
 .bs-ta-chip.mid { background: var(--surface, #fff); color: var(--text-muted, #666); }
 .bs-ta-col-desc { margin-top: 12rpx; font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); line-height: 1.5; }
+
+/* ❸ 综合建议 */
+.bs-advice { margin-top: 20rpx; padding: 18rpx 22rpx; background: var(--brand-cool, #f5f5ff); border: var(--border-width, 2rpx) solid var(--border, #111); }
+.bs-advice-label { display: block; font-size: var(--fs-body, 32rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-main, #111); margin-bottom: 6rpx; }
+.bs-advice-text { display: block; font-size: var(--fs-body, 32rpx); color: var(--text-main, #111); line-height: 1.5; }
 </style>
