@@ -1,42 +1,42 @@
 <template>
-  <view v-if="visible" class="bs-mask" @click.stop="$emit('close')">
-    <view class="bs-sheet" @click.stop>
+  <view v-if="visible" class="tds-mask" @click.stop="$emit('close')">
+    <view class="tds-sheet" @click.stop>
       <!-- Topbar -->
-      <view class="bs-topbar">
-        <view class="bs-topbar-title"><image class="bs-topbar-title-icon" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" /><text>今日的TA</text></view>
-        <view class="bs-topbar-close" @click.stop="$emit('close')"><text>×</text></view>
+      <view class="tds-topbar">
+        <view class="tds-topbar-title"><image class="tds-topbar-title-icon" src="/static/icons/taohua/heart-filled.svg" mode="aspectFit" /><text>今日的TA</text></view>
+        <view class="tds-topbar-close" @click.stop="$emit('close')"><text>×</text></view>
       </view>
 
       <!-- Body -->
-      <view class="bs-body">
+      <view class="tds-body">
         <!-- ❶ 今日气场 -->
-        <view class="bs-aura-card">
-          <view class="bs-aura-head">
-            <text class="bs-aura-label">今日气场</text>
-            <text v-if="jianchu" class="bs-aura-badge">建除 · {{ jianchu }}</text>
+        <view class="tds-aura-card">
+          <view class="tds-aura-head">
+            <text class="tds-aura-label">今日气场</text>
+            <text v-if="jianchu" class="tds-aura-badge">建除 · {{ jianchu }}</text>
           </view>
-          <text class="bs-aura-text">{{ aura || '加载中...' }}</text>
+          <text class="tds-aura-text">{{ aura || '加载中...' }}</text>
         </view>
 
         <!-- ❷ 日支关系 -->
-        <text class="bs-subtitle">日支 {{ dayZhi }} · 对你们的影响</text>
-        <view class="bs-ta-row">
-          <view class="bs-ta-col">
-            <text class="bs-ta-col-head">我 · {{ selfZhi || '--' }}</text>
-            <text :class="['bs-ta-chip', selfRel === 'good' ? 'good' : selfRel === 'bad' ? 'bad' : 'mid']">{{ selfRelText || '平' }}</text>
-            <text class="bs-ta-col-desc">{{ selfRel === 'good' ? '今天气场支持你主动推进，状态在线。' : selfRel === 'bad' ? '今天日支冲你的地支，容易敏感，别把小事放大。' : '今天能量平稳，按平常节奏就好。' }}</text>
+        <text class="tds-subtitle">日支 {{ dayZhi }} · 对你们的影响</text>
+        <view class="tds-ta-row">
+          <view class="tds-ta-col">
+            <text class="tds-ta-col-head">我 · {{ selfZhi || '--' }}</text>
+            <text :class="['tds-ta-chip', selfRel === 'good' ? 'good' : selfRel === 'bad' ? 'bad' : 'mid']">{{ selfRelText || '平' }}</text>
+            <text class="tds-ta-col-desc">{{ selfRel === 'good' ? '今天气场支持你主动推进，状态在线。' : selfRel === 'bad' ? '今天日支冲你的地支，容易敏感，别把小事放大。' : '今天能量平稳，按平常节奏就好。' }}</text>
           </view>
-          <view class="bs-ta-col">
-            <text class="bs-ta-col-head">TA · {{ crushZhi || '--' }}</text>
-            <text :class="['bs-ta-chip', crushRel === 'good' ? 'good' : crushRel === 'bad' ? 'bad' : 'mid']">{{ crushRelText || '平' }}</text>
-            <text class="bs-ta-col-desc">{{ crushRel === 'bad' ? 'TA今天可能比较冷淡或回避，别逼太紧，给TA空间。' : crushRel === 'good' ? 'TA今天气场顺，适合轻松互动。' : 'TA今天状态平稳，正常相处就好。' }}</text>
+          <view class="tds-ta-col">
+            <text class="tds-ta-col-head">TA · {{ crushZhi || '--' }}</text>
+            <text :class="['tds-ta-chip', crushRel === 'good' ? 'good' : crushRel === 'bad' ? 'bad' : 'mid']">{{ crushRelText || '平' }}</text>
+            <text class="tds-ta-col-desc">{{ crushRel === 'bad' ? 'TA今天可能比较冷淡或回避，别逼太紧，给TA空间。' : crushRel === 'good' ? 'TA今天气场顺，适合轻松互动。' : 'TA今天状态平稳，正常相处就好。' }}</text>
           </view>
         </view>
 
         <!-- ❸ 综合建议 -->
-        <view v-if="advice" class="bs-advice">
-          <text class="bs-advice-label">💡 综合建议</text>
-          <text class="bs-advice-text">{{ advice }}</text>
+        <view v-if="advice" class="tds-advice">
+          <text class="tds-advice-label">💡 综合建议</text>
+          <text class="tds-advice-text">{{ advice }}</text>
         </view>
       </view>
     </view>
@@ -61,39 +61,66 @@ defineProps<{
 defineEmits<{ close: [] }>()
 </script>
 
-<style scoped>
-/* ═══ MASK + SHEET（复用 BalanceSheet 同款） ═══ */
-.bs-mask { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; }
-.bs-sheet { width: 100%; max-height: 88vh; overflow-y: auto; padding: 0 0 calc(140rpx + env(safe-area-inset-bottom)); background: var(--app-bg, #FFFDF5); border-radius: 24rpx 24rpx 0 0; border-top: var(--border-width-strong, 3rpx) solid var(--border, #111); box-shadow: var(--shadow-hero, 0 -8rpx 0 #111); animation: bs-slide-up 0.3s ease-out; box-sizing: border-box; }
-@keyframes bs-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+<style scoped lang="scss">
+@import "@/styles/campus-pop.scss";
 
-.bs-topbar { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 28rpx 32rpx 20rpx; background: var(--app-bg, #FFFDF5); border-bottom: 1rpx solid var(--divider, #ddd); }
-.bs-topbar-title { display: flex; align-items: center; gap: 10rpx; font-size: var(--fs-heading, 38rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-main, #111); }
-.bs-topbar-title-icon { width: 30rpx; height: 30rpx; }
-.bs-topbar-close { font-size: 44rpx; line-height: 1; color: var(--text-soft, #999); padding: 0 8rpx; }
+/* ═══ MASK + SHEET ═══ */
+.tds-mask { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; }
+.tds-sheet {
+  width: 100%; max-height: 88vh; overflow-y: auto;
+  padding: 0 0 calc(140rpx + env(safe-area-inset-bottom));
+  background: var(--app-bg, #FFFDF5);
+  border-radius: 24rpx 24rpx 0 0;
+  border-top: var(--border-width-strong, 3rpx) solid var(--border, #111);
+  box-shadow: var(--shadow-hero, 0 -8rpx 0 #111);
+  box-sizing: border-box;
+}
+@keyframes tds-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-.bs-body { padding: 24rpx 32rpx; }
-.bs-subtitle { display: block; font-size: var(--fs-body-lg, 34rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-muted, #666); margin-bottom: 16rpx; }
+/* ═══ TOPBAR ═══ */
+.tds-topbar {
+  position: sticky; top: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: $sp-card-pad $sp-card-pad 20rpx;
+  background: var(--app-bg, #FFFDF5);
+  border-bottom: 1rpx solid var(--divider, #ddd);
+}
+.tds-topbar-title { display: flex; align-items: center; gap: 10rpx; font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
+.tds-topbar-title-icon { width: 30rpx; height: 30rpx; }
+.tds-topbar-close { width: 56rpx; height: 56rpx; border-radius: 50%; @include border-soft; display: flex; align-items: center; justify-content: center; font-size: $fs-heading; color: var(--text-muted, #666); }
+
+/* ═══ BODY ═══ */
+.tds-body { padding: $sp-card-pad; }
+.tds-subtitle { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-muted, #666); margin-bottom: 20rpx; }
 
 /* ❶ 今日气场 */
-.bs-aura-card { padding: 18rpx 22rpx; background: var(--accent-soft, #FFFBEB); border: var(--border-width, 2rpx) solid var(--border, #111); margin-bottom: 20rpx; }
-.bs-aura-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6rpx; }
-.bs-aura-label { font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); }
-.bs-aura-badge { font-size: var(--fs-caption, 22rpx); font-weight: var(--font-weight-heading, 800); background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 2rpx 12rpx; border: var(--border-width, 1.5rpx) solid var(--border, #111); }
-.bs-aura-text { display: block; font-size: var(--fs-body, 32rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-main, #111); line-height: 1.4; }
+.tds-aura-card { padding: 20rpx 24rpx; margin-bottom: 20rpx; background: var(--accent-soft, #FFFBEB); @include border-soft; }
+.tds-aura-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6rpx; }
+.tds-aura-label { font-size: $fs-caption; color: var(--text-muted, #666); }
+.tds-aura-badge { @include tag-v2-black; font-size: $fs-caption; padding: 2rpx 12rpx; }
+.tds-aura-text { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); line-height: 1.5; }
 
 /* ❷ 日支关系 */
-.bs-ta-row { display: flex; gap: 20rpx; }
-.bs-ta-col { flex: 1; text-align: center; padding: 24rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
-.bs-ta-col-head { font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); margin-bottom: 8rpx; }
-.bs-ta-chip { display: inline-block; margin-top: 8rpx; padding: 6rpx 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: var(--fs-body, 32rpx); font-weight: var(--font-weight-heading, 800); }
-.bs-ta-chip.good { background: var(--mint-soft, #E0FFF0); color: var(--relation-good, #4ECDC4); }
-.bs-ta-chip.bad { background: var(--risk-soft, #FFEEEC); color: var(--relation-bad, #D33F49); }
-.bs-ta-chip.mid { background: var(--surface, #fff); color: var(--text-muted, #666); }
-.bs-ta-col-desc { margin-top: 12rpx; font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); line-height: 1.5; }
+.tds-ta-row { display: flex; gap: $sp-section-gap; }
+.tds-ta-col { flex: 1; text-align: center; padding: 24rpx 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); background: var(--surface, #fff); }
+.tds-ta-col-head { font-size: $fs-caption; color: var(--text-muted, #666); margin-bottom: 8rpx; }
+.tds-ta-chip { display: inline-block; margin-top: 8rpx; padding: 6rpx 20rpx; border: var(--border-width, 2rpx) solid var(--border, #111); font-size: $fs-body; font-weight: $fw-heading; }
+.tds-ta-chip.good { background: var(--mint-soft, #E0FFF0); color: var(--relation-good, #4ECDC4); }
+.tds-ta-chip.bad  { background: var(--risk-soft, #FFEEEC); color: var(--relation-bad, #D33F49); }
+.tds-ta-chip.mid  { background: var(--surface, #fff); color: var(--text-muted, #666); }
+.tds-ta-col-desc { margin-top: 12rpx; font-size: $fs-caption; color: var(--text-muted, #666); line-height: 1.5; }
 
 /* ❸ 综合建议 */
-.bs-advice { margin-top: 20rpx; padding: 18rpx 22rpx; background: var(--brand-cool, #f5f5ff); border: var(--border-width, 2rpx) solid var(--border, #111); }
-.bs-advice-label { display: block; font-size: var(--fs-body, 32rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-main, #111); margin-bottom: 6rpx; }
-.bs-advice-text { display: block; font-size: var(--fs-body, 32rpx); color: var(--text-main, #111); line-height: 1.5; }
+.tds-advice { margin-top: 20rpx; padding: 20rpx 24rpx; background: var(--brand-cool, #f5f5ff); @include border-soft; }
+.tds-advice-label { display: block; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); margin-bottom: 6rpx; }
+.tds-advice-text { display: block; font-size: $fs-body; color: var(--text-main, #111); line-height: 1.5; }
+
+/* ═══ .font-large ═══ */
+.font-large .tds-topbar-title { font-size: 44rpx; }
+.font-large .tds-subtitle { font-size: 38rpx; }
+.font-large .tds-aura-text { font-size: 36rpx; }
+.font-large .tds-ta-chip { font-size: 36rpx; }
+.font-large .tds-ta-col-desc { font-size: 28rpx; }
+.font-large .tds-advice-label { font-size: 36rpx; }
+.font-large .tds-advice-text { font-size: 36rpx; }
 </style>
