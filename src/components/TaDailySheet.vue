@@ -11,7 +11,10 @@
       <view class="bs-body">
         <!-- ❶ 今日气场 -->
         <view class="bs-aura-card">
-          <text class="bs-aura-label">今日气场</text>
+          <view class="bs-aura-head">
+            <text class="bs-aura-label">今日气场</text>
+            <text v-if="jianchu" class="bs-aura-badge">{{ jianchu }} · {{ auraRating }}</text>
+          </view>
           <text class="bs-aura-text">{{ aura || '加载中...' }}</text>
         </view>
 
@@ -51,6 +54,8 @@ defineProps<{
   selfRelText: string
   crushRelText: string
   aura: string
+  jianchu: string
+  auraRating: string
   advice: string
 }>()
 
@@ -73,7 +78,9 @@ defineEmits<{ close: [] }>()
 
 /* ❶ 今日气场 */
 .bs-aura-card { padding: 18rpx 22rpx; background: var(--accent-soft, #FFFBEB); border: var(--border-width, 2rpx) solid var(--border, #111); margin-bottom: 20rpx; }
-.bs-aura-label { display: block; font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); margin-bottom: 4rpx; }
+.bs-aura-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6rpx; }
+.bs-aura-label { font-size: var(--fs-caption, 24rpx); color: var(--text-muted, #666); }
+.bs-aura-badge { font-size: var(--fs-caption, 22rpx); font-weight: var(--font-weight-heading, 800); background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); padding: 2rpx 12rpx; border: var(--border-width, 1.5rpx) solid var(--border, #111); }
 .bs-aura-text { display: block; font-size: var(--fs-body, 32rpx); font-weight: var(--font-weight-heading, 800); color: var(--text-main, #111); line-height: 1.4; }
 
 /* ❷ 日支关系 */
