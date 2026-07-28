@@ -111,7 +111,7 @@
                   :interaction-balance="getTimelineStats(c)"
                   :taohua-teaser-data="taohuaTeaserData"
                   :guidance-text="taohuaTeaserData?.guidance || ''"
-                  :balance-callout="getBalanceCallout(c)"
+                  :ta-aura-label="(taohuaTeaserData?.jianchu || '') + (taohuaTeaserData?.jianchu ? ' · ' : '') + (taohuaTeaserData?.summary || '')"
                   :pet-name="selectedPet.displayName"
                   :has-self-profile="hasUsableSelfProfile(selfProfile)"
                   :font-size-mode="fontSizeMode"
