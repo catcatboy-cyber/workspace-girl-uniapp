@@ -13,7 +13,7 @@
         <view class="bs-aura-card">
           <view class="bs-aura-head">
             <text class="bs-aura-label">今日气场</text>
-            <text v-if="jianchu" class="bs-aura-badge">{{ jianchu }} · {{ auraRating }}</text>
+            <text v-if="jianchu" class="bs-aura-badge">建除 · {{ jianchu }}</text>
           </view>
           <text class="bs-aura-text">{{ aura || '加载中...' }}</text>
         </view>
@@ -55,7 +55,6 @@ defineProps<{
   crushRelText: string
   aura: string
   jianchu: string
-  auraRating: string
   advice: string
 }>()
 
