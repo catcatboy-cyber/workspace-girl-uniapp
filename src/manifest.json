@@ -44,6 +44,18 @@
         "setting" : {
             "urlCheck" : true
         },
+        "packOptions" : {
+            "ignore" : [
+                {
+                    "value" : "static/logo.png",
+                    "type" : "file"
+                },
+                {
+                    "value" : "static/app-icon.png",
+                    "type" : "file"
+                }
+            ]
+        },
         "usingComponents" : true
     },
     "mp-alipay" : {

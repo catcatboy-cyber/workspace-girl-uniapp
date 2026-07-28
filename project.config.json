@@ -57,6 +57,14 @@
       {
         "value": "xlss",
         "type": "folder"
+      },
+      {
+        "value": "static/logo.png",
+        "type": "file"
+      },
+      {
+        "value": "static/app-icon.png",
+        "type": "file"
       }
     ],
     "include": []
