@@ -1279,10 +1279,6 @@ function avatarLabel(name?: string) {
 // ---- pet animation ----
 const petFrame = ref(0)
 const showSpeakSheet = ref(false)
-// swipeDisabled watch 放这里确保所有依赖 ref 已声明
-watch(swipeDisabled, (v) => {
-  })
-})
 const petMsg = ref('')
 const petState = ref('idle')
 const selectedPet = ref(getPetById(getSelectedPetId()))
@@ -1853,8 +1849,6 @@ async function loadData() {
       mode: 'home',
       detailCaseId: getActiveCaseId() || activeCaseId.value
     })
-      }))
-    })
     applyCasesList(list)
     writeHomeCasesCache(uid, cases.value)
     indexAILog('loadData_applied', {
@@ -1879,10 +1873,6 @@ async function loadData() {
       showSwipeHint.value = true
       uni.setStorageSync('swipeHintShown', true)
     }
-    // 打印每个 case 的关键字段
-    cases.value.forEach((c: any, i: number) => {
-      })
-    })
   }
 }
 
