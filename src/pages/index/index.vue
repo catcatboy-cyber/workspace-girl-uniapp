@@ -391,7 +391,7 @@
         <view v-if="petReactionMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible" class="pet-bubble reaction">
           <text class="pet-bubble-text">{{ petReactionMsg }}</text>
         </view>
-        <view v-else-if="petMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible" class="pet-bubble">
+        <view v-else-if="petMsg && !petIsRunning && !quickSheetVisible && !analysisSheetVisible && !balanceSheetVisible && !guidanceSheetVisible && !taDailySheetVisible" class="pet-bubble">
           <text class="pet-bubble-text">{{ petMsg }}</text>
         </view>
       </view>
