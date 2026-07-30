@@ -23,9 +23,21 @@ inputSubjectRole       subjectRole            subjectRoleSource
 
 ## 1. 核心架构：提示词所有权
 
-**DB promptModules.eventAssessment.rules 是唯一所有者。代码只做结构性拼接。**
+**DB promptModules.eventAssessment.rules 是唯一所有者。**
 
-### 1.1 DB 默认规则（从现有代码提取，一条不丢）
+关键认识：`buildPromptMessages()`（`ai-prompt-config.js:112`）**已经自动把 DB 的 rules 注入 prompt**。代码不需要再读同一份数据追加。
+
+### 1.1 三层分工
+
+| 层 | 来源 | 内容 |
+|----|------|------|
+| **DB rules** | `promptModules.eventAssessment.businessPrompt.rules` | 主体识别规则（管理员可改）→ 由 `buildPromptMessages` 自动注入 |
+| **代码 fallback** | `DEFAULT_SUBJECT_RULES` | DB 为空时的兜底 → 由 `buildSubjectPrompt` 注入 contextLines |
+| **代码标记** | `buildSubjectPrompt` | both 模式追加"这是聊天记录" |
+
+**关键：DB 有规则时代码不重复注入。只当 DB 为空时才补默认值。**
+
+### 1.2 DB 默认规则（部署时写入，从现有代码提取一条不丢）
 
 ```
 规则1：请自行从原文区分三层信息——
@@ -46,17 +58,40 @@ inputSubjectRole       subjectRole            subjectRoleSource
   不要编造没有出现的行为、承诺、情绪或关系状态。
 ```
 
-### 1.2 代码只做结构性拼接
+**Admin 保存校验**：规则必须包含三条关键约束（区分对方/用户/感受 + 只有对方行为可改分 + 主体不明时弱化），否则拒绝保存并提示。
+
+### 1.3 代码只做 fallback + 结构性标记
 
 ```javascript
+// getSubjectRulesFromDB 必须正确处理 { zh, en }[] 格式
+function getSubjectRulesFromDB(settings) {
+  const module = normalizeBusinessPrompt(settings, 'eventAssessment')
+  if (!module?.rules?.length) return ''
+  return module.rules
+    .map(item => typeof item === 'string' ? item : (item.zh || item.en || ''))
+    .filter(Boolean)
+    .join('\n')
+}
+
 function buildSubjectPrompt(inputSubjectRole, settings) {
-  const rules = getSubjectRulesFromDB(settings) || DEFAULT_SUBJECT_RULES
-  if (inputSubjectRole === 'both') {
-    return rules + '\n这是微信对话记录。请拆分双方各自说了什么。'
+  const dbRules = getSubjectRulesFromDB(settings)
+  const parts = []
+
+  // DB 没配规则时才补代码默认值（避免与 buildPromptMessages 自动注入重复）
+  if (!dbRules) {
+    parts.push(DEFAULT_SUBJECT_RULES)
   }
-  return rules
+
+  // both 模式追加聊天标记（始终由代码追加）
+  if (inputSubjectRole === 'both') {
+    parts.push('这是微信对话记录。请拆分双方各自说了什么。')
+  }
+
+  return parts.join('\n')
 }
 ```
+
+**最终 prompt 中主体规则只出现一次**：DB 有 → 在业务规则区；DB 无 → 在运行时上下文区。both 标记始终追加。
 
 ---
 
@@ -89,7 +124,8 @@ function buildSubjectPrompt(inputSubjectRole, settings) {
 
 | # | 改动 |
 |---|------|
-| **F14** | `createTimeline` 参数新增 `inputSubjectRole?: 'unspecified' \| 'both'` |
+| **F14** | `createTimeline` 参数新增 `inputSubjectRole: 'unspecified' \| 'both'`（**必填**） |
+| **F15** | 删除本地记录、提交参数、重置、缓存中的 `subjectRoleConfidence` 字段 |
 
 ### 2.4 后端 `createTimeline/index.js`
 
@@ -98,18 +134,19 @@ function buildSubjectPrompt(inputSubjectRole, settings) {
 | **B1** | 新增 `normalizeInputSubjectRole(v)`：`'unspecified' \| 'both'`，fallback `'unspecified'` |
 | **B2** | `normalizeSubjectRole(v)` 不变（不加 unspecified） |
 | **B3** | `subjectRole` 强制 `'unknown'`，`subjectRoleSource` 强制 `'pending'` |
-| **B4** | 删除 `subjectRoleConfidence` 持久化 |
+| **B4** | 删除 `normalizeSubjectRoleConfidence()` 函数（67 行）+ 所有读写（169/213/222/267/279/368/420 行） |
 | **B5** | `inferTimelineRecord` 传入 `inputSubjectRole`、`subjectRoleSource` |
 
 ### 2.5 后端 `generateAssessmentAI/index.js`
 
 | # | 改动 |
 |---|------|
-| **B6** | `compactTimelineItem()` 读取 `inputSubjectRole` |
-| **B7** | 调用 `buildSubjectPrompt(inputSubjectRole)` — 从 DB 读规则 |
-| **B8** | AI 成功 + actor 有效 → `subjectRole=actor, source='ai_inferred'` |
-| **B9** | AI 失败 → `subjectRole='unknown', source='fallback_unknown'` |
-| **B10** | 更新 timeline_records：subjectRole + subjectRoleSource |
+| **B6** | 删除 `normalizeSubjectRoleConfidence()` 函数（40 行）+ compactTimelineItem 删该字段 |
+| **B7** | `compactTimelineItem()` 读取 `inputSubjectRole` + `subjectRoleSource` |
+| **B8** | 调用 `buildSubjectPrompt(inputSubjectRole)` |
+| **B9** | AI 成功 + actor 有效 → `subjectRole=actor, source='ai_inferred'` |
+| **B10** | AI 失败 → `subjectRole='unknown', source='fallback_unknown'` |
+| **B11** | 更新 timeline_records：subjectRole + subjectRoleSource |
 
 ### 2.6 后端 `_shared/ai-event.js`
 
@@ -140,7 +177,7 @@ function buildSubjectPrompt(inputSubjectRole, settings) {
 | **B23** | `buildSubjectPrompt` 同 B11 |
 | **B24** | **删除** `describeSubjectRole`（630-640 行） |
 | **B25** | 预览事件改为：`inputSubjectRole: 'unspecified'`、`subjectRole: 'unknown'`、`subjectRoleSource: 'pending'` |
-| **B26** | `normalizePromptAdminView`：`guardrails`/`runtimeContext`/`outputContract` 全部派生 |
+| **B26** | `normalizePromptAdminView`：`guardrails`/`runtimeContext`/`outputContract` 全部派生；同步更新 `PROMPT_FIXED_GUARDRAILS` 和 `getRuntimePreview()` 中的 subjectRole/inputSubjectRole/subjectRoleSource 字段说明 + 四段 rawReply 结构 |
 
 ### 2.9 下游消费者
 
@@ -222,12 +259,19 @@ if (isUnresolved) {
 ## 5. 部署
 
 ```
-1. 修改 canonical cloudfunctions/_shared/
-2. npm run sync:shared && npm run sync:shared:dry
-3. DB: 备份 → 写入默认规则 → 重建 promptAdminView
-4. tcb fn deploy createTimeline generateAssessmentAI adminManage deleteTimeline
-5. npm run build:mp-weixin
+1. 备份数据库 promptModules.eventAssessment
+2. 修改 canonical cloudfunctions/_shared/
+3. npm run sync:shared && npm run sync:shared:dry
+4. tcb fn deploy createTimeline          ← 逐个部署
+5. tcb fn deploy generateAssessmentAI
+6. tcb fn deploy deleteTimeline
+7. tcb fn deploy adminManage
+8. 数据库写入四条默认规则 + Admin 保存校验
+9. Admin 保存 → 重建 promptAdminView → 检查实际 prompt
+10. npm run build:mp-weixin
 ```
+
+**先部署代码，再改数据库**。如果先改 DB，旧代码仍会附加原有的 describeSubjectRole 指令，造成短暂双重注入。
 
 ---
 
