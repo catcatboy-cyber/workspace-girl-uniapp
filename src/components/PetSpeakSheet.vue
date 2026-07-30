@@ -66,6 +66,12 @@
             </view>
 
             <view v-else class="message-bubble">
+              <text
+                v-if="message.role === 'user' && message.mode === 'reply'"
+                class="message-source-prefix"
+              >
+                对方说：
+              </text>
               <text class="message-text">{{ resolveMessageText(message) }}</text>
             </view>
 
@@ -426,7 +432,8 @@ async function sendMessage() {
     id: `user_${Date.now()}`,
     role: 'user',
     caseId: props.caseId || 'global',
-    text
+    text,
+    mode: modeForRequest
   }
   messages.value.push(userMessage)
   draft.value = ''
@@ -622,6 +629,7 @@ onUnmounted(() => {
 }
 .message-row.user .message-bubble { background: var(--accent-cool-soft, #E4FFFC); }
 .message-text { font-size: $fs-body-lg; line-height: 1.55; color: var(--text-main, #111); word-break: break-word; }
+.message-source-prefix { font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-muted, #666); margin-right: 6rpx; }
 
 .mode-notice {
   width: 100%;

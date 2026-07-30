@@ -1418,9 +1418,32 @@ function normalizePetHistory(history) {
     .filter(Boolean)
 }
 
+function restoreMissingUserMode(normalized) {
+  for (let i = 0; i < normalized.length - 1; i++) {
+    const current = normalized[i]
+    const next = normalized[i + 1]
+    if (
+      current.role === 'user' &&
+      !current.mode &&
+      next.role === 'pet' &&
+      current.caseId === next.caseId
+    ) {
+      const inferredMode = normalizePetChatMode(
+        next.requestedMode || next.mode || next.intent
+      )
+      if (inferredMode === 'reply' || inferredMode === 'initiate') {
+        current.mode = inferredMode
+      }
+    }
+  }
+  return normalized
+}
+
 function filterPetHistoryByCase(history, caseId) {
   const targetCaseId = normalizeChatCaseId(caseId)
-  return normalizePetHistory(history).filter((item) => item.caseId === targetCaseId)
+  return restoreMissingUserMode(
+    normalizePetHistory(history).filter((item) => item.caseId === targetCaseId)
+  )
 }
 
 async function getUserDoc(userId) {
@@ -1798,11 +1821,18 @@ function parsePetChatAI(raw, mode, suggestedMode = '') {
   }
 }
 
+function buildHistoryPromptContent(item) {
+  if (item.role !== 'user') return item.text
+  if (item.mode === 'reply') return `【用户转述的 TA 原话】${item.text}`
+  if (item.mode === 'initiate') return `【用户想对 TA 表达的意思】${item.text}`
+  return item.text
+}
+
 function toLLMMessages(history, incomingMessages, caseId) {
   const MAX_TOTAL_CHARS = 3000  // 限制总字符数，避免聊天历史撑爆系统提示词
   const persisted = filterPetHistoryByCase(history, caseId).slice(-20).map((item) => ({
     role: item.role === 'user' ? 'user' : 'assistant',
-    content: item.text
+    content: buildHistoryPromptContent(item)
   }))
   const incoming = normalizeChatMessages(incomingMessages).map((item) => ({
     role: item.role === 'user' ? 'user' : 'assistant',
@@ -1829,6 +1859,7 @@ async function savePetChatHistory(userId, userText, petPayload) {
     role: 'user',
     caseId,
     text: cleanChatText(userText, 800),
+    mode: normalizePetChatMode(petPayload.mode || petPayload.intent),
     time: now
   }
   const petMsg = {

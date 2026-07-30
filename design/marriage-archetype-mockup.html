@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>婚姻原型测试 + Crush名人 — Crush Master</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #e8e4dc;
+  display: flex; justify-content: center; align-items: flex-start;
+  min-height: 100vh; padding: 20px 0;
+}
+.phone {
+  width: 390px; min-height: 844px;
+  background: #FFFDF5;
+  border: 4px solid #111;
+  box-shadow: 12px 12px 0 #111;
+  overflow: hidden;
+  position: relative;
+}
+:root {
+  --hero: #FF6B6B; --accent: #FFD93D; --mint: #4ECDC4; --risk: #FF5252;
+  --ink: #111; --card: #fff; --muted: #666; --soft: #999;
+  --fs-display: 28px; --fs-hero: 24px; --fs-heading: 20px;
+  --fs-body-lg: 17px; --fs-body: 15px; --fs-caption: 13px; --fs-micro: 11px;
+  --fw-hero: 900; --fw-heading: 800; --fw-label: 700; --fw-body: 400;
+}
+
+/* ── Cards ── */
+.card { background: var(--card); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); padding: 24px; margin: 0 16px 18px; }
+.card-sm { padding: 16px; }
+.card-risk { border-left: 10px solid var(--risk); }
+.card-accent { border-left: 10px solid var(--accent); }
+.card-mint { border-left: 10px solid var(--mint); }
+
+/* ── Hero ── */
+.hero {
+  background: var(--hero); border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink); padding: 28px 24px;
+  margin: 18px 16px 18px; transform: rotate(-0.5deg);
+}
+.hero-tag { display: inline-block; background: var(--ink); color: var(--accent); padding: 4px 14px; font-size: var(--fs-caption); font-weight: var(--fw-hero); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
+.hero-title { display: block; font-size: var(--fs-hero); font-weight: var(--fw-hero); color: var(--ink); line-height: 1.15; }
+.hero-hl { display: inline-block; background: var(--accent); padding: 0 6px; }
+.hero-copy { display: block; margin-top: 10px; font-size: var(--fs-body); font-weight: var(--fw-body); color: rgba(0,0,0,0.7); line-height: 1.5; }
+
+/* ── Progress ── */
+.progress-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.progress-bar { flex: 1; height: 8px; background: #eee; border: 2px solid var(--ink); }
+.progress-fill { height: 100%; background: var(--mint); transition: width 0.3s; }
+.progress-text { font-size: var(--fs-caption); font-weight: var(--fw-heading); color: var(--muted); min-width: 48px; text-align: right; }
+
+/* ── Chips ── */
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 8px 16px; border: 2px solid var(--ink); background: var(--card); font-size: var(--fs-body); font-weight: var(--fw-label); color: var(--ink); cursor: pointer; transition: all 0.15s; user-select: none; }
+.chip:hover { background: #f5f5f5; }
+.chip.active { background: var(--ink); color: var(--accent); }
+
+/* ── Option Row (Likert) ── */
+.option-row { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.option-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 2px solid var(--ink); background: var(--card); cursor: pointer; transition: all 0.15s; }
+.option-item:hover { background: #fafafa; }
+.option-item.sel { background: var(--ink); color: var(--accent); }
+.option-radio { width: 20px; height: 20px; border: 2px solid var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: var(--fw-heading); }
+.option-item.sel .option-radio { border-color: var(--accent); color: var(--accent); }
+.option-label { font-size: var(--fs-body); font-weight: var(--fw-label); }
+.option-item.sel .option-label { color: var(--accent); }
+
+/* ── Buttons ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 28px; border: 3px solid var(--ink); font-size: var(--fs-body); font-weight: var(--fw-heading); cursor: pointer; text-align: center; transition: all 0.15s; }
+.btn-primary { background: var(--mint); box-shadow: 4px 4px 0 var(--ink); color: var(--ink); }
+.btn-primary:active { box-shadow: 1px 1px 0 var(--ink); transform: translate(2px, 2px); }
+.btn-secondary { background: var(--card); }
+.btn-block { display: flex; width: 100%; height: 56px; font-size: var(--fs-body-lg); }
+.btn-sm { height: 40px; padding: 0 18px; font-size: var(--fs-caption); }
+.btn-hero { background: var(--ink); color: var(--accent); box-shadow: 4px 4px 0 rgba(0,0,0,0.3); }
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+
+/* ── Score Bar ── */
+.score-bar { margin-bottom: 14px; }
+.score-bar-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.score-bar-label { font-size: var(--fs-body); font-weight: var(--fw-heading); color: var(--ink); }
+.score-bar-num { font-size: var(--fs-display); font-weight: var(--fw-hero); color: var(--ink); line-height: 1; }
+.score-bar-track { height: 10px; background: #eee; border: 2px solid var(--ink); }
+.score-bar-fill { height: 100%; transition: width 0.6s ease-out; }
+.hero-fill { background: var(--hero); }
+.mint-fill { background: var(--mint); }
+.accent-fill { background: var(--accent); }
+.risk-fill { background: var(--risk); }
+.ink-fill { background: var(--ink); }
+
+/* ── Section Title ── */
+.section-title { display: block; font-size: var(--fs-heading); font-weight: var(--fw-heading); color: var(--ink); margin-bottom: 8px; }
+.section-sub { display: block; font-size: var(--fs-caption); font-weight: var(--fw-label); color: var(--muted); margin-bottom: 12px; }
+
+/* ── Module Card (Report) ── */
+.module-card { background: var(--card); border: 2px solid var(--ink); padding: 20px; margin-bottom: 14px; }
+.module-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.module-icon { font-size: 32px; }
+.module-title { font-size: var(--fs-body-lg); font-weight: var(--fw-heading); color: var(--ink); }
+.module-score { font-size: var(--fs-body); font-weight: var(--fw-heading); color: var(--muted); margin-left: auto; }
+.module-desc { font-size: var(--fs-body); font-weight: var(--fw-body); color: var(--muted); line-height: 1.6; }
+
+/* ── Archetype Card ── */
+.archetype-card { background: #FFFBEB; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.archetype-card:hover { box-shadow: 6px 6px 0 var(--ink); transform: translate(-2px, -2px); }
+.arch-emoji { font-size: 40px; display: block; margin-bottom: 8px; }
+.arch-name { font-size: var(--fs-body-lg); font-weight: var(--fw-hero); color: var(--ink); }
+.arch-sub { font-size: var(--fs-caption); font-weight: var(--fw-label); color: var(--muted); margin-top: 4px; }
+
+/* ── Disclaimer ── */
+.disclaimer { text-align: center; padding: 16px; font-size: var(--fs-micro); color: var(--soft); line-height: 1.5; }
+
+/* ── Badge ── */
+.badge { display: inline-block; padding: 4px 12px; border: 2px solid var(--ink); font-size: var(--fs-micro); font-weight: var(--fw-heading); }
+.badge-risk { background: var(--risk); color: #fff; }
+.badge-mint { background: var(--mint); color: var(--ink); }
+.badge-accent { background: var(--accent); color: var(--ink); }
+.badge-ink { background: var(--ink); color: var(--accent); }
+
+/* ── Nav Bar ── */
+.nav-bar { display: flex; align-items: center; padding: 14px 16px; border-bottom: 2px solid #eee; }
+.nav-back { font-size: 20px; margin-right: 12px; cursor: pointer; }
+.nav-title { font-size: var(--fs-body-lg); font-weight: var(--fw-heading); color: var(--ink); }
+
+/* ── Top Tab Switch ── */
+.top-tab-row { display: flex; margin: 18px 16px 18px; border: 3px solid var(--ink); }
+.top-tab { flex: 1; text-align: center; padding: 14px 8px; font-size: var(--fs-body); font-weight: var(--fw-heading); cursor: pointer; background: var(--card); transition: all 0.15s; }
+.top-tab.active { background: var(--ink); color: var(--accent); }
+.top-tab-sub { font-size: 10px; font-weight: var(--fw-body); display: block; margin-top: 2px; opacity: 0.7; }
+
+/* ── Horizontal Scroll ── */
+.h-scroll { display: flex; gap: 10px; padding: 0 16px; margin-bottom: 18px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.h-scroll::-webkit-scrollbar { display: none; }
+.celebrity-chip { flex: 0 0 auto; min-width: 110px; background: var(--card); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px 12px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.celebrity-chip:hover { box-shadow: 6px 6px 0 var(--ink); transform: translate(-2px, -2px); }
+.celebrity-chip.sel { background: var(--ink); }
+.celebrity-chip.sel .cc-name { color: var(--accent); }
+.celebrity-chip.sel .cc-dynasty { color: rgba(255,217,61,0.6); }
+.cc-emoji { font-size: 32px; display: block; margin-bottom: 4px; }
+.cc-name { font-size: var(--fs-body); font-weight: var(--fw-hero); color: var(--ink); }
+.cc-dynasty { font-size: 10px; font-weight: var(--fw-label); color: var(--soft); margin-top: 2px; }
+
+/* ── Radar Bars ── */
+.radar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.radar-label { width: 72px; font-size: var(--fs-caption); font-weight: var(--fw-label); color: var(--ink); text-align: right; flex-shrink: 0; }
+.radar-bar { flex: 1; height: 14px; background: #eee; border: 2px solid var(--ink); }
+.radar-fill { height: 100%; transition: width 0.8s ease-out; }
+.radar-num { width: 32px; font-size: var(--fs-caption); font-weight: var(--fw-hero); color: var(--muted); text-align: left; flex-shrink: 0; }
+
+/* ── Hero Celebrity Card ── */
+.celebrity-hero-card { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 3px solid var(--accent); box-shadow: 6px 6px 0 var(--ink); padding: 28px 24px; margin: 0 16px 18px; text-align: center; }
+.celebrity-hero-card .chc-emoji { font-size: 64px; display: block; margin-bottom: 8px; }
+.celebrity-hero-card .chc-name { font-size: 32px; font-weight: var(--fw-hero); color: var(--accent); display: block; }
+.celebrity-hero-card .chc-dynasty { font-size: var(--fs-caption); color: rgba(255,255,255,0.5); margin-top: 2px; }
+.celebrity-hero-card .chc-quote { font-size: var(--fs-body); color: rgba(255,255,255,0.8); margin-top: 10px; font-style: italic; line-height: 1.5; }
+
+/* ── Screener ── */
+.screener-option { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border: 2px solid var(--ink); background: var(--card); cursor: pointer; margin-bottom: 10px; transition: all 0.15s; }
+.screener-option:hover { background: #fafafa; }
+.screener-option.sel { background: var(--ink); }
+.screener-option.sel .so-label { color: var(--accent); }
+.screener-option.sel .so-desc { color: rgba(255,217,61,0.7); }
+.so-radio { width: 20px; height: 20px; border: 2px solid var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: var(--fw-heading); margin-top: 1px; }
+.screener-option.sel .so-radio { border-color: var(--accent); color: var(--accent); }
+.so-content { flex: 1; }
+.so-label { display: block; font-size: var(--fs-body); font-weight: var(--fw-label); color: var(--ink); margin-bottom: 3px; }
+.so-desc { display: block; font-size: var(--fs-caption); color: var(--muted); line-height: 1.4; }
+
+/* ── Scenario ── */
+.scenario-label { display: inline-block; background: var(--accent); padding: 2px 10px; font-size: var(--fs-micro); font-weight: var(--fw-heading); margin-bottom: 8px; border: 2px solid var(--ink); }
+
+/* ── Animations ── */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.anim-up { animation: fadeUp 0.4s ease-out; }
+
+/* ── Comparison ── */
+.compare-row { display: flex; gap: 8px; margin-top: 10px; }
+.compare-chip { flex: 1; text-align: center; padding: 10px 6px; border: 2px solid var(--ink); font-size: var(--fs-micro); font-weight: var(--fw-label); background: var(--card); }
+.compare-chip.top { background: var(--ink); color: var(--accent); }
+.compare-chip .cc-pct { font-size: var(--fs-body-lg); font-weight: var(--fw-hero); display: block; }
+
+/* ── Quick Quiz Chip (for celeb quiz) ── */
+.quick-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.qc-chip { padding: 12px 18px; border: 2px solid var(--ink); background: var(--card); font-size: var(--fs-body); font-weight: var(--fw-label); cursor: pointer; text-align: center; min-width: 80px; flex: 1; }
+.qc-chip:hover { background: #fafafa; }
+.qc-chip.sel { background: var(--ink); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="phone" id="app">
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 1: Landing — Top Tab Switch         -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div id="screen-entry" style="padding-top:18px;">
+    <div class="nav-bar"><span class="nav-title">Crush Master · 原型测试</span></div>
+
+    <!-- Top tabs: Marriage vs Crush Celebrity -->
+    <div class="top-tab-row anim-up">
+      <div class="top-tab active" id="top-tab-marriage" onclick="switchTopTab('marriage')">
+        🏠 婚姻原型<span class="top-tab-sub">深度心理画像</span>
+      </div>
+      <div class="top-tab" id="top-tab-celebrity" onclick="switchTopTab('celebrity')">
+        👑 Crush 名人<span class="top-tab-sub">历史人物匹配</span>
+      </div>
+    </div>
+
+    <!-- ========== MARRIAGE TAB CONTENT ========== -->
+    <div id="tab-marriage-content">
+      <div class="hero anim-up">
+        <span class="hero-tag">MARRIAGE QUIZ</span>
+        <span class="hero-title">你的婚姻模式<text class="hero-hl">像谁</text>？</span>
+        <span class="hero-copy">冉莹颖？佟晨洁？谢杏芳？<br>3 分钟 · 15 题 · 一份心理画像报告</span>
+      </div>
+
+      <div class="card anim-up" style="animation-delay:0.1s">
+        <span class="section-title">📋 深度心理筛查</span>
+        <span class="section-sub">专门探测一种真实的社会心理模式，非娱乐测试。</span>
+        <div style="font-size:var(--fs-body);color:var(--muted);line-height:1.7;margin-bottom:16px;">
+          ✓ 6 题快筛 → 定位你的模式<br>
+          ✓ 15 道专属问卷 + 3 道情景判断<br>
+          ✓ 三层心理画像报告<br>
+          ✓ 高度倾向 / 中度 / 轻度 / 不匹配<br>
+          ✓ <strong>非临床诊断</strong>，仅行为倾向参考
+        </div>
+        <button class="btn btn-primary btn-block" onclick="showScreen('screener')">开始深度测试 →</button>
+      </div>
+
+      <div style="display:flex;gap:10px;padding:0 16px;margin-bottom:18px;" class="anim-up" style="animation-delay:0.2s">
+        <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('ran_yingying')">
+          <span class="arch-emoji">🏠</span><span class="arch-name">冉莹颖</span><span class="arch-sub">高能力兜底者</span>
+        </div>
+        <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('tong_chenjie')">
+          <span class="arch-emoji">🔍</span><span class="arch-name">佟晨洁</span><span class="arch-sub">清醒观察者</span>
+        </div>
+        <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('xie_xingfang')">
+          <span class="arch-emoji">🤍</span><span class="arch-name">谢杏芳</span><span class="arch-sub">隐忍修复者</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== CELEBRITY TAB CONTENT ========== -->
+    <div id="tab-celebrity-content" style="display:none;">
+      <div class="hero anim-up" style="background:linear-gradient(135deg,#1a1a2e,#2d1b69);">
+        <span class="hero-tag">CELEBRITY QUIZ</span>
+        <span class="hero-title" style="color:#fff;">你的 Crush 是<text class="hero-hl">哪个历史人物</text>？</span>
+        <span class="hero-copy" style="color:rgba(255,255,255,0.7);">武则天？诸葛亮？贾宝玉？林黛玉？<br>12 题 · 2 分钟 · 立刻出结果 · 不依赖事件数据</span>
+      </div>
+
+      <!-- 8 Celebrity Chips (scrollable) -->
+      <div class="h-scroll anim-up" style="animation-delay:0.1s">
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('wu_zetian')"><span class="cc-emoji">👑</span><span class="cc-name">武则天</span><span class="cc-dynasty">唐朝</span></div>
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('xiang_yu')"><span class="cc-emoji">⚔️</span><span class="cc-name">项羽</span><span class="cc-dynasty">秦末</span></div>
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('zhao_yun')"><span class="cc-emoji">🛡️</span><span class="cc-name">赵云</span><span class="cc-dynasty">三国</span></div>
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('zhuge_liang')"><span class="cc-emoji">📜</span><span class="cc-name">诸葛亮</span><span class="cc-dynasty">三国</span></div>
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('jia_baoyu')"><span class="cc-emoji">🏮</span><span class="cc-name">贾宝玉</span><span class="cc-dynasty">红楼梦</span></div>
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('duan_zhengchun')"><span class="cc-emoji">🎭</span><span class="cc-name">段正淳</span><span class="cc-dynasty">大理国</span></div>
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('lin_daiyu')"><span class="cc-emoji">🌸</span><span class="cc-name">林黛玉</span><span class="cc-dynasty">红楼梦</span></div>
+        <div class="celebrity-chip" onclick="jumpToCelebQuiz('liu_xiahui')"><span class="cc-emoji">🍃</span><span class="cc-name">柳下惠</span><span class="cc-dynasty">春秋</span></div>
+      </div>
+
+      <div class="card anim-up" style="animation-delay:0.15s">
+        <span class="section-title">⚡ 轻量快测</span>
+        <span class="section-sub">不依赖时间线事件，纯答题，新人也能立刻出结果。</span>
+        <div style="font-size:var(--fs-body);color:var(--muted);line-height:1.7;margin-bottom:16px;">
+          ✓ 12 道选择题<br>
+          ✓ 5 维人格雷达图（主导性/温度/靠谱度/浪漫/边界感）<br>
+          ✓ 匹配 8 位历史名人<br>
+          ✓ 欧几里得距离算法<br>
+          ✓ <strong>纯前端算分</strong>，不需要 AI · 不需要事件数据
+        </div>
+        <button class="btn btn-primary btn-block" onclick="showScreen('celeb-quiz')">⚡ 开始快测 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 2: Historical Celebrity Quiz (12 Q) -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div id="screen-celeb-quiz" style="display:none;padding-top:18px;">
+    <div class="nav-bar">
+      <span class="nav-back" onclick="showScreen('entry')">←</span>
+      <span class="nav-title" id="celeb-quiz-title">Crush 名人匹配</span>
+    </div>
+
+    <div class="card">
+      <span class="section-sub">第 <strong id="celeb-q-num">1</strong>/12 题</span>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="celeb-progress" style="width:0%"></div></div>
+        <span class="progress-text" id="celeb-progress-text">0/12</span>
+      </div>
+    </div>
+
+    <div class="card" id="celeb-q-card">
+      <span style="display:block;font-size:var(--fs-heading);font-weight:var(--fw-hero);color:var(--ink);margin-bottom:16px;line-height:1.4;" id="celeb-q-text">Q1. 你们之间，谁更常主动发起聊天或邀约？</span>
+      <div class="quick-chip-grid" id="celeb-q-options">
+        <div class="qc-chip" onclick="pickCelebOption(this,'A')">几乎都是 TA</div>
+        <div class="qc-chip" onclick="pickCelebOption(this,'B')">TA 多一点</div>
+        <div class="qc-chip" onclick="pickCelebOption(this,'C')">五五开</div>
+        <div class="qc-chip" onclick="pickCelebOption(this,'D')">基本是我</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 3: Historical Celebrity Result      -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div id="screen-celeb-result" style="display:none;padding:18px 0 40px;">
+    <div class="nav-bar">
+      <span class="nav-back" onclick="showScreen('entry')">←</span>
+      <span class="nav-title">匹配结果</span>
+    </div>
+
+    <!-- Hero Celebrity Card -->
+    <div class="celebrity-hero-card anim-up" id="celeb-hero-card">
+      <span class="chc-emoji" id="celeb-res-emoji">👑</span>
+      <span class="chc-name" id="celeb-res-name">武则天型</span>
+      <span class="chc-dynasty" id="celeb-res-dynasty">唐朝 · 公元 624-705</span>
+      <span class="chc-quote" id="celeb-res-quote">"朕要的人，不需要犹豫。"</span>
+    </div>
+
+    <!-- 5-Dimension Radar -->
+    <div class="card anim-up" style="animation-delay:0.1s">
+      <span class="section-title">📊 五维人格画像</span>
+      <span class="section-sub">每维度 0-100，基于 12 题加权计算</span>
+      <div id="celeb-radar">
+        <div class="radar-row"><span class="radar-label">👑 主导性</span><div class="radar-bar"><div class="radar-fill hero-fill" style="width:92%"></div></div><span class="radar-num">92</span></div>
+        <div class="radar-row"><span class="radar-label">🌡️ 情绪温度</span><div class="radar-bar"><div class="radar-fill accent-fill" style="width:58%"></div></div><span class="radar-num">58</span></div>
+        <div class="radar-row"><span class="radar-label">🛡️ 靠谱度</span><div class="radar-bar"><div class="radar-fill mint-fill" style="width:85%"></div></div><span class="radar-num">85</span></div>
+        <div class="radar-row"><span class="radar-label">💝 浪漫手段</span><div class="radar-bar"><div class="radar-fill hero-fill" style="width:45%"></div></div><span class="radar-num">45</span></div>
+        <div class="radar-row"><span class="radar-label">🚧 边界感</span><div class="radar-bar"><div class="radar-fill ink-fill" style="width:82%"></div></div><span class="radar-num">82</span></div>
+      </div>
+    </div>
+
+    <!-- Match Explanation -->
+    <div class="card card-mint anim-up" style="animation-delay:0.2s">
+      <span class="section-title">💡 为什么是 TA</span>
+      <div id="celeb-explanation" style="font-size:var(--fs-body);color:var(--muted);line-height:1.7;">
+        <p style="margin-bottom:8px;"><strong>主导性突出（92）：</strong>TA 在关系中掌控节奏，目标明确不拖泥带水。你不是在和一个人拉扯——你是在被一个人坚定地选择。</p>
+        <p style="margin-bottom:8px;"><strong>浪漫手段偏低（45）：</strong>TA 不是那种甜言蜜语的人，但会用实际行动证明。比起"我想你"，TA 更可能说"我来接你"。</p>
+        <p><strong>历史原型：</strong>武则天是中国历史上唯一的女皇帝，以谋略、决断和政治智慧著称。她不是靠运气上位的——她靠的是比所有人更清醒、更能扛。</p>
+      </div>
+    </div>
+
+    <!-- All Archetypes Comparison -->
+    <div class="card anim-up" style="animation-delay:0.3s">
+      <span class="section-title">🏆 8 位名人相似度排序</span>
+      <span class="section-sub">欧几里得距离 — 越小越匹配</span>
+      <div id="celeb-ranking" style="font-size:var(--fs-body);color:var(--muted);line-height:1.7;">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;"><span style="font-weight:var(--fw-hero);color:var(--ink);min-width:24px;">1</span><span>👑</span><span style="flex:1;font-weight:var(--fw-heading);">武则天型</span><span class="badge badge-ink">最佳匹配</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;"><span style="font-weight:var(--fw-heading);color:var(--muted);min-width:24px;">2</span><span>🛡️</span><span style="flex:1;">赵云型</span><span style="font-size:var(--fs-caption);color:var(--soft);">距离 8.3</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;"><span style="font-weight:var(--fw-heading);color:var(--muted);min-width:24px;">3</span><span>⚔️</span><span style="flex:1;">项羽型</span><span style="font-size:var(--fs-caption);color:var(--soft);">距离 12.1</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;"><span style="font-weight:var(--fw-heading);color:var(--muted);min-width:24px;">4</span><span>📜</span><span style="flex:1;">诸葛亮型</span><span style="font-size:var(--fs-caption);color:var(--soft);">距离 15.7</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;opacity:0.6;"><span style="min-width:24px;">5</span><span>🏮</span><span style="flex:1;">贾宝玉型</span><span style="font-size:var(--fs-caption);">距离 22.4</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;opacity:0.5;"><span style="min-width:24px;">6</span><span>🌸</span><span style="flex:1;">林黛玉型</span><span style="font-size:var(--fs-caption);">距离 28.9</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;opacity:0.4;"><span style="min-width:24px;">7</span><span>🎭</span><span style="flex:1;">段正淳型</span><span style="font-size:var(--fs-caption);">距离 31.2</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;opacity:0.35;"><span style="min-width:24px;">8</span><span>🍃</span><span style="flex:1;">柳下惠型</span><span style="font-size:var(--fs-caption);">距离 35.6</span></div>
+      </div>
+    </div>
+
+    <!-- History Fact Card -->
+    <div class="card card-accent anim-up" style="animation-delay:0.35s">
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <span style="font-size:40px;">📖</span>
+        <div>
+          <span class="section-title">历史小知识</span>
+          <p id="celeb-fact" style="font-size:var(--fs-body);color:var(--muted);line-height:1.6;">
+            武则天（624-705），中国历史上唯一的女皇帝。14 岁入宫为才人，经历太宗、高宗两朝，最终在 67 岁登基称帝，改国号为"周"。她打破了一千多年的男性皇权传统，用实力证明了"朕即天下"不是男人的专利。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="btn-row" style="padding:0 16px;flex-direction:column;gap:10px;" class="anim-up" style="animation-delay:0.4s">
+      <button class="btn btn-primary btn-block" onclick="showScreen('celeb-quiz');resetCelebQuiz()">🔄 重新测试</button>
+      <button class="btn btn-hero btn-block" onclick="alert('📤 分享卡片\n\n标题：我的 Crush 是武则天型——\n"朕要的人，不需要犹豫。"')">📤 分享名人卡</button>
+    </div>
+
+    <div class="disclaimer" style="margin-top:16px;">
+      本结果仅为行为模式倾向参考，基于答题计算。历史人物标签仅作为叙事框架，不代表对任何真实个人的评价。
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- MARRIAGE SCREENS (same as before)          -->
+  <!--  SCREENER / QUIZ / SCENARIO / REPORT       -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- Screener -->
+  <div id="screen-screener" style="display:none;padding-top:18px;">
+    <div class="nav-bar"><span class="nav-back" onclick="showScreen('entry')">←</span><span class="nav-title">快速定位</span></div>
+    <div class="card">
+      <span class="section-title">🔎 找到你的模式</span>
+      <span class="section-sub">6 道快筛题，帮你定位最适合的测试方向。第 <strong id="scr-q-num">1</strong>/6 题</span>
+      <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="scr-progress" style="width:0%"></div></div><span class="progress-text" id="scr-progress-text">0/6</span></div>
+    </div>
+    <div class="card" id="scr-card">
+      <span style="font-size:var(--fs-heading);font-weight:var(--fw-hero);color:var(--ink);display:block;margin-bottom:14px;" id="scr-title"></span>
+      <div id="scr-options"></div>
+    </div>
+  </div>
+
+  <!-- Screener Result -->
+  <div id="screen-screener-result" style="display:none;padding-top:18px;">
+    <div class="nav-bar"><span class="nav-back" onclick="showScreen('screener')">←</span><span class="nav-title">推荐结果</span></div>
+    <div class="hero"><span class="hero-tag">RECOMMENDED</span><span class="hero-title" id="rec-title"></span><span class="hero-copy" id="rec-desc"></span></div>
+    <div class="card" style="text-align:center;">
+      <span class="section-title">开始深度测试</span><span class="section-sub">15 道专属问卷 + 3 道情景判断 · 约 3 分钟</span>
+      <div class="btn-row" style="flex-direction:column;gap:10px;">
+        <button class="btn btn-primary btn-block" id="rec-start-btn" onclick="startMarriageQuiz()">开始测试 →</button>
+        <button class="btn btn-secondary btn-block" onclick="showScreen('screener')" style="height:40px;font-size:13px;">重新筛选</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;padding:0 16px;">
+      <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('ran_yingying')"><span class="arch-emoji">🏠</span><span class="arch-name">冉莹颖</span></div>
+      <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('tong_chenjie')"><span class="arch-emoji">🔍</span><span class="arch-name">佟晨洁</span></div>
+      <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('xie_xingfang')"><span class="arch-emoji">🤍</span><span class="arch-name">谢杏芳</span></div>
+    </div>
+    <div class="disclaimer">你也可以选择其他原型直接测试</div>
+  </div>
+
+  <!-- Marriage Quiz -->
+  <div id="screen-marriage-quiz" style="display:none;padding-top:18px;">
+    <div class="nav-bar"><span class="nav-back" onclick="showScreen('entry')">←</span><span class="nav-title" id="marriage-quiz-title">冉莹颖模式 · 自测</span></div>
+    <div class="card">
+      <span class="section-sub">第 <strong id="mq-num">1</strong>/15 题 · <span id="mq-part-label">Part 1 权力与行为模式</span></span>
+      <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="mq-progress" style="width:0%"></div></div><span class="progress-text" id="mq-progress-text">0/15</span></div>
+    </div>
+    <div class="card" id="mq-card">
+      <span style="display:block;font-size:var(--fs-heading);font-weight:var(--fw-hero);color:var(--ink);margin-bottom:16px;line-height:1.4;" id="mq-text"></span>
+      <div class="option-row" id="mq-options"></div>
+    </div>
+  </div>
+
+  <!-- Marriage Scenario -->
+  <div id="screen-marriage-scenario" style="display:none;padding-top:18px;">
+    <div class="nav-bar"><span class="nav-back" onclick="showScreen('entry')">←</span><span class="nav-title">情景判断</span></div>
+    <div class="card">
+      <span class="scenario-label">情景题 · 不计分</span>
+      <span class="section-sub">最后 3 道情景判断题，辅助验证 · 第 <strong id="ms-num">1</strong>/3 题</span>
+      <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="ms-progress" style="width:0%"></div></div><span class="progress-text" id="ms-progress-text">0/3</span></div>
+    </div>
+    <div class="card" id="ms-card">
+      <span style="display:block;font-size:17px;font-weight:var(--fw-hero);color:var(--ink);margin-bottom:14px;line-height:1.5;" id="ms-text"></span>
+      <div class="option-row" id="ms-options"></div>
+    </div>
+  </div>
+
+  <!-- Marriage Report -->
+  <div id="screen-marriage-report" style="display:none;padding:18px 0 40px;">
+    <div class="nav-bar"><span class="nav-back" onclick="showScreen('entry')">←</span><span class="nav-title">心理画像报告</span></div>
+    <div class="hero anim-up"><span class="hero-tag" id="mr-tag"></span><span class="hero-title" id="mr-title"></span><span class="hero-copy" id="mr-quote"></span></div>
+
+    <div class="card anim-up" style="animation-delay:0.1s">
+      <div class="score-bar-head">
+        <span class="score-bar-label">匹配度</span>
+        <span style="display:flex;align-items:baseline;gap:6px;">
+          <span class="score-bar-num" id="mr-total">68</span><span style="font-size:var(--fs-body);color:var(--muted);">/75 分</span>
+          <span class="badge badge-risk" id="mr-level-badge">高度倾向</span>
+        </span>
+      </div>
+      <div class="score-bar-track"><div class="score-bar-fill hero-fill" id="mr-total-bar" style="width:91%"></div></div>
+    </div>
+
+    <div class="card anim-up" style="animation-delay:0.2s"><div class="module-head"><span class="module-icon">⚙️</span><span class="module-title">权力与行为模式</span><span class="module-score" id="mr-l1-score"></span></div><div class="score-bar" style="margin-bottom:12px;"><div class="score-bar-track"><div class="score-bar-fill hero-fill" id="mr-l1-bar"></div></div></div><div class="module-desc" id="mr-l1-desc"></div></div>
+    <div class="card anim-up" style="animation-delay:0.3s"><div class="module-head"><span class="module-icon">🔗</span><span class="module-title">分离动力与枷锁</span><span class="module-score" id="mr-l2-score"></span></div><div class="score-bar" style="margin-bottom:12px;"><div class="score-bar-track"><div class="score-bar-fill risk-fill" id="mr-l2-bar"></div></div></div><div class="module-desc" id="mr-l2-desc"></div></div>
+    <div class="card anim-up" style="animation-delay:0.4s"><div class="module-head"><span class="module-icon">🪞</span><span class="module-title">自我认知与对外叙事</span><span class="module-score" id="mr-l3-score"></span></div><div class="score-bar" style="margin-bottom:12px;"><div class="score-bar-track"><div class="score-bar-fill accent-fill" id="mr-l3-bar"></div></div></div><div class="module-desc" id="mr-l3-desc"></div></div>
+
+    <div class="card card-accent anim-up" style="animation-delay:0.5s"><span class="section-title">🔬 情景验证</span><span class="section-sub" id="mr-scenario-verify"></span><div class="chip-row" id="mr-scenario-chips"></div></div>
+    <div class="card card-risk anim-up" style="animation-delay:0.6s"><span style="font-size:var(--fs-heading);font-weight:var(--fw-hero);color:var(--risk);display:block;margin-bottom:8px;">⚠️ 风险提示</span><span style="font-size:var(--fs-body);color:var(--muted);line-height:1.6;" id="mr-risk-text"></span></div>
+    <div class="card anim-up" style="animation-delay:0.7s"><span class="section-title">💡 建议方向</span><span class="section-sub">在能力范围内，为自己留一块独立空间：</span><div style="font-size:var(--fs-body);color:var(--muted);line-height:1.7;" id="mr-advice"></div></div>
+
+    <div style="padding:0 16px;margin-bottom:10px;"><span class="section-title">你对其他模式感兴趣吗？</span></div>
+    <div style="display:flex;gap:10px;padding:0 16px;margin-bottom:18px;">
+      <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('tong_chenjie')"><span class="arch-emoji">🔍</span><span class="arch-name">佟晨洁</span><span class="arch-sub">清醒观察者</span></div>
+      <div class="archetype-card" style="flex:1" onclick="jumpToMarriageQuiz('xie_xingfang')"><span class="arch-emoji">🤍</span><span class="arch-name">谢杏芳</span><span class="arch-sub">隐忍修复者</span></div>
+    </div>
+
+    <div class="btn-row" style="padding:0 16px;flex-direction:column;gap:10px;">
+      <button class="btn btn-primary btn-block" onclick="resetMarriageQuiz();showScreen('screener');">🔄 重新测试</button>
+      <button class="btn btn-hero btn-block" onclick="alert('📤 分享报告卡片')">📤 分享报告</button>
+    </div>
+    <div class="disclaimer" style="margin-top:16px;">本结果仅为行为模式倾向参考，均基于问卷答题计算，非临床心理诊断。原型人物标签仅作为叙事框架，不代表对任何真实个人的评价或定论。</div>
+  </div>
+
+</div><!-- /phone -->
+
+
+<script>
+// ── Global State ──
+let topTab = 'marriage';
+let mode = 'self';
+let screenerAnswers = [], screenerQIndex = 0;
+let marriageQuizAnswers = [], marriageQIndex = 0, currentMarriageArchetype = 'ran_yingying';
+let marriageScenarioAnswers = [], marriageScenarioQIndex = 0;
+let celebQuizAnswers = [], celebQIndex = 0;
+
+// ── Top Tab Switch ──
+function switchTopTab(tab) {
+  topTab = tab;
+  document.getElementById('top-tab-marriage').classList.toggle('active', tab==='marriage');
+  document.getElementById('top-tab-celebrity').classList.toggle('active', tab==='celebrity');
+  document.getElementById('tab-marriage-content').style.display = tab==='marriage' ? 'block' : 'none';
+  document.getElementById('tab-celebrity-content').style.display = tab==='celebrity' ? 'block' : 'none';
+}
+
+// ── Screen Nav ──
+function showScreen(name) {
+  ['entry','celeb-quiz','celeb-result','screener','screener-result','marriage-quiz','marriage-scenario','marriage-report'].forEach(id => {
+    document.getElementById('screen-'+id).style.display = id===name ? 'block' : 'none';
+  });
+  if (name === 'celeb-quiz') { celebQuizAnswers = []; celebQIndex = 0; renderCelebQuiz(); }
+  if (name === 'screener') { screenerAnswers = []; screenerQIndex = 0; renderScreener(); }
+  if (name === 'marriage-quiz') { marriageQuizAnswers = []; marriageQIndex = 0; renderMarriageQuiz(); }
+  if (name === 'marriage-scenario') { marriageScenarioAnswers = []; marriageScenarioQIndex = 0; renderMarriageScenario(); }
+  if (name === 'celeb-result') renderCelebResult();
+  if (name === 'marriage-report') renderMarriageReport();
+  window.scrollTo(0, 0);
+}
+
+// ═══════════════════════════════════════════
+//  CELEBRITY QUIZ (12 QUESTIONS)
+// ═══════════════════════════════════════════
+
+const celebQuestions = [
+  { text: '你们之间，谁更常主动发起聊天或邀约？', options: ['几乎都是 TA','TA 多一点','五五开','基本是我'], weights: { A:{dominance:4}, B:{dominance:2}, C:{dominance:1}, D:{dominance:-2} } },
+  { text: 'TA 表达好感的方式更接近？', options: ['直接说喜欢','用行动默默做','暗示/暧昧不挑明','基本不表达'], weights: { A:{emotionalHeat:1,romance:-2}, B:{reliability:3,romance:-1}, C:{romance:3,emotionalHeat:2}, D:{emotionalHeat:-2,romance:-2} } },
+  { text: 'TA 答应你的事…', options: ['都做到了','大部分做到','看心情','经常忘了'], weights: { A:{reliability:4}, B:{reliability:2}, C:{reliability:-1}, D:{reliability:-3} } },
+  { text: 'TA 在群体活动中如何对待你？', options: ['公开维护你','私下温柔','一视同仁','保持距离'], weights: { A:{dominance:3,boundary:3}, B:{boundary:3,emotionalHeat:2}, C:{boundary:-1}, D:{boundary:-2} } },
+  { text: '当你情绪低落时，TA 的反应是？', options: ['直接帮你解决问题','说温暖的话但行动少','忽冷忽热','礼貌问候不过多介入'], weights: { A:{reliability:4}, B:{romance:2}, C:{emotionalHeat:2,reliability:-2}, D:{boundary:2} } },
+  { text: '如果你拒绝 TA 一次…', options: ['执着追问为什么','等几天再试','好像不在意','反而冷淡了'], weights: { A:{dominance:4,emotionalHeat:2}, B:{dominance:2,reliability:2}, C:{dominance:-2,boundary:-2}, D:{dominance:1,emotionalHeat:3,reliability:-2} } },
+  { text: 'TA 的朋友圈/微博画风…', options: ['事业/工作为主','文艺/情绪化','社交/聚会多','不太发'], weights: { A:{emotionalHeat:-2,romance:-2}, B:{emotionalHeat:3,romance:2}, C:{emotionalHeat:2,boundary:-2}, D:{emotionalHeat:-1} } },
+  { text: 'TA 对你的了解程度…', options: ['记得很多细节','知道大概','停留在表面','好像不在乎'], weights: { A:{reliability:3,boundary:3}, B:{reliability:1,boundary:1}, C:{boundary:-1}, D:{boundary:-3,reliability:-1} } },
+  { text: '如果 TA 爽约了，通常是…', options: ['从不爽约','提前解释','事后说忘了','消失了'], weights: { A:{reliability:4}, B:{reliability:2}, C:{reliability:-2}, D:{reliability:-3,dominance:-1} } },
+  { text: 'TA 和你聊未来的频率…', options: ['经常主动聊','你提了 TA 会接','回避这个话题','从不'], weights: { A:{dominance:3,reliability:3}, B:{dominance:1,reliability:1}, C:{dominance:-2,reliability:-2}, D:{dominance:-3,boundary:-2} } },
+  { text: 'TA 让你最困惑的一点是？', options: ['太热情不确定是不是对谁都这样','嘴上说得好但行动跟不上','情绪变化太快跟不上','看不出 TA 到底怎么想的'], weights: { A:{boundary:-2,emotionalHeat:2}, B:{romance:2,reliability:-3}, C:{emotionalHeat:4,reliability:-2}, D:{dominance:-2,emotionalHeat:-1} } },
+  { text: '用一句话形容 TA 给你的感觉？', options: ['稳，靠得住','暖，但不够确定','烈，不可预测','淡，像朋友','撩，但像玩玩'], weights: { A:{reliability:4,emotionalHeat:-1}, B:{emotionalHeat:2,boundary:-1}, C:{emotionalHeat:4,dominance:2}, D:{emotionalHeat:-3,boundary:-3}, E:{romance:4,reliability:-3} } }
+];
+
+function resetCelebQuiz() { celebQuizAnswers = []; celebQIndex = 0; }
+
+function renderCelebQuiz() {
+  const q = celebQuestions[celebQIndex];
+  if (!q) { showScreen('celeb-result'); return; }
+  document.getElementById('celeb-q-num').textContent = celebQIndex + 1;
+  document.getElementById('celeb-progress').style.width = (celebQIndex/12*100) + '%';
+  document.getElementById('celeb-progress-text').textContent = celebQIndex + '/12';
+  document.getElementById('celeb-q-text').textContent = 'Q'+(celebQIndex+1)+'. '+q.text;
+
+  const keys = ['A','B','C','D','E'];
+  document.getElementById('celeb-q-options').innerHTML = q.options.map((opt,i) =>
+    '<div class="qc-chip" onclick="pickCelebOption(this,\''+keys[i]+'\')">'+opt+'</div>'
+  ).join('');
+}
+
+function pickCelebOption(el, key) {
+  el.parentElement.querySelectorAll('.qc-chip').forEach(i => i.classList.remove('sel'));
+  el.classList.add('sel');
+  celebQuizAnswers[celebQIndex] = key;
+  celebQIndex++;
+  setTimeout(() => renderCelebQuiz(), 250);
+}
+
+// ── Celebrity Archetypes ──
+const celebArchetypes = {
+  wu_zetian: { key:'wu_zetian', name:'武则天型', emoji:'👑', dynasty:'唐朝 · 公元 624-705', quote:'"朕要的人，不需要犹豫。"', profile:{dominance:95,emotionalHeat:60,reliability:85,romance:50,boundary:85}, fact:'武则天（624-705），中国历史上唯一的女皇帝。14 岁入宫为才人，经历太宗、高宗两朝，最终在 67 岁登基称帝，改国号为"周"。她打破了一千多年的男性皇权传统，用实力证明了"朕即天下"不是男人的专利。', explanation:'<p style="margin-bottom:8px;"><strong>主导性突出：</strong>TA 在关系中掌控节奏，目标明确不拖泥带水。你不是在和一个人拉扯——你是在被一个人坚定地选择。</p><p style="margin-bottom:8px;"><strong>浪漫手段偏低：</strong>TA 不是那种甜言蜜语的人，但会用实际行动证明。比起"我想你"，TA 更可能说"我来接你"。</p><p><strong>历史原型：</strong>武则天是中国历史上唯一的女皇帝，以谋略、决断和政治智慧著称。她不是靠运气上位的——她靠的是比所有人更清醒、更能扛。</p>' },
+  xiang_yu: { key:'xiang_yu', name:'项羽型', emoji:'⚔️', dynasty:'秦末 · 公元前 232-202', quote:'"破釜沉舟，说了就做。"', profile:{dominance:85,emotionalHeat:40,reliability:70,romance:50,boundary:15}, fact:'项羽，楚霸王。破釜沉舟的典故出自他——过河后烧掉所有船只和粮草，告诉士兵：这一仗只有赢，没有退路。他是一个极致的行动派，但在感情上同样用力过猛。', explanation:'<p style="margin-bottom:8px;"><strong>主导性突出：</strong>TA 是那种"我说到做到"的人。不会玩暧昧，不会让你猜。</p><p><strong>情绪温度偏低：</strong>TA 不擅长甜言蜜语，有时候甚至显得粗暴——但 TA 的诚意全在行动里。</p>' },
+  zhao_yun: { key:'zhao_yun', name:'赵云型', emoji:'🛡️', dynasty:'三国 · 公元 ?-229', quote:'"忠诚兑现，件件落实。"', profile:{dominance:40,emotionalHeat:70,reliability:95,romance:20,boundary:40}, fact:'赵云，常山赵子龙。长坂坡单骑救阿斗，七进七出。他最著名的品质不是武力，是可靠性——你交给他一件事，他会拼命做完。三国里唯一一个几乎没有任何负面评价的将领。', explanation:'<p style="margin-bottom:8px;"><strong>靠谱度极高：</strong>TA 是你见过最靠谱的人。答应的事一定做到，不答应的不会瞎承诺。</p><p><strong>浪漫手段偏低：</strong>TA 的表达方式是"接你下班"、"帮你搬家"，不是写诗送花。</p>' },
+  zhuge_liang: { key:'zhuge_liang', name:'诸葛亮型', emoji:'📜', dynasty:'三国 · 公元 181-234', quote:'"观察很久，一旦认准全力投入。"', profile:{dominance:60,emotionalHeat:50,reliability:85,romance:35,boundary:50}, fact:'诸葛亮，蜀汉丞相。刘备三顾茅庐才请他出山——他观察了刘备七年才决定"这个人值得跟"。一旦认准，鞠躬尽瘁死而后已。典型的慢热但极度忠诚型人格。', explanation:'<p style="margin-bottom:8px;"><strong>慢热但忠诚：</strong>TA 不会一开始就热情似火，但 TA 在默默观察你。一旦 TA 认定你，就是一辈子的事。</p>' },
+  jia_baoyu: { key:'jia_baoyu', name:'贾宝玉型', emoji:'🏮', dynasty:'清 · 红楼梦', quote:'"任凭弱水三千，我只取一瓢饮——但没说是哪一瓢。"', profile:{dominance:30,emotionalHeat:70,reliability:30,romance:80,boundary:25}, fact:'贾宝玉，《红楼梦》男主角。对所有女孩子都好，对黛玉尤其好——但也说不清楚到底要怎么好。他以为的"专一"在旁人看来就是"对谁都暖"。终极的中央空调体质。', explanation:'<p style="margin-bottom:8px;"><strong>暖但不确定：</strong>TA 对你有好感是确定的，但 TA 对很多人都有好感也是确定的。最难判断的就是这种人——因为 TA 自己不觉得有问题。</p>' },
+  duan_zhengchun: { key:'duan_zhengchun', name:'段正淳型', emoji:'🎭', dynasty:'大理国 · 金庸小说', quote:'"套路满分，真心难寻。"', profile:{dominance:40,emotionalHeat:55,reliability:20,romance:90,boundary:15}, fact:'段正淳，金庸《天龙八部》人物。大理国镇南王。他对每一个女人都真心——但他是同时对很多个女人真心。他的问题不是骗，是他自己都分不清哪一份感情是真正的。', explanation:'<p style="margin-bottom:8px;"><strong>浪漫手段拉满：</strong>TA 太会了。每一句话都说到你心坎上。但问题是 TA 可能对很多人都是这么说的。</p><p><strong>靠谱度极低：</strong>别指望 TA 兑现什么。TA 的存在本身就是情绪价值——但也只有情绪价值。</p>' },
+  lin_daiyu: { key:'lin_daiyu', name:'林黛玉型', emoji:'🌸', dynasty:'清 · 红楼梦', quote:'"今日热情明日冷淡，完全无法预测。"', profile:{dominance:25,emotionalHeat:15,reliability:30,romance:60,boundary:40}, fact:'林黛玉，《红楼梦》女主角。她才华横溢、情感浓烈，但情绪像过山车——今天"你放心"，明天葬花不理人。她的忽冷忽热不是不爱，是太在乎所以太脆弱。但对方很难承受这种不稳定性。', explanation:'<p style="margin-bottom:8px;"><strong>情绪温度极低且波动：</strong>TA 的情绪是一个黑洞。你永远不知道今天的 TA 是热情的还是冷淡的。</p><p><strong>浪漫手段中等偏高：</strong>TA 的内心世界很丰富，只是不知道什么时候会打开给你看。</p>' },
+  liu_xiahui: { key:'liu_xiahui', name:'柳下惠型', emoji:'🍃', dynasty:'春秋 · 公元前 720-621', quote:'"坐怀不乱，关系舒服但不越界。"', profile:{dominance:15,emotionalHeat:30,reliability:60,romance:10,boundary:90}, fact:'柳下惠，春秋时期鲁国大夫。"坐怀不乱"的典故出自他——一位女子在他怀里坐了一夜，他没有任何越界行为。不是没有能力，是他选择了不越线。最高级的边界感。', explanation:'<p style="margin-bottom:8px;"><strong>边界感极高：</strong>TA 对你有尊重，有礼貌，有照顾——但就是没有暧昧。这不是不感兴趣，是 TA 在"朋友"这条线上画得很清楚。</p><p>如果你希望升级关系，你需要主动打破这个边界。</p>' }
+};
+
+function renderCelebResult() {
+  // Compute dimensions from answers
+  const dims = { dominance: 50, emotionalHeat: 50, reliability: 50, romance: 50, boundary: 50 };
+  celebQuizAnswers.forEach((ans, i) => {
+    const q = celebQuestions[i];
+    if (!q || !q.weights[ans]) return;
+    for (const [dim, w] of Object.entries(q.weights[ans])) {
+      dims[dim] += w;
+    }
+  });
+  for (const d of Object.keys(dims)) { dims[d] = Math.max(0, Math.min(100, Math.round(dims[d]))); }
+
+  // Find best match via Euclidean distance
+  let bestKey = 'wu_zetian', bestDist = Infinity;
+  const distances = {};
+  for (const [key, arch] of Object.entries(celebArchetypes)) {
+    const d = Math.sqrt(
+      Math.pow(dims.dominance - arch.profile.dominance, 2) +
+      Math.pow(dims.emotionalHeat - arch.profile.emotionalHeat, 2) +
+      Math.pow(dims.reliability - arch.profile.reliability, 2) +
+      Math.pow(dims.romance - arch.profile.romance, 2) +
+      Math.pow(dims.boundary - arch.profile.boundary, 2)
+    );
+    distances[key] = d;
+    if (d < bestDist) { bestDist = d; bestKey = key; }
+  }
+
+  const arch = celebArchetypes[bestKey];
+
+  // Update hero card
+  document.getElementById('celeb-res-emoji').textContent = arch.emoji;
+  document.getElementById('celeb-res-name').textContent = arch.name;
+  document.getElementById('celeb-res-dynasty').textContent = arch.dynasty;
+  document.getElementById('celeb-res-quote').textContent = arch.quote;
+
+  // Update radar bars
+  const radarDiv = document.getElementById('celeb-radar');
+  const dimLabels = { dominance:'👑 主导性', emotionalHeat:'🌡️ 情绪温度', reliability:'🛡️ 靠谱度', romance:'💝 浪漫手段', boundary:'🚧 边界感' };
+  const dimColors = { dominance:'hero-fill', emotionalHeat:'accent-fill', reliability:'mint-fill', romance:'hero-fill', boundary:'ink-fill' };
+  radarDiv.innerHTML = Object.entries(dims).map(([k,v]) =>
+    '<div class="radar-row"><span class="radar-label">'+dimLabels[k]+'</span><div class="radar-bar"><div class="radar-fill '+dimColors[k]+'" style="width:'+v+'%"></div></div><span class="radar-num">'+v+'</span></div>'
+  ).join('');
+
+  // Update explanation
+  document.getElementById('celeb-explanation').innerHTML = arch.explanation;
+  document.getElementById('celeb-fact').textContent = arch.fact;
+
+  // Update ranking
+  const sorted = Object.entries(distances).sort((a,b) => a[1] - b[1]);
+  const rankDiv = document.getElementById('celeb-ranking');
+  rankDiv.innerHTML = sorted.map(([key, dist], i) => {
+    const a = celebArchetypes[key];
+    if (i === 0) return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd;"><span style="font-weight:var(--fw-hero);color:var(--ink);min-width:24px;">1</span><span>'+a.emoji+'</span><span style="flex:1;font-weight:var(--fw-heading);">'+a.name+'</span><span class="badge badge-ink">最佳匹配</span></div>';
+    const opacity = 1 - i * 0.12;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;'+(i===sorted.length-1?'':'border-bottom:1px dashed #ddd;')+'opacity:'+Math.max(0.2, opacity)+';"><span style="font-weight:var(--fw-heading);color:var(--muted);min-width:24px;">'+(i+1)+'</span><span>'+a.emoji+'</span><span style="flex:1;">'+a.name+'</span><span style="font-size:var(--fs-caption);color:var(--soft);">距离 '+dist.toFixed(1)+'</span></div>';
+  }).join('');
+
+  showScreen('celeb-result');
+}
+
+// ═══════════════════════════════════════════
+//  MARRIAGE QUIZ (same logic as before)
+// ═══════════════════════════════════════════
+
+const screenerQuestions = [
+  { title: '你们婚姻的核心矛盾更接近？', options: [
+    { key:'A', label:'我太累了，什么事都靠我', desc:'想过离开但走不了', archetype:'ran_yingying' },
+    { key:'B', label:'我们沟通没问题', desc:'但感情慢慢变淡了', archetype:'tong_chenjie' },
+    { key:'C', label:'有过伤害，我选择了原谅', desc:'但现在很痛苦', archetype:'xie_xingfang' }
+  ]},
+  { title: '在家庭里，你的角色更像？', options: [
+    { key:'A', label:'家庭的 CEO', desc:'什么都得我管', archetype:'ran_yingying' },
+    { key:'B', label:'平等的合伙人', desc:'各管各的', archetype:'tong_chenjie' },
+    { key:'C', label:'维系者', desc:'我在努力维持这个家的完整', archetype:'xie_xingfang' }
+  ]},
+  { title: '你对伴侣现在的感觉是？', options: [
+    { key:'A', label:'已经不指望他了', desc:'我自己扛', archetype:'ran_yingying' },
+    { key:'B', label:'我们还聊得来', desc:'但不像爱人了', archetype:'tong_chenjie' },
+    { key:'C', label:'我愿意再给他一次机会', desc:'', archetype:'xie_xingfang' }
+  ]},
+  { title: '如果明天一切现实枷锁消失，你会？', options: [
+    { key:'A', label:'可能真的会离开', desc:'', archetype:'ran_yingying' },
+    { key:'B', label:'不确定，需要好好谈一谈', desc:'', archetype:'tong_chenjie' },
+    { key:'C', label:'应该还是会留下', desc:'', archetype:'xie_xingfang' }
+  ]},
+  { title: '你最大的委屈来自？', options: [
+    { key:'A', label:'我做了所有事', desc:'没人看见', archetype:'ran_yingying' },
+    { key:'B', label:'我们之间已经没有温度了', desc:'', archetype:'tong_chenjie' },
+    { key:'C', label:'我原谅了，但伤口还在', desc:'', archetype:'xie_xingfang' }
+  ]},
+  { title: '你觉得自己更像？', options: [
+    { key:'A', label:'扛着整个家在走的人', desc:'', archetype:'ran_yingying' },
+    { key:'B', label:'清醒地站在十字路口的人', desc:'', archetype:'tong_chenjie' },
+    { key:'C', label:'用体面包裹着伤口的人', desc:'', archetype:'xie_xingfang' }
+  ]}
+];
+
+const marriageQuizQuestions = [
+  { part:1, text:'家庭绝大多数重要决策（钱、人情、孩子教育、危机处理）主要靠我推动，伴侣常常被动、等待我来解决问题' },
+  { part:1, text:'我经常内心感慨：很多事只能我来做，交给伴侣我会很不放心' },
+  { part:1, text:'和伴侣相处，我时常有一种像"家长/管理者"的感觉，忍不住提醒、规劝、收拾残局' },
+  { part:1, text:'家里遇到经济危机、麻烦事，本能第一反应是自己想办法兜底，而不是先指望伴侣承担' },
+  { part:1, text:'我能力较强，也有独立生存的底气，但现实中很难真正放手不管家庭' },
+  { part:1, text:'看到伴侣的短板，我曾经很想改变、改造对方，碰壁之后才慢慢降低期待' },
+  { part:2, text:'我不止一次认真想过离婚，甚至已经脑补过分开流程，但始终没有真正迈出最后一步' },
+  { part:2, text:'阻碍我离开最重要因素，不是还多么爱对方，更多来自孩子、共同债务、社会名声、现实成本' },
+  { part:2, text:'我可以接受婚姻里爱情变淡、缺少亲密，只要家庭整体局面稳定，我可以降低对情绪价值的期待' },
+  { part:2, text:'我很害怕家庭形式破碎，内心对"完整家庭外壳"有较强执念' },
+  { part:2, text:'就算对婚姻很失望，也不会冲动决裂，会反复权衡利弊，优先评估分开之后的现实损失' },
+  { part:3, text:'在关系里我常常感受到委屈、疲惫，但我认为成年人不能只跟着情绪做决定' },
+  { part:3, text:'我愿意向外倾诉婚姻困境，但也会顾虑这件事带给自己的社会评价、现实影响' },
+  { part:3, text:'对我而言婚姻更像一份现实合作项目，养育孩子、共渡难关是核心目标，爱情是附加项' },
+  { part:3, text:'即使对伴侣已经没有强烈爱意，也不会轻易撕破脸，优先维持体面' }
+];
+
+const marriageScenarioQuestions = [
+  { text:'你们婚姻已经没有激情，伴侣改变可能性很低，但你们有共同债务、孩子。此时你的第一想法？', options:[
+    { key:'A', label:'优先评估经济/孩子伤害，尽量维持现状，降低情感期待，合作过日子' },
+    { key:'B', label:'只要不爱了就优先分开，现实困难想办法克服' },
+    { key:'C', label:'努力沟通改造对方，期待关系重回有爱' }
+  ]},
+  { text:'家里出重大危机，伴侣摆烂逃避，你会？', options:[
+    { key:'A', label:'自己先顶上解决问题，事后再失望、内耗，但很难真正撒手不管' },
+    { key:'B', label:'拒绝兜底，要求对方承担，不解决就考虑结束关系' },
+    { key:'C', label:'不停吵架指责，希望对方醒悟' }
+  ]},
+  { text:'你内心已经很想离婚，但外界都会觉得"你过得还不错"，你会？', options:[
+    { key:'A', label:'会克制，不希望把生活彻底撕破，优先体面，权衡现实代价' },
+    { key:'B', label:'尊重自己感受，不在乎别人怎么看' },
+    { key:'C', label:'' }
+  ]}
+];
+
+const marriageArchetypeMeta = {
+  ran_yingying: { name:'冉莹颖', emoji:'🏠', quote:'"我体验过爱情，觉得够了"', tag:'冉莹颖式婚姻模式' },
+  tong_chenjie: { name:'佟晨洁', emoji:'🔍', quote:'"我们很好，但我们不是爱人"', tag:'佟晨洁式婚姻模式' },
+  xie_xingfang: { name:'谢杏芳', emoji:'🤍', quote:'"我愿意给他一次机会"', tag:'谢杏芳式婚姻模式' }
+};
+
+// ── Screener ──
+function renderScreener() {
+  const q = screenerQuestions[screenerQIndex];
+  if (!q) { showScreenerResult(); return; }
+  document.getElementById('scr-q-num').textContent = screenerQIndex + 1;
+  document.getElementById('scr-progress').style.width = (screenerQIndex/6*100)+'%';
+  document.getElementById('scr-progress-text').textContent = screenerQIndex + '/6';
+  document.getElementById('scr-title').textContent = q.title;
+  document.getElementById('scr-options').innerHTML = q.options.map(o =>
+    '<div class="screener-option" onclick="pickScreener(\''+o.key+'\')"><div class="so-radio">'+o.key+'</div><div class="so-content"><span class="so-label">'+o.label+'</span>'+(o.desc?'<span class="so-desc">'+o.desc+'</span>':'')+'</div></div>'
+  ).join('');
+}
+
+function pickScreener(key) {
+  const q = screenerQuestions[screenerQIndex];
+  screenerAnswers.push(q.options.find(o=>o.key===key).archetype);
+  screenerQIndex++; renderScreener();
+}
+
+function showScreenerResult() {
+  const count = {ran_yingying:0,tong_chenjie:0,xie_xingfang:0};
+  screenerAnswers.forEach(a => { if(count[a]!==undefined) count[a]++; });
+  let winner='ran_yingying', max=0;
+  for(const [k,v] of Object.entries(count)) { if(v>max){max=v;winner=k;} }
+  currentMarriageArchetype = winner;
+  const m = marriageArchetypeMeta[winner];
+  document.getElementById('rec-title').innerHTML = m.emoji+' 推荐：'+m.tag;
+  document.getElementById('rec-desc').textContent = '基于你的 6 道快筛回答，该模式最贴合你当前的核心矛盾。';
+  document.getElementById('rec-start-btn').textContent = '开始「'+m.tag+'」测试 →';
+  showScreen('screener-result');
+}
+
+function jumpToMarriageQuiz(key) { currentMarriageArchetype = key; resetMarriageQuiz(); showScreen('marriage-quiz'); }
+function startMarriageQuiz() { resetMarriageQuiz(); showScreen('marriage-quiz'); }
+function resetMarriageQuiz() { marriageQuizAnswers = []; marriageQIndex = 0; }
+
+// ── Marriage Quiz ──
+function renderMarriageQuiz() {
+  const q = marriageQuizQuestions[marriageQIndex];
+  if (!q) { showScreen('marriage-scenario'); return; }
+  const m = marriageArchetypeMeta[currentMarriageArchetype];
+  document.getElementById('marriage-quiz-title').textContent = m.name + '模式 · ' + (mode==='partner'?'伴侣观测':'自测');
+  const partLabels = {1:'Part 1 权力与行为模式',2:'Part 2 分离动力与枷锁',3:'Part 3 自我认知与对外叙事'};
+  document.getElementById('mq-num').textContent = marriageQIndex + 1;
+  document.getElementById('mq-part-label').textContent = partLabels[q.part]||'';
+  document.getElementById('mq-progress').style.width = (marriageQIndex/15*100)+'%';
+  document.getElementById('mq-progress-text').textContent = marriageQIndex + '/15';
+
+  let text = q.text;
+  if (mode === 'partner') text = text.replace(/我/g,'她').replace(/自己/g,'她自己');
+  document.getElementById('mq-text').textContent = text;
+
+  const labels = ['非常符合','比较符合','中立/不一定','不太符合','完全不符合'];
+  const keys = ['A','B','C','D','E'];
+  document.getElementById('mq-options').innerHTML = keys.map((k,i) =>
+    '<div class="option-item" onclick="pickMarriageOption(this,\''+k+'\')"><div class="option-radio">'+k+'</div><span class="option-label">'+labels[i]+'</span></div>'
+  ).join('');
+}
+
+function pickMarriageOption(el, key) {
+  el.parentElement.querySelectorAll('.option-item').forEach(i => i.classList.remove('sel'));
+  el.classList.add('sel');
+  marriageQuizAnswers[marriageQIndex] = key;
+  marriageQIndex++; setTimeout(() => renderMarriageQuiz(), 250);
+}
+
+// ── Marriage Scenario ──
+function renderMarriageScenario() {
+  const q = marriageScenarioQuestions[marriageScenarioQIndex];
+  if (!q) { showScreen('marriage-report'); return; }
+  document.getElementById('ms-num').textContent = marriageScenarioQIndex + 1;
+  document.getElementById('ms-progress').style.width = (marriageScenarioQIndex/3*100)+'%';
+  document.getElementById('ms-progress-text').textContent = marriageScenarioQIndex + '/3';
+  document.getElementById('ms-text').textContent = q.text;
+  document.getElementById('ms-options').innerHTML = q.options.filter(o=>o.label).map(o =>
+    '<div class="option-item" onclick="pickMarriageScenario(this,\''+o.key+'\')"><div class="option-radio">'+o.key+'</div><span class="option-label">'+o.label+'</span></div>'
+  ).join('');
+}
+
+function pickMarriageScenario(el, key) {
+  el.parentElement.querySelectorAll('.option-item').forEach(i => i.classList.remove('sel'));
+  el.classList.add('sel');
+  marriageScenarioAnswers[marriageScenarioQIndex] = key;
+  marriageScenarioQIndex++; setTimeout(() => renderMarriageScenario(), 250);
+}
+
+// ── Marriage Report ──
+function renderMarriageReport() {
+  const likert = {A:5,B:4,C:3,D:2,E:1};
+  let total=0; const ps={1:0,2:0,3:0};
+  marriageQuizAnswers.forEach((ans,i) => {
+    const s = likert[ans]||3; total+=s; ps[marriageQuizQuestions[i].part]+=s;
+  });
+  const level = total>=61?'high':total>=46?'medium':total>=31?'low':'none';
+  const levelLabels = {high:'高度倾向',medium:'中度倾向',low:'轻度重合',none:'几乎不匹配'};
+  const aCount = marriageScenarioAnswers.filter(a=>a==='A').length;
+  const m = marriageArchetypeMeta[currentMarriageArchetype];
+
+  document.getElementById('mr-tag').textContent = m.tag;
+  document.getElementById('mr-title').innerHTML = m.emoji+' '+levelLabels[level]+'<br>'+m.name+'模式';
+  document.getElementById('mr-quote').textContent = m.quote;
+  document.getElementById('mr-total').textContent = total;
+  document.getElementById('mr-total-bar').style.width = (total/75*100)+'%';
+  document.getElementById('mr-level-badge').textContent = levelLabels[level];
+  document.getElementById('mr-level-badge').className = 'badge '+(level==='high'?'badge-risk':'badge-mint');
+
+  const l1=30,l2=25,l3=20;
+  document.getElementById('mr-l1-score').textContent = ps[1]+'/'+l1;
+  document.getElementById('mr-l1-bar').style.width = (ps[1]/l1*100)+'%';
+  document.getElementById('mr-l2-score').textContent = ps[2]+'/'+l2;
+  document.getElementById('mr-l2-bar').style.width = (ps[2]/l2*100)+'%';
+  document.getElementById('mr-l3-score').textContent = ps[3]+'/'+l3;
+  document.getElementById('mr-l3-bar').style.width = (ps[3]/l3*100)+'%';
+
+  if (level==='high') {
+    document.getElementById('mr-l1-desc').textContent = '你在家庭中处于主导位置，习惯独自承担决策和危机处理。这让你成为家庭的"CEO"，但也让你陷入"我不扛谁扛"的孤立状态。';
+    document.getElementById('mr-l2-desc').textContent = '你内心清醒地看到了婚姻的问题，多次想过离开却没有行动。阻碍你的不是爱，是孩子/经济/社会身份的三重枷锁。';
+    document.getElementById('mr-l3-desc').textContent = '你已经把婚姻重新定义为"现实合作项目"。你很清醒，也很妥协。你给外人看到的体面，是你用委屈换来的。';
+    document.getElementById('mr-risk-text').textContent = '失望在持续沉淀。不是不会离开，只是在权衡时机。长期积累的委屈不会自动消失——它只是在等一个临界点。';
+    document.getElementById('mr-advice').innerHTML = '· 经济独立账户，哪怕很小<br>· 一个完全属于你自己的社交圈<br>· 定期问自己：如果明天一切清零，我的选择会变吗？<br>· 你不是在等 TA 改变——你是在等自己准备好';
+  } else if (level==='medium') {
+    document.getElementById('mr-l1-desc').textContent = '你有一定的兜底倾向，在家庭中承担了较多责任，但还没有完全陷入"一切靠我"的模式。';
+    document.getElementById('mr-l2-desc').textContent = '你偶尔会思考离开的可能，但现实权衡让你选择维持。不过你仍有止损的能力和意识。';
+    document.getElementById('mr-l3-desc').textContent = '你能看到婚姻的现实面，但情感需求仍然对你很重要。你在现实和情感之间寻找平衡。';
+    document.getElementById('mr-risk-text').textContent = '注意边界，不要让"兜底"变成习惯性牺牲。你还有选择的余地。';
+    document.getElementById('mr-advice').innerHTML = '· 练习说"不"——不是所有事都是你的责任<br>· 定期和伴侣重新分配家务和决策权<br>· 给自己留一个"不妥协"的底线';
+  } else {
+    document.getElementById('mr-l1-desc').textContent = '你和伴侣的分工相对均衡，不会长期独自承担所有压力。';
+    document.getElementById('mr-l2-desc').textContent = '你不会因为现实枷锁而勉强留在一段不满意的婚姻中。';
+    document.getElementById('mr-l3-desc').textContent = '你对婚姻的期待更偏向情感满足和互相分担，不合适时会倾向及时止损。';
+    document.getElementById('mr-risk-text').textContent = '你目前的婚姻模式不在该原型的范围内。如果你有其他困扰，可以试试另外两种原型测试。';
+    document.getElementById('mr-advice').innerHTML = '· 继续保持健康的关系边界<br>· 如果对婚姻有其他疑虑，试试佟晨洁或谢杏芳的测试';
+  }
+
+  document.getElementById('mr-scenario-verify').innerHTML = '3 道情景判断题中 '+aCount+' 道选 A'+(aCount>=2?' — <strong>进一步印证倾向</strong>':'');
+  const scLabels = ['维持现状，合作过日子','自己先顶上','优先体面，权衡代价'];
+  document.getElementById('mr-scenario-chips').innerHTML = marriageScenarioAnswers.map((a,i) =>
+    '<span class="chip'+(a==='A'?' active':'')+'">S'+(i+1)+': '+(a==='A'?scLabels[i]:'非 A 选项')+'</span>'
+  ).join('');
+
+  showScreen('marriage-report');
+}
+
+// ── Init ──
+showScreen('entry');
+</script>
+</body>
+</html>
