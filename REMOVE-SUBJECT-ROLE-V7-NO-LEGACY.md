@@ -2,7 +2,16 @@
 
 ## Context
 
-同 v1-v6。本轮核心简化：**不考虑旧数据兼容。** 直接改协议，旧记录通过"subjectRole 降级为仅供参考"自然过渡。
+承接 v1-v6。本轮核心简化：**不迁移、不回填、不重新推断旧记录。** 直接启用新协议。
+
+这里的“不考虑旧数据”只表示不保证旧记录重新获得准确的主体判断，**不表示允许旧账号升级后报错**。旧账号使用新版前后端时必须满足：
+
+- 首页、档案页、时间线可以正常打开；
+- 旧记录缺少 `inputSubjectRole`、`subjectRoleSource` 时允许按 `undefined` 读取；
+- 数据库残留的 `subjectRoleConfidence` 由新版代码忽略，不要求清库；
+- 旧记录已有合法 `subjectRole` 时继续使用原值；缺失或非法值在读取/重算边界归一为 `unknown`；
+- 新增记录只走新协议，旧记录不做批量迁移；
+- 删除历史记录触发重算时不得丢失剩余记录的主体字段。
 
 ---
 
@@ -62,6 +71,8 @@ inputSubjectRole       subjectRole            subjectRoleSource
 
 ### 1.3 代码只做 fallback + 结构性标记
 
+以下实现只保留在 canonical `cloudfunctions/_shared/subject-role-prompt.js`，并导出 `DEFAULT_SUBJECT_RULES`、`getSubjectRulesFromDB`、`buildSubjectPrompt`。`ai-event.js`、`event-understanding.js`、`adminManage` 只导入调用，不各自复制一份。
+
 ```javascript
 // getSubjectRulesFromDB 必须正确处理 { zh, en }[] 格式
 function getSubjectRulesFromDB(settings) {
@@ -73,13 +84,18 @@ function getSubjectRulesFromDB(settings) {
     .join('\n')
 }
 
-function buildSubjectPrompt(inputSubjectRole, settings) {
+function buildSubjectPrompt(inputSubjectRole, settings, activeModuleKey = 'eventAssessment') {
   const dbRules = getSubjectRulesFromDB(settings)
   const parts = []
 
-  // DB 没配规则时才补代码默认值（避免与 buildPromptMessages 自动注入重复）
+  // eventAssessment 的 DB rules 会被 buildPromptMessages 自动注入，不能再拼一次。
+  // 其他模块不会自动获得 eventAssessment.rules，需要从唯一所有者跨模块注入一次。
   if (!dbRules) {
-    parts.push(DEFAULT_SUBJECT_RULES)
+    parts.push(Array.isArray(DEFAULT_SUBJECT_RULES)
+      ? DEFAULT_SUBJECT_RULES.join('\n')
+      : String(DEFAULT_SUBJECT_RULES || ''))
+  } else if (activeModuleKey !== 'eventAssessment') {
+    parts.push(dbRules)
   }
 
   // both 模式追加聊天标记（始终由代码追加）
@@ -91,7 +107,11 @@ function buildSubjectPrompt(inputSubjectRole, settings) {
 }
 ```
 
-**最终 prompt 中主体规则只出现一次**：DB 有 → 在业务规则区；DB 无 → 在运行时上下文区。both 标记始终追加。
+**最终 prompt 中主体规则只出现一次**：
+
+- `eventAssessment`：DB 有 → 由 `buildPromptMessages` 放在业务规则区；DB 无 → helper 在运行时上下文区放 fallback；
+- `eventUnderstanding` 等其他模块：不会自动获得 `eventAssessment.rules`，由 helper 从唯一所有者跨模块放入运行时上下文区；
+- `both` 标记始终由 helper 追加。
 
 ---
 
@@ -118,21 +138,22 @@ function buildSubjectPrompt(inputSubjectRole, settings) {
 
 | # | 改动 |
 |---|------|
-| **F13** | `subjectRole: 'target'` 改为 `inputSubjectRole: 'unspecified'` |
+| **F13** | 删除 `subjectRole: 'target'` 和 `subjectRoleConfidence: 'confirmed'`，改为 `inputSubjectRole: 'unspecified'` |
 
 ### 2.3 前端 `src/utils/api.ts`
 
 | # | 改动 |
 |---|------|
 | **F14** | `createTimeline` 参数新增 `inputSubjectRole: 'unspecified' \| 'both'`（**必填**） |
-| **F15** | 删除本地记录、提交参数、重置、缓存中的 `subjectRoleConfidence` 字段 |
+| **F15** | 从 `createTimeline` 参数类型删除 `subjectRole`、`subjectRoleConfidence`；调用方、本地乐观记录、重置逻辑和缓存中的 `subjectRoleConfidence` 由 F3/F13 一并清除 |
+| **F16** | `normalizeTimelineRecord()` 做只读归一：合法 `subjectRole` 原样保留，缺失/非法值转为 `unknown`；新字段缺失时保留为 `undefined`。这不写回数据库，只保证旧账号打开安全 |
 
 ### 2.4 后端 `createTimeline/index.js`
 
 | # | 改动 |
 |---|------|
 | **B1** | 新增 `normalizeInputSubjectRole(v)`：`'unspecified' \| 'both'`，fallback `'unspecified'` |
-| **B2** | `normalizeSubjectRole(v)` 不变（不加 unspecified） |
+| **B2** | 客户端传入的 `subjectRole` 完全忽略；读取已有记录时使用 `normalizeStoredSubjectRole(v)`，合法值保留，缺失/非法值 fallback `'unknown'`（不加 unspecified） |
 | **B3** | `subjectRole` 强制 `'unknown'`，`subjectRoleSource` 强制 `'pending'` |
 | **B4** | 删除 `normalizeSubjectRoleConfidence()` 函数（67 行）+ 所有读写（169/213/222/267/279/368/420 行） |
 | **B5** | `inferTimelineRecord` 传入 `inputSubjectRole`、`subjectRoleSource` |
@@ -142,50 +163,94 @@ function buildSubjectPrompt(inputSubjectRole, settings) {
 | # | 改动 |
 |---|------|
 | **B6** | 删除 `normalizeSubjectRoleConfidence()` 函数（40 行）+ compactTimelineItem 删该字段 |
-| **B7** | `compactTimelineItem()` 读取 `inputSubjectRole` + `subjectRoleSource` |
-| **B8** | 调用 `buildSubjectPrompt(inputSubjectRole)` |
-| **B9** | AI 成功 + actor 有效 → `subjectRole=actor, source='ai_inferred'` |
-| **B10** | AI 失败 → `subjectRole='unknown', source='fallback_unknown'` |
+| **B7** | `compactTimelineItem()` 读取 `inputSubjectRole` + `subjectRoleSource`；其中 stored subjectRole 的 normalizer 从非法值 fallback target 改为 fallback unknown |
+| **B8** | 保证 `triggerEvent`、`recentTimeline` 将 `subjectRole`、`inputSubjectRole`、`subjectRoleSource` 传入共享重算链路；本文件不自行重复拼 prompt |
+| **B9** | AI 成功且 `eventInsight.actor` 是 `target/self/both/unknown` 之一 → 原样持久化 actor，`source='ai_inferred'`；AI 明确返回 unknown 也属于成功推断 |
+| **B10** | AI 请求失败、解析失败或 actor 非法/缺失 → `subjectRole='unknown', source='fallback_unknown'` |
 | **B11** | 更新 timeline_records：subjectRole + subjectRoleSource |
 
-### 2.6 后端 `_shared/ai-event.js`
+### 2.6 后端 `deleteTimeline/index.js`
+
+删除一条记录会清空并重建该档案的评估和时间线，因此这里必须显式保留主体字段。仅在部署列表里写 `deleteTimeline` 不足以完成改造。
 
 | # | 改动 |
 |---|------|
-| **B11** | 新增 `buildSubjectPrompt(inputSubjectRole, settings)` |
-| **B12** | **删除** `describeSubjectRole`（117-127 行） |
-| **B13** | **删除** 459 行独立 contextLine（"主体宾语校验…"） |
-| **B14** | 评分保护：只看 `eventInsight.actor`。actor=self → 三项归零；actor=unknown → 低权重 |
-| **B15** | `hasExplicitTargetReaction()` 在 actor=self 时直接返回 false |
-| **B16** | `fallbackAnalysis(isUnresolved)`：未确认 → neutral downgrade；已确认 → 按 subjectRole |
+| **B12** | `recentTimeline` 映射增加 `subjectRole`、`inputSubjectRole`、`subjectRoleSource` |
+| **B13** | 传给 `recalculateAssessmentFromEvent` 的 `event` 增加 `subjectRole`、`inputSubjectRole`、`subjectRoleSource` |
+| **B14** | 重建旧记录时：合法 `subjectRole` 保留；缺失/非法值归一为 `unknown`；缺失 `inputSubjectRole`、`subjectRoleSource` 不抛错，也不能仅因字段缺失就把合法旧 `subjectRole` 中性化 |
 
-### 2.7 后端 `_shared/event-understanding.js`
+建议使用统一的读取归一函数，避免 `deleteTimeline` 和 `generateAssessmentAI` 判断不一致：
+
+```javascript
+function normalizeStoredSubjectRole(value) {
+  return ['target', 'self', 'both', 'unknown'].includes(value) ? value : 'unknown'
+}
+
+function normalizeOptionalInputSubjectRole(value) {
+  return ['unspecified', 'both'].includes(value) ? value : undefined
+}
+
+function normalizeOptionalSubjectRoleSource(value) {
+  return ['pending', 'ai_inferred', 'fallback_unknown'].includes(value) ? value : undefined
+}
+```
+
+`recentTimeline` 和当前 `event` 两处都使用同一映射片段：
+
+```javascript
+subjectRole: normalizeStoredSubjectRole(item.subjectRole),
+inputSubjectRole: normalizeOptionalInputSubjectRole(item.inputSubjectRole),
+subjectRoleSource: normalizeOptionalSubjectRoleSource(item.subjectRoleSource)
+```
+
+当前事件对象中的 `item` 替换为 `manualEvent`。不得通过 `Boolean(inputSubjectRole)`、`hasInputSubjectRole` 或字段是否存在来判断新旧记录。
+
+### 2.7 后端 `_shared/ai-event.js`
 
 | # | 改动 |
 |---|------|
-| **B17** | `buildSubjectPrompt` 同 B11 |
-| **B18** | **删除** `describeSubjectRole`（43-54 行） |
-| **B19** | **删除** 286 行独立 contextLine |
-| **B20** | initiator：subjectRole 为 unknown → `'unknown'` |
-| **B21** | promisedBy：subjectRole 为 unknown → `'unknown'` |
-| **B22** | isWeakContext：subjectRole 为 unknown → true |
+| **B15** | 从 canonical `subject-role-prompt.js` 导入并调用 `buildSubjectPrompt(inputSubjectRole, settings, 'eventAssessment')`；本模块的 DB rules 已自动注入，helper 不得重复返回它们 |
+| **B16** | **删除** `describeSubjectRole`（117-127 行） |
+| **B17** | **删除** 459 行独立 contextLine（"主体宾语校验…"） |
+| **B18** | 评分保护：只看 `eventInsight.actor`。actor=self → 三项归零；actor=unknown → 低权重 |
+| **B19** | `hasExplicitTargetReaction()` 在 actor=self 时直接返回 false |
+| **B20** | `fallbackAnalysis(event)` 内部计算 `isUnresolved`：未确认 → neutral downgrade；已确认 → 按 subjectRole；不得把布尔值当作 event 传入 |
 
-### 2.8 后端 `adminManage/index.js`
+### 2.8 后端 `_shared/event-understanding.js`
 
 | # | 改动 |
 |---|------|
-| **B23** | `buildSubjectPrompt` 同 B11 |
-| **B24** | **删除** `describeSubjectRole`（630-640 行） |
-| **B25** | 预览事件改为：`inputSubjectRole: 'unspecified'`、`subjectRole: 'unknown'`、`subjectRoleSource: 'pending'` |
-| **B26** | `normalizePromptAdminView`：`guardrails`/`runtimeContext`/`outputContract` 全部派生；同步更新 `PROMPT_FIXED_GUARDRAILS` 和 `getRuntimePreview()` 中的 subjectRole/inputSubjectRole/subjectRoleSource 字段说明 + 四段 rawReply 结构 |
+| **B21** | 从 canonical `subject-role-prompt.js` 导入并调用 `buildSubjectPrompt(inputSubjectRole, settings, 'eventUnderstanding')`；helper 从 `eventAssessment.rules` 唯一所有者跨模块注入一次 |
+| **B22** | **删除** `describeSubjectRole`（43-54 行） |
+| **B23** | **删除** 286 行独立 contextLine |
+| **B24** | 文件内两处 subjectRole 归一的非法值 fallback 从 `target` 改为 `unknown`；initiator 在 unknown 时返回 `'unknown'` |
+| **B25** | promisedBy：subjectRole 为 unknown → `'unknown'` |
+| **B26** | isWeakContext：subjectRole 为 unknown → true |
 
-### 2.9 下游消费者
+### 2.9 后端 `adminManage/index.js`
+
+| # | 改动 |
+|---|------|
+| **B27** | 从同步后的 `./_shared/subject-role-prompt` 导入 `buildSubjectPrompt`，预览链路必须传入当前预览的 `activeModuleKey`，分别模拟 eventAssessment 自动注入和跨模块注入 |
+| **B28** | **删除** `describeSubjectRole`（630-640 行） |
+| **B29** | 预览事件改为：`inputSubjectRole: 'unspecified'`、`subjectRole: 'unknown'`、`subjectRoleSource: 'pending'` |
+| **B30** | `normalizePromptAdminView`：`guardrails`/`runtimeContext`/`outputContract` 全部派生；同步更新 `PROMPT_FIXED_GUARDRAILS` 和 `getRuntimePreview()` 中的 subjectRole/inputSubjectRole/subjectRoleSource 字段说明 + 四段 rawReply 结构 |
+
+### 2.10 旧的 AI 设置函数
+
+`src/utils/api.ts` 仍保留 `getAISettings`、`updateAISettings` 接口。若对应云函数继续部署或仍可能被调用，不能让它们保留另一套过期的 `promptAdminView` / runtime preview 生成逻辑。
+
+| # | 改动 |
+|---|------|
+| **B31** | 新建 canonical `cloudfunctions/_shared/prompt-admin-view.js`，集中导出管理视图、固定 guardrails、runtime preview、字段说明和四段 `rawReply` contract 的派生函数；`adminManage`、`getAISettings`、`updateAISettings` 全部改为调用该 helper，并删除各自重复实现 |
+
+### 2.11 下游消费者
 
 | # | 文件 | 改动 |
 |---|------|------|
-| **B27** | `src/utils/insights.js:1136` | 对方侧白名单：`role === 'target' \|\| role === 'both'` |
-| **B28** | `src/utils/insights.js:1413` | subjectRole 为 unknown → 通用建议 |
-| **B29** | `src/pages/timeline/timeline.vue:36` | unknown → `v-if` 不渲染标签框 |
+| **B32** | `src/utils/insights.js:1136` | 对方侧白名单：`role === 'target' \|\| role === 'both'`；undefined/非法值同 unknown，不能算对方侧 |
+| **B33** | `src/utils/insights.js:1413` | subjectRole 为 unknown/undefined/非法值 → 通用建议，不再 fallback 为 target |
+| **B34** | `src/pages/timeline/timeline.vue:36` | 只有 `target/self/both` 才渲染主体标签；unknown/undefined/非法值不渲染空标签框 |
 
 ---
 
@@ -194,14 +259,29 @@ function buildSubjectPrompt(inputSubjectRole, settings) {
 ### buildSubjectPrompt
 
 ```javascript
-function buildSubjectPrompt(inputSubjectRole, settings) {
-  const rules = getSubjectRulesFromDB(settings) || DEFAULT_SUBJECT_RULES
-  if (inputSubjectRole === 'both') {
-    return rules + '\n这是微信对话记录。请拆分双方各自说了什么。'
+function buildSubjectPrompt(inputSubjectRole, settings, activeModuleKey = 'eventAssessment') {
+  const dbRules = getSubjectRulesFromDB(settings)
+  const parts = []
+
+  // eventAssessment.rules 仅在 activeModuleKey=eventAssessment 时由
+  // buildPromptMessages 自动注入；其他模块需要从唯一所有者跨模块注入。
+  if (!dbRules) {
+    parts.push(Array.isArray(DEFAULT_SUBJECT_RULES)
+      ? DEFAULT_SUBJECT_RULES.join('\n')
+      : String(DEFAULT_SUBJECT_RULES || ''))
+  } else if (activeModuleKey !== 'eventAssessment') {
+    parts.push(dbRules)
   }
-  return rules
+
+  if (inputSubjectRole === 'both') {
+    parts.push('这是微信对话记录。请拆分双方各自说了什么。')
+  }
+
+  return parts.join('\n')
 }
 ```
+
+禁止调用方在 helper 之外再次拼 DB rules。`eventAssessment` 由 `buildPromptMessages` 自动注入一次；其他模块由 helper 从 `eventAssessment.rules` 跨模块注入一次；DB 缺失时才使用代码 fallback。
 
 ### createTimeline 协议
 
@@ -225,16 +305,25 @@ if (actor === 'unknown') { /* 低权重 */ }
 ### fallback 降级
 
 ```javascript
-const isUnresolved =
-  event.subjectRole === 'unknown' ||
-  event.subjectRoleSource === 'pending' ||
-  event.subjectRoleSource === 'fallback_unknown'
+function fallbackAnalysis(event) {
+  const role = normalizeStoredSubjectRole(event.subjectRole)
+  const isUnresolved =
+    role === 'unknown' ||
+    event.subjectRoleSource === 'pending' ||
+    event.subjectRoleSource === 'fallback_unknown'
 
-if (isUnresolved) {
-  return neutralFallback()  // eventType='note', 评分不变, actor='unknown'
+  if (isUnresolved) {
+    return neutralFallback()  // eventType='note', 评分不变, actor='unknown'
+  }
+
+  // 已确认：将归一后的 role 写回本地 event，继续执行当前函数既有的
+  // self/target/both 分类与评分分支，不需要新增第二套 fallback 函数。
+  event = { ...event, subjectRole: role }
+  // ...保留现有 resolved fallback 主体...
 }
-// 已确认：按 subjectRole 执行 fallback
 ```
+
+特别注意：旧记录缺少 `subjectRoleSource` 时，`undefined` 本身不代表 unresolved。只要旧记录的 `subjectRole` 是合法的 `target/self/both`，规则重算仍按该值执行。
 
 ---
 
@@ -243,16 +332,19 @@ if (isUnresolved) {
 | # | 文件 | 改动量 |
 |---|------|--------|
 | F1-F12 | `src/pages/index/index.vue` | 删 ~40 行，重写 ~45 行 |
-| F13 | `src/pages/quick-read/quick-read.vue` | 1 行 |
-| F14 | `src/utils/api.ts` | 1 行 |
+| F13 | `src/pages/quick-read/quick-read.vue` | ~3 行 |
+| F14-F16 | `src/utils/api.ts` | ~10 行 |
 | B1-B5 | `cloudfunctions/createTimeline/index.js` | ~15 行 |
-| B6-B10 | `cloudfunctions/generateAssessmentAI/index.js` | ~15 行 |
-| B11-B16 | `cloudfunctions/_shared/ai-event.js` | ~20 行（含删除） |
-| B17-B22 | `cloudfunctions/_shared/event-understanding.js` | ~10 行（含删除） |
-| B23-B26 | `cloudfunctions/adminManage/index.js` | ~10 行（含删除） |
-| B27-B29 | `src/utils/insights.js` + `src/pages/timeline/timeline.vue` | ~5 行 |
+| B6-B11 | `cloudfunctions/generateAssessmentAI/index.js` | ~20 行 |
+| B12-B14 | `cloudfunctions/deleteTimeline/index.js` | ~12 行 |
+| 1.3 | `cloudfunctions/_shared/subject-role-prompt.js` | 新增主体规则 fallback 与聊天结构标记的唯一实现 |
+| B15-B20 | `cloudfunctions/_shared/ai-event.js` | ~25 行（含删除） |
+| B21-B26 | `cloudfunctions/_shared/event-understanding.js` | ~12 行（含删除） |
+| B27-B30 | `cloudfunctions/adminManage/index.js` | ~15 行（含删除） |
+| B31 | `cloudfunctions/_shared/prompt-admin-view.js` + `cloudfunctions/getAISettings/index.js` + `cloudfunctions/updateAISettings/index.js` | 集中并删除重复派生逻辑 |
+| B32-B34 | `src/utils/insights.js` + `src/pages/timeline/timeline.vue` | ~8 行 |
 
-**9 个文件，~120 行改动（含删除）。**
+**15 个 canonical/业务源文件；执行 `sync:shared` 后会同步更新各云函数的 `_shared` 副本。以实际 diff 为准，不以估算行数作为验收条件。**
 
 ---
 
@@ -266,12 +358,16 @@ if (isUnresolved) {
 5. tcb fn deploy generateAssessmentAI
 6. tcb fn deploy deleteTimeline
 7. tcb fn deploy adminManage
-8. 数据库写入四条默认规则 + Admin 保存校验
-9. Admin 保存 → 重建 promptAdminView → 检查实际 prompt
-10. npm run build:mp-weixin
+8. tcb fn deploy getAISettings
+9. tcb fn deploy updateAISettings
+10. 数据库写入四条默认规则 + Admin 保存校验
+11. Admin 保存 → 重建 promptAdminView → 检查实际 prompt
+12. npm run build:mp-weixin
 ```
 
 **先部署代码，再改数据库**。如果先改 DB，旧代码仍会附加原有的 describeSubjectRole 指令，造成短暂双重注入。
+
+每个云函数部署后先做一次最小调用验证，再部署下一个。不得假设 CLI 支持一次传入多个函数名；除非先用当前 CLI 版本验证过该语法。
 
 ---
 
@@ -282,15 +378,22 @@ if (isUnresolved) {
 | T1 | 新记录 → createTimeline | subjectRole='unknown', source='pending' |
 | T2 | AI 返回 actor=self | subjectRole→'self'，评分归零 |
 | T3 | AI 返回 actor=target | subjectRole→'target'，保留评分 |
-| T4 | AI 失败 + unresolved | source='fallback_unknown'，安全降级 |
-| T5 | 已确认记录 → 重算 → AI 失败 | 按 subjectRole fallback，不误判 |
-| T6 | both prompt | DB 规则 + "聊天记录"标记 |
-| T7 | unspecified prompt | 仅 DB 规则 |
+| T4 | AI 请求/解析失败或 actor 非法 | subjectRole='unknown'、source='fallback_unknown'，安全降级 |
+| T4.1 | AI 成功返回 actor=unknown | subjectRole='unknown'、source='ai_inferred'；按不明确主体低权重处理，不误标为 AI 失败 |
+| T5 | AI 已解析的新记录 → deleteTimeline 重算 → AI 不可用 | 按已保存的 subjectRole fallback；不得仅因仍有 inputSubjectRole 就中性化 |
+| T6 | eventAssessment + both prompt | DB 规则只在业务规则区出现 1 次，运行时只追加“聊天记录”标记 |
+| T7 | eventUnderstanding + unspecified prompt | eventAssessment DB 主体规则跨模块注入运行时上下文 1 次 |
 | T8 | DB 规则为空 | fallback 到 DEFAULT_SUBJECT_RULES |
-| T9 | prompt 主体宾语示例 | 只出现 1 次 |
+| T9 | eventAssessment/eventUnderstanding/Admin 实际 prompt | 每个 prompt 的主体规则均只出现 1 次 |
 | T10 | 下游 unknown | 不算对方侧 |
 | T11 | timeline unknown | 不渲染标签框 |
 | T12 | 撤销聊天检测 | 失焦不重复识别 |
+| T13 | 旧账号打开首页、档案页、时间线 | 旧记录缺少 inputSubjectRole/subjectRoleSource 时正常加载，无前端异常、无云函数异常 |
+| T14 | 旧记录主体显示 | 合法 target/self/both 沿用原值；缺失/非法 subjectRole 按 unknown 处理且不显示空标签框 |
+| T15 | 旧账号继续新增记录 | 新记录使用新三字段协议；旧记录不迁移、不回填 |
+| T16 | 旧账号删除一条历史记录 | 重算不报错；剩余记录的三个主体字段不被映射层丢弃；合法旧 subjectRole 不被误中性化 |
+| T17 | 旧库残留 subjectRoleConfidence | 新版直接忽略，不要求清理字段，不影响打开和新增记录 |
+| T18 | Admin/getAISettings/updateAISettings 预览一致性 | 三个入口返回相同 guardrails、runtime 字段说明和四段 rawReply contract |
 
 ---
 
@@ -305,4 +408,4 @@ if (isUnresolved) {
 | `buildSubjectPrompt` 旧记录分支 | 不注入"历史标注仅供参考" |
 | `fallbackAnalysis` 新旧分叉 | 一套逻辑 |
 | `normalizeSubjectRoleConfidence` | 直接删函数 |
-| T2/T11/T12 旧兼容测试 | 不需要 |
+| 旧数据迁移、回填和重新推断任务 | 不需要；仅保留“旧账号不崩溃”的读取与操作冒烟测试 |

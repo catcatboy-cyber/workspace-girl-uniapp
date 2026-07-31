@@ -1,40 +1,11 @@
 ﻿const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { isSystemTimelineRecord, compareAssessments, buildTrendTimelineRecords } = require('./_shared/trend')
-const { recalculateAssessmentFromEvent } = require('./_shared/event-recalculate')
+const { replayAssessmentFromEvent } = require('./_shared/event-recalculate')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
-const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
-
-function normalizeDoc(res) {
-  if (Array.isArray(res?.data)) return res.data[0] || null
-  return res?.data || null
-}
-
-async function getAISettings(userId) {
-  const globalDocRes = await db.collection('system_settings').doc(GLOBAL_AI_SETTINGS_ID).get().catch(() => null)
-  let settings = normalizeDoc(globalDocRes)
-
-  if (!settings) {
-    const globalScopeRes = await db.collection('system_settings')
-      .where({ scope: 'global', key: 'ai' })
-      .limit(1)
-      .get()
-    settings = globalScopeRes.data && globalScopeRes.data.length > 0 ? globalScopeRes.data[0] : null
-  }
-
-  if (!settings) {
-    const userSettingsRes = await db.collection('system_settings')
-      .where({ userId })
-      .limit(1)
-      .get()
-    settings = userSettingsRes.data && userSettingsRes.data.length > 0 ? userSettingsRes.data[0] : null
-  }
-
-  return settings
-}
 
 function randomHex(n) {
   return crypto.randomBytes(n).toString('hex')
@@ -43,12 +14,6 @@ function randomHex(n) {
 function toTime(value) {
   const parsed = new Date(value).getTime()
   return Number.isNaN(parsed) ? 0 : parsed
-}
-
-function toISOStringOrUndefined(value) {
-  if (!value) return undefined
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString()
 }
 
 function sortByCreatedAtAsc(list) {
@@ -132,7 +97,7 @@ exports.main = async (event) => {
     }
 
     const baseAssessments = sortByCreatedAtAsc(
-      snapshot.assessments.filter((item) => item.source !== 'event_recalculation')
+      snapshot.assessments.filter((item) => item.source !== 'event_recalculation' && item.source !== 'ai_pending')
     )
     if (baseAssessments.length === 0) {
       return { success: false, message: '当前档案缺少基础评估，无法删除该记录' }
@@ -141,8 +106,9 @@ exports.main = async (event) => {
     const remainingManualTimeline = sortByCreatedAtAsc(
       snapshot.timeline.filter((item) => !isSystemTimelineRecord(item) && item._id !== recordId)
     )
-
-    const aiSettings = await getAISettings(userId)
+    if (remainingManualTimeline.some((item) => item.aiPending || item.subjectRoleSource === 'pending')) {
+      return { success: false, message: '还有记录正在分析，请等待完成后再删除其他记录' }
+    }
 
     try {
       await db.collection('assessments').where({ caseId }).remove()
@@ -172,8 +138,6 @@ exports.main = async (event) => {
         }))
       ].sort((left, right) => left.createdAt - right.createdAt)
 
-      const processedManualTimeline = []
-
       for (const operation of operations) {
         const previousResult = currentResult
 
@@ -182,34 +146,14 @@ exports.main = async (event) => {
           assessmentCount += 1
         } else {
           const manualEvent = operation.item
-          const recentTimeline = sortByCreatedAtAsc([...processedManualTimeline, manualEvent])
-            .slice(-8)
-            .map((item) => ({
-              id: item._id || item.id,
-              title: item.title,
-              type: item.type,
-              dateLabel: item.dateLabel || '',
-              description: item.description || '',
-              occurrenceAt: toISOStringOrUndefined(item.occurrenceAt),
-              createdAt: toISOStringOrUndefined(item.createdAt)
-            }))
-
           const nextAssessmentId = `assessment_${Date.now()}_${randomHex(4)}`
-          const recalculated = await recalculateAssessmentFromEvent({
+          const recalculated = replayAssessmentFromEvent({
             previous: currentResult,
             event: {
+              ...manualEvent,
               id: manualEvent._id || manualEvent.id,
-              title: manualEvent.title,
-              type: manualEvent.type,
-              dateLabel: manualEvent.dateLabel || '',
-              description: manualEvent.description || '',
-              occurrenceAt: manualEvent.occurrenceAt,
-              createdAt: manualEvent.createdAt
             },
-            assessmentId: nextAssessmentId,
-            recentTimeline,
-            caseProfile: caseDoc.profile,
-            aiSettings: { aiEnabled: false, aiFallbackToRules: true }
+            assessmentId: nextAssessmentId
           })
 
           const assessmentDoc = {
@@ -221,7 +165,6 @@ exports.main = async (event) => {
 
           currentResult = assessmentDoc
           assessmentCount += 1
-          processedManualTimeline.push(manualEvent)
         }
 
         const trend = compareAssessments(previousResult, currentResult)

@@ -1,4 +1,4 @@
-const PROMPT_MODULE_KEYS = ['eventAssessment', 'eventUnderstanding', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
+const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   roleZh: 800,
   roleEn: 1000,
@@ -10,8 +10,8 @@ const BUSINESS_PROMPT_LIMITS = {
 
 const SAFETY_GUARDRAILS = [
   {
-    zh: '输出必须是可解析 JSON；代码会校验枚举、数值范围和字段长度，失败时回退到规则结果。',
-    en: 'Output must be parseable JSON; code validates enums, numeric ranges, and field lengths, and falls back to rule results on failure.'
+    zh: '需要 JSON 的模块必须输出可解析 JSON；代码会校验协议、枚举和字段长度，失败时按未知语义和零分保守保存。',
+    en: 'Modules requiring JSON must output parseable JSON; code validates the protocol, enums, and field lengths, and conservatively stores unknown semantics with zero score on failure.'
   },
   {
     zh: '只根据用户提供的事实、事件上下文和画像字段判断；不要编造没有出现的行为、承诺、情绪或关系状态。',
@@ -67,9 +67,26 @@ function createEmptyBusinessPrompt(moduleKey) {
   }
 }
 
+function sanitizePromptModules(value) {
+  const modules = value && typeof value === 'object' ? JSON.parse(JSON.stringify(value)) : {}
+  delete modules.eventUnderstanding
+  const eventAssessment = modules.eventAssessment
+  if (eventAssessment && typeof eventAssessment === 'object') {
+    const business = eventAssessment.businessPrompt && typeof eventAssessment.businessPrompt === 'object'
+      ? eventAssessment.businessPrompt
+      : eventAssessment
+    business.rules = []
+    business.outputSchema = {}
+    business.outputNotes = []
+  }
+  return modules
+}
+
 function normalizeBusinessPrompt(settings, moduleKey) {
-  const moduleConfig = settings?.promptModules?.[moduleKey]
-  if (!moduleConfig || typeof moduleConfig !== 'object') return null
+  const configuredModule = settings?.promptModules?.[moduleKey]
+  const moduleConfig = configuredModule && typeof configuredModule === 'object'
+    ? configuredModule
+    : { enabled: true, businessPrompt: createEmptyBusinessPrompt(moduleKey) }
 
   const business = moduleConfig.businessPrompt && typeof moduleConfig.businessPrompt === 'object'
     ? moduleConfig.businessPrompt
@@ -96,7 +113,8 @@ function normalizeBusinessPrompt(settings, moduleKey) {
     Object.keys(normalized.outputSchema).length > 0
   )
 
-  if (!hasBusinessContent && normalized.enabled !== false) return null
+  // 即使业务内容为空，只要模块启用就返回有效对象；固定协议由调用方注入。
+  if (!hasBusinessContent && normalized.enabled === false) return null
   return normalized
 }
 
@@ -120,15 +138,18 @@ function buildPromptMessages({ moduleKey, settings, contextLines = [], systemExt
     systemExtra
   ].filter(Boolean)
 
+  // eventAssessment 的协议、枚举、语义原则与评分边界全部由代码固定。
+  // DB 在该模块只允许提供简短角色/任务，旧 rules/schema/notes 不进入运行时 prompt。
+  const useManagedEventProtocol = moduleKey === 'eventAssessment'
   const userLines = [
     `模块: ${business.nameZh}`,
     business.roleZh ? `角色: ${business.roleZh}` : '',
     business.taskZh ? `任务: ${business.taskZh}` : '',
-    business.rules.length ? '业务规则:' : '',
-    ...buildBilingualLines(business.rules),
-    Object.keys(business.outputSchema).length > 0 ? `输出结构:\n${JSON.stringify(business.outputSchema)}` : '',
-    business.outputNotes.length ? '输出要求:' : '',
-    ...buildBilingualLines(business.outputNotes),
+    !useManagedEventProtocol && business.rules.length ? '业务规则:' : '',
+    ...(!useManagedEventProtocol ? buildBilingualLines(business.rules) : []),
+    !useManagedEventProtocol && Object.keys(business.outputSchema).length > 0 ? `输出结构:\n${JSON.stringify(business.outputSchema)}` : '',
+    !useManagedEventProtocol && business.outputNotes.length ? '输出要求:' : '',
+    ...(!useManagedEventProtocol ? buildBilingualLines(business.outputNotes) : []),
     contextLines.length ? '运行时上下文:' : '',
     ...contextLines
   ].filter(Boolean)
@@ -142,6 +163,7 @@ function buildPromptMessages({ moduleKey, settings, contextLines = [], systemExt
 module.exports = {
   PROMPT_MODULE_KEYS,
   SAFETY_GUARDRAILS,
+  sanitizePromptModules,
   normalizeBusinessPrompt,
   buildPromptMessages
 }

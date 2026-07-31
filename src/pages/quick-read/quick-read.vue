@@ -427,8 +427,7 @@ async function confirmTargetProfile() {
       userId: uid,
       caseId,
       description: form.text.trim(),
-      subjectRole: 'target',
-      subjectRoleConfidence: 'confirmed',
+      inputSubjectRole: 'unspecified',
       userQuestion: currentQuestion,
       attachments: [],
       occurrenceAt

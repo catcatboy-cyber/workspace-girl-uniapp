@@ -31,6 +31,8 @@ function normalizeTimelineRecord(record: any) {
   if (!record || typeof record !== 'object') return record
 
   const fallbackDate = formatTimelineDisplayDate(record.occurrenceAt || record.createdAt)
+  // F16: 只读归一 subjectRole，合法值保留，缺失/非法 → 'unknown'
+  const validRoles = ['target', 'self', 'both', 'unknown']
   return {
     ...record,
     id: record.id || record._id,
@@ -41,7 +43,10 @@ function normalizeTimelineRecord(record: any) {
         : fallbackDate,
     dateLabel: typeof record.dateLabel === 'string' && record.dateLabel.trim()
       ? record.dateLabel.trim()
-      : fallbackDate
+      : fallbackDate,
+    subjectRole: validRoles.includes(record.subjectRole) ? record.subjectRole : 'unknown',
+    inputSubjectRole: ['unspecified', 'both'].includes(record.inputSubjectRole) ? record.inputSubjectRole : undefined,
+    subjectRoleSource: ['pending', 'ai_inferred', 'fallback_unknown'].includes(record.subjectRoleSource) ? record.subjectRoleSource : undefined
   }
 }
 
@@ -658,8 +663,7 @@ export async function createTimeline(data: {
   type?: string
   description: string
   attachments?: any[]
-  subjectRole?: 'target' | 'self' | 'both' | 'unknown' | string
-  subjectRoleConfidence?: 'user_selected' | 'confirmed' | string
+  inputSubjectRole: 'unspecified' | 'both'
   userQuestion?: { key: string; label: string } | null
   occurrenceAt: string
 }) {
@@ -1236,7 +1240,6 @@ export async function getAISettings(_userId?: string) {
 export async function updateAISettings(data: {
   userId?: string
   aiEnabled: boolean
-  aiFallbackToRules: boolean
   models: AIModelConfig[]
   defaultModelId: string
   promptConfig?: Partial<AIPromptConfig>
@@ -1270,7 +1273,6 @@ export async function adminGetUserDetail(userId: string) {
 
 export async function adminUpdateAISettings(data: {
   aiEnabled: boolean
-  aiFallbackToRules: boolean
   models: AIModelConfig[]
   defaultModelId: string
   promptConfig?: Partial<AIPromptConfig>

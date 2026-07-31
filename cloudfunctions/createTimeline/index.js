@@ -1,45 +1,9 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
-const { buildTimelineRecordTitle, classifyTimelineEvent, inferTimelineRecord } = require('./_shared/event-understanding')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
 const { checkFeatureAccess, finalizePendingReferral } = require('./_shared/subscription')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
-const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
-
-function normalizeDoc(res) {
-  if (Array.isArray(res?.data)) return res.data[0] || null
-  return res?.data || null
-}
-
-async function getAISettings(userId) {
-  const globalDocRes = await db.collection('system_settings').doc(GLOBAL_AI_SETTINGS_ID).get().catch(() => null)
-  let settings = normalizeDoc(globalDocRes)
-
-  if (!settings) {
-    const globalScopeRes = await db.collection('system_settings')
-      .where({ scope: 'global', key: 'ai' })
-      .limit(1)
-      .get()
-    settings = globalScopeRes.data && globalScopeRes.data.length > 0 ? globalScopeRes.data[0] : null
-  }
-
-  if (!settings) {
-    const userSettingsRes = await db.collection('system_settings')
-      .where({ userId })
-      .limit(1)
-      .get()
-    settings = userSettingsRes.data && userSettingsRes.data.length > 0 ? userSettingsRes.data[0] : null
-  }
-
-  return settings
-}
-
-async function getSelfProfile(userId) {
-  const result = await db.collection('users').doc(userId).get().catch(() => null)
-  const user = normalizeDoc(result)
-  return user?.selfProfile || null
-}
 
 function randomHex(n) {
   return crypto.randomBytes(n).toString('hex')
@@ -54,18 +18,15 @@ function isValidDate(date) {
   return date instanceof Date && !Number.isNaN(date.getTime())
 }
 
-function toISOStringOrUndefined(value) {
-  if (!value) return undefined
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString()
+function buildTimelineRecordTitle(input) {
+  const normalized = typeof input === 'string' ? input.replace(/\s+/g, ' ').trim() : ''
+  if (!normalized) return ''
+  const firstChunk = normalized.split(/[。！？!?；;，,\n]/).map((item) => item.trim()).find(Boolean) || normalized
+  return firstChunk.length <= 20 ? firstChunk : `${firstChunk.slice(0, 20).trim()}...`
 }
 
-function normalizeSubjectRole(value) {
-  return ['target', 'self', 'both', 'unknown'].includes(value) ? value : 'target'
-}
-
-function normalizeSubjectRoleConfidence(value) {
-  return ['user_selected', 'confirmed'].includes(value) ? value : 'user_selected'
+function normalizeInputSubjectRole(value) {
+  return ['unspecified', 'both'].includes(value) ? value : 'unspecified'
 }
 
 function buildBaselineAssessment() {
@@ -166,7 +127,7 @@ function mapCreateTimelineError(error) {
 }
 
 exports.main = async (event) => {
-  const { caseId, description, occurrenceAt, dateLabel, subjectRole, subjectRoleConfidence } = event
+  const { caseId, description, occurrenceAt, dateLabel, subjectRole: _sr, subjectRoleConfidence: _src, inputSubjectRole: _isr, ..._restEvent } = event
   let transaction = null
   const perfStart = Date.now()
   const traceId = `ct_${perfStart}_${randomHex(3)}`
@@ -209,17 +170,20 @@ exports.main = async (event) => {
     const now = new Date()
     const parsedOccurrenceAt = occurrenceAt ? new Date(occurrenceAt) : now
     const occursAt = isValidDate(parsedOccurrenceAt) ? parsedOccurrenceAt : now
-    const safeSubjectRole = normalizeSubjectRole(subjectRole)
-    const safeSubjectRoleConfidence = normalizeSubjectRoleConfidence(subjectRoleConfidence)
+    const safeInputSubjectRole = normalizeInputSubjectRole(event.inputSubjectRole)
+    // B2: 客户端传入的 subjectRole 完全忽略；subjectRole 由后端强制生成
+    const safeSubjectRole = 'unknown'
+    const safeSubjectRoleSource = 'pending'
     const safeUserQuestion = sanitizeUserQuestion(event.userQuestion)
     const safeAttachments = sanitizeAttachments(event.attachments)
 
     const draftRecord = {
       id: recordId,
       title: buildTimelineRecordTitle(safeDescription) || '关系记录',
-      type: classifyTimelineEvent(safeDescription),
+      type: 'note',
       subjectRole: safeSubjectRole,
-      subjectRoleConfidence: safeSubjectRoleConfidence,
+      subjectRoleSource: safeSubjectRoleSource,
+      inputSubjectRole: safeInputSubjectRole,
       userQuestion: safeUserQuestion,
       chatSelfName: typeof event.chatSelfName === 'string' ? event.chatSelfName.trim() : '',
       chatTargetName: typeof event.chatTargetName === 'string' ? event.chatTargetName.trim() : '',
@@ -251,70 +215,8 @@ exports.main = async (event) => {
     }
     markPerf('previous_assessment_loaded')
 
-    const { data: timelineItems } = await db.collection('timeline_records')
-      .where({ caseId })
-      .orderBy('occurrenceAt', 'desc')
-      .get()
-    markPerf('timeline_loaded', { count: Array.isArray(timelineItems) ? timelineItems.length : 0 })
-
-    const recentTimeline = (timelineItems || [])
-      .filter((item) => item.type !== 'assessment' && item.type !== 'trend')
-      .map((item) => ({
-        id: item._id || item.id,
-        title: item.title,
-        type: item.type,
-        subjectRole: normalizeSubjectRole(item.subjectRole),
-        subjectRoleConfidence: normalizeSubjectRoleConfidence(item.subjectRoleConfidence),
-        userQuestion: sanitizeUserQuestion(item.userQuestion),
-        dateLabel: item.dateLabel || '',
-        description: item.description || '',
-        occurrenceAt: toISOStringOrUndefined(item.occurrenceAt),
-        createdAt: toISOStringOrUndefined(item.createdAt)
-      }))
-    recentTimeline.unshift({
-      id: draftRecord.id,
-      title: draftRecord.title,
-      type: draftRecord.type,
-      subjectRole: draftRecord.subjectRole,
-      subjectRoleConfidence: draftRecord.subjectRoleConfidence,
-      userQuestion: draftRecord.userQuestion,
-      dateLabel: draftRecord.dateLabel,
-      description: draftRecord.description,
-      occurrenceAt: toISOStringOrUndefined(draftRecord.occurrenceAt),
-      createdAt: toISOStringOrUndefined(draftRecord.createdAt)
-    })
-    const trimmedRecentTimeline = recentTimeline
-      .slice(0, 8)
-
-    const understoodEvent = await inferTimelineRecord({
-      description: safeDescription,
-      subjectRole: draftRecord.subjectRole,
-      chatSelfName: draftRecord.chatSelfName,
-      chatTargetName: draftRecord.chatTargetName,
-      recentTimeline: trimmedRecentTimeline,
-      caseProfile: caseDoc.profile,
-      settings: { aiEnabled: false, aiFallbackToRules: true }
-    })
-    markPerf('event_understood', { usedAI: Boolean(understoodEvent.usedAI) })
-    const understoodRecord = {
-      ...draftRecord,
-      title: understoodEvent.eventTitle || draftRecord.title,
-      type: understoodEvent.eventType || draftRecord.type,
-      semanticTags: understoodEvent.semanticTags,
-      eventUnderstanding: {
-        summary: understoodEvent.summary || '',
-        usedAI: Boolean(understoodEvent.usedAI)
-      }
-    }
-    trimmedRecentTimeline[0] = {
-      ...trimmedRecentTimeline[0],
-      title: understoodRecord.title,
-      type: understoodRecord.type,
-      semanticTags: understoodRecord.semanticTags
-    }
-
     const aiUsed = false
-    const finalRecord = understoodRecord
+    const finalRecord = draftRecord
 
     const {
       _id: _previousDocId,
@@ -365,13 +267,13 @@ exports.main = async (event) => {
       title: finalRecord.title,
       type: finalRecord.type,
       subjectRole: finalRecord.subjectRole,
-      subjectRoleConfidence: finalRecord.subjectRoleConfidence,
+      subjectRoleSource: finalRecord.subjectRoleSource,
+      inputSubjectRole: finalRecord.inputSubjectRole,
       userQuestion: finalRecord.userQuestion,
       dateLabel: finalRecord.dateLabel,
       description: finalRecord.description,
       attachments: finalRecord.attachments,
-      semanticTags: finalRecord.semanticTags,
-      eventUnderstanding: finalRecord.eventUnderstanding,
+      aiPending: true,
       occurrenceAt: finalRecord.occurrenceAt,
       createdAt: finalRecord.createdAt,
       aiUsed
@@ -417,7 +319,8 @@ exports.main = async (event) => {
       aiUsed,
       aiPending: true,
       subjectRole: finalRecord.subjectRole,
-      subjectRoleConfidence: finalRecord.subjectRoleConfidence,
+      inputSubjectRole: finalRecord.inputSubjectRole,
+      subjectRoleSource: finalRecord.subjectRoleSource,
       userQuestion: finalRecord.userQuestion,
       eventType: finalRecord.type,
       eventTitle: finalRecord.title

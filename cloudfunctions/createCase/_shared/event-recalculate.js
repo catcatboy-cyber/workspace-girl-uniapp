@@ -1,5 +1,10 @@
 const { deriveLabels } = require('./engine')
 const { analyzeTimelineEvent } = require('./ai-event')
+const {
+  buildFallbackAnalysis,
+  projectSemanticTagsFromNormalizedEvent,
+  replayAnalysisSnapshot
+} = require('./normalized-event')
 
 const ALL_CATEGORIES = [
   'initiative',
@@ -195,28 +200,12 @@ function buildNextRecordFocus(params) {
   }
 }
 
-async function recalculateAssessmentFromEvent(params) {
+function buildAssessmentFromAnalysis(params, analysis) {
   const {
     previous,
     event,
-    assessmentId,
-    recentTimeline = [],
-    caseProfile,
-    caseName,
-    selfProfile,
-    aiSettings,
-    traceId
+    assessmentId
   } = params
-  const analysis = await analyzeTimelineEvent({
-    latestResult: previous,
-    event,
-    recentTimeline,
-    caseProfile,
-    caseName,
-    selfProfile,
-    settings: aiSettings,
-    traceId
-  })
   const nextSignalSummary = applyCategoryEffects(normalizeSignalSummary(previous.signalSummary), analysis)
   const nextIntentScore = clamp((previous.intentScore ?? 0) + analysis.intentDelta, 0, 100)
   const nextRiskScore = clamp((previous.consistencyRiskScore ?? 0) + analysis.riskDelta, 0, 100)
@@ -257,11 +246,20 @@ async function recalculateAssessmentFromEvent(params) {
     nextAction,
     nextRecordFocus,
     rawReply: analysis.rawReply || '',
+    semanticTags: analysis.semanticTags || null,
+    normalizedEvent: analysis.normalizedEvent || null,
+    semanticSchemaVersion: analysis.semanticSchemaVersion || null,
+    scoringPolicyVersion: analysis.scoringPolicyVersion || null,
+    analysisSnapshot: analysis.analysisSnapshot || null,
+    normalizationWarnings: Array.isArray(analysis.normalizationWarnings) ? analysis.normalizationWarnings : [],
+    validationError: analysis.validationError || '',
     actionAdvice: analysis.actionAdvice || null,
     eventInsight: analysis.eventInsight || null,
+    aiProvidedEventInsight: Boolean(analysis.aiProvidedEventInsight),
     sideReadAdvice: analysis.sideReadAdvice || null,
     currentStatus: analysis.currentStatus || null,
     explanation: {
+      headline: analysis.summary || analysis.eventTitle || event.title || '',
       bullets: analysis.rationale,
       cautions: [
         analysis.usedAI ? '本次主要看对方动作、回应节奏和后续兑现。' : '本次先按可见事实做保守判断。',
@@ -279,6 +277,95 @@ async function recalculateAssessmentFromEvent(params) {
   }
 }
 
+async function recalculateAssessmentFromEvent(params) {
+  const {
+    previous,
+    event,
+    recentTimeline = [],
+    caseProfile,
+    caseName,
+    selfProfile,
+    aiSettings,
+    traceId
+  } = params
+  const analysis = await analyzeTimelineEvent({
+    latestResult: previous,
+    event,
+    recentTimeline,
+    caseProfile,
+    caseName,
+    selfProfile,
+    settings: aiSettings,
+    traceId
+  })
+  return buildAssessmentFromAnalysis(params, analysis)
+}
+
+function replayAssessmentFromEvent(params) {
+  const { event } = params
+  const replayed = replayAnalysisSnapshot(event.analysisSnapshot)
+  if (!replayed.ok) {
+    const fallback = buildFallbackAnalysis(event.description || event.title || '', replayed.error)
+    return buildAssessmentFromAnalysis(params, fallback)
+  }
+
+  const snapshot = replayed.value
+  const normalizedEvent = snapshot.event && typeof snapshot.event === 'object'
+    ? JSON.parse(JSON.stringify(snapshot.event))
+    : null
+  const semanticTags = event.semanticTags && typeof event.semanticTags === 'object'
+    ? event.semanticTags
+    : projectSemanticTagsFromNormalizedEvent(normalizedEvent || {
+        actor: 'unknown',
+        interaction: 'unclear',
+        commitmentStatus: 'unclear',
+        commitmentType: 'none',
+        evidenceType: 'unclear',
+        scene: [],
+        signals: [],
+        strength: 'weak'
+      }, 'fallback')
+  const summary = event.eventUnderstanding?.summary || event.title || ''
+  const analysis = {
+    eventType: snapshot.eventType,
+    eventTitle: event.title || '',
+    intentDelta: snapshot.intentDelta,
+    riskDelta: snapshot.riskDelta,
+    evidenceDelta: snapshot.evidenceDelta,
+    labels: [],
+    summary,
+    rationale: [],
+    confidence: 'low',
+    categories: snapshot.categories,
+    eventInsight: normalizedEvent
+      ? {
+          actor: normalizedEvent.actor,
+          interaction: normalizedEvent.interaction,
+          commitmentStatus: normalizedEvent.commitmentStatus,
+          evidenceType: normalizedEvent.evidenceType
+        }
+      : null,
+    currentStatus: null,
+    petLine: '',
+    petMood: 'neutral',
+    rawReply: '',
+    normalizedEvent,
+    semanticTags,
+    semanticSchemaVersion: snapshot.schemaVersion,
+    scoringPolicyVersion: snapshot.policyVersion,
+    analysisSnapshot: event.analysisSnapshot,
+    normalizationWarnings: [],
+    validationError: '',
+    usedAI: Boolean(event.aiUsed),
+    aiProvidedEventInsight: Boolean(event.aiUsed && normalizedEvent),
+    aiProvider: '',
+    aiModel: '',
+    tokenUsage: null
+  }
+  return buildAssessmentFromAnalysis(params, analysis)
+}
+
 module.exports = {
-  recalculateAssessmentFromEvent
+  recalculateAssessmentFromEvent,
+  replayAssessmentFromEvent
 }

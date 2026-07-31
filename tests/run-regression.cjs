@@ -48,6 +48,39 @@ async function runCase(name, fn) {
 }
 
 async function main() {
+  await runCase('normalized event protocol trusts model enums without keyword correction', async () => {
+    const aiEvent = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'ai-event.js'))
+    const { buildSubjectPrompt } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subject-role-prompt.js'))
+    const { projectSemanticTagsFromNormalizedEvent } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'normalized-event.js'))
+
+    const unknown = aiEvent.normalizeEventInsight({ actor: 'unknown', interaction: 'unclear', commitmentStatus: 'none', evidenceType: 'unclear' })
+    assert.deepEqual(unknown, { actor: 'unknown', interaction: 'unclear', commitmentStatus: 'none', evidenceType: 'unclear' })
+    const valid = aiEvent.normalizeEventInsight({ actor: 'target', interaction: 'rejected', commitmentStatus: 'none', evidenceType: 'fact' })
+    assert.deepEqual(valid, { actor: 'target', interaction: 'rejected', commitmentStatus: 'none', evidenceType: 'fact' })
+    assert.equal(typeof aiEvent.reconcileAnalysisWithExplicitRules, 'undefined')
+
+    const currentEvent = aiEvent.buildCurrentEventContext({
+      id: 'event_1',
+      description: '他邀请我去惠州玩',
+      subjectRole: 'unknown',
+      subjectRoleSource: 'pending',
+      inputSubjectRole: 'unspecified'
+    })
+    assert.equal(Object.prototype.hasOwnProperty.call(currentEvent, 'subjectRole'), false)
+    assert.equal(Object.prototype.hasOwnProperty.call(currentEvent, 'subjectRoleSource'), false)
+
+    const semanticTags = projectSemanticTagsFromNormalizedEvent({
+      actor: 'target', interaction: 'rejected', commitmentStatus: 'none', commitmentType: 'none',
+      evidenceType: 'fact', scene: ['offline_meet'], signals: ['avoidance'], strength: 'strong'
+    })
+    assert.equal(semanticTags.initiator, 'unknown')
+    assert.equal(semanticTags.response, 'rejected')
+    assert.ok(semanticTags.risk.includes('rejected'))
+
+    assert.equal(buildSubjectPrompt('unspecified'), '')
+    assert.ok(buildSubjectPrompt('both').length > 0)
+  })
+
   await runCase('register and login return current session data', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)
@@ -108,8 +141,10 @@ async function main() {
     })
     assert.equal(timelineResult.success, true)
     assert.ok(timelineResult.assessmentId)
-    assert.equal(timelineResult.eventType, 'positive')
+    assert.equal(timelineResult.eventType, 'note')
     assert.equal(timelineResult.eventTitle, '他主动约我吃饭')
+    assert.equal(timelineResult.subjectRole, 'unknown')
+    assert.equal(timelineResult.subjectRoleSource, 'pending')
 
     asUser(fake, 'user_case_owner')
     const after = await getCaseDetail({
@@ -121,6 +156,164 @@ async function main() {
     assert.equal(after.case.latestResult.triggerEventTitle, '他主动约我吃饭')
     assert.ok(after.case.timeline.length >= 1)
     assert.ok(after.case.timeline.some((item) => item._id === timelineResult.recordId))
+  })
+
+  await runCase('generateAssessmentAI applies zero-score fallback and clears pending when tokens are insufficient', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const createCase = loadFunction('createCase')
+    const createTimeline = loadFunction('createTimeline')
+    const generateAssessmentAI = loadFunction('generateAssessmentAI')
+
+    asUser(fake, 'user_assessment_no_tokens')
+    const created = await createCase({
+      name: '测试对象',
+      answers: sampleAnswers,
+      profile: { relationType: 'romantic' }
+    })
+    assert.equal(created.success, true)
+
+    asUser(fake, 'user_assessment_no_tokens')
+    const pending = await createTimeline({
+      caseId: created.caseId,
+      description: '他拒绝和我见面',
+      inputSubjectRole: 'unspecified',
+      occurrenceAt: '2026-04-21T19:45:00.000Z'
+    })
+    assert.equal(pending.success, true)
+    Object.assign(fake.__store.getCollection('users').get('user_assessment_no_tokens'), {
+      plan: 'free',
+      monthlyTokensUsed: 30000,
+      extraTokens: 0
+    })
+
+    asUser(fake, 'user_assessment_no_tokens')
+    const result = await generateAssessmentAI({
+      caseId: created.caseId,
+      assessmentId: pending.assessmentId,
+      recordId: pending.recordId
+    })
+    assert.equal(result.success, false)
+    assert.equal(result.code, 'TOKEN_INSUFFICIENT')
+    assert.equal(result.fallbackApplied, true)
+    assert.equal(result.latestResult.triggerEventType, 'note')
+    assert.equal(result.trend.intentDelta, 0)
+    assert.equal(result.trend.riskDelta, 0)
+    assert.equal(result.latestResult.validationError, 'AI_REQUEST_FAILED')
+    assert.equal(result.latestResult.analysisSnapshot.score.intentDelta, 0)
+
+    const assessment = fake.__store.getCollection('assessments').get(pending.assessmentId)
+    assert.equal(assessment.aiPending, false)
+    assert.equal(assessment.aiUsed, false)
+    const record = fake.__store.getCollection('timeline_records').get(pending.recordId)
+    assert.equal(record.subjectRole, 'unknown')
+    assert.equal(record.subjectRoleSource, 'fallback_unknown')
+    assert.equal(record.type, 'note')
+    assert.equal(record.semanticTagsSource, 'fallback')
+    assert.equal(record.analysisSnapshot.score.riskDelta, 0)
+  })
+
+  await runCase('generateAssessmentAI persists one NormalizedEventV1 result across the full chain', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const updateAISettings = loadFunction('updateAISettings')
+    asUser(fake, 'user_normalized_chain')
+    await updateAISettings({
+      models: [{
+        id: 'model_normalized', name: 'Mock', provider: 'openai-compatible',
+        baseUrl: 'https://mock.example.com/v1', model: 'mock-normalizer', apiKey: 'sk-mock-normalizer'
+      }],
+      defaultModelId: 'model_normalized',
+      aiEnabled: true,
+      promptModules: {
+        eventAssessment: {
+          enabled: true,
+          businessPrompt: {
+            nameZh: '即时反馈', roleZh: '关系语义分析助手', taskZh: '把当前事件归一化。',
+            rules: [{ zh: '旧规则不得进入提示词：看到吃饭一律算承诺。' }],
+            outputSchema: { legacy: true },
+            outputNotes: [{ zh: '返回旧评分字段。' }]
+          }
+        }
+      }
+    })
+
+    const createCase = loadFunction('createCase')
+    const createTimeline = loadFunction('createTimeline')
+    asUser(fake, 'user_normalized_chain')
+    const created = await createCase({ name: '归一化对象', answers: sampleAnswers, profile: { relationType: 'romantic' } })
+    asUser(fake, 'user_normalized_chain')
+    const pending = await createTimeline({
+      caseId: created.caseId,
+      description: '他答应周五请我吃饭',
+      occurrenceAt: '2026-04-21T19:45:00.000Z'
+    })
+    Object.assign(fake.__store.getCollection('users').get('user_normalized_chain'), { extraTokens: 10000 })
+
+    clearCloudFunctionCache(projectRoot)
+    const aiHttpPath = path.join(projectRoot, 'cloudfunctions', 'generateAssessmentAI', '_shared', 'ai-http.js')
+    const originalAiHttp = require(aiHttpPath)
+    let capturedMessages = []
+    require.cache[aiHttpPath] = {
+      id: aiHttpPath,
+      filename: aiHttpPath,
+      loaded: true,
+      exports: {
+        ...originalAiHttp,
+        postChatCompletions: async (params) => {
+          capturedMessages = params.messages
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              model: 'mock-normalizer',
+              usage: { prompt_tokens: 100, completion_tokens: 80, total_tokens: 180 },
+              choices: [{ message: { content: JSON.stringify({
+                schemaVersion: 1,
+                event: {
+                  actor: 'target', interaction: 'promised', commitmentStatus: 'promised',
+                  commitmentType: 'meal_invitation', evidenceType: 'fact', scene: ['meal'],
+                  signals: ['initiative', 'progression'], strength: 'medium'
+                },
+                copy: {
+                  title: '他答应周五请我吃饭', summary: '对方给出明确吃饭承诺', reason: '明确承诺',
+                  answer: '这是一个明确的正向行动信号。', targetMind: '愿意安排线下互动。',
+                  nextStep: '等周五前确认具体时间地点。', caution: '继续观察是否按时兑现。',
+                  petLine: '有承诺，也要看落地。', petMood: 'encouraging'
+                }
+              }) } }]
+            })
+          }
+        }
+      }
+    }
+    const generateAssessmentAI = require(path.join(projectRoot, 'cloudfunctions', 'generateAssessmentAI', 'index.js')).main
+    asUser(fake, 'user_normalized_chain')
+    const result = await generateAssessmentAI({
+      caseId: created.caseId,
+      assessmentId: pending.assessmentId,
+      recordId: pending.recordId
+    })
+
+    assert.equal(result.success, true)
+    assert.equal(result.aiUsed, true)
+    assert.equal(result.trend.intentDelta, 7)
+    assert.equal(result.latestResult.analysisSnapshot.score.riskDelta, -2)
+    const record = fake.__store.getCollection('timeline_records').get(pending.recordId)
+    assert.equal(record.subjectRole, 'target')
+    assert.equal(record.subjectRoleSource, 'ai_inferred')
+    assert.equal(record.semanticTagsSource, 'ai')
+    assert.equal(record.normalizedEvent.commitmentType, 'meal_invitation')
+    assert.equal(record.analysisSnapshot.eventType, 'positive')
+    const promptText = capturedMessages.map((item) => item.content).join('\n')
+    assert.equal(promptText.includes('旧规则不得进入提示词'), false)
+    assert.equal(promptText.includes('返回旧评分字段'), false)
+    assert.ok(promptText.includes('NormalizedEventV1') || promptText.includes('schemaVersion'))
+    assert.ok(promptText.includes('\u6211\u8bf7\u4ed6\u5403\u996d\uff0c\u4ed6\u62d2\u7edd\u4e86\u6211'))
+    assert.ok(promptText.includes('actor=target, interaction=rejected, commitmentStatus=none, commitmentType=none'))
+    assert.ok(promptText.includes('\u62d2\u7edd\u4e00\u4e2a\u65b0\u9080\u7ea6\u4e0d\u662f broken'))
   })
 
   await runCase('getCases returns timeline and assessments for homepage insights', async () => {
@@ -205,7 +398,7 @@ async function main() {
     assert.equal(detail.case.latestResult.triggerEventTitle, '后来又失约了')
   })
 
-  await runCase('createTimeline auto-classifies obvious refusal as risk', async () => {
+  await runCase('createTimeline keeps pending subject without keyword semantic tags', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)
 
@@ -228,16 +421,20 @@ async function main() {
     })
 
     assert.equal(result.success, true)
-    assert.equal(result.eventType, 'risk')
+    assert.equal(result.eventType, 'note')
+    assert.equal(result.subjectRole, 'unknown')
+    assert.equal(result.subjectRoleSource, 'pending')
 
     asUser(fake, 'user_risk_owner')
     const timeline = await getTimeline({
       caseId: created.caseId
     })
     assert.equal(timeline.success, true)
-    assert.ok(
-      timeline.timeline.some((item) => item.type === 'risk' && /不想再继续接触/.test(item.description || ''))
-    )
+    const saved = timeline.timeline.find((item) => /不想再继续接触/.test(item.description || ''))
+    assert.ok(saved)
+    assert.equal(saved.aiPending, true)
+    assert.equal(saved.subjectRoleSource, 'pending')
+    assert.equal(saved.semanticTags, undefined)
   })
 
   await runCase('createTimeline does not call legacy synchronous recalculation', async () => {
@@ -811,7 +1008,7 @@ async function main() {
     assert.equal(fake.__store.dumpCollection('cases').length, 1)
   })
 
-  await runCase('deleteTimeline rebuilds derived assessments and latest result', async () => {
+  await runCase('deleteTimeline rebuilds remaining events with snapshot-safe fallback', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)
 
@@ -836,6 +1033,35 @@ async function main() {
     })
     assert.equal(firstEvent.success, true)
 
+    const normalizedEvent = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'normalized-event.js'))
+    const firstAnalysis = normalizedEvent.buildAnalysisFromNormalizedEvent({
+      schemaVersion: 1,
+      event: {
+        actor: 'target', interaction: 'initiated', commitmentStatus: 'none', commitmentType: 'none',
+        evidenceType: 'fact', scene: ['meal'], signals: ['initiative'], strength: 'medium'
+      },
+      copy: {
+        title: '他主动约我吃饭', summary: '对方主动发起邀约', reason: '主动邀约', answer: '这是主动信号',
+        targetMind: '愿意推进互动', nextStep: '观察是否落实', caution: '继续看兑现', petLine: '先看行动落地。', petMood: 'neutral'
+      }
+    })
+    Object.assign(fake.__store.getCollection('timeline_records').get(firstEvent.recordId), {
+      type: firstAnalysis.eventType,
+      subjectRole: 'target',
+      subjectRoleSource: 'ai_inferred',
+      semanticTags: firstAnalysis.semanticTags,
+      semanticTagsSource: 'ai',
+      normalizedEvent: firstAnalysis.normalizedEvent,
+      analysisSnapshot: firstAnalysis.analysisSnapshot,
+      aiPending: false,
+      aiUsed: true
+    })
+    Object.assign(fake.__store.getCollection('assessments').get(firstEvent.assessmentId), {
+      source: 'event_recalculation',
+      aiPending: false,
+      aiUsed: true
+    })
+
     asUser(fake, 'user_delete_timeline_owner')
     const secondEvent = await createTimeline({
       caseId: created.caseId,
@@ -846,7 +1072,7 @@ async function main() {
 
     const riskRecord = fake.__store
       .dumpCollection('timeline_records')
-      .find((item) => item.caseId === created.caseId && item.type === 'risk' && /失约/.test(item.description || ''))
+      .find((item) => item.caseId === created.caseId && item._id === secondEvent.recordId)
     assert.ok(riskRecord)
 
     asUser(fake, 'user_delete_timeline_owner')
@@ -862,6 +1088,8 @@ async function main() {
     assert.ok(detail.case.assessments.length >= 2)
     assert.ok(detail.case.latestResult)
     assert.ok(!detail.case.timeline.some((item) => item._id === riskRecord._id))
+    assert.equal(detail.case.latestResult.triggerEventId, firstEvent.recordId)
+    assert.equal(detail.case.latestResult.analysisSnapshot.score.intentDelta, 6)
   })
 
   await runCase('manual recharge fulfillment grants only users.extraTokens once', async () => {

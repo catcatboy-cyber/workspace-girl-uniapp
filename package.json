@@ -8,6 +8,7 @@
     "test:pet-energy": "node tests/run-pet-energy.cjs",
     "test:content-security": "node tests/run-content-security.cjs",
     "test:regression": "node tests/run-regression.cjs",
+    "test:normalized-event": "node tests/run-normalized-event.cjs",
     "dev:custom": "uni -p",
     "dev:h5": "uni",
     "dev:h5:ssr": "uni --ssr",

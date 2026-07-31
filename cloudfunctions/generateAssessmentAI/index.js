@@ -7,6 +7,7 @@ const { SYSTEM_PROMPT, buildEventsContext, parseTagResults } = require('./_share
 const { postChatCompletions } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
 const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
+const { normalizeStoredSubjectRole } = require('./_shared/subject-role-prompt')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -33,13 +34,7 @@ function shortId(value) {
   return text ? text.slice(-10) : ''
 }
 
-function normalizeSubjectRole(value) {
-  return ['target', 'self', 'both', 'unknown'].includes(value) ? value : 'target'
-}
-
-function normalizeSubjectRoleConfidence(value) {
-  return ['user_selected', 'confirmed'].includes(value) ? value : 'user_selected'
-}
+// normalizeSubjectRole 已删除；使用 normalizeStoredSubjectRole（从 subject-role-prompt 导入）
 
 function sanitizeUserQuestion(value) {
   const allowed = {
@@ -155,14 +150,16 @@ function compactTimelineItem(item) {
     id: item._id || item.id,
     title: item.title,
     type: item.type,
-    subjectRole: normalizeSubjectRole(item.subjectRole),
-    subjectRoleConfidence: normalizeSubjectRoleConfidence(item.subjectRoleConfidence),
+    subjectRole: normalizeStoredSubjectRole(item.subjectRole),
+    inputSubjectRole: typeof item.inputSubjectRole === 'string' ? item.inputSubjectRole : undefined,
+    subjectRoleSource: typeof item.subjectRoleSource === 'string' ? item.subjectRoleSource : undefined,
     userQuestion: sanitizeUserQuestion(item.userQuestion),
     dateLabel: item.dateLabel || '',
     description: item.description || '',
     chatSelfName: typeof item.chatSelfName === 'string' ? item.chatSelfName.trim().slice(0, 30) : '',
     chatTargetName: typeof item.chatTargetName === 'string' ? item.chatTargetName.trim().slice(0, 30) : '',
     semanticTags: item.semanticTags,
+    semanticTagsSource: typeof item.semanticTagsSource === 'string' ? item.semanticTagsSource : undefined,
     occurrenceAt: toISOStringOrUndefined(item.occurrenceAt),
     createdAt: toISOStringOrUndefined(item.createdAt)
   }
@@ -202,6 +199,7 @@ async function batchTagEvents(event) {
 
   const events = (allTimeline || [])
     .filter((item) => isSemanticTaggableTimelineRecord(item))
+    .filter((item) => item.subjectRoleSource !== 'pending' && !item.aiPending)
     .filter((item) => item.semanticTagsSource !== 'user' && !item.semanticTags)
     .slice(0, 30)
     .reverse()
@@ -280,6 +278,9 @@ function mapError(error) {
 exports.main = async (event = {}) => {
   const startedAt = Date.now()
   const traceId = `gai_${startedAt}_${randomHex(3)}`
+  let caseId = ''
+  let assessmentId = ''
+  let recordId = ''
   const markPerf = (stage, extra = {}) => {
     console.log('[generateAssessmentAI perf]', JSON.stringify({
       traceId,
@@ -294,9 +295,9 @@ exports.main = async (event = {}) => {
 
     markPerf('start')
     const userId = await requireAuthenticatedUserId(app, event)
-    const caseId = typeof event.caseId === 'string' ? event.caseId.trim() : ''
-    const assessmentId = typeof event.assessmentId === 'string' ? event.assessmentId.trim() : ''
-    const recordId = typeof event.recordId === 'string' ? event.recordId.trim() : ''
+    caseId = typeof event.caseId === 'string' ? event.caseId.trim() : ''
+    assessmentId = typeof event.assessmentId === 'string' ? event.assessmentId.trim() : ''
+    recordId = typeof event.recordId === 'string' ? event.recordId.trim() : ''
     console.log('[generateAssessmentAI trace]', JSON.stringify({
       traceId,
       stage: 'input',
@@ -318,15 +319,15 @@ exports.main = async (event = {}) => {
     const assessment = normalizeDoc(await db.collection('assessments').doc(assessmentId).get())
     if (!assessment || assessment.caseId !== caseId) throw new Error('ASSESSMENT_NOT_FOUND')
 
-    // 幂等保护：已处理过的 assessment 不再重复消费
-    if (assessment.aiUsed) {
+    // 幂等保护：无论 AI 成功还是保守兜底，只要 pending 已清除就不重复消费。
+    if (!assessment.aiPending) {
       console.log('[generateAssessmentAI trace]', JSON.stringify({
         traceId,
         stage: 'idempotent_skip',
         assessmentIdTail: shortId(assessmentId),
-        reason: 'already processed (aiUsed=true)'
+        reason: 'already processed (aiPending=false)'
       }))
-      return { success: true, assessmentId, recordId: assessment.triggerEventId || '', aiUsed: true, alreadyProcessed: true }
+      return { success: true, assessmentId, recordId: assessment.triggerEventId || '', aiUsed: Boolean(assessment.aiUsed), alreadyProcessed: true }
     }
 
     console.log('[generateAssessmentAI trace]', JSON.stringify({
@@ -379,7 +380,9 @@ exports.main = async (event = {}) => {
 
     let recalculated = null
 
-    // Token门控 - eventAssessment
+    // Token门控 - eventAssessment。门控失败时仍写入 unknown + note + 零分兜底，
+    // 避免时间线永久停留在“主体分析中”。
+    let gateFailure = null
     const accessEA = await checkFeatureAccess(db, userId, '即时反馈')
     if (!accessEA.allowed) {
       console.log('[generateAssessmentAI trace]', JSON.stringify({
@@ -389,19 +392,21 @@ exports.main = async (event = {}) => {
         assessmentIdTail: shortId(assessmentId),
         reason: accessEA.reason || ''
       }))
-      return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: accessEA.reason }
+      gateFailure = { code: 'FEATURE_NOT_AVAILABLE', message: accessEA.reason }
     }
-    const tokEA = await checkTokenBalance(db, userId, 2000)
-    if (!tokEA.ok) {
-      console.log('[generateAssessmentAI trace]', JSON.stringify({
-        traceId,
-        stage: 'token_denied',
-        caseIdTail: shortId(caseId),
-        assessmentIdTail: shortId(assessmentId),
-        code: tokEA.code,
-        message: tokEA.message
-      }))
-      return { success: false, code: tokEA.code, message: tokEA.message, ...tokEA }
+    if (!gateFailure) {
+      const tokEA = await checkTokenBalance(db, userId, 2000)
+      if (!tokEA.ok) {
+        console.log('[generateAssessmentAI trace]', JSON.stringify({
+          traceId,
+          stage: 'token_denied',
+          caseIdTail: shortId(caseId),
+          assessmentIdTail: shortId(assessmentId),
+          code: tokEA.code,
+          message: tokEA.message
+        }))
+        gateFailure = { ...tokEA, code: tokEA.code, message: tokEA.message }
+      }
     }
 
     try {
@@ -413,11 +418,11 @@ exports.main = async (event = {}) => {
         caseProfile: caseDoc.profile,
         caseName,
         selfProfile,
-        aiSettings,
+        aiSettings: gateFailure ? { aiEnabled: false } : aiSettings,
         traceId
       })
     } catch (error) {
-      markPerf('ai_failed_use_rules', { message: error instanceof Error ? error.message : String(error) })
+      markPerf('ai_failed_use_fallback', { message: error instanceof Error ? error.message : String(error) })
       recalculated = await recalculateAssessmentFromEvent({
         previous,
         event: triggerEvent,
@@ -426,14 +431,23 @@ exports.main = async (event = {}) => {
         caseProfile: caseDoc.profile,
         caseName,
         selfProfile,
-        aiSettings: { aiEnabled: false, aiFallbackToRules: true },
+        aiSettings: { aiEnabled: false },
         traceId
       })
       recalculated.aiFailed = true
       recalculated.explanation = {
         ...(recalculated.explanation || {}),
         cautions: [
-          'AI 生成超时或返回格式不完整，本次先显示规则兜底结果。',
+          'AI 生成超时或返回格式不完整，本次按主体不明、普通记录和零分保守保存。',
+          ...((recalculated.explanation?.cautions || []).slice(0, 2))
+        ]
+      }
+    }
+    if (gateFailure) {
+      recalculated.explanation = {
+        ...(recalculated.explanation || {}),
+        cautions: [
+          'AI 权限或 Crush Credits 暂不可用，本次按主体不明、普通记录和零分保守保存。',
           ...((recalculated.explanation?.cautions || []).slice(0, 2))
         ]
       }
@@ -471,15 +485,49 @@ exports.main = async (event = {}) => {
       warningText: trend.warningText
     })
     await db.collection('assessments').doc(assessmentId).update(buildAssessmentUpdate(recalculated))
-    await db.collection('timeline_records').doc(triggerEvent.id).update({
+    // NormalizedEventV1 是主体、标签、类型和评分的唯一语义来源。
+    const resolvedActor = recalculated.normalizedEvent?.actor || recalculated.eventInsight?.actor
+    const resolvedSubjectRole = ['target', 'self', 'both', 'unknown'].includes(resolvedActor) ? resolvedActor : 'unknown'
+    // AI 是唯一判断者：AI 成功且提供了 eventInsight → ai_inferred；否则 fallback_unknown
+    const aiActuallyInferred = recalculated.aiUsed && recalculated.aiProvidedEventInsight
+    const resolvedSource = aiActuallyInferred ? 'ai_inferred' : 'fallback_unknown'
+    const refreshedSemanticTags = triggerEvent.semanticTagsSource === 'user'
+      ? triggerEvent.semanticTags
+      : recalculated.semanticTags
+    console.log('[generateAssessmentAI diag]', JSON.stringify({
+      traceId,
+      stage: 'subjectRole_resolve',
+      aiUsed: Boolean(recalculated.aiUsed),
+      rawActor: resolvedActor,
+      resolvedSubjectRole,
+      resolvedSource,
+      eventInsight: recalculated.eventInsight,
+      triggerEventId: triggerEvent.id
+    }))
+    const timelineUpdate = {
       title: recalculated.triggerEventTitle || triggerEvent.title,
       type: recalculated.triggerEventType || triggerEvent.type,
+      subjectRole: resolvedSubjectRole,
+      subjectRoleSource: resolvedSource,
       aiUsed: Boolean(recalculated.aiUsed),
+      aiPending: false,
+      aiFailed: Boolean(recalculated.aiFailed),
+      normalizedEvent: _.set(recalculated.normalizedEvent || null),
+      semanticSchemaVersion: recalculated.semanticSchemaVersion || null,
+      scoringPolicyVersion: recalculated.scoringPolicyVersion || null,
+      analysisSnapshot: _.set(recalculated.analysisSnapshot || null),
+      normalizationWarnings: _.set(recalculated.normalizationWarnings || []),
+      validationError: recalculated.validationError || '',
       eventUnderstanding: _.set({
         summary: recalculated.explanation?.headline || recalculated.triggerEventTitle || '',
         usedAI: Boolean(recalculated.aiUsed)
       })
-    })
+    }
+    if (triggerEvent.semanticTagsSource !== 'user') {
+      timelineUpdate.semanticTags = _.set(refreshedSemanticTags)
+      timelineUpdate.semanticTagsSource = aiActuallyInferred ? 'ai' : 'fallback'
+    }
+    await db.collection('timeline_records').doc(triggerEvent.id).update(timelineUpdate)
     for (const autoRecord of autoRecords) {
       await db.collection('timeline_records').doc(autoRecord.id).set({
         caseId,
@@ -504,7 +552,7 @@ exports.main = async (event = {}) => {
       riskDelta: trend.riskDelta
     }))
 
-    return {
+    const successResult = {
       success: true,
       assessmentId,
       recordId: triggerEvent.id,
@@ -512,6 +560,14 @@ exports.main = async (event = {}) => {
       latestResult: recalculated,
       trend
     }
+    return gateFailure
+      ? {
+          ...successResult,
+          ...gateFailure,
+          success: false,
+          fallbackApplied: true
+        }
+      : successResult
   } catch (error) {
     markPerf('error', { message: error instanceof Error ? error.message : String(error) })
     const authError = buildAuthErrorResponse(error)

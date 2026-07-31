@@ -148,6 +148,8 @@ class FakeDocument {
         cloned[key] = (current[key] || 0) + value.amount
       } else if (value && typeof value === 'object' && value.__op === 'push') {
         cloned[key] = [...(Array.isArray(current[key]) ? current[key] : []), ...value.values]
+      } else if (value && typeof value === 'object' && value.__op === 'set') {
+        cloned[key] = value.value
       }
     }
 
@@ -157,6 +159,12 @@ class FakeDocument {
     })
 
     return { updated: 1 }
+  }
+
+  async set(value) {
+    const map = this.store.getCollection(this.name)
+    map.set(this.id, { _id: this.id, ...clone(value) })
+    return { created: 1, updated: 1 }
   }
 
   async remove() {
@@ -291,6 +299,9 @@ function createFakeCloudbase() {
         },
         push(values) {
           return { __op: 'push', values: Array.isArray(values) ? [...values] : [values] }
+        },
+        set(value) {
+          return { __op: 'set', value }
         }
       },
       collection(name) {

@@ -33,7 +33,7 @@
 </view>
           <view class="timeline-section-head-v2 anim-card" style="animation-delay:0.2s"><text class="section-title-v2">事件流 · {{ activeTimelineFilterLabel }}</text></view>
           <view v-if="filteredManualTimeline.length === 0" class="empty-sub-v2 anim-card" style="animation-delay:0.25s">当前筛选下还没有记录。</view>
-          <view v-else class="event-list-v2 anim-card" style="animation-delay:0.25s"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view :class="['event-axis-v2', toneClass(item.type)]"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text></view><view class="event-body-v2"><text class="event-desc-v2">{{ item.description }}</text><view v-if="item.subjectRole || getTimelineRecordTags(item).scene.length > 0" class="tag-row-v2" style="margin-top:4rpx;"><text v-if="item.subjectRole" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole) }}</text><text v-for="tag in getTimelineRecordTags(item).scene" :key="tag" class="tag-v2 sm">{{ sceneLabel(tag) }}</text></view><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · {{ aiLabel() }} 提取</view><view v-else class="img-analysis-label">图片 · {{ aiLabel() }} 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
+          <view v-else class="event-list-v2 anim-card" style="animation-delay:0.25s"><view v-for="item in visibleManualTimeline" :key="item._id || item.id" class="event-row-v2"><view :class="['event-axis-v2', toneClass(item.type)]"><text class="event-date-v2">{{ formatAxisDate(item) }}</text><text class="event-clock-v2">{{ formatAxisTime(item) }}</text></view><view class="event-body-v2"><text class="event-desc-v2">{{ item.description }}</text><view v-if="hasVisibleSubjectRole(item) || getTimelineRecordTags(item).scene.length > 0" class="tag-row-v2" style="margin-top:4rpx;"><text v-if="hasVisibleSubjectRole(item)" class="tag-v2 sm">{{ mapSubjectRoleLabel(item.subjectRole, item.subjectRoleSource) }}</text><text v-for="tag in getTimelineRecordTags(item).scene" :key="tag" class="tag-v2 sm">{{ sceneLabel(tag) }}</text></view><view v-if="item.sections && item.sections.length" class="side-body-v2"><view v-for="sec in item.sections" :key="sec.label" class="side-item-v2"><text class="side-label-v2">{{ sec.label }}</text><text class="side-text-v2">{{ sec.text }}</text></view></view><view v-if="getImageAttachments(item).length > 0" class="img-grid-v2" style="margin-top:12rpx;"><view v-for="(att, ai) in getImageAttachments(item)" :key="att.fileID" class="img-box-v2" @click="previewTimelineImages(item, ai)"><image :src="imageUrlMap[att.fileID] || ''" class="img-preview-v2" mode="aspectFill" /><text v-if="att.analysis?.isChatRecord" class="img-chat-badge">聊</text></view></view><view v-if="getImageAnalyses(item).length > 0" class="img-analysis-list"><view v-for="att in getImageAnalyses(item)" :key="'analysis-' + att.fileID" class="img-analysis-card"><view v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-label">聊天截图 · {{ aiLabel() }} 提取</view><view v-else class="img-analysis-label">图片 · {{ aiLabel() }} 摘要</view><text v-if="att.analysis.isChatRecord && att.analysis.extractedText" class="img-analysis-extracted">{{ att.analysis.extractedText }}</text><text v-if="att.analysis.summary" class="img-analysis-summary">{{ att.analysis.summary }}</text><view v-if="att.analysis.confidence" class="img-analysis-footer"><text :class="['tag-v2 sm', confidenceClass(att.analysis.confidence)]">{{ mapConfidenceLabel(att.analysis.confidence) }}</text></view></view></view><view v-if="getAudioBadges(item).length > 0" class="tag-row-v2" style="margin-top:6rpx;"><text v-for="badge in getAudioBadges(item)" :key="badge" class="tag-v2 sm">{{ badge }}</text></view>
                 <view class="event-meta-v2"><text>发生时间：{{ item.date }}</text><text v-if="formatRecordedAt(item)">{{ formatRecordedAt(item) }}</text></view>
                 <view v-if="getLinkedAssessment(item)" class="analysis-summary-v2" @click="toggleExpandedAnalysis(getLinkedAssessmentKey(item))">
                   <view class="summary-line-v2">
@@ -312,7 +312,7 @@ const latestActionPlanPanel = computed(() => {
     return {
       show: true,
       text: latestResult.value.aiUsed === false
-        ? '这次 ' + aiLabel() + ' 原文回复没有生成：模型响应超时，系统先用了规则兜底。'
+        ? '这次 ' + aiLabel() + ' 调用失败或语义结果未通过校验：本条已按主体不明和零分保守保存。'
         : '这次 ' + aiLabel() + ' 原文回复没有返回，下面先显示结构化建议。',
       missing: true,
       sections: []
@@ -742,7 +742,7 @@ function getAssessmentActionPlanPanel(item: any) {
     return {
       show: true,
       text: item.aiUsed === false
-        ? '这次 ' + aiLabel() + ' 原文回复没有生成：模型响应超时，系统先用了规则兜底。'
+        ? '这次 ' + aiLabel() + ' 调用失败或语义结果未通过校验：本条已按主体不明和零分保守保存。'
         : '这次 ' + aiLabel() + ' 原文回复没有返回。',
       missing: true,
       sections: []
@@ -906,13 +906,19 @@ function mapAction(action?: string) {
   }
 }
 
-function mapSubjectRoleLabel(role?: string) {
+function mapSubjectRoleLabel(role?: string, source?: string) {
+  if (source === 'pending') return '主体分析中'
   switch (role) {
     case 'self': return '我的记录'
     case 'both': return '双方互动'
     case 'target': return '对方记录'
-    default: return ''
+    case 'unknown': return source === 'ai_inferred' ? 'AI判断：主体不清' : '主体未识别'
+    default: return '主体未识别'
   }
+}
+
+function hasVisibleSubjectRole(item?: any) {
+  return Boolean(item && (item.subjectRole || item.subjectRoleSource))
 }
 
 function mapDirectionCopy(direction: 'up' | 'down' | 'flat', positiveWhenUp: string, positiveWhenDown: string) {
@@ -1175,6 +1181,8 @@ async function syncSemanticTags() {
   const timeline = caseFile.value.timeline || []
   const untagged = timeline.filter((item: any) =>
     isSemanticTaggableTimelineRecord(item) &&
+    item.subjectRoleSource !== 'pending' &&
+    !item.aiPending &&
     item.semanticTagsSource !== 'user' &&
     !item.semanticTags
   )

@@ -1,5 +1,7 @@
 ﻿const cloudbase = require('@cloudbase/node-sdk')
 const { buildAuthErrorResponse } = require('./_shared/auth')
+const { sanitizePromptModules } = require('./_shared/ai-prompt-config')
+const { MODULE_OUTPUT_CONTRACTS, MODULE_RUNTIME_FIELDS } = require('./_shared/prompt-admin-view')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const _ = db.command
@@ -46,7 +48,7 @@ async function requireAdminUserId(userId) {
   error.code = 'ADMIN_REQUIRED'
   throw error
 }
-const PROMPT_MODULE_KEYS = ['eventAssessment', 'eventUnderstanding', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
+const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
   legacyRule: 800,
@@ -67,7 +69,7 @@ const DEFAULT_RUNTIME_CONFIG = {
   eventContextLimit: 3,
   weeklyEventLimit: 10,
   weeklySideEventLimit: 8,
-  eventMaxTokens: 650,
+  eventMaxTokens: 800,
   eventUnderstandingMaxTokens: 260,
   batchTagMaxTokens: 600,
   weeklyMaxTokens: 650,
@@ -130,28 +132,22 @@ const PROMPT_FIXED_GUARDRAILS = {
   eventAssessment: {
     lockedRules: [
       '只根据用户提供的事实、事件上下文和画像字段判断；不要编造行为、承诺、情绪或关系状态。',
-      'subjectRole 为 self/both/unknown 时，代码会自动降权或修正评分。',
+      'subjectRole 由 NormalizedEventV1.event.actor 生成；subjectRoleSource 为 pending/ai_inferred/fallback_unknown。actor=self/unknown 时三项评分归零。',
       '涉及亲密、边界、酒精或私密空间时，不替用户同意升级关系，优先尊重、节奏和安全。',
       '未成年人只允许友谊、边界、安全感和健康沟通建议。',
-      'AI 返回后仍会校验枚举、数值范围、字段长度，并在失败时按规则兜底。'
+      'AI 返回后校验 NormalizedEventV1 协议、枚举和字段长度；失败时保存 unknown + note + 零分。'
     ],
     runtimeContext: [
-      'currentAssessment={intentScore,riskScore,evidenceLevel,labels,nextAction}',
       'selfProfile={gender,ageRange,identity,zodiac,constellation,aiStyle,aiBoldness}',
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
-      'recentEvents limited by runtimeConfig.eventContextLimit',
-      'currentEvent={title,description,subjectRole,semanticTags}'
+      'recentTimeline limited by runtimeConfig.eventContextLimit',
+      'currentEvent={description,inputSubjectRole,userQuestion,chatSelfName,chatTargetName,occurrenceAt,createdAt}'
     ],
     outputContract: [
-      'eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply,petLine,petMood',
-      'eventType: positive | risk | verification | note',
-      'rationale is a single short string (max 10 Chinese characters), not an array.',
-      'currentStatus 只返回 tags, summary, caution。',
-      'rawReply 只允许四段标题：小咪先回答你的问题 / 对方可能在想 / 下一步可以这样推进 / 留个心眼。每段2-3句。第一段必须先正面回答用户最想知道的问题。',
-      'petLine is a short sentence (max 50 chars) in XiaoMi first-person voice. petMood is one of: cheerful|cautious|encouraging|neutral|warning.',
-      'Do not return labels, confidence or actionAdvice for speed.',
-      'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.',
-      'JSON only; code validates and normalizes the result.'
+      'NormalizedEventV1={schemaVersion,event,copy}',
+      'event={actor,interaction,commitmentStatus,commitmentType,evidenceType,scene,signals,strength}',
+      'copy={title,summary,reason,answer,targetMind,nextStep,caution,petLine,petMood}',
+      'AI 不返回 eventType 或任何评分数值；代码执行 SCORING_POLICY_V1。'
     ]
   },
   eventUnderstanding: {
@@ -164,7 +160,7 @@ const PROMPT_FIXED_GUARDRAILS = {
     runtimeContext: [
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
       'recentTimeline latest records',
-      'newEvent={subjectRole,description}'
+      'newEvent={inputSubjectRole,description}'
     ],
     outputContract: [
       'eventType,eventTitle,summary,semanticTags',
@@ -471,12 +467,12 @@ function getRuntimePreview(moduleKey) {
       'selfProfile={gender,ageRange,identity,zodiac,constellation,aiStyle,aiBoldness}',
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
       'recentEvents limited by runtimeConfig.eventContextLimit',
-      'currentEvent={title,description,subjectRole,semanticTags,...}'
+      'currentEvent={title,description,inputSubjectRole,...}（不传入待推断的 subjectRole 占位值）'
     ],
     eventUnderstanding: [
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
       'recentTimeline latest 3 records',
-      'newEvent={subjectRole,description}'
+      'newEvent={inputSubjectRole,description}'
     ],
     weeklyReview: [
       'persona: selfProfile.aiStyle + selfProfile.aiBoldness -> backend personaConfig; under18 may override final style/intensity.',
@@ -555,8 +551,8 @@ function buildPromptAdminView(settings) {
       title: meta.title,
       description: meta.description,
       guardrails: guardrails.lockedRules || [],
-      runtimeContext: guardrails.runtimeContext || [],
-      outputContract: guardrails.outputContract || [],
+      runtimeContext: MODULE_RUNTIME_FIELDS[key] || guardrails.runtimeContext || [],
+      outputContract: MODULE_OUTPUT_CONTRACTS[key] || guardrails.outputContract || [],
       effectivePreview: buildPromptPreview(key, promptConfig[key], source)
     }
   }
@@ -565,7 +561,7 @@ function buildPromptAdminView(settings) {
     version: 1,
     policyLines: [
       '业务提示词（角色、任务、规则、输出要求）只从后台 promptModules 读取。',
-      '后台缺字段时不再回退到代码里的业务提示词；该模块会规则兜底或跳过 AI。',
+      'eventAssessment 后台只保存简短角色和任务；固定协议与评分政策由代码提供。',
       '安全护栏、输出结构校验、未成年人和边界敏感保护保留在代码中，并在后台只读可见。',
       '最终拼接顺序：安全护栏 + 用户选择的人格模板 + 后台业务提示词 + 运行时上下文。'
     ],
@@ -624,9 +620,9 @@ function migrateToV2(settings) {
     }
     clone.promptConfigVersion = 1
     clone.promptConfig = normalizePromptConfig(clone.promptConfig)
-    clone.promptModules = clone.promptModules && typeof clone.promptModules === 'object' ? clone.promptModules : {}
+    clone.promptModules = sanitizePromptModules(clone.promptModules)
     clone.personaConfig = normalizePersonaConfig(clone.personaConfig)
-    clone.promptAdminView = normalizePromptAdminView(clone.promptAdminView, clone)
+    clone.promptAdminView = buildPromptAdminView(clone)
     clone.defaultPromptConfig = getDefaultPromptConfig()
     clone.defaultPersonaConfig = normalizePersonaConfig(null)
     clone.runtimeConfigVersion = 1
@@ -649,9 +645,9 @@ function migrateToV2(settings) {
   clone.aiDefaultModelId = 'default'
   clone.promptConfigVersion = 1
   clone.promptConfig = normalizePromptConfig(clone.promptConfig)
-  clone.promptModules = clone.promptModules && typeof clone.promptModules === 'object' ? clone.promptModules : {}
+  clone.promptModules = sanitizePromptModules(clone.promptModules)
   clone.personaConfig = normalizePersonaConfig(clone.personaConfig)
-  clone.promptAdminView = normalizePromptAdminView(clone.promptAdminView, clone)
+  clone.promptAdminView = buildPromptAdminView(clone)
   clone.defaultPromptConfig = getDefaultPromptConfig()
   clone.defaultPersonaConfig = normalizePersonaConfig(null)
   clone.runtimeConfigVersion = 1

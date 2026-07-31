@@ -6,7 +6,10 @@ const db = app.database()
 const GLOBAL_AI_SETTINGS_ID = 'settings_global_ai'
 const BILLING_DOC_ID = 'settings_billing'
 const { ensureBillingSettings } = require('./_shared/billing')
-const PROMPT_MODULE_KEYS = ['eventAssessment', 'eventUnderstanding', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
+const { buildEventAssessmentMessages } = require('./_shared/ai-event')
+const { sanitizePromptModules } = require('./_shared/ai-prompt-config')
+const { MODULE_OUTPUT_CONTRACTS, MODULE_RUNTIME_FIELDS } = require('./_shared/prompt-admin-view')
+const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
   legacyRule: 800,
@@ -27,7 +30,7 @@ const DEFAULT_RUNTIME_CONFIG = {
   eventContextLimit: 3,
   weeklyEventLimit: 10,
   weeklySideEventLimit: 8,
-  eventMaxTokens: 650,
+  eventMaxTokens: 800,
   eventUnderstandingMaxTokens: 260,
   batchTagMaxTokens: 600,
   weeklyMaxTokens: 650,
@@ -65,7 +68,7 @@ function createEmptyPersonaConfig() {
   }
 }
 const COMMON_LOCKED_RULES = [
-  '输出必须是可解析 JSON；代码会校验枚举、数值范围和字段长度，失败时回退到规则结果。',
+  '需要 JSON 的模块必须输出可解析 JSON；协议失败时按主体不明、普通记录和零分保守保存。',
   '只根据用户提供的事实、事件上下文和画像字段判断；不要编造行为、承诺、情绪或关系状态。',
   '未成年人场景只允许友谊、边界、安全感和健康沟通建议；不要生成成人化、性暗示、饮酒、开房、操控或越界行为建议。'
 ]
@@ -73,21 +76,18 @@ const COMMON_LOCKED_RULES = [
 const PROMPT_MODULE_META = {
   eventAssessment: {
     title: '即时反馈',
-    description: '首页即时反馈、评估历史快照、事件触发后的关系评分重算。',
+    description: '单次 AI 语义归一化；代码统一评分、标签投影和历史快照。',
     runtimeContext: [
-      'currentAssessment={intentScore,riskScore,evidenceLevel,labels,nextAction}',
       'selfProfile={gender,ageRange,identity,zodiac,constellation,aiStyle,aiBoldness}',
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
-      'recentEvents limited by runtimeConfig.eventContextLimit',
-      'currentEvent={title,description,subjectRole,semanticTags}'
+      'recentTimeline limited by runtimeConfig.eventContextLimit',
+      'currentEvent={description,inputSubjectRole,userQuestion,chatSelfName,chatTargetName,occurrenceAt,createdAt}'
     ],
     outputContract: [
-      'eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply',
-      'eventType: positive | risk | verification | note',
-      'currentStatus 只返回 tags, summary, caution。',
-      'rawReply 四段标题：小咪先回答你的问题 / 对方可能在想 / 下一步可以这样推进 / 留个心眼（每段2-3句）。第一段必须先正面回答 userQuestion.label。',
-      'Do not return labels, confidence or actionAdvice for speed.',
-      'eventInsight={actor,interaction,commitmentStatus,evidenceType}; all values are fixed enums and validated by code.'
+      'NormalizedEventV1={schemaVersion,event,copy}',
+      'event={actor,interaction,commitmentStatus,commitmentType,evidenceType,scene,signals,strength}',
+      'copy={title,summary,reason,answer,targetMind,nextStep,caution,petLine,petMood}',
+      'AI 不返回 eventType 或任何评分数值；代码执行 SCORING_POLICY_V1。'
     ]
   },
   eventUnderstanding: {
@@ -96,7 +96,7 @@ const PROMPT_MODULE_META = {
     runtimeContext: [
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
       'recentTimeline latest records',
-      'newEvent={subjectRole,description}'
+      'newEvent={inputSubjectRole,description}'
     ],
     outputContract: [
       'eventType,eventTitle,summary,semanticTags',
@@ -156,6 +156,46 @@ function toISO(value) {
   if (!value) return ''
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '' : date.toISOString()
+}
+
+function buildAdminSelfProfile(user = {}) {
+  const source = user.selfProfile && typeof user.selfProfile === 'object' ? user.selfProfile : {}
+  return {
+    nickname: String(user.nickName || user.nickname || source.nickname || '').trim(),
+    avatarUrl: String(user.avatarUrl || source.avatarUrl || source.avatar || '').trim(),
+    gender: String(source.gender || '').trim(),
+    ageRange: String(source.ageRange || '').trim(),
+    identity: String(source.identity || '').trim(),
+    zodiac: String(source.zodiac || '').trim(),
+    constellation: String(source.constellation || '').trim(),
+    mbtiCode: String(source.mbtiCode || '').trim(),
+    aiStyle: String(source.aiStyle || '').trim(),
+    aiBoldness: String(source.aiBoldness || '').trim(),
+    completedAt: toISO(source.completedAt),
+    updatedAt: toISO(source.updatedAt)
+  }
+}
+
+async function resolveAdminAvatarUrls(items = []) {
+  const fileIds = [...new Set(items
+    .map((item) => item?.profile?.avatarUrl)
+    .filter((value) => typeof value === 'string' && value.startsWith('cloud://')))]
+  if (fileIds.length === 0) return items
+
+  try {
+    const urlRes = await app.getTempFileURL({ fileList: fileIds })
+    const fileMap = {}
+    for (const file of urlRes?.fileList || []) {
+      if (file.fileID && file.tempFileURL) fileMap[file.fileID] = file.tempFileURL
+    }
+    items.forEach((item) => {
+      const fileId = item?.profile?.avatarUrl
+      if (fileMap[fileId]) item.profile.avatarUrl = fileMap[fileId]
+    })
+  } catch (error) {
+    console.error('[adminManage] resolve user avatar failed:', error?.message || error)
+  }
+  return items
 }
 
 function redactKey(key) {
@@ -438,12 +478,12 @@ function getRuntimePreview(moduleKey) {
       'selfProfile={gender,ageRange,identity,zodiac,constellation,aiStyle,aiBoldness}',
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
       'recentEvents limited by runtimeConfig.eventContextLimit',
-      'currentEvent={title,description,subjectRole,semanticTags,...}'
+      'currentEvent={title,description,inputSubjectRole,...}（不传入待推断的 subjectRole 占位值）'
     ],
     eventUnderstanding: [
       'targetProfile={relationType,age,gender,occupation,zodiac,constellation}',
       'recentTimeline latest 3 records',
-      'newEvent={subjectRole,description}'
+      'newEvent={inputSubjectRole,description}'
     ],
     weeklyReview: [
       'persona: selfProfile.aiStyle + selfProfile.aiBoldness -> backend personaConfig; under18 may override final style/intensity.',
@@ -522,7 +562,7 @@ function buildPromptMessageLines(items) {
 
 function compactRecentTimeline(items, currentEventId, limit = 3) {
   return (items || [])
-    .filter((item) => item?.id !== currentEventId)
+    .filter((item) => item?.id !== currentEventId && item?.type !== 'assessment' && item?.type !== 'trend')
     .slice(0, limit)
     .map((item) => ({
       title: item.title,
@@ -585,19 +625,6 @@ function serializeCaseProfile(profile) {
     normalized.identityLabel = resolveIdentityLabel(profile)
   }
   return Object.values(normalized).some(Boolean) ? JSON.stringify(normalized) : '未提供'
-}
-
-function describeSubjectRoleForPrompt(role) {
-  if (role === 'self') {
-    return 'subjectRole=self：这条记录主要描述用户自己。文本里的“我”是用户本人，不是关系对象。不要把用户的穿着、化妆、准备、情绪、表达当成对方释放的信号；请分析它可能怎样影响互动、用户接下来怎么做，以及需要观察对方什么反应。'
-  }
-  if (role === 'both') {
-    return 'subjectRole=both：这条记录描述双方互动。请拆分“用户做了什么”和“关系对象回应/做了什么”；用户自己的主动不能算作对方主动，只有对方动作才能改变对方意向或风险判断。'
-  }
-  if (role === 'unknown') {
-    return 'subjectRole=unknown：行为主体不确定。请弱化权重；除非文本明确写出对方回应、承诺、兑现、回避或失约，否则不要提高或降低对方意向/风险。'
-  }
-  return 'subjectRole=target：这条记录主要描述关系对象。请分析对方行为对关系意向、风险和证据强度的影响。'
 }
 
 function isBoundarySensitivePromptEvent(event) {
@@ -668,75 +695,21 @@ function hasBusinessPromptContent(business) {
 
 function buildActualPromptMessages({ settings, recordContent, selfProfile, caseProfile, latestResult, recentTimeline }) {
   const normalizedSettings = applySettingsDefaults(settings)
-  const moduleKey = 'eventAssessment'
-  const business = readBusinessPromptConfig(
-    normalizedSettings,
-    moduleKey,
-    normalizedSettings.promptConfig && normalizedSettings.promptConfig[moduleKey]
-  )
-  if (!business || business.enabled === false || !hasBusinessPromptContent(business)) return null
-
   const description = cleanText(recordContent, 1600)
   const previewEvent = {
     id: 'admin_prompt_preview',
-    title: buildTimelineRecordTitle(description),
-    type: 'note',
-    subjectRole: 'target',
-    subjectRoleConfidence: 'user_selected',
+    inputSubjectRole: 'unspecified',
+    userQuestion: { key: 'like', label: '他喜欢我吗' },
     description,
-    semanticTags: {},
     occurrenceAt: new Date().toISOString()
   }
-  const currentAssessment = latestResult && typeof latestResult === 'object'
-    ? {
-        intentScore: latestResult.intentScore,
-        riskScore: latestResult.riskScore ?? latestResult.consistencyRiskScore,
-        evidenceLevel: latestResult.evidenceLevel,
-        labels: latestResult.labels || latestResult.primaryLabels || [],
-        nextAction: latestResult.nextAction
-      }
-    : {
-        intentScore: 50,
-        riskScore: 35,
-        evidenceLevel: 'E2',
-        labels: ['后台提示词预览'],
-        nextAction: 'observe'
-      }
-  const personaPrompt = buildPreviewPersonaPrompt(normalizedSettings, selfProfile, {
-    boundarySensitive: isBoundarySensitivePromptEvent(previewEvent)
-  })
-  const guardrails = COMMON_LOCKED_RULES
-  const systemLines = [
-    '安全护栏:',
-    ...buildPromptMessageLines(guardrails),
-    personaPrompt.systemPrompt
-  ].filter(Boolean)
-  const userLines = [
-    `模块: ${business.nameZh}`,
-    business.roleZh ? `角色: ${business.roleZh}` : '',
-    business.taskZh ? `任务: ${business.taskZh}` : '',
-    business.rules.length ? '业务规则:' : '',
-    ...buildPromptMessageLines(business.rules),
-    Object.keys(business.outputSchema || {}).length > 0 ? `输出结构:\n${JSON.stringify(business.outputSchema)}` : '',
-    business.outputNotes.length ? '输出要求:' : '',
-    ...buildPromptMessageLines(business.outputNotes),
-    '运行时上下文:',
-    personaPrompt.userPrompt,
-    '只返回 JSON。必需字段：eventType,eventTitle,intentDelta,riskDelta,evidenceDelta,summary,rationale,categories,currentStatus,eventInsight,rawReply。不要返回 labels、confidence 或 actionAdvice。',
-    'currentStatus 只需要 tags,summary,caution。rawReply 四段标题：小咪先回答你的问题 / 对方可能在想 / 下一步可以这样推进 / 留个心眼（每段2-3句）。第一段必须先正面回答 userQuestion.label。',
-    'eventInsight 只能使用枚举：actor=target|self|both|unknown；interaction=initiated|responded|rejected|delayed|fulfilled|promised|observed|unclear；commitmentStatus=none|promised|fulfilled|broken|unclear；evidenceType=fact|feeling|mixed|unclear。',
-    describeSubjectRoleForPrompt(previewEvent.subjectRole),
-    `当前评估快照: ${JSON.stringify(currentAssessment)}`,
-    `本人画像: ${serializeSelfProfile(selfProfile)}`,
-    `Crush 画像: ${serializeCaseProfile(caseProfile)}`,
-    `最近事件: ${JSON.stringify(compactRecentTimeline(recentTimeline, previewEvent.id))}`,
-    `本次事件: ${JSON.stringify(previewEvent)}`
-  ].filter(Boolean)
-
-  return [
-    { role: 'system', content: systemLines.join('\n') },
-    { role: 'user', content: userLines.join('\n') }
-  ]
+  return buildEventAssessmentMessages({
+    settings: normalizedSettings,
+    event: previewEvent,
+    recentTimeline,
+    caseProfile,
+    selfProfile
+  }).messages
 }
 
 function mergePreviewSettings(base, event) {
@@ -760,15 +733,14 @@ function buildPromptAdminView(settings) {
 
   for (const key of PROMPT_MODULE_KEYS) {
     const moduleConfig = normalized.promptConfig[key]
-    const guardrails = { lockedRules: COMMON_LOCKED_RULES }
     const meta = PROMPT_MODULE_META[key] || { title: key, description: '' }
     modules[key] = {
       key,
       title: meta.title,
       description: meta.description,
-      guardrails: guardrails.lockedRules || [],
-      runtimeContext: guardrails.runtimeContext || [],
-      outputContract: guardrails.outputContract || [],
+      guardrails: COMMON_LOCKED_RULES,
+      runtimeContext: MODULE_RUNTIME_FIELDS[key] || meta.runtimeContext || [],
+      outputContract: MODULE_OUTPUT_CONTRACTS[key] || meta.outputContract || [],
       effectivePreview: buildPromptPreview(key, moduleConfig, normalized)
     }
   }
@@ -776,10 +748,10 @@ function buildPromptAdminView(settings) {
   return {
     version: 1,
     policyLines: [
-      '业务提示词（角色、任务、规则、输出要求）只从后台 promptModules 读取。',
-      '后台缺字段时不再回退到代码里的业务提示词；该模块会规则兜底或跳过 AI。',
-      '安全护栏、输出结构校验、未成年人和边界敏感保护保留在代码中，并在后台只读可见。',
-      '最终拼接顺序：安全护栏 + 用户选择的人格模板 + 后台业务提示词 + 运行时上下文。'
+      'eventAssessment 后台只保存简短角色和任务；rules、outputSchema、outputNotes 不进入运行时提示词。',
+      'NormalizedEventV1、枚举、安全规则和 SCORING_POLICY_V1 固定在代码中。',
+      '协议或模型失败时统一保存 unknown + note + 零分，不使用中文关键词重判。',
+      '最终拼接顺序：安全护栏 + 人格文案约束 + 简短业务任务 + 固定协议 + 运行时上下文。'
     ],
     modules
   }
@@ -835,7 +807,6 @@ function getDefaultSettings() {
     key: 'ai',
     settingsVersion: 2,
     aiEnabled: false,
-    aiFallbackToRules: true,
     aiModels: [
       {
         id: 'default',
@@ -997,11 +968,15 @@ async function getOverview(currentUserId = '', currentUser = null) {
     } else if (user.plan) {
       planLabel = user.plan === 'free' ? '免费版' : user.plan
     }
+    const profile = buildAdminSelfProfile(user)
     return {
     id: user._id,
     openid: user.openid || '',
     email: user.email || '',
     phone: user.phone || '',
+    nickname: profile.nickname,
+    avatarUrl: profile.avatarUrl,
+    profile,
     loginType: user.loginType || (user.phone ? 'wechat_phone' : 'email'),
     role: user.role || (user.isAdmin ? 'admin' : 'user'),
     isAdmin: Boolean(user.isAdmin) || user.role === 'admin',
@@ -1012,6 +987,11 @@ async function getOverview(currentUserId = '', currentUser = null) {
     updatedAt: toISO(user.updatedAt),
     lastLoginAt: toISO(user.lastLoginAt)
   }})
+
+  await resolveAdminAvatarUrls(users)
+  users.forEach((user) => {
+    user.avatarUrl = user.profile.avatarUrl
+  })
 
   return {
     success: true,
@@ -1051,10 +1031,15 @@ async function getUserDetail(event) {
     Promise.all(caseIds.map((caseId) => db.collection('assessments').where({ caseId }).limit(100).get()))
   ])
 
+  const profile = buildAdminSelfProfile(user)
   const userInfo = {
     id: user._id || '',
+    openid: user.openid || '',
     email: user.email || '',
     phone: user.phone || '',
+    nickname: profile.nickname,
+    avatarUrl: profile.avatarUrl,
+    profile,
     loginType: user.loginType || '',
     role: user.role || (user.isAdmin ? 'admin' : 'user'),
     isAdmin: Boolean(user.isAdmin) || user.role === 'admin',
@@ -1075,18 +1060,49 @@ async function getUserDetail(event) {
     lastLoginAt: toISO(user.lastLoginAt)
   }
 
+  await resolveAdminAvatarUrls([{ profile: userInfo.profile }])
+  userInfo.avatarUrl = userInfo.profile.avatarUrl
+
   return {
     success: true,
     user: userInfo,
-    cases: cases.map((item, index) => ({
-      id: item._id,
-      name: item.name || item.profile?.name || '未命名 Crush',
-      createdAt: toISO(item.createdAt),
-      updatedAt: toISO(item.updatedAt),
-      latestResultId: item.latestResultId || '',
-      timelineCount: (timelineGroups[index].data || []).length,
-      assessmentCount: (assessmentGroups[index].data || []).length
-    }))
+    cases: cases.map((item, index) => {
+      const timelineData = (timelineGroups[index].data || [])
+      const manualRecords = timelineData
+        .filter((r) => r.type !== 'assessment' && r.type !== 'trend' && !String(r._id || '').startsWith('trend-') && !String(r._id || '').startsWith('assessment-'))
+      const assessmentData = (assessmentGroups[index].data || [])
+      // 按 triggerEventId 建立 assessment → event 映射
+      const assessmentByEventId = {}
+      for (const a of assessmentData) {
+        if (a.triggerEventId) assessmentByEventId[a.triggerEventId] = a
+      }
+      return {
+        id: item._id,
+        name: item.name || item.profile?.name || '未命名 Crush',
+        createdAt: toISO(item.createdAt),
+        updatedAt: toISO(item.updatedAt),
+        latestResultId: item.latestResultId || '',
+        timelineCount: timelineData.length,
+        assessmentCount: (assessmentGroups[index].data || []).length,
+        recentRecords: manualRecords.slice(-5).reverse().map((r) => {
+          const rid = r._id || r.id
+          const assessment = assessmentByEventId[rid]
+          return {
+            id: rid,
+            title: r.title || '',
+            description: (r.description || '').slice(0, 60),
+            subjectRole: r.subjectRole || '',
+            inputSubjectRole: r.inputSubjectRole || '',
+            subjectRoleSource: r.subjectRoleSource || '',
+            type: r.type || '',
+            aiUsed: Boolean(r.aiUsed),
+            aiActor: assessment?.eventInsight?.actor || '',
+            aiInteraction: assessment?.eventInsight?.interaction || '',
+            aiCommitment: assessment?.eventInsight?.commitmentStatus || ''
+          }
+        })
+      }
+    })
   }
 }
 
@@ -1103,14 +1119,13 @@ async function updateAISettings(event, adminUserId) {
     key: 'ai',
     settingsVersion: 2,
     aiEnabled: Boolean(event.aiEnabled),
-    aiFallbackToRules: event.aiFallbackToRules !== false,
     aiModels: normalizedModels,
     aiDefaultModelId: defaultModelId,
     promptConfigVersion: 1,
     promptConfig: normalizePromptConfig(event.promptConfig, base.promptConfig),
-    promptModules: event.promptModules && typeof event.promptModules === 'object'
+    promptModules: sanitizePromptModules(event.promptModules && typeof event.promptModules === 'object'
       ? event.promptModules
-      : (base.promptModules || {}),
+      : (base.promptModules || {})),
     petSpeakConfig: event.petSpeakConfig && typeof event.petSpeakConfig === 'object'
       ? event.petSpeakConfig
       : (base.petSpeakConfig || {}),
@@ -1162,12 +1177,20 @@ async function previewPrompt(event) {
   const [selfProfileRes, latestAssessmentRes, timelineRes] = await Promise.all([
     ownerUserId ? db.collection('users').doc(ownerUserId).get().catch(() => null) : Promise.resolve(null),
     db.collection('assessments').where({ caseId }).orderBy('createdAt', 'desc').limit(1).get().catch(() => null),
-    db.collection('timeline_records').where({ caseId }).orderBy('occurrenceAt', 'desc').limit(8).get().catch(() => null)
+    db.collection('timeline_records').where({ caseId }).orderBy('occurrenceAt', 'desc').limit(50).get().catch(() => null)
   ])
   const selfProfile = normalizeDoc(selfProfileRes)?.selfProfile || null
   const latestAssessment = normalizeDoc(latestAssessmentRes)
   const recentTimeline = (timelineRes?.data || [])
-    .filter((item) => item?.type !== 'assessment' && item?.type !== 'trend')
+    .filter((item) => {
+      const id = String(item?._id || item?.id || '')
+      return item?.type !== 'assessment'
+        && item?.type !== 'trend'
+        && !id.startsWith('assessment-')
+        && !id.startsWith('trend-')
+        && !/^t\d+$/.test(id)
+    })
+    .slice(0, 8)
     .map((item) => ({
       id: item._id || item.id,
       title: item.title,
@@ -1188,7 +1211,7 @@ async function previewPrompt(event) {
   if (!messages) {
     return {
       success: false,
-      message: '即时反馈业务提示词为空或已停用，实际调用时会跳过 AI 或规则兜底'
+      message: '即时反馈模块已停用，实际调用时会按主体不明和零分保守保存'
     }
   }
 

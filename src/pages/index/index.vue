@@ -190,47 +190,38 @@
             <text v-if="hasQuickDraft" class="qr-draft-hint">有未保存草稿，请先提交或清空后再切换 Crush</text>
         <view class="record-block" style="border:none;box-shadow:none;margin:0;background:transparent;">
           <view class="block-head"><text class="block-title">快速记录</text><text class="block-badge">别脑补</text></view>
-          <view class="role-row">
-            <view class="role-main-v2">
-              <text class="role-label">这条主要在说</text>
-              <view class="role-options">
-                <view v-for="item in subjectRoleOptions" :key="item.value" :class="['role-chip', quickSubjectRole === item.value ? 'active' : '']" @click="setQuickSubjectRole(item.value)">{{ item.label }}</view>
-              </view>
-            </view>
-            <view class="quick-tool-row-v2">
-              <button class="quick-tool-btn-v2" :disabled="quickUploading" aria-label="上传图片" @click="chooseQuickImages">
-                <text class="quick-tool-icon-v2">{{ quickUploading ? '…' : '+' }}</text>
-              </button>
-              <button :class="['quick-tool-btn-v2', 'voice', recording ? 'recording' : '', voiceUploading ? 'loading' : '']" :disabled="voiceUploading" aria-label="语音输入" @click="toggleVoiceRecord">
-                <view v-if="recording" class="quick-voice-active-v2">
-                  <view class="quick-voice-wave-v2">
-                    <view v-for="i in 3" :key="i" class="quick-wave-bar-v2"></view>
-                  </view>
-                  <text class="quick-voice-time-v2">{{ countdownText }}</text>
+          <view class="quick-tool-row-v2" style="margin-bottom:12rpx;">
+            <button class="quick-tool-btn-v2" :disabled="quickUploading" aria-label="上传图片" @click="chooseQuickImages">
+              <text class="quick-tool-icon-v2">{{ quickUploading ? '…' : '+' }}</text>
+            </button>
+            <button :class="['quick-tool-btn-v2', 'voice', recording ? 'recording' : '', voiceUploading ? 'loading' : '']" :disabled="voiceUploading" aria-label="语音输入" @click="toggleVoiceRecord">
+              <view v-if="recording" class="quick-voice-active-v2">
+                <view class="quick-voice-wave-v2">
+                  <view v-for="i in 3" :key="i" class="quick-wave-bar-v2"></view>
                 </view>
-                <text v-else-if="voiceUploading" class="quick-tool-icon-v2">…</text>
-                <view v-else class="quick-mic-icon-v2"></view>
-              </button>
-            </view>
+                <text class="quick-voice-time-v2">{{ countdownText }}</text>
+              </view>
+              <text v-else-if="voiceUploading" class="quick-tool-icon-v2">…</text>
+              <view v-else class="quick-mic-icon-v2"></view>
+            </button>
           </view>
-          <text class="role-hint-v2">{{ quickSubjectRoleHint }}</text>
-          <view class="quick-chat-names-v2">
-            <template v-if="quickSubjectRole === 'self' || quickSubjectRole === 'both'">
-              <!-- #ifdef MP-WEIXIN -->
-              <input v-model="quickChatSelfName" type="nickname" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
-              <!-- #endif -->
-              <!-- #ifndef MP-WEIXIN -->
-              <input v-model="quickChatSelfName" type="text" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
-              <!-- #endif -->
-            </template>
-            <template v-if="quickSubjectRole === 'target' || quickSubjectRole === 'both'">
-              <text v-if="quickSubjectRole === 'both'" class="quick-chat-name-sep-v2">和</text>
-              <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="latestCase?.name || 'TA的微信昵称'" />
-            </template>
-            <text v-if="quickSubjectRole === 'both'" class="quick-chat-name-hint-v2">贴对话后标注，帮小咪分清谁说了什么</text>
+          <view v-if="quickInputSubjectRole === 'both'" class="role-hint-v2 chat-hint">
+            <text>已识别为聊天记录</text>
+            <text class="chat-hint-dismiss" @click="chatDetectionDismissed = quickDesc">不是聊天记录</text>
           </view>
-          <textarea :value="quickDesc" @blur="onQuickDescBlur" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
-          <view v-if="quickSubjectRole === 'both'" class="quick-paste-warn-v2">
+          <view v-if="quickInputSubjectRole === 'both'" class="quick-chat-names-v2">
+            <!-- #ifdef MP-WEIXIN -->
+            <input v-model="quickChatSelfName" type="nickname" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
+            <!-- #endif -->
+            <!-- #ifndef MP-WEIXIN -->
+            <input v-model="quickChatSelfName" type="text" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
+            <!-- #endif -->
+            <text class="quick-chat-name-sep-v2">和</text>
+            <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="latestCase?.name || 'TA的微信昵称'" />
+            <text class="quick-chat-name-hint-v2">贴对话后标注，帮小咪分清谁说了什么</text>
+          </view>
+          <textarea :value="quickDesc" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickInputSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
+          <view v-if="quickInputSubjectRole === 'both'" class="quick-paste-warn-v2">
             <image class="quick-paste-warn-icon-v2-img" src="/static/icons/taohua/warning.svg" mode="aspectFit" />
             <text class="quick-paste-warn-text-v2">部分手机粘贴多行聊天记录时可能被截断，只显示第一条。如遇此情况，请先将聊天记录粘贴到<text class="quick-paste-warn-bold-v2">备忘录</text>的输入框，再重新复制后粘贴到此处即可完整导入。</text>
           </view>
@@ -599,8 +590,8 @@ const pendingAIRetryCounts = new Map<string, number>()
 let aiFeedbackTimer: any = null
 const petScene = ref<PetScene | null>(null)
 let petSceneTimer: ReturnType<typeof setTimeout> | null = null
-const quickSubjectRole = ref<'target' | 'self' | 'both'>('target')
-const quickSubjectRoleConfidence = ref<'auto' | 'user_selected'>('auto')
+const quickInputSubjectRole = ref<'unspecified' | 'both'>('unspecified')
+const chatDetectionDismissed = ref('')
 const quickAttachments = ref<any[]>([])
 const quickFeedback = ref<{
   caseId: string
@@ -623,11 +614,7 @@ function indexAILog(stage: string, payload: Record<string, any> = {}) {
   console.log(`[${ts}][ai] ${stage}`, JSON.stringify(payload))
 }
 
-const subjectRoleOptions = [
-  { value: 'target', label: '对方' },
-  { value: 'self', label: '自己' },
-  { value: 'both', label: '互动' }
-] as const
+// subjectRoleOptions 已删除 (F1); 不再显示手动角色选择器
 
 const quickQuestionOptions = [
   { value: 'like', label: '他喜欢我吗' },
@@ -856,9 +843,9 @@ const latestActionPlanPanel = computed(() => {
     return {
       show: true,
       text: latestCase.value.latestResult.aiFailed
-        ? '这次 ' + aiLabel() + ' 返回超时或格式不完整，系统先用了规则兜底。'
+        ? '这次 ' + aiLabel() + ' 调用失败或语义结果未通过校验，本条已按主体不明和零分保守保存。'
         : latestCase.value.latestResult.aiUsed === false
-          ? '这次 ' + aiLabel() + ' 原文回复没有生成，系统先用了规则兜底。'
+          ? '这次 ' + aiLabel() + ' 原文回复没有生成，本条已按主体不明和零分保守保存。'
         : '这次 ' + aiLabel() + ' 原文回复没有返回，下面先显示结构化建议。',
       missing: true,
       sections: []
@@ -912,7 +899,7 @@ const analysisAiState = computed(() => {
     pending: Boolean(r?.aiPending && !aiFeedbackLoading.value),
     seconds: aiFeedbackSeconds.value,
     error: Boolean(!aiFeedbackLoading.value && !r?.aiPending && aiFailed),
-    errorMsg: aiFailed ? '本次 AI 返回超时或格式不完整，系统先用了规则兜底。' : '',
+    errorMsg: aiFailed ? '本次 AI 调用失败或语义结果未通过校验，本条已按主体不明和零分保守保存。' : '',
   }
 })
 const analysisScores = computed(() => ({
@@ -1143,18 +1130,11 @@ function getTaDailyAdvice(selfRel: string, crushRel: string): string {
 // 兼容旧 prop，保留接口不动
 const balanceCalloutForHome = computed(() => getBalanceCallout(latestCase.value))
 
-const quickSubjectRoleHint = computed(() => {
-  const label = mapSubjectRoleLabel(quickSubjectRole.value)
-  if (quickSubjectRoleConfidence.value === 'user_selected') return `已手动设为：${label}。`
-  if (quickSubjectRole.value === 'self') return aiLabel() + ' 判断这更像你的心理感受或自我状态，已归为”自己”。'
-  if (quickSubjectRole.value === 'both') return '检测到多行内容，已切为”互动”。可填入昵称帮小咪分清谁说了什么。'
-  return '默认按”对方”记录；如果写的是你的心理感受，请改为”自己”。'
-})
+// quickSubjectRoleHint 已删除 (F7); 模板中使用内联 v-if 显示聊天检测提示
 
 const quickDescPlaceholder = computed(() => {
-  if (quickSubjectRole.value === 'both') return '可直接粘贴微信对话记录，' + aiLabel() + ' 会自动解析双方说了什么'
-  if (quickSubjectRole.value === 'self') return '你做了什么？说了什么？你的感受是怎样的？例如：我主动问他周末有没有空…'
-  return 'TA 做了什么？原话是什么？例如：他说下次一起去图书馆…'
+  if (quickInputSubjectRole.value === 'both') return '可直接粘贴微信对话记录，' + aiLabel() + ' 会自动解析双方说了什么'
+  return 'TA 做了什么？原话是什么？你的感受是怎样的？直接写下来…'
 })
 
 const recordingSeconds = ref(60)
@@ -1251,54 +1231,28 @@ function mapTimelineTypeLabel(type?: string) {
   }
 }
 
-function mapSubjectRoleLabel(role?: string) {
-  switch (role) {
-    case 'self': return '自己'
-    case 'both': return '互动'
-    case 'target': return '对方'
-    default: return '对方'
-  }
-}
-
-function setQuickSubjectRole(role: 'target' | 'self' | 'both') {
-  quickSubjectRole.value = role
-  quickSubjectRoleConfidence.value = 'user_selected'
-  const cached = getCachedSelfProfile()
-  // 按角色自动填入对应的昵称
-  if (role === 'target') {
-    quickChatTargetName.value = latestCase.value?.name || ''
-    quickChatSelfName.value = ''
-  } else if (role === 'self') {
-    quickChatSelfName.value = cached?.nickname || ''
-    quickChatTargetName.value = ''
-  } else {
-    // both: 两个都填入
-    if (!quickChatSelfName.value && cached?.nickname) quickChatSelfName.value = cached.nickname
-    if (!quickChatTargetName.value) quickChatTargetName.value = latestCase.value?.name || ''
-  }
-}
+// mapSubjectRoleLabel 已删除; 不再显示手动角色选择
 
 // 用 :value + @input 替代 v-model，绕过微信 textarea 粘贴截断 bug
+function inferInputSubjectRole(text: string): 'unspecified' | 'both' {
+  if (!text) return 'unspecified'
+  // 检测微信聊天格式：多行 + 时间戳
+  if (text.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(text)) return 'both'
+  return 'unspecified'
+}
+
 function onQuickDescInput(e: any) {
   const val = e?.detail?.value ?? e?.target?.value ?? ''
   quickDesc.value = val.slice(0, 6000)
-}
-
-function inferSubjectRole(value?: string): 'target' | 'self' | 'both' {
-  const text = String(value || '').trim()
-  if (!text) return 'target'
-  if (text.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(text)) return 'both'
-  const selfIndicators = /(我|我们|本人|自己|这边)/.test(text)
-  const selfFeeling = /(我.*(感觉|觉得|感到|心理|心里|焦虑|难受|失落|开心|期待|害怕|纠结|想他|想她|想对方|放不下|不安|委屈|生气|吃醋)|自己.*(状态|感受|情绪|心理|心里))/.test(text)
-  if (selfFeeling) return 'self'
-  if (selfIndicators) return 'self'
-  return 'target'
-}
-
-function onQuickDescBlur() {
-  if (quickSubjectRoleConfidence.value !== 'user_selected') {
-    quickSubjectRole.value = inferSubjectRole(quickDesc.value)
-    quickSubjectRoleConfidence.value = 'auto'
+  // F6: 自动检测聊天记录格式
+  if (chatDetectionDismissed.value !== val) {
+    const detected = inferInputSubjectRole(val)
+    if (detected === 'both') {
+      quickInputSubjectRole.value = 'both'
+      const cached = getCachedSelfProfile()
+      if (!quickChatSelfName.value && cached?.nickname) quickChatSelfName.value = cached.nickname
+      if (!quickChatTargetName.value) quickChatTargetName.value = latestCase.value?.name || ''
+    }
   }
 }
 
@@ -2531,8 +2485,9 @@ function applyPendingQuickFeedback(params: {
   eventType: string
   eventTitle: string
   description: string
-  subjectRole: 'target' | 'self' | 'both'
-  subjectRoleConfidence: string
+  subjectRole: 'target' | 'self' | 'both' | 'unknown'
+  inputSubjectRole?: 'unspecified' | 'both'
+  subjectRoleSource?: 'pending' | 'ai_inferred' | 'fallback_unknown'
   userQuestion?: { key: string; label: string }
   attachments: any[]
   occurrenceAt: string
@@ -2581,7 +2536,8 @@ function applyPendingQuickFeedback(params: {
     title: params.eventTitle,
     type: params.eventType,
     subjectRole: params.subjectRole,
-    subjectRoleConfidence: params.subjectRoleConfidence,
+    inputSubjectRole: params.inputSubjectRole,
+    subjectRoleSource: params.subjectRoleSource,
     userQuestion: params.userQuestion || null,
     description: params.description,
     attachments: params.attachments,
@@ -2715,8 +2671,7 @@ async function submitQuickRecord() {
   try {
     const desc = quickDesc.value.trim()
     const currentCaseId = latestCase.value.caseId
-    const currentSubjectRole = quickSubjectRole.value
-    const currentSubjectRoleConfidence = quickSubjectRoleConfidence.value === 'user_selected' ? 'user_selected' : 'confirmed'
+    const currentInputSubjectRole = quickInputSubjectRole.value
     const currentUserQuestion = getQuickQuestionPayload()
     if (!currentUserQuestion) {
       showError('请填写你想问的问题')
@@ -2727,7 +2682,7 @@ async function submitQuickRecord() {
     indexAILog('submit_start', {
       caseIdTail: shortId(currentCaseId),
       descLength: desc.length,
-      subjectRole: currentSubjectRole,
+      inputSubjectRole: currentInputSubjectRole,
       attachmentCount: currentAttachments.length,
       hasQuestion: Boolean(currentUserQuestion)
     })
@@ -2735,8 +2690,7 @@ async function submitQuickRecord() {
       userId: userId.value,
       caseId: currentCaseId,
       description: desc,
-      subjectRole: currentSubjectRole,
-      subjectRoleConfidence: currentSubjectRoleConfidence,
+      inputSubjectRole: currentInputSubjectRole,
       userQuestion: currentUserQuestion,
       chatSelfName: quickChatSelfName.value.trim() || undefined,
       chatTargetName: quickChatTargetName.value.trim() || undefined,
@@ -2766,8 +2720,8 @@ async function submitQuickRecord() {
       quickCustomQuestion.value = ''
       quickChatSelfName.value = ''
       quickChatTargetName.value = ''
-      quickSubjectRole.value = 'target'
-      quickSubjectRoleConfidence.value = 'auto'
+      quickInputSubjectRole.value = 'unspecified'
+      chatDetectionDismissed.value = ''
       quickAttachments.value = []
       quickDate.value = getDateInputValue()
       quickTime.value = getTimeInputValue()
@@ -2796,8 +2750,9 @@ async function submitQuickRecord() {
           eventType: res.eventType || 'note',
           eventTitle: res.eventTitle || '最新记录',
           description: desc,
-          subjectRole: currentSubjectRole,
-          subjectRoleConfidence: currentSubjectRoleConfidence,
+          subjectRole: 'unknown',
+          inputSubjectRole: currentInputSubjectRole,
+          subjectRoleSource: 'pending',
           userQuestion: currentUserQuestion,
           attachments: currentAttachments,
           occurrenceAt: currentOccurrenceAt
@@ -2869,9 +2824,8 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
       assessmentIdTail: shortId(aiRes?.assessmentId || payload.assessmentId),
       recordIdTail: shortId(aiRes?.recordId || payload.recordId)
     })
-    if (aiRes?.code === 'INSUFFICIENT_BALANCE') {
+    if (handleInsufficientBalance(aiRes)) {
       applyPetScene('insufficient_balance')
-      handleInsufficientBalance(aiRes)
       await loadData()
       return
     }
@@ -2888,7 +2842,7 @@ async function runAssessmentAI(payload: { caseId: string; assessmentId: string; 
       const msg = expl?.petLine || expl?.bullets?.[0]
       applyPetScene(scene, 5000, msg || undefined)
     }
-    showSuccess('AI即时反馈已更新')
+    showSuccess(aiRes.aiUsed ? 'AI即时反馈已更新' : '已使用规则完成保守分析')
   } catch (error: any) {
     indexAILog('run_ai_error', { message: error?.message || String(error || '') })
     applyPetScene('ai_error', 3000)

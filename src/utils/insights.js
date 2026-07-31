@@ -1134,7 +1134,9 @@ function hasTargetInitiative(item) {
 }
 
 function isTargetSideRecord(item) {
-  return Boolean(item && item.subjectRole !== 'self')
+  // B32: only target/both counted as target side; unknown/undefined/self excluded
+  if (!item) return false
+  return item.subjectRole === 'target' || item.subjectRole === 'both'
 }
 
 function summarizeRecordTitle(item) {
@@ -1410,7 +1412,7 @@ export function buildReadableActionAdvice(caseFile, current, event, primaryFocus
   const withRecentDo = recentPattern ? `${sceneAdvice.do} ${recentPattern.do}` : sceneAdvice.do
   const withRecentTone = recentPattern ? `${sceneAdvice.tone} ${recentPattern.tone}` : sceneAdvice.tone
   const withRecentObserve = recentPattern ? `${sceneAdvice.observe} ${recentPattern.observe}` : sceneAdvice.observe
-  const role = event?.subjectRole || current?.triggerSubjectRole || 'target'
+  const role = event?.subjectRole || current?.triggerSubjectRole || 'unknown'
   const roleAdvice = buildSubjectRoleActionAdvice(role, eventTitle)
   const rolePrefix = role === 'self'
     ? '这条更像你的感受记录，先把自己的情绪和事实分开；'
@@ -1501,7 +1503,7 @@ function normalizeReadableAIActionAdvice(value) {
 function buildSemanticActionAdvice(event, current, eventTitle) {
   const semantic = event?.semanticTags || current?.semanticTags || event?.eventUnderstanding?.semanticTags || null
   const fallbackTags = event ? getTimelineRecordTags(event) : null
-  const role = event?.subjectRole || current?.triggerSubjectRole || 'target'
+  const role = event?.subjectRole || current?.triggerSubjectRole || 'unknown'
   const text = getActionEventText(event, current)
   const scene = new Set([...(semantic?.scene || []), ...(fallbackTags?.scene || [])])
   const outcome = new Set([...(semantic?.outcome || []), ...(fallbackTags?.outcome || [])])

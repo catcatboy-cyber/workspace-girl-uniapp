@@ -87,7 +87,14 @@
               :class="['table-row', selectedUserId === user.id ? 'selected' : '']"
               @click="selectUser(user.id)"
             >
-              <text class="mono">{{ user.email || user.phone || user.id }}</text>
+              <view class="user-account-cell">
+                <image v-if="user.avatarUrl" class="user-list-avatar" :src="user.avatarUrl" mode="aspectFill" />
+                <view v-else class="user-list-avatar user-list-avatar-fallback">{{ (user.nickname || user.email || user.id).slice(0, 1) }}</view>
+                <view class="user-account-copy">
+                  <text class="user-account-name">{{ user.nickname || user.email || user.phone || user.id }}</text>
+                  <text v-if="user.nickname" class="user-account-id mono">{{ user.email || user.phone || user.id }}</text>
+                </view>
+              </view>
               <text class="mono" style="font-size:20rpx;word-break:break-all;">{{ user.openid || '-' }}</text>
               <text style="font-size:22rpx;color:#999;">{{ formatDateTime(user.createdAt) }}</text>
               <text :class="['plan-tag', planTagClass(user)]">{{ user.planLabel || '免费版' }}</text>
@@ -100,18 +107,38 @@
         <view class="panel">
           <view class="panel-head">
             <text class="panel-title">用户详情</text>
-            <text class="panel-meta">{{ selectedUser?.email || selectedUser?.phone || '未选择' }}</text>
+            <text class="panel-meta">{{ selectedDetail?.user?.nickname || selectedUser?.nickname || selectedUser?.email || selectedUser?.phone || '未选择' }}</text>
           </view>
           <view v-if="detailLoading" class="empty">正在读取用户数据...</view>
           <view v-else-if="!selectedDetail" class="empty">选择左侧用户查看 Crushes 和记录概况。</view>
           <view v-else>
+            <view class="user-profile-summary">
+              <image v-if="selectedDetail.user.avatarUrl" class="user-profile-avatar" :src="selectedDetail.user.avatarUrl" mode="aspectFill" />
+              <view v-else class="user-profile-avatar user-profile-avatar-fallback">{{ (selectedDetail.user.nickname || selectedDetail.user.email || selectedDetail.user.id).slice(0, 1) }}</view>
+              <view class="user-profile-copy">
+                <text class="user-profile-name">{{ selectedDetail.user.nickname || '未获取微信昵称' }}</text>
+                <text class="user-profile-account">{{ selectedDetail.user.email || selectedDetail.user.phone || selectedDetail.user.id }}</text>
+              </view>
+            </view>
             <view class="detail-line">
               <text class="detail-label">用户 ID</text>
               <text class="detail-value mono">{{ selectedDetail.user.id }}</text>
             </view>
             <view class="detail-line">
+              <text class="detail-label">OpenID</text>
+              <text class="detail-value mono">{{ selectedDetail.user.openid || '-' }}</text>
+            </view>
+            <view class="detail-line">
+              <text class="detail-label">登录方式</text>
+              <text class="detail-value">{{ selectedDetail.user.loginType || '-' }}</text>
+            </view>
+            <view class="detail-line">
               <text class="detail-label">注册时间</text>
               <text class="detail-value">{{ formatDate(selectedDetail.user.createdAt) }}</text>
+            </view>
+            <view class="detail-line">
+              <text class="detail-label">最后登录</text>
+              <text class="detail-value">{{ formatDate(selectedDetail.user.lastLoginAt) }}</text>
             </view>
             <view v-if="selectedDetail.user.landingChannel || selectedDetail.user.landingScene" class="detail-line">
               <text class="detail-label">来源</text>
@@ -124,6 +151,26 @@
             <view v-if="selectedDetail.user.landingInviteCode" class="detail-line">
               <text class="detail-label">邀请码</text>
               <text class="detail-value">{{ selectedDetail.user.landingInviteCode }}</text>
+            </view>
+
+            <view class="profile-section">
+              <view class="section-head profile-section-head">
+                <text class="section-title">个人画像</text>
+                <text class="panel-meta">已保存的全部个人画像字段</text>
+              </view>
+              <view class="profile-grid">
+                <view class="profile-field"><text class="profile-field-label">昵称</text><text class="profile-field-value">{{ selectedDetail.user.profile?.nickname || '-' }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">性别</text><text class="profile-field-value">{{ genderText(selectedDetail.user.profile?.gender) }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">年龄阶段</text><text class="profile-field-value">{{ ageRangeText(selectedDetail.user.profile?.ageRange) }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">当前身份</text><text class="profile-field-value">{{ identityText(selectedDetail.user.profile?.identity) }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">属相</text><text class="profile-field-value">{{ selectedDetail.user.profile?.zodiac || '-' }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">星座</text><text class="profile-field-value">{{ selectedDetail.user.profile?.constellation || '-' }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">MBTI</text><text class="profile-field-value">{{ selectedDetail.user.profile?.mbtiCode || '-' }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">AI 风格</text><text class="profile-field-value">{{ personaStyleTitles[selectedDetail.user.profile?.aiStyle || ''] || '-' }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">表达尺度</text><text class="profile-field-value">{{ personaBoldnessTitles[selectedDetail.user.profile?.aiBoldness || ''] || '-' }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">画像完成</text><text class="profile-field-value">{{ formatDate(selectedDetail.user.profile?.completedAt) }}</text></view>
+                <view class="profile-field"><text class="profile-field-label">画像更新</text><text class="profile-field-value">{{ formatDate(selectedDetail.user.profile?.updatedAt) }}</text></view>
+              </view>
             </view>
 
             <view class="settings-section" style="margin-top:16px;">
@@ -172,14 +219,29 @@
             </view>
 
             <view class="case-list" style="margin-top:16px;">
-              <view v-for="item in selectedDetail.cases" :key="item.id" class="case-item">
-                <view>
+              <view v-for="(item, ci) in selectedDetail.cases" :key="item.id" class="case-item">
+                <view style="flex:1;cursor:pointer;" @click="toggleCaseDebug(ci)">
                   <text class="case-name">{{ item.name }}</text>
                   <text class="case-meta">{{ formatDate(item.updatedAt || item.createdAt) }}</text>
                 </view>
                 <view class="case-counts">
                   <text>{{ item.assessmentCount }} 次分析</text>
                   <text>{{ item.timelineCount }} 条记录</text>
+                </view>
+                <view v-if="expandedDebugCase === ci && item.recentRecords && item.recentRecords.length" class="timeline-debug" style="margin-top:10px;padding:10px;background:#fafaf8;border:1px solid rgba(23,35,31,0.1);border-radius:8px;width:100%;">
+                  <text style="font-size:22rpx;color:#999;margin-bottom:6px;display:block;">最近 5 条记录 · subjectRole / inputSubjectRole / source</text>
+                  <view v-for="r in item.recentRecords" :key="r.id" class="debug-row" style="padding:6px 0;border-bottom:1px solid rgba(23,35,31,0.06);">
+                    <text style="font-size:22rpx;color:#666;display:block;">{{ r.description || r.title }}</text>
+                    <text :style="{ fontSize: '20rpx', color: r.subjectRole === 'unknown' ? '#e67e22' : '#2ecc71' }">
+                      subjectRole=<b>{{ r.subjectRole || '空' }}</b>
+                      inputSubjectRole=<b>{{ r.inputSubjectRole || '空' }}</b>
+                      source=<b>{{ r.subjectRoleSource || '空' }}</b>
+                      aiUsed=<b>{{ r.aiUsed }}</b>
+                    </text>
+                    <text v-if="r.aiActor" style="font-size:18rpx;color:#999;display:block;">
+                      AI判断: actor=<b>{{ r.aiActor }}</b> interaction=<b>{{ r.aiInteraction }}</b> commitment=<b>{{ r.aiCommitment }}</b>
+                    </text>
+                  </view>
                 </view>
               </view>
               <view v-if="selectedDetail.cases.length === 0" class="empty">暂无 Crush。</view>
@@ -200,17 +262,9 @@
         <view class="switch-row">
           <view>
             <text class="field-title">启用 AI 事件分析</text>
-            <text class="field-desc">关闭后前台会回退到规则分析。</text>
+            <text class="field-desc">关闭后新记录会按主体不明、普通记录和零分保守保存。</text>
           </view>
           <switch :checked="aiForm.aiEnabled" @change="onAIEnabledChange" />
-        </view>
-
-        <view class="switch-row">
-          <view>
-            <text class="field-title">{{ aiLabel() }} 失败时回退规则</text>
-            <text class="field-desc">建议保持开启，避免用户保存记录失败。</text>
-          </view>
-          <switch :checked="aiForm.aiFallbackToRules" @change="onFallbackChange" />
         </view>
 
         <view v-for="(model, index) in models" :key="model.id" class="model-card">
@@ -333,7 +387,7 @@
         <view class="settings-section">
           <view class="section-head">
             <text class="section-title">业务提示词</text>
-            <text class="section-desc">非安全护栏类提示词全部从这里读取；代码不再提供业务提示词兜底。</text>
+            <text class="section-desc">即时反馈只编辑名称、角色和任务；协议、枚举、评分与安全规则由代码固定。</text>
           </view>
           <view v-if="promptPolicyLines.length" class="policy-box">
             <text v-for="line in promptPolicyLines" :key="line" class="policy-line">{{ line }}</text>
@@ -371,7 +425,11 @@
                 <text>任务</text>
                 <textarea v-model="selectedPromptModule.businessPrompt.taskZh" class="textarea" :maxlength="-1" />
               </view>
-              <view class="field wide">
+              <view v-if="selectedPromptModuleKey === 'eventAssessment'" class="field wide fixed-protocol-note">
+                <text>固定协议说明</text>
+                <text class="field-desc">此模块不读取后台业务规则、输出要求和输出 JSON。模型只返回 NormalizedEventV1；eventType、标签和分数全部由代码生成。</text>
+              </view>
+              <view v-if="selectedPromptModuleKey !== 'eventAssessment'" class="field wide">
                 <text>业务规则（每行一条）</text>
                 <textarea
                   :value="rulesDraft"
@@ -380,7 +438,7 @@
                   @blur="onRulesBlur"
                 />
               </view>
-              <view class="field wide">
+              <view v-if="selectedPromptModuleKey !== 'eventAssessment'" class="field wide">
                 <text>输出要求（只写业务判断标准）</text>
                 <textarea
                   v-model="outputNotesDraft"
@@ -390,7 +448,7 @@
                   @blur="onOutputNotesBlur"
                 />
               </view>
-              <view class="field wide">
+              <view v-if="selectedPromptModuleKey !== 'eventAssessment'" class="field wide">
                 <text>输出结构（JSON）</text>
                 <textarea
                   :value="outputSchemaDraft"
@@ -592,21 +650,47 @@ import BillingPanel from './components/panels/BillingPanel.vue'
 import LoginLogsPanel from './components/panels/LoginLogsPanel.vue'
 import ReferralClaimsPanel from './components/panels/ReferralClaimsPanel.vue'
 
+type AdminSelfProfile = {
+  nickname?: string
+  avatarUrl?: string
+  gender?: string
+  ageRange?: string
+  identity?: string
+  zodiac?: string
+  constellation?: string
+  mbtiCode?: string
+  aiStyle?: string
+  aiBoldness?: string
+  completedAt?: string
+  updatedAt?: string
+}
+
 type AdminUser = {
   id: string
+  openid?: string
   email: string
   phone: string
+  nickname?: string
+  avatarUrl?: string
+  profile?: AdminSelfProfile
   loginType: string
   role: string
   isAdmin: boolean
   caseCount: number
+  createdAt?: string
+  lastLoginAt?: string
 }
 
 type AdminDetail = {
   user: {
     id: string
+    openid?: string
     email: string
     phone: string
+    nickname?: string
+    avatarUrl?: string
+    profile?: AdminSelfProfile
+    loginType?: string
     isAdmin?: boolean
     plan?: string
     trialEndsAt?: string | null
@@ -616,6 +700,12 @@ type AdminDetail = {
     inviteCode?: string
     createdAt: string
     updatedAt?: string
+    lastLoginAt?: string
+    landingChannel?: string
+    landingScene?: string
+    landingRef?: string
+    landingShareId?: string
+    landingInviteCode?: string
   }
   cases: Array<{
     id: string
@@ -679,7 +769,7 @@ type PersonaConfig = {
 }
 
 let modelIdCounter = 1
-const promptModuleKeys = ['eventAssessment', 'eventUnderstanding', 'weeklyReview', 'attachmentAnalysis']
+const promptModuleKeys = ['eventAssessment', 'weeklyReview', 'attachmentAnalysis']
 
 const petSpeakModuleKeys = [
   { key: 'qaStrategy', label: '撩一下策略' },
@@ -779,7 +869,6 @@ const personaBoldnessKeys = ['conservative', 'balanced', 'bold']
 
 const promptModuleTitles: Record<string, string> = {
   eventAssessment: '即时反馈',
-  eventUnderstanding: '事件理解',
   weeklyReview: '近月度复盘',
   attachmentAnalysis: '附件识别'
 }
@@ -801,10 +890,8 @@ const personaBoldnessTitles: Record<string, string> = {
 const runtimeFields = [
   { key: 'eventContextLimit', label: '事件上下文条数', fallback: 3 },
   { key: 'weeklyEventLimit', label: '月度复盘事件条数', fallback: 10 },
-  { key: 'eventMaxTokens', label: '即时反馈 Max Tokens', fallback: 650 },
-  { key: 'eventUnderstandingMaxTokens', label: '事件理解 Max Tokens', fallback: 260 },
+  { key: 'eventMaxTokens', label: '即时反馈 Max Tokens', fallback: 800 },
   { key: 'batchTagMaxTokens', label: '批量语义打标 Max Tokens', fallback: 600 },
-  { key: 'eventUnderstandingTemperature', label: '事件理解温度', fallback: 0.1 },
   { key: 'weeklyMaxTokens', label: '月度复盘 Max Tokens', fallback: 650 },
   { key: 'attachmentMaxTokens', label: '附件识别 Max Tokens', fallback: 1200 },
   { key: 'eventTemperature', label: '即时反馈温度', fallback: 0.2 },
@@ -820,6 +907,10 @@ const currentUserId = ref('')
 const selectedDetail = ref<AdminDetail | null>(null)
 const detailLoading = ref(false)
 const errorMessage = ref('')
+const expandedDebugCase = ref(-1)
+function toggleCaseDebug(index: number) {
+  expandedDebugCase.value = expandedDebugCase.value === index ? -1 : index
+}
 const saveMessage = ref('')
 const savingAI = ref(false)
 const testingModelId = ref('')
@@ -849,8 +940,7 @@ const stats = reactive({
   aiEnabled: false
 })
 const aiForm = reactive({
-  aiEnabled: false,
-  aiFallbackToRules: true
+  aiEnabled: false
 })
 
 const selectedUser = computed(() => users.value.find((user) => user.id === selectedUserId.value))
@@ -1204,7 +1294,6 @@ function applyOverview(result: any) {
 
   const settings = result.aiSettings || {}
   aiForm.aiEnabled = Boolean(settings.aiEnabled)
-  aiForm.aiFallbackToRules = settings.aiFallbackToRules !== false
 
   if (Array.isArray(settings.aiModels) && settings.aiModels.length > 0) {
     models.value = settings.aiModels.map(normalizeModel)
@@ -1307,6 +1396,18 @@ function planLabelText(plan: string) {
   return plan === 'free' ? '免费版' : plan === 'pro' ? 'Pro' : plan === 'ultra' ? 'Ultra' : plan
 }
 
+function genderText(value?: string) {
+  return ({ male: '男生', female: '女生', private: '暂不说' } as Record<string, string>)[value || ''] || '-'
+}
+
+function ageRangeText(value?: string) {
+  return ({ under18: '18 岁以下', '18_22': '18-22 岁', '23_26': '23-26 岁', '27_plus': '27 岁以上' } as Record<string, string>)[value || ''] || '-'
+}
+
+function identityText(value?: string) {
+  return ({ student: '学生', worker: '已工作', other: '其他' } as Record<string, string>)[value || ''] || '-'
+}
+
 function onPlanChange(e: any) {
   userEditForm.plan = planOptions[Number(e.detail.value)] || 'free'
 }
@@ -1398,10 +1499,6 @@ function onPlanDateChange(e: any) {
 
 function onAIEnabledChange(event: any) {
   aiForm.aiEnabled = Boolean(event.detail?.value)
-}
-
-function onFallbackChange(event: any) {
-  aiForm.aiFallbackToRules = Boolean(event.detail?.value)
 }
 
 function onPromptEnabledChange(event: any) {
@@ -1537,7 +1634,6 @@ async function saveAISettings() {
   try {
     const result = await adminUpdateAISettings({
       aiEnabled: aiForm.aiEnabled,
-      aiFallbackToRules: aiForm.aiFallbackToRules,
       defaultModelId: defaultModelId.value || models.value[0].id,
       models: collectModels(),
       promptModules: buildPromptModulesPayload(),
@@ -1889,17 +1985,18 @@ button {
 .table {
   border: 1px solid rgba(23, 35, 31, 0.08);
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.7fr) minmax(90px, 0.7fr) 70px 80px;
+  grid-template-columns: minmax(190px, 1.5fr) minmax(130px, 1fr) 110px 80px 56px 70px;
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
   border-top: 1px solid rgba(23, 35, 31, 0.08);
   font-size: 14px;
+  min-width: 780px;
 }
 
 .table-row:first-child {
@@ -1914,6 +2011,56 @@ button {
 
 .table-row.selected {
   background: #edf7f2;
+}
+
+.user-account-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.user-list-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #edf2ef;
+  object-fit: cover;
+}
+
+.user-list-avatar-fallback,
+.user-profile-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #315f54;
+  font-weight: 700;
+}
+
+.user-account-copy,
+.user-profile-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-account-name {
+  color: #17231f;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-account-id {
+  margin-top: 2px;
+  color: #7a8882;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mono {
@@ -1938,6 +2085,74 @@ button {
 
 .detail-label {
   color: #68766f;
+}
+
+.user-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0 16px;
+  border-bottom: 1px solid rgba(23, 35, 31, 0.08);
+}
+
+.user-profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #edf2ef;
+  object-fit: cover;
+}
+
+.user-profile-name {
+  color: #17231f;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.user-profile-account {
+  margin-top: 5px;
+  color: #68766f;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.profile-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 2px solid #17231f;
+}
+
+.profile-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+}
+
+.profile-field {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(23, 35, 31, 0.08);
+}
+
+.profile-field-label {
+  color: #68766f;
+}
+
+.profile-field-value {
+  color: #17231f;
+  font-weight: 600;
+  word-break: break-word;
 }
 
 .case-list {
@@ -2400,9 +2615,14 @@ input {
   }
 
   .table-row {
-    grid-template-columns: minmax(0, 1fr) 72px 52px 66px;
+    grid-template-columns: minmax(170px, 1.5fr) minmax(120px, 1fr) 96px 72px 48px 62px;
     gap: 8px;
     font-size: 12px;
+    min-width: 700px;
+  }
+
+  .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .field.wide {

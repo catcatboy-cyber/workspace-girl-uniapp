@@ -29,10 +29,7 @@
           <text class="switch-label-v2">启用 AI 事件分析</text>
           <switch :checked="enabled" :color="switchColor" @change="onEnabledChange" />
         </view>
-        <view class="switch-row-v2">
-          <text class="switch-label-v2">{{ aiLabel() }} 调用失败时自动回退规则模式</text>
-          <switch :checked="fallbackToRules" :color="switchColor" @change="onFallbackChange" />
-        </view>
+        <text class="card-text-v2">AI 关闭或调用失败时，新记录会按主体不明、普通记录和零分保守保存。</text>
       </view>
 
       <!-- 模型列表 -->
@@ -157,7 +154,6 @@ const loading = ref(true)
 const submitting = ref(false)
 const saved = ref(false)
 const enabled = ref(false)
-const fallbackToRules = ref(true)
 const models = ref<EditableModel[]>([])
 const defaultModelId = ref('')
 
@@ -186,7 +182,6 @@ function redactKey(key: string) {
 function applySettings(settings: any) {
   if (!settings) {
     enabled.value = false
-    fallbackToRules.value = true
     const m = createEmptyModel()
     m.name = '默认模型'
     models.value = [m]
@@ -195,7 +190,6 @@ function applySettings(settings: any) {
   }
 
   enabled.value = Boolean(settings.aiEnabled)
-  fallbackToRules.value = settings.aiFallbackToRules !== false
 
   if (settings.settingsVersion === 2 && Array.isArray(settings.aiModels)) {
     models.value = settings.aiModels.map((m: any) => ({
@@ -248,10 +242,6 @@ function onEnabledChange(e: any) {
   enabled.value = Boolean(e.detail.value)
 }
 
-function onFallbackChange(e: any) {
-  fallbackToRules.value = Boolean(e.detail.value)
-}
-
 function addModel() {
   models.value.push(createEmptyModel())
 }
@@ -293,7 +283,6 @@ async function onSave() {
     await updateAISettings({
       userId: uid,
       aiEnabled: enabled.value,
-      aiFallbackToRules: fallbackToRules.value,
       models: collected,
       defaultModelId: defaultModelId.value
     })
@@ -340,7 +329,6 @@ async function runModelTest(model: EditableModel) {
       await updateAISettings({
         userId: uid,
         aiEnabled: enabled.value,
-        aiFallbackToRules: fallbackToRules.value,
         models: allModels,
         defaultModelId: defaultModelId.value
       })
