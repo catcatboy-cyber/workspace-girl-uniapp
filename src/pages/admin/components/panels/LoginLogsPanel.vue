@@ -49,7 +49,7 @@
         <view class="stats-row stats-header">
           <text class="stats-cell wide">用户</text>
           <text class="stats-cell">登录次数</text>
-          <text class="stats-cell wide">最后登录</text>
+          <text class="stats-cell wide">最后登录 ↓</text>
         </view>
         <view v-for="stat in userStats" :key="stat.userId" class="stats-row" @click="filterByUser(stat)">
           <text class="stats-cell wide">{{ stat.email || stat.userId }}</text>
@@ -148,6 +148,15 @@ function filterByUserId(uid: string) {
   loadLogs(1)
 }
 
+function dateTimestamp(value: unknown) {
+  const timestamp = new Date(value as any).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function newestFirst<T>(items: T[], getDate: (item: T) => unknown) {
+  return [...items].sort((a, b) => dateTimestamp(getDate(b)) - dateTimestamp(getDate(a)))
+}
+
 async function loadLogs(p: number) {
   loading.value = true
   page.value = p
@@ -161,10 +170,10 @@ async function loadLogs(p: number) {
 
     const result = await getLoginLogs(params)
     if (result?.success) {
-      logs.value = result.data || []
+      logs.value = newestFirst(result.data || [], (log: any) => log.createdAt)
       total.value = result.total || 0
       totalPages.value = result.totalPages || 0
-      userStats.value = result.userStats || []
+      userStats.value = newestFirst(result.userStats || [], (stat: any) => stat.lastLogin)
     } else {
       emit('error', result?.message || '加载失败')
     }
