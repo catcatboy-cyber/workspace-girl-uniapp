@@ -386,7 +386,8 @@ const heroProfileItems = computed(() => {
     p.gender || '',
     p.zodiac ? `属${p.zodiac}` : '',
     p.constellation || '',
-    p.occupation || ''
+    p.occupation || '',
+    p.mbtiCode || ''
   ].filter(Boolean)
 })
 

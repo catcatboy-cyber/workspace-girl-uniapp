@@ -136,8 +136,10 @@ const activeHeroTypeLabel = computed(() => {
 const activeHeroProfileTags = computed(() => {
   const item: any = activeHeroCase.value
   if (!item) return []
-  const tags = (item.cardProfileItems || []).filter(Boolean).slice(0, 5)
-  return tags
+  return [
+    ...(item.cardProfileItems || []),
+    item.profile?.mbtiCode || ''
+  ].filter(Boolean)
 })
 
 onShareAppMessage(() => ({ title: 'TA已经把你设置为Crush了。', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE }))

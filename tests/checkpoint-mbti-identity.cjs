@@ -335,17 +335,38 @@ console.log('\n=== C16: index.vue hero MBTI tag ===')
 const indexPage = fs.readFileSync('src/pages/index/index.vue', 'utf8')
 
 check('hero profile items include MBTI value when present',
-  indexPage.includes('if (p.mbtiCode) items.push(`MBTI ${p.mbtiCode}`)'))
+  indexPage.includes('if (p.mbtiCode) items.push(p.mbtiCode)'))
 
 console.log('  Result: %d/%d PASS', pass, pass + fail)
 const c16ok = fail === 0
 pass = 0; fail = 0
 
 // ==========================================
+// C17: tab page heroes - MBTI profile tags
+// ==========================================
+console.log('\n=== C17: tab page hero MBTI tags ===')
+const caseDetailPage = fs.readFileSync('src/pages/case-detail/case-detail.vue', 'utf8')
+const casesPage = fs.readFileSync('src/pages/cases/cases.vue', 'utf8')
+const timelinePage = fs.readFileSync('src/pages/timeline/timeline.vue', 'utf8')
+
+check('case-detail hero profile items include MBTI value',
+  caseDetailPage.includes("p.mbtiCode || ''"))
+
+check('cases hero profile tags include active Crush MBTI value',
+  casesPage.includes("item.profile?.mbtiCode || ''"))
+
+check('timeline hero profile items include MBTI value',
+  timelinePage.includes("p.mbtiCode || ''"))
+
+console.log('  Result: %d/%d PASS', pass, pass + fail)
+const c17ok = fail === 0
+pass = 0; fail = 0
+
+// ==========================================
 // SUMMARY
 // ==========================================
 console.log('\n=== SMOKE TEST SUMMARY ===')
-const checkpointResults = [c1ok, c2ok, c3ok, c4ok, c5ok, c6ok, c7ok, c8ok, c9ok, c10ok, c11ok, c12ok, c13ok, c14ok, c15ok, c16ok]
+const checkpointResults = [c1ok, c2ok, c3ok, c4ok, c5ok, c6ok, c7ok, c8ok, c9ok, c10ok, c11ok, c12ok, c13ok, c14ok, c15ok, c16ok, c17ok]
 const allPass = checkpointResults.every(Boolean)
 const failedChecks = checkpointResults
   .map((ok, i) => ok ? null : `C${i + 1}`).filter(Boolean)
