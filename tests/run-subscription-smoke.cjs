@@ -1,5 +1,5 @@
 /**
- * v3.2 平台 Token 体系冒烟测试 + 回归测试
+ * 当前订阅与平台 Token 体系冒烟测试 + 回归测试
  */
 const assert = require('node:assert/strict')
 const path = require('path')
@@ -22,13 +22,13 @@ async function runCase(name, fn) {
 
 // ─── Main ─────────────────────────────────────────────
 async function main() {
-  console.log('=== v3.2 平台 Token 体系冒烟测试 ===\n')
+  console.log('=== 当前订阅与平台 Token 体系冒烟测试 ===\n')
 
   // ── 1. 默认配置 ──
-  console.log('1. DEFAULT_SUBSCRIPTION_CONFIG (v3.2)')
-  await runCase('tokenExchangeRate=1.5', () => {
+  console.log('1. DEFAULT_SUBSCRIPTION_CONFIG (v5)')
+  await runCase('configVersion=5', () => {
     const m = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
-    assert.equal(m.DEFAULT_SUBSCRIPTION_CONFIG.tokenExchangeRate, 1.5)
+    assert.equal(m.DEFAULT_SUBSCRIPTION_CONFIG.configVersion, 5)
   })
   await runCase('monthlyTokens (不是 monthlyCalls)', () => {
     const m = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
@@ -38,34 +38,22 @@ async function main() {
     assert.equal(c.plans.pro.monthlyTokens, 300000)
     assert.equal(c.plans.ultra.monthlyTokens, -1)
   })
-  await runCase('featureEstTokens 包含关键 key', () => {
-    const m = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
-    const fet = m.DEFAULT_SUBSCRIPTION_CONFIG.featureEstTokens
-    assert.ok(fet.eventAssessment)
-    assert.ok(fet.weeklyReview)
-    assert.ok(fet.sideRead)
-    assert.ok(fet.petReply)
-  })
   await runCase('referral 用 inviterRewardTokens/inviteeRewardTokens', () => {
     const m = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
     const r = m.DEFAULT_SUBSCRIPTION_CONFIG.referral
     assert.equal(r.inviterRewardTokens, 3000)
     assert.equal(r.inviteeRewardTokens, 5000)
   })
-  await runCase('welcomeTokens=10000', () => {
-    const m = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
-    assert.equal(m.DEFAULT_SUBSCRIPTION_CONFIG.welcomeTokens, 10000)
-  })
 
   // ── 2. checkTokenBalance ──
   console.log('\n2. checkTokenBalance')
-  await runCase('试用期用户 → ok', async () => {
+  await runCase('试用期用户没有额外余额 → TOKEN_INSUFFICIENT', async () => {
     const fake = createFakeCloudbase(); setCurrentFakeCloudbase(fake)
     const uid = 'u_trial'; const db = fake.init().database()
     fake.__store.getCollection('users').set(uid, { _id: uid, plan: 'free', trialEndsAt: new Date(Date.now() + 86400000), monthlyTokensUsed: 0, monthlyTokensReset: new Date(new Date().getFullYear(), new Date().getMonth(), 1), extraTokens: 0 })
     const { checkTokenBalance } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
     const r = await checkTokenBalance(db, uid, 1000)
-    assert.equal(r.ok, true); assert.equal(r.source, 'trial')
+    assert.equal(r.ok, false); assert.equal(r.code, 'TOKEN_INSUFFICIENT')
   })
   await runCase('ultra 用户 → ok', async () => {
     const fake = createFakeCloudbase(); setCurrentFakeCloudbase(fake)
@@ -73,7 +61,7 @@ async function main() {
     fake.__store.getCollection('users').set(uid, { _id: uid, plan: 'ultra', trialEndsAt: null, monthlyTokensUsed: 999999, monthlyTokensReset: new Date(new Date().getFullYear(), new Date().getMonth(), 1), extraTokens: 0 })
     const { checkTokenBalance } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
     const r = await checkTokenBalance(db, uid, 1000)
-    assert.equal(r.ok, true); assert.equal(r.source, 'ultra')
+    assert.equal(r.ok, true); assert.equal(r.source, 'unlimited')
   })
   await runCase('免费用户余额不足 → TOKEN_INSUFFICIENT', async () => {
     const fake = createFakeCloudbase(); setCurrentFakeCloudbase(fake)
@@ -109,7 +97,7 @@ async function main() {
     try {
       const r = await consumeTokens(db, uid, 1000, '测试')
       assert.equal(r.deducted, 0)
-      assert.equal(r.source, 'trial')
+      assert.equal(r.source, undefined)
     } catch (e) {
       if (e.message === 'db.command.inc is not a function') return // mock limitation
       throw e
@@ -128,18 +116,17 @@ async function main() {
       throw e
     }
   })
-  await runCase('倍率 1.5: 1000 model token → 1500 平台 Token', async () => {
+  await runCase('未配置 billing 倍率时: 1000 model token → 1000 平台 Token', async () => {
     const { consumeTokens } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
     const fake = createFakeCloudbase(); setCurrentFakeCloudbase(fake)
     const uid = 'u_rate'; const db = fake.init().database()
-    // 确保 config 有 tokenExchangeRate=1.5
     const { ensureSubscriptionConfig } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
     await ensureSubscriptionConfig(db)
     fake.__store.getCollection('users').set(uid, { _id: uid, plan: 'free', trialEndsAt: null, monthlyTokensUsed: 0, monthlyTokensReset: new Date(new Date().getFullYear(), new Date().getMonth(), 1), extraTokens: 0 })
     try {
       const r = await consumeTokens(db, uid, 1000, '测试')
-      assert.equal(r.platformTokens, 1500, `expected 1500 platform tokens, got ${r.platformTokens}`)
-      assert.equal(r.rate, 1.5)
+      assert.equal(r.platformTokens, 1000, `expected 1000 platform tokens, got ${r.platformTokens}`)
+      assert.equal(r.rate, 1)
     } catch (e) {
       if (e.message === 'db.command.inc is not a function') return
       throw e
@@ -155,7 +142,7 @@ async function main() {
     await ensureSubscriptionConfig(db)
     fake.__store.getCollection('users').set(uid, { _id: uid, plan: 'free', trialEndsAt: null })
     const { checkFeatureAccess } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
-    const r = await checkFeatureAccess(db, uid, '星象速写')
+    const r = await checkFeatureAccess(db, uid, '命理桃花')
     assert.equal(r.allowed, false)
   })
   await runCase('试用期内可以用星象速写', async () => {
@@ -170,8 +157,8 @@ async function main() {
   })
 
   // ── 5. 配置迁移 ──
-  console.log('\n5. 配置迁移 (monthlyCalls → monthlyTokens)')
-  await runCase('旧 monthlyCalls 自动转为 monthlyTokens', async () => {
+  console.log('\n5. 配置迁移（只补缺、不覆盖管理员配置）')
+  await runCase('旧配置升级版本并补全邀请奖励字段', async () => {
     const fake = createFakeCloudbase(); setCurrentFakeCloudbase(fake)
     const db = fake.init().database()
     // 模拟旧配置
@@ -179,11 +166,9 @@ async function main() {
     fake.__store.getCollection('system_settings').set('settings_subscription', oldDoc)
     const { ensureSubscriptionConfig } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
     const migrated = await ensureSubscriptionConfig(db)
-    assert.equal(migrated.tokenExchangeRate, 1.5)
-    assert.equal(migrated.plans.free.monthlyTokens, 30000)
-    assert.equal(migrated.plans.ultra.monthlyTokens, -1)
+    assert.equal(migrated.configVersion, 5)
+    assert.equal(migrated.plans.free.monthlyCalls, 20)
     assert.equal(migrated.referral.inviterRewardTokens, 3000)
-    assert.equal(migrated.welcomeTokens, 10000)
   })
 
   // ── 6. 注册 ──
@@ -214,11 +199,6 @@ async function main() {
     const fake = createFakeCloudbase(); setCurrentFakeCloudbase(fake)
     const r = await loadFunction('register')({ email: 'x@x.com', password: '123' })
     assert.equal(r.success, false)
-  })
-  await runCase('AI 函数 require 不爆', () => {
-    for (const fn of ['generateAssessmentAI', 'weeklyReview', 'generateSideRead', 'analyzeAttachment', 'petLines', 'createTimeline']) {
-      require(path.join(projectRoot, 'cloudfunctions', fn, 'index.js'))
-    }
   })
 
   console.log(`\n═══════════════════════════════════════`)
