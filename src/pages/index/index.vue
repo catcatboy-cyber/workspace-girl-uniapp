@@ -670,6 +670,7 @@ function getProfileItems(c: any): string[] {
   if (p.zodiac) items.push(`属${p.zodiac}`)
   if (p.constellation) items.push(p.constellation)
   if (p.occupation) items.push(p.occupation)
+  if (p.mbtiCode) items.push(`MBTI ${p.mbtiCode}`)
   return items
 }
 

@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>首页原型测试 Banner - 交互稿</title>
+  <style>
+    :root {
+      --ink: #111111;
+      --paper: #fffdf5;
+      --white: #ffffff;
+      --coral: #ff6b6b;
+      --yellow: #ffd93d;
+      --mint: #4ecdc4;
+      --sky: #7cc8ff;
+      --lavender: #b9a7ff;
+      --muted: #6f6b63;
+      --line: 3px solid var(--ink);
+      --shadow: 6px 6px 0 var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+    button { font: inherit; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: #ebe7de;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .workspace {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 390px minmax(280px, 360px);
+      justify-content: center;
+      align-items: start;
+      gap: 42px;
+      padding: 28px 20px 48px;
+    }
+
+    .phone-shell {
+      width: 390px;
+      height: 844px;
+      overflow: hidden;
+      position: relative;
+      border: 4px solid var(--ink);
+      background: var(--paper);
+      box-shadow: 12px 12px 0 var(--ink);
+    }
+
+    .phone-scroll {
+      height: 100%;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .phone-scroll::-webkit-scrollbar { display: none; }
+
+    .statusbar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      background: var(--paper);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .topbar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 2px solid var(--ink);
+      background: var(--paper);
+    }
+
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand-mark {
+      width: 31px;
+      height: 31px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      background: var(--coral);
+      font-size: 13px;
+      font-weight: 950;
+      transform: rotate(-4deg);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .brand-name { font-size: 16px; font-weight: 950; }
+    .login-pill {
+      border: 2px solid var(--ink);
+      background: var(--yellow);
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .hero-wrap { padding: 14px 14px 0; }
+    .hero-carousel {
+      height: 278px;
+      position: relative;
+      overflow: hidden;
+      border: var(--line);
+      box-shadow: var(--shadow);
+      background: var(--white);
+      touch-action: pan-y;
+    }
+    .hero-track {
+      height: 100%;
+      display: flex;
+      transition: transform 420ms cubic-bezier(.22,.8,.28,1);
+    }
+    .hero-slide {
+      min-width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      padding: 17px 17px 44px;
+      cursor: pointer;
+    }
+    .hero-slide.heroine { background: var(--coral); }
+    .hero-slide.celebrity { background: var(--yellow); }
+    .hero-slide::after {
+      content: "";
+      position: absolute;
+      width: 86px;
+      height: 86px;
+      right: -28px;
+      bottom: -30px;
+      border: 3px solid var(--ink);
+      background: var(--mint);
+      transform: rotate(20deg);
+    }
+    .hero-slide.celebrity::after { background: var(--coral); }
+
+    .eyebrow-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 9px;
+      background: var(--ink);
+      color: var(--yellow);
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .update-badge {
+      padding: 3px 7px;
+      border: 2px solid var(--ink);
+      background: var(--white);
+      font-size: 9px;
+      font-weight: 900;
+      transform: rotate(2deg);
+    }
+    .hero-title {
+      margin: 11px 0 5px;
+      font-size: 28px;
+      line-height: 1.04;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+    .hero-subtitle {
+      margin: 0;
+      max-width: 300px;
+      font-size: 12px;
+      line-height: 1.5;
+      font-weight: 800;
+    }
+
+    .heroine-stack {
+      display: flex;
+      align-items: flex-end;
+      gap: 7px;
+      margin-top: 12px;
+    }
+    .mini-person {
+      flex: 1;
+      min-width: 0;
+      height: 67px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px;
+      border: 2px solid var(--ink);
+      background: var(--paper);
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    .mini-person:nth-child(2) { transform: translateY(-5px); background: var(--yellow); }
+    .mini-face {
+      width: 37px;
+      height: 47px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      background: var(--mint);
+      font-size: 15px;
+      font-weight: 950;
+    }
+    .mini-person:nth-child(2) .mini-face { background: var(--lavender); }
+    .mini-person:nth-child(3) .mini-face { background: var(--sky); }
+    .mini-name { min-width: 0; font-size: 11px; line-height: 1.25; font-weight: 950; }
+    .mini-style { display: block; color: var(--muted); font-size: 8px; font-weight: 800; margin-top: 3px; }
+
+    .era-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 11px; }
+    .era-card {
+      height: 72px;
+      padding: 7px;
+      border: 2px solid var(--ink);
+      background: var(--white);
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    .era-card:nth-child(2) { background: var(--mint); transform: translateY(-4px); }
+    .era-card:nth-child(3) { background: var(--lavender); }
+    .era-name { font-size: 11px; font-weight: 950; }
+    .era-list { margin-top: 6px; font-size: 8px; line-height: 1.45; font-weight: 800; color: #3c3934; }
+
+    .hero-cta {
+      position: absolute;
+      left: 17px;
+      bottom: 12px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 13px;
+      border: 2px solid var(--ink);
+      background: var(--ink);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 900;
+      box-shadow: 3px 3px 0 rgba(255,255,255,.8);
+    }
+    .hero-cta.locked { background: #77736c; color: #fff; }
+
+    .carousel-arrow {
+      position: absolute;
+      z-index: 4;
+      top: 120px;
+      width: 30px;
+      height: 38px;
+      border: 2px solid var(--ink);
+      background: var(--paper);
+      font-size: 21px;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .carousel-arrow.prev { left: 7px; }
+    .carousel-arrow.next { right: 7px; }
+    .carousel-dots {
+      position: absolute;
+      z-index: 4;
+      right: 13px;
+      bottom: 15px;
+      display: flex;
+      gap: 6px;
+    }
+    .carousel-dot {
+      width: 9px;
+      height: 9px;
+      padding: 0;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--white);
+      cursor: pointer;
+    }
+    .carousel-dot.active { width: 22px; border-radius: 6px; background: var(--ink); }
+
+    .home-fragment { padding: 23px 14px 100px; }
+    .fragment-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 11px; }
+    .fragment-title { font-size: 18px; font-weight: 950; }
+    .fragment-link { font-size: 11px; font-weight: 900; }
+    .signal-card {
+      border: var(--line);
+      background: var(--white);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .signal-top { display: flex; align-items: center; gap: 10px; }
+    .signal-avatar {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      background: var(--sky);
+      font-weight: 950;
+    }
+    .signal-name { font-size: 15px; font-weight: 950; }
+    .signal-meta { margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 700; }
+    .signal-score { margin-left: auto; text-align: right; }
+    .signal-num { display: block; font-size: 24px; line-height: 1; font-weight: 950; }
+    .signal-label { font-size: 9px; font-weight: 800; color: var(--muted); }
+    .bars { display: grid; gap: 8px; margin-top: 14px; }
+    .bar { height: 10px; border: 2px solid var(--ink); background: #eee; }
+    .bar > i { display: block; height: 100%; background: var(--mint); }
+    .bar:nth-child(2) > i { background: var(--coral); }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 8;
+      height: 72px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 3px solid var(--ink);
+      background: var(--paper);
+    }
+    .nav-item { display: grid; place-items: center; align-content: center; gap: 3px; font-size: 9px; font-weight: 800; }
+    .nav-icon { font-size: 19px; line-height: 1; }
+    .nav-item.active { background: var(--yellow); }
+
+    .review-panel {
+      position: sticky;
+      top: 28px;
+      border: var(--line);
+      background: var(--white);
+      box-shadow: 9px 9px 0 var(--ink);
+      padding: 20px;
+    }
+    .review-kicker { font-size: 10px; font-weight: 950; color: var(--coral); }
+    .review-title { margin: 5px 0 7px; font-size: 23px; line-height: 1.15; font-weight: 950; }
+    .review-copy { margin: 0 0 18px; color: var(--muted); font-size: 12px; line-height: 1.6; font-weight: 700; }
+    .control-label { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 950; }
+    .plan-switch { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .plan-button {
+      min-height: 42px;
+      border: 2px solid var(--ink);
+      background: var(--paper);
+      font-size: 12px;
+      font-weight: 950;
+      cursor: pointer;
+    }
+    .plan-button.active { background: var(--ink); color: var(--yellow); box-shadow: 3px 3px 0 var(--coral); }
+    .permission-card {
+      margin-top: 17px;
+      padding: 13px;
+      border: 2px solid var(--ink);
+      background: #f7f5ef;
+    }
+    .permission-state { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; font-weight: 950; }
+    .state-open { color: #117970; }
+    .state-closed { color: #d64040; }
+    .permission-code {
+      margin-top: 9px;
+      padding-top: 9px;
+      border-top: 1px dashed #999;
+      color: var(--muted);
+      font-family: Consolas, monospace;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+    .review-note {
+      margin-top: 17px;
+      padding: 12px;
+      border-left: 6px solid var(--yellow);
+      background: #fff8d9;
+      font-size: 11px;
+      line-height: 1.6;
+      font-weight: 700;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      align-items: flex-end;
+      background: rgba(17,17,17,.62);
+    }
+    .modal-backdrop.open { display: flex; }
+    .detail-sheet {
+      width: 100%;
+      max-height: 735px;
+      overflow-y: auto;
+      border-top: 4px solid var(--ink);
+      background: var(--paper);
+      animation: sheetUp 220ms ease-out;
+    }
+    @keyframes sheetUp { from { transform: translateY(30px); opacity: .5; } to { transform: translateY(0); opacity: 1; } }
+    .sheet-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--ink);
+      background: var(--paper);
+    }
+    .sheet-title { font-size: 16px; font-weight: 950; }
+    .close-button {
+      width: 34px;
+      height: 34px;
+      border: 2px solid var(--ink);
+      background: var(--white);
+      font-size: 20px;
+      font-weight: 950;
+      cursor: pointer;
+    }
+    .sheet-body { padding: 14px 14px 28px; }
+    .detail-hero {
+      border: var(--line);
+      background: var(--coral);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .detail-hero.celeb { background: var(--yellow); }
+    .detail-tag { font-size: 10px; font-weight: 950; }
+    .detail-title { margin: 5px 0; font-size: 23px; line-height: 1.15; font-weight: 950; }
+    .detail-desc { margin: 0; font-size: 12px; line-height: 1.55; font-weight: 750; }
+    .process-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 16px; }
+    .process-step { min-height: 84px; padding: 9px; border: 2px solid var(--ink); background: var(--white); }
+    .step-num { font-size: 19px; font-weight: 950; }
+    .step-name { display: block; margin-top: 5px; font-size: 10px; line-height: 1.3; font-weight: 900; }
+    .step-note { display: block; margin-top: 3px; font-size: 8px; line-height: 1.35; color: var(--muted); font-weight: 700; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; margin: 21px 0 10px; }
+    .section-head strong { font-size: 16px; font-weight: 950; }
+    .section-head span { font-size: 9px; color: var(--muted); font-weight: 800; }
+    .archetype-detail { display: grid; gap: 8px; }
+    .archetype-row { display: grid; grid-template-columns: 45px 1fr auto; align-items: center; gap: 9px; padding: 9px; border: 2px solid var(--ink); background: var(--white); }
+    .archetype-initial { width: 45px; height: 45px; display: grid; place-items: center; border: 2px solid var(--ink); background: var(--mint); font-weight: 950; }
+    .archetype-row:nth-child(2) .archetype-initial { background: var(--yellow); }
+    .archetype-row:nth-child(3) .archetype-initial { background: var(--sky); }
+    .archetype-info strong { display: block; font-size: 12px; font-weight: 950; }
+    .archetype-info span { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; font-weight: 700; }
+    .sample-score { font-size: 18px; font-weight: 950; }
+    .sample-score small { font-size: 9px; }
+
+    .pool-tabs { display: flex; gap: 7px; }
+    .pool-tab { padding: 7px 13px; border: 2px solid var(--ink); background: var(--white); font-size: 10px; font-weight: 950; cursor: pointer; }
+    .pool-tab.active { background: var(--ink); color: var(--yellow); }
+    .people-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 10px; }
+    .person-chip { min-width: 0; padding: 8px 5px; border: 2px solid var(--ink); background: var(--white); text-align: center; }
+    .person-avatar { width: 37px; height: 37px; display: grid; place-items: center; margin: 0 auto 5px; border: 2px solid var(--ink); background: var(--mint); font-size: 12px; font-weight: 950; }
+    .person-chip:nth-child(3n+2) .person-avatar { background: var(--lavender); }
+    .person-chip:nth-child(3n) .person-avatar { background: var(--coral); }
+    .person-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 950; }
+    .person-type { margin-top: 2px; color: var(--muted); font-size: 8px; font-weight: 700; }
+
+    .login-tip { margin: 18px 0 10px; text-align: center; font-size: 10px; font-weight: 800; color: var(--muted); }
+    .primary-button {
+      width: 100%;
+      height: 50px;
+      border: var(--line);
+      background: var(--mint);
+      box-shadow: 5px 5px 0 var(--ink);
+      font-size: 14px;
+      font-weight: 950;
+      cursor: pointer;
+    }
+    .primary-button.locked { background: #d4d0c7; color: #666; cursor: not-allowed; }
+
+    .toast {
+      position: absolute;
+      z-index: 50;
+      left: 50%;
+      bottom: 92px;
+      display: none;
+      width: max-content;
+      max-width: 310px;
+      transform: translateX(-50%);
+      border: 2px solid var(--ink);
+      background: var(--ink);
+      color: var(--white);
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: 4px 4px 0 var(--yellow);
+    }
+    .toast.show { display: block; animation: toastIn 180ms ease-out; }
+    @keyframes toastIn { from { transform: translate(-50%, 8px); opacity: 0; } }
+
+    @media (max-width: 850px) {
+      .workspace { grid-template-columns: 390px; gap: 28px; padding-top: 16px; }
+      .review-panel { position: static; width: 390px; }
+    }
+    @media (max-width: 430px) {
+      body { background: var(--paper); }
+      .workspace { display: block; padding: 0; }
+      .phone-shell { width: 100vw; height: 100vh; border: 0; box-shadow: none; }
+      .review-panel { width: calc(100vw - 24px); margin: 24px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <section class="phone-shell" aria-label="小程序首页原型">
+      <div class="phone-scroll" id="phoneScroll">
+        <div class="statusbar"><span>9:41</span><span>● ●● 100%</span></div>
+        <header class="topbar">
+          <div class="brand"><span class="brand-mark">CM</span><span class="brand-name">Crush Master</span></div>
+          <span class="login-pill">已登录</span>
+        </header>
+
+        <section class="hero-wrap" aria-label="玩法推荐">
+          <div class="hero-carousel" id="carousel">
+            <div class="hero-track" id="heroTrack">
+              <article class="hero-slide heroine" data-feature="heroine" tabindex="0">
+                <div class="eyebrow-row"><span class="eyebrow">专业型趣味测试</span><span class="update-badge">自测 / 测对方</span></div>
+                <h1 class="hero-title">你是哪种<br>关系女主角？</h1>
+                <p class="hero-subtitle">6题定位 · 15题专测 · 3道情景验证</p>
+                <div class="heroine-stack">
+                  <div class="mini-person"><span class="mini-face">冉</span><span class="mini-name">冉莹颖<span class="mini-style">高能兜底型</span></span></div>
+                  <div class="mini-person"><span class="mini-face">佟</span><span class="mini-name">佟晨洁<span class="mini-style">清醒观察型</span></span></div>
+                  <div class="mini-person"><span class="mini-face">谢</span><span class="mini-name">谢杏芳<span class="mini-style">隐忍修复型</span></span></div>
+                </div>
+                <span class="hero-cta">开始测试 <b>→</b></span>
+              </article>
+
+              <article class="hero-slide celebrity" data-feature="celebrity" tabindex="0">
+                <div class="eyebrow-row"><span class="eyebrow">CRUSH 名人图鉴</span><span class="update-badge">48+ 人物持续更新</span></div>
+                <h1 class="hero-title">你的气质<br>最像哪位名人？</h1>
+                <p class="hero-subtitle">跨越古今的人格相似度匹配，结果用百分比表达</p>
+                <div class="era-row">
+                  <div class="era-card"><div class="era-name">历史</div><div class="era-list">武则天 · 项羽<br>李清照 · 王阳明</div></div>
+                  <div class="era-card"><div class="era-name">近代</div><div class="era-list">张爱玲 · 林徽因<br>宋庆龄 · 胡适</div></div>
+                  <div class="era-card"><div class="era-name">当代</div><div class="era-list">王菲 · 周迅<br>周杰伦 · 刘德华</div></div>
+                </div>
+                <span class="hero-cta">打开图鉴 <b>→</b></span>
+              </article>
+            </div>
+            <button class="carousel-arrow prev" type="button" aria-label="上一张">‹</button>
+            <button class="carousel-arrow next" type="button" aria-label="下一张">›</button>
+            <div class="carousel-dots" aria-label="轮播页码">
+              <button class="carousel-dot active" type="button" aria-label="关系女主角"></button>
+              <button class="carousel-dot" type="button" aria-label="Crush 名人图鉴"></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="home-fragment">
+          <div class="fragment-head"><span class="fragment-title">今日关系雷达</span><span class="fragment-link">查看全部 →</span></div>
+          <div class="signal-card">
+            <div class="signal-top">
+              <span class="signal-avatar">TA</span>
+              <span><span class="signal-name">最近关注的人</span><span class="signal-meta">互动信号 · 今日已更新</span></span>
+              <span class="signal-score"><b class="signal-num">76</b><span class="signal-label">意向指数</span></span>
+            </div>
+            <div class="bars"><div class="bar"><i style="width:76%"></i></div><div class="bar"><i style="width:41%"></i></div></div>
+          </div>
+        </section>
+      </div>
+
+      <nav class="bottom-nav" aria-label="底部导航">
+        <span class="nav-item active"><span class="nav-icon">⌂</span><span>首页</span></span>
+        <span class="nav-item"><span class="nav-icon">◎</span><span>Crushes</span></span>
+        <span class="nav-item"><span class="nav-icon">＋</span><span>记录</span></span>
+        <span class="nav-item"><span class="nav-icon">◇</span><span>我的</span></span>
+      </nav>
+
+      <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+        <div class="detail-sheet">
+          <div class="sheet-head"><span class="sheet-title" id="sheetTitle">玩法详情</span><button class="close-button" id="closeModal" type="button" aria-label="关闭">×</button></div>
+          <div class="sheet-body" id="sheetBody"></div>
+        </div>
+      </div>
+      <div class="toast" id="toast"></div>
+    </section>
+
+    <aside class="review-panel">
+      <div class="review-kicker">仅用于原型验收</div>
+      <h2 class="review-title">切换套餐，查看 Banner 权限状态</h2>
+      <p class="review-copy">生产环境只读取后台订阅配置中的 <b>features / excludedFeatures</b>。这里的按钮不会出现在小程序首页。</p>
+      <span class="control-label">当前模拟套餐</span>
+      <div class="plan-switch">
+        <button class="plan-button active" type="button" data-plan="trial">试用期</button>
+        <button class="plan-button" type="button" data-plan="free">免费</button>
+        <button class="plan-button" type="button" data-plan="pro">Pro</button>
+        <button class="plan-button" type="button" data-plan="ultra">Ultra</button>
+      </div>
+      <div class="permission-card">
+        <div class="permission-state"><span>关系女主角</span><span class="state-open" data-state>已开放</span></div>
+        <div class="permission-state" style="margin-top:7px"><span>Crush 名人图鉴</span><span class="state-open" data-state>已开放</span></div>
+        <div class="permission-code" id="permissionCode">features: [关系女主角, Crush名人图鉴]<br>excludedFeatures: []</div>
+      </div>
+      <div class="review-note">默认规则：试用期开放；免费不开放；Pro、Ultra 开放。最终可在后台按套餐覆盖配置。</div>
+    </aside>
+  </main>
+
+  <script>
+    const people = {
+      history: [
+        ['武则天','掌控型'],['项羽','燃烧型'],['赵云','守护型'],['诸葛亮','谋略型'],
+        ['李清照','敏锐型'],['王阳明','笃定型'],['苏轼','豁达型'],['李白','自由型'],
+        ['花木兰','担当型'],['王昭君','坚韧型'],['唐伯虎','浪漫型'],['曹操','进取型'],
+        ['杜甫','深情型'],['辛弃疾','热血型'],['上官婉儿','智性型'],['兰陵王','神秘型']
+      ],
+      modern: [
+        ['张爱玲','洞察型'],['林徽因','灵气型'],['徐志摩','浪漫型'],['胡适','理性型'],
+        ['宋庆龄','坚定型'],['鲁迅','锋利型'],['钱钟书','机智型'],['杨绛','通透型'],
+        ['陆小曼','绚烂型'],['梁思成','专注型'],['冰心','温柔型'],['梅兰芳','自律型'],
+        ['萧红','敏感型'],['沈从文','纯粹型'],['张学良','洒脱型'],['周恩来','周全型']
+      ],
+      contemporary: [
+        ['王菲','疏离型'],['周迅','灵动型'],['刘德华','稳健型'],['周杰伦','创意型'],
+        ['张曼玉','松弛型'],['梁朝伟','内敛型'],['舒淇','坦然型'],['巩俐','强势型'],
+        ['莫文蔚','自在型'],['陈奕迅','感受型'],['杨紫琼','力量型'],['汤唯','文艺型'],
+        ['金城武','安静型'],['张国荣','真我型'],['林青霞','英气型'],['蔡康永','共情型']
+      ]
+    };
+
+    const planRules = {
+      trial: { label: '试用期', open: true, code: 'features: [关系女主角, Crush名人图鉴]<br>excludedFeatures: []' },
+      free: { label: '免费', open: false, code: 'features: []<br>excludedFeatures: [关系女主角, Crush名人图鉴]' },
+      pro: { label: 'Pro', open: true, code: 'features: [关系女主角, Crush名人图鉴]<br>excludedFeatures: []' },
+      ultra: { label: 'Ultra', open: true, code: 'features: [关系女主角, Crush名人图鉴]<br>excludedFeatures: []' }
+    };
+
+    let activeSlide = 0;
+    let activePlan = 'trial';
+    let activeEra = 'history';
+    let timer;
+    let dragStart = null;
+
+    const track = document.getElementById('heroTrack');
+    const carousel = document.getElementById('carousel');
+    const dots = [...document.querySelectorAll('.carousel-dot')];
+    const slides = [...document.querySelectorAll('.hero-slide')];
+    const modal = document.getElementById('modalBackdrop');
+    const sheetBody = document.getElementById('sheetBody');
+    const sheetTitle = document.getElementById('sheetTitle');
+    const toast = document.getElementById('toast');
+
+    function setSlide(index, restart = true) {
+      activeSlide = (index + slides.length) % slides.length;
+      track.style.transform = `translateX(-${activeSlide * 100}%)`;
+      dots.forEach((dot, i) => dot.classList.toggle('active', i === activeSlide));
+      if (restart) startTimer();
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timer = setInterval(() => setSlide(activeSlide + 1, false), 4800);
+    }
+
+    document.querySelector('.prev').addEventListener('click', (e) => { e.stopPropagation(); setSlide(activeSlide - 1); });
+    document.querySelector('.next').addEventListener('click', (e) => { e.stopPropagation(); setSlide(activeSlide + 1); });
+    dots.forEach((dot, i) => dot.addEventListener('click', (e) => { e.stopPropagation(); setSlide(i); }));
+
+    carousel.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('button')) return;
+      dragStart = event.clientX;
+      clearInterval(timer);
+    });
+    carousel.addEventListener('pointerup', (event) => {
+      if (dragStart === null) return;
+      const distance = event.clientX - dragStart;
+      dragStart = null;
+      if (Math.abs(distance) > 42) setSlide(activeSlide + (distance < 0 ? 1 : -1));
+      else startTimer();
+    });
+    carousel.addEventListener('pointercancel', () => { dragStart = null; startTimer(); });
+
+    slides.forEach(slide => {
+      slide.addEventListener('click', () => openFeature(slide.dataset.feature));
+      slide.addEventListener('keydown', event => { if (event.key === 'Enter') openFeature(slide.dataset.feature); });
+    });
+
+    function heroineTemplate() {
+      return `
+        <div class="detail-hero">
+          <span class="detail-tag">关系行为原型 · 可自测也可测对方</span>
+          <h3 class="detail-title">你是哪一种关系女主角？</h3>
+          <p class="detail-desc">先定位最接近的原型，再进入该人物的专属题库。不同女主角使用不同问题与情景，结果显示多人物相似度百分比。</p>
+        </div>
+        <div class="process-row">
+          <div class="process-step"><b class="step-num">6</b><span class="step-name">题快速筛选</span><span class="step-note">确定优先测试方向</span></div>
+          <div class="process-step"><b class="step-num">15</b><span class="step-name">题人物专测</span><span class="step-note">每个原型独立题库</span></div>
+          <div class="process-step"><b class="step-num">3</b><span class="step-name">道专属情景题</span><span class="step-note">验证真实行为选择</span></div>
+        </div>
+        <div class="section-head"><strong>首发女主角</strong><span>后续可后台持续增加</span></div>
+        <div class="archetype-detail">
+          <div class="archetype-row"><span class="archetype-initial">冉</span><span class="archetype-info"><strong>冉莹颖式 · 高能兜底型</strong><span>能扛事、强推动、关系中承担更多</span></span><span class="sample-score">82<small>%</small></span></div>
+          <div class="archetype-row"><span class="archetype-initial">佟</span><span class="archetype-info"><strong>佟晨洁式 · 清醒观察型</strong><span>看得明白、保持判断、重视边界</span></span><span class="sample-score">64<small>%</small></span></div>
+          <div class="archetype-row"><span class="archetype-initial">谢</span><span class="archetype-info"><strong>谢杏芳式 · 隐忍修复型</strong><span>重视完整、倾向修复、承受力较强</span></span><span class="sample-score">41<small>%</small></span></div>
+        </div>
+        ${actionTemplate('关系女主角')}`;
+    }
+
+    function peopleGrid(era) {
+      return people[era].map(([name, type]) => `<div class="person-chip"><span class="person-avatar">${name.slice(0,1)}</span><div class="person-name">${name}</div><div class="person-type">${type}</div></div>`).join('');
+    }
+
+    function celebrityTemplate() {
+      return `
+        <div class="detail-hero celeb">
+          <span class="detail-tag">CRUSH 名人图鉴 · 48+ 人物持续扩展</span>
+          <h3 class="detail-title">你的气质最像哪位名人？</h3>
+          <p class="detail-desc">不是简单星座配对，而是把作答映射到人格维度，再与跨时代人物原型进行匹配，展示相似度排行。</p>
+        </div>
+        <div class="section-head"><strong>跨时代人物库</strong><span>每类当前展示 16 人</span></div>
+        <div class="pool-tabs">
+          <button class="pool-tab active" data-era="history" type="button">历史</button>
+          <button class="pool-tab" data-era="modern" type="button">近代</button>
+          <button class="pool-tab" data-era="contemporary" type="button">当代</button>
+        </div>
+        <div class="people-grid" id="peopleGrid">${peopleGrid('history')}</div>
+        <div class="section-head"><strong>结果示意</strong><span>多人物相似度排行</span></div>
+        <div class="archetype-detail">
+          <div class="archetype-row"><span class="archetype-initial">张</span><span class="archetype-info"><strong>张爱玲 · 洞察型</strong><span>敏锐、克制、擅长看见关系暗线</span></span><span class="sample-score">87<small>%</small></span></div>
+          <div class="archetype-row"><span class="archetype-initial">王</span><span class="archetype-info"><strong>王菲 · 疏离型</strong><span>自由、自洽、不迎合外部期待</span></span><span class="sample-score">73<small>%</small></span></div>
+        </div>
+        ${actionTemplate('Crush 名人图鉴')}`;
+    }
+
+    function actionTemplate(featureName) {
+      const open = planRules[activePlan].open;
+      return `
+        <div class="login-tip">需要登录后使用 · 当前模拟套餐：${planRules[activePlan].label}</div>
+        <button class="primary-button ${open ? '' : 'locked'}" type="button" data-start-feature="${featureName}" ${open ? '' : 'disabled'}>${open ? '开始测试' : '当前套餐未开放'}</button>`;
+    }
+
+    function openFeature(feature) {
+      clearInterval(timer);
+      sheetTitle.textContent = feature === 'heroine' ? '关系女主角' : 'Crush 名人图鉴';
+      sheetBody.innerHTML = feature === 'heroine' ? heroineTemplate() : celebrityTemplate();
+      modal.classList.add('open');
+      bindSheetActions();
+    }
+
+    function bindSheetActions() {
+      document.querySelectorAll('.pool-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          activeEra = tab.dataset.era;
+          document.querySelectorAll('.pool-tab').forEach(item => item.classList.toggle('active', item === tab));
+          document.getElementById('peopleGrid').innerHTML = peopleGrid(activeEra);
+        });
+      });
+      const startButton = document.querySelector('[data-start-feature]');
+      startButton?.addEventListener('click', () => showToast(`已进入「${startButton.dataset.startFeature}」登录校验 / 测试流程`));
+    }
+
+    function closeModal() { modal.classList.remove('open'); startTimer(); }
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
+
+    document.querySelectorAll('.plan-button').forEach(button => {
+      button.addEventListener('click', () => {
+        activePlan = button.dataset.plan;
+        document.querySelectorAll('.plan-button').forEach(item => item.classList.toggle('active', item === button));
+        updatePermissions();
+      });
+    });
+
+    function updatePermissions() {
+      const rule = planRules[activePlan];
+      document.querySelectorAll('[data-state]').forEach(state => {
+        state.textContent = rule.open ? '已开放' : '未开放';
+        state.className = rule.open ? 'state-open' : 'state-closed';
+      });
+      document.getElementById('permissionCode').innerHTML = rule.code;
+      document.querySelectorAll('.hero-cta').forEach(cta => {
+        cta.innerHTML = rule.open ? `${cta.closest('.celebrity') ? '打开图鉴' : '开始测试'} <b>→</b>` : '当前套餐未开放';
+        cta.classList.toggle('locked', !rule.open);
+      });
+      if (modal.classList.contains('open')) openFeature(sheetTitle.textContent === '关系女主角' ? 'heroine' : 'celebrity');
+    }
+
+    let toastTimer;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    startTimer();
+  </script>
+</body>
+</html>

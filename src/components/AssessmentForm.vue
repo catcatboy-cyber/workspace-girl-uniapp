@@ -50,7 +50,7 @@
         </view>
 
         <view class="field">
-          <view class="field-label">身份</view>
+          <view class="field-label">工作</view>
           <input v-model="profile.occupation" class="text-input" placeholder="例如：大学生、产品经理" />
         </view>
 
@@ -66,6 +66,30 @@
           <picker :range="constellationOptions" :value="constellationIndex" @change="onConstellationChange">
             <view class="picker-view">{{ profile.constellation || '请选择' }}</view>
           </picker>
+        </view>
+
+        <view class="field">
+          <view class="field-label">MBTI 性格类型</view>
+          <picker :range="mbtiLabels" :value="mbtiIndex" @change="onMbtiChange">
+            <view class="picker-view">{{ profile.mbtiCode || '不限' }}</view>
+          </picker>
+        </view>
+
+        <view class="field">
+          <view class="field-label">TA 的身份</view>
+          <picker :range="identityLabelLabels" :value="identityLabelIndex" @change="onIdentityLabelChange">
+            <view class="picker-view">{{ identityLabelDisplay }}</view>
+          </picker>
+        </view>
+
+        <view v-if="profile.identityLabel === '__custom__'" class="field">
+          <view class="field-label">自定义身份</view>
+          <input
+            v-model="profile.identityLabelCustom"
+            class="text-input"
+            placeholder="例如：前同事、学长"
+            maxlength="20"
+          />
         </view>
       </view>
     </view>
@@ -125,6 +149,7 @@ import { ref, computed, reactive } from 'vue'
 import { questionDefinitions, getQuestionsForRelationType } from './assessment-questions'
 import { aiLabel } from '@/utils/labels'
 import ProfileAvatarPicker from '@/components/ProfileAvatarPicker.vue'
+import { IDENTITY_LABEL_OPTIONS, MBTI_OPTIONS } from '@/utils/taohua'
 
 const props = defineProps<{
   relationType?: string
@@ -149,6 +174,9 @@ const constellationOptions = [
   '白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座',
   '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'
 ]
+const mbtiLabels = MBTI_OPTIONS.map((item) => item || '不限')
+const identityLabelValues = IDENTITY_LABEL_OPTIONS.map((item) => item.value)
+const identityLabelLabels = IDENTITY_LABEL_OPTIONS.map((item) => item.label)
 
 const relationTypeRef = ref(props.relationType === 'close_friend' ? 'close_friend' : 'romantic')
 const caseName = ref(props.initialName || '')
@@ -159,7 +187,10 @@ const profile = reactive({
   occupation: props.initialProfile?.occupation || '',
   zodiac: props.initialProfile?.zodiac || '',
   constellation: props.initialProfile?.constellation || '',
-  avatar: props.initialProfile?.avatar || ''
+  avatar: props.initialProfile?.avatar || '',
+  mbtiCode: props.initialProfile?.mbtiCode || '',
+  identityLabel: props.initialProfile?.identityLabel || '',
+  identityLabelCustom: props.initialProfile?.identityLabelCustom || ''
 })
 const answers = reactive<Record<string, any>>({})
 
@@ -178,10 +209,23 @@ const textQuestions = computed(() => allQuestions.value.filter((q: any) => q.typ
 const genderIndex = computed(() => Math.max(0, genderOptions.indexOf(profile.gender)))
 const zodiacIndex = computed(() => Math.max(0, zodiacOptions.indexOf(profile.zodiac)))
 const constellationIndex = computed(() => Math.max(0, constellationOptions.indexOf(profile.constellation)))
+const mbtiIndex = computed(() => Math.max(0, MBTI_OPTIONS.indexOf(profile.mbtiCode || '')))
+const identityLabelIndex = computed(() => {
+  const index = identityLabelValues.indexOf(profile.identityLabel || '')
+  return index >= 0 ? index : 0
+})
+const identityLabelDisplay = computed(() => {
+  return identityLabelLabels[identityLabelIndex.value] || '请选择'
+})
 
 function onGenderChange(e: any) { profile.gender = genderOptions[e.detail.value] }
 function onZodiacChange(e: any) { profile.zodiac = zodiacOptions[e.detail.value] }
 function onConstellationChange(e: any) { profile.constellation = constellationOptions[e.detail.value] }
+function onMbtiChange(e: any) { profile.mbtiCode = MBTI_OPTIONS[e.detail.value] || '' }
+function onIdentityLabelChange(e: any) {
+  profile.identityLabel = identityLabelValues[e.detail.value] || ''
+  if (profile.identityLabel !== '__custom__') profile.identityLabelCustom = ''
+}
 
 function handleSubmit() {
   if (!questionsOnly.value && !caseName.value.trim()) {

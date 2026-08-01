@@ -302,15 +302,56 @@ const c14ok = fail === 0
 pass = 0; fail = 0
 
 // ==========================================
+// C15: create Crush form — MBTI + identity fields
+// ==========================================
+console.log('\n=== C15: AssessmentForm.vue Crush profile fields ===')
+const assessmentForm = fs.readFileSync('src/components/AssessmentForm.vue', 'utf8')
+
+check('create form renders MBTI picker',
+  assessmentForm.includes('MBTI 性格类型') && assessmentForm.includes('onMbtiChange'))
+
+check('create form renders TA identity picker and custom input',
+  assessmentForm.includes('TA 的身份') &&
+  assessmentForm.includes("profile.identityLabel === '__custom__'") &&
+  assessmentForm.includes('profile.identityLabelCustom'))
+
+check('create form reuses shared MBTI and identity options',
+  assessmentForm.includes('IDENTITY_LABEL_OPTIONS') && assessmentForm.includes('MBTI_OPTIONS'))
+
+check('create payload profile includes MBTI and identity fields',
+  assessmentForm.includes('mbtiCode: props.initialProfile?.mbtiCode') &&
+  assessmentForm.includes('identityLabel: props.initialProfile?.identityLabel') &&
+  assessmentForm.includes('identityLabelCustom: props.initialProfile?.identityLabelCustom') &&
+  assessmentForm.includes('profile: { ...profile }'))
+
+console.log('  Result: %d/%d PASS', pass, pass + fail)
+const c15ok = fail === 0
+pass = 0; fail = 0
+
+// ==========================================
+// C16: homepage hero — MBTI profile tag
+// ==========================================
+console.log('\n=== C16: index.vue hero MBTI tag ===')
+const indexPage = fs.readFileSync('src/pages/index/index.vue', 'utf8')
+
+check('hero profile items include MBTI value when present',
+  indexPage.includes('if (p.mbtiCode) items.push(`MBTI ${p.mbtiCode}`)'))
+
+console.log('  Result: %d/%d PASS', pass, pass + fail)
+const c16ok = fail === 0
+pass = 0; fail = 0
+
+// ==========================================
 // SUMMARY
 // ==========================================
 console.log('\n=== SMOKE TEST SUMMARY ===')
-const allPass = c1ok && c2ok && c3ok && c4ok && c5ok && c6ok && c7ok && c8ok && c9ok && c10ok && c11ok && c12ok && c13ok && c14ok
-const failedChecks = [c1ok, c2ok, c3ok, c4ok, c5ok, c6ok, c7ok, c8ok, c9ok, c10ok, c11ok, c12ok, c13ok, c14ok]
+const checkpointResults = [c1ok, c2ok, c3ok, c4ok, c5ok, c6ok, c7ok, c8ok, c9ok, c10ok, c11ok, c12ok, c13ok, c14ok, c15ok, c16ok]
+const allPass = checkpointResults.every(Boolean)
+const failedChecks = checkpointResults
   .map((ok, i) => ok ? null : `C${i + 1}`).filter(Boolean)
 
 if (allPass) {
-  console.log('ALL 13 checkpoints PASSED')
+  console.log(`ALL ${checkpointResults.length} checkpoints PASSED`)
   process.exit(0)
 } else {
   console.error('FAILED checkpoints:', failedChecks.join(', '))

@@ -158,6 +158,34 @@ async function main() {
     assert.ok(after.case.timeline.some((item) => item._id === timelineResult.recordId))
   })
 
+  await runCase('createCase persists Crush MBTI and identity profile fields', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    const createCase = loadFunction('createCase')
+    const getCaseDetail = loadFunction('getCaseDetail')
+
+    asUser(fake, 'user_crush_profile_fields')
+    const created = await createCase({
+      name: '画像字段测试',
+      answers: [],
+      profile: {
+        relationType: 'romantic',
+        mbtiCode: 'INFJ',
+        identityLabel: '__custom__',
+        identityLabelCustom: '学长'
+      }
+    })
+    assert.equal(created.success, true)
+
+    asUser(fake, 'user_crush_profile_fields')
+    const detail = await getCaseDetail({ caseId: created.caseId })
+    assert.equal(detail.success, true)
+    assert.equal(detail.case.profile.mbtiCode, 'INFJ')
+    assert.equal(detail.case.profile.identityLabel, '__custom__')
+    assert.equal(detail.case.profile.identityLabelCustom, '学长')
+  })
+
   await runCase('generateAssessmentAI applies zero-score fallback and clears pending when tokens are insufficient', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)

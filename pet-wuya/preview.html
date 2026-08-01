@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ほしぞら - 宠物动画预览</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18201f;
+      --muted: #66706e;
+      --paper: #f5f7f3;
+      --surface: #ffffff;
+      --line: #cfd7d3;
+      --accent: #087f72;
+      --accent-dark: #05665c;
+      --warm: #e9b949;
+      --danger: #a33a3a;
+      font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    button, select { font: inherit; }
+
+    button:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(8, 127, 114, 0.28);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .topbar-inner,
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar-inner {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .identity {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+      object-fit: contain;
+      background: #edf1ef;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .status.error { color: var(--danger); }
+    .status.error .status-dot { background: var(--danger); }
+
+    main { padding: 28px 0 40px; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(300px, 1fr) minmax(320px, 0.9fr);
+      gap: 32px;
+      align-items: start;
+    }
+
+    .stage-area { min-width: 0; }
+
+    .stage {
+      min-height: 520px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background-color: #eef1ec;
+      background-image:
+        linear-gradient(45deg, #dfe5e1 25%, transparent 25%),
+        linear-gradient(-45deg, #dfe5e1 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #dfe5e1 75%),
+        linear-gradient(-45deg, transparent 75%, #dfe5e1 75%);
+      background-size: 28px 28px;
+      background-position: 0 0, 0 14px, 14px -14px, -14px 0;
+    }
+
+    .sprite {
+      width: 192px;
+      height: 208px;
+      background-repeat: no-repeat;
+      image-rendering: auto;
+      transform: scale(1.65);
+      transform-origin: center;
+      will-change: background-position;
+    }
+
+    .readout {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .readout strong { color: var(--ink); }
+
+    .controls {
+      min-width: 0;
+      border-top: 4px solid var(--warm);
+      padding-top: 18px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .states {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .state-button,
+    .tool-button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .state-button {
+      padding: 9px 10px;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+
+    .state-button:hover,
+    .tool-button:hover { border-color: var(--accent); }
+
+    .state-button[aria-pressed="true"] {
+      color: #ffffff;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .transport {
+      display: grid;
+      grid-template-columns: 44px minmax(120px, 1fr) 44px;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .tool-button {
+      padding: 8px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .play-button {
+      color: #ffffff;
+      border-color: var(--accent);
+      background: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .play-button:hover { background: var(--accent-dark); }
+
+    .speed-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .speed-row label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 12px;
+      color: var(--ink);
+      background: var(--surface);
+    }
+
+    .metadata {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .metadata dl {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 9px 14px;
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .metadata dt { color: var(--muted); }
+    .metadata dd { margin: 0; overflow-wrap: anywhere; }
+
+    .error-message {
+      display: none;
+      margin-top: 14px;
+      padding: 12px;
+      border-left: 4px solid var(--danger);
+      color: var(--danger);
+      background: #fff4f4;
+      font-size: 13px;
+    }
+
+    .error-message.visible { display: block; }
+
+    @media (max-width: 760px) {
+      .topbar-inner, main { width: min(100% - 24px, 620px); }
+      .topbar-inner { min-height: 72px; }
+      .workspace { grid-template-columns: 1fr; gap: 18px; }
+      .stage { min-height: 390px; }
+      .sprite { transform: scale(1.35); }
+      .controls { border-top-width: 3px; }
+    }
+
+    @media (max-width: 420px) {
+      .topbar-inner { align-items: flex-start; padding: 12px 0; }
+      .status { margin-top: 5px; }
+      .stage { min-height: 330px; }
+      .sprite { transform: scale(1.15); }
+      .states { grid-template-columns: 1fr 1fr; }
+      .readout { align-items: flex-start; flex-direction: column; gap: 4px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="identity">
+        <img class="avatar" src="delivery/custom_b4ab7b36a1952d16b38ea5b0/v1/avatar.png" alt="ほしぞら头像">
+        <div>
+          <h1>ほしぞら</h1>
+          <p class="subtitle">Pet ID: custom_b4ab7b36a1952d16b38ea5b0</p>
+        </div>
+      </div>
+      <div id="loadStatus" class="status" role="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>正在读取资源</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="workspace">
+      <section class="stage-area" aria-label="动画画布">
+        <div class="stage">
+          <div id="sprite" class="sprite" role="img" aria-label="ほしぞら动画"></div>
+        </div>
+        <div class="readout" aria-live="polite">
+          <span>状态：<strong id="stateReadout">idle</strong></span>
+          <span>帧：<strong id="frameReadout">1 / 1</strong> · FPS：<strong id="fpsReadout">0</strong></span>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="动画控制">
+        <h2>动画状态</h2>
+        <div id="stateButtons" class="states"></div>
+
+        <div class="transport" aria-label="播放控制">
+          <button id="prevButton" class="tool-button" type="button" title="上一帧" aria-label="上一帧">&#9664;</button>
+          <button id="playButton" class="tool-button play-button" type="button">暂停</button>
+          <button id="nextButton" class="tool-button" type="button" title="下一帧" aria-label="下一帧">&#9654;</button>
+        </div>
+
+        <div class="speed-row">
+          <label for="speedSelect">播放速度</label>
+          <select id="speedSelect">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2">2x</option>
+          </select>
+        </div>
+
+        <div class="metadata">
+          <h2>资源信息</h2>
+          <dl>
+            <dt>单帧</dt><dd id="cellSize">-</dd>
+            <dt>图集</dt><dd id="atlasSize">-</dd>
+            <dt>循环</dt><dd id="loopReadout">-</dd>
+            <dt>版本</dt><dd>v1</dd>
+          </dl>
+          <div id="errorMessage" class="error-message" role="alert"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const manifestURL = 'delivery/custom_b4ab7b36a1952d16b38ea5b0/v1/manifest.json';
+    const spritesheetURL = 'delivery/custom_b4ab7b36a1952d16b38ea5b0/v1/spritesheet.webp';
+    const preferredOrder = [
+      'idle', 'running-right', 'running-left', 'waving', 'jumping',
+      'failed', 'waiting', 'running', 'review'
+    ];
+
+    const labels = {
+      idle: '待机',
+      'running-right': '向右跑',
+      'running-left': '向左跑',
+      waving: '挥手',
+      jumping: '跳跃',
+      failed: '失败',
+      waiting: '等待',
+      running: '处理中',
+      review: '回顾'
+    };
+
+    const els = {
+      sprite: document.getElementById('sprite'),
+      stateButtons: document.getElementById('stateButtons'),
+      playButton: document.getElementById('playButton'),
+      prevButton: document.getElementById('prevButton'),
+      nextButton: document.getElementById('nextButton'),
+      speedSelect: document.getElementById('speedSelect'),
+      stateReadout: document.getElementById('stateReadout'),
+      frameReadout: document.getElementById('frameReadout'),
+      fpsReadout: document.getElementById('fpsReadout'),
+      loopReadout: document.getElementById('loopReadout'),
+      cellSize: document.getElementById('cellSize'),
+      atlasSize: document.getElementById('atlasSize'),
+      loadStatus: document.getElementById('loadStatus'),
+      errorMessage: document.getElementById('errorMessage')
+    };
+
+    let manifest = null;
+    let activeState = 'idle';
+    let frame = 0;
+    let playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let speed = 1;
+    let lastFrameAt = 0;
+    let animationHandle = 0;
+
+    function setLoadStatus(text, isError = false) {
+      els.loadStatus.classList.toggle('error', isError);
+      els.loadStatus.querySelector('span:last-child').textContent = text;
+    }
+
+    function showError(message) {
+      els.errorMessage.textContent = message;
+      els.errorMessage.classList.add('visible');
+      setLoadStatus('资源读取失败', true);
+    }
+
+    function stateConfig() {
+      return manifest.states[activeState];
+    }
+
+    function renderFrame() {
+      const config = stateConfig();
+      const row = manifest.rowMap[activeState];
+      const x = -(frame * manifest.cellWidth);
+      const y = -(row * manifest.cellHeight);
+
+      els.sprite.style.width = `${manifest.cellWidth}px`;
+      els.sprite.style.height = `${manifest.cellHeight}px`;
+      els.sprite.style.backgroundImage = `url("${spritesheetURL}")`;
+      els.sprite.style.backgroundSize = `${manifest.columns * manifest.cellWidth}px ${manifest.rows * manifest.cellHeight}px`;
+      els.sprite.style.backgroundPosition = `${x}px ${y}px`;
+      els.stateReadout.textContent = `${labels[activeState] || activeState} (${activeState})`;
+      els.frameReadout.textContent = `${frame + 1} / ${config.frames}`;
+      els.fpsReadout.textContent = String(config.fps * speed);
+      els.loopReadout.textContent = config.loop ? '是' : '否';
+    }
+
+    function updatePlayButton() {
+      els.playButton.textContent = playing ? '暂停' : '播放';
+      els.playButton.setAttribute('aria-pressed', String(playing));
+    }
+
+    function setState(name) {
+      if (!manifest.states[name] || manifest.rowMap[name] === undefined) return;
+      activeState = name;
+      frame = 0;
+      lastFrameAt = performance.now();
+      for (const button of els.stateButtons.querySelectorAll('button')) {
+        button.setAttribute('aria-pressed', String(button.dataset.state === name));
+      }
+      renderFrame();
+    }
+
+    function step(direction) {
+      const frames = stateConfig().frames;
+      frame = (frame + direction + frames) % frames;
+      renderFrame();
+    }
+
+    function animate(now) {
+      const config = stateConfig();
+      const interval = 1000 / (config.fps * speed);
+
+      if (playing && now - lastFrameAt >= interval) {
+        const elapsedFrames = Math.max(1, Math.floor((now - lastFrameAt) / interval));
+        const nextFrame = frame + elapsedFrames;
+
+        if (config.loop) {
+          frame = nextFrame % config.frames;
+        } else if (nextFrame >= config.frames) {
+          frame = config.frames - 1;
+          playing = false;
+          updatePlayButton();
+        } else {
+          frame = nextFrame;
+        }
+
+        lastFrameAt = now;
+        renderFrame();
+      }
+
+      animationHandle = requestAnimationFrame(animate);
+    }
+
+    function buildStateButtons() {
+      const names = preferredOrder.filter((name) => manifest.states[name] && manifest.rowMap[name] !== undefined);
+      for (const name of names) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'state-button';
+        button.dataset.state = name;
+        button.textContent = `${labels[name] || name} · ${manifest.states[name].frames} 帧`;
+        button.setAttribute('aria-pressed', 'false');
+        button.addEventListener('click', () => setState(name));
+        els.stateButtons.appendChild(button);
+      }
+    }
+
+    async function load() {
+      try {
+        const response = await fetch(manifestURL, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`manifest 请求失败：HTTP ${response.status}`);
+        manifest = await response.json();
+
+        if (!manifest.states || !manifest.rowMap || !manifest.cellWidth || !manifest.cellHeight) {
+          throw new Error('manifest 缺少动画契约字段');
+        }
+
+        const image = new Image();
+        image.src = spritesheetURL;
+        await image.decode();
+
+        els.cellSize.textContent = `${manifest.cellWidth} x ${manifest.cellHeight}px`;
+        els.atlasSize.textContent = `${image.naturalWidth} x ${image.naturalHeight}px`;
+        buildStateButtons();
+        setState(manifest.states.idle ? 'idle' : Object.keys(manifest.states)[0]);
+        updatePlayButton();
+        setLoadStatus('资源已就绪');
+        animationHandle = requestAnimationFrame(animate);
+      } catch (error) {
+        showError(error instanceof Error ? error.message : String(error));
+      }
+    }
+
+    els.playButton.addEventListener('click', () => {
+      if (!manifest) return;
+      if (!playing && frame === stateConfig().frames - 1 && !stateConfig().loop) frame = 0;
+      playing = !playing;
+      lastFrameAt = performance.now();
+      updatePlayButton();
+      renderFrame();
+    });
+
+    els.prevButton.addEventListener('click', () => {
+      if (!manifest) return;
+      playing = false;
+      updatePlayButton();
+      step(-1);
+    });
+
+    els.nextButton.addEventListener('click', () => {
+      if (!manifest) return;
+      playing = false;
+      updatePlayButton();
+      step(1);
+    });
+
+    els.speedSelect.addEventListener('change', () => {
+      speed = Number(els.speedSelect.value) || 1;
+      lastFrameAt = performance.now();
+      if (manifest) renderFrame();
+    });
+
+    window.addEventListener('beforeunload', () => cancelAnimationFrame(animationHandle));
+    load();
+  </script>
+</body>
+</html>
