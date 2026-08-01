@@ -125,9 +125,10 @@ function normalizeRowMap(value = {}) {
 function normalizeDeliveredPet(value) {
   if (!value || typeof value !== 'object') return null
   const id = String(value.id || '').trim()
-  const requestId = String(value.requestId || '').trim()
+  const requestId = String(value.requestId || id).trim()
   const version = String(value.version || 'v1').trim()
   if (!id.startsWith('custom_') || !isSafePetId(id) || !requestId || !version) return null
+  const accessType = ['owner', 'authorized', 'public'].includes(value.accessType) ? value.accessType : 'owner'
 
   const manifest = value.manifest && typeof value.manifest === 'object' ? value.manifest : value
   const spritesheetFileID = String(value.spritesheetFileID || '').trim()
@@ -141,6 +142,7 @@ function normalizeDeliveredPet(value) {
     id,
     requestId,
     version,
+    accessType,
     displayName: String(value.displayName || '定制宠物').trim() || '定制宠物',
     description: String(value.description || '你的专属定制宠物').trim() || '你的专属定制宠物',
     renderer: 'spritesheet',

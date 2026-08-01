@@ -8,6 +8,7 @@ process.env.CUSTOM_PET_STORAGE_ROOT = 'cloud://test-env.test-bucket'
 const projectRoot = path.resolve(__dirname, '..')
 const petsSource = fs.readFileSync(path.join(projectRoot, 'src', 'utils', 'pets.js'), 'utf8')
 const resourceHelper = require(path.join(projectRoot, 'cloudfunctions', 'adminManage', '_shared', 'custom-pet-resource.js'))
+const accessHelper = require(path.join(projectRoot, 'cloudfunctions', 'adminManage', '_shared', 'custom-pet-access.js'))
 const catalogHelper = require(path.join(projectRoot, 'cloudfunctions', 'customPet', '_shared', 'custom-pet-catalog.js'))
 const authHelper = require(path.join(projectRoot, 'cloudfunctions', 'customPet', '_shared', 'auth.js'))
 const { createFakeCloudbase } = require('./support/fake-cloudbase.cjs')
@@ -122,6 +123,7 @@ function validResourceApp(requestId, onDownload) {
 function createCatalogDatabase(records) {
   const command = {
     lt(value) { return { __op: 'lt', value } },
+    all(values) { return { __op: 'all', values } },
     and(values) { return { __op: 'and', values } },
     or(values) { return { __op: 'or', values } }
   }
@@ -135,12 +137,14 @@ function createCatalogDatabase(records) {
     if (condition?.__op === 'or') return condition.values.some((entry) => matches(item, entry))
     return Object.entries(condition || {}).every(([key, expected]) => {
       if (expected?.__op === 'lt') return compare(item[key], expected.value) < 0
+      if (expected?.__op === 'all') return Array.isArray(item[key]) && expected.values.every((value) => item[key].includes(value))
       return compare(item[key], expected) === 0
     })
   }
   return {
     command,
     db: {
+      command,
       collection() {
         const state = { where: {}, orders: [], limit: Infinity }
         const query = {
@@ -390,6 +394,7 @@ async function main() {
       { _id: 'legacy-c', status: 'delivered' }
     ]
     const batches = []
+    const accessCalls = []
     const command = {
       gt: (value) => ({ __op: 'gt', value }),
       and: (values) => ({ __op: 'and', values })
@@ -436,6 +441,16 @@ async function main() {
             batches.push({ ids: requests.map((item) => item._id), dryRun })
             return { total: requests.length, succeeded: requests.length, failed: 0, failures: [] }
           }
+        },
+        './_shared/custom-pet-access': {
+          updateCustomPetAuthorizedUsers: async (args) => {
+            accessCalls.push(args)
+            return { success: true, authorizedUserIds: ['admin-user'] }
+          },
+          updateCustomPetPublic: async (args) => {
+            accessCalls.push(args)
+            return { success: true, isPublic: args.isPublic }
+          }
         }
       }
     )
@@ -449,9 +464,30 @@ async function main() {
     assert.equal(second.success, true)
     assert.equal(second.nextCursor, null)
     assert.deepEqual(batches[1], { ids: ['legacy-c'], dryRun: true })
+
+    const access = await adminModule.main({
+      action: 'setCustomPetAuthorizedUsers',
+      requestId: 'request-access',
+      authorizedUserIds: [],
+      addCurrentAdmin: true,
+      adminUserId: 'forged-admin'
+    })
+    assert.equal(access.success, true)
+    assert.equal(accessCalls[0].adminUserId, 'admin-user')
+    assert.equal(accessCalls[0].addCurrentAdmin, true)
+
+    const publicAccess = await adminModule.main({
+      action: 'setCustomPetPublic',
+      requestId: 'request-access',
+      isPublic: true,
+      adminUserId: 'forged-admin'
+    })
+    assert.equal(publicAccess.success, true)
+    assert.equal(accessCalls[1].adminUserId, 'admin-user')
+    assert.equal(accessCalls[1].isPublic, true)
   })
 
-  await run('request pagination is stable for equal timestamps and delivered pets are owner-filtered', async () => {
+  await run('request pagination is stable and delivered pets include explicitly authorized accounts', async () => {
     const sameTime = new Date('2026-07-31T12:00:00.000Z')
     const older = new Date('2026-07-30T12:00:00.000Z')
     const requestRecords = [
@@ -484,20 +520,125 @@ async function main() {
     )
 
     const petA = deliveredPet({ avatarURL: '', spritesheetURL: '' })
-    const petB = deliveredPet({ id: 'custom_abcdef1234567890abcdef12', requestId: 'request-b', avatarURL: '', spritesheetURL: '' })
+    const petB = deliveredPet({
+      id: 'custom_abcdef1234567890abcdef12',
+      requestId: 'request-b',
+      displayName: '豆包',
+      avatarFileID: 'cloud://env/pets/custom/b/avatar.png',
+      spritesheetFileID: 'cloud://env/pets/custom/b/spritesheet.webp',
+      manifestFileID: 'cloud://env/pets/custom/b/manifest.json',
+      avatarURL: '',
+      spritesheetURL: ''
+    })
+    const petC = deliveredPet({
+      id: 'custom_fedcba0987654321fedcba09',
+      requestId: 'request-c',
+      displayName: '星星',
+      avatarFileID: 'cloud://env/pets/custom/c/avatar.png',
+      spritesheetFileID: 'cloud://env/pets/custom/c/spritesheet.webp',
+      manifestFileID: 'cloud://env/pets/custom/c/manifest.json',
+      avatarURL: '',
+      spritesheetURL: ''
+    })
     const deliveredRecords = [
       { _id: 'request-a', userId: 'user-a', status: 'delivered', createdAt: sameTime, nickname: '奶糖', deliveredPet: petA },
-      { _id: 'request-b', userId: 'user-b', status: 'delivered', createdAt: sameTime, nickname: '豆包', deliveredPet: petB }
+      { _id: 'request-b', userId: 'user-b', authorizedUserIds: ['user-a'], status: 'delivered', createdAt: sameTime, nickname: '豆包', deliveredPet: petB },
+      { _id: 'request-c', userId: 'user-d', isPublic: true, status: 'delivered', createdAt: sameTime, nickname: '星星', deliveredPet: petC }
     ]
     const deliveredDb = createCatalogDatabase(deliveredRecords)
-    const catalog = await catalogHelper.listMyDeliveredPets({ db: deliveredDb.db, app: tempUrlApp('spritesheet.webp'), userId: 'user-a' })
-    assert.deepEqual(catalog.pets.map((pet) => pet.id), [petA.id])
-    assert.deepEqual(catalog.warnings, [{ petId: petA.id, code: 'TEMP_URL_UNAVAILABLE' }])
+    const catalog = await catalogHelper.listMyDeliveredPets({ db: deliveredDb.db, app: tempUrlApp(), userId: 'user-a' })
+    assert.deepEqual(catalog.pets.map((pet) => pet.id), [petC.id, petB.id, petA.id])
+    assert.deepEqual(catalog.pets.map((pet) => pet.accessType), ['public', 'authorized', 'owner'])
+    assert.equal(catalog.pets[0].requestId, undefined, 'public catalog must not expose the source request ID')
+    assert.deepEqual(catalog.warnings, [])
+    const unbound = await catalogHelper.listMyDeliveredPets({ db: deliveredDb.db, app: tempUrlApp(), userId: 'user-c' })
+    assert.deepEqual(unbound.pets.map((pet) => pet.id), [petC.id])
+    assert.equal(unbound.pets[0].accessType, 'public')
 
     installUniStorage()
     const pets = await loadPetsModule()
     const stored = await pets.refreshDeliveredPetCatalog('user-a', async () => catalog)
-    assert.equal(stored.length, 0, 'H5 must not cache a pet with a missing temporary spritesheet URL')
+    assert.equal(stored.length, 3)
+    assert.equal(stored.find((pet) => pet.id === petC.id).accessType, 'public')
+    assert.equal(stored.find((pet) => pet.id === petC.id).requestId, petC.id)
+  })
+
+  await run('admin can bind multiple existing accounts to a delivered pet', async () => {
+    const fake = createFakeCloudbase()
+    const db = fake.init().database()
+    const users = fake.__store.getCollection('users')
+    users.set('owner-user', { _id: 'owner-user' })
+    users.set('admin-user', { _id: 'admin-user', isAdmin: true })
+    users.set('viewer-user', { _id: 'viewer-user' })
+    const requests = fake.__store.getCollection('custom_pet_requests')
+    requests.set('request-access', {
+      _id: 'request-access',
+      userId: 'owner-user',
+      status: 'delivered',
+      deliveredPet: { id: 'custom_access' },
+      authorizedUserIds: []
+    })
+
+    const currentAdmin = await accessHelper.updateCustomPetAuthorizedUsers({
+      db,
+      requestId: 'request-access',
+      authorizedUserIds: [],
+      addCurrentAdmin: true,
+      adminUserId: 'admin-user'
+    })
+    assert.deepEqual(currentAdmin.authorizedUserIds, ['admin-user'])
+
+    const multiple = await accessHelper.updateCustomPetAuthorizedUsers({
+      db,
+      requestId: 'request-access',
+      authorizedUserIds: ['admin-user', 'viewer-user', 'viewer-user', 'owner-user'],
+      adminUserId: 'admin-user'
+    })
+    assert.deepEqual(multiple.authorizedUserIds, ['admin-user', 'viewer-user'])
+    assert.deepEqual(requests.get('request-access').authorizedUserIds, ['admin-user', 'viewer-user'])
+
+    const published = await accessHelper.updateCustomPetPublic({
+      db,
+      requestId: 'request-access',
+      isPublic: true,
+      adminUserId: 'admin-user'
+    })
+    assert.equal(published.isPublic, true)
+    assert.equal(requests.get('request-access').isPublic, true)
+    const unpublished = await accessHelper.updateCustomPetPublic({
+      db,
+      requestId: 'request-access',
+      isPublic: false,
+      adminUserId: 'admin-user'
+    })
+    assert.equal(unpublished.isPublic, false)
+    assert.equal(requests.get('request-access').isPublic, false)
+
+    await assert.rejects(
+      () => accessHelper.updateCustomPetAuthorizedUsers({
+        db,
+        requestId: 'request-access',
+        authorizedUserIds: ['missing-user'],
+        adminUserId: 'admin-user'
+      }),
+      (error) => error?.code === 'USER_NOT_FOUND'
+    )
+
+    requests.set('request-pending', {
+      _id: 'request-pending',
+      userId: 'owner-user',
+      status: 'in_progress',
+      deliveredPet: null
+    })
+    await assert.rejects(
+      () => accessHelper.updateCustomPetPublic({
+        db,
+        requestId: 'request-pending',
+        isPublic: true,
+        adminUserId: 'admin-user'
+      }),
+      (error) => error?.code === 'PET_NOT_DELIVERED'
+    )
   })
 
   await run('server-generated pet IDs are deterministic and paths are versioned', async () => {

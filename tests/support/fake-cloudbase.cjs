@@ -20,6 +20,9 @@ function matchesCondition(left, right) {
   if (right && typeof right === 'object' && right.__op === 'in' && Array.isArray(right.values)) {
     return right.values.some((value) => valuesEqual(left, value))
   }
+  if (right && typeof right === 'object' && right.__op === 'all' && Array.isArray(right.values)) {
+    return Array.isArray(left) && right.values.every((value) => left.some((item) => valuesEqual(item, value)))
+  }
 
   return valuesEqual(left, right)
 }
@@ -291,6 +294,9 @@ function createFakeCloudbase() {
   function createDatabaseApi(targetStore) {
     return {
       command: {
+        all(values) {
+          return { __op: 'all', values: [...values] }
+        },
         in(values) {
           return { __op: 'in', values: [...values] }
         },

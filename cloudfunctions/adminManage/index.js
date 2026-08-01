@@ -14,6 +14,7 @@ const {
   buildExpectedPetId,
   deliverCustomPetRequest
 } = require('./_shared/custom-pet-resource')
+const { updateCustomPetAuthorizedUsers, updateCustomPetPublic } = require('./_shared/custom-pet-access')
 const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
@@ -1832,7 +1833,7 @@ async function resolveFeedback(event) {
   }
 }
 
-async function listCustomPetRequests() {
+async function listCustomPetRequests(currentAdminUserId) {
   try {
     const { data } = await db.collection('custom_pet_requests')
       .orderBy('createdAt', 'desc')
@@ -1870,7 +1871,7 @@ async function listCustomPetRequests() {
       }
     }
 
-    return { success: true, requests }
+    return { success: true, requests, currentAdminUserId }
   } catch (error) {
     console.error('listCustomPetRequests error:', error)
     return { success: false, message: error?.message || '读取宠物需求失败' }
@@ -1923,6 +1924,43 @@ async function updateCustomPetRequest(event) {
   } catch (error) {
     console.error('updateCustomPetRequest error:', error)
     return { success: false, code: error?.code || 'CUSTOM_PET_UPDATE_FAILED', message: error?.message || '更新宠物需求失败' }
+  }
+}
+
+async function setCustomPetAuthorizedUsers(event, adminUserId) {
+  try {
+    return await updateCustomPetAuthorizedUsers({
+      db,
+      requestId: event.requestId,
+      authorizedUserIds: event.authorizedUserIds,
+      addCurrentAdmin: event.addCurrentAdmin === true,
+      adminUserId
+    })
+  } catch (error) {
+    console.error('setCustomPetAuthorizedUsers error:', error)
+    return {
+      success: false,
+      code: error?.code || 'CUSTOM_PET_ACCESS_UPDATE_FAILED',
+      message: error?.message || '更新宠物绑定账号失败'
+    }
+  }
+}
+
+async function setCustomPetPublic(event, adminUserId) {
+  try {
+    return await updateCustomPetPublic({
+      db,
+      requestId: event.requestId,
+      isPublic: event.isPublic,
+      adminUserId
+    })
+  } catch (error) {
+    console.error('setCustomPetPublic error:', error)
+    return {
+      success: false,
+      code: error?.code || 'CUSTOM_PET_PUBLIC_UPDATE_FAILED',
+      message: error?.message || '更新公共宠物状态失败'
+    }
   }
 }
 
@@ -2142,8 +2180,10 @@ exports.main = async (event = {}) => {
     if (action === 'adminManualRecharge') return await adminManualRecharge(event, userId)
     if (action === 'listFeedbacks') return await listFeedbacks()
     if (action === 'resolveFeedback') return await resolveFeedback(event)
-    if (action === 'listCustomPetRequests') return await listCustomPetRequests()
+    if (action === 'listCustomPetRequests') return await listCustomPetRequests(userId)
     if (action === 'updateCustomPetRequest') return await updateCustomPetRequest(event)
+    if (action === 'setCustomPetAuthorizedUsers') return await setCustomPetAuthorizedUsers(event, userId)
+    if (action === 'setCustomPetPublic') return await setCustomPetPublic(event, userId)
     if (action === 'backfillCustomPetDeliveries') return await backfillCustomPetDeliveries(event)
     if (action === 'listOrders') return await listOrders(event)
     if (action === 'refundOrder') return await refundOrder(event)

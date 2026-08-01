@@ -115,6 +115,52 @@ function normalizeDisplayName(value) {
   return name || '定制宠物'
 }
 
+function compareDeliveredRequests(left, right) {
+  const leftTime = extractDate(left?.createdAt)?.getTime() || 0
+  const rightTime = extractDate(right?.createdAt)?.getTime() || 0
+  if (leftTime !== rightTime) return rightTime - leftTime
+  return String(right?._id || '').localeCompare(String(left?._id || ''))
+}
+
+function getRequestAccessType(request, userId) {
+  if (String(request?.userId || '') === userId) return 'owner'
+  if (Array.isArray(request?.authorizedUserIds) && request.authorizedUserIds.includes(userId)) return 'authorized'
+  return request?.isPublic === true ? 'public' : null
+}
+
+async function listAccessibleDeliveredRequests({ db, userId }) {
+  const ownerQuery = db.collection(REQUESTS_COLLECTION)
+    .where({ userId, status: 'delivered' })
+    .orderBy('createdAt', 'desc')
+    .limit(MAX_DELIVERED_PETS + 1)
+
+  const all = db.command?.all
+  if (typeof all !== 'function') {
+    throw createCatalogError('QUERY_CAPABILITY_UNAVAILABLE', '数据库数组查询能力不可用')
+  }
+  const authorizedQuery = db.collection(REQUESTS_COLLECTION)
+    .where({ authorizedUserIds: all.call(db.command, [userId]) })
+    .limit(MAX_DELIVERED_PETS + 1)
+  const publicQuery = db.collection(REQUESTS_COLLECTION)
+    .where({ isPublic: true })
+    .limit(MAX_DELIVERED_PETS + 1)
+
+  const [ownedResult, authorizedResult, publicResult] = await Promise.all([
+    ownerQuery.get(),
+    authorizedQuery.get(),
+    publicQuery.get()
+  ])
+  const byId = new Map()
+  for (const request of [...(publicResult.data || []), ...(authorizedResult.data || []), ...(ownedResult.data || [])]) {
+    if (hasCompleteDelivery(request)) byId.set(request._id, request)
+  }
+  const requests = [...byId.values()].sort(compareDeliveredRequests)
+  if (requests.length > MAX_DELIVERED_PETS) {
+    throw createCatalogError('CATALOG_LIMIT_EXCEEDED', '定制宠物数量超过目录上限，请联系管理员')
+  }
+  return requests
+}
+
 async function isCustomPetCatalogEnabled(db) {
   try {
     const result = await db.collection('system_settings').doc('settings_custom_pet').get()
@@ -126,16 +172,7 @@ async function isCustomPetCatalogEnabled(db) {
 }
 
 async function listMyDeliveredPets({ db, app, userId }) {
-  const { data } = await db.collection(REQUESTS_COLLECTION)
-    .where({ userId, status: 'delivered' })
-    .orderBy('createdAt', 'desc')
-    .limit(MAX_DELIVERED_PETS + 1)
-    .get()
-  if ((data || []).length > MAX_DELIVERED_PETS) {
-    throw createCatalogError('CATALOG_LIMIT_EXCEEDED', '定制宠物数量超过目录上限，请联系管理员')
-  }
-
-  const requests = (data || []).filter(hasCompleteDelivery)
+  const requests = await listAccessibleDeliveredRequests({ db, userId })
   const fileIDs = requests.flatMap((request) => [request.deliveredPet.avatarFileID, request.deliveredPet.spritesheetFileID])
   const maxAge = getTempUrlMaxAgeSeconds()
   let fileMap = new Map()
@@ -150,6 +187,7 @@ async function listMyDeliveredPets({ db, app, userId }) {
   const urlExpiresAt = now + Math.max(0, maxAge - 60) * 1000
   const pets = requests.map((request) => {
     const pet = request.deliveredPet
+    const accessType = getRequestAccessType(request, userId)
     const avatarURL = fileMap.get(pet.avatarFileID) || ''
     const spritesheetURL = fileMap.get(pet.spritesheetFileID) || ''
     if (!avatarURL || !spritesheetURL) {
@@ -158,9 +196,14 @@ async function listMyDeliveredPets({ db, app, userId }) {
     return {
       id: pet.id,
       version: pet.version,
-      requestId: request._id,
+      ...(accessType === 'public' ? {} : { requestId: request._id }),
+      accessType,
       displayName: normalizeDisplayName(pet.displayName || request.nickname),
-      description: '你的专属定制宠物',
+      description: accessType === 'public'
+        ? '公共宠物，使用时需通过套餐权限检查'
+        : accessType === 'authorized'
+          ? '已授权给你的定制宠物'
+          : '你的专属定制宠物',
       renderer: 'spritesheet',
       avatarURL,
       spritesheetURL,
@@ -183,8 +226,10 @@ module.exports = {
   decodeCursor,
   encodeCursor,
   getTempUrlMaxAgeSeconds,
+  getRequestAccessType,
   hasCompleteDelivery,
   isCustomPetCatalogEnabled,
+  listAccessibleDeliveredRequests,
   listMyDeliveredPets,
   listMyRequests,
   normalizeDisplayName,

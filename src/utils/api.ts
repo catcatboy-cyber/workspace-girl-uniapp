@@ -1340,6 +1340,23 @@ export async function adminUpdateCustomPetRequest(requestId: string, data: { sta
   }).then((res: any) => res.result)
 }
 
+export async function adminSetCustomPetAuthorizedUsers(
+  requestId: string,
+  data: { authorizedUserIds?: string[]; addCurrentAdmin?: boolean }
+) {
+  return callFunction({
+    name: 'adminManage',
+    data: { action: 'setCustomPetAuthorizedUsers', requestId, ...getBusinessAuthPayload(), ...data }
+  }).then((res: any) => res.result)
+}
+
+export async function adminSetCustomPetPublic(requestId: string, isPublic: boolean) {
+  return callFunction({
+    name: 'adminManage',
+    data: { action: 'setCustomPetPublic', requestId, isPublic, ...getBusinessAuthPayload() }
+  }).then((res: any) => res.result)
+}
+
 export async function adminBackfillCustomPetDeliveries(dryRun = true, cursor?: string | null, limit = 20) {
   return callFunction({
     name: 'adminManage',

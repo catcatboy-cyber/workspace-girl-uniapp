@@ -97,13 +97,23 @@
                 <text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text>
               </view>
             </view>
-            <view v-if="petCatalogLoading" class="pet-catalog-state-v2">正在读取你的定制宠物...</view>
+            <view v-if="petCatalogLoading" class="pet-catalog-state-v2">正在读取可用宠物...</view>
             <view v-else-if="myDeliveredPets.length" class="pet-custom-group-v2">
               <view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">我的定制宠物</text></view>
               <view class="pet-custom-list-v2">
                 <view v-for="pet in myDeliveredPets" :key="`${pet.id}:${pet.version}`" :class="['pet-option-v2', 'custom', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)">
                   <image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" />
                   <view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isPetCachedLocally(pet)" class="pet-option-badge-v2">已下载</text><text v-else class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view>
+                  <text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text>
+                </view>
+              </view>
+            </view>
+            <view v-if="!petCatalogLoading && publicPets.length" class="pet-custom-group-v2">
+              <view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">公共宠物</text></view>
+              <view class="pet-custom-list-v2">
+                <view v-for="pet in publicPets" :key="`${pet.id}:${pet.version}`" :class="['pet-option-v2', 'custom', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)">
+                  <image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" />
+                  <view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text class="pet-option-badge-v2 public">公共</text><text v-if="isPetCachedLocally(pet)" class="pet-option-badge-v2">已下载</text><text v-else class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view>
                   <text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text>
                 </view>
               </view>
@@ -360,7 +370,11 @@ const petCatalogLoading = ref(false)
 const petCatalogError = ref('')
 const myDeliveredPets = computed(() => {
   void petCatalogVersion.value
-  return getCachedDeliveredPets(getCurrentUserId() || '')
+  return getCachedDeliveredPets(getCurrentUserId() || '').filter((pet: any) => pet.accessType !== 'public')
+})
+const publicPets = computed(() => {
+  void petCatalogVersion.value
+  return getCachedDeliveredPets(getCurrentUserId() || '').filter((pet: any) => pet.accessType === 'public')
 })
 const currentPet = computed(() => {
   void petCatalogVersion.value
@@ -924,6 +938,7 @@ function goAbout() {
 .v2-mode .pet-option-check-v2 { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; z-index: 1; font-size: $fs-body; font-weight: $fw-hero; color: var(--accent, #FFD93D); }
 .v2-mode .pet-option-name-row-v2 { min-width: 0; display: flex; align-items: center; gap: 8rpx; }
 .v2-mode .pet-option-badge-v2 { flex-shrink: 0; display: inline-block; padding: 2rpx 10rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--accent-cool, #4ECDC4); border: 1rpx solid var(--accent-cool, #4ECDC4); border-radius: var(--shape-radius-control, 0); }
+.v2-mode .pet-option-badge-v2.public { color: #5b4aa8; border-color: #5b4aa8; }
 .v2-mode .pet-option-badge-v2.download { color: var(--hero-bg, #FF6B6B); border-color: var(--hero-bg, #FF6B6B); }
 .v2-mode .pet-option-v2.active .pet-option-badge-v2 { color: var(--accent, #FFD93D); border-color: var(--accent, #FFD93D); }
 

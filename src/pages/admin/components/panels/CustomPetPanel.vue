@@ -34,6 +34,34 @@
           <text>已交付 Pet ID：{{ req.deliveredPet?.id || req.deliveredPetId }}</text>
           <text class="pet-request-version">版本：{{ req.deliveredPet?.version || req.deliveredResourceVersion || 'legacy' }}</text>
         </view>
+        <view v-if="req.status === 'delivered'" class="pet-access-section">
+          <view class="pet-public-row">
+            <view class="pet-public-copy">
+              <text class="pet-access-title">公共宠物</text>
+              <text class="pet-public-desc">所有登录用户可见，选择使用仍走套餐权限</text>
+            </view>
+            <switch :checked="req.isPublic === true" :disabled="publicUpdatingId === req._id" color="#087f72" @change="setPetPublic(req, $event)" />
+          </view>
+          <view class="pet-access-head">
+            <text class="pet-access-title">额外绑定账号</text>
+            <button
+              class="small-btn"
+              :disabled="bindingRequestId === req._id || !currentAdminUserId || hasPetAccess(req, currentAdminUserId)"
+              @click="bindCurrentAdmin(req)"
+            >{{ currentAdminAccessLabel(req) }}</button>
+          </view>
+          <view v-if="authorizedIds(req).length" class="pet-access-users">
+            <view v-for="userId in authorizedIds(req)" :key="userId" class="pet-access-user">
+              <text class="pet-access-user-id">{{ userId }}</text>
+              <button class="pet-access-remove" :disabled="bindingRequestId === req._id" :aria-label="`解除绑定 ${userId}`" @click="removeAuthorizedUser(req, userId)">&times;</button>
+            </view>
+          </view>
+          <text v-else class="pet-access-empty">尚未绑定额外账号</text>
+          <view class="pet-access-add">
+            <input v-model="authorizedUserInputs[req._id]" class="pet-access-input" placeholder="输入用户 ID，多个可用逗号分隔" />
+            <button class="small-btn" :disabled="bindingRequestId === req._id" @click="addAuthorizedUsers(req)">{{ bindingRequestId === req._id ? '保存中...' : '添加账号' }}</button>
+          </view>
+        </view>
         <view v-if="req.status === 'pending'" class="pet-request-actions">
           <button class="small-btn" @click="updatePetRequest(req._id, 'in_progress')">标记制作中</button>
           <button class="small-btn danger" @click="updatePetRequest(req._id, 'rejected')">拒绝</button>
@@ -63,7 +91,7 @@
 // 宠物定制需求面板 —— 自 admin.vue 抽出。
 // 修复：原模板里交付输入框的 v-if 用了未定义变量 deliveredPetIds（in_progress 项渲染即崩），已移除该 v-if。
 import { ref, reactive, onMounted } from 'vue'
-import { adminListCustomPetRequests, adminUpdateCustomPetRequest } from '@/utils/api'
+import { adminListCustomPetRequests, adminSetCustomPetAuthorizedUsers, adminSetCustomPetPublic, adminUpdateCustomPetRequest } from '@/utils/api'
 import { aiLabel } from '@/utils/labels'
 
 const emit = defineEmits<{ error: [string] }>()
@@ -71,7 +99,11 @@ const emit = defineEmits<{ error: [string] }>()
 const petRequests = ref<any[]>([])
 const petRequestsLoading = ref(false)
 const tempVersions = reactive<Record<string, string>>({})
+const authorizedUserInputs = reactive<Record<string, string>>({})
 const deliveringId = ref('')
+const bindingRequestId = ref('')
+const publicUpdatingId = ref('')
+const currentAdminUserId = ref('')
 
 async function loadPetRequests() {
   petRequestsLoading.value = true
@@ -79,6 +111,7 @@ async function loadPetRequests() {
     const result = await adminListCustomPetRequests()
     if (result?.success) {
       const requests = result.requests || []
+      currentAdminUserId.value = String(result.currentAdminUserId || '')
       // Resolve cloud:// file IDs to temp URLs for H5 display
       const allFileIds: string[] = []
       for (const req of requests) {
@@ -142,6 +175,91 @@ function nextVersion(request: any) {
   const current = String(request?.deliveredPet?.version || request?.deliveredResourceVersion || 'v0')
   const match = current.match(/^v([1-9]\d{0,8})$/)
   return `v${match ? Number(match[1]) + 1 : 1}`
+}
+
+function authorizedIds(request: any) {
+  return Array.isArray(request?.authorizedUserIds)
+    ? request.authorizedUserIds.map((id: unknown) => String(id || '').trim()).filter(Boolean)
+    : []
+}
+
+function isAuthorized(request: any, userId: string) {
+  return Boolean(userId) && authorizedIds(request).includes(userId)
+}
+
+function hasPetAccess(request: any, userId: string) {
+  return Boolean(userId) && (String(request?.userId || '') === userId || isAuthorized(request, userId))
+}
+
+function currentAdminAccessLabel(request: any) {
+  if (String(request?.userId || '') === currentAdminUserId.value) return '当前管理员是所有者'
+  return isAuthorized(request, currentAdminUserId.value) ? '当前管理员已绑定' : '绑定当前管理员'
+}
+
+async function saveAuthorizedUsers(request: any, userIds: string[], addCurrentAdmin = false) {
+  const requestId = String(request?._id || '')
+  if (!requestId) return false
+  emit('error', '')
+  bindingRequestId.value = requestId
+  try {
+    const result = await adminSetCustomPetAuthorizedUsers(requestId, {
+      authorizedUserIds: userIds,
+      addCurrentAdmin
+    })
+    if (!result?.success) {
+      emit('error', result?.message || '更新绑定账号失败')
+      return false
+    }
+    request.authorizedUserIds = result.authorizedUserIds || []
+    return true
+  } catch (error: any) {
+    emit('error', error?.message || '更新绑定账号失败')
+    return false
+  } finally {
+    bindingRequestId.value = ''
+  }
+}
+
+async function bindCurrentAdmin(request: any) {
+  await saveAuthorizedUsers(request, authorizedIds(request), true)
+}
+
+async function addAuthorizedUsers(request: any) {
+  const requestId = String(request?._id || '')
+  const values = String(authorizedUserInputs[requestId] || '')
+    .split(/[\s,，]+/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+  if (!values.length) {
+    emit('error', '请输入要绑定的用户 ID')
+    return
+  }
+  const saved = await saveAuthorizedUsers(request, [...authorizedIds(request), ...values])
+  if (saved) authorizedUserInputs[requestId] = ''
+}
+
+async function removeAuthorizedUser(request: any, userId: string) {
+  await saveAuthorizedUsers(request, authorizedIds(request).filter((id: string) => id !== userId))
+}
+
+async function setPetPublic(request: any, event: any) {
+  const requestId = String(request?._id || '')
+  if (!requestId) return
+  const isPublic = event?.detail?.value === true
+  emit('error', '')
+  publicUpdatingId.value = requestId
+  try {
+    const result = await adminSetCustomPetPublic(requestId, isPublic)
+    if (!result?.success) {
+      emit('error', result?.message || '更新公共宠物状态失败')
+      return
+    }
+    request.isPublic = result.isPublic === true
+  } catch (error: any) {
+    emit('error', error?.message || '更新公共宠物状态失败')
+  } finally {
+    publicUpdatingId.value = ''
+  }
 }
 
 async function deliverPetRequest(request: any, redelivery: boolean) {
@@ -227,4 +345,23 @@ onMounted(() => { loadPetRequests() })
 .pet-delivery-label { font-size: 12px; color: #68766f; }
 .pet-delivery-id { padding: 6px 8px; border-radius: 4px; background: #f1f5f3; font-family: monospace; font-size: 12px; color: #17231f; }
 .pet-request-version-input { width: 90px; height: 34px; padding: 0 10px; border: 1px solid rgba(23, 35, 31, 0.18); border-radius: 6px; font-size: 13px; }
+.pet-access-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(23, 35, 31, 0.08); }
+.pet-public-row { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(23, 35, 31, 0.08); }
+.pet-public-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pet-public-desc { color: #68766f; font-size: 12px; line-height: 1.4; }
+.pet-access-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pet-access-title { font-size: 13px; font-weight: 700; color: #17231f; }
+.pet-access-users { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.pet-access-user { min-width: 0; display: flex; align-items: center; gap: 4px; min-height: 34px; padding: 0 4px 0 10px; border: 1px solid rgba(23, 35, 31, 0.14); border-radius: 6px; background: #fff; }
+.pet-access-user-id { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 12px; color: #17231f; }
+.pet-access-remove { width: 34px; height: 34px; min-height: 34px; display: grid; place-items: center; margin: 0; padding: 0; border: 0; border-radius: 4px; color: #8f3030; background: transparent; font-size: 20px; line-height: 1; }
+.pet-access-empty { display: block; margin-top: 8px; color: #87918c; font-size: 12px; }
+.pet-access-add { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.pet-access-input { min-width: 0; flex: 1; height: 36px; padding: 0 10px; border: 1px solid rgba(23, 35, 31, 0.18); border-radius: 6px; background: #fff; font-size: 13px; }
+@media (max-width: 600px) {
+  .pet-access-head, .pet-access-add { align-items: stretch; flex-direction: column; }
+  .pet-public-row { align-items: flex-start; }
+  .pet-access-user { max-width: 100%; }
+  .pet-access-user-id { max-width: calc(100vw - 130px); }
+}
 </style>
