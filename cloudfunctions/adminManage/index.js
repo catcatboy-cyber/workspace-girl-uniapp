@@ -9,6 +9,11 @@ const { ensureBillingSettings } = require('./_shared/billing')
 const { buildEventAssessmentMessages } = require('./_shared/ai-event')
 const { sanitizePromptModules } = require('./_shared/ai-prompt-config')
 const { MODULE_OUTPUT_CONTRACTS, MODULE_RUNTIME_FIELDS } = require('./_shared/prompt-admin-view')
+const {
+  backfillDeliveredPetRecords,
+  buildExpectedPetId,
+  deliverCustomPetRequest
+} = require('./_shared/custom-pet-resource')
 const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
@@ -1834,6 +1839,9 @@ async function listCustomPetRequests() {
       .limit(100)
       .get()
     const requests = data || []
+    for (const req of requests) {
+      try { req.expectedPetId = buildExpectedPetId(req._id) } catch { req.expectedPetId = '' }
+    }
 
     // Resolve cloud:// file IDs to temp URLs for image display
     const allFileIds = []
@@ -1873,28 +1881,82 @@ async function updateCustomPetRequest(event) {
   const requestId = String(event.requestId || '').trim()
   const status = String(event.status || '').trim()
   const adminNote = String(event.adminNote || '').trim()
-  const deliveredPetId = String(event.deliveredPetId || '').trim()
+  const version = String(event.version || 'v1').trim()
 
   if (!requestId) return { success: false, message: '缺少 requestId' }
   if (!['in_progress', 'delivered', 'rejected'].includes(status)) {
     return { success: false, message: '无效状态，可选：in_progress, delivered, rejected' }
   }
-  if (status === 'delivered' && !deliveredPetId) {
-    return { success: false, message: '交付时需要填写 deliveredPetId' }
-  }
-
   try {
+    if (status === 'delivered') {
+      const delivery = await deliverCustomPetRequest({
+        db,
+        app,
+        requestId,
+        version,
+        adminNote,
+        allowRedelivery: event.redelivery === true
+      })
+      return {
+        success: true,
+        idempotent: Boolean(delivery.idempotent),
+        expectedPetId: delivery.expectedPetId,
+        deliveredPet: { id: delivery.deliveredPet.id, version: delivery.deliveredPet.version }
+      }
+    }
+
+    const currentResult = await db.collection('custom_pet_requests').doc(requestId).get()
+    const current = Array.isArray(currentResult?.data) ? currentResult.data[0] : currentResult?.data
+    if (!current) return { success: false, message: '定制宠物请求不存在' }
+    if (current.status === status) return { success: true, idempotent: true }
+    const allowed = status === 'in_progress'
+      ? current.status === 'pending'
+      : status === 'rejected' && ['pending', 'in_progress'].includes(current.status)
+    if (!allowed) return { success: false, message: `不允许从 ${current.status} 更新为 ${status}` }
+
     const update = { status, updatedAt: new Date() }
     if (adminNote) update.adminNote = adminNote
-    if (deliveredPetId) update.deliveredPetId = deliveredPetId
-    if (status === 'delivered') update.deliveredAt = new Date()
     if (status === 'rejected') update.rejectedAt = new Date()
 
     await db.collection('custom_pet_requests').doc(requestId).update(update)
     return { success: true }
   } catch (error) {
     console.error('updateCustomPetRequest error:', error)
-    return { success: false, message: error?.message || '更新宠物需求失败' }
+    return { success: false, code: error?.code || 'CUSTOM_PET_UPDATE_FAILED', message: error?.message || '更新宠物需求失败' }
+  }
+}
+
+async function backfillCustomPetDeliveries(event = {}) {
+  const dryRun = event.dryRun !== false
+  const cursor = String(event.cursor || '').trim()
+  const limit = Math.min(20, Math.max(1, Number.parseInt(event.limit, 10) || 20))
+  try {
+    const where = cursor
+      ? db.command.and([{ status: 'delivered' }, { _id: db.command.gt(cursor) }])
+      : { status: 'delivered' }
+    const { data } = await db.collection('custom_pet_requests')
+      .where(where)
+      .orderBy('_id', 'asc')
+      .limit(limit)
+      .get()
+    const summary = await backfillDeliveredPetRecords({
+      app,
+      requests: data || [],
+      dryRun,
+      persist: async (request, deliveredPet) => {
+        await db.collection('custom_pet_requests').doc(request._id).update({
+          deliveredPet,
+          deliveredResourceVersion: 'legacy-v1',
+          updatedAt: new Date()
+        })
+      }
+    })
+    const records = data || []
+    const nextCursor = records.length === limit ? String(records[records.length - 1]?._id || '') || null : null
+    return { success: true, ...summary, nextCursor }
+  } catch (error) {
+    console.error('backfillCustomPetDeliveries error:', error)
+    return { success: false, message: error?.message || '回填定制宠物交付数据失败' }
   }
 }
 
@@ -2082,6 +2144,7 @@ exports.main = async (event = {}) => {
     if (action === 'resolveFeedback') return await resolveFeedback(event)
     if (action === 'listCustomPetRequests') return await listCustomPetRequests()
     if (action === 'updateCustomPetRequest') return await updateCustomPetRequest(event)
+    if (action === 'backfillCustomPetDeliveries') return await backfillCustomPetDeliveries(event)
     if (action === 'listOrders') return await listOrders(event)
     if (action === 'refundOrder') return await refundOrder(event)
     if (action === 'deleteUser') return await deleteUser(event, userId)

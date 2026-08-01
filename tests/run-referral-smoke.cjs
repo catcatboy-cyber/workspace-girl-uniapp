@@ -127,7 +127,7 @@ async function main() {
 
   // ── 3. call_usage_records.source 格式 ──
   console.log('\n3. call_usage_records.source 格式验证')
-  await runCase('存在 referral_inviter:<inviteeUserId> 记录', async () => {
+  await runCase('邀请奖励来源拆分为 source + sourceId', async () => {
     const fake = createFakeCloudbase()
     const db = fake.init().database()
     const { settleReward } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'referral-settlement.js'))
@@ -144,15 +144,11 @@ async function main() {
     const grantRecords = records.filter(r => r.type === 'grant')
     assert.ok(grantRecords.length >= 2, `expected >= 2 grant records, got ${grantRecords.length}`)
 
-    // 验证 source 格式
-    const inviterSource = `referral_inviter:${inviteeId}`
-    const inviteeSource = `referral_invitee:${inviteeId}`
+    const hasInviterGrant = grantRecords.some(r => r.source === 'referral_inviter' && r.sourceId === inviteeId)
+    const hasInviteeGrant = grantRecords.some(r => r.source === 'referral_invitee' && r.sourceId === inviteeId)
 
-    const hasInviterGrant = grantRecords.some(r => r.source === inviterSource)
-    const hasInviteeGrant = grantRecords.some(r => r.source === inviteeSource)
-
-    assert.ok(hasInviterGrant, `missing grant with source='${inviterSource}'. Found: ${grantRecords.map(r => r.source).join(', ')}`)
-    assert.ok(hasInviteeGrant, `missing grant with source='${inviteeSource}'. Found: ${grantRecords.map(r => r.source).join(', ')}`)
+    assert.ok(hasInviterGrant, `missing inviter grant for sourceId='${inviteeId}'. Found: ${grantRecords.map(r => `${r.source}:${r.sourceId || ''}`).join(', ')}`)
+    assert.ok(hasInviteeGrant, `missing invitee grant for sourceId='${inviteeId}'. Found: ${grantRecords.map(r => `${r.source}:${r.sourceId || ''}`).join(', ')}`)
   })
 
   // ── 4. 老用户点分享 → 只新增 share_visits ──

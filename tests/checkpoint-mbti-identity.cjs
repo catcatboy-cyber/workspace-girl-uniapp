@@ -71,16 +71,16 @@ const c2ok = fail === 0
 pass = 0; fail = 0
 
 // ==========================================
-// C3: event-understanding.js — serializeCaseProfile uses shared
+// C3: event-understanding.js — legacy entry remains explicitly disabled
 // ==========================================
 console.log('\n=== C3: event-understanding.js ===')
 const eu = readShared('event-understanding.js')
 
-check('case-profile.js is required',
-  eu.includes("require('./case-profile')"))
+check('legacy event-understanding entry is explicitly disabled',
+  eu.includes('LEGACY_EVENT_UNDERSTANDING_DISABLED'))
 
-check('serializeCaseProfile delegates to shared implementation',
-  eu.includes('serializeCaseProfileForAI'))
+check('legacy entry does not run a second case-profile serializer',
+  !eu.includes('serializeCaseProfileForAI'))
 
 console.log('  Result: %d/%d PASS', pass, pass + fail)
 const c3ok = fail === 0

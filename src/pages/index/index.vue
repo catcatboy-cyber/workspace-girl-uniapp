@@ -463,7 +463,7 @@ import BalanceSheet from '@/components/BalanceSheet.vue'
 import TaDailySheet from '@/components/TaDailySheet.vue'
 import PetEnergySheet from '@/components/PetEnergySheet.vue'
 import { normalizeActionGuideData } from '@/utils/taohua'
-import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, getContentSecurityMessage, hasUsableSelfProfile, queryTaohua, checkFeatureAccess } from '@/utils/api'
+import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, getContentSecurityMessage, hasUsableSelfProfile, queryTaohua, checkFeatureAccess, listMyDeliveredPets } from '@/utils/api'
 import {
   bumpDataVersion,
   combineDateAndTimeToISOString,
@@ -490,7 +490,7 @@ import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
 import { xianchiAlgorithm, hongluanTianxi, ZODIAC_TO_ZHI } from '@/utils/taohua'
-import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets } from '@/utils/pets.js'
+import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets, refreshDeliveredPetCatalog, setSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
 
 type PetScene =
@@ -1440,7 +1440,7 @@ function closePetEnergySheet() {
 
 const resolvedSpritesheetPath = computed(() => {
   void petAssetsVersion.value
-  return getResolvedSpritesheetPath(selectedPet.value.id)
+  return getResolvedSpritesheetPath(selectedPet.value, getCurrentUserId() || '')
 })
 
 const petSpritesheetKey = computed(() => `${selectedPet.value.id}:${petAssetsVersion.value}:${resolvedSpritesheetPath.value}`)
@@ -1797,29 +1797,45 @@ function syncPetBarPref() {
   try { showPetBar.value = uni.getStorageSync('showPetBar') !== false } catch { showPetBar.value = true }
 }
 async function syncSelectedPet() {
-  const nextPetId = getSelectedPetId()
+  const userId = getCurrentUserId() || ''
+  if (userId) {
+    try { await refreshDeliveredPetCatalog(userId, listMyDeliveredPets) } catch {}
+  }
+  const nextPetId = getSelectedPetId(userId)
   if (nextPetId !== 'xiaomi') {
     try {
       const access = await checkFeatureAccess('更换宠物')
       if (access?.allowed === false) {
-        setSelectedPetId('xiaomi')
-        selectedPet.value = getPetById('xiaomi')
+        setSelectedPetId('xiaomi', userId)
+        selectedPet.value = getPetById('xiaomi', userId)
         petAssetsVersion.value++
         return
       }
     } catch {
-      setSelectedPetId('xiaomi')
-      selectedPet.value = getPetById('xiaomi')
+      setSelectedPetId('xiaomi', userId)
+      selectedPet.value = getPetById('xiaomi', userId)
       petAssetsVersion.value++
       return
     }
   }
-  selectedPet.value = getPetById(nextPetId)
-  if (isCloudPet(selectedPet.value.id) && !isPetCachedLocally(selectedPet.value.id)) {
+  const resolvedPet = getPetById(nextPetId, userId)
+  if (resolvedPet.id !== nextPetId) {
+    setSelectedPetId('xiaomi', userId)
+    selectedPet.value = getPetById('xiaomi', userId)
+    petAssetsVersion.value++
+    return
+  }
+  selectedPet.value = resolvedPet
+  if (isCloudPet(resolvedPet, userId) && !isPetCachedLocally(resolvedPet, userId)) {
     try {
-      await downloadPetAssets(selectedPet.value.id)
+      const downloaded = await downloadPetAssets(resolvedPet, userId)
+      if (!downloaded) throw new Error('pet assets unavailable')
     } catch (err: any) {
       void err
+      if (resolvedPet.isCustom) {
+        setSelectedPetId('xiaomi', userId)
+        selectedPet.value = getPetById('xiaomi', userId)
+      }
     }
   }
   petAssetsVersion.value++

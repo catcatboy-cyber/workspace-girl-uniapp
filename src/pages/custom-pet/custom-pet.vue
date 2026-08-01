@@ -35,6 +35,35 @@
     <button class="btn btn-primary btn-lg btn-full" style="margin-bottom:40rpx;" :disabled="!canSubmit || submitting" @click="submit">
       {{ submitting ? '提交中...' : '提交定制需求' }}
     </button>
+
+    <view class="history-head-v2">
+      <text class="section-title-v2">我的定制记录</text>
+      <text class="history-refresh-v2" @click="loadMyRequests(true)">刷新</text>
+    </view>
+    <view v-if="requestsLoading && !myRequests.length" class="card-v2 history-state-v2">记录加载中...</view>
+    <view v-else-if="requestsError && !myRequests.length" class="card-v2 history-state-v2 error">{{ requestsError }}</view>
+    <view v-else-if="!myRequests.length" class="card-v2 history-state-v2">还没有定制记录。</view>
+    <view v-else class="request-list-v2">
+      <view v-for="req in myRequests" :key="req.requestId" class="card-v2 request-item-v2">
+        <view class="request-head-v2">
+          <text class="request-name-v2">{{ req.nickname }}</text>
+          <text :class="['request-status-v2', req.status]">{{ statusLabel(req.status) }}</text>
+        </view>
+        <text class="request-desc-v2">{{ req.description }}</text>
+        <view v-if="req.referenceImageURLs?.length" class="request-images-v2">
+          <image v-for="(url, index) in req.referenceImageURLs" :key="url" :src="url" class="request-image-v2" mode="aspectFill" @click="previewRequestImage(req.referenceImageURLs, index)" />
+        </view>
+        <text class="request-time-v2">提交于 {{ formatDate(req.createdAt) }}</text>
+        <view v-if="req.status === 'delivered'" class="delivery-notice-v2">
+          <text class="delivery-title-v2">你的专属宠物已制作完成</text>
+          <text class="delivery-copy-v2">请前往「我的 → 更换宠物」选择使用。</text>
+        </view>
+      </view>
+      <button v-if="nextCursor" class="btn btn-secondary btn-full load-more-v2" :disabled="requestsLoading" @click="loadMyRequests(false)">
+        {{ requestsLoading ? '加载中...' : '加载更多' }}
+      </button>
+      <text v-if="requestsError" class="history-inline-error-v2">{{ requestsError }}</text>
+    </view>
   </view>
 </template>
 
@@ -42,7 +71,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { callFunction } from '@/utils/cloudbase'
-import { checkFeatureAccess, getCurrentUserId, contentSecCheck, getContentSecurityMessage } from '@/utils/api'
+import { checkFeatureAccess, getCurrentUserId, contentSecCheck, getContentSecurityMessage, getMyCustomPetRequests } from '@/utils/api'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { aiLabel } from '@/utils/labels'
 
@@ -52,24 +81,30 @@ const nickname = ref('')
 const description = ref('')
 const images = ref<string[]>([])
 const submitting = ref(false)
+const featureAllowed = ref(true)
+const myRequests = ref<any[]>([])
+const requestsLoading = ref(false)
+const requestsError = ref('')
+const nextCursor = ref<string | null>(null)
 
-const canSubmit = computed(() => nickname.value.trim() && description.value.trim())
+const canSubmit = computed(() => featureAllowed.value && nickname.value.trim() && description.value.trim())
 
 onShow(() => {
   themeVars.value = getThemeStyle()
   applyThemeChrome()
+  if (getCurrentUserId()) loadMyRequests(true)
 })
 
 onMounted(async () => {
   try {
     const access = await checkFeatureAccess('自定义宠物')
     if (access?.allowed === false) {
+      featureAllowed.value = false
       uni.showModal({
         title: '功能不可用',
         content: access.reason || '当前月卡不支持自定义宠物功能，请购买月卡。',
-        confirmText: '返回',
+        confirmText: '知道了',
         showCancel: false,
-        success: () => uni.navigateBack({ delta: 1 })
       })
     }
   } catch (_) { /* ignore */ }
@@ -144,7 +179,10 @@ async function submit() {
 
     if (result.success) {
       uni.showToast({ title: '已提交，我们会尽快为你制作！', icon: 'none', duration: 2500 })
-      setTimeout(() => uni.navigateBack(), 2500)
+      nickname.value = ''
+      description.value = ''
+      images.value = []
+      await loadMyRequests(true)
     } else {
       uni.showToast({ title: result.message || '提交失败', icon: 'none' })
     }
@@ -153,6 +191,43 @@ async function submit() {
   } finally {
     submitting.value = false
   }
+}
+
+async function loadMyRequests(reset = false) {
+  if (requestsLoading.value || !getCurrentUserId()) return
+  requestsLoading.value = true
+  requestsError.value = ''
+  try {
+    const result = await getMyCustomPetRequests(reset ? null : nextCursor.value, 20)
+    if (!result?.success) throw new Error(result?.message || '读取定制记录失败')
+    const requests = Array.isArray(result.requests) ? result.requests : []
+    myRequests.value = reset ? requests : [...myRequests.value, ...requests]
+    nextCursor.value = result.nextCursor || null
+  } catch (error: any) {
+    requestsError.value = error?.message || '读取定制记录失败'
+  } finally {
+    requestsLoading.value = false
+  }
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    pending: '待处理',
+    in_progress: '制作中',
+    delivered: '已完成',
+    rejected: '未通过'
+  }
+  return labels[status] || status
+}
+
+function formatDate(value: any) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function previewRequestImage(urls: string[], index: number) {
+  uni.previewImage({ urls, current: urls[index] })
 }
 </script>
 
@@ -185,5 +260,29 @@ async function submit() {
 .v2-mode .img-add-v2 { width: 180rpx; height: 180rpx; border: var(--border-width, 2rpx) dashed var(--border, #111); border-radius: var(--shape-radius-inner, 0); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; background: var(--surface-dim, #f9f9f9); }
 .v2-mode .img-add-icon-v2 { font-size: $fs-hero-title; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; }
 .v2-mode .img-add-label-v2 { font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); }
+
+.history-head-v2 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14rpx; }
+.history-head-v2 .section-title-v2 { margin-bottom: 0; }
+.history-refresh-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: var(--accent-cool, #168f88); padding: 10rpx; }
+.history-state-v2 { display: block; color: var(--text-muted, #666); font-size: $fs-body-lg; }
+.history-state-v2.error, .history-inline-error-v2 { color: var(--risk, #d43d3d); }
+.request-list-v2 { display: flex; flex-direction: column; gap: 18rpx; padding-bottom: 32rpx; }
+.request-item-v2 { margin-bottom: 0 !important; }
+.request-head-v2 { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.request-name-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
+.request-status-v2 { flex-shrink: 0; padding: 6rpx 14rpx; border: 2rpx solid var(--border, #111); font-size: $fs-caption; font-weight: $fw-hero; background: var(--surface-dim, #f4f4f4); }
+.request-status-v2.pending { background: #fff3c4; }
+.request-status-v2.in_progress { background: #dff3ff; }
+.request-status-v2.delivered { background: #dff8e9; }
+.request-status-v2.rejected { background: #ffe1e1; }
+.request-desc-v2 { display: block; margin-top: 12rpx; color: var(--text-muted, #666); font-size: $fs-body-lg; line-height: 1.55; }
+.request-images-v2 { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 14rpx; }
+.request-image-v2 { width: 132rpx; height: 132rpx; border: 2rpx solid var(--border, #111); }
+.request-time-v2 { display: block; margin-top: 14rpx; color: var(--text-soft, #999); font-size: $fs-caption; }
+.delivery-notice-v2 { margin-top: 16rpx; padding: 16rpx; border: 2rpx solid var(--border, #111); background: var(--success-soft, #dff8e9); }
+.delivery-title-v2 { display: block; color: var(--text-main, #111); font-size: $fs-body-lg; font-weight: $fw-hero; }
+.delivery-copy-v2 { display: block; margin-top: 6rpx; color: var(--text-muted, #555); font-size: $fs-body; }
+.load-more-v2 { margin-top: 0; }
+.history-inline-error-v2 { display: block; text-align: center; font-size: $fs-caption; }
 
 </style>

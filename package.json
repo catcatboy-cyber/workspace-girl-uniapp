@@ -6,6 +6,7 @@
     "sync:shared": "node scripts/sync-shared.js",
     "sync:shared:dry": "node scripts/sync-shared.js --dry-run",
     "test:pet-energy": "node tests/run-pet-energy.cjs",
+    "test:custom-pet": "node tests/run-custom-pet-delivery.cjs",
     "test:content-security": "node tests/run-content-security.cjs",
     "test:regression": "node tests/run-regression.cjs",
     "test:normalized-event": "node tests/run-normalized-event.cjs",

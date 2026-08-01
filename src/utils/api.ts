@@ -7,6 +7,7 @@ import { resetCloudAuthState } from './cloudbase'
 import { normalizeAvatarValue, resolveAvatarSrc } from './avatar'
 import { feedPet } from './helpers'
 import { normalizeSelfIdentity } from './identity'
+import { clearPetUserState } from './pets.js'
 
 function toTimestamp(value: any): number | null {
   if (!value) return null
@@ -413,7 +414,10 @@ export async function register(email: string, password: string, inviteCode?: str
  * 用户登出
  */
 export async function logout() {
+  const previousUserId = getCurrentUserId()
   await auth.signOut()
+
+  if (previousUserId) clearPetUserState(previousUserId)
 
   // 清除本地存储
   uni.removeStorageSync('userId')
@@ -1329,10 +1333,31 @@ export async function adminListCustomPetRequests() {
   return callFunction({ name: 'adminManage', data: { action: 'listCustomPetRequests', ...getBusinessAuthPayload() } }).then((res: any) => res.result)
 }
 
-export async function adminUpdateCustomPetRequest(requestId: string, data: { status: string; adminNote?: string; deliveredPetId?: string }) {
+export async function adminUpdateCustomPetRequest(requestId: string, data: { status: string; adminNote?: string; version?: string; redelivery?: boolean }) {
   return callFunction({
     name: 'adminManage',
     data: { action: 'updateCustomPetRequest', requestId, ...getBusinessAuthPayload(), ...data }
+  }).then((res: any) => res.result)
+}
+
+export async function adminBackfillCustomPetDeliveries(dryRun = true, cursor?: string | null, limit = 20) {
+  return callFunction({
+    name: 'adminManage',
+    data: { action: 'backfillCustomPetDeliveries', dryRun, cursor: cursor || undefined, limit, ...getBusinessAuthPayload() }
+  }).then((res: any) => res.result)
+}
+
+export async function getMyCustomPetRequests(cursor?: string | null, limit = 20) {
+  return callFunction({
+    name: 'customPet',
+    data: { action: 'listMyRequests', cursor: cursor || undefined, limit, ...getBusinessAuthPayload() }
+  }).then((res: any) => res.result)
+}
+
+export async function listMyDeliveredPets() {
+  return callFunction({
+    name: 'customPet',
+    data: { action: 'listMyDeliveredPets', ...getBusinessAuthPayload() }
   }).then((res: any) => res.result)
 }
 

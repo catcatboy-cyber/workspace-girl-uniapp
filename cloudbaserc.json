@@ -33,7 +33,9 @@
     {
       "name": "adminManage",
       "timeout": 20,
-      "envVariables": {},
+      "envVariables": {
+        "CUSTOM_PET_STORAGE_ROOT": "cloud://cloud1-d0gvhqu2c8a2b61fd.636c-cloud1-d0gvhqu2c8a2b61fd-1442786291"
+      },
       "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",
@@ -267,7 +269,9 @@
     {
       "name": "customPet",
       "timeout": 15,
-      "envVariables": {},
+      "envVariables": {
+        "CUSTOM_PET_TEMP_URL_MAX_AGE_SECONDS": "3600"
+      },
       "runtime": "Nodejs18.15",
       "memorySize": 128,
       "handler": "index.main",

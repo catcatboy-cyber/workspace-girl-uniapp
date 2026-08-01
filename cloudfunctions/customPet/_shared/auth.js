@@ -60,9 +60,35 @@ async function requireAuthenticatedUserId(app, event = {}) {
   return userId
 }
 
+async function requireVerifiedAuthenticatedUserId(app) {
+  const userInfo = await app.auth().getUserInfo()
+  const candidates = [
+    userInfo?.customUserId,
+    userInfo?.uid,
+    userInfo?.userInfo?.customUserId,
+    userInfo?.userInfo?.uid,
+    userInfo?.user?.customUserId,
+    userInfo?.user?.uid
+  ]
+
+  if (isMpRuntime()) {
+    const openid = getTrustedOpenId()
+    const mappedUserId = await findUserIdByOpenId(app.database(), openid)
+    if (mappedUserId) candidates.push(mappedUserId)
+  }
+
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+
+  const error = new Error('UNAUTHENTICATED')
+  error.code = 'UNAUTHENTICATED'
+  throw error
+}
+
 function buildAuthErrorResponse(error) {
   if (error?.code === 'UNAUTHENTICATED' || error?.message === 'UNAUTHENTICATED') {
-    return { success: false, message: '请先登录' }
+    return { success: false, code: 'UNAUTHORIZED', message: '请先登录' }
   }
 
   return null
@@ -91,6 +117,7 @@ async function getOwnedCase(db, caseId, userId) {
 
 module.exports = {
   requireAuthenticatedUserId,
+  requireVerifiedAuthenticatedUserId,
   buildAuthErrorResponse,
   getOwnedCase
 }

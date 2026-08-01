@@ -22,21 +22,37 @@
         </view>
         <text class="pet-request-desc">{{ req.description }}</text>
         <view v-if="req.referenceImages && req.referenceImages.length" class="pet-request-images">
-          <image v-for="(img, i) in req.referenceImages" :key="i" :src="img" class="pet-request-img" mode="aspectFill" />
+          <view v-for="(img, i) in req.referenceImages" :key="i" class="pet-request-img-wrapper" @click="downloadImage(img)">
+            <image :src="img" class="pet-request-img" mode="aspectFill" />
+            <text class="pet-request-img-download">下载原图</text>
+          </view>
         </view>
         <view v-if="req.adminNote" class="pet-request-note">
           <text>后台备注：{{ req.adminNote }}</text>
         </view>
-        <view v-if="req.deliveredPetId" class="pet-request-note">
-          <text>已交付 Pet ID：{{ req.deliveredPetId }}</text>
+        <view v-if="req.deliveredPet || req.deliveredPetId" class="pet-request-note">
+          <text>已交付 Pet ID：{{ req.deliveredPet?.id || req.deliveredPetId }}</text>
+          <text class="pet-request-version">版本：{{ req.deliveredPet?.version || req.deliveredResourceVersion || 'legacy' }}</text>
         </view>
         <view v-if="req.status === 'pending'" class="pet-request-actions">
           <button class="small-btn" @click="updatePetRequest(req._id, 'in_progress')">标记制作中</button>
           <button class="small-btn danger" @click="updatePetRequest(req._id, 'rejected')">拒绝</button>
         </view>
         <view v-if="req.status === 'in_progress'" class="pet-request-actions">
-          <input :value="tempDeliveredPetIds[req._id] || ''" class="pet-request-petid-input" placeholder="输入交付的 Pet ID" @input="onDeliveredPetIdInput(req._id, $event)" />
-          <button class="small-btn" @click="deliverPetRequest(req._id)">标记已交付</button>
+          <view class="pet-delivery-fields">
+            <text class="pet-delivery-label">资源目录</text>
+            <text class="pet-delivery-id">{{ req.expectedPetId }}</text>
+            <input :value="tempVersions[req._id] || 'v1'" class="pet-request-version-input" placeholder="版本，如 v1" @input="onVersionInput(req._id, $event)" />
+          </view>
+          <button class="small-btn" :disabled="deliveringId === req._id" @click="deliverPetRequest(req, false)">{{ deliveringId === req._id ? '校验中...' : '校验并交付' }}</button>
+        </view>
+        <view v-if="req.status === 'delivered'" class="pet-request-actions">
+          <view class="pet-delivery-fields">
+            <text class="pet-delivery-label">重新交付目录</text>
+            <text class="pet-delivery-id">{{ req.expectedPetId }}</text>
+            <input :value="tempVersions[req._id] || nextVersion(req)" class="pet-request-version-input" placeholder="新版本，如 v2" @input="onVersionInput(req._id, $event)" />
+          </view>
+          <button class="small-btn" :disabled="deliveringId === req._id" @click="deliverPetRequest(req, true)">{{ deliveringId === req._id ? '校验中...' : '重新交付' }}</button>
         </view>
       </view>
     </view>
@@ -54,7 +70,8 @@ const emit = defineEmits<{ error: [string] }>()
 
 const petRequests = ref<any[]>([])
 const petRequestsLoading = ref(false)
-const tempDeliveredPetIds = reactive<Record<string, string>>({})
+const tempVersions = reactive<Record<string, string>>({})
+const deliveringId = ref('')
 
 async function loadPetRequests() {
   petRequestsLoading.value = true
@@ -87,6 +104,10 @@ async function loadPetRequests() {
         } catch { /* ignore resolution errors */ }
       }
       petRequests.value = requests
+      for (const req of requests) {
+        if (req.status === 'in_progress' && !tempVersions[req._id]) tempVersions[req._id] = 'v1'
+        if (req.status === 'delivered' && !tempVersions[req._id]) tempVersions[req._id] = nextVersion(req)
+      }
     }
   } catch { /* ignore */ }
   finally { petRequestsLoading.value = false }
@@ -97,8 +118,8 @@ function statusLabel(status: string) {
   return map[status] || status
 }
 
-function onDeliveredPetIdInput(requestId: string, e: any) {
-  tempDeliveredPetIds[requestId] = String(e?.detail?.value || '').trim()
+function onVersionInput(requestId: string, e: any) {
+  tempVersions[requestId] = String(e?.detail?.value || '').trim()
 }
 
 async function updatePetRequest(requestId: string, status: string) {
@@ -117,23 +138,42 @@ async function updatePetRequest(requestId: string, status: string) {
   }
 }
 
-async function deliverPetRequest(requestId: string) {
+function nextVersion(request: any) {
+  const current = String(request?.deliveredPet?.version || request?.deliveredResourceVersion || 'v0')
+  const match = current.match(/^v([1-9]\d{0,8})$/)
+  return `v${match ? Number(match[1]) + 1 : 1}`
+}
+
+async function deliverPetRequest(request: any, redelivery: boolean) {
+  const requestId = String(request?._id || '')
   if (!requestId) return
-  const deliveredPetId = tempDeliveredPetIds[requestId] || ''
-  if (!deliveredPetId) { emit('error', '请填写交付的 Pet ID'); return }
+  const version = String(tempVersions[requestId] || 'v1').trim()
+  if (!version) { emit('error', '请填写资源版本'); return }
 
   emit('error', '')
+  deliveringId.value = requestId
   try {
-    const result = await adminUpdateCustomPetRequest(requestId, { status: 'delivered', deliveredPetId })
+    if (!/^v[1-9]\d{0,8}$/.test(version)) {
+      emit('error', '资源版本格式无效，请使用 v1、v2 等递增版本')
+      return
+    }
+    const result = await adminUpdateCustomPetRequest(requestId, { status: 'delivered', version, redelivery })
     if (result?.success) {
       const req = petRequests.value.find((r: any) => r._id === requestId)
-      if (req) { req.status = 'delivered'; req.deliveredPetId = deliveredPetId }
-      delete tempDeliveredPetIds[requestId]
+      if (req) {
+        req.status = 'delivered'
+        req.deliveredPetId = result.expectedPetId || req.expectedPetId
+        req.deliveredResourceVersion = version
+        req.deliveredPet = { id: req.deliveredPetId, version }
+      }
+      tempVersions[requestId] = `v${Number(version.slice(1)) + 1}`
     } else {
       emit('error', result?.message || '交付失败')
     }
   } catch (e: any) {
     emit('error', e?.message || '交付失败')
+  } finally {
+    deliveringId.value = ''
   }
 }
 
@@ -142,6 +182,17 @@ function formatDate(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function downloadImage(url: string) {
+  if (!url) return
+  // H5: 打开原图 URL 供下载/查看
+  // #ifdef H5
+  window.open(url, '_blank')
+  // #endif
+  // #ifdef MP-WEIXIN
+  uni.previewImage({ urls: [url], current: url })
+  // #endif
 }
 
 onMounted(() => { loadPetRequests() })
@@ -165,8 +216,15 @@ onMounted(() => { loadPetRequests() })
 .pet-request-status.rejected { background: #fde8e8; color: #c62828; }
 .pet-request-desc { display: block; font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 8px; }
 .pet-request-images { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-.pet-request-img { width: 100px; height: 100px; border-radius: 6px; border: 1px solid rgba(23, 35, 31, 0.12); }
+.pet-request-img-wrapper { position: relative; width: 100px; height: 100px; cursor: pointer; border-radius: 6px; overflow: hidden; border: 1px solid rgba(23, 35, 31, 0.12); }
+.pet-request-img { width: 100%; height: 100%; display: block; }
+.pet-request-img-download { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; text-align: center; padding: 2px 0; opacity: 0; transition: opacity 0.15s; }
+.pet-request-img-wrapper:hover .pet-request-img-download { opacity: 1; }
 .pet-request-note { margin-top: 6px; font-size: 13px; color: #68766f; }
+.pet-request-version { display: block; margin-top: 3px; }
 .pet-request-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(23, 35, 31, 0.08); }
-.pet-request-petid-input { width: 200px; height: 34px; padding: 0 10px; border: 1px solid rgba(23, 35, 31, 0.18); border-radius: 6px; font-size: 13px; }
+.pet-delivery-fields { display: flex; flex: 1; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pet-delivery-label { font-size: 12px; color: #68766f; }
+.pet-delivery-id { padding: 6px 8px; border-radius: 4px; background: #f1f5f3; font-family: monospace; font-size: 12px; color: #17231f; }
+.pet-request-version-input { width: 90px; height: 34px; padding: 0 10px; border: 1px solid rgba(23, 35, 31, 0.18); border-radius: 6px; font-size: 13px; }
 </style>

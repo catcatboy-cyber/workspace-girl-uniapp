@@ -85,7 +85,34 @@
         </view>
       </view>
       <!-- Pet select sheet -->
-      <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false"><view class="sheet-panel" @click.stop><view class="sheet-head"><text class="sheet-title">选择陪伴宠物</text><text class="sheet-close" @click="showPetSheet = false">&times;</text></view><scroll-view scroll-y class="pet-sheet-scroll-v2"><view class="pet-sheet-grid-inner-v2"><view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)"><image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" /><view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet.id) && isPetCachedLocally(pet.id)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet.id)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view><text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text></view></view></scroll-view><view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">定制专属宠物</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view></view></view>
+      <view v-if="showPetSheet" class="sheet-mask" @click="showPetSheet = false">
+        <view class="sheet-panel" @click.stop>
+          <view class="sheet-head"><text class="sheet-title">选择陪伴宠物</text><text class="sheet-close" role="button" aria-label="关闭宠物选择器" @click="showPetSheet = false">&times;</text></view>
+          <scroll-view scroll-y class="pet-sheet-scroll-v2">
+            <text class="pet-group-title-v2">内置宠物</text>
+            <view class="pet-sheet-grid-inner-v2">
+              <view v-for="pet in petOptions" :key="pet.id" :class="['pet-option-v2', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)">
+                <image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" />
+                <view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isCloudPet(pet) && isPetCachedLocally(pet)" class="pet-option-badge-v2">已下载</text><text v-else-if="isCloudPet(pet)" class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view>
+                <text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text>
+              </view>
+            </view>
+            <view v-if="petCatalogLoading" class="pet-catalog-state-v2">正在读取你的定制宠物...</view>
+            <view v-else-if="myDeliveredPets.length" class="pet-custom-group-v2">
+              <view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">我的定制宠物</text></view>
+              <view class="pet-custom-list-v2">
+                <view v-for="pet in myDeliveredPets" :key="`${pet.id}:${pet.version}`" :class="['pet-option-v2', 'custom', currentPetId === pet.id ? 'active' : '']" @click="choosePet(pet.id)">
+                  <image :src="pet.avatarPath" class="pet-option-img-v2" mode="aspectFit" />
+                  <view class="pet-option-text-v2"><view class="pet-option-name-row-v2"><text class="pet-option-name-v2">{{ pet.displayName }}</text><text v-if="isPetCachedLocally(pet)" class="pet-option-badge-v2">已下载</text><text v-else class="pet-option-badge-v2 download">下载</text></view><text class="pet-option-desc-v2">{{ pet.description }}</text></view>
+                  <text v-if="currentPetId === pet.id" class="pet-option-check-v2">&#10003;</text>
+                </view>
+              </view>
+            </view>
+            <text v-if="petCatalogError" class="pet-catalog-error-v2">{{ petCatalogError }}</text>
+          </scroll-view>
+          <view class="pet-sheet-footer-v2"><view class="pet-sheet-divider-v2"><text class="pet-sheet-divider-text-v2">还想定制新的宠物？</text></view><view class="pet-custom-entry-v2" @click="goCustomPet"><text class="pet-custom-icon-v2">&#9998;</text><text class="pet-custom-text-v2">描述你心中的专属宠物形象</text><text class="pet-custom-arrow-v2">&rarr;</text></view></view>
+        </view>
+      </view>
       <!-- 低 Token 提示 -->
       <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:var(--brand-warm,#FFFBEB);border-style:dashed;">
         <view open-type="share" style="width:100%;">
@@ -148,6 +175,7 @@ import {
   getSubscriptionStatus,
   getTokenUsage,
   getVoiceUsage,
+  listMyDeliveredPets,
   hasUsableSelfProfile,
   updateSelfProfile,
   type AIBoldnessValue,
@@ -156,11 +184,11 @@ import {
 } from '@/utils/api'
 import { applyThemeChrome, getCurrentThemeId, getFontSizeMode, getThemeStyle, setCurrentTheme, setFontSizeMode, themeOptions, type ThemeId } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
-import { downloadPetAssets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, setSelectedPetId } from '@/utils/pets.js'
+import { downloadPetAssets, getCachedDeliveredPets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, refreshDeliveredPetCatalog, setSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
 import { normalizeSelfIdentity } from '@/utils/identity'
 
-type PetId = 'xiaomi' | 'doggo'
+type PetId = string
 
 const userEmail = ref('')
 const caseCount = ref(0)
@@ -327,7 +355,17 @@ const aiBoldnessOptions: Array<{
 const showPetBar = ref(true)
 const showPetSheet = ref(false)
 const currentPetId = ref<PetId>(getSelectedPetId())
-const currentPet = computed(() => getPetById(currentPetId.value))
+const petCatalogVersion = ref(0)
+const petCatalogLoading = ref(false)
+const petCatalogError = ref('')
+const myDeliveredPets = computed(() => {
+  void petCatalogVersion.value
+  return getCachedDeliveredPets(getCurrentUserId() || '')
+})
+const currentPet = computed(() => {
+  void petCatalogVersion.value
+  return getPetById(currentPetId.value)
+})
 const switchColor = computed(() => String(themeVars.value['--text-main'] || themeVars.value['--border'] || ''))
 
 function setCustomTabBarHidden(hidden: boolean) {
@@ -341,6 +379,7 @@ function setCustomTabBarHidden(hidden: boolean) {
 
 watch(showPetSheet, (visible) => {
   setCustomTabBarHidden(visible)
+  if (visible) void refreshPetCatalog()
 })
 
 onUnmounted(() => {
@@ -378,6 +417,29 @@ async function canSwitchPet(id: PetId, showPrompt = true) {
   return true
 }
 
+async function refreshPetCatalog() {
+  const userId = getCurrentUserId()
+  if (!userId || petCatalogLoading.value) return
+  petCatalogLoading.value = true
+  petCatalogError.value = ''
+  try {
+    await refreshDeliveredPetCatalog(userId, listMyDeliveredPets)
+    petCatalogVersion.value++
+    const selected = getSelectedPetId(userId)
+    const resolved = getPetById(selected, userId)
+    if (resolved.id !== selected) {
+      setSelectedPetId('xiaomi', userId)
+      currentPetId.value = 'xiaomi'
+    } else {
+      currentPetId.value = selected
+    }
+  } catch (error: any) {
+    petCatalogError.value = error?.message || '定制宠物读取失败，请稍后重试'
+  } finally {
+    petCatalogLoading.value = false
+  }
+}
+
 async function ensureSelectedPetAllowed() {
   const selected = getSelectedPetId()
   if (selected === 'xiaomi') {
@@ -396,22 +458,31 @@ async function ensureSelectedPetAllowed() {
 async function choosePet(id: PetId) {
   const allowed = await canSwitchPet(id)
   if (!allowed) return
-  currentPetId.value = id
-  setSelectedPetId(id)
-  showPetSheet.value = false
-  if (isCloudPet(id) && !isPetCachedLocally(id)) {
+  const userId = getCurrentUserId() || ''
+  const pet = getPetById(id, userId)
+  if (pet.id !== id) {
+    uni.showToast({ title: '该宠物已不可用，请刷新后重试', icon: 'none' })
+    return
+  }
+  if (isCloudPet(pet, userId) && !isPetCachedLocally(pet, userId)) {
     uni.showLoading({ title: '下载宠物资源...' })
     try {
-      await downloadPetAssets(id)
+      const downloaded = await downloadPetAssets(pet, userId)
+      if (!downloaded) throw new Error('资源地址不可用')
       uni.hideLoading()
-      uni.showToast({ title: `已切换为 ${getPetById(id).displayName}`, icon: 'none' })
-    } catch {
+    } catch (error) {
       uni.hideLoading()
       uni.showToast({ title: '下载失败，请重试', icon: 'none' })
+      return
     }
-  } else {
-    uni.showToast({ title: `已切换为 ${getPetById(id).displayName}`, icon: 'none' })
   }
+  if (!setSelectedPetId(id, userId)) {
+    uni.showToast({ title: '宠物状态已变化，请刷新后重试', icon: 'none' })
+    return
+  }
+  currentPetId.value = id
+  showPetSheet.value = false
+  uni.showToast({ title: `已切换为 ${pet.displayName}`, icon: 'none' })
 }
 
 const lastDataVersion = ref(0)
@@ -422,7 +493,7 @@ onShow(() => {
   syncTheme()
   syncAdminState()
   showPetBar.value = uni.getStorageSync('showPetBar') !== false
-  void ensureSelectedPetAllowed()
+  void refreshPetCatalog().finally(() => ensureSelectedPetAllowed())
   const dv = Number(uni.getStorageSync('dataVersion') || 0)
   const changed = !userEmail.value || dv > lastDataVersion.value
   if (changed) loadData()
@@ -830,22 +901,29 @@ function goAbout() {
 .v2-mode .sheet-panel { width: 100%; max-width: 500px; max-height: 75vh; background: var(--app-bg, #FFFDF5); border: 3px solid var(--text-main, #111); border-radius: var(--shape-radius-hero, 0) var(--shape-radius-hero, 0) 0 0; box-shadow: var(--shadow-hero, 8rpx 8rpx 0 #111); padding: 24rpx; padding-bottom: calc(24rpx + env(safe-area-inset-bottom)); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
 .v2-mode .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; flex-shrink: 0; }
 .v2-mode .sheet-title { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }
-.v2-mode .sheet-close { font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); padding: 0 8rpx; line-height: 1; }
+.v2-mode .sheet-close { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: $fs-kpi; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1; box-sizing: border-box; }
 
 /* pet sheet grid */
 .v2-mode .pet-sheet-scroll-v2 { flex: 1; overflow-y: auto; }
+.v2-mode .pet-group-title-v2 { display: block; margin-bottom: 12rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-muted, #666); letter-spacing: 2rpx; }
 .v2-mode .pet-sheet-grid-inner-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14rpx; padding-right: 4rpx; }
-.v2-mode .pet-option-v2 { display: flex; align-items: center; gap: 14rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); position: relative; }
+.v2-mode .pet-custom-group-v2 { margin-top: 22rpx; padding-right: 4rpx; }
+.v2-mode .pet-custom-list-v2 { display: flex; flex-direction: column; gap: 14rpx; }
+.v2-mode .pet-option-v2.custom { width: 100%; box-sizing: border-box; }
+.v2-mode .pet-catalog-state-v2 { display: block; padding: 20rpx 0; color: var(--text-muted, #666); font-size: $fs-caption; text-align: center; }
+.v2-mode .pet-catalog-error-v2 { display: block; padding: 12rpx 0; color: var(--risk, #d43d3d); font-size: $fs-caption; text-align: center; }
+.v2-mode .pet-option-v2 { min-height: 44px; display: flex; align-items: center; gap: 14rpx; padding: 16rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); position: relative; box-sizing: border-box; }
 .v2-mode .pet-option-v2.active { background: var(--text-main, #111); }
+.v2-mode .pet-option-v2.active .pet-option-name-row-v2 { padding-right: 24px; box-sizing: border-box; }
 .v2-mode .pet-option-img-v2 { width: 80rpx; height: 80rpx; flex-shrink: 0; }
 .v2-mode .pet-option-text-v2 { flex: 1; min-width: 0; }
-.v2-mode .pet-option-name-v2 { display: block; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); }
+.v2-mode .pet-option-name-v2 { min-width: 0; flex: 1; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: $fs-body-lg; font-weight: $fw-hero; color: var(--text-main, #111); line-height: 1.3; }
 .v2-mode .pet-option-v2.active .pet-option-name-v2 { color: var(--accent, #FFD93D); }
 .v2-mode .pet-option-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.3; margin-top: 4rpx; }
 .v2-mode .pet-option-v2.active .pet-option-desc-v2 { color: var(--on-active-muted, rgba(255,255,255,0.6)); }
-.v2-mode .pet-option-check-v2 { position: absolute; top: 8rpx; right: 10rpx; font-size: $fs-body; font-weight: $fw-hero; color: var(--accent, #FFD93D); }
-.v2-mode .pet-option-name-row-v2 { display: flex; align-items: center; gap: 8rpx; }
-.v2-mode .pet-option-badge-v2 { display: inline-block; padding: 2rpx 10rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--accent-cool, #4ECDC4); border: 1rpx solid var(--accent-cool, #4ECDC4); border-radius: var(--shape-radius-control, 0); }
+.v2-mode .pet-option-check-v2 { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; z-index: 1; font-size: $fs-body; font-weight: $fw-hero; color: var(--accent, #FFD93D); }
+.v2-mode .pet-option-name-row-v2 { min-width: 0; display: flex; align-items: center; gap: 8rpx; }
+.v2-mode .pet-option-badge-v2 { flex-shrink: 0; display: inline-block; padding: 2rpx 10rpx; font-size: $fs-caption; font-weight: $fw-hero; color: var(--accent-cool, #4ECDC4); border: 1rpx solid var(--accent-cool, #4ECDC4); border-radius: var(--shape-radius-control, 0); }
 .v2-mode .pet-option-badge-v2.download { color: var(--hero-bg, #FF6B6B); border-color: var(--hero-bg, #FF6B6B); }
 .v2-mode .pet-option-v2.active .pet-option-badge-v2 { color: var(--accent, #FFD93D); border-color: var(--accent, #FFD93D); }
 
@@ -855,7 +933,7 @@ function goAbout() {
 .v2-mode .pet-sheet-divider-v2::before,
 .v2-mode .pet-sheet-divider-v2::after { content: ''; flex: 1; height: 2rpx; background: var(--text-main, #111); }
 .v2-mode .pet-sheet-divider-text-v2 { font-size: $fs-caption; font-weight: $fw-hero; color: var(--text-main, #111); text-transform: uppercase; letter-spacing: 2rpx; white-space: nowrap; }
-.v2-mode .pet-custom-entry-v2 { display: flex; align-items: center; gap: 12rpx; padding: 20rpx; border: 2rpx dashed var(--text-main, #111); border-radius: var(--shape-radius-card, 0); background: var(--surface-bright, #fcfcfc); }
+.v2-mode .pet-custom-entry-v2 { min-height: 44px; display: flex; align-items: center; gap: 12rpx; padding: 20rpx; border: 2rpx dashed var(--text-main, #111); border-radius: var(--shape-radius-card, 0); background: var(--surface-bright, #fcfcfc); box-sizing: border-box; }
 .v2-mode .pet-custom-icon-v2 { font-size: $fs-heading; }
 .v2-mode .pet-custom-text-v2 { flex: 1; font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-muted, #666); }
 .v2-mode .pet-custom-arrow-v2 { font-size: $fs-heading; font-weight: $fw-hero; color: var(--text-main, #111); }

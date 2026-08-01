@@ -16,6 +16,12 @@ function test(name, fn) {
 
 function dirExists(p) { return fs.existsSync(p) && fs.statSync(p).isDirectory() }
 function fileExists(p) { return fs.existsSync(p) && fs.statSync(p).isFile() }
+function readUniJson(p) {
+  // pages.json supports uni-app conditional-compilation comment lines, which
+  // are valid for the compiler but not for JSON.parse.
+  const source = fs.readFileSync(p, 'utf8').replace(/^\s*\/\/.*$/gm, '')
+  return JSON.parse(source)
+}
 
 // ── 1. Source assets ──────────────────────────────────────────
 console.log('\n── Source assets ──')
@@ -165,7 +171,7 @@ test('mp-weixin app.json has custom tabBar', () => {
 })
 
 test('pages.json has custom-pet route', () => {
-  const pj = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'pages.json'), 'utf8'))
+  const pj = readUniJson(path.join(ROOT, 'src', 'pages.json'))
   const routes = pj.pages.map(p => p.path)
   assert.ok(routes.includes('pages/custom-pet/custom-pet'))
 })
