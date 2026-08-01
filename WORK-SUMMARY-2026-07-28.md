@@ -142,4 +142,11 @@
 - 音频安全尚未实施。当前流程为“上传 MP3 → 语音转文字”，建议改为“上传 → `mediaCheckAsync(mediaType: 1)` → 通过后转文字”。
 - 文本和音频接入后，需要在同一权限文件中补充 `security.msgSecCheck`，重新构建小程序，并再次通过微信开发者工具上传 `contentSecCheck`。
 - `npm.cmd run sync:shared:dry` 当前受项目既有 Windows ACL 影响，对 `scripts/sync-shared.js` 返回 `EPERM`；本轮已通过直接文件清单、入口引用扫描和专项测试完成等价验证。
-- 当前内容安全、宠物活力和旧代码清理改动已完成提交前审计，将与本总结一并提交 Git。
+- 当前内容安全、宠物活力和旧代码清理改动已完成审计并提交 Git：`2f6d25d feat: harden content security and add pet energy feedback`。
+
+## Git 交付记录
+
+- 小程序主包瘦身提交：`6c0cad9 fix(mp-weixin): reduce upload package size`。
+- 内容安全、宠物活力反馈、弹窗视觉统一及今日总结提交：`2f6d25d feat: harden content security and add pet energy feedback`。
+- 本次提交共涉及 83 个文件，提交前 `git diff --cached --check` 通过。
+- 工作区仅剩与本次交付无关的 `pet-runs/doggo/**` 删除状态，未纳入提交。
