@@ -16,12 +16,36 @@ function valuesEqual(left, right) {
   return left === right
 }
 
+function toComparable(value) {
+  if (value instanceof Date) return value.getTime()
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    const ts = Date.parse(value)
+    if (!Number.isNaN(ts)) return ts
+  }
+  return value
+}
+
 function matchesCondition(left, right) {
   if (right && typeof right === 'object' && right.__op === 'in' && Array.isArray(right.values)) {
     return right.values.some((value) => valuesEqual(left, value))
   }
+  if (right && typeof right === 'object' && right.__op === 'nin' && Array.isArray(right.values)) {
+    return !right.values.some((value) => valuesEqual(left, value))
+  }
   if (right && typeof right === 'object' && right.__op === 'all' && Array.isArray(right.values)) {
     return Array.isArray(left) && right.values.every((value) => left.some((item) => valuesEqual(item, value)))
+  }
+  if (right && typeof right === 'object' && right.__op === 'neq') {
+    return !valuesEqual(left, right.value)
+  }
+  if (right && typeof right === 'object' && (right.__op === 'lte' || right.__op === 'lt' || right.__op === 'gte' || right.__op === 'gt')) {
+    const a = toComparable(left)
+    const b = toComparable(right.value)
+    if (a == null || b == null) return false
+    if (right.__op === 'lte') return a <= b
+    if (right.__op === 'lt') return a < b
+    if (right.__op === 'gte') return a >= b
+    if (right.__op === 'gt') return a > b
   }
 
   return valuesEqual(left, right)
@@ -187,6 +211,11 @@ class FakeCollection {
     const map = this.store.getCollection(this.name)
     const value = clone(doc)
     const id = value._id || `${this.name}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`
+    if (value._id && map.has(id)) {
+      const err = new Error(`DOCUMENT_EXISTS: ${this.name}/${id}`)
+      err.code = 'DOCUMENT_EXISTS'
+      throw err
+    }
     value._id = id
     map.set(id, value)
     return { id }
@@ -258,6 +287,7 @@ function createFakeCloudbase() {
   const store = new FakeStore()
   let currentAuthUserId = null
   const failures = []
+  let injectedNow = null
 
   function ensureUser(userId) {
     if (!userId) return
@@ -291,7 +321,8 @@ function createFakeCloudbase() {
     throw new Error(failure.message || `Mock failure for ${key}`)
   }
 
-  function createDatabaseApi(targetStore) {
+  function createDatabaseApi(targetStore, options = {}) {
+    const isTransaction = Boolean(options.isTransaction)
     return {
       command: {
         all(values) {
@@ -299,6 +330,24 @@ function createFakeCloudbase() {
         },
         in(values) {
           return { __op: 'in', values: [...values] }
+        },
+        nin(values) {
+          return { __op: 'nin', values: [...values] }
+        },
+        neq(value) {
+          return { __op: 'neq', value }
+        },
+        lte(value) {
+          return { __op: 'lte', value }
+        },
+        lt(value) {
+          return { __op: 'lt', value }
+        },
+        gte(value) {
+          return { __op: 'gte', value }
+        },
+        gt(value) {
+          return { __op: 'gt', value }
         },
         inc(amount) {
           return { __op: 'inc', amount }
@@ -318,6 +367,7 @@ function createFakeCloudbase() {
 
         collection.add = async (doc) => {
           maybeFail(`collection.add:${name}`)
+          if (isTransaction) maybeFail(`tx.collection.add:${name}`)
           return originalAdd(doc)
         }
 
@@ -325,20 +375,39 @@ function createFakeCloudbase() {
           const document = originalDoc(id)
           const originalGet = document.get.bind(document)
           const originalUpdate = document.update.bind(document)
+          const originalSet = document.set.bind(document)
           const originalRemove = document.remove.bind(document)
 
           document.get = async () => {
             maybeFail(`doc.get:${name}`)
+            maybeFail(`doc.get:${name}:${id}`)
+            if (isTransaction) {
+              maybeFail(`tx.doc.get:${name}`)
+              maybeFail(`tx.doc.get:${name}:${id}`)
+            }
             return originalGet()
           }
 
           document.update = async (patch) => {
             maybeFail(`doc.update:${name}`)
+            maybeFail(`doc.update:${name}:${id}`)
+            if (isTransaction) {
+              maybeFail(`tx.doc.update:${name}`)
+              maybeFail(`tx.doc.update:${name}:${id}`)
+            }
             return originalUpdate(patch)
+          }
+
+          document.set = async (value) => {
+            maybeFail(`doc.set:${name}`)
+            maybeFail(`doc.set:${name}:${id}`)
+            if (isTransaction) maybeFail(`tx.doc.set:${name}:${id}`)
+            return originalSet(value)
           }
 
           document.remove = async () => {
             maybeFail(`doc.remove:${name}`)
+            maybeFail(`doc.remove:${name}:${id}`)
             return originalRemove()
           }
 
@@ -348,11 +417,17 @@ function createFakeCloudbase() {
         collection.where = (query) => {
           const queryInstance = originalWhere(query)
           const originalGet = queryInstance.get.bind(queryInstance)
+          const originalCount = queryInstance.count.bind(queryInstance)
           const originalRemove = queryInstance.remove.bind(queryInstance)
 
           queryInstance.get = async () => {
             maybeFail(`query.get:${name}`)
             return originalGet()
+          }
+
+          queryInstance.count = async () => {
+            maybeFail(`query.count:${name}`)
+            return originalCount()
           }
 
           queryInstance.remove = async () => {
@@ -366,8 +441,9 @@ function createFakeCloudbase() {
         return collection
       },
       async startTransaction() {
+        maybeFail('transaction.start')
         const transactionStore = targetStore.snapshot()
-        const transactionDb = createDatabaseApi(transactionStore)
+        const transactionDb = createDatabaseApi(transactionStore, { isTransaction: true })
         let closed = false
 
         return {
@@ -376,6 +452,7 @@ function createFakeCloudbase() {
           async commit() {
             if (closed) throw new Error('Transaction already closed')
             maybeFail('transaction.commit')
+            // 将事务快照写回主 store（targetStore 在顶层即 store）
             store.replaceWith(transactionStore)
             closed = true
             return { committed: true }
@@ -385,6 +462,21 @@ function createFakeCloudbase() {
             return { rolledBack: true }
           }
         }
+      },
+      async runTransaction(callback, times = 1) {
+        let lastError = null
+        for (let i = 0; i < times; i += 1) {
+          const tx = await this.startTransaction()
+          try {
+            const result = await callback(tx)
+            await tx.commit()
+            return result
+          } catch (error) {
+            lastError = error
+            try { await tx.rollback() } catch (_) {}
+          }
+        }
+        throw lastError || new Error('runTransaction failed')
       }
     }
   }
@@ -418,6 +510,12 @@ function createFakeCloudbase() {
     __setAuthUser(userId) {
       currentAuthUserId = userId || null
       ensureUser(currentAuthUserId)
+    },
+    __setNow(value) {
+      injectedNow = value == null ? null : new Date(value)
+    },
+    __now() {
+      return injectedNow ? new Date(injectedNow) : new Date()
     },
     __store: store
   }

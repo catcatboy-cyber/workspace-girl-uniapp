@@ -66,15 +66,16 @@ exports.main = async (event) => {
         referralWeekCount: user.referralWeekCount || 0
       })
 
+      const effectiveInviteCode = user.inviteCode || invCode
       user.plan = 'free'
       user.trialEndsAt = null
       user.monthlyTokensReset = defaultFields.monthlyTokensReset
       user.monthlyTokensUsed = 0
       user.extraTokens = 0
-      user.inviteCode = invCode
-      user.referralCount = 0
-      user.referralWeekStart = defaultFields.referralWeekStart
-      user.referralWeekCount = 0
+      user.inviteCode = effectiveInviteCode
+      user.referralCount = user.referralCount || 0
+      user.referralWeekStart = user.referralWeekStart || defaultFields.referralWeekStart
+      user.referralWeekCount = user.referralWeekCount || 0
     }
 
     // 处理跨月重置

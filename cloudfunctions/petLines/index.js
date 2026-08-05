@@ -414,7 +414,7 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
   if (!ai.enabled || !ai.apiKey) return { success: false, message: 'AI 未启用' }
 
   if (userId) {
-    const bal = await checkReplyBalance(userId)
+    const bal = await checkReplyBalance(userId, REPLY_PAIR_EST_TOKENS, ai.model)
     if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足' }
   }
 
@@ -447,12 +447,17 @@ async function generateReply(eventDesc, eventType, userId, isMinor) {
 
 // ========== replyPair (双句) ==========
 
-async function checkPetTokenBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, accessFeature = PET_REPLY_ACCESS_FEATURE) {
+async function checkPetTokenBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, accessFeature = PET_REPLY_ACCESS_FEATURE, modelId = '', featureKey = '') {
   try {
     // 功能 + Token 门控（v3.2）
     const access = await checkFeatureAccess(db, userId, accessFeature)
     if (!access.allowed) return { ok: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason, balance: 0, required: 0 }
-    const tokCheck = await checkTokenBalance(db, userId, estTokens)
+    const resolvedFeatureKey = featureKey || (accessFeature === PET_STRATEGY_ACCESS_FEATURE ? 'petReplyStrategy' : 'petReply')
+    const tokCheck = await checkTokenBalance(db, userId, {
+      featureKey: resolvedFeatureKey,
+      modelId,
+      fallbackTokens: estTokens
+    })
     const monthlyRemaining = Number(tokCheck.monthlyRemaining || 0)
     const extraTokens = Number(tokCheck.extraTokens || 0)
     const balance = monthlyRemaining + extraTokens
@@ -477,8 +482,8 @@ async function checkPetTokenBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, a
   }
 }
 
-async function checkReplyBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS) {
-  return checkPetTokenBalance(userId, estTokens, PET_REPLY_ACCESS_FEATURE)
+async function checkReplyBalance(userId, estTokens = REPLY_PAIR_EST_TOKENS, modelId = '', featureKey = 'petReply') {
+  return checkPetTokenBalance(userId, estTokens, PET_REPLY_ACCESS_FEATURE, modelId, featureKey)
 }
 
 function isTokenBalanceError(result) {
@@ -535,13 +540,14 @@ function buildReplySystemPrompt(baseSystemPrompt, jsonShape) {
 }
 
 async function generateReplyPair(scene, content, userId, tone, safetyContext) {
+  const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
+  const settings = settingsRes?.data?.[0] || {}
+  const gateAi = normalizeAISettingsForReply(settings)
   if (userId) {
-    const balCheck = await checkReplyBalance(userId)
+    const balCheck = await checkReplyBalance(userId, REPLY_PAIR_EST_TOKENS, gateAi.model)
     if (!balCheck.ok) return { success: false, ...balCheck, message: balCheck.message || '余额不足，请充值' }
   }
 
-  const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
-  const settings = settingsRes?.data?.[0] || {}
   const replyModuleKey = scene === 'active' ? 'replyActive' : 'reply'
   const cfg = getPetSpeakConfig(settings, replyModuleKey, safetyContext)
 
@@ -692,7 +698,7 @@ async function tagLinesLoop(startIndex, count, userId) {
   let current = startIndex
   while (current < endTarget) {
     if (userId) {
-      const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS)
+      const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS, ai.model, 'petLineTagging')
       if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足，请先充值' }
     }
     const batch = SEED_DATA.slice(current, Math.min(current + BATCH_SIZE, endTarget))
@@ -749,7 +755,7 @@ async function generateQAByAI(content, userId) {
     const cfg = getPetSpeakConfig(settings || {}, 'qaStrategy')
 
     if (userId) {
-      const bal = await checkReplyBalance(userId, QA_GEN_EST_TOKENS)
+      const bal = await checkReplyBalance(userId, QA_GEN_EST_TOKENS, ai.model, 'petQaSingle')
       if (!bal.ok) return null
     }
 
@@ -953,13 +959,13 @@ async function normalizeQASelfReply() {
 // ========== 撩一下 v3：AI 语义生成多策略 ==========
 
 async function generateQAByAIV3(content, userId) {
-  if (userId) {
-    const bal = await checkReplyBalance(userId, QA_GEN_EST_TOKENS * 2)
-    if (!bal.ok) return null
-  }
-
   const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
   const settings = settingsRes?.data?.[0] || {}
+  const gateAi = normalizeAISettingsForReply(settings)
+  if (userId) {
+    const bal = await checkReplyBalance(userId, QA_GEN_EST_TOKENS * 2, gateAi.model, 'petQaGeneration')
+    if (!bal.ok) return null
+  }
   const cfg = getPetSpeakConfig(settings, 'qaStrategy')
   const systemPrompt = cfg.systemPrompt || DEFAULT_PET_SPEAK_CONFIG.qaStrategy.systemPrompt
 
@@ -1081,7 +1087,7 @@ async function tagQAStrategies(userId) {
 
   for (let start = 0; start < allQA.length; start += BATCH_SIZE) {
     if (userId) {
-      const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS)
+      const bal = await checkReplyBalance(userId, LINE_TAGGING_EST_TOKENS, ai.model, 'petQaStrategyTagging')
       if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足，请先充值', done, tagged: allTagged.length }
     }
 
@@ -1147,6 +1153,7 @@ async function tagQAStrategies(userId) {
 async function generateReplyStrategy(content, userId, scene = 'reply', safetyContext) {
   const settingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
   const settings = settingsRes?.data?.[0]
+  const gateAi = normalizeAISettingsForReply(settings || {})
   const cfg = getPetSpeakConfig(settings || {}, 'replyStrategy', safetyContext)
 
   if (userId) {
@@ -1158,7 +1165,7 @@ async function generateReplyStrategy(content, userId, scene = 'reply', safetyCon
         message: strategyAccess.reason || '当前套餐不支持小咪多轮策略'
       }
     }
-    const bal = await checkPetTokenBalance(userId, REPLY_STRATEGY_EST_TOKENS, PET_STRATEGY_ACCESS_FEATURE)
+    const bal = await checkPetTokenBalance(userId, REPLY_STRATEGY_EST_TOKENS, PET_STRATEGY_ACCESS_FEATURE, gateAi.model, 'petReplyStrategy')
     if (!bal.ok) return { success: false, ...bal, message: bal.message || '余额不足，请充值' }
   }
 
@@ -1993,7 +2000,14 @@ async function handlePetChatMessage(event) {
     }
   }
 
-  const tokenCheck = await checkTokenBalance(db, userId, PET_CHAT_EST_TOKENS)
+  const gateSettingsRes = await db.collection('system_settings').where({ scope: 'global', key: 'ai' }).limit(1).get().catch(() => null)
+  const gateSettings = gateSettingsRes?.data?.[0] || {}
+  const gateAi = normalizeAISettingsForReply(gateSettings)
+  const tokenCheck = await checkTokenBalance(db, userId, {
+    featureKey: 'petChat',
+    modelId: gateAi.model,
+    fallbackTokens: PET_CHAT_EST_TOKENS
+  })
   if (!tokenCheck.ok) {
     return {
       success: false,

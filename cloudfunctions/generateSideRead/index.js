@@ -499,7 +499,11 @@ exports.main = async (event = {}) => {
     if (!access.allowed) return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason }
 
     // Token 预估检查
-    const tokCheck = await checkTokenBalance(db, userId, runtimeConfig.sideReadMaxTokens)
+    const tokCheck = await checkTokenBalance(db, userId, {
+      featureKey: 'sideRead',
+      modelId: aiSettings.model,
+      fallbackTokens: runtimeConfig.sideReadMaxTokens
+    })
     if (!tokCheck.ok) return { success: false, code: tokCheck.code, message: tokCheck.message, ...tokCheck }
 
     const response = await postChatCompletions(aiSettings, messages)

@@ -218,7 +218,11 @@ async function batchTagEvents(event) {
   // Token门控 - batchTag
   const accessBT = await checkFeatureAccess(db, userId, '事件理解')
   if (!accessBT.allowed) return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: accessBT.reason }
-  const tokBT = await checkTokenBalance(db, userId, 800)
+  const tokBT = await checkTokenBalance(db, userId, {
+    featureKey: 'batchTag',
+    modelId: model.model,
+    fallbackTokens: 800
+  })
   if (!tokBT.ok) return { success: false, code: tokBT.code, message: tokBT.message, ...tokBT }
 
   const userPrompt = `输入事件列表：\n${buildEventsContext(events)}`
@@ -380,6 +384,10 @@ exports.main = async (event = {}) => {
     }
 
     let recalculated = null
+    const aiModelsForGate = Array.isArray(aiSettings?.aiModels) ? aiSettings.aiModels : []
+    const defaultAiModelId = aiSettings?.aiDefaultModelId || ''
+    const selectedAiModelForGate = aiModelsForGate.find(item => item?.id === defaultAiModelId) || aiModelsForGate[0]
+    const modelIdForGate = selectedAiModelForGate?.model || aiSettings?.model || ''
 
     // Token门控 - eventAssessment。门控失败时仍写入 unknown + note + 零分兜底，
     // 避免时间线永久停留在“主体分析中”。
@@ -396,7 +404,11 @@ exports.main = async (event = {}) => {
       gateFailure = { code: 'FEATURE_NOT_AVAILABLE', message: accessEA.reason }
     }
     if (!gateFailure) {
-      const tokEA = await checkTokenBalance(db, userId, 2000)
+      const tokEA = await checkTokenBalance(db, userId, {
+        featureKey: 'eventAssessment',
+        modelId: modelIdForGate,
+        fallbackTokens: 2000
+      })
       if (!tokEA.ok) {
         console.log('[generateAssessmentAI trace]', JSON.stringify({
           traceId,

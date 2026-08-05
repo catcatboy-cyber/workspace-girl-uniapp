@@ -105,9 +105,13 @@ async function chargeTokenUsage(db, payload) {
   if (!userId) return null
 
   const billing = await ensureBillingSettings(db)
-  const multiplier = (billing.modelPricing || []).find(
-    p => p.modelId === model || p.modelId === '*'
-  )?.costMultiplier || 1
+  const pricing = Array.isArray(billing.modelPricing)
+    ? billing.modelPricing.filter(item => item && item.enabled !== false)
+    : []
+  const exact = pricing.find(item => item.modelId === model)
+  const wildcard = pricing.find(item => item.modelId === '*')
+  const configuredMultiplier = Number((exact || wildcard)?.costMultiplier)
+  const multiplier = Number.isFinite(configuredMultiplier) && configuredMultiplier >= 0 ? configuredMultiplier : 1
 
   const deducted = Math.ceil((realTokens || 0) * multiplier)
   if (deducted <= 0) return { deducted: 0 }

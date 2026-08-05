@@ -67,6 +67,7 @@ function buildUserLoginPayload(user, ticket) {
     ticket,
     userId: user._id,
     email: user.email,
+    inviteCode: user.inviteCode || '',
     selfProfile: user.selfProfile || null,
     role: user.role || (user.isAdmin ? 'admin' : 'user'),
     isAdmin: Boolean(user.isAdmin) || user.role === 'admin'

@@ -122,6 +122,33 @@
           <input v-model.number="subForm.weeklyInviteCap" type="number" placeholder="5" />
         </view>
       </view>
+      <view v-if="subForm.referralEnabled" class="switch-row" style="margin-top:16rpx;">
+        <view>
+          <text class="field-title">要求首条事件后发奖</text>
+          <text class="field-desc">开启后，被邀请人需先创建时间轴事件，后台 worker 才发放奖励。</text>
+        </view>
+        <switch :checked="subForm.requireFirstEvent" @change="subForm.requireFirstEvent = $event.detail.value" />
+      </view>
+      <view v-if="subForm.referralEnabled" class="switch-row" style="margin-top:16rpx;">
+        <view>
+          <text class="field-title">暂停后台邀请奖励</text>
+          <text class="field-desc">暂停后台邀请奖励，不影响注册、登录和记录创建。</text>
+        </view>
+        <switch :checked="subForm.payoutPaused" @change="subForm.payoutPaused = $event.detail.value" />
+      </view>
+    </view>
+
+    <view class="settings-section">
+      <view class="section-head">
+        <text class="section-title">AI 预估消耗</text>
+      </view>
+      <text class="field-desc" style="display:block;margin-bottom:16rpx;">门槛按预估值乘当前模型扣费倍率计算。</text>
+      <view class="form-grid">
+        <view v-for="item in FEATURE_ESTIMATE_FIELDS" :key="item.key" class="field">
+          <text>{{ item.label }}</text>
+          <input v-model.number="subForm.featureEstTokens[item.key]" type="number" :placeholder="String(item.defaultValue)" />
+        </view>
+      </view>
     </view>
 
     <view v-if="subSaveMsg" class="save-message">{{ subSaveMsg }}</view>
@@ -137,6 +164,22 @@ import { ref, reactive, onMounted } from 'vue'
 import { adminGetSubscriptionConfig, adminUpdateSubscriptionConfig } from '@/utils/api'
 import { aiLabel } from '@/utils/labels'
 
+const FEATURE_ESTIMATE_FIELDS = [
+  { key: 'initial_assessment_text', label: '首次文本分析', defaultValue: 800 },
+  { key: 'batchTag', label: '批量事件理解', defaultValue: 800 },
+  { key: 'eventAssessment', label: '即时事件分析', defaultValue: 2000 },
+  { key: 'attachmentAnalysis', label: '微信截图识别', defaultValue: 1000 },
+  { key: 'quickRead', label: '快速解读', defaultValue: 800 },
+  { key: 'pairRead', label: '桃花匹配解读', defaultValue: 2000 },
+  { key: 'sideRead', label: '星象速写', defaultValue: 1500 },
+  { key: 'weeklyReview', label: '周复盘', defaultValue: 2000 },
+  { key: 'petReply', label: '小咪单句回复', defaultValue: 700 },
+  { key: 'petReplyStrategy', label: '小咪多轮策略', defaultValue: 1200 },
+  { key: 'petQaSingle', label: '小咪问答单条', defaultValue: 300 },
+  { key: 'petQaGeneration', label: '小咪问答多策略', defaultValue: 600 },
+  { key: 'petChat', label: '小咪普通聊天', defaultValue: 700 }
+]
+
 const subForm = reactive({
   trialEnabled: true,
   trialDurationDays: 7,
@@ -151,12 +194,16 @@ const subForm = reactive({
   referralEnabled: true,
   inviterRewardTokens: 3000,
   inviteeRewardTokens: 5000,
-  weeklyInviteCap: 5
+  weeklyInviteCap: 5,
+  requireFirstEvent: true,
+  payoutPaused: false,
+  featureEstTokens: Object.fromEntries(FEATURE_ESTIMATE_FIELDS.map(item => [item.key, item.defaultValue]))
 }) as any
 const ALL_FEATURES = [
   '记录', '时间轴', '规则分析', '即时反馈', '事件理解',
   '周复盘', '附件识别', '小咪帮你说（单轮）',
-  '小咪多轮策略', '自定义宠物', '更换宠物', '自定义AI风格', '命理桃花'
+  '小咪多轮策略', '自定义宠物', '更换宠物', '自定义AI风格', '命理桃花',
+  '关系女主角', 'Crush名人图鉴', '次元角色图鉴'
 ]
 const SUMMARY_MARKERS = ['免费版全部', 'Pro全部']
 const subSaving = ref(false)
@@ -201,6 +248,9 @@ async function loadSubscriptionConfig() {
     if (Array.isArray(c.trial?.features)) subForm.trialFeatures = c.trial.features.filter((f: string) => ALL_FEATURES.includes(f))
     if (Array.isArray(c.trial?.excludedFeatures)) subForm.trialExcludedFeatures = c.trial.excludedFeatures.filter((f: string) => ALL_FEATURES.includes(f))
     subForm.welcomeCalls = Number(c.welcomeCalls ?? 10)
+    for (const item of FEATURE_ESTIMATE_FIELDS) {
+      subForm.featureEstTokens[item.key] = numberOr(c.featureEstTokens?.[item.key], item.defaultValue)
+    }
     if (c.plans) {
       for (const key of ['free', 'pro', 'ultra']) {
         if (c.plans[key]) {
@@ -229,6 +279,8 @@ async function loadSubscriptionConfig() {
       subForm.inviterRewardTokens = Number(c.referral.inviterRewardTokens ?? subForm.inviterRewardTokens)
       subForm.inviteeRewardTokens = Number(c.referral.inviteeRewardTokens ?? subForm.inviteeRewardTokens)
       subForm.weeklyInviteCap = Number(c.referral.weeklyInviteCap ?? 5)
+      subForm.requireFirstEvent = c.referral.requireFirstEvent !== false
+      subForm.payoutPaused = c.referral.payoutPaused === true
     }
   } catch { /* ignore */ }
   finally { subSaving.value = false }
@@ -256,12 +308,18 @@ async function saveSubscriptionConfig() {
         pro: { name: subForm.plans.pro.name, monthlyTokens: numberOr(subForm.plans.pro.monthlyTokens, 300000), maxCrushes: numberOr(subForm.plans.pro.maxCrushes, 3), priceYuan: numberOr(subForm.plans.pro.priceYuan, 19), priceYuanAnnual: numberOr(subForm.plans.pro.priceYuanAnnual, 168), priceYuanStudent: numberOr(subForm.plans.pro.priceYuanStudent, 12), priceYuanStudentAnnual: numberOr(subForm.plans.pro.priceYuanStudentAnnual, 99), features: [...subForm.plans.pro.features], excludedFeatures: [...subForm.plans.pro.excludedFeatures] },
         ultra: { name: subForm.plans.ultra.name, monthlyTokens: numberOr(subForm.plans.ultra.monthlyTokens, -1), maxCrushes: numberOr(subForm.plans.ultra.maxCrushes, -1), priceYuan: numberOr(subForm.plans.ultra.priceYuan, 39), priceYuanAnnual: numberOr(subForm.plans.ultra.priceYuanAnnual, 298), priceYuanStudent: numberOr(subForm.plans.ultra.priceYuanStudent, 25), priceYuanStudentAnnual: numberOr(subForm.plans.ultra.priceYuanStudentAnnual, 199), features: [...subForm.plans.ultra.features], excludedFeatures: [...subForm.plans.ultra.excludedFeatures] }
       },
+      featureEstTokens: Object.fromEntries(FEATURE_ESTIMATE_FIELDS.map(item => [
+        item.key,
+        numberOr(subForm.featureEstTokens[item.key], item.defaultValue)
+      ])),
       referral: {
         enabled: subForm.referralEnabled,
         inviterTrialExtendDays: numberOr(subForm.trialExtendOnReferral, 0),
         inviterRewardTokens: numberOr(subForm.inviterRewardTokens, 3000),
         inviteeRewardTokens: numberOr(subForm.inviteeRewardTokens, 5000),
-        weeklyInviteCap: numberOr(subForm.weeklyInviteCap, 5)
+        weeklyInviteCap: numberOr(subForm.weeklyInviteCap, 5),
+        requireFirstEvent: subForm.requireFirstEvent !== false,
+        payoutPaused: subForm.payoutPaused === true
       }
     })
     if (!result?.success) {

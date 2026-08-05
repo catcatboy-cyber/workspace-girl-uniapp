@@ -131,6 +131,16 @@ exports.main = async (event) => {
       }
     } catch (_) {}
 
+    const { normalizeInviteCode, buildReferralIntentFields } = require('./_shared/referral-settlement')
+    const regInviteCode = normalizeInviteCode(event.inviteCode)
+    const referralIntent = buildReferralIntentFields({
+      inviteCode: regInviteCode,
+      channel: String(event.channel || '').trim(),
+      scene: String(event.scene || '').trim(),
+      shareId: String(event.shareId || '').trim(),
+      intentVersion: 1
+    })
+
     await db.collection('users').add({
       _id: userId,
       email: normalizedEmail,
@@ -148,7 +158,8 @@ exports.main = async (event) => {
       invitedBy: subFields.invitedBy,
       referralCount: subFields.referralCount,
       referralWeekStart: subFields.referralWeekStart,
-      referralWeekCount: subFields.referralWeekCount
+      referralWeekCount: subFields.referralWeekCount,
+      ...referralIntent
     })
 
     // 首次赠送写 call_usage_records，前端"充值记录"可查
@@ -166,22 +177,6 @@ exports.main = async (event) => {
       } catch (_) {}
     }
 
-    // 新用户邀请奖励结算
-    let referral = null
-    const regInviteCode = String(event.inviteCode || '').trim()
-    if (regInviteCode) {
-      try {
-        const inviter = await db.collection('users')
-          .where({ inviteCode: regInviteCode }).limit(1).get()
-        if (inviter.data.length > 0 && inviter.data[0]._id !== userId) {
-          const { settleReward } = require('./_shared/referral-settlement')
-          referral = await settleReward(db, userId, inviter.data[0]._id, regInviteCode, '', '')
-        }
-      } catch (err) {
-        console.warn('register settlement failed (non-fatal):', safeError(err))
-      }
-    }
-
     // 创建自定义登录票据（7天有效期）
     const ticket = getCustomLoginCredentials() ? await app.auth().createTicket(userId, {
       refresh: 7 * 24 * 60 * 60 * 1000 // 7天（毫秒）
@@ -192,7 +187,7 @@ exports.main = async (event) => {
       ticket,
       userId,
       email: normalizedEmail,
-      referral,
+      inviteCode: subFields.inviteCode || '',
       selfProfile: null
     }
   } catch (error) {

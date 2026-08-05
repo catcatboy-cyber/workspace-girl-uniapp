@@ -132,7 +132,12 @@ exports.main = async (event = {}) => {
     const access = await checkFeatureAccess(db, userId, '命理桃花')
     if (!access.allowed) return { success: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason }
 
-    const tokCheck = await checkTokenBalance(db, userId, 2000)
+    const settings = normalizeSettings(await getAISettings())
+    const tokCheck = await checkTokenBalance(db, userId, {
+      featureKey: 'pairRead',
+      modelId: settings?.model,
+      fallbackTokens: 2000
+    })
     if (!tokCheck.ok) return { success: false, code: tokCheck.code, message: tokCheck.message, ...tokCheck }
 
     const { caseDoc, error: caseError } = await getOwnedCase(db, caseId, userId)
@@ -151,7 +156,6 @@ exports.main = async (event = {}) => {
 
     const dayCtx = dailyContext(match)
 
-    const settings = normalizeSettings(await getAISettings())
     let aiEnhanced = null
 
     if (settings.enabled && settings.apiKey) {

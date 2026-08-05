@@ -100,13 +100,17 @@ function buildQuickReadUsage(usage, fallbackTokens = QUICK_READ_EST_TOKENS) {
   }
 }
 
-async function checkQuickReadAccess(userId) {
+async function checkQuickReadAccess(userId, modelId) {
   const access = await checkFeatureAccess(db, userId, QUICK_READ_FEATURE)
   if (!access.allowed) {
     return { ok: false, code: 'FEATURE_NOT_AVAILABLE', message: access.reason || '当前套餐不支持此功能' }
   }
 
-  const tokenCheck = await checkTokenBalance(db, userId, QUICK_READ_EST_TOKENS)
+  const tokenCheck = await checkTokenBalance(db, userId, {
+    featureKey: 'quickRead',
+    modelId,
+    fallbackTokens: QUICK_READ_EST_TOKENS
+  })
   if (!tokenCheck.ok) {
     return {
       ok: false,
@@ -298,7 +302,7 @@ exports.main = async (event = {}) => {
     throw error
   }
 
-  const accessCheck = await checkQuickReadAccess(userId)
+  const accessCheck = await checkQuickReadAccess(userId, models[0]?.model)
   if (!accessCheck.ok) {
     return {
       success: false,

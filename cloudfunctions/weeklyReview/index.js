@@ -411,7 +411,11 @@ async function buildAIReview(params) {
   // 功能 + Token 门控
   const accessW = await checkFeatureAccess(db, params.userId, '周复盘')
   if (!accessW.allowed) throw Object.assign(new Error(accessW.reason), { code: 'FEATURE_NOT_AVAILABLE' })
-  const tokW = await checkTokenBalance(db, params.userId, 2000)
+  const tokW = await checkTokenBalance(db, params.userId, {
+    featureKey: 'weeklyReview',
+    modelId: settings.model,
+    fallbackTokens: 2000
+  })
   if (!tokW.ok) throw Object.assign(new Error(tokW.message || 'Token不足'), { code: tokW.code, ...tokW })
 
   try {
@@ -606,7 +610,11 @@ async function buildAIWeeklySideRead(params) {
   // 功能 + Token 门控 - sideRead
   const accessSR = await checkFeatureAccess(db, params.userId, '星象速写')
   if (!accessSR.allowed) throw Object.assign(new Error(accessSR.reason), { code: 'FEATURE_NOT_AVAILABLE' })
-  const tokSR = await checkTokenBalance(db, params.userId, 1500)
+  const tokSR = await checkTokenBalance(db, params.userId, {
+    featureKey: 'sideRead',
+    modelId: settings.model,
+    fallbackTokens: 1500
+  })
   if (!tokSR.ok) throw Object.assign(new Error(tokSR.message || 'Token不足'), { code: tokSR.code, ...tokSR })
 
   const response = await postChatCompletions({

@@ -240,9 +240,18 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
   const profilePatch = buildWechatProfilePatch(profile, {}, true)
 
   // 生成邀请码和订阅字段
-  const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig, redeemInviteCode } = require('./_shared/subscription')
+  const { generateInviteCode, getDefaultUserSubscriptionFields, getSubscriptionConfig } = require('./_shared/subscription')
+  const { normalizeInviteCode, buildReferralIntentFields } = require('./_shared/referral-settlement')
   const inviteCode = generateInviteCode(userId)
   const subFields = getDefaultUserSubscriptionFields()
+  const normalizedLandingCode = normalizeInviteCode(landingInviteCode || inviteCodeParam)
+  const referralIntent = buildReferralIntentFields({
+    inviteCode: normalizedLandingCode,
+    channel: landingChannel,
+    scene: landingScene,
+    shareId: landingShareId,
+    intentVersion: 1
+  })
 
   // 读取试用期配置
   let trialDurationDays = 0
@@ -278,11 +287,7 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
     createdAt: now,
     updatedAt: now,
     seedFromLegacy: false,
-    landingChannel: landingChannel || '',
-    landingScene: landingScene || '',
     landingRef: landingRef || '',
-    landingShareId: landingShareId || '',
-    landingInviteCode: landingInviteCode || '',
     sessionKey: sessionKey || '',
     plan: subFields.plan,
     trialEndsAt: subFields.trialEndsAt,
@@ -294,7 +299,8 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
     invitedBy: subFields.invitedBy,
     referralCount: subFields.referralCount,
     referralWeekStart: subFields.referralWeekStart,
-    referralWeekCount: subFields.referralWeekCount
+    referralWeekCount: subFields.referralWeekCount,
+    ...referralIntent
   })
 
   return {
@@ -302,6 +308,7 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
     openid,
     phone,
     email: '',
+    inviteCode: subFields.inviteCode || '',
     ...profilePatch,
     selfProfile: null,
     loginType: 'wechat_phone'
@@ -310,12 +317,13 @@ async function createWechatUser({ openid, phone = '', profile, inviteCodeParam =
 
 exports.main = async (event = {}) => {
   const code = String(event.code || '').trim()
-  const inviteCodeParam = String(event.inviteCode || event.invite_code || '').trim()
+  const { normalizeInviteCode } = require('./_shared/referral-settlement')
+  const inviteCodeParam = normalizeInviteCode(event.inviteCode || event.invite_code)
   const landingChannel = String(event.channel || '').trim()
   const landingScene = String(event.scene || '').trim()
   const landingRef = String(event.ref || '').trim()
   const landingShareId = String(event.shareId || '').trim()
-  const landingInviteCode = String(event.inviteCode || event.invite_code || '').trim().toUpperCase()
+  const landingInviteCode = inviteCodeParam
   const profile = normalizeWechatProfile(event)
 
   try {
@@ -387,23 +395,6 @@ exports.main = async (event = {}) => {
       console.error('[wechatLogin] 记录登录日志失败:', err)
     })
 
-    // 新用户邀请奖励结算
-    let referral = null
-    if (isNewUser && inviteCodeParam) {
-      try {
-        const inviter = await db.collection('users')
-          .where({ inviteCode: inviteCodeParam }).limit(1).get()
-        if (inviter.data.length > 0 && inviter.data[0]._id !== user._id) {
-          const { settleReward } = require('./_shared/referral-settlement')
-          referral = await settleReward(db, user._id, inviter.data[0]._id,
-            inviteCodeParam, landingShareId, landingChannel)
-        }
-      } catch (err) {
-        err = safeError(err)
-        console.error('[wechatLogin] settlement failed:', err?.message || err, err?.stack?.slice(0,200))
-      }
-    }
-
     return {
       success: true,
       userId: user._id,
@@ -417,7 +408,6 @@ exports.main = async (event = {}) => {
       selfProfile: user.selfProfile || null,
       inviteCode: user.inviteCode || '',
       isNewUser,
-      referral: referral && referral.success ? { inviteeReward: referral.inviteeReward } : undefined,
       showAILabel: await getShowAILabel(db)
     }
   } catch (error) {

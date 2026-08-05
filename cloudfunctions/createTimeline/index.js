@@ -1,7 +1,7 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const crypto = require('crypto')
 const { requireAuthenticatedUserId, buildAuthErrorResponse, getOwnedCase } = require('./_shared/auth')
-const { checkFeatureAccess, finalizePendingReferral } = require('./_shared/subscription')
+const { checkFeatureAccess } = require('./_shared/subscription')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 
@@ -263,6 +263,7 @@ exports.main = async (event) => {
     // 事务内写入所有数据
     await transaction.collection('timeline_records').add({
       _id: recordId,
+      userId,
       caseId,
       title: finalRecord.title,
       type: finalRecord.type,
@@ -270,6 +271,9 @@ exports.main = async (event) => {
       subjectRoleSource: finalRecord.subjectRoleSource,
       inputSubjectRole: finalRecord.inputSubjectRole,
       userQuestion: finalRecord.userQuestion,
+      // 聊天记录里的说话人名字（不是画像昵称本身），供 AI Identity 映射
+      chatSelfName: finalRecord.chatSelfName || '',
+      chatTargetName: finalRecord.chatTargetName || '',
       dateLabel: finalRecord.dateLabel,
       description: finalRecord.description,
       attachments: finalRecord.attachments,
@@ -293,12 +297,6 @@ exports.main = async (event) => {
     await transaction.commit()
     transaction = null
     markPerf('committed')
-
-    try {
-      await finalizePendingReferral(db, userId)
-    } catch (err) {
-      console.warn('finalizePendingReferral failed (non-fatal):', err?.message || err)
-    }
 
     console.log('[createTimeline trace]', JSON.stringify({
       traceId,

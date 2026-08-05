@@ -91,11 +91,6 @@ const handleRegister = async () => {
     const result = await register(email.value, password.value, inviteCode.value || undefined)
 
     if (result.success) {
-      // 受邀奖励通知
-      if (result?.referral?.inviteeReward > 0) {
-        uni.setStorageSync('showInviteeNotice', true)
-        uni.setStorageSync('inviteeNoticeAmount', result.referral.inviteeReward)
-      }
       if (shouldCompleteSelfProfile(result)) {
         uni.redirectTo({ url: '/pages/self-profile/self-profile?mode=onboarding' })
       } else {

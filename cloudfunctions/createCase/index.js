@@ -75,7 +75,11 @@ async function analyzeTextAnswers(answers, userId) {
     if (!model?.apiKey) return { signals: [], aiUsed: false }
 
     // 检查余额（block 模式下余额不足则跳过）
-    const bal = await checkTokenBalance(db, userId, AI_ESTIMATED_TOKENS)
+    const bal = await checkTokenBalance(db, userId, {
+      featureKey: AI_FEATURE_NAME,
+      modelId: model.model,
+      fallbackTokens: AI_ESTIMATED_TOKENS
+    })
     if (!bal.ok) {
       console.log('[createCase] insufficient balance for AI text analysis, skipping')
       return { signals: [], aiUsed: false, balanceInsufficient: true }
