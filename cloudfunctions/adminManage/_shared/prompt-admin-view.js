@@ -20,6 +20,8 @@ const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'atta
  */
 const MODULE_OUTPUT_CONTRACTS = {
   eventAssessment: [
+    'NormalizedEventV2={schemaVersion:2,event:{...,actions:[{actor,interaction,commitmentStatus,commitmentType,evidenceType,strength,sequence}]},copy}',
+    'actions 保存双方动作；intentScore 只根据 actor=target 的主要动作计算，self 动作仅作为回应上下文。',
     'NormalizedEventV1={schemaVersion,event,copy}',
     'event={actor,interaction,commitmentStatus,commitmentType,evidenceType,scene,signals,strength}',
     'copy={title,summary,reason,answer,targetMind,nextStep,caution,petLine,petMood}',
@@ -29,10 +31,11 @@ const MODULE_OUTPUT_CONTRACTS = {
   ],
   eventUnderstanding: [
     'eventType,eventTitle,summary,semanticTags',
-    'semanticTags={scene,behavior,outcome,risk,initiator,response,commitment}',
+    'semanticTags={scene,behavior,outcome,risk,initiator,response,responseActor,commitment}',
     'scene/behavior/outcome/risk 必须从预定义可选值中选择，不要自创标签。',
     'initiator: target | self | both | unknown',
     'response: accepted | rejected | pending | unclear | none',
+    'responseActor: target | self | unknown',
     'commitment={exists,type,promisedBy,fulfilled}'
   ]
 }
@@ -58,7 +61,7 @@ const MODULE_RUNTIME_FIELDS = {
  * 新协议下三大字段的说明文档。
  */
 const SUBJECT_FIELD_DESCRIPTIONS = {
-  subjectRole: '由后端根据 NormalizedEventV1.event.actor 强制生成（target/self/both/unknown）。代码不信任客户端传入的 subjectRole。',
+  subjectRole: '由后端根据 NormalizedEventV2.event.actions 中是否存在 target/self 动作派生；V1 记录继续根据 event.actor 兼容生成。代码不信任客户端传入的 subjectRole。',
   inputSubjectRole: '前端传入（unspecified/both）。unspecified=未指定；both=用户粘贴了聊天记录。后端只用于提示词构建，不直接作为 subjectRole 来源。',
   subjectRoleSource: '后端状态字段（pending/ai_inferred/fallback_unknown）。pending=等待 AI；ai_inferred=AI 语义结果；fallback_unknown=协议或模型失败后的保守结果。'
 }

@@ -242,7 +242,7 @@ async function main() {
     assert.equal(record.analysisSnapshot.score.riskDelta, 0)
   })
 
-  await runCase('generateAssessmentAI persists one NormalizedEventV1 result across the full chain', async () => {
+  await runCase('generateAssessmentAI persists one NormalizedEventV2 result across the full chain', async () => {
     const fake = createFakeCloudbase()
     setCurrentFakeCloudbase(fake)
 
@@ -275,7 +275,10 @@ async function main() {
     asUser(fake, 'user_normalized_chain')
     const pending = await createTimeline({
       caseId: created.caseId,
-      description: '他答应周五请我吃饭',
+      description: '张三：周末要不要吃饭。\n夏红：我不想去',
+      inputSubjectRole: 'both',
+      chatSelfName: '夏红',
+      chatTargetName: '张三',
       occurrenceAt: '2026-04-21T19:45:00.000Z'
     })
     Object.assign(fake.__store.getCollection('users').get('user_normalized_chain'), { extraTokens: 10000 })
@@ -299,17 +302,27 @@ async function main() {
               model: 'mock-normalizer',
               usage: { prompt_tokens: 100, completion_tokens: 80, total_tokens: 180 },
               choices: [{ message: { content: JSON.stringify({
-                schemaVersion: 1,
+                schemaVersion: 2,
                 event: {
-                  actor: 'target', interaction: 'promised', commitmentStatus: 'promised',
-                  commitmentType: 'meal_invitation', evidenceType: 'fact', scene: ['meal'],
-                  signals: ['initiative', 'progression'], strength: 'medium'
+                  actor: 'target', interaction: 'initiated', commitmentStatus: 'none',
+                  commitmentType: 'none', evidenceType: 'fact', scene: ['meal'],
+                  signals: ['initiative', 'progression'], strength: 'medium',
+                  actions: [
+                    {
+                      actor: 'target', interaction: 'initiated', commitmentStatus: 'none',
+                      commitmentType: 'none', evidenceType: 'fact', strength: 'medium', sequence: 1
+                    },
+                    {
+                      actor: 'self', interaction: 'rejected', commitmentStatus: 'none',
+                      commitmentType: 'none', evidenceType: 'fact', strength: 'strong', sequence: 2
+                    }
+                  ]
                 },
                 copy: {
-                  title: '他答应周五请我吃饭', summary: '对方给出明确吃饭承诺', reason: '明确承诺',
-                  answer: '这是一个明确的正向行动信号。', targetMind: '愿意安排线下互动。',
-                  nextStep: '等周五前确认具体时间地点。', caution: '继续观察是否按时兑现。',
-                  petLine: '有承诺，也要看落地。', petMood: 'encouraging'
+                  title: '对方发起邀约，我方拒绝', summary: '对方主动邀约，你明确拒绝', reason: '双方动作明确',
+                  answer: '对方有主动意向，但你拒绝了这次邀约。', targetMind: '愿意主动发起见面邀约。',
+                  nextStep: '按照你的边界决定是否继续互动。', caution: '不要把你的拒绝写成对方拒绝。',
+                  petLine: '双方动作都要分别记录。', petMood: 'neutral'
                 }
               }) } }]
             })
@@ -327,20 +340,24 @@ async function main() {
 
     assert.equal(result.success, true)
     assert.equal(result.aiUsed, true)
-    assert.equal(result.trend.intentDelta, 7)
+    assert.equal(result.trend.intentDelta, 6)
     assert.equal(result.latestResult.analysisSnapshot.score.riskDelta, -2)
     const record = fake.__store.getCollection('timeline_records').get(pending.recordId)
-    assert.equal(record.subjectRole, 'target')
+    assert.equal(record.subjectRole, 'both')
     assert.equal(record.subjectRoleSource, 'ai_inferred')
     assert.equal(record.semanticTagsSource, 'ai')
-    assert.equal(record.normalizedEvent.commitmentType, 'meal_invitation')
+    assert.equal(record.normalizedEvent.commitmentType, 'none')
+    assert.equal(record.normalizedEvent.actions.length, 2)
+    assert.equal(record.semanticTags.responseActor, 'self')
+    assert.equal(record.semanticTags.risk.includes('rejected'), false)
     assert.equal(record.analysisSnapshot.eventType, 'positive')
     const promptText = capturedMessages.map((item) => item.content).join('\n')
     assert.equal(promptText.includes('旧规则不得进入提示词'), false)
     assert.equal(promptText.includes('返回旧评分字段'), false)
-    assert.ok(promptText.includes('NormalizedEventV1') || promptText.includes('schemaVersion'))
+    assert.ok(promptText.includes('schemaVersion=2'))
     assert.ok(promptText.includes('\u6211\u8bf7\u4ed6\u5403\u996d\uff0c\u4ed6\u62d2\u7edd\u4e86\u6211'))
-    assert.ok(promptText.includes('actor=target, interaction=rejected, commitmentStatus=none, commitmentType=none'))
+    assert.ok(promptText.includes('actions=[self initiated,target rejected]'))
+    assert.ok(promptText.includes('actions=[target initiated,self rejected]'))
     assert.ok(promptText.includes('\u62d2\u7edd\u4e00\u4e2a\u65b0\u9080\u7ea6\u4e0d\u662f broken'))
   })
 

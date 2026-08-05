@@ -8,6 +8,7 @@ const { postChatCompletions } = require('./_shared/ai-http')
 const { recordTokenUsage } = require('./_shared/token-usage')
 const { checkFeatureAccess, checkTokenBalance } = require('./_shared/subscription')
 const { normalizeStoredSubjectRole } = require('./_shared/subject-role-prompt')
+const { deriveSubjectRoleFromEvent } = require('./_shared/normalized-event')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -485,9 +486,9 @@ exports.main = async (event = {}) => {
       warningText: trend.warningText
     })
     await db.collection('assessments').doc(assessmentId).update(buildAssessmentUpdate(recalculated))
-    // NormalizedEventV1 是主体、标签、类型和评分的唯一语义来源。
+    // V2 actions 是双方动作来源；V1 event.actor 继续用于历史兼容。
     const resolvedActor = recalculated.normalizedEvent?.actor || recalculated.eventInsight?.actor
-    const resolvedSubjectRole = ['target', 'self', 'both', 'unknown'].includes(resolvedActor) ? resolvedActor : 'unknown'
+    const resolvedSubjectRole = deriveSubjectRoleFromEvent(recalculated.normalizedEvent || { actor: resolvedActor })
     // AI 是唯一判断者：AI 成功且提供了 eventInsight → ai_inferred；否则 fallback_unknown
     const aiActuallyInferred = recalculated.aiUsed && recalculated.aiProvidedEventInsight
     const resolvedSource = aiActuallyInferred ? 'ai_inferred' : 'fallback_unknown'
