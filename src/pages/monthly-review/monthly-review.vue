@@ -78,7 +78,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { generateMonthlyReview, getCaseDetail, getCurrentUserId, getMonthlyReviews, prepareCurrentUserReferralShare } from '@/utils/api'
+import { generateMonthlyReview, getCaseDetail, getCurrentUserId, getMonthlyReviews, handleInsufficientBalance, prepareCurrentUserReferralShare } from '@/utils/api'
 import { getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { appendReferralParams, buildSafeTimelineShare, SAFE_SHARE_IMAGE, isReferralShareBlocked } from '@/utils/share'
@@ -180,11 +180,8 @@ async function generateCurrentReview() {
     writeMonthlyReviewCache()
     showSuccess('本月复盘已生成')
   } catch (error: any) {
-    if (error?.code === 'INSUFFICIENT_BALANCE') {
-      showError(error?.message || 'Crush Credits 不足')
-    } else {
-      showError(error?.message || '生成失败')
-    }
+    if (handleInsufficientBalance(error)) return
+    showError(error?.message || '生成失败')
   } finally {
     generating.value = false
   }
