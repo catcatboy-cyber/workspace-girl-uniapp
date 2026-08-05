@@ -191,8 +191,12 @@
         <view class="record-block" style="border:none;box-shadow:none;margin:0;background:transparent;">
           <view class="block-head"><text class="block-title">快速记录</text><text class="block-badge">别脑补</text></view>
           <view class="quick-tool-row-v2" style="margin-bottom:12rpx;">
-            <button class="quick-tool-btn-v2" :disabled="quickUploading" aria-label="上传图片" @click="chooseQuickImages">
-              <text class="quick-tool-icon-v2">{{ quickUploading ? '…' : '+' }}</text>
+            <button class="quick-tool-btn-v2 screenshot" :disabled="quickAttachmentBusy" aria-label="导入微信聊天截图" @click="chooseQuickImages">
+              <text v-if="quickAttachmentBusy" class="quick-tool-icon-v2">…</text>
+              <template v-else>
+                <image class="quick-tool-image-v2" src="/static/icons/taohua/image.svg" mode="aspectFit" />
+                <text class="quick-tool-label-v2">微信截图</text>
+              </template>
             </button>
             <button :class="['quick-tool-btn-v2', 'voice', recording ? 'recording' : '', voiceUploading ? 'loading' : '']" :disabled="voiceUploading" aria-label="语音输入" @click="toggleVoiceRecord">
               <view v-if="recording" class="quick-voice-active-v2">
@@ -205,20 +209,40 @@
               <view v-else class="quick-mic-icon-v2"></view>
             </button>
           </view>
-          <view v-if="quickInputSubjectRole === 'both'" class="role-hint-v2 chat-hint">
-            <text>已识别为聊天记录</text>
-            <text class="chat-hint-dismiss" @click="chatDetectionDismissed = quickDesc">不是聊天记录</text>
+          <view v-if="quickAnalysisStatus || quickAnalysisError" :class="['quick-analysis-status-v2', quickAnalysisError ? 'error' : '']">
+            <text>{{ quickAnalysisError || quickAnalysisStatus }}</text>
+          </view>
+          <view class="quick-chat-toggle-v2" @click="toggleChatMode">
+            <view :class="['quick-chat-check-v2', quickInputSubjectRole === 'both' ? 'on' : '']">{{ quickInputSubjectRole === 'both' ? '✓' : '' }}</view>
+            <text class="quick-chat-toggle-label-v2">这是双方聊天记录</text>
+            <text v-if="quickInputSubjectRole === 'both' && chatAutoDetected" class="quick-chat-auto-tag-v2">已自动识别</text>
           </view>
           <view v-if="quickInputSubjectRole === 'both'" class="quick-chat-names-v2">
-            <!-- #ifdef MP-WEIXIN -->
-            <input v-model="quickChatSelfName" type="nickname" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
-            <!-- #endif -->
-            <!-- #ifndef MP-WEIXIN -->
-            <input v-model="quickChatSelfName" type="text" class="quick-chat-name-input-v2" placeholder="你的微信昵称" />
-            <!-- #endif -->
-            <text class="quick-chat-name-sep-v2">和</text>
-            <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="latestCase?.name || 'TA的微信昵称'" />
-            <text class="quick-chat-name-hint-v2">贴对话后标注，帮小咪分清谁说了什么</text>
+            <template v-if="quickScreenshotImported">
+              <text class="quick-chat-name-hint-v2">已按微信气泡方向识别身份</text>
+              <text class="quick-chat-map-v2">右侧气泡 → 你 · 左侧气泡 → {{ latestCase?.name || '当前 Crush' }}</text>
+            </template>
+            <template v-else-if="detectedSpeakers.length >= 2 && !forceManualChatNames">
+              <text class="quick-chat-name-hint-v2">聊天记录里哪个是你？点选后，另一个默认归当前 Crush</text>
+              <view class="quick-speaker-chips-v2">
+                <view
+                  v-for="name in detectedSpeakers"
+                  :key="name"
+                  :class="['quick-speaker-chip-v2', quickChatSelfName === name ? 'active' : '']"
+                  @click="selectSelfSpeaker(name)"
+                >{{ name }}</view>
+              </view>
+              <text v-if="quickChatSelfName && quickChatTargetName" class="quick-chat-map-v2">
+                {{ quickChatSelfName }} → 你 · {{ quickChatTargetName }} → {{ latestCase?.name || '当前 Crush' }}
+              </text>
+              <text class="quick-chat-manual-link-v2" @click="forceManualChatNames = true">名字对不上？手动填写</text>
+            </template>
+            <template v-else>
+              <text class="quick-chat-name-hint-v2">填写聊天记录里出现的说话人名字（不是小程序昵称）</text>
+              <input v-model="quickChatSelfName" class="quick-chat-name-input-v2" placeholder="聊天里你的名字" maxlength="20" />
+              <text class="quick-chat-name-sep-v2">和</text>
+              <input v-model="quickChatTargetName" class="quick-chat-name-input-v2" :placeholder="'聊天里' + (latestCase?.name || 'TA') + '的名字'" maxlength="20" />
+            </template>
           </view>
           <textarea :value="quickDesc" @input="onQuickDescInput" class="text-area-v2" :class="{ 'chat-mode': quickInputSubjectRole === 'both' }" maxlength="6000" :placeholder="quickDescPlaceholder" />
           <view v-if="quickInputSubjectRole === 'both'" class="quick-paste-warn-v2">
@@ -259,7 +283,7 @@
               <text class="img-del-v2" @click.stop="removeQuickAttachment(index)">x</text>
             </view>
           </view>
-          <button class="btn btn-primary btn-md btn-full anim-pulse" style="margin-top:16rpx;" :disabled="quickSubmitting" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : '记上！' }}</button>
+          <button class="btn btn-primary btn-md btn-full anim-pulse" style="margin-top:16rpx;" :disabled="quickSubmitting || quickAttachmentBusy" @click="submitQuickRecord">{{ quickSubmitting ? '保存中...' : quickAttachmentBusy ? '识别中...' : '记上！' }}</button>
         </view>
           </view>
         </view>
@@ -271,6 +295,7 @@
           :scores="analysisScores"
           :signal="analysisSignal"
           :meta="analysisMeta"
+          :share-ready="referralShareReady"
           :pet-name="selectedPet.displayName"
           :reason-bullets="quickReasonBullets"
           :action-sections="latestActionPlanPanel.sections"
@@ -463,7 +488,7 @@ import BalanceSheet from '@/components/BalanceSheet.vue'
 import TaDailySheet from '@/components/TaDailySheet.vue'
 import PetEnergySheet from '@/components/PetEnergySheet.vue'
 import { normalizeActionGuideData } from '@/utils/taohua'
-import { getCases, createCase, createTimeline, generateAssessmentAI, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, getContentSecurityMessage, hasUsableSelfProfile, queryTaohua, checkFeatureAccess, listMyDeliveredPets } from '@/utils/api'
+import { getCases, createCase, createTimeline, generateAssessmentAI, analyzeAttachment, handleInsufficientBalance, getCachedSelfProfile, getCurrentUserId, getSelfProfile, getSubscriptionStatus, getTempFileURL, speechToText, uploadFile, contentSecCheck, getContentSecurityMessage, hasUsableSelfProfile, queryTaohua, checkFeatureAccess, listMyDeliveredPets, prepareCurrentUserReferralShare } from '@/utils/api'
 import {
   bumpDataVersion,
   combineDateAndTimeToISOString,
@@ -477,6 +502,7 @@ import {
   readPetEnergy,
   setActiveCaseId,
   setPendingTimelineContext,
+  consumePendingOpenAnalysis,
   showError,
   showSuccess,
   takePendingPetEnergyFeedback,
@@ -487,11 +513,12 @@ import type { PendingPetEnergyFeedback, PetEnergySnapshot, PetMoodLevel } from '
 import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal, buildTimelineStats } from '@/utils/insights'
 import { buildDivergingBars } from '@/utils/insights.ts'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isInviteCodeReady, isReferralShareBlocked } from '@/utils/share'
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
 import { xianchiAlgorithm, hongluanTianxi, ZODIAC_TO_ZHI } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets, refreshDeliveredPetCatalog, setSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
+import { extractChatSpeakers, inferIsChatRecord, mapChatSpeakers, suggestSelfSpeaker } from '@/utils/chat-speakers'
 
 type PetScene =
   | 'ai_loading'
@@ -530,6 +557,7 @@ const pageStyle = computed(() => {
 })
 const loading = ref(true)
 const fontSizeMode = ref(getFontSizeMode())
+const referralShareReady = ref(!isReferralShareBlocked())
 // 邀请到账通知
 const showIndexReferralNotice = ref(false)
 const indexReferralNoticeAmount = ref(0)
@@ -561,6 +589,11 @@ const quickChatSelfName = ref('')
 const quickChatTargetName = ref('')
 const quickSubmitting = ref(false)
 const quickUploading = ref(false)
+const quickAnalyzing = ref(false)
+const quickAnalysisStatus = ref('')
+const quickAnalysisError = ref('')
+const quickScreenshotImported = ref(false)
+const quickAttachmentBusy = computed(() => quickUploading.value || quickAnalyzing.value)
 const quickSheetVisible = ref(false)
 const analysisSheetVisible = ref(false)
 const voiceUploading = ref(false)
@@ -591,7 +624,10 @@ let aiFeedbackTimer: any = null
 const petScene = ref<PetScene | null>(null)
 let petSceneTimer: ReturnType<typeof setTimeout> | null = null
 const quickInputSubjectRole = ref<'unspecified' | 'both'>('unspecified')
-const chatDetectionDismissed = ref('')
+const chatAutoDetected = ref(false)
+const chatManualOverride = ref(false) // 用户手动关/开后，不再被自动检测覆盖
+const detectedSpeakers = ref<string[]>([])
+const forceManualChatNames = ref(false)
 const quickAttachments = ref<any[]>([])
 const quickFeedback = ref<{
   caseId: string
@@ -1234,26 +1270,72 @@ function mapTimelineTypeLabel(type?: string) {
 
 // mapSubjectRoleLabel 已删除; 不再显示手动角色选择
 
-// 用 :value + @input 替代 v-model，绕过微信 textarea 粘贴截断 bug
-function inferInputSubjectRole(text: string): 'unspecified' | 'both' {
-  if (!text) return 'unspecified'
-  // 检测微信聊天格式：多行 + 时间戳
-  if (text.includes('\n') && /\d{4}[-/]\d{2}[-/]\d{2}\s*\d{1,2}:\d{2}/.test(text)) return 'both'
-  return 'unspecified'
+function refreshDetectedSpeakers(text: string) {
+  detectedSpeakers.value = extractChatSpeakers(text)
+  if (forceManualChatNames.value) return
+  if (detectedSpeakers.value.length < 2) return
+  if (quickChatSelfName.value && detectedSpeakers.value.includes(quickChatSelfName.value)) {
+    selectSelfSpeaker(quickChatSelfName.value)
+    return
+  }
+  quickChatSelfName.value = ''
+  quickChatTargetName.value = ''
+  const suggested = suggestSelfSpeaker({
+    speakers: detectedSpeakers.value,
+    profileNickname: getCachedSelfProfile()?.nickname
+  })
+  if (suggested) selectSelfSpeaker(suggested)
 }
 
+function selectSelfSpeaker(name: string) {
+  const mapped = mapChatSpeakers({
+    selfSpeaker: name,
+    speakers: detectedSpeakers.value,
+    crushName: latestCase.value?.name || ''
+  })
+  quickChatSelfName.value = mapped.chatSelfName
+  quickChatTargetName.value = mapped.chatTargetName
+  forceManualChatNames.value = false
+}
+
+function toggleChatMode() {
+  chatManualOverride.value = true
+  if (quickInputSubjectRole.value === 'both') {
+    quickInputSubjectRole.value = 'unspecified'
+    quickChatSelfName.value = ''
+    quickChatTargetName.value = ''
+    chatAutoDetected.value = false
+    forceManualChatNames.value = false
+    return
+  }
+  quickInputSubjectRole.value = 'both'
+  if (quickScreenshotImported.value) {
+    quickChatSelfName.value = '我'
+    quickChatTargetName.value = '对方'
+    chatAutoDetected.value = true
+    return
+  }
+  chatAutoDetected.value = false
+  refreshDetectedSpeakers(quickDesc.value)
+}
+
+// 用 :value + @input 替代 v-model，绕过微信 textarea 粘贴截断 bug
 function onQuickDescInput(e: any) {
   const val = e?.detail?.value ?? e?.target?.value ?? ''
   quickDesc.value = val.slice(0, 6000)
-  // F6: 自动检测聊天记录格式
-  if (chatDetectionDismissed.value !== val) {
-    const detected = inferInputSubjectRole(val)
-    if (detected === 'both') {
-      quickInputSubjectRole.value = 'both'
-      const cached = getCachedSelfProfile()
-      if (!quickChatSelfName.value && cached?.nickname) quickChatSelfName.value = cached.nickname
-      if (!quickChatTargetName.value) quickChatTargetName.value = latestCase.value?.name || ''
-    }
+  if (quickScreenshotImported.value) return
+  refreshDetectedSpeakers(val)
+  if (chatManualOverride.value) return
+  if (inferIsChatRecord(val)) {
+    quickInputSubjectRole.value = 'both'
+    chatAutoDetected.value = true
+  } else if (quickInputSubjectRole.value === 'both' && chatAutoDetected.value) {
+    // 用户改短文本后，仅撤销“自动识别”打开的状态
+    quickInputSubjectRole.value = 'unspecified'
+    quickChatSelfName.value = ''
+    quickChatTargetName.value = ''
+    chatAutoDetected.value = false
+    forceManualChatNames.value = false
   }
 }
 
@@ -1920,6 +2002,8 @@ onLoad((options: any) => {
 })
 
 onShow(() => {
+  referralShareReady.value = !isReferralShareBlocked()
+  void prepareCurrentUserReferralShare().then((ready) => { referralShareReady.value = ready })
   indexPageVisible = true
   // 检查邀请到账通知
   if (uni.getStorageSync('showReferralNotice')) {
@@ -2011,10 +2095,14 @@ onShow(() => {
     loadData()
   } else {
     maybeResumePendingAssessmentAI('onShow')
+    if (consumePendingOpenAnalysis()) {
+      analysisSheetVisible.value = true
+    }
   }
 })
 
 onShareAppMessage(() => {
+  if (isReferralShareBlocked()) return {}
   const r = latestCase.value?.latestResult
   const params = [
     `intent=${r?.intentScore ?? 50}`,
@@ -2036,11 +2124,19 @@ onShareAppMessage(() => {
     params.push(`action=${encodeURIComponent(latestActionPlanPanel.value.text.slice(0, 150))}`)
   }
   let path = `/pages/quick-read/quick-read?${params.join('&')}`
-  path = appendReferralParams(path, 'analysis_share', sceneKey.value)
+  if (isInviteCodeReady()) {
+    path = appendReferralParams(path, 'analysis_share', sceneKey.value)
+  }
   return { title: shareTitle.value, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
-onShareTimeline(() => buildSafeTimelineShare())
+onShareTimeline(() => {
+  if (isReferralShareBlocked()) return {}
+  if (!isInviteCodeReady()) return buildSafeTimelineShare()
+  const path = appendReferralParams('/pages/index/index', 'analysis_share', 'timeline')
+  const query = path.includes('?') ? path.split('?')[1] : ''
+  return buildSafeTimelineShare({ query })
+})
 
 onPullDownRefresh(async () => {
   await loadData()
@@ -2111,6 +2207,9 @@ async function loadData() {
     })
     refreshSelfProfileInBackground()
     maybeResumePendingAssessmentAI('loadData')
+    if (consumePendingOpenAnalysis()) {
+      analysisSheetVisible.value = true
+    }
   } catch (e: any) {
     indexAILog('loadData_error', { message: e?.message || String(e || '') })
     showError(e?.message || '加载失败')
@@ -2204,6 +2303,19 @@ function appendRecognizedText(text: string) {
   quickDesc.value = quickDesc.value.trim()
     ? `${quickDesc.value.trim()}\n${normalized}`
     : normalized
+}
+
+function appendWechatScreenshotText(text: string) {
+  const normalized = String(text || '').trim()
+  if (!normalized) return false
+  const current = quickDesc.value.trim()
+  const combined = current ? `${current}\n\n${normalized}` : normalized
+  if (combined.length > 6000) {
+    showError('聊天记录过长，请减少截图后分批导入')
+    return false
+  }
+  quickDesc.value = combined
+  return true
 }
 
 function getRecorderManager() {
@@ -2379,10 +2491,6 @@ async function handleVoiceRecordStop(res: any) {
 function onQuickRecordAction(mode: string) {
   // dock 的三个入口都打开同一个快速记录面板；输入逻辑只有这一份
   quickSheetVisible.value = true
-  const cached = getCachedSelfProfile()
-  if (cached?.nickname && !quickChatSelfName.value) {
-    quickChatSelfName.value = cached.nickname
-  }
   if (mode === 'image') { chooseQuickImages(); return }
   if (mode === 'voice') { toggleVoiceRecord(); return }
   // mode === 'text': 仅打开面板，聚焦文字输入
@@ -2404,16 +2512,16 @@ function closeAnalysisSheet() {
 }
 
 async function chooseQuickImages() {
-  if (quickUploading.value) return
+  if (quickAttachmentBusy.value) return
   const remain = Math.max(0, 6 - quickAttachments.value.length)
   if (remain === 0) {
-    showError('最多上传 6 张图片')
+    showError('最多上传 6 张微信聊天截图')
     return
   }
   uni.chooseImage({
     count: remain,
     sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
+    sourceType: ['album'],
     fail: (err: any = {}) => {
       const msg = String(err?.errMsg || err?.message || '')
       if (!msg.includes('cancel')) showError(msg || '无法打开相册，请检查相册权限')
@@ -2421,17 +2529,19 @@ async function chooseQuickImages() {
     success: async (res: any = {}) => {
       const files = res?.tempFiles || []
       if (!files.length) return
+      quickAnalysisStatus.value = '正在上传截图...'
+      quickAnalysisError.value = ''
       quickUploading.value = true
-      uni.showLoading({ title: '上传图片...' })
+      uni.showLoading({ title: '上传截图...' })
       try {
-        const uploaded = []
+        const uploaded: any[] = []
         let skippedCount = 0
         for (let i = 0; i < files.length; i += 1) {
           const file = files[i]
           const filePath = file.path || file.tempFilePath
           if (!filePath) continue
           if (Number(file.size || 0) > 1024 * 1024) {
-            throw new Error('图片请控制在 1MB 以内')
+            throw new Error('截图请控制在 1MB 以内')
           }
           const fileID = await uploadFile(filePath, buildQuickCloudPath(filePath, i))
 
@@ -2454,15 +2564,71 @@ async function chooseQuickImages() {
             url
           })
         }
-        quickAttachments.value = [...quickAttachments.value, ...uploaded]
         if (skippedCount > 0) {
           uni.showToast({ title: '所发布内容含违规信息', icon: 'none', duration: 2000 })
         }
+        if (uploaded.length === 0) {
+          quickAnalysisStatus.value = ''
+          return
+        }
+
+        quickUploading.value = false
+        quickAnalyzing.value = true
+        quickAnalysisStatus.value = '正在提取聊天记录...'
+        uni.showLoading({ title: '识别聊天...' })
+        const result = await analyzeAttachment({
+          fileIDs: uploaded.map((item) => item.fileID),
+          mediaType: 'image',
+          mode: 'wechat_chat_screenshot'
+        })
+        if (handleInsufficientBalance(result)) {
+          quickAnalysisStatus.value = ''
+          return
+        }
+        if (!result?.success) {
+          quickAnalysisStatus.value = ''
+          quickAnalysisError.value = result?.message || '微信聊天截图识别失败'
+          return
+        }
+
+        const analysis = result.analysis || {}
+        const acceptedIndexes = Array.isArray(analysis.acceptedIndexes) ? analysis.acceptedIndexes : []
+        const accepted = acceptedIndexes
+          .map((index: any) => uploaded[Number(index)])
+          .filter(Boolean)
+        const extractedText = String(analysis.extractedText || '').trim()
+        if (!analysis.isWechatChatScreenshot || !analysis.isTwoPartyChat || accepted.length === 0 || !extractedText) {
+          quickAnalysisStatus.value = ''
+          quickAnalysisError.value = analysis.rejectReason || '仅支持清晰的微信双人聊天截图'
+          return
+        }
+        if (!appendWechatScreenshotText(extractedText)) {
+          quickAnalysisStatus.value = ''
+          return
+        }
+
+        quickAttachments.value = [...quickAttachments.value, ...accepted]
+        quickInputSubjectRole.value = 'both'
+        quickChatSelfName.value = '我'
+        quickChatTargetName.value = '对方'
+        chatAutoDetected.value = true
+        chatManualOverride.value = false
+        detectedSpeakers.value = ['我', '对方']
+        forceManualChatNames.value = false
+        quickScreenshotImported.value = true
+
+        const rejectedCount = skippedCount + (Array.isArray(analysis.rejectedImages) ? analysis.rejectedImages.length : 0)
+        quickAnalysisStatus.value = rejectedCount > 0
+          ? `已提取，${rejectedCount} 张截图未通过识别`
+          : '已提取，请检查聊天内容'
       } catch (error: any) {
-        showError(error?.message || '图片上传失败')
+        quickAnalysisStatus.value = ''
+        quickAnalysisError.value = error?.message || '微信聊天截图导入失败'
+        showError(quickAnalysisError.value)
       } finally {
         uni.hideLoading()
         quickUploading.value = false
+        quickAnalyzing.value = false
       }
     }
   })
@@ -2672,6 +2838,10 @@ function maybeResumePendingAssessmentAI(reason = '') {
 }
 
 async function submitQuickRecord() {
+  if (quickAttachmentBusy.value) {
+    showError('请等待聊天截图识别完成')
+    return
+  }
   if (quickSubmitting.value) {
     indexAILog('submit_skip_submitting')
     return
@@ -2694,6 +2864,12 @@ async function submitQuickRecord() {
       showError('请填写你想问的问题')
       return
     }
+    if (currentInputSubjectRole === 'both') {
+      if (!quickChatSelfName.value.trim() || !quickChatTargetName.value.trim()) {
+        showError('请标明聊天记录里哪个是你、哪个是 TA')
+        return
+      }
+    }
     const currentAttachments = quickAttachments.value.map(({ url: _url, ...item }: any) => item)
     const currentOccurrenceAt = combineDateAndTimeToISOString(quickDate.value, quickTime.value)
     indexAILog('submit_start', {
@@ -2709,8 +2885,8 @@ async function submitQuickRecord() {
       description: desc,
       inputSubjectRole: currentInputSubjectRole,
       userQuestion: currentUserQuestion,
-      chatSelfName: quickChatSelfName.value.trim() || undefined,
-      chatTargetName: quickChatTargetName.value.trim() || undefined,
+      chatSelfName: currentInputSubjectRole === 'both' ? (quickChatSelfName.value.trim() || undefined) : undefined,
+      chatTargetName: currentInputSubjectRole === 'both' ? (quickChatTargetName.value.trim() || undefined) : undefined,
       attachments: currentAttachments,
       occurrenceAt: currentOccurrenceAt
     })
@@ -2738,8 +2914,14 @@ async function submitQuickRecord() {
       quickChatSelfName.value = ''
       quickChatTargetName.value = ''
       quickInputSubjectRole.value = 'unspecified'
-      chatDetectionDismissed.value = ''
+      chatAutoDetected.value = false
+      chatManualOverride.value = false
+      detectedSpeakers.value = []
+      forceManualChatNames.value = false
       quickAttachments.value = []
+      quickScreenshotImported.value = false
+      quickAnalysisStatus.value = ''
+      quickAnalysisError.value = ''
       quickDate.value = getDateInputValue()
       quickTime.value = getTimeInputValue()
       quickFeedback.value = {
@@ -3027,8 +3209,13 @@ function goTaohua() {
 }
 .v2-mode .quick-tool-btn-v2::after { border: none; }
 .v2-mode .quick-tool-btn-v2[disabled] { opacity: .52; box-shadow: none; }
+.v2-mode .quick-tool-btn-v2.screenshot { width: auto; min-width: 144rpx; padding: 0 14rpx; gap: 8rpx; }
 .v2-mode .quick-tool-btn-v2.recording { width: 112rpx; background: var(--hero-bg, #FF6B6B); color: var(--surface, #fff); }
 .v2-mode .quick-tool-icon-v2 { font-size: $fs-heading; font-weight: $fw-heading; color: var(--text-main, #111); line-height: 1; }
+.v2-mode .quick-tool-image-v2 { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+.v2-mode .quick-tool-label-v2 { font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-main, #111); white-space: nowrap; }
+.v2-mode .quick-analysis-status-v2 { margin: 0 0 6rpx; padding: 10rpx 12rpx; border-left: 6rpx solid var(--accent-cool, #4ECDC4); background: var(--surface, #fff); color: var(--text-muted, #555); font-size: $fs-caption; font-weight: $fw-body; line-height: 1.45; }
+.v2-mode .quick-analysis-status-v2.error { border-left-color: var(--risk, #FF5252); color: var(--risk, #C62828); }
 .v2-mode .quick-mic-icon-v2 {
   position: relative;
   width: 18rpx;
@@ -3081,6 +3268,7 @@ function goTaohua() {
   .v2-mode .role-chip { padding: 7rpx 9rpx; }
   .v2-mode .quick-tool-row-v2 { gap: 6rpx; }
   .v2-mode .quick-tool-btn-v2 { width: 52rpx; height: 52rpx; min-width: 52rpx; }
+  .v2-mode .quick-tool-btn-v2.screenshot { width: auto; min-width: 136rpx; }
   .v2-mode .quick-tool-btn-v2.recording { width: 104rpx; }
 }
 .v2-mode .quick-question-block-v2 { margin-top: 16rpx; padding: 16rpx; border: 2rpx dashed var(--text-main, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); }
@@ -3118,10 +3306,20 @@ function goTaohua() {
 .v2-mode .quick-question-option-v2.active .quick-question-label-v2 { color: var(--text-main, #111); font-weight: $fw-heading; }
 .v2-mode .quick-question-check-v2 { flex-shrink: 0; font-size: $fs-body; font-weight: $fw-heading; color: var(--text-main, #111); }
 .v2-mode .quick-question-hint-v2 { display: block; margin-top: 10rpx; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.4; }
-.v2-mode .quick-chat-names-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 10rpx; padding: 12rpx; border: 2rpx dashed var(--divider, #ccc); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #fafafa); }
+.v2-mode .quick-chat-toggle-v2 { display: flex; align-items: center; gap: 10rpx; margin-top: 10rpx; padding: 10rpx 4rpx; }
+.v2-mode .quick-chat-check-v2 { width: 32rpx; height: 32rpx; border: 2rpx solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); display: flex; align-items: center; justify-content: center; font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-main, #111); box-sizing: border-box; flex-shrink: 0; }
+.v2-mode .quick-chat-check-v2.on { background: var(--mint, #4ECDC4); }
+.v2-mode .quick-chat-toggle-label-v2 { font-size: $fs-body; font-weight: $fw-label; color: var(--text-main, #111); }
+.v2-mode .quick-chat-auto-tag-v2 { margin-left: auto; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); }
+.v2-mode .quick-chat-names-v2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 6rpx; padding: 12rpx; border: 2rpx dashed var(--divider, #ccc); border-radius: var(--shape-radius-inner, 0); background: var(--surface-dim, #fafafa); }
 .v2-mode .quick-chat-name-input-v2 { flex: 1; min-width: 0; height: 56rpx; padding: 0 14rpx; border: var(--border-width, 2rpx) solid var(--border, #111); border-radius: var(--shape-radius-control, 0); font-size: $fs-body; font-weight: $fw-body; color: var(--text-main, #111); background: var(--surface, #fff); box-sizing: border-box; }
 .v2-mode .quick-chat-name-sep-v2 { font-size: $fs-body; font-weight: $fw-body; color: var(--text-soft, #999); flex-shrink: 0; }
 .v2-mode .quick-chat-name-hint-v2 { width: 100%; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.3; }
+.v2-mode .quick-speaker-chips-v2 { width: 100%; display: flex; flex-wrap: wrap; gap: 8rpx; }
+.v2-mode .quick-speaker-chip-v2 { min-height: 52rpx; padding: 0 16rpx; border: 2rpx solid var(--border, #111); border-radius: var(--shape-radius-control, 0); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-label; color: var(--text-main, #111); display: flex; align-items: center; box-sizing: border-box; }
+.v2-mode .quick-speaker-chip-v2.active { background: var(--accent, #FFD93D); }
+.v2-mode .quick-chat-map-v2 { width: 100%; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); line-height: 1.35; }
+.v2-mode .quick-chat-manual-link-v2 { width: 100%; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); text-decoration: underline; }
 .v2-mode .quick-custom-question-input-v2 {
   width: 100%;
   height: 64rpx;

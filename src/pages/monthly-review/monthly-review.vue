@@ -78,10 +78,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { generateMonthlyReview, getCaseDetail, getCurrentUserId, getMonthlyReviews } from '@/utils/api'
+import { generateMonthlyReview, getCaseDetail, getCurrentUserId, getMonthlyReviews, prepareCurrentUserReferralShare } from '@/utils/api'
 import { getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { appendReferralParams, buildSafeTimelineShare, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { appendReferralParams, buildSafeTimelineShare, SAFE_SHARE_IMAGE, isReferralShareBlocked } from '@/utils/share'
 import { aiLabel } from '@/utils/labels'
 
 const loading = ref(true)
@@ -109,6 +109,7 @@ onLoad((options) => {
 })
 
 onShow(() => {
+  void prepareCurrentUserReferralShare()
   fontSizeMode.value = getFontSizeMode()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
@@ -117,11 +118,12 @@ onShow(() => {
 })
 
 onShareAppMessage(() => {
+  if (isReferralShareBlocked()) return {}
   const path = appendReferralParams(`/pages/monthly-review/monthly-review?caseId=${caseId.value}`, 'monthly_review')
   return { title: `我和 ${caseName.value || 'TA'} 的月度复盘`, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
-onShareTimeline(() => buildSafeTimelineShare())
+onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
 
 async function loadData(options: { silent?: boolean } = {}) {
   const silent = Boolean(options.silent)

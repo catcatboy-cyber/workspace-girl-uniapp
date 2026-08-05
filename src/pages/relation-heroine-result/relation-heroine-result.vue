@@ -28,7 +28,8 @@
 
       <button class="primary" @click="retest">重新测试</button>
       <button class="secondary" @click="testAnother">测另一位{{ result.subjectGender === 'male' ? '男主角' : '女主角' }}</button>
-      <button class="secondary" open-type="share">分享结果</button>
+      <button v-if="referralShareReady" class="secondary" open-type="share">分享结果</button>
+      <button v-else class="secondary" disabled>邀请码准备中</button>
       <button class="text-button" @click="goHistory">查看测试记录</button>
     </template>
   </view>
@@ -37,8 +38,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
-import { getArchetypeQuestionBank, getArchetypeResults } from '@/utils/api'
+import { getArchetypeQuestionBank, getArchetypeResults, prepareCurrentUserReferralShare } from '@/utils/api'
 import { FEATURE_RELATION_HEROINE } from '@/utils/feature-keys'
+import { appendReferralParams, isReferralShareBlocked } from '@/utils/share'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const themeVars = ref(getThemeStyle())
@@ -47,6 +49,7 @@ const errorMessage = ref('')
 const resultId = ref('')
 const result = ref<any>(null)
 const content = ref<any>(null)
+const referralShareReady = ref(!isReferralShareBlocked())
 const archetype = computed(() => content.value?.archetypes?.find((item: any) => item.key === result.value?.personKey))
 const displayTitle = computed(() => result.value?.subjectGender === 'male' ? '关系男主角' : '关系女主角')
 const levelText = computed(() => result.value.similarity >= 80 ? '高度相似' : result.value.similarity >= 60 ? '明显相似' : result.value.similarity >= 40 ? '部分相似' : '相似度较低')
@@ -89,10 +92,12 @@ function goHistory() { uni.navigateTo({ url: '/pages/relation-heroine-history/re
 
 onLoad((options: any) => { resultId.value = String(options?.id || ''); loadResult() })
 onShow(() => {
+  referralShareReady.value = !isReferralShareBlocked()
+  void prepareCurrentUserReferralShare().then((ready) => { referralShareReady.value = ready })
   themeVars.value = getThemeStyle()
   applyThemeChrome()
 })
-onShareAppMessage(() => ({ title: `${result.value?.mode === 'target' ? 'TA' : '我'}与${archetype.value?.name || displayTitle.value}相似度 ${result.value?.similarity || 0}%`, path: '/pages/relation-heroine/relation-heroine?mode=self' }))
+onShareAppMessage(() => isReferralShareBlocked() ? {} : ({ title: `${result.value?.mode === 'target' ? 'TA' : '我'}与${archetype.value?.name || displayTitle.value}相似度 ${result.value?.similarity || 0}%`, path: appendReferralParams('/pages/relation-heroine/relation-heroine?mode=self', 'relation_archetype') }))
 </script>
 
 <style scoped lang="scss">

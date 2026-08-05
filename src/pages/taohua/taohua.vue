@@ -214,6 +214,21 @@
         </view>
       </view>
 
+      <view class="persona-entry-row-v2">
+        <view class="persona-entry-card-v2 persona-entry-relation" @click="goRelationHeroineSelf">
+          <text class="persona-entry-title-v2">我的{{ selfProfile?.gender === 'male' ? '关系男主角' : selfProfile?.gender === 'female' ? '关系女主角' : '关系主角测试' }}</text>
+          <text class="persona-entry-desc-v2">看看我是哪种相处人设 →</text>
+        </view>
+        <view class="persona-entry-card-v2 persona-entry-celebrity" @click="goCelebritySelf">
+          <text class="persona-entry-title-v2">我像哪位古今名人？</text>
+          <text class="persona-entry-desc-v2">跨越古今的人格匹配 →</text>
+        </view>
+        <view class="persona-entry-card-v2 persona-entry-celebrity" @click="goDimensionCharacterSelf">
+          <text class="persona-entry-title-v2">我是哪位次元角色？</text>
+          <text class="persona-entry-desc-v2">名著 · 影视 · 动漫角色匹配 →</text>
+        </view>
+      </view>
+
       <view class="persona-card-v2">
         <!-- Top: avatar + identity summary -->
         <view class="persona-top-v2">
@@ -632,7 +647,8 @@
         <image v-if="shareImagePath" class="share-preview-image-v2" :src="shareImagePath" mode="widthFix" />
         <view style="display:flex;gap:12rpx;margin-top:20rpx;">
           <button v-if="canSaveShareImage" class="btn-v2-me primary" style="flex:1;" @click="saveShareImage">保存到相册</button>
-          <button class="btn-v2-me outline" style="flex:1;" open-type="share">转发给好友</button>
+          <button v-if="referralShareReady" class="btn-v2-me outline" style="flex:1;" open-type="share">转发给好友</button>
+          <button v-else class="btn-v2-me outline" style="flex:1;opacity:0.5;" disabled>邀请码准备中</button>
         </view>
       </view>
     </view>
@@ -708,8 +724,8 @@ import {
 } from '@/utils/taohua'
 import type { CrossMatchResult, PairInsight } from '@/utils/taohua'
 import TaohuaCompass from '@/components/TaohuaCompass.vue'
-import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId, getCaseDetail, generatePairRead, getSelfProfile } from '@/utils/api'
-import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
+import { checkFeatureAccess, queryTaohua, getCachedSelfProfile, getCurrentUserId, getCaseDetail, generatePairRead, getSelfProfile, prepareCurrentUserReferralShare } from '@/utils/api'
+import { TAOHUA_SHARE_IMAGE, appendReferralParams, isReferralShareBlocked } from '@/utils/share'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { bumpDataVersion, getActiveCaseId } from '@/utils/helpers'
 import { aiLabel } from '@/utils/labels'
@@ -719,6 +735,7 @@ import { getZodiacSvg, getConstellationSvg, parseEmojiText } from '@/utils/zodia
 // 用户画像
 // ============================================================
 const selfProfile = ref<any>(null)
+const referralShareReady = ref(!isReferralShareBlocked())
 const userZodiac = ref<string>('')
 const userSign = ref<string>('')
 const fontSizeMode = ref<string>(getFontSizeMode())
@@ -883,6 +900,8 @@ onMounted(async () => {
 })
 
 onShow(() => {
+  referralShareReady.value = !isReferralShareBlocked()
+  void prepareCurrentUserReferralShare().then((ready) => { referralShareReady.value = ready })
   applyThemeChrome()
   fontSizeMode.value = getFontSizeMode()
   pageStyle.value = getThemeStyle()
@@ -1411,6 +1430,18 @@ function goSelfProfile() {
   uni.navigateTo({ url: '/pages/self-profile/self-profile' })
 }
 
+function goRelationHeroineSelf() {
+  uni.navigateTo({ url: '/pages/relation-heroine/relation-heroine?mode=self' })
+}
+
+function goCelebritySelf() {
+  uni.navigateTo({ url: '/pages/crush-celebrity/crush-celebrity?mode=self' })
+}
+
+function goDimensionCharacterSelf() {
+  uni.navigateTo({ url: '/pages/dimension-character/dimension-character?mode=self' })
+}
+
 // ============================================================
 // Canvas 分享卡
 // ============================================================
@@ -1425,6 +1456,7 @@ const sharePreviewTitle = computed(() => shareMode.value === 'pair' ? '我和 TA
 const canSaveShareImage = computed(() => !!shareImagePath.value && !String(shareImagePath.value).startsWith('cloud://'))
 
 onShareAppMessage(() => {
+  if (isReferralShareBlocked()) return {}
   if (shareMode.value === 'pair' && pairParticipants.value && pairMatch.value) {
     return {
       title: `${pairParticipants.value.selfZodiac || '我'} × ${pairParticipants.value.partnerZodiac || 'TA'} 的桃花匹配度`,
@@ -2067,6 +2099,14 @@ async function saveShareImage() {
 .persona-match-badge-v2.caution { background: var(--relation-bad, #FF5252); color: var(--surface, #fff); }
 
 .persona-match-tags-v2 { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 14rpx; align-items: center; }
+
+/* 桃花人设入口（关系女主角 / 古今名人）— 跟随主题 */
+.persona-entry-row-v2 { display: flex; gap: 16rpx; margin: 18rpx 0 6rpx; }
+.persona-entry-card-v2 { flex: 1; min-width: 0; padding: 18rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-inner, 0); background: var(--surface, #fff); }
+.persona-entry-card-v2.persona-entry-relation { background: var(--risk-soft, #FFEEEC); }
+.persona-entry-card-v2.persona-entry-celebrity { background: var(--brand-warm, #FFFBEB); }
+.persona-entry-title-v2 { display: block; font-size: $fs-caption; font-weight: var(--font-weight-hero, $fw-hero); color: var(--text-main, #111); }
+.persona-entry-desc-v2 { display: block; margin-top: 4rpx; font-size: $fs-micro; color: var(--text-muted, #666); }
 
 /* 引导卡 */
 .guide-card-v2 { border-style: dashed; border-color: var(--text-soft, #999); cursor: pointer; }

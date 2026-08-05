@@ -15,7 +15,8 @@
         <view class="pair-match-head">
           <text class="section-title-v2 no-margin">桃花匹配度</text>
           <!-- #ifdef MP-WEIXIN -->
-          <button class="pair-share-btn" open-type="share">↗</button>
+          <button v-if="referralShareReady" class="pair-share-btn" open-type="share">↗</button>
+          <button v-else class="pair-share-btn" disabled>↗</button>
           <!-- #endif -->
           <!-- #ifndef MP-WEIXIN -->
           <view class="pair-share-btn pair-share-btn-disabled">↗</view>
@@ -168,11 +169,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { getCachedSelfProfile, getCaseDetail, getCurrentUserId, getSelfProfile } from '@/utils/api'
+import { getCachedSelfProfile, getCaseDetail, getCurrentUserId, getSelfProfile, prepareCurrentUserReferralShare } from '@/utils/api'
 import { SIGN_NAMES, ZODIAC_NAMES, ZODIAC_TO_ZHI, buildPairMatchPayload, getElementComboText, type PairMatchPayload } from '@/utils/taohua'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { getZodiacSvg } from '@/utils/zodiac-icons'
 import { aiLabel } from '@/utils/labels'
+import { isReferralShareBlocked } from '@/utils/share'
 
 const ready = ref(false)
 const loading = ref(true)
@@ -184,6 +186,7 @@ const payload = ref<PairMatchPayload | null>(null)
 const errorMessage = ref('')
 const fontSizeMode = ref(getFontSizeMode())
 const pageStyle = ref(getThemeStyle())
+const referralShareReady = ref(!isReferralShareBlocked())
 
 const toneClass = computed(() => relationTone(payload.value?.match?.relation || ''))
 const signToneClass = computed(() => relationTone(payload.value?.match?.signRelation || ''))
@@ -200,6 +203,8 @@ onLoad(async (options: any) => {
 })
 
 onShow(() => {
+  referralShareReady.value = !isReferralShareBlocked()
+  void prepareCurrentUserReferralShare().then((shareReady) => { referralShareReady.value = shareReady })
   applyThemeChrome()
   fontSizeMode.value = getFontSizeMode()
   pageStyle.value = getThemeStyle()
@@ -276,20 +281,23 @@ function goTaohua() {
 </script>
 
 <script lang="ts">
+import { appendReferralParams, isReferralShareBlocked } from '@/utils/share'
+
 export default {
   onShareAppMessage() {
+    if (isReferralShareBlocked()) return {}
     const pages = getCurrentPages()
     const page = pages[pages.length - 1] as any
     const payload = page?.$vm?.payload
     if (payload) {
       return {
         title: `我和 TA 的桃花匹配度`,
-        path: `/pages/taohua-pair-share/taohua-pair-share?selfZodiac=${encodeURIComponent(payload.self.zodiac)}&selfSign=${encodeURIComponent(payload.self.sign)}&taZodiac=${encodeURIComponent(payload.partner.zodiac)}&taSign=${encodeURIComponent(payload.partner.sign)}`,
+        path: appendReferralParams(`/pages/taohua-pair-share/taohua-pair-share?selfZodiac=${encodeURIComponent(payload.self.zodiac)}&selfSign=${encodeURIComponent(payload.self.sign)}&taZodiac=${encodeURIComponent(payload.partner.zodiac)}&taSign=${encodeURIComponent(payload.partner.sign)}`, 'taohua_pair_result'),
       }
     }
     return {
       title: '桃花匹配度',
-      path: '/pages/taohua/taohua',
+      path: appendReferralParams('/pages/taohua/taohua', 'taohua_pair_result'),
     }
   },
 }

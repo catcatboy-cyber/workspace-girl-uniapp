@@ -75,14 +75,14 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow, onHide, onUnload } from '@dcloudio/uni-app'
-import { batchTagEvents, getCaseDetail, getCurrentUserId, getCases, getCachedSelfProfile, getSelfProfile, getTempFileURL } from '@/utils/api'
+import { batchTagEvents, getCaseDetail, getCurrentUserId, getCases, getCachedSelfProfile, getSelfProfile, getTempFileURL, prepareCurrentUserReferralShare } from '@/utils/api'
 import { consumePendingTimelineContext, getActiveCaseId, setActiveCaseId, showError } from '@/utils/helpers'
 import { getSelectedPetId, getPetById } from '@/utils/pets.js'
 import { explainProblemLabel, explainStatusTag } from '@/utils/insights'
 import { buildTimelineFromLatestResult, compareAssessments, sortTimelineRecordsDesc, isSystemTimelineRecord, getTimelineRecordTimestamp } from '@/utils/insights'
 import { buildTimelineStats, getTimelineRecordTags, buildObjectStatusCard } from '@/utils/insights'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isReferralShareBlocked } from '@/utils/share'
 import { aiLabel } from '@/utils/labels'
 
 const loading = ref(true)
@@ -99,9 +99,11 @@ const recorded = ref(false)
 const targetEventId = ref('')
 const themeVars = ref(getThemeStyle())
 
-onShareAppMessage(() => ({ title: 'Crush Master｜关系时间线', path: appendReferralParams('/pages/index/index', 'timeline'), imageUrl: SAFE_SHARE_IMAGE }))
+onShareAppMessage(() => isReferralShareBlocked()
+  ? {}
+  : { title: 'Crush Master｜关系时间线', path: appendReferralParams('/pages/index/index', 'timeline'), imageUrl: SAFE_SHARE_IMAGE })
 
-onShareTimeline(() => buildSafeTimelineShare())
+onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
 
 onPullDownRefresh(async () => {
   await loadData()
@@ -1048,6 +1050,7 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  void prepareCurrentUserReferralShare()
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
     fontSizeMode.value = getFontSizeMode()

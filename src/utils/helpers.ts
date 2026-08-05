@@ -231,6 +231,32 @@ export type PendingTimelineContext = {
   targetEventId?: string
 }
 
+const PENDING_OPEN_ANALYSIS_KEY = 'pendingOpenAnalysis'
+
+/** 落地页建记录后：首页自动打开「本次分析」弹窗 */
+export function setPendingOpenAnalysis(enabled = true) {
+  try {
+    if (!enabled) {
+      uni.removeStorageSync(PENDING_OPEN_ANALYSIS_KEY)
+      return
+    }
+    uni.setStorageSync(PENDING_OPEN_ANALYSIS_KEY, Date.now())
+  } catch {}
+}
+
+export function consumePendingOpenAnalysis(): boolean {
+  try {
+    const raw = uni.getStorageSync(PENDING_OPEN_ANALYSIS_KEY)
+    uni.removeStorageSync(PENDING_OPEN_ANALYSIS_KEY)
+    if (!raw) return false
+    const ts = Number(raw) || 0
+    if (ts > 0 && Date.now() - ts > 2 * 60 * 1000) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function getActiveCaseId(): string {
   try {
     return String(uni.getStorageSync(ACTIVE_CASE_KEY) || '').trim()

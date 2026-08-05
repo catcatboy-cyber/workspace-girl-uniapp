@@ -110,11 +110,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { getCases, getCurrentUserId } from '@/utils/api'
+import { getCases, getCurrentUserId, prepareCurrentUserReferralShare } from '@/utils/api'
 import { callFunction } from '@/utils/cloudbase'
 import { bumpDataVersion, clearActiveCaseId, formatDateTime, getActiveCaseId, setActiveCaseId, showError, showSuccess } from '@/utils/helpers'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isReferralShareBlocked } from '@/utils/share'
 import { deriveCrushType } from '@/utils/crush-type.js'
 import { aiLabel } from '@/utils/labels'
 
@@ -142,9 +142,11 @@ const activeHeroProfileTags = computed(() => {
   ].filter(Boolean)
 })
 
-onShareAppMessage(() => ({ title: 'TA已经把你设置为Crush了。', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE }))
+onShareAppMessage(() => isReferralShareBlocked()
+  ? {}
+  : { title: 'TA已经把你设置为Crush了。', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE })
 
-onShareTimeline(() => buildSafeTimelineShare())
+onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
 
 onPullDownRefresh(async () => {
   await loadData()
@@ -161,6 +163,7 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  void prepareCurrentUserReferralShare()
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
     fontSizeMode.value = getFontSizeMode()

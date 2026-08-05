@@ -66,8 +66,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
-import { getCurrentUserId } from '@/utils/api'
-import { TAOHUA_SHARE_IMAGE, appendReferralParams } from '@/utils/share'
+import { getCurrentUserId, prepareCurrentUserReferralShare } from '@/utils/api'
+import { TAOHUA_SHARE_IMAGE, appendReferralParams, isReferralShareBlocked } from '@/utils/share'
 import { captureLandingContext } from '@/utils/landing'
 import { buildPairMatchPayload, SIGN_NAMES, ZODIAC_NAMES } from '@/utils/taohua'
 import { aiLabel } from '@/utils/labels'
@@ -96,16 +96,19 @@ onLoad(async (options: any) => {
   if (ZODIAC_NAMES.includes(tz)) taZodiac.value = tz
   if (SIGN_NAMES.includes(ts)) taSign.value = ts
   await waitForSilentLogin()
+  await prepareCurrentUserReferralShare()
   ready.value = true
 })
 
 onShow(() => {
+  void prepareCurrentUserReferralShare()
   fontSizeMode.value = getFontSizeMode()
   pageStyle.value = getThemeStyle()
   applyThemeChrome()
 })
 
 onShareAppMessage(() => {
+  if (isReferralShareBlocked()) return {}
   let path = `/pages/taohua-pair-share/taohua-pair-share?selfZodiac=${encodeURIComponent(selfZodiac.value)}&selfSign=${encodeURIComponent(selfSign.value)}&taZodiac=${encodeURIComponent(taZodiac.value)}&taSign=${encodeURIComponent(taSign.value)}&from=reshare`
   path = appendReferralParams(path, 'taohua_pair')
   return { title: `${selfZodiac.value} × ${taZodiac.value} 的桃花匹配度`, path, imageUrl: TAOHUA_SHARE_IMAGE }

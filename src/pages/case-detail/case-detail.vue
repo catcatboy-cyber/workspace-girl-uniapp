@@ -47,6 +47,20 @@
           <text class="weekly-desc-v2">查看你和 TA 的生肖星座匹配 + {{ aiLabel() }} 深度解读 →</text>
         </view>
 
+        <view class="card-v2 anim-card" style="animation-delay:0.225s;background:var(--risk-soft, #FFEEEC);" @click="goRelationHeroine">
+          <text class="section-title-v2">TA 像哪位{{ relationTargetTitle }}？</text>
+          <text class="weekly-desc-v2">6 题定位 · 15 题专测 · 3 道情景验证 →</text>
+        </view>
+
+        <view class="card-v2 anim-card" style="animation-delay:0.228s;background:var(--brand-warm, #FFFBEB);" @click="goCrushCelebrity">
+          <text class="section-title-v2">TA 像哪位古今名人？</text>
+          <text class="weekly-desc-v2">12 道行为题，匹配历史、近代和当代人物 →</text>
+        </view>
+        <view class="card-v2 anim-card" style="animation-delay:0.23s;background:var(--accent-soft,#E9F7F5);" @click="goDimensionCharacter">
+          <text class="section-title-v2">TA 像哪位次元角色？</text>
+          <text class="weekly-desc-v2">12 道行为题，匹配名著、影视与动漫人物 →</text>
+        </view>
+
         <!-- ===== 新增板块 ===== -->
 
         <!-- 1. 关系雷达 -->
@@ -299,12 +313,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, generateMonthlyReview, handleInsufficientBalance } from '@/utils/api'
+import { getCaseDetail, getCurrentUserId, getMonthlyReviews, getCases, generateMonthlyReview, handleInsufficientBalance, prepareCurrentUserReferralShare } from '@/utils/api'
 import { bumpDataVersion, consumeActiveCaseProfileUpdated, getActiveCaseId, setActiveCaseId, setPendingTimelineContext, showError, showSuccess } from '@/utils/helpers'
 import { buildCaseOverviewStats, buildFocusItems, buildObjectStatusCard, compareAssessments, buildTimelineStats, getTimelineRecordTags } from '@/utils/insights.js'
 import { clamp, confidenceAdjust, computeInitiative, computeResponsive, computeCommitment, computeTemperature, buildRadarDims, buildSignalCards, buildDivergingBars, buildBalanceCallout } from '@/utils/insights.ts'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isReferralShareBlocked } from '@/utils/share'
 import { deriveCrushType } from '@/utils/crush-type.js'
 import { aiLabel } from '@/utils/labels'
 import ProgressMilestone from '@/components/ProgressMilestone.vue'
@@ -321,12 +335,13 @@ const themeVars = ref(getThemeStyle())
 const initialAssessmentPromptDismissed = ref(false)
 
 onShareAppMessage(() => {
+  if (isReferralShareBlocked()) return {}
   // 不分享具体 caseId：接收者无法访问发送者的档案，改为引导对方创建自己的分析
   const path = appendReferralParams('/pages/index/index', 'we_card')
   return { title: `来看看我和 ${caseFile.value?.name || 'TA'} 的关系分析`, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
-onShareTimeline(() => buildSafeTimelineShare())
+onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
 
 onPullDownRefresh(async () => {
   await loadData()
@@ -345,6 +360,7 @@ const RELATION_CHART_GAP = 140
 const RELATION_CHART_VISIBLE = 5
 
 const result = computed(() => caseFile.value?.latestResult)
+const relationTargetTitle = computed(() => caseFile.value?.profile?.gender === '男' ? '关系男主角' : caseFile.value?.profile?.gender === '女' ? '关系女主角' : '关系主角')
 
 const caseCrushTimelineStats = computed(() => {
   const timeline = Array.isArray(caseFile.value?.timeline) ? caseFile.value.timeline : []
@@ -892,6 +908,7 @@ onLoad((options) => {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  void prepareCurrentUserReferralShare()
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
     fontSizeMode.value = getFontSizeMode()
@@ -1252,6 +1269,21 @@ function goHome() {
 function goTaohuaMatch() {
   if (caseId.value) setActiveCaseId(caseId.value)
   uni.navigateTo({ url: '/pages/taohua/taohua?caseId=' + caseId.value })
+}
+
+function goRelationHeroine() {
+  if (!caseId.value) return
+  uni.navigateTo({ url: `/pages/relation-heroine/relation-heroine?mode=target&caseId=${encodeURIComponent(caseId.value)}` })
+}
+
+function goCrushCelebrity() {
+  if (!caseId.value) return
+  uni.navigateTo({ url: `/pages/crush-celebrity/crush-celebrity?mode=target&caseId=${encodeURIComponent(caseId.value)}` })
+}
+
+function goDimensionCharacter() {
+  if (!caseId.value) return
+  uni.navigateTo({ url: `/pages/dimension-character/dimension-character?mode=target&caseId=${encodeURIComponent(caseId.value)}` })
 }
 
 // Inline review generation

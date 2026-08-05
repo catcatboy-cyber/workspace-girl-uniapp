@@ -57,6 +57,9 @@
       </view>
 
       <view class="actions anim-card" style="animation-delay:0.3s">
+        <button class="btn-v2 primary" @click="goRelationHeroine">测测我的{{ relationSelfTitle }}</button>
+        <button class="btn-v2 ghost" @click="goCelebrity">我像哪位古今名人？</button>
+        <button class="btn-v2 ghost" @click="goDimensionCharacter">我是哪位次元角色？</button>
         <button class="btn-v2 primary" @click="goHome">回到首页</button>
         <button class="btn-v2 ghost" @click="goTaohua">继续看今日桃花</button>
       </view>
@@ -88,8 +91,10 @@ const errorMessage = ref('')
 const selfZodiac = ref('')
 const selfSign = ref('')
 const avatarUrl = ref('')
+const selfGender = ref('')
 const fontSizeMode = ref(getFontSizeMode())
 const pageStyle = ref(getThemeStyle())
+const relationSelfTitle = computed(() => selfGender.value === 'male' ? '关系男主角' : selfGender.value === 'female' ? '关系女主角' : '关系主角')
 
 const crossData = computed<CrossMatchResult | null>(() => {
   try {
@@ -139,6 +144,7 @@ async function loadProfile() {
       profile = profileRes?.selfProfile || getCachedSelfProfile()
     }
     avatarUrl.value = profile?.avatarUrl || ''
+    selfGender.value = String(profile?.gender || '')
     const zodiac = normalizeOption(profile?.zodiac, ZODIAC_NAMES)
     const sign = normalizeOption(profile?.constellation, SIGN_NAMES)
     if (!zodiac || !sign) {
@@ -177,6 +183,18 @@ function goHome() {
 
 function goTaohua() {
   uni.navigateTo({ url: '/pages/taohua/taohua?from=persona_result' })
+}
+
+function goRelationHeroine() {
+  uni.navigateTo({ url: '/pages/relation-heroine/relation-heroine?mode=self' })
+}
+
+function goCelebrity() {
+  uni.navigateTo({ url: '/pages/crush-celebrity/crush-celebrity?mode=self' })
+}
+
+function goDimensionCharacter() {
+  uni.navigateTo({ url: '/pages/dimension-character/dimension-character?mode=self' })
 }
 
 function goProfile() {

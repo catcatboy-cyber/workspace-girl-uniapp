@@ -125,10 +125,21 @@
       </view>
       <!-- 低 Token 提示 -->
       <view v-if="showLowTokenNudge" class="card-v2 anim-card" style="animation-delay:0.32s;background:var(--brand-warm,#FFFBEB);border-style:dashed;">
-        <view open-type="share" style="width:100%;">
+        <view style="width:100%;">
           <text class="section-title-v2" style="color:var(--warning,#e67e22);">Crush Credits 快不够了</text>
           <text class="card-text-v2">邀请好友注册，双方各得 Crush Credits →</text>
-          <button class="btn btn-secondary btn-sm" open-type="share" style="margin-top:12rpx;">+{{ referralRewardTokens }}</button>
+          <button
+            v-if="inviteShareReady"
+            class="btn btn-secondary btn-sm"
+            open-type="share"
+            style="margin-top:12rpx;"
+          >+{{ referralRewardTokens }}</button>
+          <button
+            v-else
+            class="btn btn-secondary btn-sm"
+            disabled
+            style="margin-top:12rpx;opacity:0.5;"
+          >邀请码准备中</button>
         </view>
       </view>
       <!-- Theme picker -->
@@ -183,6 +194,7 @@ import {
   getSelfProfile,
   getSubscriptionConfig,
   getSubscriptionStatus,
+  prepareCurrentUserReferralShare,
   getTokenUsage,
   getVoiceUsage,
   listMyDeliveredPets,
@@ -193,7 +205,7 @@ import {
   type SelfProfile
 } from '@/utils/api'
 import { applyThemeChrome, getCurrentThemeId, getFontSizeMode, getThemeStyle, setCurrentTheme, setFontSizeMode, themeOptions, type ThemeId } from '@/utils/theme'
-import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isInviteCodeReady, cacheMyInviteCode, isReferralShareBlocked } from '@/utils/share'
 import { downloadPetAssets, getCachedDeliveredPets, getPetById, getSelectedPetId, isCloudPet, isPetCachedLocally, petOptions, refreshDeliveredPetCatalog, setSelectedPetId } from '@/utils/pets.js'
 import { aiLabel } from '@/utils/labels'
 import { normalizeSelfIdentity } from '@/utils/identity'
@@ -330,11 +342,29 @@ const planBadgeClass = computed(() => {
   return 'badge-free'
 })
 
-onShareAppMessage(() => ({ title: 'Crush Master｜读懂关系信号', path: appendReferralParams('/pages/index/index', 'invite'), imageUrl: SAFE_SHARE_IMAGE }))
+const inviteShareReady = computed(() => isInviteCodeReady())
 
-onShareTimeline(() => buildSafeTimelineShare({
-  query: subInviteCode.value ? `inviteCode=${subInviteCode.value}` : ''
-}))
+onShareAppMessage(() => {
+  if (isReferralShareBlocked()) return {}
+  if (!inviteShareReady.value) {
+    return { title: 'Crush Master｜读懂关系信号', path: '/pages/index/index', imageUrl: SAFE_SHARE_IMAGE }
+  }
+  return {
+    title: 'Crush Master｜读懂关系信号',
+    path: appendReferralParams('/pages/index/index', 'invite', 'me'),
+    imageUrl: SAFE_SHARE_IMAGE
+  }
+})
+
+onShareTimeline(() => {
+  if (isReferralShareBlocked()) return {}
+  if (!inviteShareReady.value) {
+    return buildSafeTimelineShare({ query: '' })
+  }
+  const path = appendReferralParams('/pages/index/index', 'invite', 'me_timeline')
+  const query = path.includes('?') ? path.split('?')[1] : ''
+  return buildSafeTimelineShare({ query })
+})
 
 onPullDownRefresh(async () => {
   await loadData()
@@ -502,6 +532,7 @@ async function choosePet(id: PetId) {
 const lastDataVersion = ref(0)
 
 onShow(() => {
+  void prepareCurrentUserReferralShare()
   const tabBar = getCurrentPages().pop()?.getTabBar?.()
   if (tabBar) tabBar.updateSelected()
   syncTheme()
@@ -580,6 +611,10 @@ async function loadSubscriptionStatus() {
     subMonthlyLimit.value = s.monthlyTokensLimit || 0
     subExtraTokens.value = s.extraTokens || 0
     subInviteCode.value = s.inviteCode || ''
+    if (s.inviteCode) {
+      const uid = uni.getStorageSync('userId') || ''
+      if (uid) cacheMyInviteCode(uid, s.inviteCode)
+    }
     subReferralCount.value = s.referralCount || 0
   } catch {
     // ignore

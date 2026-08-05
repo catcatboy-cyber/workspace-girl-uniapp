@@ -17,7 +17,7 @@
       <view class="card watch"><text class="card-title">可以继续观察</text><text v-for="item in watchSignals" :key="item.key" class="copy-line">· {{ item.text }}</text></view>
       <view class="card"><text class="card-title">前五名人</text><view v-for="(item,index) in result.topFive" :key="item.personKey" class="rank" @click="openPerson(item.personKey)"><text>{{ index+1 }} · {{ item.name }}</text><text>{{ item.similarity }}%</text></view></view>
       <text v-if="result.mode==='target'" class="confidence">观察覆盖 {{ result.answeredCount }}/12 · {{ confidenceText }}</text>
-      <button class="primary" @click="retest">重新测试</button><button class="secondary" open-type="share">分享结果</button>
+      <button class="primary" @click="retest">重新测试</button><button v-if="referralShareReady" class="secondary" open-type="share">分享结果</button><button v-else class="secondary" disabled>邀请码准备中</button>
     </template>
   </view>
 </template>
@@ -25,12 +25,14 @@
 <script setup lang="ts">
 import { computed,ref } from 'vue'
 import { onLoad,onShareAppMessage,onShow } from '@dcloudio/uni-app'
-import { getArchetypeQuestionBank,getArchetypeResults } from '@/utils/api'
+import { getArchetypeQuestionBank,getArchetypeResults,prepareCurrentUserReferralShare } from '@/utils/api'
 import { FEATURE_DIMENSION_CHARACTER } from '@/utils/feature-keys'
 import { buildCelebrityShareCopy, buildCelebritySummary } from '@/utils/crush-celebrity-copy'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { appendReferralParams,isReferralShareBlocked } from '@/utils/share'
 const themeVars=ref(getThemeStyle())
 const loading=ref(true),errorMessage=ref(''),resultId=ref(''),result=ref<any>(null),content=ref<any>(null)
+const referralShareReady=ref(!isReferralShareBlocked())
 const primary=computed(()=>content.value?.people?.find((p:any)=>p.key===result.value?.primaryPersonKey))
 const secondary=computed(()=>content.value?.people?.find((p:any)=>p.key===result.value?.secondaryPersonKey))
 const runnerUp=computed(()=>content.value?.people?.find((p:any)=>p.key===result.value?.topFive?.[1]?.personKey))
@@ -43,8 +45,8 @@ async function load(){try{if(!resultId.value)throw new Error('缺少测试结果
 function openPerson(key:string){uni.navigateTo({url:`/pages/dimension-character-person/dimension-character-person?personKey=${key}`})}
 function retest(){uni.redirectTo({url:`/pages/dimension-character/dimension-character?mode=${result.value.mode}${result.value.caseId?`&caseId=${result.value.caseId}`:''}`})}
 onLoad((options:any)=>{resultId.value=String(options?.id||'');load()})
-onShow(()=>{themeVars.value=getThemeStyle();applyThemeChrome()})
-onShareAppMessage(()=>({title:buildCelebrityShareCopy({mode:result.value?.mode,primary:primary.value,primarySimilarity:result.value?.similarities?.[result.value?.primaryPersonKey]||0,secondary:runnerUp.value,secondarySimilarity:result.value?.topFive?.[1]?.similarity||0,template:content.value?.resultCopy?.shareTemplate}),path:'/pages/dimension-character/dimension-character?mode=self'}))
+onShow(()=>{referralShareReady.value=!isReferralShareBlocked();void prepareCurrentUserReferralShare().then((ready)=>{referralShareReady.value=ready});themeVars.value=getThemeStyle();applyThemeChrome()})
+onShareAppMessage(()=>isReferralShareBlocked()?{}:({title:buildCelebrityShareCopy({mode:result.value?.mode,primary:primary.value,primarySimilarity:result.value?.similarities?.[result.value?.primaryPersonKey]||0,secondary:runnerUp.value,secondarySimilarity:result.value?.topFive?.[1]?.similarity||0,template:content.value?.resultCopy?.shareTemplate}),path:appendReferralParams('/pages/dimension-character/dimension-character?mode=self','dimension_character')}))
 </script>
 
 <style scoped lang="scss">

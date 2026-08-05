@@ -99,7 +99,37 @@
 
         <view class="qr-field-block">
           <text class="qr-form-title">TA 做了什么？原话是什么？</text>
-          <textarea v-model="form.text" class="qr-textarea" maxlength="6000" placeholder="比如：他昨天说下次约我，但一直没定时间..." />
+          <view class="qr-chat-toggle" @click="toggleChatMode">
+            <view :class="['qr-chat-check', form.inputSubjectRole === 'both' ? 'on' : '']">{{ form.inputSubjectRole === 'both' ? '✓' : '' }}</view>
+            <text class="qr-chat-toggle-label">这是双方聊天记录</text>
+            <text v-if="form.inputSubjectRole === 'both' && chatAutoDetected" class="qr-chat-auto-tag">已自动识别</text>
+          </view>
+          <view v-if="form.inputSubjectRole === 'both'" class="qr-chat-names">
+            <template v-if="detectedSpeakers.length >= 2">
+              <text class="qr-chat-hint">聊天记录里哪个是你？点选后，另一个默认归当前 Crush</text>
+              <view class="qr-speaker-chips">
+                <view
+                  v-for="name in detectedSpeakers"
+                  :key="name"
+                  :class="['qr-speaker-chip', form.chatSelfName === name ? 'active' : '']"
+                  @click="selectSelfSpeaker(name)"
+                >{{ name }}</view>
+              </view>
+              <text v-if="form.chatSelfName && form.chatTargetName" class="qr-chat-map">
+                {{ form.chatSelfName }} → 你 · {{ form.chatTargetName }} → {{ form.targetName || '当前 Crush' }}
+              </text>
+              <text class="qr-chat-manual-link" @click="forceManualChatNames = true">名字对不上？手动填写</text>
+            </template>
+            <template v-if="detectedSpeakers.length < 2 || forceManualChatNames">
+              <text class="qr-chat-hint">填写聊天记录里出现的说话人名字（不是小程序昵称）</text>
+              <view class="qr-chat-inputs">
+                <input v-model="form.chatSelfName" class="qr-input" maxlength="20" placeholder="聊天里你的名字" />
+                <text class="qr-chat-sep">和</text>
+                <input v-model="form.chatTargetName" class="qr-input" maxlength="20" :placeholder="'聊天里' + (form.targetName || 'TA') + '的名字'" />
+              </view>
+            </template>
+          </view>
+          <textarea :value="form.text" @input="onLandingTextInput" class="qr-textarea" :class="{ 'chat-mode': form.inputSubjectRole === 'both' }" maxlength="6000" placeholder="比如：他昨天说下次约我，但一直没定时间... 也可直接粘贴微信对话" />
           <text class="qr-text-count">当前 {{ form.text.length }}/6000</text>
         </view>
 
@@ -165,12 +195,13 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { createCase, createTimeline, generateAssessmentAI, getCurrentUserId, getCachedSelfProfile, hasUsableSelfProfile, wechatLogin } from '@/utils/api'
-import { bumpDataVersion, combineDateAndTimeToISOString, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingTimelineContext } from '@/utils/helpers'
+import { createCase, createTimeline, getCurrentUserId, getCachedSelfProfile, hasUsableSelfProfile, wechatLogin } from '@/utils/api'
+import { bumpDataVersion, combineDateAndTimeToISOString, getDateInputValue, getTimeInputValue, setActiveCaseId, setPendingOpenAnalysis, setPendingTimelineContext } from '@/utils/helpers'
 import { captureLandingContext, readLandingContext } from '@/utils/landing'
 import { SIGN_NAMES, ZODIAC_NAMES } from '@/utils/taohua'
 import { aiLabel } from '@/utils/labels'
 import { applyThemeChrome, getThemeClass, getThemeStyle } from '@/utils/theme'
+import { extractChatSpeakers, inferIsChatRecord, mapChatSpeakers, suggestSelfSpeaker } from '@/utils/chat-speakers'
 
 const DRAFT_KEY = 'quickReadAnalysisDraft'
 
@@ -201,8 +232,15 @@ const form = reactive({
   targetName: 'TA',
   targetGender: '',
   targetZodiac: '不知道',
-  targetConstellation: '不知道'
+  targetConstellation: '不知道',
+  inputSubjectRole: 'unspecified' as 'unspecified' | 'both',
+  chatSelfName: '',
+  chatTargetName: ''
 })
+const chatAutoDetected = ref(false)
+const chatManualOverride = ref(false)
+const detectedSpeakers = ref<string[]>([])
+const forceManualChatNames = ref(false)
 
 const relationOptions = [
   { value: 'romantic', label: '暧昧 / Crush' },
@@ -321,6 +359,12 @@ function saveDraft(overrides: Record<string, any> = {}) {
       targetGender: form.targetGender,
       targetZodiac: form.targetZodiac,
       targetConstellation: form.targetConstellation,
+      inputSubjectRole: form.inputSubjectRole,
+      chatSelfName: form.chatSelfName,
+      chatTargetName: form.chatTargetName,
+      chatAutoDetected: chatAutoDetected.value,
+      chatManualOverride: chatManualOverride.value,
+      forceManualChatNames: forceManualChatNames.value,
       started: started.value,
       targetProfileMode: targetProfileMode.value,
       ...overrides
@@ -339,6 +383,13 @@ function restoreDraft() {
     form.targetGender = draft.targetGender || ''
     form.targetZodiac = draft.targetZodiac || '不知道'
     form.targetConstellation = draft.targetConstellation || '不知道'
+    form.inputSubjectRole = draft.inputSubjectRole === 'both' ? 'both' : 'unspecified'
+    form.chatSelfName = String(draft.chatSelfName || '').trim()
+    form.chatTargetName = String(draft.chatTargetName || '').trim()
+    chatAutoDetected.value = Boolean(draft.chatAutoDetected)
+    chatManualOverride.value = Boolean(draft.chatManualOverride)
+    forceManualChatNames.value = Boolean(draft.forceManualChatNames)
+    refreshDetectedSpeakers(form.text)
     started.value = Boolean(draft.started || draft.text)
     targetProfileMode.value = Boolean(draft.targetProfileMode)
   } catch {}
@@ -348,10 +399,74 @@ function clearDraft() {
   try { uni.removeStorageSync(DRAFT_KEY) } catch {}
 }
 
+function refreshDetectedSpeakers(text: string) {
+  detectedSpeakers.value = extractChatSpeakers(text)
+  if (forceManualChatNames.value) return
+  if (detectedSpeakers.value.length < 2) return
+  if (form.chatSelfName && detectedSpeakers.value.includes(form.chatSelfName)) {
+    selectSelfSpeaker(form.chatSelfName)
+    return
+  }
+  form.chatSelfName = ''
+  form.chatTargetName = ''
+  const suggested = suggestSelfSpeaker({
+    speakers: detectedSpeakers.value,
+    profileNickname: getCachedSelfProfile()?.nickname
+  })
+  if (suggested) selectSelfSpeaker(suggested)
+}
+
+function selectSelfSpeaker(name: string) {
+  const mapped = mapChatSpeakers({
+    selfSpeaker: name,
+    speakers: detectedSpeakers.value,
+    crushName: form.targetName || 'TA'
+  })
+  form.chatSelfName = mapped.chatSelfName
+  form.chatTargetName = mapped.chatTargetName
+  forceManualChatNames.value = false
+}
+
+function toggleChatMode() {
+  chatManualOverride.value = true
+  if (form.inputSubjectRole === 'both') {
+    form.inputSubjectRole = 'unspecified'
+    form.chatSelfName = ''
+    form.chatTargetName = ''
+    chatAutoDetected.value = false
+    forceManualChatNames.value = false
+    return
+  }
+  form.inputSubjectRole = 'both'
+  chatAutoDetected.value = false
+  refreshDetectedSpeakers(form.text)
+}
+
+function onLandingTextInput(e: any) {
+  const val = String(e?.detail?.value ?? e?.target?.value ?? '').slice(0, 6000)
+  form.text = val
+  refreshDetectedSpeakers(val)
+  if (chatManualOverride.value) return
+  if (inferIsChatRecord(val)) {
+    form.inputSubjectRole = 'both'
+    chatAutoDetected.value = true
+  } else if (form.inputSubjectRole === 'both' && chatAutoDetected.value) {
+    form.inputSubjectRole = 'unspecified'
+    form.chatSelfName = ''
+    form.chatTargetName = ''
+    chatAutoDetected.value = false
+    forceManualChatNames.value = false
+  }
+}
+
 function validateQuestionForm() {
   if (!form.relationType) { uni.showToast({ title: '先选你们的关系', icon: 'none' }); return false }
   if (form.text.trim().length < 2) { uni.showToast({ title: '写一句真实互动', icon: 'none' }); return false }
   if (!selectedQuestion.value) { uni.showToast({ title: '先选一个困惑', icon: 'none' }); return false }
+  if (form.inputSubjectRole === 'both' && (!form.chatSelfName.trim() || !form.chatTargetName.trim())) {
+    uni.showToast({ title: '请标明聊天记录里哪个是你、哪个是 TA', icon: 'none' })
+    return false
+  }
   return true
 }
 
@@ -423,12 +538,18 @@ async function confirmTargetProfile() {
 
     const currentQuestion = { key: selectedQuestion.value.key, label: selectedQuestion.value.label }
     const occurrenceAt = combineDateAndTimeToISOString(getDateInputValue(), getTimeInputValue())
+    // 第二步可能改了 TA 称呼：按最新 Crush 名重新映射对方说话人
+    if (form.inputSubjectRole === 'both' && form.chatSelfName && detectedSpeakers.value.length >= 2) {
+      selectSelfSpeaker(form.chatSelfName)
+    }
     const timelineRes = await createTimeline({
       userId: uid,
       caseId,
       description: form.text.trim(),
-      inputSubjectRole: 'unspecified',
+      inputSubjectRole: form.inputSubjectRole,
       userQuestion: currentQuestion,
+      chatSelfName: form.inputSubjectRole === 'both' ? (form.chatSelfName.trim() || undefined) : undefined,
+      chatTargetName: form.inputSubjectRole === 'both' ? (form.chatTargetName.trim() || undefined) : undefined,
       attachments: [],
       occurrenceAt
     })
@@ -449,12 +570,9 @@ async function confirmTargetProfile() {
         targetEventId: timelineRes.recordId
       })
     }
+    // AI 由首页独占发起：打开「本次分析」弹窗 + resume pending assessment
     if (timelineRes.aiPending && timelineRes.assessmentId) {
-      generateAssessmentAI({
-        caseId,
-        assessmentId: timelineRes.assessmentId,
-        recordId: timelineRes.recordId
-      }).catch(() => {})
+      setPendingOpenAnalysis(true)
     }
 
     uni.hideLoading()
@@ -528,7 +646,23 @@ async function onCTA() {
 .qr-chip.active { background: var(--hero-tag-bg, #111); color: var(--hero-tag-color, #FFD93D); }
 .qr-input { width: 100%; height: 88rpx; box-sizing: border-box; padding: 0 18rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); }
 .qr-textarea { width: 100%; min-height: 180rpx; box-sizing: border-box; padding: 18rpx; border: var(--border-width-strong, 3rpx) solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body-lg; font-weight: $fw-body; color: var(--text-main, #111); line-height: 1.55; }
+.qr-textarea.chat-mode { border-color: var(--mint, #4ECDC4); }
 .qr-text-count { display: block; margin-top: 8rpx; text-align: right; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); }
+.qr-chat-toggle { display: flex; align-items: center; gap: 10rpx; margin: 0 0 12rpx; padding: 10rpx 4rpx; }
+.qr-chat-check { width: 32rpx; height: 32rpx; border: 2rpx solid var(--border, #111); background: var(--surface, #fff); display: flex; align-items: center; justify-content: center; font-size: $fs-caption; font-weight: $fw-heading; color: var(--text-main, #111); box-sizing: border-box; flex-shrink: 0; }
+.qr-chat-check.on { background: var(--mint, #4ECDC4); }
+.qr-chat-toggle-label { font-size: $fs-body; font-weight: $fw-label; color: var(--text-main, #111); }
+.qr-chat-auto-tag { margin-left: auto; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); }
+.qr-chat-names { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-bottom: 12rpx; padding: 12rpx; border: 2rpx dashed var(--divider, #ccc); background: var(--surface-dim, #fafafa); }
+.qr-chat-hint { width: 100%; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); line-height: 1.3; }
+.qr-speaker-chips { width: 100%; display: flex; flex-wrap: wrap; gap: 8rpx; }
+.qr-speaker-chip { min-height: 52rpx; padding: 0 16rpx; border: 2rpx solid var(--border, #111); background: var(--surface, #fff); font-size: $fs-body; font-weight: $fw-label; color: var(--text-main, #111); display: flex; align-items: center; box-sizing: border-box; }
+.qr-speaker-chip.active { background: var(--accent, #FFD93D); }
+.qr-chat-map { width: 100%; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-main, #111); line-height: 1.35; }
+.qr-chat-manual-link { width: 100%; font-size: $fs-caption; font-weight: $fw-label; color: var(--text-soft, #999); text-decoration: underline; }
+.qr-chat-inputs { width: 100%; display: flex; align-items: center; gap: 10rpx; }
+.qr-chat-inputs .qr-input { flex: 1; min-width: 0; width: auto; height: 72rpx; }
+.qr-chat-sep { font-size: $fs-body; font-weight: $fw-body; color: var(--text-soft, #999); flex-shrink: 0; }
 .qr-form-actions, .qr-result-actions { display: flex; gap: 12rpx; margin-top: 18rpx; }
 .qr-form-actions .btn, .qr-result-actions .btn { flex: 1; }
 .qr-skip-link { display: block; margin-top: 16rpx; text-align: center; font-size: $fs-body; font-weight: $fw-label; color: var(--text-muted, #666); text-decoration: underline; }

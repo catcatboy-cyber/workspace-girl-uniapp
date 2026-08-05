@@ -5,7 +5,10 @@
       <view class="as-topbar">
         <text class="as-topbar-title">本次分析</text>
         <view class="as-topbar-actions">
-          <button class="as-share-btn" open-type="share">
+          <button v-if="props.shareReady" class="as-share-btn" open-type="share">
+            <image class="as-share-icon" src="/static/icons/taohua/share-2.svg" mode="aspectFit" />
+          </button>
+          <button v-else class="as-share-btn" disabled>
             <image class="as-share-icon" src="/static/icons/taohua/share-2.svg" mode="aspectFit" />
           </button>
           <view class="as-topbar-close" @click.stop="$emit('close')"><text>×</text></view>
@@ -97,12 +100,13 @@ const props = withDefaults(defineProps<{
   scores: { intentScore: number; riskScore: number; intentBucket: string; riskBucket: string; intentDelta: number; riskDelta: number }
   signal: { emoji: string; label: string; svg?: string }
   meta: { questionLabel?: string; rawDescription?: string }
+  shareReady?: boolean
   petName?: string
   reasonBullets: string[]
   actionSections: { label: string; text: string }[]
   actionMissing: boolean
   actionMissingText: string
-}>(), { petName: '小咪' })
+}>(), { petName: '小咪', shareReady: true })
 
 defineEmits<{ close: [] }>()
 
