@@ -83,6 +83,21 @@
             <text v-else class="card-text-v2">未配置 API Key。</text>
           </view>
 
+          <button
+            class="vision-model-toggle-v2"
+            role="checkbox"
+            :aria-checked="model.supportsVision"
+            @click="toggleVisionModel(model)"
+          >
+            <view :class="['vision-model-check-v2', model.supportsVision ? 'checked' : '']">
+              <text v-if="model.supportsVision">✓</text>
+            </view>
+            <view class="vision-model-copy-v2">
+              <text class="vision-model-label-v2">视觉模型</text>
+              <text class="vision-model-hint-v2">勾选后，微信聊天截图识别会优先调用此模型</text>
+            </view>
+          </button>
+
           <view class="actions-v2">
             <button class="btn btn-secondary btn-sm btn-auto" :disabled="testingId === model.id" @click="runModelTest(model)">
               {{ testingId === model.id ? '测试中...' : '测试连接' }}
@@ -128,6 +143,7 @@ type EditableModel = {
   baseUrl: string
   model: string
   apiKey: string
+  supportsVision: boolean
   _hasStoredKey?: boolean
   _maskedKey?: string
   _lastTestResult?: boolean
@@ -145,6 +161,7 @@ function createEmptyModel(): EditableModel {
     baseUrl: 'https://api.deepseek.com/v1',
     model: '',
     apiKey: '',
+    supportsVision: false,
     _hasStoredKey: false,
     _maskedKey: ''
   }
@@ -199,6 +216,7 @@ function applySettings(settings: any) {
       baseUrl: m.baseUrl || 'https://api.deepseek.com/v1',
       model: m.model || '',
       apiKey: '',
+      supportsVision: m.supportsVision === true,
       _hasStoredKey: Boolean(m.apiKey),
       _maskedKey: m.apiKey ? redactKey(m.apiKey) : ''
     }))
@@ -210,6 +228,7 @@ function applySettings(settings: any) {
     m.provider = settings.aiProvider || 'deepseek'
     m.baseUrl = settings.aiBaseUrl || 'https://api.deepseek.com/v1'
     m.model = settings.aiModel || 'deepseek-chat'
+    m.supportsVision = false
     m._hasStoredKey = Boolean(settings.aiApiKey)
     m._maskedKey = settings.aiApiKey ? redactKey(settings.aiApiKey) : ''
     models.value = [m]
@@ -261,6 +280,11 @@ function setDefault(modelId: string) {
   saved.value = false
 }
 
+function toggleVisionModel(model: EditableModel) {
+  model.supportsVision = !model.supportsVision
+  saved.value = false
+}
+
 function collectNonEmptyModels() {
   return models.value.map((m) => ({
     id: m.id,
@@ -268,7 +292,8 @@ function collectNonEmptyModels() {
     provider: m.provider || 'deepseek',
     baseUrl: m.baseUrl || 'https://api.deepseek.com/v1',
     model: m.model || 'deepseek-chat',
-    apiKey: m.apiKey || ''
+    apiKey: m.apiKey || '',
+    supportsVision: m.supportsVision === true
   }))
 }
 
@@ -537,6 +562,39 @@ function goBack() {
 }
 .v2-mode .grid-two-v2 { display: flex; gap: 16rpx; }
 .v2-mode .grid-two-v2 .field-v2 { flex: 1; }
+.v2-mode .vision-model-toggle-v2 {
+  width: 100%;
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 14rpx 16rpx;
+  margin: 16rpx 0;
+  text-align: left;
+  color: var(--text-main, #111);
+  background: var(--surface, #fff);
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.v2-mode .vision-model-toggle-v2::after { border: 0; }
+.v2-mode .vision-model-check-v2 {
+  width: 36rpx;
+  height: 36rpx;
+  flex: 0 0 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width, 2rpx) solid var(--border, #111);
+  background: var(--surface, #fff);
+  box-sizing: border-box;
+  font-size: $fs-caption;
+  font-weight: $fw-heading;
+}
+.v2-mode .vision-model-check-v2.checked { background: var(--accent-cool, #4ECDC4); }
+.v2-mode .vision-model-copy-v2 { min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.v2-mode .vision-model-label-v2 { font-size: $fs-body-lg; font-weight: $fw-label; color: var(--text-main, #111); }
+.v2-mode .vision-model-hint-v2 { font-size: $fs-caption; font-weight: $fw-body; color: var(--text-muted, #555); line-height: 1.4; }
 
 /* Actions */
 .v2-mode .actions-v2 { display: flex; gap: 12rpx; align-items: center; flex-wrap: wrap; }

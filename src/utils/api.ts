@@ -8,6 +8,7 @@ import { normalizeAvatarValue, resolveAvatarSrc } from './avatar'
 import { feedPet } from './helpers'
 import { normalizeSelfIdentity } from './identity'
 import { clearPetUserState } from './pets.js'
+import { cacheMyInviteCode, clearMyInviteCodeCache, prepareReferralShareMenu } from './share'
 
 function toTimestamp(value: any): number | null {
   if (!value) return null
@@ -162,6 +163,9 @@ function cacheLoginUser(result: any) {
     isAdmin: Boolean(result.isAdmin || result.role === 'admin'),
     inviteCode: result.inviteCode || ''
   })
+  if (result.userId && result.inviteCode) {
+    cacheMyInviteCode(result.userId, result.inviteCode)
+  }
   cacheSelfProfile(result.selfProfile)
 }
 
@@ -417,7 +421,10 @@ export async function logout() {
   const previousUserId = getCurrentUserId()
   await auth.signOut()
 
-  if (previousUserId) clearPetUserState(previousUserId)
+  if (previousUserId) {
+    clearPetUserState(previousUserId)
+    clearMyInviteCodeCache(previousUserId)
+  }
 
   // 清除本地存储
   uni.removeStorageSync('userId')
@@ -669,6 +676,10 @@ export async function createTimeline(data: {
   attachments?: any[]
   inputSubjectRole: 'unspecified' | 'both'
   userQuestion?: { key: string; label: string } | null
+  /** 聊天记录里「你」的说话人名字（非小程序昵称） */
+  chatSelfName?: string
+  /** 聊天记录里「TA」的说话人名字（非 Crush 档案展示名本身） */
+  chatTargetName?: string
   occurrenceAt: string
 }) {
   const { userId: _userId, ...payload } = data
@@ -815,8 +826,10 @@ export async function reassess(data: {
 }
 
 export async function analyzeAttachment(data: {
-  fileID: string
-  mediaType: 'image' | string
+  fileID?: string
+  fileIDs?: string[]
+  mediaType: 'image'
+  mode: 'wechat_chat_screenshot'
 }) {
   const res = await callFunction({
     name: 'analyzeAttachment',
@@ -1032,6 +1045,13 @@ export async function getSubscriptionStatus() {
   return res.result
 }
 
+export async function prepareCurrentUserReferralShare(): Promise<boolean> {
+  return prepareReferralShareMenu(async () => {
+    const result = await getSubscriptionStatus()
+    return result?.success ? (result?.subscription?.inviteCode || '') : ''
+  })
+}
+
 /** 检查某个功能是否对当前用户可用 */
 export async function checkFeatureAccess(featureKey: string) {
   const res = await callFunction({
@@ -1040,6 +1060,48 @@ export async function checkFeatureAccess(featureKey: string) {
   })
   return res.result
 }
+
+// ==================== 原型测试题库 ====================
+
+export async function getArchetypeQuestionBank(featureKey: '关系女主角' | 'Crush名人图鉴' | '次元角色图鉴', contentVersion = '', subjectGender?: 'female' | 'male') {
+  const res = await callFunction({
+    name: 'getArchetypeQuestionBank',
+    data: { featureKey, ...(contentVersion ? { contentVersion } : {}), ...(subjectGender ? { subjectGender } : {}), ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function saveArchetypeResult(payload: Record<string, any>) {
+  const res = await callFunction({
+    name: 'saveArchetypeResult',
+    data: { ...payload, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function getArchetypeResults(params: { kind: 'relation_archetype' | 'crush_celebrity' | 'dimension_character'; resultId?: string; subjectGender?: 'female' | 'male'; caseId?: string; personKey?: string; limit?: number }) {
+  const res = await callFunction({
+    name: 'getArchetypeResults',
+    data: { ...params, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+async function callArchetypeAdmin(action: string, payload: Record<string, any> = {}) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action, ...payload, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export const adminGetArchetypeQuestionBank = (payload: Record<string, any>) => callArchetypeAdmin('getArchetypeQuestionBank', payload)
+export const adminSeedArchetypeQuestionBanks = (featureKey: string, subjectGender?: 'female' | 'male') => callArchetypeAdmin('seedArchetypeQuestionBanks', { featureKey, ...(subjectGender ? { subjectGender } : {}) })
+export const adminCreateArchetypeQuestionDraft = (featureKey: string, nextVersion: string, subjectGender?: 'female' | 'male') => callArchetypeAdmin('createArchetypeQuestionDraft', { featureKey, nextVersion, ...(subjectGender ? { subjectGender } : {}) })
+export const adminSaveArchetypeQuestionDraft = (payload: Record<string, any>) => callArchetypeAdmin('saveArchetypeQuestionDraft', payload)
+export const adminValidateArchetypeQuestionDraft = (bankId: string, expectedRevision: number) => callArchetypeAdmin('validateArchetypeQuestionDraft', { bankId, expectedRevision })
+export const adminRunCelebrityCalibration = (payload: Record<string, any>) => callArchetypeAdmin('runCelebrityCalibration', payload)
+export const adminPublishArchetypeQuestionBank = (payload: Record<string, any>) => callArchetypeAdmin('publishArchetypeQuestionBank', payload)
 
 /** AI增强双人桃花解读 */
 export async function generatePairRead(caseId: string) {
@@ -1095,10 +1157,46 @@ export async function adminGetUserTokenDetails(userId: string, limit = 200) {
 }
 
 /** Admin: 邀请奖励列表 */
-export async function adminListReferralClaims() {
+export async function adminListReferralClaims(params: { limit?: number; offset?: number } = {}) {
   const res = await callFunction({
     name: 'adminManage',
-    data: { action: 'listReferralClaims', ...getBusinessAuthPayload() }
+    data: { action: 'listReferralClaims', ...params, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 重新排队邀请 claim */
+export async function adminRetryReferralClaim(claimId: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'retryReferralClaim', claimId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 对账邀请 claim（不加钱） */
+export async function adminRecheckReferralClaim(claimId: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'recheckReferralClaim', claimId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+/** Admin: 人工补偿邀请奖励 */
+export async function adminGrantReferralCompensation(payload: {
+  claimId: string
+  confirmText: string
+  inviterUserId: string
+  inviteeUserId: string
+  inviterTokens: number
+  inviteeTokens: number
+  repairSides: Array<'inviter' | 'invitee'>
+  reason?: string
+}) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'grantReferralCompensation', ...payload, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -1198,6 +1296,7 @@ export type AIModelConfig = {
   baseUrl: string
   model: string
   apiKey: string
+  supportsVision?: boolean
 }
 
 export type AIPromptModuleConfig = {

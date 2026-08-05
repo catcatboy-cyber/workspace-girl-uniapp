@@ -15,6 +15,15 @@ const {
   deliverCustomPetRequest
 } = require('./_shared/custom-pet-resource')
 const { updateCustomPetAuthorizedUsers, updateCustomPetPublic } = require('./_shared/custom-pet-access')
+const {
+  getArchetypeQuestionBankAdmin,
+  seedArchetypeQuestionBanks,
+  createArchetypeQuestionDraft,
+  saveArchetypeQuestionDraft,
+  validateArchetypeQuestionDraft,
+  runCelebrityCalibrationDraft,
+  publishArchetypeQuestionBank
+} = require('./_shared/archetype-bank')
 const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
@@ -136,13 +145,13 @@ const PROMPT_MODULE_META = {
     ]
   },
   attachmentAnalysis: {
-    title: '附件识别',
-    description: '聊天截图和图片附件的文字提取、摘要与置信度识别。',
+    title: '微信截图识别',
+    description: '微信一对一聊天截图的文字提取、左右气泡身份识别、排序与去重。',
     runtimeContext: [
-      'one image attachment URL is sent as image_url content'
+      'one to six WeChat screenshot candidates are sent as image_url content in one request'
     ],
     outputContract: [
-      '{"isChatRecord":boolean,"extractedText":"...","suggestedTitle":"...","summary":"...","confidence":"low|medium|high"}'
+      '{"isWechatChatScreenshot":boolean,"isTwoPartyChat":boolean,"confidence":"low|medium|high","images":[...],"messages":[...],"rejectReason":"..."}'
     ]
   }
 }
@@ -440,7 +449,7 @@ function getCallNames(moduleKey) {
   if (moduleKey === 'eventUnderstanding') return ['createTimeline: eventUnderstanding', 'generateAssessmentAI: eventUnderstanding']
   if (moduleKey === 'weeklyReview') return ['weeklyReview: generateReview']
   if (moduleKey === 'sideRead') return ['generateSideRead: instant side read', 'weeklyReview: 14-day side read']
-  if (moduleKey === 'attachmentAnalysis') return ['analyzeAttachment: image/chat screenshot']
+  if (moduleKey === 'attachmentAnalysis') return ['analyzeAttachment: WeChat one-to-one screenshots']
   return [moduleKey]
 }
 
@@ -469,8 +478,9 @@ function getSafetyPreview(moduleKey) {
       '未成年人场景使用保守、边界优先表达。'
     ],
     attachmentAnalysis: [
-      '看不清的截图内容必须留空或标注不确定，不要编造文字。',
-      '不要识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。'
+      '只允许微信一对一聊天截图；其他图片类型必须拒绝。',
+      '右侧气泡识别为用户，左侧气泡识别为对方，必须依据头像对齐和气泡箭头方向。',
+      '看不清的截图内容标记为“无法辨认”，不要编造文字。'
     ]
   }
   return common.concat(moduleSpecific[moduleKey] || [])
@@ -504,7 +514,7 @@ function getRuntimePreview(moduleKey) {
       '14-day side read: 14-day range + review summary + scoreTrend + 14-day key events'
     ],
     attachmentAnalysis: [
-      'one image attachment URL is sent as image_url content',
+      'one to six WeChat screenshot candidates are sent in one multimodal request',
       'no persona is used for this call'
     ]
   }
@@ -820,7 +830,8 @@ function getDefaultSettings() {
         provider: 'openai-compatible',
         baseUrl: 'https://api.openai.com/v1',
         model: 'gpt-4o-mini',
-        apiKey: ''
+        apiKey: '',
+        supportsVision: false
       }
     ],
     aiDefaultModelId: 'default',
@@ -843,6 +854,9 @@ function normalizeModels(models, existingModels) {
       provider: model.provider || existing.provider || 'openai-compatible',
       baseUrl: model.baseUrl || existing.baseUrl || 'https://api.openai.com/v1',
       model: model.model || existing.model || 'gpt-4o-mini',
+      supportsVision: Object.prototype.hasOwnProperty.call(model, 'supportsVision')
+        ? model.supportsVision === true
+        : existing.supportsVision === true,
       apiKey: typeof model.apiKey === 'string' && model.apiKey && !model.apiKey.startsWith('***')
         ? model.apiKey
         : (existing.apiKey || ''),
@@ -2128,21 +2142,102 @@ async function deleteUser(event, currentUserId) {
   }
 }
 
-async function listReferralClaims() {
-  const { data: claims } = await db.collection('referral_claims')
-    .orderBy('createdAt', 'desc').limit(500).get()
-  const userIds = new Set()
-  ;(claims || []).forEach(c => { userIds.add(c.inviterUserId); userIds.add(c.inviteeUserId) })
-  const userMap = {}
-  if (userIds.size > 0) {
-    const batches = [...userIds]
-    for (let i = 0; i < batches.length; i += 100) {
-      const { data: users } = await db.collection('users')
-        .where({ _id: db.command.in(batches.slice(i, i + 100)) }).get()
-      ;(users || []).forEach(u => { userMap[u._id] = { email: u.email || '', phone: u.phone || '' } })
+async function listReferralClaims(event = {}) {
+  const pageSize = Math.min(200, Math.max(1, Number(event.limit || 100)))
+  const offset = Math.max(0, Number(event.offset || 0))
+  const statusCounts = {
+    pending_relation: 0,
+    waiting_first_event: 0,
+    retry: 0,
+    rewarded: 0,
+    rejected: 0,
+    failed: 0,
+    needs_review: 0,
+    manual_resolved: 0
+  }
+
+  // 全量统计（分页扫描，不把当前页 reduce 冒充全量）
+  let totalInviterRewards = 0
+  let totalInviteeRewards = 0
+  let total = 0
+  const allForStats = []
+  for (let skip = 0; ; skip += 200) {
+    const { data = [] } = await db.collection('referral_claims')
+      .orderBy('createdAt', 'desc')
+      .skip(skip)
+      .limit(200)
+      .get()
+    if (!data.length) break
+    for (const claim of data) {
+      total += 1
+      const status = claim.status || ''
+      if (Object.prototype.hasOwnProperty.call(statusCounts, status)) {
+        statusCounts[status] += 1
+      }
+      allForStats.push(claim)
+    }
+    if (data.length < 200) break
+  }
+
+  for (const claim of allForStats) {
+    if (claim.status !== 'rewarded' && claim.status !== 'manual_resolved') continue
+    const inviteeUserId = claim.inviteeUserId || claim._id
+    try {
+      const inviterGrant = await db.collection('call_usage_records').doc(`referral_inviter_${inviteeUserId}`).get()
+      const inviteeGrant = await db.collection('call_usage_records').doc(`referral_invitee_${inviteeUserId}`).get()
+      const inviterDoc = inviterGrant.data && inviterGrant.data[0]
+      const inviteeDoc = inviteeGrant.data && inviteeGrant.data[0]
+      if (inviterDoc) totalInviterRewards += Number(inviterDoc.amountTokens || inviterDoc.amount || claim.inviterTokens || 0)
+      if (inviteeDoc) totalInviteeRewards += Number(inviteeDoc.amountTokens || inviteeDoc.amount || claim.inviteeTokens || 0)
+    } catch (_) {
+      // 流水缺失时不计入已发放
     }
   }
-  const rows = (claims || []).map(c => ({
+
+  const { data: pageClaims = [] } = await db.collection('referral_claims')
+    .orderBy('createdAt', 'desc')
+    .skip(offset)
+    .limit(pageSize)
+    .get()
+
+  const userIds = new Set()
+  pageClaims.forEach((c) => {
+    if (c.inviterUserId) userIds.add(c.inviterUserId)
+    if (c.inviteeUserId) userIds.add(c.inviteeUserId)
+  })
+  const userMap = {}
+  const batches = [...userIds]
+  for (let i = 0; i < batches.length; i += 100) {
+    const { data: users = [] } = await db.collection('users')
+      .where({ _id: db.command.in(batches.slice(i, i + 100)) }).get()
+    users.forEach((u) => {
+      userMap[u._id] = { email: u.email || '', phone: u.phone || '' }
+    })
+  }
+
+  const grantStateMap = {}
+  await Promise.all(pageClaims.map(async (claim) => {
+    const inviteeUserId = claim.inviteeUserId || claim._id
+    try {
+      const [inviterGrant, inviteeGrant] = await Promise.all([
+        db.collection('call_usage_records').doc(`referral_inviter_${inviteeUserId}`).get(),
+        db.collection('call_usage_records').doc(`referral_invitee_${inviteeUserId}`).get()
+      ])
+      grantStateMap[claim._id] = {
+        inviter: Boolean(inviterGrant.data && inviterGrant.data[0]),
+        invitee: Boolean(inviteeGrant.data && inviteeGrant.data[0])
+      }
+    } catch (_) {
+      grantStateMap[claim._id] = { inviter: false, invitee: false }
+    }
+  }))
+
+  const rows = pageClaims.map((c) => {
+    const grantState = grantStateMap[c._id] || { inviter: false, invitee: false }
+    const missingSides = []
+    if (Number(c.inviterTokens || 0) > 0 && !grantState.inviter) missingSides.push('inviter')
+    if (Number(c.inviteeTokens || 0) > 0 && !grantState.invitee) missingSides.push('invitee')
+    return {
     id: c._id,
     inviteeId: c.inviteeUserId,
     inviteeLabel: userMap[c.inviteeUserId]?.email || userMap[c.inviteeUserId]?.phone || c.inviteeUserId?.slice(0, 20),
@@ -2151,12 +2246,73 @@ async function listReferralClaims() {
     inviteCode: c.inviteCode || '',
     channel: c.channel || '',
     status: c.status || '',
+    statusReason: c.statusReason || '',
+    attempts: c.attempts || 0,
+    nextRunAt: c.nextRunAt || null,
+    lastErrorCode: c.lastErrorCode || '',
     inviterTokens: c.inviterTokens || 0,
     inviteeTokens: c.inviteeTokens || 0,
+    inviterGrantExists: grantState.inviter,
+    inviteeGrantExists: grantState.invitee,
+    missingSides,
     createdAt: c.createdAt,
     rewardedAt: c.rewardedAt
-  }))
-  return { success: true, rows, total: rows.length, totalInviterRewards: rows.reduce((s, r) => s + r.inviterTokens, 0), totalInviteeRewards: rows.reduce((s, r) => s + r.inviteeTokens, 0) }
+    }
+  })
+
+  return {
+    success: true,
+    rows,
+    total,
+    offset,
+    limit: pageSize,
+    hasMore: offset + rows.length < total,
+    statusCounts,
+    totalInviterRewards,
+    totalInviteeRewards
+  }
+}
+
+async function retryReferralClaim(event = {}, adminUserId) {
+  const claimId = String(event.claimId || '').trim()
+  if (!claimId) return { success: false, message: '缺少 claimId' }
+  const { retryClaimManually } = require('./_shared/referral-settlement')
+  const result = await retryClaimManually(db, claimId)
+  if (result.success) {
+    console.log('[adminManage] retryReferralClaim', JSON.stringify({ claimId, adminUserId }))
+  }
+  return result
+}
+
+async function recheckReferralClaim(event = {}, adminUserId) {
+  const claimId = String(event.claimId || '').trim()
+  if (!claimId) return { success: false, message: '缺少 claimId' }
+  const { reconcileLegacyClaim } = require('./_shared/referral-settlement')
+  const result = await reconcileLegacyClaim(db, claimId)
+  console.log('[adminManage] recheckReferralClaim', JSON.stringify({ claimId, adminUserId, status: result.status }))
+  return result
+}
+
+async function grantReferralCompensation(event = {}, adminUserId) {
+  const claimId = String(event.claimId || '').trim()
+  const confirmText = String(event.confirmText || '').trim()
+  const inviterUserId = String(event.inviterUserId || '').trim()
+  const inviteeUserId = String(event.inviteeUserId || '').trim()
+  if (!claimId || !inviterUserId || !inviteeUserId) {
+    return { success: false, message: '缺少 claimId/inviterUserId/inviteeUserId' }
+  }
+  const { compensateClaimManually } = require('./_shared/referral-settlement')
+  return compensateClaimManually(db, {
+    claimId,
+    adminUserId,
+    confirmText,
+    inviterUserId,
+    inviteeUserId,
+    inviterTokens: Number(event.inviterTokens),
+    inviteeTokens: Number(event.inviteeTokens),
+    repairSides: Array.isArray(event.repairSides) ? event.repairSides : [],
+    reason: String(event.reason || '')
+  })
 }
 
 exports.main = async (event = {}) => {
@@ -2188,7 +2344,17 @@ exports.main = async (event = {}) => {
     if (action === 'listOrders') return await listOrders(event)
     if (action === 'refundOrder') return await refundOrder(event)
     if (action === 'deleteUser') return await deleteUser(event, userId)
-    if (action === 'listReferralClaims') return await listReferralClaims()
+    if (action === 'listReferralClaims') return await listReferralClaims(event)
+    if (action === 'retryReferralClaim') return await retryReferralClaim(event, userId)
+    if (action === 'recheckReferralClaim') return await recheckReferralClaim(event, userId)
+    if (action === 'grantReferralCompensation') return await grantReferralCompensation(event, userId)
+    if (action === 'getArchetypeQuestionBank') return await getArchetypeQuestionBankAdmin(db, event)
+    if (action === 'seedArchetypeQuestionBanks') return await seedArchetypeQuestionBanks(db, event, userId)
+    if (action === 'createArchetypeQuestionDraft') return await createArchetypeQuestionDraft(db, event, userId)
+    if (action === 'saveArchetypeQuestionDraft') return await saveArchetypeQuestionDraft(db, event, userId)
+    if (action === 'validateArchetypeQuestionDraft') return await validateArchetypeQuestionDraft(db, event)
+    if (action === 'runCelebrityCalibration') return await runCelebrityCalibrationDraft(db, event, userId)
+    if (action === 'publishArchetypeQuestionBank') return await publishArchetypeQuestionBank(db, event, userId)
 
     return { success: false, message: '未知后台操作' }
   } catch (error) {

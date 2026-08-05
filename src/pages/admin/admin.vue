@@ -27,6 +27,7 @@
           <text class="sidebar-group-title">运营工具</text>
           <view :class="['sidebar-item', activeTab === 'feedback' ? 'active' : '']" @click="activeTab = 'feedback'"><image class="sidebar-icon" src="/static/icons/taohua/bubble.svg" mode="aspectFit" /><text>反馈管理</text></view>
           <view :class="['sidebar-item', activeTab === 'customPet' ? 'active' : '']" @click="activeTab = 'customPet'">🐾 宠物需求</view>
+          <view :class="['sidebar-item', activeTab === 'archetypeQuestions' ? 'active' : '']" @click="activeTab = 'archetypeQuestions'">🧩 题库管理</view>
         </view>
       </view>
       <view class="admin-main">
@@ -311,6 +312,20 @@
             <view class="field">
               <text>总额度（tokens，0=不限）</text>
               <input v-model.number="model.quota" type="number" placeholder="例如 5000000" />
+            </view>
+            <view class="field wide">
+              <button
+                :class="['vision-model-option', model.supportsVision ? 'checked' : '']"
+                role="checkbox"
+                :aria-checked="model.supportsVision"
+                @click="toggleVisionModel(model)"
+              >
+                <view class="vision-model-box">{{ model.supportsVision ? '✓' : '' }}</view>
+                <view class="vision-model-copy">
+                  <text class="vision-model-label">视觉模型</text>
+                  <text class="vision-model-hint">微信聊天截图识别会使用已勾选的视觉模型</text>
+                </view>
+              </button>
             </view>
             <view v-if="model.tokensUsed > 0" class="field">
               <text>已消耗</text>
@@ -620,6 +635,7 @@
 
       <LoginLogsPanel v-if="activeTab === 'loginLogs'" @error="errorMessage = $event" />
       <ReferralClaimsPanel v-if="activeTab === 'referralClaims'" />
+      <ArchetypeQuestionBankPanel v-if="activeTab === 'archetypeQuestions'" />
       </view>
     </view>
   </view>
@@ -649,6 +665,7 @@ import SubscriptionPanel from './components/panels/SubscriptionPanel.vue'
 import BillingPanel from './components/panels/BillingPanel.vue'
 import LoginLogsPanel from './components/panels/LoginLogsPanel.vue'
 import ReferralClaimsPanel from './components/panels/ReferralClaimsPanel.vue'
+import ArchetypeQuestionBankPanel from './components/panels/ArchetypeQuestionBankPanel.vue'
 
 type AdminSelfProfile = {
   nickname?: string
@@ -724,6 +741,7 @@ type AdminAIModel = {
   baseUrl: string
   model: string
   apiKey: string
+  supportsVision: boolean
   hasApiKey: boolean
   quota: number
   tokensUsed: number
@@ -870,7 +888,7 @@ const personaBoldnessKeys = ['conservative', 'balanced', 'bold']
 const promptModuleTitles: Record<string, string> = {
   eventAssessment: '即时反馈',
   weeklyReview: '近月度复盘',
-  attachmentAnalysis: '附件识别'
+  attachmentAnalysis: '微信截图识别'
 }
 
 const personaStyleTitles: Record<string, string> = {
@@ -961,7 +979,7 @@ const promptPreviewCaseOptions = computed(() => selectedDetail.value?.cases || [
 onShow(() => {
   const uid = getCurrentUserId()
   if (!uid) {
-    uni.reLaunch({ url: '/pages/login/login' })
+    uni.reLaunch({ url: '/pages/admin-login/admin-login' })
     return
   }
   currentUserId.value = uid
@@ -998,6 +1016,7 @@ function createEmptyModel(id = generateModelId()): AdminAIModel {
     baseUrl: 'https://api.deepseek.com/v1',
     model: 'deepseek-chat',
     apiKey: '',
+    supportsVision: false,
     hasApiKey: false,
     quota: 0,
     tokensUsed: 0
@@ -1278,6 +1297,7 @@ function normalizeModel(raw: any, index: number): AdminAIModel {
     baseUrl: raw?.baseUrl || 'https://api.deepseek.com/v1',
     model: raw?.model || 'deepseek-chat',
     apiKey: '',
+    supportsVision: raw?.supportsVision === true,
     hasApiKey: Boolean(raw?.hasApiKey || raw?.apiKey),
     quota: Number(raw?.quota || 0),
     tokensUsed: Number(raw?.tokensUsed || 0)
@@ -1338,12 +1358,12 @@ async function refresh() {
 
 async function handleLogout() {
   await logout()
-  uni.reLaunch({ url: '/pages/login/login' })
+  uni.reLaunch({ url: '/pages/admin-login/admin-login' })
 }
 
 async function goAdminLogin() {
   await logout()
-  uni.reLaunch({ url: '/pages/login/login?admin=1' })
+  uni.reLaunch({ url: '/pages/admin-login/admin-login' })
 }
 
 async function selectUser(userId: string) {
@@ -1610,6 +1630,11 @@ function setDefaultModel(modelId: string) {
   saveMessage.value = ''
 }
 
+function toggleVisionModel(model: AdminAIModel) {
+  model.supportsVision = !model.supportsVision
+  saveMessage.value = ''
+}
+
 function collectModels() {
   return models.value.map((model, index) => ({
     id: model.id || (index === 0 ? 'default' : generateModelId()),
@@ -1618,6 +1643,7 @@ function collectModels() {
     baseUrl: model.baseUrl || 'https://api.deepseek.com/v1',
     model: model.model || 'deepseek-chat',
     apiKey: model.apiKey || '',
+    supportsVision: model.supportsVision === true,
     quota: Number(model.quota || 0)
   }))
 }
@@ -2274,6 +2300,44 @@ button {
 .field.wide {
   grid-column: span 2;
 }
+
+.vision-model-option {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  text-align: left;
+  color: #17231f;
+  background: #fff;
+  border: 1px solid rgba(23, 35, 31, 0.14);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.vision-model-option::after { border: 0; }
+.vision-model-option.checked { background: #edf9f6; border-color: #218f7f; }
+.vision-model-box {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #fff;
+  border: 2px solid #68766f;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 14px;
+  font-weight: 700;
+}
+.vision-model-option.checked .vision-model-box { background: #218f7f; border-color: #218f7f; }
+.vision-model-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.vision-model-label { color: #17231f; font-size: 14px; font-weight: 700; }
+.vision-model-hint { color: #52625a; font-size: 12px; line-height: 1.4; }
 
 input {
   height: 40px;
