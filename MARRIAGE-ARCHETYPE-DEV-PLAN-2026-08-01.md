@@ -1,20 +1,31 @@
 # 关系女主角开发计划
 
+> 本文保留产品讨论过程，不再作为开发模型的唯一输入。DeepSeek 实施请只使用：[关系女主角 V1 开发交接规格](C:/Users/Administrator/.openclaw/workspace-innergirl/workspace-girl-uniapp/RELATION-HEROINE-DEEPSEEK-HANDOFF-2026-08-01.md)。
+
+> 后续增量以[关系主角男女题库与人物改名开发计划](C:/Users/Administrator/.openclaw/workspace-innergirl/workspace-girl-uniapp/RELATION-ARCHETYPE-GENDERED-DEV-PLAN-2026-08-03.md)为准：关系女性与关系男性题库均已发布 `1.0.0`；旧的无性别女性 V1 仅作内容来源和历史版本说明。
+
 > 原功能名：婚姻原型  
 > 推荐正式名：**关系女主角**  
 > 副标题：测测你或 TA，更像哪位现实关系人物  
 > 日期：2026-08-01
 
+> 执行状态：**内容讨论稿已实施；男女题库增量已实施并发布**
+> 视觉参考：现有页面的轻量入口样式；V1 不改造首页 Banner。
+> 本文中的文件名、功能键、默认权限、接口字段和验收标准均为 V1 固定要求，开发时不得自行替换。
+
 ## 1. 已确认的产品要求
 
 - 必须登录后才能开始测试。
-- 支持“测自己”和“测 TA”两种模式。
+- 支持“测自己”和“测当前 Crush”两种模式。
+- “测当前 Crush”只使用项目现有活动 Crush，不允许在测试页选择、更换或不绑定 Crush。
 - 结果输出当前女主角的相似度百分比。
 - 保留专业分层流程：`6 题筛选 + 15 题人物专测 + 3 道情景验证`。
 - 三位女主角使用完全独立的专属题库、评分维度和结果文案。
-- 使用真实人物名称，人物内容和展示开关由配置管理。
+- 使用真实人物名称；人物、题目、选项、评分和报告均由版本化题库管理。
 - 产品需要好玩、可分享，但测试过程要有专业感和内容深度。
-- 功能接入后台订阅配置，可控制全局开关、入口可见性和套餐权限。
+- 功能只接入现有订阅配置的 `features/excludedFeatures`，不新增 `featureSwitches`、独立全局开关或另一套权限系统。
+- 默认权限：试用期开放、免费版关闭、Pro 开放、Ultra 开放；管理员之后可在订阅面板自行调整。
+- 入口不新增首页 Banner：当前 Crush 从“我们”页/Crush 详情页进入，自测从“你的桃花人设”进入。
 
 ## 2. 命名方案
 
@@ -46,7 +57,7 @@ V1 保留两层测试：
 - 只负责判断用户当前更适合测哪一位女主角。
 - 不产生最终相似度。
 - 推荐后允许用户改选其他人物。
-- 点击首页人物卡时可以跳过快筛，直接进入该人物专测。
+- 点击人物卡时可以跳过快筛，直接进入该人物专测。
 
 ### 第二层：人物专属测试
 
@@ -63,12 +74,14 @@ V1 保留两层测试：
 ## 4. 用户流程
 
 ```text
-首页“好玩测试” / “我”页 / 本人画像 / 分享落地
+“我们”页 / Crush 详情 / “你的桃花人设” / 分享落地
   -> 点击“关系女主角”
   -> 未登录：跳登录，成功后 redirect 回测试
-  -> 已登录：checkFeatureAccess('关系女主角')
-  -> 选择“测自己”或“测 TA”
-  -> 测 TA 时可绑定现有 Crush，也可不绑定
+  -> 已登录：checkFeatureAccess(FEATURE_RELATION_HEROINE)
+  -> 选择“测自己”或“测当前 Crush”
+  -> 测当前 Crush：锁定进入页面时的 activeCaseId
+  -> 没有 activeCaseId：提示先去首页滑动或 Crushes 页面选择
+  -> 选择当前关系阶段（不计分）
   -> 6 题快速定位
   -> 推荐女主角，可查看推荐原因或改选人物
   -> 进入该人物的 15 道专属题
@@ -83,6 +96,66 @@ V1 保留两层测试：
 ```text
 人物预览 -> “测测我/TA像不像她” -> 15 题专测 -> 3 道情景题 -> 结果
 ```
+
+页面状态固定为：`access-checking`、`mode-select`、`missing-current-crush`、`stage-select`、`screener`、`person-select`、`quiz`、`scenario`、`saving`、`result`、`locked`、`error`。检查权限和保存期间按钮必须禁用；网络失败保留答案并显示重试；答题中返回需确认“退出并保留草稿 / 继续答题”。
+
+### 当前 Crush 锁定规则
+
+```ts
+const lockedCaseId = mode === 'target'
+  ? String(options.caseId || getActiveCaseId() || '').trim()
+  : ''
+```
+
+- `mode=self`：不读取、不保存 `caseId`。
+- `mode=target`：`lockedCaseId` 必填，加载后通过 `getCaseDetail(lockedCaseId)` 校验归属并获取姓名、头像快照。
+- 测试页顶部只读显示“正在测试：{Crush 名称}”，不出现下拉框、切换按钮或“不绑定档案”。
+- 测试过程中不调用 `setActiveCaseId`，也不监听活动 Crush 变化。
+- 用户要更换对象，必须退出测试，到首页左右滑动或 `Crushes` 页面调用现有 `setActiveCaseId`，再重新进入测试。
+- 从“我们”页或 Crush 详情页进入 target 模式时传入当前 `caseId`。
+
+### 关系阶段与动态题目
+
+开始答题前先选择一个不计分的阶段：
+
+1. 还没在一起：刚认识、朋友或暧昧。
+2. 刚开始交往。
+3. 稳定交往。
+4. 长期共同生活或婚姻。
+
+阶段只改变题目场景，不改变维度含义、权重和相似度阈值。6 题快筛以通用行为为主，仅允许轻量换词；每位人物的 15 题由 `10 道通用人格题 + 5 道同 ID 的阶段情景变体` 组成；3 道情景验证题全部按阶段切换。用户返回修改阶段时，已回答的阶段题和情景题必须清空，通用题可保留。
+
+同一特质的不同阶段写法示例：
+
+```text
+还没在一起：约见面一直没人定时间，TA通常会怎么做？
+刚开始交往：周末活动细节一直没定，TA通常会怎么做？
+稳定交往：两个人的共同安排迟迟没定，TA通常会怎么做？
+长期关系：现实问题迟迟没人处理，TA通常会怎么做？
+```
+
+### Self 与 Crush 题本决策
+
+结论：**题目文字不同，测量维度和评分不变。**
+
+- 6 题快筛、15 题专测、3 道情景题都要同时配置 self/target 两套文案。
+- 两套题本保持相同的题目 id、人物归属、维度、正反向标记、选项分值和情景典型答案，因此使用同一套相似度阈值。
+- self 题本可以询问自己的感受、念头和动机。
+- target 题本只能询问当前 Crush 的公开表达、长期行为和实际选择；不能要求用户直接判断 TA 未表达过的内心状态。
+- target 证据不足时选择独立选项 U“无法判断 / 没观察到”，该题不参与分数，并在结果页标注观察覆盖度。不能把未知答案按中点 3 分处理。
+- 两种模式结果不能混写：标题分别为“你与……”和“当前 Crush 与……”。历史页按 `mode` 筛选。
+
+必须按以下方式改写，而不是简单替换代词：
+
+| self 题意 | target 可观察版本 |
+| --- | --- |
+| 我不止一次认真想过离开 | 当前 Crush 曾不止一次明确谈过离开，或为分开做过实际准备 |
+| 阻碍我离开的主要原因是孩子、经济或责任 | 当前 Crush 谈到继续关系的理由时，经常提到孩子、经济、家庭责任或现实成本 |
+| 我仍会怀疑类似伤害再次发生 | 当前 Crush 在关系恢复后仍会反复确认细节、检查承诺是否兑现，或表现出明显警惕 |
+| 我已经降低对伴侣的期待 | 当前 Crush 很少再要求伴侣改变，遇到重要事情更倾向自己处理 |
+| 我仍期待创造共同体验 | 当前 Crush 仍会主动安排相处、靠近伴侣或创造新的共同体验 |
+
+开发任务包含完整编写并校对 6+45+9 条 `textTarget`，规则测试必须确认每个 self 题目都有对应 target 文案且不与 self 文案完全相同。
 
 ## 5. 首发人物与专属维度
 
@@ -116,7 +189,40 @@ V1 保留两层测试：
 | 修复投入 | 原谅、观察行动、继续尝试 | Q6-Q10 |
 | 稳定与体面 | 家庭完整、外界评价、长期维持 | Q11-Q15 |
 
-人物 key、显示名、封面、题库、维度名、报告和是否启用均从配置读取。
+人物 key、显示名、封面、题库、维度名、报告和是否启用均从已发布题库版本读取。
+
+### 5.4 后台题库与发布机制
+
+题目必须做成后台可编辑的题库，不能把生产题目永久写死在 Vue 或单个 TypeScript 文件中。后台允许修改题干、self/target 两套文案、选项、维度、反向题标记、权重、关系阶段版本、情景题和结果文案。
+
+采用“草稿 → 校验 → 发布 → 归档/回滚”的版本流程：
+
+1. 管理员在 `关系女主角` 题库面板编辑草稿，草稿不影响用户答题。
+2. 发布前由服务端校验题目数量、唯一 ID、self/target 文案、选项分值、每个维度覆盖度、阶段变体完整性和报告字段；校验不通过禁止发布。
+3. 发布生成不可变的 `contentVersion`，新测试只读取当前 published 版本；正在进行的测试继续使用进入时加载的版本。
+4. 结果必须保存 `contentVersion`、`questionSnapshotHash` 和答案。后续改题不会重新解释历史答案；回滚只是重新发布旧版本的副本。
+5. 后台可随时保存和发布，但不能编辑已发布版本本身。紧急下线使用题库版本状态，不得借此新增套餐权限字段。
+
+建议数据模型（CloudBase 集合 `archetype_question_banks`，一条文档为一个功能的一套版本）：
+
+```ts
+type ArchetypeQuestionBank = {
+  featureKey: '关系女主角'
+  contentVersion: string
+  status: 'draft' | 'published' | 'archived'
+  stageKeys: string[]
+  archetypes: RelationHeroineConfig[]
+  screener: ScreenerQuestion[]
+  updatedBy: string
+  updatedAt: string
+  publishedAt?: string
+  checksum: string
+}
+```
+
+管理员写操作复用现有 `adminManage` 云函数，新增 action：`getArchetypeQuestionBank`、`saveArchetypeQuestionDraft`、`validateArchetypeQuestionDraft`、`publishArchetypeQuestionBank`、`rollbackArchetypeQuestionBank`；普通用户只通过只读 `getArchetypeQuestionBank` 云函数取得 published 版本。只有管理员可写，客户端和保存结果接口只能读取 published 版本。`relation-heroine-content.ts` 保留为类型定义、种子数据和离线测试 fixture，不再作为线上唯一题目来源。
+
+后台面板最少提供：按人物/阶段筛选、self/target 并排编辑、选项与权重编辑、手机预览、完整性校验、版本差异、发布记录和一键回滚。只改文案也必须发布新版本；改分值、权重或典型答案时，还必须先通过规则测试与固定答案回归。
 
 ## 6. 六题快速定位
 
@@ -162,6 +268,8 @@ V1 保留两层测试：
 - 两人并列时展示双候选和差异说明，由用户选择。
 - 三人并列时不强行推荐，直接进入人物选择页。
 - 筛选结果不参与最终相似度。
+- target 快筛每题额外提供 U“无法判断 / 没观察到”，U 不给任何人物计票。
+- target 快筛少于 4 道有效答案时不做自动推荐，直接进入人物选择页并提示“观察信息较少，请自行选择想测试的人物”。
 
 ## 7. 专属题库
 
@@ -175,7 +283,13 @@ D 不太符合
 E 完全不符合
 ```
 
-测 TA 时主语切换为 TA。无法观察 TA 内心的问题，提示用户按长期行为判断；不确定时选择 C。
+target 模式额外提供：
+
+```text
+U 无法判断 / 没观察到
+```
+
+两种模式使用平行题本：题号、维度、正反向和 A-E 评分完全相同，但 `textSelf` 与 `textTarget` 分开配置。Crush 版不能只做字符串替换；涉及离开念头、内心期待、伤害感受等不可直接观察内容时，必须改写成“表达过什么、长期做了什么、如何处理关系”的可观察行为。U 不计分。
 
 ### 7.1 冉莹颖专属 15 题
 
@@ -339,11 +453,22 @@ E 完全不符合
 
 - A=5、B=4、C=3、D=2、E=1。
 - 反向题使用 A=1、B=2、C=3、D=4、E=5。
-- 原始分范围 15-75。
+- self 模式原始分范围 15-75。
+- target 模式的 U 答案不计入维度平均值。
 
 ```ts
-similarity = Math.round((rawScore - 15) / 60 * 100)
+dimensionSimilarity = Math.round(((dimensionAverageScore - 1) / 4) * 100)
+similarity = Math.round((dimension1 + dimension2 + dimension3) / 3)
 ```
+
+self 模式每维固定 5 题，上述算法与 `(rawScore - 15) / 60 * 100` 等价。统一使用维度平均算法，避免客户端和服务端维护两套公式。
+
+target 模式生成结果的最低证据要求：
+
+- 15 题中至少 10 题为 A-E。
+- 每个维度至少有 3 题为 A-E。
+- 未达到要求时不生成相似度，返回 `INSUFFICIENT_OBSERVATION`，提示继续观察后再测。
+- 覆盖度：`answeredCount / 15`。14-15 为高、12-13 为中、10-11 为较低。
 
 结果示例：
 
@@ -368,10 +493,14 @@ similarity = Math.round((rawScore - 15) / 60 * 100)
 
 情景题不直接修改相似度，单独输出验证结果：
 
+V1 九道情景题的典型人物反应均为选项 `A`，配置中仍必须显式写入 `typicalOptionKey: 'A'`，不能在评分函数中默认所有第一项都是典型答案。
+
 - 3 题中 3 题选择人物典型反应：`情景高度吻合`。
 - 3 题中 2 题吻合：`情景进一步支持`。
 - 3 题中 1 题吻合：`部分情景吻合`。
 - 0 题吻合：`实际决策方式与该人物存在明显差异`。
+
+target 情景题额外允许 U“无法判断”。U 不计入分母；至少完成 2 道有效情景题才输出验证档位，否则显示“情景信息不足”。
 
 这样既保留百分比的直观性，也避免用 3 道情景题随意拉高或拉低分数。
 
@@ -380,6 +509,36 @@ similarity = Math.round((rawScore - 15) / 60 * 100)
 - 不同人物使用不同题库，因此单次结果不伪装成三人横向精确排名。
 - 用户完成两位或三位测试后，历史页可以展示各自相似度。
 - 比较页必须标注“不同人物使用不同判断维度，百分比用于各自测试内参考”。
+
+### 8.4 固定报告内容
+
+报告不得调用 AI 临时生成。以下内容写入后台题库并随 `contentVersion` 发布；`relation-heroine-content.ts` 只保留种子与测试 fixture。
+
+统一等级文案：
+
+| 相似度 | 标题模板 | 解释模板 |
+| --- | --- | --- |
+| 80-100 | 高度相似 | 你的长期行为选择与“{人物显示名}”的核心关系风格高度接近。 |
+| 60-79 | 明显相似 | 你在多个关键维度上呈现出“{人物显示名}”的典型倾向，但仍保留自己的处理方式。 |
+| 40-59 | 部分相似 | 你只在部分情境中接近“{人物显示名}”，这不是你稳定而全面的关系模式。 |
+| 0-39 | 相似度较低 | 你的主要关系选择与“{人物显示名}”存在明显差异，可以把结果作为对照参考。 |
+
+人物固定报告：
+
+| 人物 | 核心总结 | 优势表达 | 风险观察 | 行动建议 |
+| --- | --- | --- | --- | --- |
+| 冉莹颖式 | 你倾向成为关系中的实际推动者和兜底者，面对问题时先解决，再处理自己的感受。 | 有执行力、责任感强、危机中稳定，能让生活继续运转。 | 长期包办可能让伴侣更加被动，也容易把“我能处理”变成“只能我处理”。 | 列出三件必须共同承担的事务；明确一次可执行的分工；练习在问题发生时先提出需求而不是立即接管。 |
+| 佟晨洁式 | 你重视真实感受、个人边界和清醒判断，不愿只因为关系没有大错就忽略情感温度。 | 自我感清楚、能观察行动、较少被体面和惯性完全绑住。 | 过度观察可能延长悬而未决的状态，也可能用理性代替真实表达。 | 进行一次具体关系对话；约定可观察的改变；给观察期设置明确日期和判断条件。 |
+| 谢杏芳式 | 你重视承诺、家庭稳定和修复机会，即使经历伤害，也更愿意观察长期行动后再决定。 | 有耐心、能容纳复杂感受、不会只凭一次情绪否定全部关系。 | 原谅如果没有修复条件，可能变成单方面忍耐；外部期待也可能遮住自己的底线。 | 写下信任修复的三项条件；区分道歉和持续行动；每月检查痛苦是否下降、边界是否被尊重。 |
+
+三维解释直接使用各人物第 5 节的维度定义，并按维度百分比套用：`80+ 强倾向`、`60-79 明显倾向`、`40-59 中等`、`0-39 较弱`。不得为相同分数随机生成不同结论。
+
+分享文案固定模板：
+
+```text
+我测出的关系女主角是「{人物显示名}」，相似度 {similarity}% 。
+6题定位 + 15题专测 + 3道情景验证，你也来测测。
+```
 
 ## 9. 登录与结果保存
 
@@ -400,42 +559,140 @@ if (!getCurrentUserId()) {
 
 ```ts
 type RelationHeroineResult = {
+  _id?: string
   userId: string
-  caseId?: string
+  caseId?: string // mode=target 必填；mode=self 不得存在
   kind: 'relation_heroine'
   mode: 'self' | 'target'
+  stageKey: RelationshipStageKey
   personKey: 'ran_yingying' | 'tong_chenjie' | 'xie_xingfang'
   similarity: number
   dimensionScores: Record<string, number>
+  rawScore?: number // 仅 self 模式保留
+  answeredCount: number
+  unknownCount: number
+  observationConfidence: 'high' | 'medium' | 'low'
   scenarioVerification: string
-  answers: string[]
-  scenarioAnswers: string[]
+  answers: Array<{
+    questionId: string
+    optionKey: 'A' | 'B' | 'C' | 'D' | 'E' | 'U'
+    value: 1 | 2 | 3 | 4 | 5 | null
+  }>
+  scenarioAnswers: Array<{ questionId: string; optionKey: 'A' | 'B' | 'C' | 'U' }>
   contentVersion: string
+  questionSnapshotHash: string
   algorithmVersion: string
   createdAt: Date
+  updatedAt: Date
 }
 ```
 
 结果存入独立 `archetype_results`，不覆盖现有 `latestResult` 和 `crushType`。
 
-## 10. 入口与发现路径
+### 9.3 云函数与客户端 API 契约
 
-### 首页主入口
-
-在 [首页](C:/Users/Administrator/.openclaw/workspace-innergirl/workspace-girl-uniapp/src/pages/index/index.vue) 的 Crush 主卡/轮播之后增加“好玩测试”：
+新增两个云函数：
 
 ```text
-[关系女主角]
-6 题定位，进入专属人物测试
-
-[Crush 名人图鉴]
-12 道题，看看 TA 像哪位古今人物
+saveArchetypeResult
+getArchetypeResults
 ```
+
+`saveArchetypeResult` 入参：
+
+```ts
+{
+  kind: 'relation_heroine'
+  mode: 'self' | 'target'
+  caseId?: string // mode=target 必填；mode=self 不得传
+  stageKey: RelationshipStageKey
+  personKey: string
+  answers: Array<{
+    questionId: string
+    optionKey: 'A' | 'B' | 'C' | 'D' | 'E' | 'U'
+  }>
+  scenarioAnswers: Array<{ questionId: string; optionKey: 'A' | 'B' | 'C' | 'U' }>
+  contentVersion: string
+  questionSnapshotHash: string
+  authUserId: string
+}
+```
+
+服务端必须按以下顺序处理：
+
+1. 使用现有 `_shared/auth` 的 `requireAuthenticatedUserId` 校验登录，禁止信任客户端传入的 `userId`。
+2. 调用 `_shared/subscription.checkFeatureAccess(db, userId, FEATURE_RELATION_HEROINE)`。
+3. `mode=target` 时要求 `caseId` 非空并验证该 case 属于当前用户；`mode=self` 时若传入 caseId 返回 `INVALID_ARGUMENT`。
+4. 按 `contentVersion` 读取对应的已发布或已归档不可变题库，校验 stage、人物、题目数量、题目 id、选项、观察覆盖度和快照 hash；self 模式禁止 U。分值由服务端根据该版本的 optionKey、reverse 和模式推导，禁止客户端上传分值。只有版本不存在、hash 不匹配或版本损坏时才返回 `CONTENT_VERSION_MISMATCH`，不能因为后台刚发布了新版本而拒绝旧版本提交。
+5. 使用服务端共享评分模块重新计算结果，禁止直接保存客户端上传的 similarity。
+6. 写入 `archetype_results`，返回完整标准化结果。
+
+成功返回：
+
+```ts
+{ success: true, result: RelationHeroineResult }
+```
+
+固定错误码：`AUTH_REQUIRED`、`FEATURE_NOT_AVAILABLE`、`INVALID_ARGUMENT`、`INSUFFICIENT_OBSERVATION`、`CONTENT_VERSION_MISMATCH`、`CASE_NOT_FOUND`、`SAVE_FAILED`。
+
+`getArchetypeResults` 入参：
+
+```ts
+{
+  kind: 'relation_heroine'
+  caseId?: string
+  personKey?: string
+  limit?: number // 默认 20，最大 50
+  authUserId: string
+}
+```
+
+只返回当前用户数据，按 `createdAt desc` 排序。
+
+`src/utils/api.ts` 新增：
+
+```ts
+saveArchetypeResult(payload)
+getArchetypeResults(params)
+```
+
+两者均使用现有 `callFunction` 和 `getBusinessAuthPayload()`。
+
+集合索引：
+
+```text
+archetype_results: userId + kind + createdAt(desc)
+archetype_results: userId + kind + caseId + createdAt(desc)
+```
+
+答题草稿仅保存在本地：`archetype_draft:relation_heroine:{userId}:{mode}:{caseId|self}:{personKey}:{contentVersion}`。提交成功后删除；恢复时按草稿的 `contentVersion` 读取原题库，原版本仍存在时继续答题，只有版本不存在、hash 不匹配或结构损坏时才废弃草稿。
+
+## 10. 入口与发现路径
+
+### 当前 Crush 入口
+
+在 [Crush 详情页](C:/Users/Administrator/.openclaw/workspace-innergirl/workspace-girl-uniapp/src/pages/case-detail/case-detail.vue) 的“桃花匹配度”提示附近增加：
+
+```text
+测测 TA 像哪位关系女主角
+```
+
+点击后自动带当前 `caseId`，进入 target 模式并锁定对象。测试页不显示切换、解绑或重新选择 Crush 的控件；更换对象必须返回首页 swiper 或 `Crushes` 页面完成。
+
+### 自测入口
+
+在 [你的桃花人设](C:/Users/Administrator/.openclaw/workspace-innergirl/workspace-girl-uniapp/src/pages/taohua/taohua.vue) 和结果页增加：
+
+```text
+测测我的关系女主角
+```
+
+点击进入 `mode=self`，不读取也不保存 `caseId`。未登录统一跳转登录并携带 redirect；套餐判断仍使用 `features/excludedFeatures`。
 
 ### 场景入口
 
 - 本人画像页：“测测我的关系女主”。
-- Crush 详情页：“测测 TA 的关系女主角”，默认测 TA 并绑定 caseId。
+- Crush 详情页：“测测 TA 的关系女主角”，默认测当前 Crush 并锁定当前 caseId。
 - 人物结果页：“继续测另外一位女主角”。
 - 分享落地页：“我也测测”。
 
@@ -443,7 +700,9 @@ type RelationHeroineResult = {
 
 在 [“我”页](C:/Users/Administrator/.openclaw/workspace-innergirl/workspace-girl-uniapp/src/pages/me/me.vue) 宠物模块之后、界面设置之前增加“好玩测试”卡片。不新增 tabBar。
 
-## 11. 后台订阅与功能开关
+V1 必做入口是“我们”页的当前 Crush 场景入口和“你的桃花人设”的自测入口；不新增 tabBar，不改造首页 Banner。
+
+## 11. 后台订阅与套餐权限
 
 ### 功能键
 
@@ -453,35 +712,32 @@ export const FEATURE_RELATION_HEROINE = '关系女主角'
 
 集中放入 `src/utils/feature-keys.ts`。
 
-### 套餐权限
+### 唯一权限机制
 
-将“关系女主角”加入：
-
-- `SubscriptionPanel.vue` 的 `ALL_FEATURES`。
-- `trial.features/excludedFeatures`。
-- `free/pro/ultra.features/excludedFeatures`。
-- `cloudfunctions/_shared/subscription.js` 及同步副本。
-
-默认建议所有已登录套餐可用，后台可随时改为 Pro 或 Ultra 专属。
-
-### 全局开关
-
-配置升级为 `configVersion=6`：
+不得新增 `featureSwitches`、`visible/enabled`、次数限制或独立权限表。继续使用现有：
 
 ```ts
-featureSwitches: {
-  '关系女主角': {
-    enabled: true,
-    visible: true
-  }
-}
+checkFeatureAccess(FEATURE_RELATION_HEROINE)
 ```
 
-- `visible=false`：首页、“我”页、本人画像和 Crush 详情入口隐藏。
-- `enabled=false`：直接路由访问显示“功能暂未开放”。
-- `enabled=true`：继续检查登录和套餐权限。
+服务端访问判断以 `excludedFeatures` 为准；`features` 用于后台展示套餐能力。功能加入以下位置：
 
-后台增加“显示入口”“启用功能”两个 switch，并保留试用/免费/Pro/Ultra 权限 chip。
+- `src/pages/admin/components/panels/SubscriptionPanel.vue` 的 `ALL_FEATURES`。
+- `cloudfunctions/_shared/subscription.js`。
+- 所有已有的 `cloudfunctions/*/_shared/subscription.js` 同步副本，使用仓库现有同步脚本处理，不能手工漏改。
+
+默认数组变更：
+
+| 套餐 | `features` | `excludedFeatures` | 默认结果 |
+| --- | --- | --- | --- |
+| Trial | 加入 `关系女主角` | 移除 `关系女主角` | 开放 |
+| Free | 不加入 `关系女主角` | 加入 `关系女主角` | 关闭 |
+| Pro | 加入 `关系女主角` | 移除 `关系女主角` | 开放 |
+| Ultra | 加入 `关系女主角` | 移除 `关系女主角` | 开放 |
+
+`configVersion` 可以因默认数据迁移递增，但不得借此增加新权限字段。现有线上配置不会因版本号自动覆盖数组，因此部署后必须在订阅管理面板保存一次上述默认值，并验证 `getSubscriptionStatus?action=checkFeature` 的四种套餐结果。
+
+后台验收：管理员能在试用期、免费、Pro、Ultra 面板中独立勾选或排除“关系女主角”；保存并刷新后配置不丢失。
 
 ## 12. 文件规划
 
@@ -502,14 +758,101 @@ src/components/
 
 src/utils/
   feature-keys.ts
-  relation-heroine-content.js
-  relation-heroine-score.js
-  archetype-storage.js
+  relation-heroine-content.ts # 类型、种子与测试 fixture
+  relation-heroine-score.ts
+  archetype-storage.ts
+
+src/pages/admin/components/panels/
+  ArchetypeQuestionBankPanel.vue
 
 cloudfunctions/
+  getArchetypeQuestionBank/index.js
+  adminManage/index.js # 新增题库草稿、校验、发布和回滚 actions
   saveArchetypeResult/index.js
+  saveArchetypeResult/_shared/auth.js
+  saveArchetypeResult/_shared/subscription.js
+  saveArchetypeResult/_shared/relation-heroine-score.js
   getArchetypeResults/index.js
+  getArchetypeResults/_shared/auth.js
+  getArchetypeResults/_shared/subscription.js
+
+tests/
+  run-relation-heroine-rules.cjs
 ```
+
+`src/pages.json` 固定增加：
+
+```json
+{
+  "path": "pages/archetype-hub/archetype-hub",
+  "style": { "navigationBarTitleText": "好玩测试" }
+},
+{
+  "path": "pages/relation-heroine/relation-heroine",
+  "style": { "navigationBarTitleText": "关系女主角" }
+},
+{
+  "path": "pages/relation-heroine-result/relation-heroine-result",
+  "style": { "navigationBarTitleText": "测试结果" }
+},
+{
+  "path": "pages/relation-heroine-history/relation-heroine-history",
+  "style": { "navigationBarTitleText": "测试记录" }
+}
+```
+
+页面参数：
+
+```text
+/pages/relation-heroine/relation-heroine?mode=self
+/pages/relation-heroine/relation-heroine?mode=target&caseId=xxx
+/pages/relation-heroine/relation-heroine?mode=self&personKey=ran_yingying
+/pages/relation-heroine-result/relation-heroine-result?id=结果文档ID
+```
+
+配置结构必须以数据驱动，页面中不得按人物写三套条件分支：
+
+```ts
+type RelationHeroineConfig = {
+  key: string
+  name: string
+  shortStyle: string
+  enabled: boolean
+  coverUrl: string
+  dimensions: Array<{ key: string; name: string; description: string }>
+  universalQuestions: Array<{
+    id: string
+    dimensionKey: string
+    textSelf: string
+    textTarget: string
+    reverse: boolean
+  }>
+  stageQuestionVariants: Record<RelationshipStageKey, Array<{
+    id: string
+    dimensionKey: string
+    textSelf: string
+    textTarget: string
+    reverse: boolean
+  }>>
+  scenarioVariants: Record<RelationshipStageKey, Array<{
+    id: string
+    textSelf: string
+    textTarget: string
+    typicalOptionKey: string
+    options: Array<{ key: string; text: string }>
+  }>>
+  report: {
+    coreSummary: string
+    strengthText: string
+    riskText: string
+    actionItems: string[]
+    shareTemplate: string
+  }
+  contentVersion: string
+}
+```
+
+客户端和云函数评分逻辑必须来自同一组测试向量。若因云函数部署边界需要复制文件，使用现有共享文件同步机制，并由测试比较两端结果，禁止维护两套不同算法。
 
 ## 13. 测试计划
 
@@ -517,13 +860,22 @@ cloudfunctions/
 
 - 6 题全 A/B/C 与所有平局组合。
 - 三套题库各 15 题、3 个维度、3 道情景题的完整性。
+- 每套题库均包含 10 道通用题、四阶段各 5 道同 ID 变体和四阶段各 3 道情景题；阶段切换不改变维度和权重。
 - 三套题目 id 不重复。
 - 正向题和反向题计分。
 - 15、39、40、59、60、79、80、100% 等边界。
 - 情景验证四档结果。
 - 切换人物后不复用上一套答案。
-- 测自己和测 TA 的主语、caseId 和保存字段。
-- 后台开关、套餐权限、登录 redirect。
+- 测自己和测当前 Crush 的平行题本、caseId 和保存字段。
+- target 模式缺少 caseId、伪造他人 caseId、测试页尝试切换 Crush。
+- target 的 U 选项、每维最低有效题数、总体覆盖度和 `INSUFFICIENT_OBSERVATION`。
+- 后台套餐配置、功能访问、登录 redirect。
+- 题库管理员鉴权、草稿隔离、发布校验、并发发布保护、历史版本提交和回滚。
+- 不新增首页 Banner；两类场景入口均能完成登录回跳和套餐校验。
+- 题库草稿不会影响线上；校验失败不能发布；发布后新测试使用新版本，旧结果仍可按旧版本解释。
+- Trial/Pro/Ultra 允许，Free 拒绝；后台修改后立即按新配置生效。
+- 云函数忽略客户端伪造的 similarity，并按 answers 重新计算。
+- 非本人 caseId 无法保存 target 结果。
 
 工程验证：
 
@@ -531,13 +883,24 @@ cloudfunctions/
 - `npm run test:regression`
 - `npm run build:h5`
 - `npm run build:mp-weixin`
-- 微信真机完成快筛推荐、直接人物入口、测自己、测 TA 四条路径。
+- 微信真机完成快筛推荐、直接人物入口、测自己、测当前 Crush 四条路径。
+
+### DeepSeek 固定实施顺序
+
+1. 先完成 `feature-keys.ts`、订阅面板和默认权限，不开发页面。
+2. 完成题库集合、后台草稿/校验/发布/回滚、评分函数和规则测试，先让 `node tests/run-relation-heroine-rules.cjs` 通过。
+3. 完成云函数和 API，使用固定 answers 验证客户端/服务端结果一致。
+4. 完成答题页、结果页和草稿恢复。
+5. 最后接入“我们”页、Crush 详情和“你的桃花人设”入口。
+6. 执行回归构建并提供变更文件清单、测试输出和未完成项。
+
+禁止事项：不接入 AI 生成报告；不增加测试次数限制；不修改现有 `latestResult`、`crushType`；不新建另一套套餐表；不把题库硬编码在 Vue 模板中。
 
 ## 14. 实施阶段与工作量
 
 1. **题库与报告内容，3-4 天**：45 道专属题、9 道情景题、反向题、结果文案和版本配置。
 2. **评分与规则测试，1.5-2 天**：相似度、维度分、情景验证、边界测试。
-3. **登录和订阅，1-1.5 天**：登录 redirect、全局开关、套餐权限和服务端校验。
+3. **登录和订阅，1-1.5 天**：登录 redirect、现有套餐权限和服务端校验。
 4. **页面流程，3-4 天**：快筛、人物选择、三套答题、情景题、草稿恢复和防连点。
 5. **结果、历史和分享，2-3 天**：自动保存、结果页、跨人物历史、分享回流。
 6. **入口和回归，1-1.5 天**：首页、本人画像、Crush 详情、“我”页、多端构建和真机。
@@ -552,8 +915,9 @@ cloudfunctions/
 - 直接点击人物卡可以跳过快筛进入该人物专测。
 - 结果展示人物相似度、三维分数和独立情景验证。
 - 完成其他人物测试后可以在历史页查看各自百分比。
-- 后台可控制全局启用、入口显示和试用/免费/Pro/Ultra 权限。
-- 测 TA 可以绑定现有 Crush，结果不覆盖现有 AI 分析和 Crush 类型。
-- 首页、本人画像、Crush 详情和“我”页入口均受后台配置控制。
+- 后台可通过现有 `features/excludedFeatures` 分别配置试用/免费/Pro/Ultra 权限。
+- 测当前 Crush 必须锁定已有 activeCaseId，结果不覆盖现有 AI 分析和 Crush 类型。
+- 测试页不能选择、更换或取消绑定 Crush；更换必须返回首页滑动或进入 Crushes 页面。
+- “我们”页/Crush 详情和“你的桃花人设”入口始终可发现，点击后的可用性由登录状态和套餐权限控制。
 - H5、微信小程序构建、规则测试和真机流程全部通过。
 
