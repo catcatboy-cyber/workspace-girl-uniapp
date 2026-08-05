@@ -15,7 +15,9 @@ const COLLECTIONS = [
   'token_ledger_records',
   'call_usage_records',
   'voice_usage',
-  'recharge_orders'
+  'recharge_orders',
+  'archetype_question_banks',
+  'archetype_results'
 ]
 
 function normalizeDoc(res) {

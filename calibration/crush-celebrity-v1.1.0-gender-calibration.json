@@ -1,0 +1,1436 @@
+{
+  "sourceFile": "crush-celebrity-v1.json",
+  "passed": true,
+  "reportChecksum": "590473c242cba9f203b52fb39e6f5966b41cb5e3af16fe7e02b093a822f791d3",
+  "adjustmentLimit": 5,
+  "adjustments": [
+    {
+      "personKey": "wu_zetian",
+      "before": {
+        "initiative": 90,
+        "warmth": 50,
+        "reliability": 83,
+        "romance": 40,
+        "boundary": 85
+      },
+      "after": {
+        "initiative": 90,
+        "warmth": 50,
+        "reliability": 83,
+        "romance": 40,
+        "boundary": 85
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "xiang_yu",
+      "before": {
+        "initiative": 93,
+        "warmth": 74,
+        "reliability": 44,
+        "romance": 85,
+        "boundary": 45
+      },
+      "after": {
+        "initiative": 93,
+        "warmth": 74,
+        "reliability": 44,
+        "romance": 85,
+        "boundary": 45
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhao_yun",
+      "before": {
+        "initiative": 65,
+        "warmth": 75,
+        "reliability": 91,
+        "romance": 40,
+        "boundary": 87
+      },
+      "after": {
+        "initiative": 65,
+        "warmth": 75,
+        "reliability": 91,
+        "romance": 40,
+        "boundary": 87
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhuge_liang",
+      "before": {
+        "initiative": 60,
+        "warmth": 63,
+        "reliability": 96,
+        "romance": 40,
+        "boundary": 85
+      },
+      "after": {
+        "initiative": 60,
+        "warmth": 63,
+        "reliability": 96,
+        "romance": 40,
+        "boundary": 85
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "li_qingzhao",
+      "before": {
+        "initiative": 48,
+        "warmth": 87,
+        "reliability": 66,
+        "romance": 92,
+        "boundary": 68
+      },
+      "after": {
+        "initiative": 48,
+        "warmth": 87,
+        "reliability": 66,
+        "romance": 92,
+        "boundary": 68
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "wang_yangming",
+      "before": {
+        "initiative": 71,
+        "warmth": 66,
+        "reliability": 88,
+        "romance": 33,
+        "boundary": 89
+      },
+      "after": {
+        "initiative": 71,
+        "warmth": 66,
+        "reliability": 88,
+        "romance": 33,
+        "boundary": 89
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "su_shi",
+      "before": {
+        "initiative": 63,
+        "warmth": 91,
+        "reliability": 69,
+        "romance": 88,
+        "boundary": 61
+      },
+      "after": {
+        "initiative": 63,
+        "warmth": 91,
+        "reliability": 69,
+        "romance": 88,
+        "boundary": 61
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "li_bai",
+      "before": {
+        "initiative": 73,
+        "warmth": 78,
+        "reliability": 37,
+        "romance": 93,
+        "boundary": 36
+      },
+      "after": {
+        "initiative": 73,
+        "warmth": 78,
+        "reliability": 37,
+        "romance": 93,
+        "boundary": 36
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "hua_mulan",
+      "before": {
+        "initiative": 77,
+        "warmth": 64,
+        "reliability": 89,
+        "romance": 40,
+        "boundary": 87
+      },
+      "after": {
+        "initiative": 77,
+        "warmth": 64,
+        "reliability": 89,
+        "romance": 40,
+        "boundary": 87
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "wang_zhaojun",
+      "before": {
+        "initiative": 58,
+        "warmth": 83,
+        "reliability": 88,
+        "romance": 62,
+        "boundary": 85
+      },
+      "after": {
+        "initiative": 58,
+        "warmth": 83,
+        "reliability": 88,
+        "romance": 62,
+        "boundary": 85
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "cai_wenji",
+      "before": {
+        "initiative": 70,
+        "warmth": 78,
+        "reliability": 46,
+        "romance": 96,
+        "boundary": 38
+      },
+      "after": {
+        "initiative": 70,
+        "warmth": 78,
+        "reliability": 46,
+        "romance": 96,
+        "boundary": 38
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "cao_cao",
+      "before": {
+        "initiative": 99,
+        "warmth": 47,
+        "reliability": 85,
+        "romance": 53,
+        "boundary": 73
+      },
+      "after": {
+        "initiative": 99,
+        "warmth": 47,
+        "reliability": 85,
+        "romance": 53,
+        "boundary": 73
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhuo_wenjun",
+      "before": {
+        "initiative": 52,
+        "warmth": 85,
+        "reliability": 87,
+        "romance": 70,
+        "boundary": 80
+      },
+      "after": {
+        "initiative": 52,
+        "warmth": 85,
+        "reliability": 87,
+        "romance": 70,
+        "boundary": 80
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "xin_qiji",
+      "before": {
+        "initiative": 90,
+        "warmth": 65,
+        "reliability": 87,
+        "romance": 64,
+        "boundary": 81
+      },
+      "after": {
+        "initiative": 90,
+        "warmth": 65,
+        "reliability": 87,
+        "romance": 64,
+        "boundary": 81
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "shangguan_waner",
+      "before": {
+        "initiative": 80,
+        "warmth": 57,
+        "reliability": 87,
+        "romance": 55,
+        "boundary": 86
+      },
+      "after": {
+        "initiative": 80,
+        "warmth": 57,
+        "reliability": 87,
+        "romance": 55,
+        "boundary": 86
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "ban_zhao",
+      "before": {
+        "initiative": 71,
+        "warmth": 57,
+        "reliability": 90,
+        "romance": 55,
+        "boundary": 85
+      },
+      "after": {
+        "initiative": 71,
+        "warmth": 57,
+        "reliability": 90,
+        "romance": 55,
+        "boundary": 85
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhang_ailing",
+      "before": {
+        "initiative": 37,
+        "warmth": 55,
+        "reliability": 68,
+        "romance": 82,
+        "boundary": 95
+      },
+      "after": {
+        "initiative": 37,
+        "warmth": 55,
+        "reliability": 68,
+        "romance": 82,
+        "boundary": 95
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "lin_huiyin",
+      "before": {
+        "initiative": 67,
+        "warmth": 77,
+        "reliability": 79,
+        "romance": 85,
+        "boundary": 77
+      },
+      "after": {
+        "initiative": 67,
+        "warmth": 77,
+        "reliability": 79,
+        "romance": 85,
+        "boundary": 77
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "xu_zhimo",
+      "before": {
+        "initiative": 80,
+        "warmth": 81,
+        "reliability": 47,
+        "romance": 95,
+        "boundary": 30
+      },
+      "after": {
+        "initiative": 80,
+        "warmth": 81,
+        "reliability": 47,
+        "romance": 95,
+        "boundary": 30
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "hu_shi",
+      "before": {
+        "initiative": 63,
+        "warmth": 62,
+        "reliability": 90,
+        "romance": 52,
+        "boundary": 88
+      },
+      "after": {
+        "initiative": 63,
+        "warmth": 62,
+        "reliability": 90,
+        "romance": 52,
+        "boundary": 88
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "song_qingling",
+      "before": {
+        "initiative": 82,
+        "warmth": 77,
+        "reliability": 94,
+        "romance": 48,
+        "boundary": 89
+      },
+      "after": {
+        "initiative": 82,
+        "warmth": 77,
+        "reliability": 94,
+        "romance": 48,
+        "boundary": 89
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "lu_xun",
+      "before": {
+        "initiative": 77,
+        "warmth": 52,
+        "reliability": 85,
+        "romance": 40,
+        "boundary": 90
+      },
+      "after": {
+        "initiative": 77,
+        "warmth": 52,
+        "reliability": 85,
+        "romance": 40,
+        "boundary": 90
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "qian_zhongshu",
+      "before": {
+        "initiative": 50,
+        "warmth": 57,
+        "reliability": 88,
+        "romance": 70,
+        "boundary": 85
+      },
+      "after": {
+        "initiative": 50,
+        "warmth": 57,
+        "reliability": 88,
+        "romance": 70,
+        "boundary": 85
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "yang_jiang",
+      "before": {
+        "initiative": 53,
+        "warmth": 77,
+        "reliability": 93,
+        "romance": 57,
+        "boundary": 89
+      },
+      "after": {
+        "initiative": 53,
+        "warmth": 77,
+        "reliability": 93,
+        "romance": 57,
+        "boundary": 89
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "lu_xiaoman",
+      "before": {
+        "initiative": 78,
+        "warmth": 75,
+        "reliability": 38,
+        "romance": 92,
+        "boundary": 45
+      },
+      "after": {
+        "initiative": 78,
+        "warmth": 75,
+        "reliability": 38,
+        "romance": 92,
+        "boundary": 45
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "liang_sicheng",
+      "before": {
+        "initiative": 65,
+        "warmth": 64,
+        "reliability": 90,
+        "romance": 54,
+        "boundary": 87
+      },
+      "after": {
+        "initiative": 65,
+        "warmth": 64,
+        "reliability": 90,
+        "romance": 54,
+        "boundary": 87
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "bing_xin",
+      "before": {
+        "initiative": 58,
+        "warmth": 87,
+        "reliability": 86,
+        "romance": 63,
+        "boundary": 86
+      },
+      "after": {
+        "initiative": 58,
+        "warmth": 87,
+        "reliability": 86,
+        "romance": 63,
+        "boundary": 86
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "mei_lanfang",
+      "before": {
+        "initiative": 79,
+        "warmth": 76,
+        "reliability": 91,
+        "romance": 77,
+        "boundary": 87
+      },
+      "after": {
+        "initiative": 79,
+        "warmth": 76,
+        "reliability": 91,
+        "romance": 77,
+        "boundary": 87
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "xiao_hong",
+      "before": {
+        "initiative": 67,
+        "warmth": 88,
+        "reliability": 47,
+        "romance": 93,
+        "boundary": 53
+      },
+      "after": {
+        "initiative": 67,
+        "warmth": 88,
+        "reliability": 47,
+        "romance": 93,
+        "boundary": 53
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "shen_congwen",
+      "before": {
+        "initiative": 53,
+        "warmth": 84,
+        "reliability": 75,
+        "romance": 88,
+        "boundary": 67
+      },
+      "after": {
+        "initiative": 53,
+        "warmth": 84,
+        "reliability": 75,
+        "romance": 88,
+        "boundary": 67
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "deng_yingchao",
+      "before": {
+        "initiative": 88,
+        "warmth": 73,
+        "reliability": 43,
+        "romance": 88,
+        "boundary": 44
+      },
+      "after": {
+        "initiative": 88,
+        "warmth": 73,
+        "reliability": 43,
+        "romance": 88,
+        "boundary": 44
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhou_enlai",
+      "before": {
+        "initiative": 85,
+        "warmth": 83,
+        "reliability": 95,
+        "romance": 53,
+        "boundary": 93
+      },
+      "after": {
+        "initiative": 85,
+        "warmth": 83,
+        "reliability": 95,
+        "romance": 53,
+        "boundary": 93
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "wang_fei",
+      "before": {
+        "initiative": 49,
+        "warmth": 55,
+        "reliability": 67,
+        "romance": 83,
+        "boundary": 93
+      },
+      "after": {
+        "initiative": 49,
+        "warmth": 55,
+        "reliability": 67,
+        "romance": 83,
+        "boundary": 93
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhou_xun",
+      "before": {
+        "initiative": 74,
+        "warmth": 90,
+        "reliability": 70,
+        "romance": 91,
+        "boundary": 57
+      },
+      "after": {
+        "initiative": 74,
+        "warmth": 90,
+        "reliability": 70,
+        "romance": 91,
+        "boundary": 57
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "liu_dehua",
+      "before": {
+        "initiative": 75,
+        "warmth": 81,
+        "reliability": 93,
+        "romance": 65,
+        "boundary": 89
+      },
+      "after": {
+        "initiative": 75,
+        "warmth": 81,
+        "reliability": 93,
+        "romance": 65,
+        "boundary": 89
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhou_jielun",
+      "before": {
+        "initiative": 67,
+        "warmth": 60,
+        "reliability": 83,
+        "romance": 87,
+        "boundary": 81
+      },
+      "after": {
+        "initiative": 67,
+        "warmth": 60,
+        "reliability": 83,
+        "romance": 87,
+        "boundary": 81
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "zhang_manyu",
+      "before": {
+        "initiative": 50,
+        "warmth": 72,
+        "reliability": 80,
+        "romance": 77,
+        "boundary": 90
+      },
+      "after": {
+        "initiative": 50,
+        "warmth": 72,
+        "reliability": 80,
+        "romance": 77,
+        "boundary": 90
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "liang_chaowei",
+      "before": {
+        "initiative": 33,
+        "warmth": 68,
+        "reliability": 87,
+        "romance": 73,
+        "boundary": 91
+      },
+      "after": {
+        "initiative": 33,
+        "warmth": 68,
+        "reliability": 87,
+        "romance": 73,
+        "boundary": 91
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "shu_qi",
+      "before": {
+        "initiative": 70,
+        "warmth": 83,
+        "reliability": 77,
+        "romance": 86,
+        "boundary": 83
+      },
+      "after": {
+        "initiative": 70,
+        "warmth": 83,
+        "reliability": 77,
+        "romance": 86,
+        "boundary": 83
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "gong_li",
+      "before": {
+        "initiative": 83,
+        "warmth": 67,
+        "reliability": 89,
+        "romance": 60,
+        "boundary": 92
+      },
+      "after": {
+        "initiative": 83,
+        "warmth": 67,
+        "reliability": 89,
+        "romance": 60,
+        "boundary": 92
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "mo_wenwei",
+      "before": {
+        "initiative": 75,
+        "warmth": 91,
+        "reliability": 87,
+        "romance": 85,
+        "boundary": 85
+      },
+      "after": {
+        "initiative": 75,
+        "warmth": 91,
+        "reliability": 87,
+        "romance": 85,
+        "boundary": 85
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "chen_yixun",
+      "before": {
+        "initiative": 73,
+        "warmth": 93,
+        "reliability": 67,
+        "romance": 86,
+        "boundary": 65
+      },
+      "after": {
+        "initiative": 73,
+        "warmth": 93,
+        "reliability": 67,
+        "romance": 86,
+        "boundary": 65
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "michelle_yeoh",
+      "before": {
+        "initiative": 87,
+        "warmth": 76,
+        "reliability": 93,
+        "romance": 53,
+        "boundary": 93
+      },
+      "after": {
+        "initiative": 87,
+        "warmth": 76,
+        "reliability": 93,
+        "romance": 53,
+        "boundary": 93
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "hu_ge",
+      "before": {
+        "initiative": 65,
+        "warmth": 78,
+        "reliability": 79,
+        "romance": 83,
+        "boundary": 85
+      },
+      "after": {
+        "initiative": 65,
+        "warmth": 78,
+        "reliability": 79,
+        "romance": 83,
+        "boundary": 85
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "takeshi_kaneshiro",
+      "before": {
+        "initiative": 30,
+        "warmth": 65,
+        "reliability": 83,
+        "romance": 74,
+        "boundary": 93
+      },
+      "after": {
+        "initiative": 30,
+        "warmth": 65,
+        "reliability": 83,
+        "romance": 74,
+        "boundary": 93
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "leslie_cheung",
+      "before": {
+        "initiative": 87,
+        "warmth": 93,
+        "reliability": 73,
+        "romance": 95,
+        "boundary": 69
+      },
+      "after": {
+        "initiative": 87,
+        "warmth": 93,
+        "reliability": 73,
+        "romance": 95,
+        "boundary": 69
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "brigitte_lin",
+      "before": {
+        "initiative": 80,
+        "warmth": 77,
+        "reliability": 85,
+        "romance": 73,
+        "boundary": 92
+      },
+      "after": {
+        "initiative": 80,
+        "warmth": 77,
+        "reliability": 85,
+        "romance": 73,
+        "boundary": 92
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    },
+    {
+      "personKey": "cai_kangyong",
+      "before": {
+        "initiative": 63,
+        "warmth": 91,
+        "reliability": 87,
+        "romance": 67,
+        "boundary": 89
+      },
+      "after": {
+        "initiative": 63,
+        "warmth": 91,
+        "reliability": 87,
+        "romance": 67,
+        "boundary": 89
+      },
+      "delta": {
+        "initiative": 0,
+        "warmth": 0,
+        "reliability": 0,
+        "romance": 0,
+        "boundary": 0
+      }
+    }
+  ],
+  "genders": {
+    "female": {
+      "subjectGender": "female",
+      "seed": 20260804,
+      "iterations": 200000,
+      "passed": true,
+      "maxRatio": 0.11516,
+      "topFiveRatio": 0.43667500000000004,
+      "groupWinnerCounts": {
+        "modern": 8,
+        "history": 8,
+        "contemporary": 8
+      },
+      "missingGolden": [],
+      "distribution": [
+        {
+          "personKey": "deng_yingchao",
+          "count": 23032,
+          "ratio": 0.11516
+        },
+        {
+          "personKey": "ban_zhao",
+          "count": 19614,
+          "ratio": 0.09807
+        },
+        {
+          "personKey": "cai_wenji",
+          "count": 17599,
+          "ratio": 0.087995
+        },
+        {
+          "personKey": "lu_xiaoman",
+          "count": 14073,
+          "ratio": 0.070365
+        },
+        {
+          "personKey": "hua_mulan",
+          "count": 13017,
+          "ratio": 0.065085
+        },
+        {
+          "personKey": "wang_zhaojun",
+          "count": 12973,
+          "ratio": 0.064865
+        },
+        {
+          "personKey": "xiao_hong",
+          "count": 12701,
+          "ratio": 0.063505
+        },
+        {
+          "personKey": "li_qingzhao",
+          "count": 12143,
+          "ratio": 0.060715
+        },
+        {
+          "personKey": "zhuo_wenjun",
+          "count": 12134,
+          "ratio": 0.06067
+        },
+        {
+          "personKey": "shangguan_waner",
+          "count": 9077,
+          "ratio": 0.045385
+        },
+        {
+          "personKey": "wang_fei",
+          "count": 9073,
+          "ratio": 0.045365
+        },
+        {
+          "personKey": "zhou_xun",
+          "count": 7911,
+          "ratio": 0.039555
+        },
+        {
+          "personKey": "zhang_ailing",
+          "count": 7843,
+          "ratio": 0.039215
+        },
+        {
+          "personKey": "wu_zetian",
+          "count": 7088,
+          "ratio": 0.03544
+        },
+        {
+          "personKey": "lin_huiyin",
+          "count": 7021,
+          "ratio": 0.035105
+        },
+        {
+          "personKey": "bing_xin",
+          "count": 5600,
+          "ratio": 0.028
+        },
+        {
+          "personKey": "yang_jiang",
+          "count": 2882,
+          "ratio": 0.01441
+        },
+        {
+          "personKey": "zhang_manyu",
+          "count": 2508,
+          "ratio": 0.01254
+        },
+        {
+          "personKey": "brigitte_lin",
+          "count": 1243,
+          "ratio": 0.006215
+        },
+        {
+          "personKey": "song_qingling",
+          "count": 1162,
+          "ratio": 0.00581
+        },
+        {
+          "personKey": "shu_qi",
+          "count": 663,
+          "ratio": 0.003315
+        },
+        {
+          "personKey": "gong_li",
+          "count": 486,
+          "ratio": 0.00243
+        },
+        {
+          "personKey": "michelle_yeoh",
+          "count": 143,
+          "ratio": 0.000715
+        },
+        {
+          "personKey": "mo_wenwei",
+          "count": 14,
+          "ratio": 0.00007
+        }
+      ],
+      "reportChecksum": "e351eec5c3a864b9aa97fb09544c39917a995413ce07fc87c7ccf5c703e01f41"
+    },
+    "male": {
+      "subjectGender": "male",
+      "seed": 20260805,
+      "iterations": 200000,
+      "passed": true,
+      "maxRatio": 0.14571,
+      "topFiveRatio": 0.5254949999999999,
+      "groupWinnerCounts": {
+        "modern": 8,
+        "history": 8,
+        "contemporary": 8
+      },
+      "missingGolden": [],
+      "distribution": [
+        {
+          "personKey": "li_bai",
+          "count": 29142,
+          "ratio": 0.14571
+        },
+        {
+          "personKey": "xiang_yu",
+          "count": 24623,
+          "ratio": 0.123115
+        },
+        {
+          "personKey": "shen_congwen",
+          "count": 21986,
+          "ratio": 0.10993
+        },
+        {
+          "personKey": "liang_sicheng",
+          "count": 14888,
+          "ratio": 0.07444
+        },
+        {
+          "personKey": "su_shi",
+          "count": 14460,
+          "ratio": 0.0723
+        },
+        {
+          "personKey": "zhao_yun",
+          "count": 12323,
+          "ratio": 0.061615
+        },
+        {
+          "personKey": "qian_zhongshu",
+          "count": 10497,
+          "ratio": 0.052485
+        },
+        {
+          "personKey": "xin_qiji",
+          "count": 9653,
+          "ratio": 0.048265
+        },
+        {
+          "personKey": "lu_xun",
+          "count": 9320,
+          "ratio": 0.0466
+        },
+        {
+          "personKey": "hu_shi",
+          "count": 8924,
+          "ratio": 0.04462
+        },
+        {
+          "personKey": "chen_yixun",
+          "count": 8555,
+          "ratio": 0.042775
+        },
+        {
+          "personKey": "cao_cao",
+          "count": 7262,
+          "ratio": 0.03631
+        },
+        {
+          "personKey": "takeshi_kaneshiro",
+          "count": 6527,
+          "ratio": 0.032635
+        },
+        {
+          "personKey": "zhuge_liang",
+          "count": 6442,
+          "ratio": 0.03221
+        },
+        {
+          "personKey": "wang_yangming",
+          "count": 5780,
+          "ratio": 0.0289
+        },
+        {
+          "personKey": "hu_ge",
+          "count": 3100,
+          "ratio": 0.0155
+        },
+        {
+          "personKey": "cai_kangyong",
+          "count": 2574,
+          "ratio": 0.01287
+        },
+        {
+          "personKey": "xu_zhimo",
+          "count": 2011,
+          "ratio": 0.010055
+        },
+        {
+          "personKey": "liu_dehua",
+          "count": 728,
+          "ratio": 0.00364
+        },
+        {
+          "personKey": "liang_chaowei",
+          "count": 652,
+          "ratio": 0.00326
+        },
+        {
+          "personKey": "zhou_jielun",
+          "count": 245,
+          "ratio": 0.001225
+        },
+        {
+          "personKey": "zhou_enlai",
+          "count": 217,
+          "ratio": 0.001085
+        },
+        {
+          "personKey": "leslie_cheung",
+          "count": 58,
+          "ratio": 0.00029
+        },
+        {
+          "personKey": "mei_lanfang",
+          "count": 33,
+          "ratio": 0.000165
+        }
+      ],
+      "reportChecksum": "a4d15201b989295483552a9f8f9fe0da9fbfc0cf18871326f87949373d77967b"
+    }
+  }
+}
