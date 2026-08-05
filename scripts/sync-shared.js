@@ -56,8 +56,9 @@ function syncOne(targetFnDir) {
 
   if (!DRY_RUN) {
     fs.mkdirSync(dst, { recursive: true })
-    for (const file of SHARED_FILES) {
-      fs.copyFileSync(path.join(SHARED_SRC, file), path.join(dst, file))
+    for (const change of changes) {
+      if (change.type === 'extra') continue
+      fs.copyFileSync(path.join(SHARED_SRC, change.file), path.join(dst, change.file))
     }
   }
 

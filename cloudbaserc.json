@@ -32,7 +32,7 @@
     },
     {
       "name": "adminManage",
-      "timeout": 20,
+      "timeout": 120,
       "envVariables": {
         "CUSTOM_PET_STORAGE_ROOT": "cloud://cloud1-d0gvhqu2c8a2b61fd.636c-cloud1-d0gvhqu2c8a2b61fd-1442786291"
       },
@@ -372,6 +372,42 @@
       "timeout": 15,
       "runtime": "Nodejs18.15",
       "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getArchetypeQuestionBank",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "saveArchetypeResult",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getArchetypeResults",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "processReferralJobs",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
       "handler": "index.main",
       "installDependency": true
     }
