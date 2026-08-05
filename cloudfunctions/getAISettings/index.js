@@ -124,8 +124,8 @@ const PROMPT_MODULE_META = {
     description: '属相、星座等轻量星象速写，包括即时星象速写和14天星象速写。'
   },
   attachmentAnalysis: {
-    title: '附件识别',
-    description: '聊天截图和图片附件的文字提取、摘要与置信度识别。'
+    title: '微信截图识别',
+    description: '微信一对一聊天截图的文字提取、左右气泡身份识别、排序与去重。'
   }
 }
 const PROMPT_FIXED_GUARDRAILS = {
@@ -201,15 +201,16 @@ const PROMPT_FIXED_GUARDRAILS = {
   },
   attachmentAnalysis: {
     lockedRules: [
-      '看不清的内容必须留空或标注不确定，不要编造截图文字。',
-      '不识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。',
+      '只处理微信一对一双人聊天截图；群聊、朋友圈、个人资料页、其他聊天软件和普通照片必须拒绝。',
+      '右侧气泡按头像行对齐及箭头方向识别为用户，左侧气泡识别为对方；不得只根据气泡颜色判断。',
+      '看不清的内容标记为“无法辨认”，不要编造截图文字。',
       '输出必须是可解析 JSON，代码会校验字段和置信度枚举。'
     ],
     runtimeContext: [
-      'one image attachment URL is sent as image_url content'
+      'one to six WeChat screenshot candidates are sent as image_url content in one request'
     ],
     outputContract: [
-      '{"isChatRecord":boolean,"extractedText":"...","suggestedTitle":"...","summary":"...","confidence":"low|medium|high"}'
+      '{"isWechatChatScreenshot":boolean,"isTwoPartyChat":boolean,"confidence":"low|medium|high","images":[...],"messages":[...],"rejectReason":"..."}'
     ]
   }
 }
@@ -423,7 +424,7 @@ function getCallNames(moduleKey) {
   if (moduleKey === 'eventUnderstanding') return ['createTimeline: eventUnderstanding', 'generateAssessmentAI: eventUnderstanding']
   if (moduleKey === 'weeklyReview') return ['weeklyReview: generateReview']
   if (moduleKey === 'sideRead') return ['generateSideRead: instant side read', 'weeklyReview: 14-day side read']
-  if (moduleKey === 'attachmentAnalysis') return ['analyzeAttachment: image/chat screenshot']
+  if (moduleKey === 'attachmentAnalysis') return ['analyzeAttachment: WeChat one-to-one screenshots']
   return [moduleKey]
 }
 
@@ -452,8 +453,9 @@ function getSafetyPreview(moduleKey) {
       '未成年人场景使用保守、边界优先表达。'
     ],
     attachmentAnalysis: [
-      '看不清的截图内容必须留空或标注不确定，不要编造文字。',
-      '不要识别或扩散敏感个人信息，除非它是用户提供内容中完成任务所必需的上下文。'
+      '只允许微信一对一聊天截图；其他图片类型必须拒绝。',
+      '右侧气泡识别为用户，左侧气泡识别为对方，必须依据头像对齐和气泡箭头方向。',
+      '看不清的截图内容标记为“无法辨认”，不要编造文字。'
     ]
   }
   return common.concat(moduleSpecific[moduleKey] || [])
@@ -487,7 +489,7 @@ function getRuntimePreview(moduleKey) {
       '14-day side read: 14-day range + review summary + scoreTrend + 14-day key events'
     ],
     attachmentAnalysis: [
-      'one image attachment URL is sent as image_url content',
+      'one to six WeChat screenshot candidates are sent in one multimodal request',
       'no persona is used for this call'
     ]
   }
