@@ -141,9 +141,9 @@
               <text class="detail-label">最后登录</text>
               <text class="detail-value">{{ formatDate(selectedDetail.user.lastLoginAt) }}</text>
             </view>
-            <view v-if="selectedDetail.user.landingChannel || selectedDetail.user.landingScene" class="detail-line">
-              <text class="detail-label">来源</text>
-              <text class="detail-value">{{ [selectedDetail.user.landingChannel, selectedDetail.user.landingScene, selectedDetail.user.landingRef].filter(Boolean).join(' · ') || '-' }}</text>
+            <view v-if="landingSourceText(selectedDetail.user)" class="detail-line">
+              <text class="detail-label">注册来源</text>
+              <text class="detail-value">{{ landingSourceText(selectedDetail.user) }}</text>
             </view>
             <view v-if="selectedDetail.user.landingShareId" class="detail-line">
               <text class="detail-label">分享ID</text>
@@ -657,6 +657,7 @@ import {
   testAIConnection
 } from '@/utils/api'
 import { aiLabel } from '@/utils/labels'
+import { buildLandingSourceText } from '@/utils/scene-map'
 import TokenUsersPanel from './components/panels/TokenUsersPanel.vue'
 import OrdersPanel from './components/panels/OrdersPanel.vue'
 import FeedbackPanel from './components/panels/FeedbackPanel.vue'
@@ -1418,6 +1419,11 @@ function planLabelText(plan: string) {
 
 function genderText(value?: string) {
   return ({ male: '男生', female: '女生', private: '暂不说' } as Record<string, string>)[value || ''] || '-'
+}
+
+function landingSourceText(user: { landingChannel?: string; landingScene?: string; landingRef?: string } | undefined) {
+  if (!user) return ''
+  return buildLandingSourceText(user.landingChannel, user.landingScene, user.landingRef)
 }
 
 function ageRangeText(value?: string) {

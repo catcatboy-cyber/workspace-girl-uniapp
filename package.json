@@ -10,6 +10,7 @@
     "test:content-security": "node tests/run-content-security.cjs",
     "test:wechat-screenshot": "node tests/run-wechat-screenshot-analysis.cjs",
     "test:chat-speakers": "node tests/run-chat-speakers.cjs",
+    "test:scene-map": "node tests/run-scene-map.cjs",
     "test:archetypes": "node tests/run-relation-heroine-rules.cjs && node tests/run-crush-celebrity-rules.cjs && node tests/run-dimension-character-rules.cjs && node tests/run-archetype-integration-rules.cjs && node tests/run-archetype-subscription-migration.cjs && node tests/run-archetype-bank-transactions.cjs && node tests/run-archetype-result-cloudfunctions.cjs",
     "test:archetype-calibration": "node tests/run-portrait-calibration.cjs && node tests/run-dimension-character-calibration.cjs",
     "calibrate:portrait-banks": "node scripts/calibrate-portrait-banks.cjs",
