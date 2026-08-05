@@ -113,6 +113,15 @@
     // #endif
     // #ifdef H5
     {
+      "path": "pages/admin-login/admin-login",
+      "style": {
+        "navigationBarTitleText": "管理员登录",
+        "navigationStyle": "default"
+      }
+    },
+    // #endif
+    // #ifdef H5
+    {
       "path": "pages/admin/admin",
       "style": {
         "navigationBarTitleText": "后台管理",
@@ -173,6 +182,46 @@
       "style": {
         "navigationBarTitleText": "桃花人设"
       }
+    },
+    {
+      "path": "pages/relation-heroine/relation-heroine",
+      "style": { "navigationBarTitleText": "关系主角测试" }
+    },
+    {
+      "path": "pages/relation-heroine-result/relation-heroine-result",
+      "style": { "navigationBarTitleText": "关系主角测试结果" }
+    },
+    {
+      "path": "pages/relation-heroine-history/relation-heroine-history",
+      "style": { "navigationBarTitleText": "关系主角测试记录" }
+    },
+    {
+      "path": "pages/crush-celebrity/crush-celebrity",
+      "style": { "navigationBarTitleText": "Crush 名人图鉴" }
+    },
+    {
+      "path": "pages/crush-celebrity-result/crush-celebrity-result",
+      "style": { "navigationBarTitleText": "名人匹配结果" }
+    },
+    {
+      "path": "pages/crush-celebrity-person/crush-celebrity-person",
+      "style": { "navigationBarTitleText": "人物图鉴" }
+    },
+    {
+      "path": "pages/dimension-character/dimension-character",
+      "style": { "navigationBarTitleText": "次元角色图鉴" }
+    },
+    {
+      "path": "pages/dimension-character-result/dimension-character-result",
+      "style": { "navigationBarTitleText": "角色图鉴结果" }
+    },
+    {
+      "path": "pages/dimension-character-person/dimension-character-person",
+      "style": { "navigationBarTitleText": "角色详情" }
+    },
+    {
+      "path": "pages/dimension-character-history/dimension-character-history",
+      "style": { "navigationBarTitleText": "次元角色记录" }
     },
     {
       "path": "pages/quick-read/quick-read",

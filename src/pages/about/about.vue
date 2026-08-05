@@ -5,6 +5,20 @@
       <text class="hero-title-v2">关<text class="hl-v2">于</text></text>
       <text class="hero-copy-v2">Signal Board · 关系信号看板</text>
     </view>
+    <!-- #ifdef H5 -->
+    <view class="card-v2" @click="handleAdminTap">
+      <text class="section-title-v2">版本信息</text>
+      <view class="info-row-v2">
+        <text class="info-label-v2">当前版本</text>
+        <text class="info-value-v2">v1.0.0</text>
+      </view>
+      <view class="info-row-v2">
+        <text class="info-label-v2">版本代号</text>
+        <text class="info-value-v2">100</text>
+      </view>
+    </view>
+    <!-- #endif -->
+    <!-- #ifndef H5 -->
     <view class="card-v2">
       <text class="section-title-v2">版本信息</text>
       <view class="info-row-v2">
@@ -16,6 +30,7 @@
         <text class="info-value-v2">100</text>
       </view>
     </view>
+    <!-- #endif -->
     <view class="card-v2">
       <text class="section-title-v2">技术说明</text>
       <text class="card-text-v2">基于微信云开发构建。{{ aiLabel() }} 能力由 DeepSeek / 腾讯混元等国内大模型驱动，通过 CloudBase 云函数代理调用。</text>
@@ -48,6 +63,29 @@ import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 import { aiLabel } from '@/utils/labels'
 
 const themeVars = ref(getThemeStyle())
+
+// #ifdef H5
+const ADMIN_TAP_COUNT = 5
+const ADMIN_TAP_WINDOW_MS = 2000
+let adminTapCount = 0
+let adminTapStartedAt = 0
+
+function handleAdminTap() {
+  const now = Date.now()
+  if (!adminTapStartedAt || now - adminTapStartedAt > ADMIN_TAP_WINDOW_MS) {
+    adminTapCount = 1
+    adminTapStartedAt = now
+    return
+  }
+
+  adminTapCount += 1
+  if (adminTapCount < ADMIN_TAP_COUNT) return
+
+  adminTapCount = 0
+  adminTapStartedAt = 0
+  uni.navigateTo({ url: '/pages/admin-login/admin-login' })
+}
+// #endif
 
 onLoad(() => {
   themeVars.value = getThemeStyle()
