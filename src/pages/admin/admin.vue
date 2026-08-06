@@ -20,6 +20,7 @@
           <text class="sidebar-group-title">数据中心</text>
           <view :class="['sidebar-item', activeTab === 'tokenUsers' ? 'active' : '']" @click="activeTab = 'tokenUsers'">📈 Crush Credits 消耗</view>
           <view :class="['sidebar-item', activeTab === 'orders' ? 'active' : '']" @click="activeTab = 'orders'"><image class="sidebar-icon" src="/static/icons/taohua/clipboard.svg" mode="aspectFit" /><text>订单管理</text></view>
+          <view :class="['sidebar-item', activeTab === 'reportOrders' ? 'active' : '']" @click="activeTab = 'reportOrders'">报告解锁订单</view>
           <view :class="['sidebar-item', activeTab === 'loginLogs' ? 'active' : '']" @click="activeTab = 'loginLogs'">🔐 登录日志</view>
           <view :class="['sidebar-item', activeTab === 'referralClaims' ? 'active' : '']" @click="activeTab = 'referralClaims'"><image class="sidebar-icon" src="/static/icons/taohua/gem.svg" mode="aspectFit" /><text>邀请奖励</text></view>
         </view>
@@ -632,6 +633,7 @@
       <CustomPetPanel v-if="activeTab === 'customPet'" @error="errorMessage = $event" />
 
       <OrdersPanel v-if="activeTab === 'orders'" @error="errorMessage = $event" />
+      <ArchetypeReportOrdersPanel v-if="activeTab === 'reportOrders'" @error="errorMessage = $event" />
 
       <LoginLogsPanel v-if="activeTab === 'loginLogs'" @error="errorMessage = $event" />
       <ReferralClaimsPanel v-if="activeTab === 'referralClaims'" />
@@ -667,6 +669,7 @@ import BillingPanel from './components/panels/BillingPanel.vue'
 import LoginLogsPanel from './components/panels/LoginLogsPanel.vue'
 import ReferralClaimsPanel from './components/panels/ReferralClaimsPanel.vue'
 import ArchetypeQuestionBankPanel from './components/panels/ArchetypeQuestionBankPanel.vue'
+import ArchetypeReportOrdersPanel from './components/panels/ArchetypeReportOrdersPanel.vue'
 
 type AdminSelfProfile = {
   nickname?: string
@@ -919,7 +922,7 @@ const runtimeFields = [
   { key: 'attachmentTemperature', label: '附件温度', fallback: 0.1 }
 ]
 
-const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'tokenUsers' | 'feedback' | 'customPet' | 'orders' | 'loginLogs'>('users')
+const activeTab = ref<'users' | 'ai' | 'billing' | 'subscription' | 'tokenUsers' | 'feedback' | 'customPet' | 'orders' | 'reportOrders' | 'loginLogs' | 'referralClaims' | 'archetypeQuestions'>('users')
 const users = ref<AdminUser[]>([])
 const selectedUserId = ref('')
 const currentUserId = ref('')

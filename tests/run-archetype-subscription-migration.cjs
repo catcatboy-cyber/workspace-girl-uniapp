@@ -32,7 +32,9 @@ const db = {
 
 async function main() {
   const migrated = await ensureSubscriptionConfig(db)
-  assert.strictEqual(migrated.configVersion, 7)
+  assert.strictEqual(migrated.configVersion, 8)
+  assert.strictEqual(migrated.heartPersonaReportPayment.priceFen, 199)
+  assert.strictEqual(migrated.heartPersonaReportPayment.sandboxProductId, '0001')
   for (const feature of ['关系女主角', 'Crush名人图鉴', '次元角色图鉴']) {
     assert(migrated.trial.features.includes(feature))
     assert(migrated.plans.free.excludedFeatures.includes(feature))

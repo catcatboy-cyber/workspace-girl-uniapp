@@ -1087,6 +1087,49 @@ export async function getArchetypeResults(params: { kind: 'relation_archetype' |
   return res.result
 }
 
+export async function getArchetypeReport(resultId: string) {
+  const res = await callFunction({
+    name: 'getArchetypeReport',
+    data: { resultId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+function createHeartPersonaRequestId() {
+  return `hpr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`
+}
+
+export async function prepareHeartPersonaReportOrder(resultId: string, clientRequestId = createHeartPersonaRequestId()) {
+  let loginCode = ''
+  // #ifdef MP-WEIXIN
+  loginCode = await new Promise<string>((resolve) => {
+    // @ts-ignore wx 为微信小程序全局
+    wx.login({ success: (response: any) => resolve(String(response?.code || '')), fail: () => resolve('') })
+  })
+  // #endif
+  const res = await callFunction({
+    name: 'archetypeReportPayment',
+    data: { action: 'prepareOrder', resultId, clientRequestId, loginCode, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function getHeartPersonaReportOrderStatus(outTradeNo: string) {
+  const res = await callFunction({
+    name: 'archetypeReportPayment',
+    data: { action: 'getOrderStatus', outTradeNo, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function reconcileHeartPersonaReportOrder(outTradeNo: string, clientWxOrderIdCandidate = '') {
+  const res = await callFunction({
+    name: 'archetypeReportPayment',
+    data: { action: 'reconcileOrder', outTradeNo, clientWxOrderIdCandidate, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
 async function callArchetypeAdmin(action: string, payload: Record<string, any> = {}) {
   const res = await callFunction({
     name: 'adminManage',
@@ -1094,6 +1137,11 @@ async function callArchetypeAdmin(action: string, payload: Record<string, any> =
   })
   return res.result
 }
+
+export const adminGetArchetypeReportOrders = (payload: Record<string, any> = {}) => callArchetypeAdmin('listArchetypeReportOrders', payload)
+export const adminReconcileArchetypeReportOrder = (outTradeNo: string, reason: string) => callArchetypeAdmin('reconcileArchetypeReportOrder', { outTradeNo, reason })
+export const adminGetArchetypeReportRefundTasks = (payload: Record<string, any> = {}) => callArchetypeAdmin('listArchetypeReportRefundTasks', payload)
+export const adminUpdateArchetypeReportRefundTask = (taskId: string, nextStatus: 'processing' | 'dismissed', reason: string) => callArchetypeAdmin('updateArchetypeReportRefundTask', { taskId, nextStatus, reason })
 
 export const adminGetArchetypeQuestionBank = (payload: Record<string, any>) => callArchetypeAdmin('getArchetypeQuestionBank', payload)
 export const adminSeedArchetypeQuestionBanks = (featureKey: string, subjectGender?: 'female' | 'male') => callArchetypeAdmin('seedArchetypeQuestionBanks', { featureKey, ...(subjectGender ? { subjectGender } : {}) })

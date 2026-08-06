@@ -9,7 +9,9 @@ const subscription = require('../cloudfunctions/_shared/subscription')
 const config = subscription.DEFAULT_SUBSCRIPTION_CONFIG
 const features = ['关系女主角', 'Crush名人图鉴', '次元角色图鉴']
 
-assert.strictEqual(config.configVersion, 7)
+assert.strictEqual(config.configVersion, 8)
+assert.strictEqual(config.heartPersonaReportPayment.priceFen, 199)
+assert.strictEqual(config.heartPersonaReportPayment.sandboxProductId, '0001')
 for (const feature of features) {
   assert(config.trial.features.includes(feature), `trial missing ${feature}`)
   assert(!config.trial.excludedFeatures.includes(feature), `trial excludes ${feature}`)
@@ -39,6 +41,8 @@ const caseDetail = fs.readFileSync(path.join(root, 'src/pages/case-detail/case-d
 assert(caseDetail.includes('goRelationHeroine'))
 assert(caseDetail.includes('goCrushCelebrity'))
 assert(caseDetail.includes('goDimensionCharacter'))
+assert(caseDetail.includes('normalizeRelationGender'))
+assert(caseDetail.includes('relationDisplayTitle'))
 assert(!caseDetail.includes('ArchetypeHeroBanner'))
 const taohua = fs.readFileSync(path.join(root, 'src/pages/taohua/taohua.vue'), 'utf8')
 assert(taohua.includes('goRelationHeroineSelf'))
@@ -60,20 +64,60 @@ assert(celebrityPage.includes('enabledPeople'))
 assert(celebrityPage.includes('caseAvatar'))
 assert(celebrityPage.includes('target-snapshot'))
 assert(celebrityPage.includes('CelebrityPersonCard'))
+for (const source of [celebrityPage, characterPage]) {
+  assert(source.includes('normalizeRelationGender'))
+  assert(!source.includes("!['male', 'female'].includes(String("))
+  assert(source.includes('/pages/edit-profile/edit-profile?caseId='))
+  assert(source.includes('/pages/self-profile/self-profile?mode=onboarding&redirect='))
+  assert(!source.includes("uni.navigateTo({ url: mode.value === 'target' ? `/pages/case-detail/case-detail"))
+}
 const celebrityPersonCard = fs.readFileSync(path.join(root, 'src/components/archetype/CelebrityPersonCard.vue'), 'utf8')
 assert(celebrityPersonCard.includes('person.coverUrl'))
 
 const saveResultFunction = fs.readFileSync(path.join(root, 'cloudfunctions/saveArchetypeResult/index.js'), 'utf8')
-assert(saveResultFunction.indexOf('checkFeatureAccess(db, userId, featureKey)') < saveResultFunction.indexOf('await requireOwnedCase(caseId, userId)'))
+assert(saveResultFunction.includes('resolveQuizAccess(db, userId, kind, subjectGender)'))
+assert(saveResultFunction.includes('return { success: true, resultId, kind }'))
+assert(saveResultFunction.includes("return error('PROFILE_GENDER_REQUIRED'"))
+
+for (const functionName of ['getArchetypeReport', 'archetypeReportPayment']) {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'cloudfunctions', functionName, 'package.json'), 'utf8'))
+  assert(packageJson.dependencies?.['wx-server-sdk'], `${functionName} must package wx-server-sdk for trusted mini-program identity`)
+}
+
+const reportAccess = fs.readFileSync(path.join(root, 'cloudfunctions/_shared/archetype-report-access.js'), 'utf8')
+assert(reportAccess.includes("collection('archetype_report_refund_tasks')"))
+assert(reportAccess.includes("status: 'pending'"))
+assert(reportAccess.includes('auditTrail: []'))
+
+const adminManage = fs.readFileSync(path.join(root, 'cloudfunctions/adminManage/index.js'), 'utf8')
+assert(adminManage.includes("action === 'listArchetypeReportRefundTasks'"))
+assert(adminManage.includes("action === 'updateArchetypeReportRefundTask'"))
+assert(adminManage.includes("!['processing', 'dismissed'].includes(nextStatus)"))
+assert(adminManage.includes("task.status === 'refunded'"))
+assert(adminManage.includes("const targetUserId = String(event.targetUserId || '').trim()"))
+const listOrdersStart = adminManage.indexOf('async function listArchetypeReportOrders')
+const listOrdersEnd = adminManage.indexOf('async function adminReconcileArchetypeReportOrder', listOrdersStart)
+const listOrdersSource = adminManage.slice(listOrdersStart, listOrdersEnd)
+assert(!listOrdersSource.includes('event.targetUserId || event.userId'))
+
+const adminApi = fs.readFileSync(path.join(root, 'src/utils/api.ts'), 'utf8')
+assert(adminApi.includes('adminGetArchetypeReportRefundTasks'))
+assert(adminApi.includes('adminUpdateArchetypeReportRefundTask'))
+const reportOrdersPanel = fs.readFileSync(path.join(root, 'src/pages/admin/components/panels/ArchetypeReportOrdersPanel.vue'), 'utf8')
+assert(reportOrdersPanel.includes('最终“已退款”只由微信退款通知写入'))
+assert(reportOrdersPanel.includes("updateRefundTask(task, 'processing')"))
+assert(reportOrdersPanel.includes("updateRefundTask(task, 'dismissed')"))
+assert(reportOrdersPanel.includes('targetUserId: filters.userId'))
 
 const relationResultPage = fs.readFileSync(path.join(root, 'src/pages/relation-heroine-result/relation-heroine-result.vue'), 'utf8')
 const celebrityResultPage = fs.readFileSync(path.join(root, 'src/pages/crush-celebrity-result/crush-celebrity-result.vue'), 'utf8')
 for (const source of [relationResultPage, celebrityResultPage]) {
   assert(source.includes('resultId'))
-  assert(source.includes('result.value.contentVersion'))
-  assert(!source.includes("history?.results?.[0]"))
+  assert(source.includes('getArchetypeReport'))
+  assert(!source.includes('getArchetypeQuestionBank'))
+  assert(source.includes('HeartPersonaReportPaywall'))
 }
-assert(relationResultPage.includes("similarity >= 80 ? '高度相似' : result.value.similarity >= 60 ? '明显相似' : result.value.similarity >= 40 ? '部分相似' : '相似度较低'"))
+assert(relationResultPage.includes('report.value?.exactSimilarity'))
 
 const celebrityCopy = fs.readFileSync(path.join(root, 'src/utils/crush-celebrity-copy.ts'), 'utf8')
 assert(celebrityCopy.includes('buildCelebrityTypeLabel'))
@@ -87,6 +131,6 @@ assert(indexManager.includes("key: { featureKey: 1, subjectGender: 1, contentVer
 assert(indexManager.includes("unique: true"))
 assert(relationPage.includes('resolveRelationSubjectGender'))
 assert(relationPage.includes("kind: 'relation_archetype'"))
-assert(relationResultPage.includes('result.value.subjectGender'))
+assert(relationResultPage.includes('report.value?.subjectGender'))
 
 console.log(JSON.stringify({ success: true, configVersion: config.configVersion, features, routeCount: 10 }, null, 2))

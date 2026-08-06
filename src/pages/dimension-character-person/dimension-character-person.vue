@@ -15,14 +15,11 @@
       <view class="card intro">
         <text class="card-title">人物风格</text>
         <text>{{ person.summary || introText }}</text>
-        <text class="dimension-desc">{{ person.attraction }}</text>
-        <text class="dimension-desc">提醒：{{ person.caution }}</text>
       </view>
       <view class="card">
-        <view v-for="dimension in content.dimensions" :key="dimension.key" class="dimension">
-          <view class="dimension-head"><text>{{ dimension.name }}</text><text>{{ person.profile[dimension.key] }}</text></view>
-          <text class="dimension-desc">{{ dimension.description }}</text>
-          <view class="track"><view class="fill" :style="{ width: person.profile[dimension.key] + '%' }" /></view>
+          <view v-for="dimension in content.dimensions" :key="dimension.key" class="dimension">
+          <view class="dimension-head"><text>{{ dimension.name }}</text><text>已纳入匹配</text></view>
+          <text class="dimension-desc">该维度用于测试中的角色风格匹配。</text>
         </view>
       </view>
     </template>
@@ -34,7 +31,6 @@ import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getArchetypeQuestionBank } from '@/utils/api'
 import { FEATURE_DIMENSION_CHARACTER } from '@/utils/feature-keys'
-import { buildCelebritySummary, buildCelebrityTypeLabel } from '@/utils/crush-celebrity-copy'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const themeVars = ref(getThemeStyle())
@@ -43,8 +39,8 @@ const person = ref<any>(null)
 const content = ref<any>({ dimensions: [], people: [] })
 const loading = ref(true)
 const errorMessage = ref('')
-const typeLabel = computed(() => buildCelebrityTypeLabel(person.value, content.value.dimensions || []))
-const introText = computed(() => buildCelebritySummary(person.value, content.value.dimensions || [], content.value.resultCopy || {}))
+const typeLabel = computed(() => person.value?.category || '角色风格原型')
+const introText = computed(() => person.value?.summary || `${person.value?.name || '该角色'}代表一种可辨识的人物风格。`)
 
 function eraText(value: string) { return ({ history: '历史', modern: '近代', contemporary: '当代' } as any)[value] || value }
 async function load() {

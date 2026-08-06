@@ -46,7 +46,7 @@
       <text v-if="mode === 'target' && validScreenerCount < 4" class="card-desc">观察信息较少，请自行选择想测试的人物。</text>
       <button v-for="person in sortedArchetypes" :key="person.key" :class="['person-card', recommendedPersonKey === person.key ? 'recommended' : '']" @click="startPerson(person.key)">
         <view><text class="person-name">{{ person.name }}</text><text class="person-label">{{ person.label }}</text></view>
-        <text>{{ person.resultCopy.attraction }}</text>
+        <text>{{ person.label || '查看这一型的专属题目' }}</text>
       </button>
     </view>
 
@@ -75,7 +75,7 @@ import { computed, reactive, ref } from 'vue'
 import { onBackPress, onLoad, onShow } from '@dcloudio/uni-app'
 import ArchetypeOptionList from '@/components/archetype/ArchetypeOptionList.vue'
 import ArchetypeQuizProgress from '@/components/archetype/ArchetypeQuizProgress.vue'
-import { checkFeatureAccess, getArchetypeQuestionBank, getCaseDetail, getCurrentUserId, getSelfProfile, saveArchetypeResult } from '@/utils/api'
+import { getArchetypeQuestionBank, getCaseDetail, getCurrentUserId, getSelfProfile, saveArchetypeResult } from '@/utils/api'
 import { getActiveCaseId } from '@/utils/helpers'
 import { FEATURE_RELATION_HEROINE } from '@/utils/feature-keys'
 import { clearArchetypeDraft, getArchetypeDraftKey, loadArchetypeDraft, saveArchetypeDraft } from '@/utils/archetype-storage'
@@ -155,13 +155,6 @@ async function initialize() {
   const userId = getCurrentUserId()
   if (!userId) { loading.value = false; goLogin(); return }
   try {
-    const access = await checkFeatureAccess(FEATURE_RELATION_HEROINE)
-    if (!access?.success || !access?.allowed) {
-      accessDenied.value = true
-      errorMessage.value = '当前套餐未开放关系女主角测试。'
-      loading.value = false
-      return
-    }
     if (!mode.value) { phase.value = 'mode-select'; return }
     let crushProfile: any = null
     let selfProfile: any = null
@@ -295,7 +288,7 @@ async function submit() {
     })
     if (!result?.success) throw new Error(result?.message || '保存失败')
     clearArchetypeDraft(draftKey())
-    uni.redirectTo({ url: `/pages/relation-heroine-result/relation-heroine-result?id=${encodeURIComponent(result.result._id)}` })
+    uni.redirectTo({ url: `/pages/relation-heroine-result/relation-heroine-result?id=${encodeURIComponent(result.resultId)}` })
   } catch (error: any) { errorMessage.value = error?.message || '生成结果失败'; phase.value = 'scenario' }
   finally { submitting.value = false }
 }

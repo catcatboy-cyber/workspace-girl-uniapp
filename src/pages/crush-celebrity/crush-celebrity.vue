@@ -54,10 +54,11 @@ import { onBackPress, onLoad, onShow } from '@dcloudio/uni-app'
 import ArchetypeOptionList from '@/components/archetype/ArchetypeOptionList.vue'
 import ArchetypeQuizProgress from '@/components/archetype/ArchetypeQuizProgress.vue'
 import CelebrityPersonCard from '@/components/archetype/CelebrityPersonCard.vue'
-import { checkFeatureAccess, getArchetypeQuestionBank, getCaseDetail, getCurrentUserId, getSelfProfile, saveArchetypeResult } from '@/utils/api'
+import { getArchetypeQuestionBank, getCaseDetail, getCurrentUserId, getSelfProfile, saveArchetypeResult } from '@/utils/api'
 import { getActiveCaseId } from '@/utils/helpers'
 import { FEATURE_CRUSH_CELEBRITY } from '@/utils/feature-keys'
 import { clearArchetypeDraft, getArchetypeDraftKey, loadArchetypeDraft, saveArchetypeDraft } from '@/utils/archetype-storage'
+import { normalizeRelationGender } from '@/utils/relation-gender'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const themeVars = ref(getThemeStyle())
@@ -102,7 +103,13 @@ function currentPath() { return `/pages/crush-celebrity/crush-celebrity?mode=${m
 function goLogin() { uni.navigateTo({ url: `/pages/login/login?redirect=${encodeURIComponent(currentPath())}` }) }
 function goCrushes() { uni.switchTab({ url: '/pages/cases/cases' }) }
 function goSubscription() { uni.navigateTo({ url: '/pages/subscription/subscription' }) }
-function goProfile() { uni.navigateTo({ url: mode.value === 'target' ? `/pages/case-detail/case-detail?caseId=${encodeURIComponent(caseId.value)}` : '/pages/edit-profile/edit-profile' }) }
+function goProfile() {
+  if (mode.value === 'target') {
+    uni.navigateTo({ url: `/pages/edit-profile/edit-profile?caseId=${encodeURIComponent(caseId.value)}` })
+    return
+  }
+  uni.navigateTo({ url: `/pages/self-profile/self-profile?mode=onboarding&redirect=${encodeURIComponent(currentPath())}` })
+}
 function draftKey() { return getArchetypeDraftKey({ kind: 'crush_celebrity', userId: getCurrentUserId() || '', mode: mode.value as any, caseId: caseId.value, contentVersion: bank.value.contentVersion }) }
 
 function persist() {
@@ -127,12 +134,6 @@ async function initialize() {
   const userId = getCurrentUserId()
   if (!userId) { loading.value = false; goLogin(); return }
   try {
-    const access = await checkFeatureAccess(FEATURE_CRUSH_CELEBRITY)
-    if (!access?.success || !access?.allowed) {
-      accessDenied.value = true
-      errorMessage.value = '当前套餐未开放 Crush 名人图鉴。'
-      return
-    }
     if (mode.value === 'target') {
       caseId.value = caseId.value || getActiveCaseId() || ''
       if (!caseId.value) {
@@ -143,14 +144,14 @@ async function initialize() {
       const detail: any = await getCaseDetail(userId, caseId.value)
       caseName.value = detail?.profile?.nickname || detail?.profile?.name || detail?.name || '当前 Crush'
       caseAvatar.value = detail?.profile?.avatarUrl || detail?.profile?.avatar || ''
-      if (!['male', 'female'].includes(String(detail?.profile?.gender || '').trim())) {
+      if (normalizeRelationGender(detail?.profile?.gender) === 'unknown') {
         missingProfile.value = true
         errorMessage.value = '请先补全当前 Crush 画像中的性别信息。'
         return
       }
     } else {
       const profile: any = await getSelfProfile()
-      if (!['male', 'female'].includes(String(profile?.selfProfile?.gender || '').trim())) {
+      if (normalizeRelationGender(profile?.selfProfile?.gender) === 'unknown') {
         missingProfile.value = true
         errorMessage.value = '请先补全自己的画像性别信息。'
         return
@@ -214,7 +215,7 @@ async function submit() {
     })
     if (!response?.success) throw new Error(response?.message || '保存失败')
     clearArchetypeDraft(draftKey())
-    uni.redirectTo({ url: `/pages/crush-celebrity-result/crush-celebrity-result?id=${encodeURIComponent(response.result._id)}` })
+    uni.redirectTo({ url: `/pages/crush-celebrity-result/crush-celebrity-result?id=${encodeURIComponent(response.resultId)}` })
   } catch (error: any) {
     errorMessage.value = error?.message || '生成结果失败'
     phase.value = 'quiz'

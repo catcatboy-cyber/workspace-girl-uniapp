@@ -108,7 +108,7 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
   _id: SUBSCRIPTION_DOC_ID,
   scope: 'global',
   key: 'subscription',
-  configVersion: 7,
+  configVersion: 8,
 
   trial: {
     enabled: true,
@@ -151,6 +151,16 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
   },
 
   featureEstTokens: { ...DEFAULT_FEATURE_EST_TOKENS },
+
+  heartPersonaReportPayment: {
+    enabled: true,
+    answerBeforePayEnabled: true,
+    priceFen: 199,
+    sandboxProductId: '0001',
+    productionProductId: '',
+    allowedFeatures: ['关系女主角', 'Crush名人图鉴', '次元角色图鉴'],
+    refundRevokesPurchase: true
+  },
 
   referral: {
     enabled: true,
@@ -209,6 +219,18 @@ async function ensureSubscriptionConfig(db) {
         ensureNewFeatureDefault(existing.plans?.free, featureKey, false)
         ensureNewFeatureDefault(existing.plans?.pro, featureKey, true)
         ensureNewFeatureDefault(existing.plans?.ultra, featureKey, true)
+      }
+      if (!existing.heartPersonaReportPayment || typeof existing.heartPersonaReportPayment !== 'object' || Array.isArray(existing.heartPersonaReportPayment)) {
+        existing.heartPersonaReportPayment = { ...DEFAULT_SUBSCRIPTION_CONFIG.heartPersonaReportPayment }
+        needsUpdate = true
+      } else {
+        const paymentDefaults = DEFAULT_SUBSCRIPTION_CONFIG.heartPersonaReportPayment
+        for (const [key, value] of Object.entries(paymentDefaults)) {
+          if (existing.heartPersonaReportPayment[key] === undefined || existing.heartPersonaReportPayment[key] === null) {
+            existing.heartPersonaReportPayment[key] = Array.isArray(value) ? [...value] : value
+            needsUpdate = true
+          }
+        }
       }
       // 仅同步版本号，不覆盖管理员已配置的任何字段（features/monthlyTokens/价格等全部保留）
       if (existing.configVersion !== DEFAULT_SUBSCRIPTION_CONFIG.configVersion) {
@@ -498,8 +520,9 @@ async function checkTokenBalance(db, userId, estTokensOrOptions, modelIdArg) {
     monthlyUsed = 0
   }
 
-  const monthlyRemaining = monthlyLimit - monthlyUsed
-  const extraRemaining = user.extraTokens || 0
+  // 套餐超额不能抵消加油包余额；实际扣费同样会把套餐可用量归零。
+  const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed)
+  const extraRemaining = Math.max(0, Number(user.extraTokens) || 0)
   const totalRemaining = monthlyRemaining + extraRemaining
   const options = normalizeTokenCheckOptions(estTokensOrOptions, modelIdArg)
   const estimatedTokens = resolveEstimatedTokens(config, options.featureKey, options.fallbackTokens)

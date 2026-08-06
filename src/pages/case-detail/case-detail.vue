@@ -320,6 +320,7 @@ import { clamp, confidenceAdjust, computeInitiative, computeResponsive, computeC
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
 import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isReferralShareBlocked } from '@/utils/share'
 import { deriveCrushType } from '@/utils/crush-type.js'
+import { normalizeRelationGender, relationDisplayTitle } from '@/utils/relation-gender'
 import { aiLabel } from '@/utils/labels'
 import ProgressMilestone from '@/components/ProgressMilestone.vue'
 
@@ -360,7 +361,10 @@ const RELATION_CHART_GAP = 140
 const RELATION_CHART_VISIBLE = 5
 
 const result = computed(() => caseFile.value?.latestResult)
-const relationTargetTitle = computed(() => caseFile.value?.profile?.gender === '男' ? '关系男主角' : caseFile.value?.profile?.gender === '女' ? '关系女主角' : '关系主角')
+const relationTargetTitle = computed(() => {
+  const gender = normalizeRelationGender(caseFile.value?.profile?.gender)
+  return gender === 'unknown' ? '关系主角' : relationDisplayTitle(gender)
+})
 
 const caseCrushTimelineStats = computed(() => {
   const timeline = Array.isArray(caseFile.value?.timeline) ? caseFile.value.timeline : []

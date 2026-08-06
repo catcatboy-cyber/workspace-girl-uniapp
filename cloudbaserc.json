@@ -403,6 +403,24 @@
       "installDependency": true
     },
     {
+      "name": "getArchetypeReport",
+      "timeout": 15,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 128,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "archetypeReportPayment",
+      "timeout": 30,
+      "envVariables": {},
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "processReferralJobs",
       "timeout": 60,
       "envVariables": {},

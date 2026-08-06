@@ -34,12 +34,34 @@
           :class="['chip-v2', hasTrialFeature(f) ? 'active' : '']"
           style="padding:6rpx 16rpx;font-size:20rpx;"
           @click="toggleTrialFeature(f)"
-        >{{ hasTrialFeature(f) ? '✓' : '✗' }} {{ f }}</view>
+        >{{ hasTrialFeature(f) ? '✓' : '✗' }} {{ featureDisplayLabel(f) }}</view>
       </view>
     </view>
 
     <view class="note-text" style="padding:12rpx 0;color:#999;font-size:22rpx;">
       倍率 → 「Crush Credits 额度」tab 的模型扣费倍率 · 新用户赠送 → 「Crush Credits 额度」tab 的首次赠送额度 · 加油包 → 「Crush Credits 额度」tab 的充值档位
+    </view>
+
+    <view class="settings-section">
+      <view class="section-head">
+        <text class="section-title">心动人设局单次解锁</text>
+        <text class="section-desc">固定使用 short_series_goods，道具 0001，价格 199 分；这里仅配置是否开放、现网道具 ID 和允许的测试类型。</text>
+      </view>
+      <view class="switch-row">
+        <view><text class="field-title">开启先答题后付费</text><text class="field-desc">关闭后，免费用户不能进入这三个测试；订阅权限仍按 features / excludedFeatures 判断。</text></view>
+        <switch :checked="subForm.heartPersona.enabled && subForm.heartPersona.answerBeforePayEnabled" @change="subForm.heartPersona.enabled = $event.detail.value; subForm.heartPersona.answerBeforePayEnabled = $event.detail.value" />
+      </view>
+      <view class="form-grid">
+        <view class="field"><text>沙箱道具 ID（固定）</text><input value="0001" disabled /></view>
+        <view class="field"><text>价格（固定，分）</text><input value="199" disabled /></view>
+        <view class="field wide"><text>现网道具 ID</text><input v-model="subForm.heartPersona.productionProductId" placeholder="微信后台发布现网道具后填写" /></view>
+      </view>
+      <text class="field-desc" style="display:block;margin-top:14rpx;">允许单次解锁的测试（点击切换）</text>
+      <view style="display:flex;flex-wrap:wrap;gap:8rpx;margin-top:8rpx;">
+        <view v-for="feature in ARCHETYPE_FEATURES" :key="'pay_' + feature" :class="['chip-v2', subForm.heartPersona.allowedFeatures.includes(feature) ? 'active' : '']" style="padding:6rpx 16rpx;font-size:20rpx;" @click="togglePaymentFeature(feature)">
+          {{ subForm.heartPersona.allowedFeatures.includes(feature) ? '✓' : '✗' }} {{ featureDisplayLabel(feature) }}
+        </view>
+      </view>
     </view>
 
     <!-- 三档套餐 -->
@@ -90,7 +112,7 @@
               :class="['chip-v2', hasFeature(planKey, f) ? 'active' : '']"
               style="padding:6rpx 16rpx;font-size:20rpx;"
               @click="toggleFeature(planKey, f)"
-            >{{ hasFeature(planKey, f) ? '✓' : '✗' }} {{ f }}</view>
+            >{{ hasFeature(planKey, f) ? '✓' : '✗' }} {{ featureDisplayLabel(f) }}</view>
           </view>
         </view>
       </view>
@@ -198,6 +220,7 @@ const subForm = reactive({
   requireFirstEvent: true,
   payoutPaused: false,
   featureEstTokens: Object.fromEntries(FEATURE_ESTIMATE_FIELDS.map(item => [item.key, item.defaultValue]))
+  ,heartPersona: { enabled: true, answerBeforePayEnabled: true, productionProductId: '', allowedFeatures: ['关系女主角', 'Crush名人图鉴', '次元角色图鉴'] }
 }) as any
 const ALL_FEATURES = [
   '记录', '时间轴', '规则分析', '即时反馈', '事件理解',
@@ -206,6 +229,11 @@ const ALL_FEATURES = [
   '关系女主角', 'Crush名人图鉴', '次元角色图鉴'
 ]
 const SUMMARY_MARKERS = ['免费版全部', 'Pro全部']
+const ARCHETYPE_FEATURES = ['关系女主角', 'Crush名人图鉴', '次元角色图鉴']
+const FEATURE_DISPLAY_LABELS: Record<string, string> = {
+  '关系女主角': '关系主角（含男主角 / 女主角）'
+}
+const featureDisplayLabel = (feature: string) => FEATURE_DISPLAY_LABELS[feature] || feature
 const subSaving = ref(false)
 const subSaveMsg = ref('')
 
@@ -235,6 +263,11 @@ function toggleFeature(planKey: string, f: string) {
     if (!plan.features.includes(f)) plan.features.push(f)
   }
 }
+function togglePaymentFeature(feature: string) {
+  const list = subForm.heartPersona.allowedFeatures
+  if (list.includes(feature)) subForm.heartPersona.allowedFeatures = list.filter((item: string) => item !== feature)
+  else subForm.heartPersona.allowedFeatures = [...list, feature]
+}
 
 async function loadSubscriptionConfig() {
   subSaving.value = true
@@ -242,6 +275,12 @@ async function loadSubscriptionConfig() {
     const result = await adminGetSubscriptionConfig()
     if (!result?.success || !result?.config) return
     const c = result.config
+    subForm.heartPersona.enabled = c.heartPersonaReportPayment?.enabled === true
+    subForm.heartPersona.answerBeforePayEnabled = c.heartPersonaReportPayment?.answerBeforePayEnabled === true
+    subForm.heartPersona.productionProductId = String(c.heartPersonaReportPayment?.productionProductId || '')
+    subForm.heartPersona.allowedFeatures = Array.isArray(c.heartPersonaReportPayment?.allowedFeatures)
+      ? c.heartPersonaReportPayment.allowedFeatures.filter((item: string) => ARCHETYPE_FEATURES.includes(item))
+      : [...ARCHETYPE_FEATURES]
     subForm.trialEnabled = c.trial?.enabled !== false
     subForm.trialDurationDays = Number(c.trial?.durationDays ?? 7)
     subForm.trialExtendOnReferral = Number(c.trial?.extendOnReferral ?? 3)
@@ -312,6 +351,13 @@ async function saveSubscriptionConfig() {
         item.key,
         numberOr(subForm.featureEstTokens[item.key], item.defaultValue)
       ])),
+      heartPersonaReportPayment: {
+        enabled: subForm.heartPersona.enabled === true,
+        answerBeforePayEnabled: subForm.heartPersona.answerBeforePayEnabled === true,
+        productionProductId: String(subForm.heartPersona.productionProductId || ''),
+        allowedFeatures: [...subForm.heartPersona.allowedFeatures],
+        refundRevokesPurchase: true
+      },
       referral: {
         enabled: subForm.referralEnabled,
         inviterTrialExtendDays: numberOr(subForm.trialExtendOnReferral, 0),

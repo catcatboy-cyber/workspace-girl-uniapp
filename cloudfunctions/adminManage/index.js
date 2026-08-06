@@ -24,6 +24,8 @@ const {
   runCelebrityCalibrationDraft,
   publishArchetypeQuestionBank
 } = require('./_shared/archetype-bank')
+const { getOrderByTradeNo, fulfillReportOrder } = require('./_shared/archetype-report-access')
+const { queryOrder, notifyProvideGoods, validateQueriedOrder } = require('./_shared/heart-persona-virtual-pay')
 const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
@@ -1396,6 +1398,23 @@ async function updateSubscriptionConfigAdmin(event, adminUserId) {
     if (event.featureEstTokens) {
       updated.featureEstTokens = { ...existing.featureEstTokens, ...event.featureEstTokens }
     }
+    if (event.heartPersonaReportPayment) {
+      const incoming = event.heartPersonaReportPayment
+      const allowed = ['关系女主角', 'Crush名人图鉴', '次元角色图鉴']
+      const requestedFeatures = Array.isArray(incoming.allowedFeatures)
+        ? incoming.allowedFeatures.map((item) => String(item || '').trim()).filter((item) => allowed.includes(item))
+        : existing.heartPersonaReportPayment?.allowedFeatures || allowed
+      updated.heartPersonaReportPayment = {
+        ...existing.heartPersonaReportPayment,
+        enabled: incoming.enabled === true,
+        answerBeforePayEnabled: incoming.answerBeforePayEnabled === true,
+        priceFen: 199,
+        sandboxProductId: '0001',
+        productionProductId: String(incoming.productionProductId || '').trim(),
+        allowedFeatures: [...new Set(requestedFeatures)],
+        refundRevokesPurchase: incoming.refundRevokesPurchase !== false
+      }
+    }
     if (event.welcomeTokens !== undefined) {
       updated.welcomeTokens = Number(event.welcomeTokens) || 0
     }
@@ -2111,6 +2130,201 @@ async function refundOrder(event = {}) {
   return { success: true, orderId }
 }
 
+async function listArchetypeReportOrders(event = {}) {
+  const where = {}
+  const status = String(event.status || '').trim()
+  const targetUserId = String(event.targetUserId || '').trim()
+  const resultId = String(event.resultId || '').trim()
+  const outTradeNo = String(event.outTradeNo || '').trim()
+  if (status && status !== 'all') where.status = status
+  if (targetUserId) where.userId = targetUserId
+  if (resultId) where.resultId = resultId
+  if (outTradeNo) where.outTradeNo = outTradeNo
+  const page = Math.max(1, Number(event.page) || 1)
+  const pageSize = Math.max(1, Math.min(100, Number(event.pageSize) || 20))
+  let query = db.collection('archetype_report_orders')
+  if (Object.keys(where).length) query = query.where(where)
+  const count = await query.count()
+  const response = await query.orderBy('createdAt', 'desc').skip((page - 1) * pageSize).limit(pageSize).get()
+  return {
+    success: true,
+    orders: (response?.data || []).map((order) => ({
+      _id: order._id,
+      outTradeNo: order.outTradeNo,
+      userId: order.userId,
+      resultId: order.resultId,
+      kind: order.kind,
+      subjectGender: order.subjectGender,
+      featureKey: order.featureKey,
+      productId: order.productId,
+      env: order.env,
+      amountFen: order.origPriceFen,
+      actualPriceFen: order.actualPriceFen,
+      status: order.status,
+      fulfillmentSource: order.fulfillmentSource,
+      duplicatePaid: order.duplicatePaid === true,
+      queryAttempts: order.queryAttempts || 0,
+      lastQueryStatus: order.lastQueryStatus,
+      lastErrorCode: order.lastErrorCode || '',
+      lastErrorMessage: order.lastErrorMessage || '',
+      transactionId: order.transactionId || '',
+      wxOrderIdVerified: order.wxOrderIdVerified || '',
+      createdAt: order.createdAt,
+      paidAt: order.paidAt,
+      fulfilledAt: order.fulfilledAt,
+      refundedAt: order.refundedAt,
+      auditTrail: Array.isArray(order.auditTrail) ? order.auditTrail : []
+    })),
+    total: Number(count?.total || 0),
+    page,
+    pageSize
+  }
+}
+
+async function adminReconcileArchetypeReportOrder(event, adminUserId) {
+  const outTradeNo = String(event.outTradeNo || '').trim()
+  const reason = String(event.reason || '').trim()
+  if (!outTradeNo) return { success: false, message: '缺少 outTradeNo' }
+  if (!reason) return { success: false, message: '人工查单/补发必须填写原因' }
+  const order = await getOrderByTradeNo(db, outTradeNo)
+  if (!order) return { success: false, code: 'ORDER_NOT_FOUND', message: '订单不存在' }
+  const beforeStatus = order.status
+  let response
+  try {
+    response = await queryOrder({ outTradeNo, openid: order.openidSnapshot, env: order.env })
+  } catch (error) {
+    return { success: false, code: 'WECHAT_QUERY_FAILED', message: error?.message || '微信查单失败' }
+  }
+  const validation = validateQueriedOrder(response, order)
+  const auditEntry = {
+    adminUserId,
+    action: 'wechat_query_and_fulfill',
+    reason,
+    beforeStatus,
+    queriedStatus: validation.status,
+    at: new Date()
+  }
+  const auditTrail = [...(Array.isArray(order.auditTrail) ? order.auditTrail : []), auditEntry].slice(-50)
+  if (!validation.valid || ![2, 3, 4].includes(validation.status)) {
+    await db.collection('archetype_report_orders').doc(order._id).update({
+      lastQueryStatus: validation.status,
+      lastErrorCode: validation.code || 'ORDER_PENDING',
+      lastErrorMessage: String(response?.errmsg || '微信订单尚不可发货').slice(0, 300),
+      auditTrail,
+      updatedAt: new Date()
+    })
+    return { success: false, code: validation.code || 'ORDER_PENDING', message: '微信未确认可发货，未解锁报告', querySummary: { errcode: response?.errcode, status: validation.status } }
+  }
+  const wxOrder = validation.order
+  if (order.status === 'exception') {
+    await db.collection('archetype_report_orders').doc(order._id).update({ status: 'paid', lastErrorCode: '', lastErrorMessage: '', auditTrail, updatedAt: new Date() })
+  }
+  const fulfillment = await fulfillReportOrder(db, {
+    outTradeNo,
+    source: 'admin',
+    paymentEvidence: {
+      actualPriceFen: Number(wxOrder.paid_fee),
+      paidAt: new Date(Number(wxOrder.paid_time) * 1000),
+      wxOrderIdVerified: order.wxOrderIdVerified || ''
+    }
+  })
+  let notifyWarning = ''
+  if ([2, 3].includes(validation.status)) {
+    try {
+      await notifyProvideGoods({ outTradeNo, env: order.env })
+    } catch (cause) {
+      notifyWarning = String(cause?.message || 'WECHAT_NOTIFY_FAILED').slice(0, 300)
+      await db.collection('archetype_report_orders').doc(order._id).update({
+        lastErrorCode: cause?.code || 'WECHAT_NOTIFY_FAILED',
+        lastErrorMessage: notifyWarning,
+        updatedAt: new Date()
+      })
+    }
+  }
+  const current = await getOrderByTradeNo(db, outTradeNo)
+  await db.collection('archetype_report_orders').doc(order._id).update({
+    auditTrail: [...(Array.isArray(current?.auditTrail) ? current.auditTrail : auditTrail), { ...auditEntry, afterStatus: 'fulfilled' }].slice(-50),
+    updatedAt: new Date()
+  })
+  return { success: true, fulfillment, warning: notifyWarning || undefined, querySummary: { errcode: response?.errcode, status: validation.status } }
+}
+
+async function listArchetypeReportRefundTasks(event = {}) {
+  const where = {}
+  const status = String(event.status || '').trim()
+  const userId = String(event.targetUserId || event.userId || '').trim()
+  const resultId = String(event.resultId || '').trim()
+  const outTradeNo = String(event.outTradeNo || '').trim()
+  if (status && status !== 'all') where.status = status
+  if (userId) where.userId = userId
+  if (resultId) where.resultId = resultId
+  if (outTradeNo) where.outTradeNo = outTradeNo
+  const page = Math.max(1, Number(event.page) || 1)
+  const pageSize = Math.max(1, Math.min(100, Number(event.pageSize) || 20))
+  let query = db.collection('archetype_report_refund_tasks')
+  if (Object.keys(where).length) query = query.where(where)
+  const count = await query.count()
+  const response = await query.orderBy('createdAt', 'desc').skip((page - 1) * pageSize).limit(pageSize).get()
+  return {
+    success: true,
+    tasks: (response?.data || []).map((task) => ({
+      _id: task._id,
+      orderId: task.orderId,
+      outTradeNo: task.outTradeNo,
+      userId: task.userId,
+      resultId: task.resultId,
+      reason: task.reason,
+      status: task.status,
+      amountFen: task.amountFen,
+      handledBy: task.handledBy || '',
+      handledAt: task.handledAt || null,
+      handleNote: task.handleNote || '',
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      auditTrail: Array.isArray(task.auditTrail) ? task.auditTrail : []
+    })),
+    total: Number(count?.total || 0),
+    page,
+    pageSize
+  }
+}
+
+async function updateArchetypeReportRefundTask(event = {}, adminUserId) {
+  const taskId = String(event.taskId || '').trim()
+  const nextStatus = String(event.nextStatus || '').trim()
+  const reason = String(event.reason || '').trim()
+  if (!taskId) return { success: false, code: 'INVALID_ARGUMENT', message: '缺少退款待办 ID' }
+  if (!['processing', 'dismissed'].includes(nextStatus)) {
+    return { success: false, code: 'INVALID_ARGUMENT', message: '退款待办只允许标记处理中或驳回' }
+  }
+  if (!reason) return { success: false, code: 'INVALID_ARGUMENT', message: '处理退款待办必须填写原因' }
+  const response = await db.collection('archetype_report_refund_tasks').doc(taskId).get().catch(() => null)
+  const task = Array.isArray(response?.data) ? response.data[0] || null : response?.data || null
+  if (!task) return { success: false, code: 'REFUND_TASK_NOT_FOUND', message: '退款待办不存在' }
+  if (task.status === 'refunded') return { success: false, code: 'REFUND_TASK_FINALIZED', message: '退款已由微信通知确认，不能人工修改' }
+  if (task.status === 'dismissed' && nextStatus === 'processing') {
+    return { success: false, code: 'REFUND_TASK_FINALIZED', message: '已驳回的退款待办不能重新进入处理中' }
+  }
+  const now = new Date()
+  const auditEntry = {
+    adminUserId,
+    action: nextStatus === 'processing' ? 'mark_refund_processing' : 'dismiss_refund_task',
+    reason,
+    beforeStatus: task.status,
+    afterStatus: nextStatus,
+    at: now
+  }
+  await db.collection('archetype_report_refund_tasks').doc(taskId).update({
+    status: nextStatus,
+    handledBy: adminUserId,
+    handledAt: now,
+    handleNote: reason,
+    auditTrail: [...(Array.isArray(task.auditTrail) ? task.auditTrail : []), auditEntry].slice(-50),
+    updatedAt: now
+  })
+  return { success: true, taskId, status: nextStatus }
+}
+
 async function deleteUser(event, currentUserId) {
   const targetUserId = String(event.targetUserId || '').trim()
   if (!targetUserId) return { success: false, message: '缺少 targetUserId' }
@@ -2343,6 +2557,10 @@ exports.main = async (event = {}) => {
     if (action === 'backfillCustomPetDeliveries') return await backfillCustomPetDeliveries(event)
     if (action === 'listOrders') return await listOrders(event)
     if (action === 'refundOrder') return await refundOrder(event)
+    if (action === 'listArchetypeReportOrders') return await listArchetypeReportOrders(event)
+    if (action === 'reconcileArchetypeReportOrder') return await adminReconcileArchetypeReportOrder(event, userId)
+    if (action === 'listArchetypeReportRefundTasks') return await listArchetypeReportRefundTasks(event)
+    if (action === 'updateArchetypeReportRefundTask') return await updateArchetypeReportRefundTask(event, userId)
     if (action === 'deleteUser') return await deleteUser(event, userId)
     if (action === 'listReferralClaims') return await listReferralClaims(event)
     if (action === 'retryReferralClaim') return await retryReferralClaim(event, userId)

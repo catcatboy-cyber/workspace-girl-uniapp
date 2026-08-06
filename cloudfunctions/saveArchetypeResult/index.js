@@ -2,7 +2,7 @@
 
 const cloudbase = require('@cloudbase/node-sdk')
 const { requireAuthenticatedUserId } = require('./_shared/auth')
-const { checkFeatureAccess } = require('./_shared/subscription')
+const { resolveQuizAccess } = require('./_shared/archetype-report-access')
 const {
   FEATURE_RELATION,
   FEATURE_CELEBRITY,
@@ -51,8 +51,6 @@ exports.main = async (event = {}) => {
     if (!featureKey) return error('INVALID_ARGUMENT', 'kind 无效')
     const mode = event.mode === 'self' ? 'self' : event.mode === 'target' ? 'target' : ''
     if (!mode) return error('INVALID_ARGUMENT', 'mode 无效')
-    const access = await checkFeatureAccess(db, userId, featureKey)
-    if (!access?.allowed) return error('FEATURE_NOT_AVAILABLE', '当前套餐未开放此功能')
     const caseId = String(event.caseId || '').trim()
     if (mode === 'self' && caseId) return error('INVALID_ARGUMENT', 'self 模式不得提交 caseId')
     if (mode === 'target' && !caseId) return error('CASE_NOT_FOUND', '请先选择当前 Crush')
@@ -65,15 +63,21 @@ exports.main = async (event = {}) => {
       if (!['female', 'male'].includes(claimedGender)) return error('GENDER_REQUIRED', '请选择本次要测的关系主角性别')
       const userDoc = mode === 'self' ? await getUser(userId) : null
       const profileGender = normalizeSubjectGender(mode === 'self' ? userDoc?.selfProfile?.gender : caseDoc?.profile?.gender)
+      if (!['female', 'male'].includes(profileGender)) {
+        return error('PROFILE_GENDER_REQUIRED', mode === 'self' ? '请先补全自己的画像性别信息再来测' : '请先补全当前 Crush 画像中的性别信息再来测')
+      }
       if (profileGender !== 'unknown' && profileGender !== claimedGender) {
         return error('GENDER_MISMATCH', '被测对象性别与所选题库不一致')
       }
-      subjectGender = profileGender === 'unknown' ? claimedGender : profileGender
+      subjectGender = profileGender
     } else {
       const userDoc = mode === 'self' ? await getUser(userId) : null
       subjectGender = normalizeSubjectGender(mode === 'self' ? userDoc?.selfProfile?.gender : caseDoc?.profile?.gender)
       if (!['female', 'male'].includes(subjectGender)) return error('PROFILE_GENDER_REQUIRED', mode === 'self' ? '请先补全自己的画像性别再来测' : '请先补全当前 Crush 画像中的性别信息再来测')
     }
+
+    const access = await resolveQuizAccess(db, userId, kind, subjectGender)
+    if (!access?.allowed) return error('FEATURE_NOT_AVAILABLE', '当前套餐未开放此功能')
 
     const contentVersion = String(event.contentVersion || '').trim()
     if (!contentVersion) return error('INVALID_ARGUMENT', '缺少 contentVersion')
@@ -121,12 +125,19 @@ exports.main = async (event = {}) => {
       }),
       ...calculated,
       contentVersion,
+      reportAccess: {
+        purchaseState: 'locked',
+        purchaseOrderId: null,
+        purchasedAt: null,
+        revokedAt: null,
+        revokeReason: ''
+      },
       createdAt: now,
       updatedAt: now
     }
     const saved = await db.collection(RESULTS).add(result)
-    result._id = saved?.id || saved?._id || ''
-    return { success: true, result }
+    const resultId = saved?.id || saved?._id || ''
+    return { success: true, resultId, kind }
   } catch (cause) {
     const code = cause?.code === 'UNAUTHENTICATED' ? 'AUTH_REQUIRED' : cause?.code || 'SAVE_FAILED'
     const known = {

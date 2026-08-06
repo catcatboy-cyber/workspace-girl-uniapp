@@ -116,6 +116,7 @@ const FEATURE_DISPLAY: Record<string, string> = {
   '自定义宠物': '自定义宠物',
   '自定义AI风格': '自定义 ' + aiLabel() + ' 风格',
   '命理桃花': '命理桃花',
+  '关系女主角': '关系主角测试',
 }
 const SUMMARY_MARKERS = ['免费版全部', 'Pro全部']
 const normalizeFeature = (name: string) => FEATURE_DISPLAY[name] || name

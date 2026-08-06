@@ -89,6 +89,32 @@ async function main() {
   assert.strictEqual(allowed.required, 80)
   assert.strictEqual(allowed.ok, true)
 
+  const overusedMonthlyDb = createDb({
+    user: {
+      plan: 'free',
+      trialEndsAt: null,
+      monthlyTokensReset: new Date(),
+      monthlyTokensUsed: 1000,
+      extraTokens: 200
+    },
+    subscription: {
+      _id: 'settings_subscription',
+      configVersion: 7,
+      plans: { free: { monthlyTokens: 60 }, pro: { monthlyTokens: 0 }, ultra: { monthlyTokens: -1 } },
+      featureEstTokens: { attachmentAnalysis: 100 }
+    },
+    billing
+  })
+  const allowedFromExtra = await checkTokenBalance(overusedMonthlyDb, 'user1', {
+    featureKey: 'attachmentAnalysis',
+    modelId: 'deepseek-chat',
+    fallbackTokens: 100
+  })
+  assert.strictEqual(allowedFromExtra.required, 10)
+  assert.strictEqual(allowedFromExtra.monthlyRemaining, 0)
+  assert.strictEqual(allowedFromExtra.extraTokens, 200)
+  assert.strictEqual(allowedFromExtra.ok, true)
+
   console.log('subscription token gate tests passed')
 }
 

@@ -1,7 +1,10 @@
 const crypto = require('crypto')
 const cloudbase = require('@cloudbase/node-sdk')
+const { XMLParser } = require('fast-xml-parser')
 const { normalizeMediaCheckCallback } = require('./_shared/content-security')
 const { storeAvatarSecurityProof } = require('./_shared/avatar-security')
+const { getOrderByTradeNo, fulfillReportOrder, applyRefundNotification, normalizePaymentConfig } = require('./_shared/archetype-report-access')
+const { getSubscriptionConfig } = require('./_shared/subscription')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -28,6 +31,10 @@ function textResponse(statusCode, body) {
     headers: { 'content-type': 'text/plain; charset=utf-8' },
     body: String(body || '')
   }
+}
+
+function structuredResponse(statusCode, body, contentType) {
+  return { statusCode, headers: { 'content-type': contentType }, body }
 }
 
 function getQuery(event) {
@@ -60,6 +67,98 @@ function parseBody(event) {
   } catch (_) {
     return null
   }
+}
+
+function parseRequestBody(event) {
+  let body = event?.body
+  if (event?.isBase64Encoded && typeof body === 'string') body = Buffer.from(body, 'base64').toString('utf8')
+  if (body && typeof body === 'object') return { payload: body, format: 'json' }
+  const raw = String(body || '').trim()
+  if (!raw) return { payload: null, format: 'json' }
+  if (raw.startsWith('<')) {
+    try {
+      const parsed = new XMLParser({ ignoreAttributes: false, parseTagValue: false, trimValues: true }).parse(raw)
+      return { payload: parsed?.xml || parsed, format: 'xml' }
+    } catch (_) {
+      return { payload: null, format: 'xml' }
+    }
+  }
+  try { return { payload: JSON.parse(raw), format: 'json' } } catch (_) { return { payload: null, format: 'json' } }
+}
+
+function paymentCallbackResponse(format, errCode, errMsg) {
+  if (format === 'xml') {
+    const safeMessage = String(errMsg || '').split(']]>').join(']]]]><![CDATA[>')
+    const body = `<xml><ErrCode>${Number(errCode)}</ErrCode><ErrMsg><![CDATA[${safeMessage}]]></ErrMsg></xml>`
+    return structuredResponse(Number(errCode) === 0 ? 200 : 500, body, 'application/xml; charset=utf-8')
+  }
+  return structuredResponse(Number(errCode) === 0 ? 200 : 500, JSON.stringify({ ErrCode: Number(errCode), ErrMsg: String(errMsg || '') }), 'application/json; charset=utf-8')
+}
+
+function callbackDigest(payload) {
+  const summary = {
+    event: payload?.Event || payload?.event || '',
+    outTradeNo: payload?.OutTradeNo || payload?.MchOrderId || '',
+    transactionId: payload?.WeChatPayInfo?.TransactionId || payload?.WxpayRefundTransactionId || '',
+    wxRefundId: payload?.WxRefundId || ''
+  }
+  return crypto.createHash('sha256').update(JSON.stringify(summary), 'utf8').digest('hex')
+}
+
+function validateDeliveryPayload(payload, order) {
+  const goods = payload?.GoodsInfo || {}
+  const pay = payload?.WeChatPayInfo || {}
+  const actualPrice = Number(goods.ActualPrice)
+  const failures = []
+  if (String(payload?.MsgType || '').toLowerCase() !== 'event') failures.push('MsgType')
+  if (String(payload?.Event || '') !== 'xpay_goods_deliver_notify') failures.push('Event')
+  if (String(payload?.OpenId || '') !== String(order?.openidSnapshot || '')) failures.push('OpenId')
+  if (Number(payload?.Env) !== Number(order?.env)) failures.push('Env')
+  if (String(goods.ProductId || '') !== String(order?.productId || '')) failures.push('ProductId')
+  if (Number(goods.Quantity) !== 1) failures.push('Quantity')
+  if (Number(goods.OrigPrice) !== Number(order?.origPriceFen)) failures.push('OrigPrice')
+  if (!Number.isInteger(actualPrice) || actualPrice < 0 || actualPrice > Number(order?.origPriceFen)) failures.push('ActualPrice')
+  if (String(goods.Attach || '') !== String(order?.attach || '')) failures.push('Attach')
+  if (Number(pay.PaidTime) <= 0) failures.push('PaidTime')
+  if (order?.transactionId && String(order.transactionId) !== String(pay.TransactionId || '')) failures.push('TransactionId')
+  if (order?.mchOrderNo && String(order.mchOrderNo) !== String(pay.MchOrderNo || '')) failures.push('MchOrderNo')
+  return { valid: failures.length === 0, failures, goods, pay, actualPrice }
+}
+
+async function handleGoodsDelivery(payload) {
+  const outTradeNo = String(payload?.OutTradeNo || '').trim()
+  const order = outTradeNo ? await getOrderByTradeNo(db, outTradeNo) : null
+  if (!order) return { ok: false, code: 'ORDER_NOT_FOUND' }
+  const validation = validateDeliveryPayload(payload, order)
+  if (!validation.valid) {
+    await db.collection('archetype_report_orders').doc(order._id).update({
+      status: 'exception',
+      lastErrorCode: 'ORDER_VALIDATION_FAILED',
+      lastErrorMessage: `callback mismatch: ${validation.failures.join(',')}`,
+      callbackDigest: callbackDigest(payload),
+      updatedAt: new Date()
+    })
+    return { ok: false, code: 'ORDER_VALIDATION_FAILED' }
+  }
+  const paidAt = new Date(Number(validation.pay.PaidTime) * 1000)
+  await fulfillReportOrder(db, {
+    outTradeNo,
+    source: 'push',
+    paymentEvidence: {
+      actualPriceFen: validation.actualPrice,
+      mchOrderNo: validation.pay.MchOrderNo,
+      transactionId: validation.pay.TransactionId,
+      paidAt
+    }
+  })
+  await db.collection('archetype_report_orders').doc(order._id).update({ callbackDigest: callbackDigest(payload), updatedAt: new Date() })
+  return { ok: true, code: 'OK' }
+}
+
+async function handleRefundNotify(payload) {
+  const config = normalizePaymentConfig(await getSubscriptionConfig(db))
+  const result = await applyRefundNotification(db, payload, { refundRevokesPurchase: config.refundRevokesPurchase })
+  return { ok: true, code: result.refunded ? 'REFUNDED' : 'REFUND_NOT_SUCCEEDED', result }
 }
 
 async function findCheckByTraceId(traceId) {
@@ -109,6 +208,10 @@ exports.main = async (event = {}) => {
 
   const query = getQuery(event)
   if (!verifyMessageSignature(token, query)) return textResponse(403, 'invalid signature')
+  if (String(query.encrypt_type || '').toLowerCase() === 'aes' || query.msg_signature) {
+    console.error('contentSecCallback ENCRYPTED_CALLBACK_UNSUPPORTED')
+    return textResponse(400, 'encrypted callback unsupported')
+  }
 
   if (method === 'GET') {
     const echo = String(query.echostr || '').trim()
@@ -116,15 +219,29 @@ exports.main = async (event = {}) => {
   }
   if (method !== 'POST') return textResponse(405, 'method not allowed')
 
-  const payload = parseBody(event)
+  const parsed = parseRequestBody(event)
+  const payload = parsed.payload
   const eventName = String(payload?.Event || payload?.event || '').trim()
-  if (!payload || eventName !== 'wxa_media_check') return textResponse(400, 'invalid event')
+  if (!payload) return textResponse(400, 'invalid event')
 
   try {
-    await applyMediaCheckResult(payload)
-    return textResponse(200, 'success')
+    if (eventName === 'wxa_media_check') {
+      await applyMediaCheckResult(payload)
+      return textResponse(200, 'success')
+    }
+    if (eventName === 'xpay_goods_deliver_notify') {
+      const result = await handleGoodsDelivery(payload)
+      return paymentCallbackResponse(parsed.format, result.ok ? 0 : 1, result.ok ? 'success' : result.code)
+    }
+    if (eventName === 'xpay_refund_notify') {
+      const result = await handleRefundNotify(payload)
+      return paymentCallbackResponse(parsed.format, result.ok ? 0 : 1, result.ok ? 'success' : result.code)
+    }
+    console.warn('contentSecCallback ignored verified event:', eventName || 'unknown')
+    return parsed.format === 'xml' ? paymentCallbackResponse('xml', 0, 'success') : textResponse(200, 'success')
   } catch (error) {
     console.error('contentSecCallback failed:', error)
+    if (eventName.startsWith('xpay_')) return paymentCallbackResponse(parsed.format, 1, error?.code || 'failed')
     return textResponse(500, 'failed')
   }
 }
@@ -133,5 +250,11 @@ module.exports._test = {
   getQuery,
   verifyMessageSignature,
   parseBody,
-  applyMediaCheckResult
+  parseRequestBody,
+  paymentCallbackResponse,
+  validateDeliveryPayload,
+  callbackDigest,
+  applyMediaCheckResult,
+  handleGoodsDelivery,
+  handleRefundNotify
 }

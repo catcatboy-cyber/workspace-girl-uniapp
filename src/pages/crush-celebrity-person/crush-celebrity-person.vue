@@ -17,10 +17,9 @@
         <text>{{ introText }}</text>
       </view>
       <view class="card">
-        <view v-for="dimension in content.dimensions" :key="dimension.key" class="dimension">
-          <view class="dimension-head"><text>{{ dimension.name }}</text><text>{{ person.profile[dimension.key] }}</text></view>
-          <text class="dimension-desc">{{ dimension.description }}</text>
-          <view class="track"><view class="fill" :style="{ width: person.profile[dimension.key] + '%' }" /></view>
+          <view v-for="dimension in content.dimensions" :key="dimension.key" class="dimension">
+          <view class="dimension-head"><text>{{ dimension.name }}</text><text>已纳入匹配</text></view>
+          <text class="dimension-desc">该维度用于测试中的人物风格匹配。</text>
         </view>
       </view>
     </template>
@@ -32,7 +31,6 @@ import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getArchetypeQuestionBank } from '@/utils/api'
 import { FEATURE_CRUSH_CELEBRITY } from '@/utils/feature-keys'
-import { buildCelebritySummary, buildCelebrityTypeLabel } from '@/utils/crush-celebrity-copy'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
 const themeVars = ref(getThemeStyle())
@@ -41,8 +39,8 @@ const person = ref<any>(null)
 const content = ref<any>({ dimensions: [], people: [] })
 const loading = ref(true)
 const errorMessage = ref('')
-const typeLabel = computed(() => buildCelebrityTypeLabel(person.value, content.value.dimensions || []))
-const introText = computed(() => buildCelebritySummary(person.value, content.value.dimensions || [], content.value.resultCopy || {}))
+const typeLabel = computed(() => '关系风格原型')
+const introText = computed(() => person.value?.summary || `${person.value?.name || '该人物'}代表一种可辨识的关系风格。`)
 
 function eraText(value: string) { return ({ history: '历史', modern: '近代', contemporary: '当代' } as any)[value] || value }
 async function load() {

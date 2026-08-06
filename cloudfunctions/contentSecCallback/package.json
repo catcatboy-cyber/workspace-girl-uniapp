@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "@cloudbase/node-sdk": "^2.4.0"
+    "@cloudbase/node-sdk": "^2.4.0",
+    "fast-xml-parser": "^4.5.3"
   }
 }

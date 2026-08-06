@@ -1451,6 +1451,49 @@ async function main() {
     assert.equal(userAfterConsume.extraTokens, 499200)
   })
 
+  await runCase('token gate does not let monthly overuse offset available extra tokens', async () => {
+    const fake = createFakeCloudbase()
+    setCurrentFakeCloudbase(fake)
+
+    asUser(fake, 'user_monthly_overuse')
+    Object.assign(fake.__store.getCollection('users').get('user_monthly_overuse'), {
+      plan: 'free',
+      trialEndsAt: null,
+      monthlyTokensReset: new Date(),
+      monthlyTokensUsed: 1000,
+      extraTokens: 200
+    })
+    const db = fake.init().database()
+    await db.collection('system_settings').doc('settings_subscription').set({
+      _id: 'settings_subscription',
+      plans: {
+        free: { monthlyTokens: 60 },
+        pro: { monthlyTokens: 0 },
+        ultra: { monthlyTokens: -1 }
+      },
+      featureEstTokens: { attachmentAnalysis: 100 }
+    })
+    await db.collection('system_settings').doc('settings_billing').set({
+      _id: 'settings_billing',
+      modelPricing: [
+        { modelId: '*', costMultiplier: 1 },
+        { modelId: 'deepseek-chat', costMultiplier: 0.1 }
+      ]
+    })
+
+    const { checkTokenBalance } = require(path.join(projectRoot, 'cloudfunctions', '_shared', 'subscription.js'))
+    const result = await checkTokenBalance(db, 'user_monthly_overuse', {
+      featureKey: 'attachmentAnalysis',
+      modelId: 'deepseek-chat',
+      fallbackTokens: 100
+    })
+
+    assert.equal(result.ok, true)
+    assert.equal(result.required, 10)
+    assert.equal(result.monthlyRemaining, 0)
+    assert.equal(result.extraTokens, 200)
+  })
+
   if (process.exitCode && process.exitCode !== 0) {
     process.exit(process.exitCode)
   }

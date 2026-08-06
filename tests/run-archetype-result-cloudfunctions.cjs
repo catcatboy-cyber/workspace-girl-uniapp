@@ -104,7 +104,10 @@ async function main() {
     archetype_results: [
       { _id: 'other-user-result', userId: 'user-2', kind: 'relation_archetype', subjectGender: 'female', mode: 'self', createdAt: new Date('2026-08-01T00:00:00Z') }
     ],
-    users: [{ _id: 'user-1', selfProfile: { gender: 'female' } }]
+    users: [
+      { _id: 'user-1', selfProfile: { gender: 'female' } },
+      { _id: 'user-unknown', selfProfile: { gender: 'unknown' } }
+    ]
   })
 
   let authenticatedUserId = 'user-1'
@@ -125,9 +128,9 @@ async function main() {
       return authenticatedUserId
     }
   }
-  const subscriptionPath = require.resolve('../cloudfunctions/saveArchetypeResult/_shared/subscription')
-  require(subscriptionPath)
-  require.cache[subscriptionPath].exports = { checkFeatureAccess: async () => ({ allowed: featureAllowed }) }
+  const accessPath = require.resolve('../cloudfunctions/saveArchetypeResult/_shared/archetype-report-access')
+  require(accessPath)
+  require.cache[accessPath].exports = { resolveQuizAccess: async () => ({ allowed: featureAllowed }) }
   const savePath = require.resolve('../cloudfunctions/saveArchetypeResult/index.js')
   delete require.cache[savePath]
   const saveFunction = require(savePath)
@@ -135,9 +138,9 @@ async function main() {
   const publicBankAuthPath = require.resolve('../cloudfunctions/getArchetypeQuestionBank/_shared/auth')
   require(publicBankAuthPath)
   require.cache[publicBankAuthPath].exports = require.cache[authPath].exports
-  const publicBankSubscriptionPath = require.resolve('../cloudfunctions/getArchetypeQuestionBank/_shared/subscription')
-  require(publicBankSubscriptionPath)
-  require.cache[publicBankSubscriptionPath].exports = require.cache[subscriptionPath].exports
+  const publicBankAccessPath = require.resolve('../cloudfunctions/getArchetypeQuestionBank/_shared/archetype-report-access')
+  require(publicBankAccessPath)
+  require.cache[publicBankAccessPath].exports = { resolveQuizAccess: async () => ({ allowed: featureAllowed }) }
   const publicBankPath = require.resolve('../cloudfunctions/getArchetypeQuestionBank/index.js')
   delete require.cache[publicBankPath]
   const publicBankFunction = require(publicBankPath)
@@ -186,17 +189,29 @@ async function main() {
     dimensionScores: { forged: 100 }
   })
   assert.strictEqual(selfSaved.success, true)
-  assert.strictEqual(selfSaved.result.similarity, expectedRelation.similarity)
-  assert.deepStrictEqual(selfSaved.result.dimensionScores, expectedRelation.dimensionScores)
-  assert.strictEqual(selfSaved.result.personSnapshot.name, '冉莹颖型')
-  assert.strictEqual('caseId' in selfSaved.result, false)
-  assert.strictEqual('forged' in selfSaved.result.dimensionScores, false)
+  assert.ok(selfSaved.resultId)
+  assert.deepStrictEqual(Object.keys(selfSaved).sort(), ['kind', 'resultId', 'success'])
+  const selfStored = db.readAll('archetype_results').find((item) => item._id === selfSaved.resultId)
+  assert.strictEqual(selfStored.similarity, expectedRelation.similarity)
+  assert.deepStrictEqual(selfStored.dimensionScores, expectedRelation.dimensionScores)
+  assert.strictEqual(selfStored.personSnapshot.name, '冉莹颖型')
+  assert.strictEqual('caseId' in selfStored, false)
+  assert.strictEqual('forged' in selfStored.dimensionScores, false)
+  assert.strictEqual(selfStored.reportAccess.purchaseState, 'locked')
 
   const mismatchedGender = await saveFunction.main({
     kind: 'relation_archetype', subjectGender: 'male', mode: 'self',
     stageKey: 'pre_relationship', personKey: 'ran_yingying', answers: relationAnswers, scenarioAnswers, contentVersion: '1.0.0'
   })
   assert.strictEqual(mismatchedGender.code, 'GENDER_MISMATCH')
+
+  authenticatedUserId = 'user-unknown'
+  const unknownGender = await saveFunction.main({
+    kind: 'relation_archetype', subjectGender: 'female', mode: 'self',
+    stageKey: 'pre_relationship', personKey: 'ran_yingying', answers: relationAnswers, scenarioAnswers, contentVersion: '1.0.0'
+  })
+  assert.strictEqual(unknownGender.code, 'PROFILE_GENDER_REQUIRED')
+  authenticatedUserId = 'user-1'
 
   const unauthorizedCase = await saveFunction.main({
     kind: 'relation_archetype', subjectGender: 'female',
@@ -221,7 +236,8 @@ async function main() {
     contentVersion: '1.0.0'
   })
   assert.strictEqual(targetSaved.success, true)
-  assert.strictEqual(targetSaved.result.caseSnapshot.name, '小夏')
+  const targetStored = db.readAll('archetype_results').find((item) => item._id === targetSaved.resultId)
+  assert.strictEqual(targetStored.caseSnapshot.name, '小夏')
 
   const celebrityAnswers = celebrityContent.questions.map((question) => ({ questionId: question.id, optionKey: 'A' }))
 const expectedCelebrity = scoreCrushCelebrity(celebrityContent, { mode: 'self', subjectGender: 'female', answers: celebrityAnswers })
@@ -234,9 +250,10 @@ const expectedCelebrity = scoreCrushCelebrity(celebrityContent, { mode: 'self', 
     similarities: { 'forged-person': 100 }
   })
   assert.strictEqual(celebritySaved.success, true)
-  assert.strictEqual(celebritySaved.result.primaryPersonKey, expectedCelebrity.primaryPersonKey)
-  assert.deepStrictEqual(celebritySaved.result.topFive, expectedCelebrity.topFive)
-  assert.strictEqual(celebritySaved.result.similarities['forged-person'], undefined)
+  const celebrityStored = db.readAll('archetype_results').find((item) => item._id === celebritySaved.resultId)
+  assert.strictEqual(celebrityStored.primaryPersonKey, expectedCelebrity.primaryPersonKey)
+  assert.deepStrictEqual(celebrityStored.topFive, expectedCelebrity.topFive)
+  assert.strictEqual(celebrityStored.similarities['forged-person'], undefined)
 
   featureAllowed = false
   const denied = await saveFunction.main({
@@ -256,19 +273,22 @@ const expectedCelebrity = scoreCrushCelebrity(celebrityContent, { mode: 'self', 
   const resultsAuthPath = require.resolve('../cloudfunctions/getArchetypeResults/_shared/auth')
   require(resultsAuthPath)
   require.cache[resultsAuthPath].exports = require.cache[authPath].exports
+  const resultsAccessPath = require.resolve('../cloudfunctions/getArchetypeResults/_shared/archetype-report-access')
+  require(resultsAccessPath)
+  require.cache[resultsAccessPath].exports = { resolveReportAccess: async () => ({ accessLevel: 'preview' }) }
   const resultsPath = require.resolve('../cloudfunctions/getArchetypeResults/index.js')
   delete require.cache[resultsPath]
   const resultsFunction = require(resultsPath)
   const ownResults = await resultsFunction.main({ kind: 'relation_archetype', subjectGender: 'female', limit: 50 })
   assert.strictEqual(ownResults.success, true)
   assert(ownResults.results.length >= 2)
-  assert(ownResults.results.every((item) => item.userId === 'user-1'))
+  assert(ownResults.results.every((item) => !('userId' in item) && !('similarity' in item) && !('answers' in item)))
   const caseResults = await resultsFunction.main({ kind: 'relation_archetype', subjectGender: 'female', caseId: 'case-owned', limit: 50 })
   assert.strictEqual(caseResults.results.length, 1)
-  assert.strictEqual(caseResults.results[0]._id, targetSaved.result._id)
-  const exactOwnResult = await resultsFunction.main({ kind: 'relation_archetype', resultId: selfSaved.result._id })
+  assert.strictEqual(caseResults.results[0].resultId, targetSaved.resultId)
+  const exactOwnResult = await resultsFunction.main({ kind: 'relation_archetype', resultId: selfSaved.resultId })
   assert.strictEqual(exactOwnResult.results.length, 1)
-  assert.strictEqual(exactOwnResult.results[0]._id, selfSaved.result._id)
+  assert.strictEqual(exactOwnResult.results[0].resultId, selfSaved.resultId)
   const exactOtherResult = await resultsFunction.main({ kind: 'relation_archetype', resultId: 'other-user-result' })
   assert.deepStrictEqual(exactOtherResult.results, [])
 

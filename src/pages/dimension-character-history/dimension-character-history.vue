@@ -5,8 +5,8 @@
     <view v-else-if="errorMessage" class="card error">{{ errorMessage }}</view>
     <view v-else-if="!results.length" class="card">还没有次元角色测试记录。</view>
     <view v-else class="card">
-      <view v-for="item in results" :key="item._id" class="history-row" @click="openResult(item._id)">
-        <view><text class="row-title">{{ item.mode === 'target' ? (item.caseSnapshot?.name || '当前 Crush') : '我自己' }} · {{ item.subjectGender === 'male' ? '男性池' : '女性池' }}</text><text class="row-meta">{{ formatDate(item.createdAt) }} · 主要相似度 {{ item.similarities?.[item.primaryPersonKey] || 0 }}%</text></view>
+      <view v-for="item in results" :key="item.resultId" class="history-row" @click="openResult(item.resultId)">
+        <view><text class="row-title">{{ item.mode === 'target' ? (item.caseSnapshot?.name || '当前 Crush') : '我自己' }} · {{ item.primary?.name || '角色原型' }}</text><text class="row-meta">{{ formatDate(item.createdAt) }} · 主要相似度 {{ item.similarityBand?.label || '-' }}</text></view>
         <text class="arrow">›</text>
       </view>
     </view>
