@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
-import { getCurrentUserId, wechatLogin, trackAnonymousVisit, trackLoginVisit } from '@/utils/api'
-import { captureLandingContext, readLandingContext } from '@/utils/landing'
-import { aiLabel, setAILabel } from '@/utils/labels'
-
-const SILENT_LOGIN_TRIED_KEY = 'silentLoginTried'
-const SILENT_LOGIN_DONE_KEY = 'silentLoginDone'
+import { getCurrentUserId, trackAnonymousVisit } from '@/utils/api'
+import { captureLandingContext } from '@/utils/landing'
+import { ensureSilentWechatLogin } from '@/utils/silent-login'
 
 onLaunch(() => {
   // 记录分享访问（有参数时）
@@ -47,7 +44,7 @@ onLaunch(() => {
   } catch (_) { /* H5 等非微信环境忽略 */ }
 
   // 全量静默登录：wx.login 无弹窗，后端通过 openid 自动识别/创建用户
-  silentWechatLogin().catch(() => {})
+  ensureSilentWechatLogin(true).catch(() => {})
 })
 
 onShow((options: any) => {
@@ -55,44 +52,10 @@ onShow((options: any) => {
   if (options && typeof options === 'object') {
     captureLandingContext(options)
   }
+  if (!getCurrentUserId()) ensureSilentWechatLogin().catch(() => {})
 })
 
 onHide(() => {})
-
-async function silentWechatLogin() {
-  // 每次冷启动都走 wechatLogin 刷新 CloudBase 鉴权状态
-  // 否则老用户冷启动时 CloudBase auth 过期，后续云函数调用全部鉴权失败
-  uni.setStorageSync(SILENT_LOGIN_TRIED_KEY, true)
-
-  try {
-    const wxApi = (globalThis as any)?.wx
-    if (!wxApi?.login) return
-
-    const launchOptions = uni.getLaunchOptionsSync?.() || ({} as any)
-    if (launchOptions?.query) {
-      captureLandingContext(launchOptions.query)
-    }
-
-    const loginCode = await new Promise<string>((resolve) => {
-      wxApi.login({
-        success(res: any) { resolve(res?.code || '') },
-        fail() { resolve('') }
-      })
-    })
-    if (!loginCode) return
-
-    const ctx = readLandingContext()
-    const result = await wechatLogin('', { loginCode, channel: ctx.channel, scene: ctx.scene, ref: ctx.ref, shareId: ctx.shareId, inviteCode: ctx.inviteCode })
-    if (result?.success) {
-      trackLoginVisit({ shareId: ctx.shareId, visitorUserId: result.userId, isNewUser: result.isNewUser || false }).catch(() => {})
-      setAILabel(result.showAILabel !== false)
-    }
-  } catch (_) {
-    // Silent login is best-effort; avoid logging user/session data in production.
-  } finally {
-    uni.setStorageSync(SILENT_LOGIN_DONE_KEY, true)
-  }
-}
 </script>
 
 <style lang="scss">

@@ -1087,10 +1087,36 @@ export async function getArchetypeResults(params: { kind: 'relation_archetype' |
   return res.result
 }
 
+export async function waitForCurrentUserId(timeoutMs = 10000, intervalMs = 150): Promise<string | null> {
+  const startedAt = Date.now()
+  let userId = getCurrentUserId()
+  while (!userId && Date.now() - startedAt < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+    userId = getCurrentUserId()
+  }
+  return userId
+}
+
 export async function getArchetypeReport(resultId: string) {
   const res = await callFunction({
     name: 'getArchetypeReport',
     data: { resultId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function prepareArchetypeResultShare(resultId: string) {
+  const res = await callFunction({
+    name: 'getArchetypeReport',
+    data: { action: 'prepareShare', resultId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function getArchetypeSharedPreview(resultShareId: string) {
+  const res = await callFunction({
+    name: 'getArchetypeReport',
+    data: { action: 'getSharedPreview', resultShareId, ...getBusinessAuthPayload() }
   })
   return res.result
 }

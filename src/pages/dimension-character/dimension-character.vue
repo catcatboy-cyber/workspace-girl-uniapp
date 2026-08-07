@@ -55,12 +55,13 @@ import { onBackPress, onLoad, onShow } from '@dcloudio/uni-app'
 import ArchetypeOptionList from '@/components/archetype/ArchetypeOptionList.vue'
 import ArchetypeQuizProgress from '@/components/archetype/ArchetypeQuizProgress.vue'
 import CelebrityPersonCard from '@/components/archetype/CelebrityPersonCard.vue'
-import { getArchetypeQuestionBank, getCaseDetail, getCurrentUserId, getSelfProfile, saveArchetypeResult } from '@/utils/api'
+import { getArchetypeQuestionBank, getCaseDetail, getCurrentUserId, getSelfProfile, saveArchetypeResult, waitForCurrentUserId } from '@/utils/api'
 import { getActiveCaseId } from '@/utils/helpers'
 import { FEATURE_DIMENSION_CHARACTER } from '@/utils/feature-keys'
 import { clearArchetypeDraft, getArchetypeDraftKey, loadArchetypeDraft, saveArchetypeDraft } from '@/utils/archetype-storage'
 import { normalizeRelationGender } from '@/utils/relation-gender'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
+import { ensureSilentWechatLogin } from '@/utils/silent-login'
 
 const themeVars = ref(getThemeStyle())
 const loading = ref(true)
@@ -78,13 +79,17 @@ const restoredDraft = ref(false)
 const allowBack = ref(false)
 const submitting = ref(false)
 const mode = ref<'self' | 'target' | ''>('')
+const entryMode = ref<'standard' | 'share_quick'>('standard')
+const resultShareId = ref('')
+const subjectGender = ref<'female' | 'male' | ''>('')
 const bank = ref<any>(null)
 const answers = reactive<Record<string, string>>({})
 
 const content = computed(() => bank.value?.content || { questions: [], people: [] })
 const questions = computed(() => content.value.questions || [])
 const currentQuestion = computed(() => questions.value[questionIndex.value])
-const enabledPeople = computed(() => (content.value.people || []).filter((person: any) => person.enabled !== false))
+const isShareQuick = computed(() => entryMode.value === 'share_quick')
+const enabledPeople = computed(() => (content.value.people || []).filter((person: any) => person.enabled !== false && normalizeRelationGender(person.gender) === subjectGender.value))
 const eraSummary = computed(() => [
   `历史 ${enabledPeople.value.filter((person: any) => person.era === 'history').length}`,
   `近代 ${enabledPeople.value.filter((person: any) => person.era === 'modern').length}`,
@@ -100,7 +105,7 @@ const currentOptions = computed(() => {
 })
 
 function questionText(item: any) { return mode.value === 'target' ? item?.textTarget || '' : item?.textSelf || '' }
-function currentPath() { return `/pages/dimension-character/dimension-character?mode=${mode.value || 'self'}${caseId.value ? `&caseId=${caseId.value}` : ''}` }
+function currentPath() { return `/pages/dimension-character/dimension-character?mode=${mode.value || 'self'}${caseId.value ? `&caseId=${caseId.value}` : ''}${subjectGender.value ? `&subjectGender=${subjectGender.value}` : ''}${isShareQuick.value ? `&entryMode=share_quick&resultShareId=${encodeURIComponent(resultShareId.value)}` : ''}` }
 function goLogin() { uni.navigateTo({ url: `/pages/login/login?redirect=${encodeURIComponent(currentPath())}` }) }
 function goCrushes() { uni.switchTab({ url: '/pages/cases/cases' }) }
 function goSubscription() { uni.navigateTo({ url: '/pages/subscription/subscription' }) }
@@ -111,14 +116,14 @@ function goProfile() {
   }
   uni.navigateTo({ url: `/pages/self-profile/self-profile?mode=onboarding&redirect=${encodeURIComponent(currentPath())}` })
 }
-function draftKey() { return getArchetypeDraftKey({ kind: 'dimension_character', userId: getCurrentUserId() || '', mode: mode.value as any, caseId: caseId.value, contentVersion: bank.value.contentVersion }) }
+function draftKey() { return getArchetypeDraftKey({ kind: 'dimension_character', userId: getCurrentUserId() || '', mode: mode.value as any, caseId: caseId.value, subjectGender: subjectGender.value as any, entryMode: entryMode.value, resultShareId: resultShareId.value, contentVersion: bank.value.contentVersion }) }
 
 function persist() {
   if (!bank.value || !mode.value) return
   saveArchetypeDraft(draftKey(), {
     kind: 'dimension_character',
     mode: mode.value as any,
-    caseId: mode.value === 'target' ? caseId.value : undefined,
+    caseId: !isShareQuick.value && mode.value === 'target' ? caseId.value : undefined,
     answers: Object.entries(answers).map(([questionId, optionKey]) => ({ questionId, optionKey: optionKey as any })),
     contentVersion: bank.value.contentVersion,
     updatedAt: Date.now()
@@ -132,10 +137,20 @@ async function initialize() {
   missingProfile.value = false
   accessDenied.value = false
   restoredDraft.value = false
-  const userId = getCurrentUserId()
-  if (!userId) { loading.value = false; goLogin(); return }
+  let userId = getCurrentUserId()
+  if (!userId && isShareQuick.value) userId = await ensureSilentWechatLogin() || await waitForCurrentUserId()
+  if (!userId) {
+    loading.value = false
+    if (isShareQuick.value) { errorMessage.value = '网络有点慢，正在等待登录完成，请重试。'; return }
+    goLogin()
+    return
+  }
   try {
-    if (mode.value === 'target') {
+    if (isShareQuick.value) {
+      caseId.value = ''
+      caseName.value = mode.value === 'target' ? 'TA' : ''
+      if (!resultShareId.value || !subjectGender.value) throw new Error('分享测试参数不完整，请返回分享页重新进入。')
+    } else if (mode.value === 'target') {
       caseId.value = caseId.value || getActiveCaseId() || ''
       if (!caseId.value) {
         missingCase.value = true
@@ -145,20 +160,24 @@ async function initialize() {
       const detail: any = await getCaseDetail(userId, caseId.value)
       caseName.value = detail?.profile?.nickname || detail?.profile?.name || detail?.name || '当前 Crush'
       caseAvatar.value = detail?.profile?.avatarUrl || detail?.profile?.avatar || ''
-      if (normalizeRelationGender(detail?.profile?.gender) === 'unknown') {
+      const gender = normalizeRelationGender(detail?.profile?.gender)
+      if (gender === 'unknown') {
         missingProfile.value = true
         errorMessage.value = '请先补全当前 Crush 画像中的性别信息。'
         return
       }
+      subjectGender.value = gender
     } else {
       const profile: any = await getSelfProfile()
-      if (normalizeRelationGender(profile?.selfProfile?.gender) === 'unknown') {
+      const gender = normalizeRelationGender(profile?.selfProfile?.gender)
+      if (gender === 'unknown') {
         missingProfile.value = true
         errorMessage.value = '请先补全自己的画像性别信息。'
         return
       }
+      subjectGender.value = gender
     }
-    const result = await getArchetypeQuestionBank(FEATURE_DIMENSION_CHARACTER)
+    const result = await getArchetypeQuestionBank(FEATURE_DIMENSION_CHARACTER, '', subjectGender.value as any)
     if (!result?.success || !result?.bank) throw new Error(result?.message || '题库尚未发布')
     bank.value = result.bank
     if (!mode.value) { phase.value = 'mode-select'; return }
@@ -207,10 +226,16 @@ async function submit() {
   submitting.value = true
   phase.value = 'submitting'
   try {
+    persist()
+    if (isShareQuick.value && !getCurrentUserId() && !(await ensureSilentWechatLogin()) && !(await waitForCurrentUserId())) {
+      throw new Error('登录尚未完成，答案已保存，请稍后重试。')
+    }
     const response = await saveArchetypeResult({
       kind: 'dimension_character',
       mode: mode.value,
-      ...(mode.value === 'target' ? { caseId: caseId.value } : {}),
+      subjectGender: subjectGender.value,
+      entryMode: entryMode.value,
+      ...(isShareQuick.value ? { resultShareId: resultShareId.value } : mode.value === 'target' ? { caseId: caseId.value } : {}),
       answers: questions.value.map((question: any) => ({ questionId: question.id, optionKey: answers[question.id] })),
       contentVersion: bank.value.contentVersion
     })
@@ -241,6 +266,9 @@ function confirmExit() {
 }
 
 onLoad((options: any) => {
+  entryMode.value = options?.entryMode === 'share_quick' ? 'share_quick' : 'standard'
+  resultShareId.value = String(options?.resultShareId || '').trim()
+  subjectGender.value = options?.subjectGender === 'male' ? 'male' : options?.subjectGender === 'female' ? 'female' : ''
   mode.value = options?.mode === 'target' ? 'target' : options?.mode === 'self' ? 'self' : ''
   caseId.value = String(options?.caseId || '').trim()
   initialize()
