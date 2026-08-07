@@ -17,6 +17,7 @@ const { scoreCrushCelebrity } = require('./_shared/crush-celebrity-score')
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
 const RESULTS = 'archetype_results'
+const SHARES = 'archetype_result_shares'
 
 function error(code, message, extras = {}) {
   return { success: false, code, message, ...extras }
@@ -37,6 +38,25 @@ async function getUser(userId) {
   return Array.isArray(data) ? data[0] || null : data || null
 }
 
+function firstDoc(response) {
+  const data = response?.data
+  return Array.isArray(data) ? data[0] || null : data || null
+}
+
+function validResultShareId(value) {
+  return /^hps_[A-Za-z0-9_-]{24,80}$/.test(String(value || '').trim())
+}
+
+async function requireActiveShare(resultShareId, kind) {
+  if (!validResultShareId(resultShareId)) return { status: 'missing' }
+  const share = firstDoc(await db.collection(SHARES).where({ resultShareId, status: 'active' }).limit(1).get().catch(() => null))
+  if (!share) return { status: 'missing' }
+  if (String(share.kind || '') !== kind) return { status: 'kind_mismatch' }
+  const source = firstDoc(await db.collection(RESULTS).doc(String(share.resultId || '')).get().catch(() => null))
+  if (!source || String(source.userId || '') !== String(share.ownerUserId || '') || source.kind !== kind) return { status: 'missing' }
+  return { status: 'active', share, source }
+}
+
 exports.main = async (event = {}) => {
   try {
     const userId = await requireAuthenticatedUserId(app, event)
@@ -51,14 +71,27 @@ exports.main = async (event = {}) => {
     if (!featureKey) return error('INVALID_ARGUMENT', 'kind 无效')
     const mode = event.mode === 'self' ? 'self' : event.mode === 'target' ? 'target' : ''
     if (!mode) return error('INVALID_ARGUMENT', 'mode 无效')
+    const entryMode = event.entryMode === 'share_quick' ? 'share_quick' : 'standard'
     const caseId = String(event.caseId || '').trim()
-    if (mode === 'self' && caseId) return error('INVALID_ARGUMENT', 'self 模式不得提交 caseId')
-    if (mode === 'target' && !caseId) return error('CASE_NOT_FOUND', '请先选择当前 Crush')
-    const caseDoc = mode === 'target' ? await requireOwnedCase(caseId, userId) : null
-    if (mode === 'target' && !caseDoc) return error('CASE_NOT_FOUND', 'Crush 不存在或无权访问')
+    const resultShareId = String(event.resultShareId || '').trim()
+    let sourceShare = null
+    if (entryMode === 'share_quick') {
+      if (caseId) return error('QUICK_CASE_FORBIDDEN', '分享快速测试不得提交 caseId')
+      sourceShare = await requireActiveShare(resultShareId, kind)
+      if (sourceShare.status === 'kind_mismatch') return error('SHARE_KIND_MISMATCH', '分享来源与测试类型不一致')
+      if (sourceShare.status !== 'active') return error('SHARE_NOT_FOUND', '分享结果不存在或已失效')
+    } else {
+      if (mode === 'self' && caseId) return error('INVALID_ARGUMENT', 'self 模式不得提交 caseId')
+      if (mode === 'target' && !caseId) return error('CASE_NOT_FOUND', '请先选择当前 Crush')
+    }
+    const caseDoc = entryMode === 'standard' && mode === 'target' ? await requireOwnedCase(caseId, userId) : null
+    if (entryMode === 'standard' && mode === 'target' && !caseDoc) return error('CASE_NOT_FOUND', 'Crush 不存在或无权访问')
 
     let subjectGender
-    if (kind === 'relation_archetype') {
+    if (entryMode === 'share_quick') {
+      subjectGender = normalizeSubjectGender(event.subjectGender)
+      if (!['female', 'male'].includes(subjectGender)) return error('GENDER_REQUIRED', '请选择本次测试对象的性别')
+    } else if (kind === 'relation_archetype') {
       const claimedGender = normalizeSubjectGender(event.subjectGender)
       if (!['female', 'male'].includes(claimedGender)) return error('GENDER_REQUIRED', '请选择本次要测的关系主角性别')
       const userDoc = mode === 'self' ? await getUser(userId) : null
@@ -105,7 +138,14 @@ exports.main = async (event = {}) => {
       kind,
       subjectGender,
       mode,
-      ...(mode === 'target' ? {
+      entryMode,
+      ...(entryMode === 'share_quick' ? {
+        sourceResultShareId: resultShareId,
+        sourceResultId: sourceShare.source._id || sourceShare.share.resultId,
+        subjectType: mode === 'target' ? 'temporary_target' : 'self',
+        subjectLabel: mode === 'target' ? 'TA' : '你'
+      } : {}),
+      ...(entryMode === 'standard' && mode === 'target' ? {
         caseId,
         caseSnapshot: {
           name: caseDoc?.profile?.nickname || caseDoc?.profile?.name || caseDoc?.name || '当前 Crush',

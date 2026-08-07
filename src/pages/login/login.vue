@@ -8,7 +8,7 @@
     <!-- Hero -->
     <view class="landing-hero">
       <text class="landing-hero-tag">{{ aiLabel() }} CRUSH ANALYZER</text>
-      <text class="landing-hero-title">Crush<text class="landing-hero-hl">Master</text></text>
+      <text class="landing-hero-title">Crush<text class="landing-hero-hl">Radar</text></text>
       <text class="landing-hero-sub">read the signals, not your mind.</text>
     </view>
 
@@ -112,7 +112,9 @@ function stopLoginCheck() {
 const TAB_PAGES = ['/pages/index/index', '/pages/case-detail/case-detail', '/pages/cases/cases', '/pages/timeline/timeline', '/pages/me/me']
 
 function normalizeRedirect(value: string) {
-  const decoded = decodeURIComponent(String(value || '')).trim()
+  let decoded = ''
+  try { decoded = decodeURIComponent(String(value || '')).trim() }
+  catch { return '' }
   if (!decoded.startsWith('/pages/')) return ''
   if (decoded.includes('://') || decoded.includes('\\')) return ''
   return decoded
@@ -136,6 +138,10 @@ function goHome() {
   uni.switchTab({ url: '/pages/index/index' })
 }
 
+function isHeartPersonaShareRedirect(url: string) {
+  return String(url || '').split('?')[0] === '/pages/heart-persona-share/heart-persona-share'
+}
+
 async function handleEnter() {
   entering.value = true
 
@@ -150,9 +156,13 @@ async function handleEnter() {
 
   if (!uid) {
     uni.showToast({ title: '登录中，请稍后刷新', icon: 'none' })
+    entering.value = false
+    return
   }
 
-  if (uid && shouldCompleteSelfProfile()) {
+  if (uid && pendingRedirect.value && isHeartPersonaShareRedirect(pendingRedirect.value)) {
+    jumpTo(pendingRedirect.value)
+  } else if (uid && shouldCompleteSelfProfile()) {
     const suffix = pendingRedirect.value ? `&redirect=${encodeURIComponent(pendingRedirect.value)}` : ''
     uni.redirectTo({ url: `/pages/self-profile/self-profile?mode=onboarding${suffix}` })
   } else if (uid && pendingRedirect.value) {

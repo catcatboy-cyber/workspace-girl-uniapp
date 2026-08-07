@@ -188,6 +188,13 @@
       "style": { "navigationBarTitleText": "关系主角测试" }
     },
     {
+      "path": "pages/heart-persona-share/heart-persona-share",
+      "style": {
+        "navigationBarTitleText": "心动人设局",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/relation-heroine-result/relation-heroine-result",
       "style": { "navigationBarTitleText": "关系主角测试结果" }
     },

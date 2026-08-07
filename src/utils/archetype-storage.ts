@@ -11,6 +11,8 @@ export function getArchetypeDraftKey(params: {
   caseId?: string
   personKey?: string
   subjectGender?: 'female' | 'male'
+  entryMode?: 'standard' | 'share_quick'
+  resultShareId?: string
   contentVersion: string
 }) {
   const parts = [
@@ -18,9 +20,13 @@ export function getArchetypeDraftKey(params: {
     params.kind,
     safeUserPart(params.userId),
     params.mode,
-    params.mode === 'target' ? safeUserPart(params.caseId) : 'self'
+    params.entryMode === 'share_quick' ? 'share_quick' : 'standard',
+    params.entryMode === 'share_quick'
+      ? safeUserPart(params.resultShareId)
+      : params.mode === 'target' ? safeUserPart(params.caseId) : 'self'
   ]
-  if (params.kind === 'relation_archetype') parts.push(safeUserPart(params.subjectGender), safeUserPart(params.personKey))
+  parts.push(safeUserPart(params.subjectGender))
+  if (params.kind === 'relation_archetype') parts.push(safeUserPart(params.personKey))
   parts.push(safeUserPart(params.contentVersion))
   return parts.join(':')
 }

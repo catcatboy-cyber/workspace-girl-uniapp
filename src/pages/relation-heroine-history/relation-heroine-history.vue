@@ -5,7 +5,7 @@
     <view v-if="loading" class="empty">读取中...</view>
     <view v-else-if="!filtered.length" class="empty">还没有测试记录</view>
     <view v-for="item in filtered" :key="item.resultId" class="record" @click="openResult(item.resultId)">
-      <view><text class="name">{{ personName(item) }}</text><text class="meta">{{ item.subjectGender === 'male' ? '关系男主角' : '关系女主角' }} · {{ item.mode === 'target' ? item.caseSnapshot?.name || '当前 Crush' : '测自己' }} · {{ formatDate(item.createdAt) }}</text></view>
+      <view><text class="name">{{ personName(item) }}</text><text class="meta">{{ item.subjectGender === 'male' ? '关系男主角' : '关系女主角' }} · {{ subjectName(item) }} · {{ formatDate(item.createdAt) }}</text></view>
       <text class="score">{{ item.similarityBand?.label || '-' }}</text>
     </view>
   </view>
@@ -23,6 +23,7 @@ const filter = ref('all')
 const results = ref<any[]>([])
 const filtered = computed(() => filter.value === 'all' ? results.value : results.value.filter((item) => item.mode === filter.value))
 function personName(item: any) { return item.primary?.name || item.primary?.key || '关系主角' }
+function subjectName(item: any) { return item.mode !== 'target' ? '测自己' : item.entryMode === 'share_quick' ? 'TA（快速测试）' : item.caseSnapshot?.name || '当前 Crush' }
 function formatDate(value: any) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}` }
 function openResult(id: string) { uni.navigateTo({ url: `/pages/relation-heroine-result/relation-heroine-result?id=${id}` }) }
 async function load() { loading.value=true; const [female, male] = await Promise.all([getArchetypeResults({kind:'relation_archetype',subjectGender:'female',limit:50}),getArchetypeResults({kind:'relation_archetype',subjectGender:'male',limit:50})]); results.value=[...(female?.results||[]),...(male?.results||[])].sort((a:any,b:any)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()).slice(0,50); loading.value=false }

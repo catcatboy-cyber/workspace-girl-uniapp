@@ -6,7 +6,7 @@
     <view v-else-if="!results.length" class="card">还没有次元角色测试记录。</view>
     <view v-else class="card">
       <view v-for="item in results" :key="item.resultId" class="history-row" @click="openResult(item.resultId)">
-        <view><text class="row-title">{{ item.mode === 'target' ? (item.caseSnapshot?.name || '当前 Crush') : '我自己' }} · {{ item.primary?.name || '角色原型' }}</text><text class="row-meta">{{ formatDate(item.createdAt) }} · 主要相似度 {{ item.similarityBand?.label || '-' }}</text></view>
+        <view><text class="row-title">{{ subjectName(item) }} · {{ item.primary?.name || '角色原型' }}</text><text class="row-meta">{{ formatDate(item.createdAt) }} · 主要相似度 {{ item.similarityBand?.label || '-' }}</text></view>
         <text class="arrow">›</text>
       </view>
     </view>
@@ -23,6 +23,7 @@ const loading = ref(true)
 const errorMessage = ref('')
 const results = ref<any[]>([])
 function formatDate(value: any) { const date = value ? new Date(value) : null; return date && !Number.isNaN(date.getTime()) ? `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}` : '刚刚' }
+function subjectName(item: any) { return item.mode !== 'target' ? '我自己' : item.entryMode === 'share_quick' ? 'TA（快速测试）' : item.caseSnapshot?.name || '当前 Crush' }
 function openResult(id: string) { uni.navigateTo({ url: `/pages/dimension-character-result/dimension-character-result?id=${encodeURIComponent(id)}` }) }
 async function load() { try { const response = await getArchetypeResults({ kind: 'dimension_character', limit: 50 }); if (!response?.success) throw new Error(response?.message || '读取记录失败'); results.value = response.results || [] } catch (error: any) { errorMessage.value = error?.message || '读取记录失败' } finally { loading.value = false } }
 onLoad(load)

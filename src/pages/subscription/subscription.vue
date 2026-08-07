@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getSubscriptionConfig, getSubscriptionStatus, getRechargePlans, createVirtualPayOrder, confirmVirtualPay } from '@/utils/api'
 import TokenCoinOverlay from '@/components/TokenCoinOverlay.vue'
 import { getCurrentThemeId, getFontSizeMode, getThemeStyle, applyThemeChrome } from '@/utils/theme'
@@ -84,6 +84,8 @@ import { aiLabel } from '@/utils/labels'
 const fontSizeMode = ref(getFontSizeMode())
 const themeVars = ref(getThemeStyle())
 const plansLoading = ref(false)
+const returnFrom = ref('')
+const returnResultId = ref('')
 
 const plans = ref<any[]>([])
 const currentPlan = ref<any>(null)
@@ -275,6 +277,11 @@ onShow(() => {
   loadSubscriptionData()
 })
 
+onLoad((options: any) => {
+  returnFrom.value = String(options?.from || '').trim()
+  returnResultId.value = String(options?.resultId || '').trim()
+})
+
 const upgradingPlan = ref('')
 const upgradeMessage = ref('')
 const upgradeOk = ref(false)
@@ -319,6 +326,11 @@ async function doVirtualSubscribe(planKey: string, priceOpt: { billingCycle: str
       showCoin.value = true
       bumpDataVersion()
       await loadSubscriptionData()
+      if (returnFrom.value === 'heart_persona_result' && returnResultId.value) {
+        uni.showToast({ title: '权益已生效，正在返回报告', icon: 'none' })
+        setTimeout(() => uni.navigateBack(), 500)
+        return
+      }
     } else {
       // 支付面板已回调成功、但服务端未在窗口内确认发货 → 权益处理中（非失败）
       upgradeOk.value = true

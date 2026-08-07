@@ -41,6 +41,12 @@ for (const value of [
 }
 assert(!landing.includes('createCase('))
 assert(/\/\/ #ifdef MP-WEIXIN\s+offerExplicitLogin = false/.test(landing), 'Mini Program auth fallback must remain silent')
+for (const value of ['storybook-page', '魔镜说', '完整维度仅本人可见', '好友的完整报告保持私密']) {
+  assert(landing.includes(value), `storybook landing contract missing: ${value}`)
+}
+for (const forbidden of ['dimensionScores', 'similarities', 'watchSignals', 'communicationAdvice']) {
+  assert(!landing.includes(forbidden), `shared landing must not depend on private report field: ${forbidden}`)
+}
 assert(!landing.includes('getActiveCaseId'))
 assert(!landing.includes('updateSelfProfile'))
 assert(!landing.includes("'confirm'"), 'gender selection must not open a second confirmation step')
@@ -115,6 +121,28 @@ for (const file of [
 
 const paywall = read('src/components/HeartPersonaReportPaywall.vue')
 assert(paywall.includes('/pages/subscription/subscription?from=heart_persona_result&resultId='))
+for (const value of ['storybook-paywall', '魔镜已找到原型', '后面的答案，被魔镜封存了', '支付 ¥${priceYuan}', '只解锁当前测试结果']) {
+  assert(paywall.includes(value), `storybook paywall missing ${value}`)
+}
+
+const storybookReport = read('src/components/HeartPersonaStorybookReport.vue')
+for (const value of ['--persona-paper:var(--surface', '第一章 · 魔镜判词', '第二章 · 关系雷达', 'radarDataPolygon', '第五章 · 不同阶段怎么相处', '第六章 · 红绿灯信号', '第七章 · 现在就能做', 'actionSteps', 'getArchetypeResults', '你的人设图鉴已点亮', '喜欢还是想逃', '人物相似度', '测试用于关系风格探索']) {
+  assert(storybookReport.includes(value), `storybook full report missing ${value}`)
+}
+assert(!storybookReport.includes('color-mix('), 'storybook result must stay compatible with WeChat WXSS')
+const archetypeAdmin = read('src/pages/admin/components/panels/ArchetypeQuestionBankPanel.vue')
+for (const value of ['resultPage.stageAdvice', 'resultPage.trafficSignals', 'resultPage.actionSteps', '编辑完整报告配置']) {
+  assert(archetypeAdmin.includes(value), `archetype admin missing configurable result field ${value}`)
+}
+for (const file of [
+  'src/pages/relation-heroine-result/relation-heroine-result.vue',
+  'src/pages/crush-celebrity-result/crush-celebrity-result.vue',
+  'src/pages/dimension-character-result/dimension-character-result.vue'
+]) {
+  const source = read(file)
+  assert(source.includes('HeartPersonaStorybookReport'), `${file} must use the shared storybook report`)
+  assert(source.includes("@import '@/styles/heart-persona-storybook.scss'"), `${file} must use shared storybook tokens and actions`)
+}
 
 const subscription = read('src/pages/subscription/subscription.vue')
 before(subscription, 'if (confirmed?.success)', 'uni.navigateBack()', 'subscription must navigate back only inside the confirmed-success path')

@@ -125,6 +125,12 @@ function publicPersonDetail(person) {
   }
 }
 
+function resultSubjectLabel(result) {
+  if (result?.mode !== 'target') return '你'
+  if (result?.entryMode === 'share_quick') return 'TA（快速测试）'
+  return cleanPublicText(result?.caseSnapshot?.name, '当前 Crush', 40)
+}
+
 function buildHistoryPreview(result, bankContent, accessLevel = 'preview') {
   const exact = result?.kind === 'relation_archetype'
     ? result.similarity
@@ -134,6 +140,8 @@ function buildHistoryPreview(result, bankContent, accessLevel = 'preview') {
     kind: result?.kind || '',
     mode: result?.mode || '',
     subjectGender: result?.subjectGender || '',
+    entryMode: result?.entryMode === 'share_quick' ? 'share_quick' : 'standard',
+    subjectLabel: resultSubjectLabel(result),
     caseSnapshot: result?.caseSnapshot || null,
     primary: getPrimary(result, bankContent),
     similarityBand: similarityBand(exact),
@@ -154,6 +162,68 @@ function observation(result) {
 function previewSummary(result, primary) {
   const subject = result?.mode === 'target' ? 'TA' : '你'
   return `${subject}在当前答题中最接近「${primary.name}」风格，完整报告会进一步拆解具体信号。`
+}
+
+function sharedPreviewSummary(result, primary) {
+  const subject = result?.mode === 'target' ? 'TA' : '这位朋友'
+  return `${subject}在这次答题中最接近「${primary.name}」风格，完整报告仍由本人私密保管。`
+}
+
+function cleanPublicText(value, fallback = '', maxLength = 80) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim()
+  return (text || fallback).slice(0, maxLength)
+}
+
+function sharedTags(result, bankContent, primary) {
+  const candidates = []
+  if (result?.kind === 'relation_archetype') {
+    const stage = (bankContent?.stages || []).find((item) => item?.key === result?.stageKey)
+    candidates.push(primary?.label, stage?.label, result?.subjectGender === 'male' ? '关系男主角' : '关系女主角')
+  } else {
+    const person = (bankContent?.people || []).find((item) => item?.key === result?.primaryPersonKey)
+    candidates.push(person?.category, person?.era, person?.source)
+  }
+  return [...new Set(candidates.map((item) => cleanPublicText(item, '', 24)).filter(Boolean))].slice(0, 3)
+}
+
+function displayTitleForSharedResult(result) {
+  if (result?.kind === 'relation_archetype') return result?.subjectGender === 'male' ? '关系男主角' : '关系女主角'
+  if (result?.kind === 'crush_celebrity') return 'Crush 名人图鉴'
+  if (result?.kind === 'dimension_character') return '次元角色图鉴'
+  return '心动人设局'
+}
+
+function buildSharedReportPreview(result, bankContent, owner, access) {
+  const primary = getPrimary(result, bankContent)
+  const exact = result?.kind === 'relation_archetype'
+    ? result?.similarity
+    : result?.similarities?.[result?.primaryPersonKey] ?? result?.topFive?.[0]?.similarity
+  const hasFullAccess = access?.accessLevel === 'full'
+  const profile = owner?.selfProfile && typeof owner.selfProfile === 'object' ? owner.selfProfile : {}
+  const nickname = cleanPublicText(profile.nickname || owner?.nickname, '一位朋友', 24)
+  const avatarUrl = cleanPublicText(profile.avatarUrl || profile.avatar || owner?.avatarUrl || owner?.avatar, '', 500)
+  return {
+    kind: cleanPublicText(result?.kind, '', 40),
+    mode: result?.mode === 'target' ? 'target' : 'self',
+    subjectGender: result?.subjectGender === 'male' ? 'male' : 'female',
+    displayTitle: displayTitleForSharedResult(result),
+    sharer: {
+      displayName: nickname,
+      ...(avatarUrl ? { avatarUrl } : {})
+    },
+    primary: {
+      key: cleanPublicText(primary?.key, '', 80),
+      name: cleanPublicText(primary?.name, '人物原型', 40),
+      label: cleanPublicText(primary?.label, '', 80),
+      ...(primary?.coverUrl ? { coverUrl: cleanPublicText(primary.coverUrl, '', 500) } : {})
+    },
+    scoreDisplay: hasFullAccess
+      ? { type: 'exact', exact: Math.max(0, Math.min(100, Math.round(Number(exact) || 0))) }
+      : { type: 'band', band: similarityBand(exact) },
+    summary: cleanPublicText(sharedPreviewSummary(result, primary), '', 140),
+    tags: sharedTags(result, bankContent, primary),
+    createdAt: result?.createdAt || null
+  }
 }
 
 function decisionForSimilarity(value) {
@@ -185,6 +255,8 @@ function buildFullReport(result, bankContent, access) {
     kind: result?.kind || '',
     mode: result?.mode || '',
     subjectGender: result?.subjectGender || '',
+    entryMode: result?.entryMode === 'share_quick' ? 'share_quick' : 'standard',
+    subjectLabel: resultSubjectLabel(result),
     caseId: result?.caseId || '',
     caseSnapshot: result?.caseSnapshot || null,
     contentVersion: result?.contentVersion || '',
@@ -279,5 +351,6 @@ module.exports = {
   buildHistoryPreview,
   buildPreviewReport,
   buildFullReport,
+  buildSharedReportPreview,
   publicPersonDetail
 }

@@ -114,6 +114,31 @@
               <textarea v-model="archetype.resultCopy.attraction" auto-height />
               <text class="field-label">结果页注意点</text>
               <textarea v-model="archetype.resultCopy.caution" auto-height />
+              <button class="ghost-btn result-config-toggle" @click="toggleResultPage(archetype.key)">
+                {{ expandedResultPageKey === archetype.key ? '收起完整报告配置' : '编辑完整报告配置' }}
+              </button>
+              <view v-if="expandedResultPageKey === archetype.key" class="result-page-config">
+                <text class="config-title">不同关系阶段建议</text>
+                <view v-for="stage in content.stages" :key="stage.key" class="config-group">
+                  <text class="field-label">{{ stage.label }}</text>
+                  <input v-model="archetype.resultPage.stageAdvice[stage.key].shortLabel" class="person-input" maxlength="20" placeholder="短标签，如：刚接触" />
+                  <input v-model="archetype.resultPage.stageAdvice[stage.key].title" class="person-input" maxlength="120" placeholder="阶段标题；留空使用系统默认" />
+                  <textarea v-model="archetype.resultPage.stageAdvice[stage.key].summary" auto-height maxlength="500" placeholder="阶段建议；留空使用系统默认" />
+                  <textarea v-model="archetype.resultPage.stageAdvice[stage.key].question" auto-height maxlength="160" placeholder="可以直接问的问题；留空使用系统默认" />
+                </view>
+                <text class="config-title">红黄绿灯信号</text>
+                <view v-for="signal in resultSignalLevels" :key="signal.key" class="config-group compact-config">
+                  <text class="field-label">{{ signal.label }}</text>
+                  <input v-model="archetype.resultPage.trafficSignals[signal.key].title" class="person-input" maxlength="120" placeholder="信号标题；留空使用系统默认" />
+                  <textarea v-model="archetype.resultPage.trafficSignals[signal.key].text" auto-height maxlength="500" placeholder="具体行为说明；留空使用系统默认" />
+                </view>
+                <text class="config-title">三步行动</text>
+                <view v-for="(action, actionIndex) in archetype.resultPage.actionSteps" :key="actionIndex" class="config-group compact-config">
+                  <text class="field-label">第 {{ actionIndex + 1 }} 步</text>
+                  <input v-model="action.title" class="person-input" maxlength="80" placeholder="行动标题；留空使用系统默认" />
+                  <textarea v-model="action.text" auto-height maxlength="500" placeholder="行动说明；留空使用系统默认" />
+                </view>
+              </view>
             </view>
           </template>
           <template v-else>
@@ -137,6 +162,23 @@
                   <text>{{ dimension }}</text>
                   <input v-model.number="person.profile[dimension]" type="number" />
                 </label>
+              </view>
+              <button class="ghost-btn result-config-toggle" @click="toggleResultPage(person.key)">
+                {{ expandedResultPageKey === person.key ? '收起完整报告配置' : '编辑完整报告配置' }}
+              </button>
+              <view v-if="expandedResultPageKey === person.key" class="result-page-config">
+                <text class="config-title">红黄绿灯信号</text>
+                <view v-for="signal in resultSignalLevels" :key="signal.key" class="config-group compact-config">
+                  <text class="field-label">{{ signal.label }}</text>
+                  <input v-model="person.resultPage.trafficSignals[signal.key].title" class="person-input" maxlength="120" placeholder="信号标题；留空使用系统默认" />
+                  <textarea v-model="person.resultPage.trafficSignals[signal.key].text" auto-height maxlength="500" placeholder="具体行为说明；留空使用系统默认" />
+                </view>
+                <text class="config-title">三步行动</text>
+                <view v-for="(action, actionIndex) in person.resultPage.actionSteps" :key="actionIndex" class="config-group compact-config">
+                  <text class="field-label">第 {{ actionIndex + 1 }} 步</text>
+                  <input v-model="action.title" class="person-input" maxlength="80" placeholder="行动标题；留空使用系统默认" />
+                  <textarea v-model="action.text" auto-height maxlength="500" placeholder="行动说明；留空使用系统默认" />
+                </view>
               </view>
             </view>
             <view class="person-card">
@@ -200,6 +242,7 @@ const relationGroups = [{ key: 'universal', label: '10 道通用题' }, { key: '
 const eras = [{ key: 'history', label: '历史' }, { key: 'modern', label: '近代' }, { key: 'contemporary', label: '当代' }]
 const categories = [{ key: 'classic', label: '名著经典' }, { key: 'wuxia', label: '金庸武侠' }, { key: 'tomb_raiding', label: '盗墓题材' }, { key: 'chinese_screen', label: '国产影视' }, { key: 'international', label: '国际书影音' }, { key: 'anime', label: '动漫' }]
 const celebrityDimensionKeys = ['initiative', 'warmth', 'reliability', 'romance', 'boundary']
+const resultSignalLevels = [{ key: 'green', label: '绿灯 · 可继续' }, { key: 'yellow', label: '黄灯 · 要观察' }, { key: 'red', label: '红灯 · 要回避' }]
 
 type ArchetypeFeatureKey = '关系女主角' | 'Crush名人图鉴' | '次元角色图鉴'
 
@@ -219,6 +262,7 @@ const selectedQuestionIndex = ref(0)
 const selectedEra = ref('history')
 const rawContent = ref('')
 const lastValidation = ref<any>(null)
+const expandedResultPageKey = ref('')
 
 const content = computed(() => bank.value?.content || {})
 const isRelation = computed(() => featureKey.value === '关系女主角')
@@ -253,6 +297,30 @@ watch(activeTab, (value) => { if (value === 'raw') refreshRaw() })
 function statusText(status: string) { return ({ draft: '草稿', published: '已发布', archived: '已归档' } as any)[status] || status }
 function notify(text: string, ok = false) { message.value = text; messageOk.value = ok }
 function refreshRaw() { rawContent.value = JSON.stringify(content.value, null, 2) }
+function toggleResultPage(key: string) { expandedResultPageKey.value = expandedResultPageKey.value === key ? '' : key }
+function ensureResultPageConfig() {
+  if (!bank.value?.content) return
+  const ensureSignalsAndActions = (person: any) => {
+    person.resultPage = person.resultPage || {}
+    person.resultPage.trafficSignals = person.resultPage.trafficSignals || {}
+    for (const signal of resultSignalLevels) {
+      person.resultPage.trafficSignals[signal.key] = person.resultPage.trafficSignals[signal.key] || { title: '', text: '' }
+    }
+    const actions = Array.isArray(person.resultPage.actionSteps) ? person.resultPage.actionSteps : []
+    person.resultPage.actionSteps = [0, 1, 2].map((index) => ({ title: '', text: '', ...(actions[index] || {}) }))
+  }
+  if (isRelation.value) {
+    for (const archetype of bank.value.content.archetypes || []) {
+      ensureSignalsAndActions(archetype)
+      archetype.resultPage.stageAdvice = archetype.resultPage.stageAdvice || {}
+      for (const stage of bank.value.content.stages || []) {
+        archetype.resultPage.stageAdvice[stage.key] = archetype.resultPage.stageAdvice[stage.key] || { shortLabel: '', title: '', summary: '', question: '' }
+      }
+    }
+  } else {
+    for (const person of bank.value.content.people || []) ensureSignalsAndActions(person)
+  }
+}
 function suggestNextVersion(version: string) {
   const match = String(version || '').match(/^(\d+)\.(\d+)\.(\d+)$/)
   if (!match) return '1.0.1'
@@ -264,6 +332,7 @@ async function selectFeature(item: any) {
   subjectGender.value = item.subjectGender
   selectedEra.value = item.key === '次元角色图鉴' ? 'classic' : 'history'
   selectedPersonKey.value = ''
+  expandedResultPageKey.value = ''
   lastValidation.value = null
   await loadBank()
 }
@@ -276,6 +345,7 @@ async function loadBank() {
     let result = await adminGetArchetypeQuestionBank({ featureKey: featureKey.value, subjectGender: subjectGender.value, status: 'draft' })
     if (!result?.success) result = await adminGetArchetypeQuestionBank({ featureKey: featureKey.value, subjectGender: subjectGender.value, status: 'published' })
     bank.value = result?.success ? JSON.parse(JSON.stringify(result.bank)) : null
+    ensureResultPageConfig()
     if (bank.value && isPublished.value) {
       nextVersion.value = suggestNextVersion(bank.value.contentVersion)
     }
@@ -313,6 +383,7 @@ async function createDraft() {
 function applyRaw() {
   try {
     bank.value.content = JSON.parse(rawContent.value)
+    ensureResultPageConfig()
     lastValidation.value = null
     notify('JSON 已应用，尚未保存。', true)
   } catch (error: any) { notify(`JSON 格式错误：${error?.message || ''}`) }
@@ -390,6 +461,7 @@ onMounted(loadBank)
 .score-grid { display:grid; grid-template-columns:repeat(5,minmax(80px,1fr)); gap:8px; }.score-grid label{font-size:11px}.score-grid input{width:100%;box-sizing:border-box}
 .phone-preview { max-width:360px; margin:20px auto 0; padding:18px; border:3px solid #222; border-radius:22px; background:#fffdf5; box-shadow:6px 6px 0 #222; }.preview-label{font-size:11px;color:#777}.preview-question{display:block;margin:12px 0;font-size:18px;font-weight:800}.preview-option{margin-top:8px;padding:8px;border:2px solid #222;border-radius:10px;background:#fff}
 .people-editor{display:flex;flex-direction:column;gap:12px}.person-title{font-weight:900}.person-line{display:flex;justify-content:space-between}.dimension-row{display:grid;grid-template-columns:140px 80px 1fr 1fr;gap:8px;margin-top:8px}.person-card textarea{width:100%;box-sizing:border-box;margin-top:8px}.celebrity-row{display:flex;flex-direction:column;gap:10px}.result-copy-row{margin-top:14px;padding-top:8px;border-top:1px dashed #bbb}.validation-error{display:block;margin-top:5px;font-size:12px}.mono{font-family:monospace}
+.result-config-toggle{margin-top:14px}.result-page-config{margin-top:12px;padding:14px;border:1px solid #9aa69f;border-radius:10px;background:#f7faf8}.config-title{display:block;margin-top:16px;padding-bottom:7px;border-bottom:2px solid #26332e;font-size:14px;font-weight:900;color:#26332e}.config-title:first-child{margin-top:0}.config-group{margin-top:10px;padding:12px;border:1px dashed #aab4af;border-radius:8px;background:#fff}.compact-config{padding-top:6px}
 .person-input {
   width:100%;
   height:44px;

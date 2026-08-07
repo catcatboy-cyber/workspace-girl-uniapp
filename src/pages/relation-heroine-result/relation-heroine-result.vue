@@ -1,41 +1,26 @@
 <template>
-  <view class="page" :style="themeVars">
-    <view v-if="loading" class="card">正在读取结果...</view>
-    <view v-else-if="errorMessage" class="card error">{{ errorMessage }}</view>
+  <view class="storybook-result-page" :style="themeVars">
+    <view v-if="loading" class="storybook-state">魔镜正在整理结果...</view>
+    <view v-else-if="errorMessage" class="storybook-state error">{{ errorMessage }}</view>
     <template v-else-if="report">
-      <view v-if="report.accessLevel === 'preview'" class="preview-wrap">
-        <HeartPersonaReportPaywall :result-id="resultId" :report="report" @unlocked="loadReport" />
+      <HeartPersonaReportPaywall v-if="report.accessLevel === 'preview'" :result-id="resultId" :report="report" @unlocked="loadReport" />
+      <HeartPersonaStorybookReport
+        v-else
+        :report="report"
+        :display-title="displayTitle"
+        :subject-label="subjectLabel"
+        variant="relation"
+        ranking-title="关系主角图鉴"
+      />
+
+      <view class="storybook-actions">
+        <button class="storybook-action primary" :loading="homeRouting" :disabled="homeRouting" @click="goHome">{{ report.accessLevel === 'full' ? '进入主页' : '先去主页看看' }}</button>
+        <button class="storybook-action" :loading="quizRoutingAction === 'retest'" :disabled="Boolean(quizRoutingAction)" @click="retest">重新测试</button>
+        <button class="storybook-action" :loading="quizRoutingAction === 'another'" :disabled="Boolean(quizRoutingAction)" @click="testAnother">测另一位{{ report.subjectGender === 'male' ? '男主角' : '女主角' }}</button>
+        <button v-if="shareReady" class="storybook-action share" open-type="share">分享结果</button>
+        <button v-else class="storybook-action share" disabled>分享链接准备中</button>
+        <button class="storybook-action text" @click="goHistory">查看测试记录</button>
       </view>
-      <template v-else>
-        <view class="result-hero">
-          <text class="eyebrow">{{ displayTitle }}</text>
-          <text class="headline">{{ report.mode === 'target' ? '当前 Crush' : '你' }}与「{{ report.primary?.name }}」</text>
-          <view class="score-ring"><text>{{ report.exactSimilarity }}</text><text>%</text></view>
-          <text class="level">{{ levelText }}</text>
-          <text class="confidence">观察覆盖：{{ report.observation?.answeredCount }}/{{ report.observation?.total }} · {{ confidenceText }}</text>
-        </view>
-        <view class="card">
-          <text class="card-title">三维相处画像</text>
-          <view v-for="dimension in report.dimensions || []" :key="dimension.key" class="dimension">
-            <view class="dimension-head"><text>{{ dimension.name }}</text><text>{{ dimension.score }}%</text></view>
-            <view class="track"><view class="fill" :style="{ width: dimension.score + '%' }" /></view>
-            <text class="dimension-copy">{{ dimension.copy }}</text>
-          </view>
-        </view>
-        <view class="card attraction"><text class="card-title">让人心动的地方</text><text>{{ report.resultCopy?.attraction }}</text></view>
-        <view class="card caution"><text class="card-title">需要留意的地方</text><text>{{ report.resultCopy?.caution }}</text></view>
-        <view class="card"><text class="card-title">做判断时可以观察</text><text v-for="item in report.evidence || []" :key="item.questionId" class="evidence">· {{ item.text }}</text></view>
-        <view class="card"><text class="card-title">情景验证</text><text>{{ report.scenarioVerification }}</text></view>
-        <view v-if="report.decision" class="card decision-card"><text class="card-title">当前关系判断</text><text class="decision-label">{{ report.decision.label }}</text><text class="decision-copy">{{ report.decision.text }}</text></view>
-        <view v-if="report.strengths?.length" class="card"><text class="card-title">值得保留的信号</text><text v-for="(item,index) in report.strengths" :key="'strength_' + index" class="evidence">· {{ item }}</text></view>
-        <view v-if="report.watchSignals?.length" class="card caution"><text class="card-title">需要继续验证</text><text v-for="(item,index) in report.watchSignals" :key="'watch_' + index" class="evidence">· {{ item }}</text></view>
-        <view v-if="report.communicationAdvice" class="card"><text class="card-title">下一步怎么聊</text><text>{{ report.communicationAdvice }}</text></view>
-      </template>
-      <button class="primary" @click="retest">重新测试</button>
-      <button class="secondary" @click="testAnother">测另一位{{ report.subjectGender === 'male' ? '男主角' : '女主角' }}</button>
-      <button v-if="referralShareReady" class="secondary" open-type="share">分享结果</button>
-      <button v-else class="secondary" disabled>邀请码准备中</button>
-      <button class="text-button" @click="goHistory">查看测试记录</button>
     </template>
   </view>
 </template>
@@ -44,7 +29,9 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import HeartPersonaReportPaywall from '@/components/HeartPersonaReportPaywall.vue'
-import { getArchetypeReport, prepareCurrentUserReferralShare } from '@/utils/api'
+import HeartPersonaStorybookReport from '@/components/HeartPersonaStorybookReport.vue'
+import { getArchetypeReport, prepareArchetypeResultShare, prepareCurrentUserReferralShare } from '@/utils/api'
+import { enterHomeFromHeartPersonaResult } from '@/utils/heart-persona-result'
 import { appendReferralParams, isReferralShareBlocked } from '@/utils/share'
 import { applyThemeChrome, getThemeStyle } from '@/utils/theme'
 
@@ -54,46 +41,92 @@ const errorMessage = ref('')
 const resultId = ref('')
 const report = ref<any>(null)
 const referralShareReady = ref(!isReferralShareBlocked())
+const resultShareId = ref('')
+const homeRouting = ref(false)
+const quizRoutingAction = ref<'retest' | 'another' | ''>('')
+let loadSequence = 0
+let resultSharePromise: Promise<boolean> | null = null
+const shareReady = computed(() => referralShareReady.value && Boolean(resultShareId.value))
 const displayTitle = computed(() => report.value?.subjectGender === 'male' ? '关系男主角' : '关系女主角')
+const subjectLabel = computed(() => report.value?.subjectLabel || (report.value?.mode !== 'target' ? '你' : report.value?.entryMode === 'share_quick' ? 'TA（快速测试）' : '当前 Crush'))
 const levelText = computed(() => Number(report.value?.exactSimilarity) >= 80 ? '高度相似' : Number(report.value?.exactSimilarity) >= 60 ? '明显相似' : Number(report.value?.exactSimilarity) >= 40 ? '部分相似' : '相似度较低')
 const confidenceText = computed(() => ({ high: '观察充分', medium: '观察中等', low: '观察较少' } as any)[report.value?.observation?.confidence] || '')
 
 async function loadReport() {
+  const sequence = ++loadSequence
   loading.value = true
   errorMessage.value = ''
   try {
     const response = await getArchetypeReport(resultId.value)
     if (!response?.success || !response.report) throw new Error(response?.message || '读取结果失败')
+    if (sequence !== loadSequence) return
     report.value = response.report
     uni.setNavigationBarTitle({ title: `${displayTitle.value}结果` })
-  } catch (error: any) { errorMessage.value = error?.message || '读取结果失败' }
-  finally { loading.value = false }
+  } catch (error: any) { if (sequence === loadSequence) errorMessage.value = error?.message || '读取结果失败' }
+  finally { if (sequence === loadSequence) loading.value = false }
+}
+
+function prepareResultShare() {
+  if (resultShareId.value) return Promise.resolve(true)
+  if (!resultId.value) return Promise.resolve(false)
+  if (resultSharePromise) return resultSharePromise
+  resultSharePromise = prepareArchetypeResultShare(resultId.value)
+    .then((response) => {
+      resultShareId.value = response?.success ? String(response?.data?.resultShareId || '') : ''
+      return Boolean(resultShareId.value)
+    })
+    .catch(() => false)
+    .finally(() => { resultSharePromise = null })
+  return resultSharePromise
 }
 
 function quizUrl(withPerson = true) {
   const query = [`mode=${report.value.mode}`]
-  if (report.value.caseId) query.push(`caseId=${report.value.caseId}`)
+  if (report.value.entryMode === 'share_quick') {
+    query.push('entryMode=share_quick', `resultShareId=${encodeURIComponent(resultShareId.value)}`)
+  } else if (report.value.caseId) query.push(`caseId=${report.value.caseId}`)
   query.push(`subjectGender=${report.value.subjectGender}`)
   if (withPerson) query.push(`personKey=${report.value.primary?.key || ''}`)
   return `/pages/relation-heroine/relation-heroine?${query.join('&')}`
 }
-function retest() { uni.redirectTo({ url: quizUrl(true) }) }
-function testAnother() { uni.redirectTo({ url: quizUrl(false) }) }
+async function ensureQuickRetestReady() {
+  if (report.value?.entryMode !== 'share_quick') return true
+  if (resultShareId.value || await prepareResultShare()) return true
+  uni.showToast({ title: '重测链接准备失败，请稍后重试', icon: 'none' })
+  return false
+}
+async function routeToQuiz(action: 'retest' | 'another', withPerson: boolean) {
+  if (quizRoutingAction.value) return
+  quizRoutingAction.value = action
+  try {
+    if (await ensureQuickRetestReady()) uni.redirectTo({ url: quizUrl(withPerson) })
+  } finally {
+    quizRoutingAction.value = ''
+  }
+}
+function retest() { return routeToQuiz('retest', true) }
+function testAnother() { return routeToQuiz('another', false) }
+async function goHome() {
+  if (homeRouting.value) return
+  homeRouting.value = true
+  try { await enterHomeFromHeartPersonaResult() }
+  finally { homeRouting.value = false }
+}
 function goHistory() { uni.navigateTo({ url: '/pages/relation-heroine-history/relation-heroine-history' }) }
 
 onLoad((options: any) => { resultId.value = String(options?.id || ''); loadReport() })
 onShow(() => {
+  if (resultId.value) loadReport()
   referralShareReady.value = !isReferralShareBlocked()
   void prepareCurrentUserReferralShare().then((ready) => { referralShareReady.value = ready })
+  void prepareResultShare()
   themeVars.value = getThemeStyle()
   applyThemeChrome()
 })
-onShareAppMessage(() => isReferralShareBlocked() ? {} : ({ title: `${report.value?.mode === 'target' ? 'TA' : '我'}与${report.value?.primary?.name || displayTitle.value}的关系人设报告`, path: appendReferralParams('/pages/relation-heroine/relation-heroine?mode=self', 'relation_archetype') }))
+onShareAppMessage(() => !shareReady.value ? {} : ({ title: `${report.value?.mode === 'target' ? 'TA' : '我'}与${report.value?.primary?.name || displayTitle.value}的关系人设报告`, path: appendReferralParams(`/pages/heart-persona-share/heart-persona-share?resultShareId=${encodeURIComponent(resultShareId.value)}`, 'heart_persona_result') }))
 </script>
 
 <style scoped lang="scss">
 @import '@/styles/campus-pop.scss';
-.page{min-height:100vh;padding:28rpx;background:var(--app-bg,#FFFDF5);color:var(--text-main,#111)}.result-hero,.card{margin-bottom:24rpx;padding:30rpx;border:var(--border-width-strong,3rpx) solid var(--border,#111);border-radius:var(--shape-radius-card,0);background:var(--surface,#fff);box-shadow:var(--shadow-hero,8rpx 8rpx 0 #111)}.result-hero{text-align:center;background:var(--hero-bg,#FF6B6B)}.eyebrow{display:block;font-size:$fs-micro;font-weight:$fw-label;letter-spacing:2rpx}.headline{display:block;margin:12rpx 0;font-size:$fs-heading;font-weight:var(--font-weight-hero,$fw-hero)}.score-ring{display:flex;align-items:flex-end;justify-content:center;width:210rpx;height:210rpx;margin:22rpx auto;border:6rpx solid var(--border,#111);border-radius:50%;background:var(--surface,#fff)}.score-ring text:first-child{font-size:$fs-display;font-weight:var(--font-weight-hero,$fw-hero);line-height:210rpx}.score-ring text:last-child{margin-bottom:45rpx;font-size:$fs-body;font-weight:var(--font-weight-hero,$fw-hero)}.level{display:block;font-size:$fs-body;font-weight:var(--font-weight-hero,$fw-hero)}.confidence{display:block;margin-top:8rpx;font-size:$fs-caption;color:var(--text-muted,#666)}.card-title{display:block;margin-bottom:16rpx;font-size:$fs-heading;font-weight:var(--font-weight-heading,$fw-heading)}.dimension{margin-top:22rpx}.dimension-head{display:flex;justify-content:space-between;font-weight:var(--font-weight-heading,$fw-heading)}.track{height:14rpx;margin:10rpx 0;border:var(--border-width,2rpx) solid var(--border,#111);overflow:hidden}.fill{height:100%;background:var(--accent,#FFD93D)}.dimension-copy,.evidence{font-size:$fs-caption;color:var(--text-muted,#666);line-height:1.5}.evidence{display:block;margin-top:10rpx}.attraction{background:var(--success-soft,#E0FFF0)}.caution{background:var(--brand-warm,#FFFBEB)}.primary,.secondary{margin-top:20rpx;border:var(--border-width-strong,3rpx) solid var(--border,#111);box-shadow:var(--shadow-hard,4rpx 4rpx 0 #111)}.primary{background:var(--accent-cool,#4ECDC4)}.secondary{background:var(--surface,#fff)}.text-button{background:transparent;font-size:$fs-caption;color:var(--text-muted,#666)}.text-button::after{border:0}.error{background:var(--risk-soft,#FFEEEC)}
-.decision-card{background:var(--accent-soft,#FFF4BF)}.decision-label{display:block;font-size:$fs-heading;font-weight:var(--font-weight-hero,$fw-hero)}.decision-copy{display:block;margin-top:10rpx;color:var(--text-muted,#666);font-size:$fs-caption;line-height:1.5}
-.decision-card{background:var(--accent-soft,#FFF4BF)}.decision-label{display:block;font-size:$fs-heading;font-weight:var(--font-weight-hero,$fw-hero)}.decision-copy{display:block;margin-top:10rpx;color:var(--text-muted,#666);font-size:$fs-caption;line-height:1.5}
+@import '@/styles/heart-persona-storybook.scss';
 </style>

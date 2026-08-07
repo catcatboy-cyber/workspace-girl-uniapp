@@ -1,0 +1,78 @@
+.storybook-result-page {
+  --persona-paper: var(--surface, #fff);
+  --persona-ink: var(--text-main, #111);
+  --persona-muted: var(--text-muted, #666);
+  --persona-deep: var(--primary, var(--hero-bg, #4b6674));
+  --persona-gold: var(--accent, #f0c65a);
+  min-height: 100vh;
+  padding: 28rpx 24rpx calc(44rpx + env(safe-area-inset-bottom));
+  color: var(--persona-ink);
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 255, 255, .22) 0 2rpx, transparent 3rpx),
+    radial-gradient(circle at 78% 72%, rgba(0, 0, 0, .05) 0 2rpx, transparent 3rpx),
+    var(--app-bg, #f5f5f5);
+  background-size: 28rpx 28rpx, 38rpx 38rpx, auto;
+  font-family: var(--font-ui);
+}
+
+.storybook-state {
+  padding: 34rpx;
+  border: var(--border-width, 2rpx) solid var(--divider-strong, var(--border, var(--persona-ink)));
+  border-radius: var(--shape-radius-card, var(--radius-lg, 36rpx));
+  color: var(--persona-muted);
+  background: var(--persona-paper);
+  box-shadow: var(--shadow-md, 0 12rpx 32rpx rgba(0, 0, 0, .06));
+  font-size: $fs-body;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.storybook-state.error {
+  color: var(--risk, #b42318);
+  background: var(--risk-soft, #ffeeec);
+}
+
+.storybook-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  margin-top: 26rpx;
+}
+
+.storybook-action {
+  min-height: var(--control-height-lg, 88rpx);
+  margin: 0;
+  padding: 0 18rpx;
+  border: var(--border-width, 2rpx) solid var(--border, var(--persona-ink));
+  border-radius: var(--shape-radius-control, var(--radius-md, 28rpx));
+  color: var(--persona-ink);
+  background: var(--persona-paper);
+  box-shadow: var(--shadow-sm, 0 6rpx 16rpx rgba(0, 0, 0, .06));
+  font-size: $fs-caption;
+  font-weight: var(--font-weight-hero, $fw-hero);
+}
+
+.storybook-action::after { border: 0; }
+.storybook-action.primary {
+  grid-column: 1 / -1;
+  color: var(--primary-contrast, #fff);
+  background: var(--persona-deep);
+  box-shadow: 6rpx 7rpx 0 var(--persona-gold);
+}
+.storybook-action.share { background: var(--accent-soft, #fff4bf); }
+.storybook-action[disabled] { opacity: .56; box-shadow: none; }
+.storybook-action.text {
+  grid-column: 1 / -1;
+  min-height: 68rpx;
+  border-color: transparent;
+  color: var(--persona-muted);
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 370px) {
+  .storybook-result-page { padding-right: 18rpx; padding-left: 18rpx; }
+  .storybook-actions { grid-template-columns: 1fr; }
+  .storybook-action.primary,
+  .storybook-action.text { grid-column: auto; }
+}
