@@ -1,6 +1,6 @@
 const cloudbase = require('@cloudbase/node-sdk')
 const cloud = require('wx-server-sdk')
-const { requireVerifiedAuthenticatedUserId, buildAuthErrorResponse } = require('./_shared/auth')
+const { requireVerifiedAuthenticatedUserId, buildAuthErrorResponse } = require('./custom-pet-auth')
 const { checkFeatureAccess } = require('./_shared/subscription')
 const { isCustomPetCatalogEnabled, listMyDeliveredPets, listMyRequests } = require('./_shared/custom-pet-catalog')
 

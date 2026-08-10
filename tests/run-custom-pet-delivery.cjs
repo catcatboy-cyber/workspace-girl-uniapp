@@ -10,7 +10,7 @@ const petsSource = fs.readFileSync(path.join(projectRoot, 'src', 'utils', 'pets.
 const resourceHelper = require(path.join(projectRoot, 'cloudfunctions', 'adminManage', '_shared', 'custom-pet-resource.js'))
 const accessHelper = require(path.join(projectRoot, 'cloudfunctions', 'adminManage', '_shared', 'custom-pet-access.js'))
 const catalogHelper = require(path.join(projectRoot, 'cloudfunctions', 'customPet', '_shared', 'custom-pet-catalog.js'))
-const authHelper = require(path.join(projectRoot, 'cloudfunctions', 'customPet', '_shared', 'auth.js'))
+const authHelper = require(path.join(projectRoot, 'cloudfunctions', 'customPet', 'custom-pet-auth.js'))
 const { createFakeCloudbase } = require('./support/fake-cloudbase.cjs')
 
 function installUniStorage() {
@@ -355,7 +355,7 @@ async function main() {
           database: () => wxDb,
           getWXContext: () => ({})
         },
-        './_shared/auth': {
+        './custom-pet-auth': {
           async requireVerifiedAuthenticatedUserId() {
             authenticatedUsers.push('owner-user')
             return 'owner-user'
