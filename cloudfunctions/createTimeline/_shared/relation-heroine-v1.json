@@ -1,0 +1,1689 @@
+{
+  "stages": [
+    {
+      "key": "pre_relationship",
+      "label": "还没在一起：刚认识、朋友或暧昧"
+    },
+    {
+      "key": "early_dating",
+      "label": "刚开始交往"
+    },
+    {
+      "key": "steady_relationship",
+      "label": "稳定交往"
+    },
+    {
+      "key": "long_term",
+      "label": "长期共同生活或婚姻"
+    }
+  ],
+  "screener": [
+    {
+      "id": "S01",
+      "textSelf": "大家都在等一个人拍板时，你通常会？",
+      "textTarget": "大家都在等一个人拍板时，TA通常会？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "直接分工并推动",
+          "textTarget": "直接分工并推动",
+          "voteFor": "ran_yingying"
+        },
+        {
+          "key": "T",
+          "textSelf": "先看信息和边界再决定",
+          "textTarget": "先看信息和边界再决定",
+          "voteFor": "tong_chenjie"
+        },
+        {
+          "key": "X",
+          "textSelf": "先稳住大家再慢慢协调",
+          "textTarget": "先稳住大家再慢慢协调",
+          "voteFor": "xie_xingfang"
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "textSelf": "约会或共同安排迟迟定不下来时，你通常会？",
+      "textTarget": "TA通常会？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "主动把时间地点定下来",
+          "textTarget": "主动把时间地点定下来",
+          "voteFor": "ran_yingying"
+        },
+        {
+          "key": "T",
+          "textSelf": "明确自己能接受什么",
+          "textTarget": "明确自己能接受什么",
+          "voteFor": "tong_chenjie"
+        },
+        {
+          "key": "X",
+          "textSelf": "多配合对方，尽量让安排落地",
+          "textTarget": "多配合对方，尽量让安排落地",
+          "voteFor": "xie_xingfang"
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "textSelf": "对方让你失望一次时，你更接近？",
+      "textTarget": "TA更接近？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "先补位解决，再提高要求",
+          "textTarget": "先补位解决，再提高要求",
+          "voteFor": "ran_yingying"
+        },
+        {
+          "key": "T",
+          "textSelf": "观察是否持续，必要时拉开距离",
+          "textTarget": "观察是否持续，必要时拉开距离",
+          "voteFor": "tong_chenjie"
+        },
+        {
+          "key": "X",
+          "textSelf": "看后续行动，愿意给修复机会",
+          "textTarget": "看后续行动，愿意给修复机会",
+          "voteFor": "xie_xingfang"
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "textSelf": "关系里出现分歧时，你通常会？",
+      "textTarget": "TA通常会？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "提方案并推进一个结果",
+          "textTarget": "提方案并推进一个结果",
+          "voteFor": "ran_yingying"
+        },
+        {
+          "key": "T",
+          "textSelf": "把需求和底线说清楚",
+          "textTarget": "把需求和底线说清楚",
+          "voteFor": "tong_chenjie"
+        },
+        {
+          "key": "X",
+          "textSelf": "控制情绪，优先维护长期关系",
+          "textTarget": "控制情绪，优先维护长期关系",
+          "voteFor": "xie_xingfang"
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "textSelf": "朋友会怎样形容你处理感情？",
+      "textTarget": "别人更可能怎样形容 TA？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "能扛事，也比较强势",
+          "textTarget": "能扛事，也比较强势",
+          "voteFor": "ran_yingying"
+        },
+        {
+          "key": "T",
+          "textSelf": "清醒独立，不容易失去自己",
+          "textTarget": "清醒独立，不容易失去自己",
+          "voteFor": "tong_chenjie"
+        },
+        {
+          "key": "X",
+          "textSelf": "能忍耐，也愿意守住关系",
+          "textTarget": "能忍耐，也愿意守住关系",
+          "voteFor": "xie_xingfang"
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "textSelf": "下面哪句话最像你？",
+      "textTarget": "哪句话最像 TA？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "“事情总得有人推进。”",
+          "textTarget": "“事情总得有人推进。”",
+          "voteFor": "ran_yingying"
+        },
+        {
+          "key": "T",
+          "textSelf": "“喜欢归喜欢，边界也要清楚。”",
+          "textTarget": "“喜欢归喜欢，边界也要清楚。”",
+          "voteFor": "tong_chenjie"
+        },
+        {
+          "key": "X",
+          "textSelf": "“一次问题不代表整段关系没救。”",
+          "textTarget": "“一次问题不代表整段关系没救。”",
+          "voteFor": "xie_xingfang"
+        }
+      ]
+    }
+  ],
+  "archetypes": [
+    {
+      "key": "ran_yingying",
+      "name": "冉莹颖型",
+      "label": "掌舵大女主",
+      "enabled": true,
+      "dimensions": [
+        {
+          "key": "take_charge",
+          "name": "主动掌舵",
+          "weight": 0.3333333333333333,
+          "highText": "遇到模糊局面时更愿意拍板并推进",
+          "lowText": "更习惯等待共识或由别人发起"
+        },
+        {
+          "key": "responsibility",
+          "name": "责任兜底",
+          "weight": 0.3333333333333333,
+          "highText": "关键时刻倾向补位、兑现和收尾",
+          "lowText": "更重视各自负责，不会轻易替人兜底"
+        },
+        {
+          "key": "standards_control",
+          "name": "高标准掌控",
+          "weight": 0.3333333333333333,
+          "highText": "对过程和结果都有较强标准与掌控感",
+          "lowText": "更能接受别人按自己的方式处理"
+        }
+      ],
+      "universalQuestions": [
+        {
+          "id": "RQ01",
+          "textSelf": "大家讨论很久还没结论时，我会主动给出方案。",
+          "textTarget": "大家讨论很久还没结论时，TA会主动给出方案。",
+          "reverse": false,
+          "dimensionKey": "take_charge"
+        },
+        {
+          "id": "RQ02",
+          "textSelf": "约人见面或做事时，我习惯尽快把时间地点定下来。",
+          "textTarget": "约人见面或做事时，TA习惯尽快把时间地点定下来。",
+          "reverse": false,
+          "dimensionKey": "take_charge"
+        },
+        {
+          "id": "RQ03",
+          "textSelf": "突然出状况时，我通常先安排谁做什么。",
+          "textTarget": "突然出状况时，TA通常先安排谁做什么。",
+          "reverse": false,
+          "dimensionKey": "take_charge"
+        },
+        {
+          "id": "RQ04",
+          "textSelf": "意见不一致时，我会推动大家选一个方案继续往前。",
+          "textTarget": "意见不一致时，TA会推动大家选一个方案继续往前。",
+          "reverse": false,
+          "dimensionKey": "take_charge"
+        },
+        {
+          "id": "RQ05",
+          "textSelf": "重要事情一直没有结论时，我也可以继续等别人推进。",
+          "textTarget": "重要事情一直没有结论时，TA也可以继续等别人推进。",
+          "reverse": true,
+          "dimensionKey": "take_charge"
+        },
+        {
+          "id": "RQ06",
+          "textSelf": "身边的人掉链子时，我常会先补位，免得事情砸掉。",
+          "textTarget": "身边的人掉链子时，TA常会先补位，免得事情砸掉。",
+          "reverse": false,
+          "dimensionKey": "responsibility"
+        },
+        {
+          "id": "RQ07",
+          "textSelf": "答应过别人的事，我会想办法做到，不轻易找借口。",
+          "textTarget": "答应过别人的事，TA会想办法做到，不轻易找借口。",
+          "reverse": false,
+          "dimensionKey": "responsibility"
+        },
+        {
+          "id": "RQ08",
+          "textSelf": "亲近的人遇到麻烦，我很容易把它当成自己的事。",
+          "textTarget": "亲近的人遇到麻烦，TA很容易把它当成自己的事。",
+          "reverse": false,
+          "dimensionKey": "responsibility"
+        },
+        {
+          "id": "RQ09",
+          "textSelf": "有问题时，我更习惯先处理，情绪可以之后再说。",
+          "textTarget": "有问题时，TA更习惯先处理，情绪可以之后再说。",
+          "reverse": false,
+          "dimensionKey": "responsibility"
+        },
+        {
+          "id": "RQ10",
+          "textSelf": "亲近的人遇到麻烦时，我通常会等对方求助，不会马上接手。",
+          "textTarget": "亲近的人遇到麻烦时，TA通常会等对方求助，不会马上接手。",
+          "reverse": true,
+          "dimensionKey": "responsibility"
+        }
+      ],
+      "stageQuestions": {
+        "pre_relationship": [
+          {
+            "id": "RQ11",
+            "textSelf": "约见面一直没人定细节时，我会直接给出完整安排",
+            "textTarget": "约见面一直没人定细节时，TA会直接给出完整安排",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ12",
+            "textSelf": "对方临时改约时，我会追问原因并重新定好时间",
+            "textTarget": "别人临时改约时，TA会追问原因并重新定好时间",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ13",
+            "textSelf": "一起做事时，如果对方效率太低，我会直接接手",
+            "textTarget": "一起做事时，如果别人效率太低，TA会直接接手",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ14",
+            "textSelf": "对方做法和我不同但结果还可以时，我也很难完全不管",
+            "textTarget": "别人做法和TA不同但结果还可以时，TA也很难完全不管",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ15",
+            "textSelf": "我不太放心把重要结果完全交给别人决定",
+            "textTarget": "TA不太放心把重要结果完全交给别人决定",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "RQ11",
+            "textSelf": "周末约会还没定时，我会把时间地点都安排好",
+            "textTarget": "周末约会还没定时，TA会把时间地点都安排好",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ12",
+            "textSelf": "对方反复迟到时，我会明确要求以后怎么做",
+            "textTarget": "对象反复迟到时，TA会明确要求以后怎么做",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ13",
+            "textSelf": "准备约会或旅行时，对方做得太慢我会接手",
+            "textTarget": "准备约会或旅行时，对方做得太慢TA会接手",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ14",
+            "textSelf": "对象用自己的方式安排事情时，我常会提醒细节",
+            "textTarget": "对象用自己的方式安排事情时，TA常会提醒细节",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ15",
+            "textSelf": "刚交往时，我也希望重要安排按可控方式进行",
+            "textTarget": "刚交往时，TA也希望重要安排按可控方式进行",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "RQ11",
+            "textSelf": "共同计划拖着没定时，我会接手推进",
+            "textTarget": "共同计划拖着没定时，TA会接手推进",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ12",
+            "textSelf": "对方反复忘记约定时，我会设下清楚规则",
+            "textTarget": "对象反复忘记约定时，TA会设下清楚规则",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ13",
+            "textSelf": "共同任务进度太慢时，我会接手关键部分",
+            "textTarget": "共同任务进度太慢时，TA会接手关键部分",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ14",
+            "textSelf": "对象负责一件重要事情时，我会持续确认进度",
+            "textTarget": "对象负责一件重要事情时，TA会持续确认进度",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ15",
+            "textSelf": "关系中的重要决定，我希望自己有较大决定权",
+            "textTarget": "关系中的重要决定，TA希望自己有较大决定权",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "RQ11",
+            "textSelf": "家里现实安排迟迟没人处理时，我会接手推进",
+            "textTarget": "家里现实安排迟迟没人处理时，TA会接手推进",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ12",
+            "textSelf": "对方反复忘记家庭安排时，我会建立固定规则",
+            "textTarget": "对象反复忘记家庭安排时，TA会建立固定规则",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ13",
+            "textSelf": "家庭事务进度太慢时，我会接手关键部分",
+            "textTarget": "家庭事务进度太慢时，TA会接手关键部分",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ14",
+            "textSelf": "对象负责家庭重要事项时，我会持续确认进度",
+            "textTarget": "对象负责家庭重要事项时，TA会持续确认进度",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          },
+          {
+            "id": "RQ15",
+            "textSelf": "家庭的重要决定，我希望自己有较大决定权",
+            "textTarget": "家庭的重要决定，TA希望自己有较大决定权",
+            "reverse": false,
+            "dimensionKey": "standards_control"
+          }
+        ]
+      },
+      "scenarios": {
+        "pre_relationship": [
+          {
+            "id": "RS1",
+            "textSelf": "一次见面一直定不下来，你通常会：",
+            "textTarget": "一次见面一直定不下来，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "直接列方案、定时间并分工"
+              },
+              {
+                "key": "B",
+                "text": "继续等对方安排"
+              },
+              {
+                "key": "C",
+                "text": "暂时取消，不再处理"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS2",
+            "textSelf": "一起做事的人突然掉链子，你通常会：",
+            "textTarget": "一起做事的人突然掉链子，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先补位解决，再谈责任"
+              },
+              {
+                "key": "B",
+                "text": "当场指责但不接手"
+              },
+              {
+                "key": "C",
+                "text": "完全不管结果"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS3",
+            "textSelf": "对方做法很慢但还没出错，你通常会：",
+            "textTarget": "对方做法很慢但还没出错，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "接手关键部分并重新安排"
+              },
+              {
+                "key": "B",
+                "text": "全程等待，不提要求"
+              },
+              {
+                "key": "C",
+                "text": "直接放弃这件事"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "RS1",
+            "textSelf": "周末安排一直定不下来，你通常会：",
+            "textTarget": "周末安排一直定不下来，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "直接列方案、定时间并分工"
+              },
+              {
+                "key": "B",
+                "text": "继续等对方安排"
+              },
+              {
+                "key": "C",
+                "text": "暂时取消，不再处理"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS2",
+            "textSelf": "对象临时忘了重要约定，你通常会：",
+            "textTarget": "对象临时忘了重要约定，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先补位解决，再谈责任"
+              },
+              {
+                "key": "B",
+                "text": "当场指责但不接手"
+              },
+              {
+                "key": "C",
+                "text": "完全不管结果"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS3",
+            "textSelf": "对象安排约会不够周全，你通常会：",
+            "textTarget": "对象安排约会不够周全，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "接手关键部分并重新安排"
+              },
+              {
+                "key": "B",
+                "text": "全程等待，不提要求"
+              },
+              {
+                "key": "C",
+                "text": "直接放弃这件事"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "RS1",
+            "textSelf": "共同旅行一直没人推进，你通常会：",
+            "textTarget": "共同旅行一直没人推进，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "直接列方案、定时间并分工"
+              },
+              {
+                "key": "B",
+                "text": "继续等对方安排"
+              },
+              {
+                "key": "C",
+                "text": "暂时取消，不再处理"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS2",
+            "textSelf": "对象负责的任务出了问题，你通常会：",
+            "textTarget": "对象负责的任务出了问题，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先补位解决，再谈责任"
+              },
+              {
+                "key": "B",
+                "text": "当场指责但不接手"
+              },
+              {
+                "key": "C",
+                "text": "完全不管结果"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS3",
+            "textSelf": "对象负责的重要事进度缓慢，你通常会：",
+            "textTarget": "对象负责的重要事进度缓慢，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "接手关键部分并重新安排"
+              },
+              {
+                "key": "B",
+                "text": "全程等待，不提要求"
+              },
+              {
+                "key": "C",
+                "text": "直接放弃这件事"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "RS1",
+            "textSelf": "家里一项重要安排迟迟没人处理，你通常会：",
+            "textTarget": "家里一项重要安排迟迟没人处理，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "直接列方案、定时间并分工"
+              },
+              {
+                "key": "B",
+                "text": "继续等对方安排"
+              },
+              {
+                "key": "C",
+                "text": "暂时取消，不再处理"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS2",
+            "textSelf": "家庭重要事务出了问题，你通常会：",
+            "textTarget": "家庭重要事务出了问题，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先补位解决，再谈责任"
+              },
+              {
+                "key": "B",
+                "text": "当场指责但不接手"
+              },
+              {
+                "key": "C",
+                "text": "完全不管结果"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "RS3",
+            "textSelf": "对象处理家庭事项进度缓慢，你通常会：",
+            "textTarget": "对象处理家庭事项进度缓慢，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "接手关键部分并重新安排"
+              },
+              {
+                "key": "B",
+                "text": "全程等待，不提要求"
+              },
+              {
+                "key": "C",
+                "text": "直接放弃这件事"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ]
+      },
+      "resultCopy": {
+        "attraction": "主动、能扛事、关键时刻有行动力",
+        "caution": "标准过高时可能替别人做决定，让人有被管理感"
+      }
+    },
+    {
+      "key": "tong_chenjie",
+      "name": "佟晨洁型",
+      "label": "清醒边界派",
+      "enabled": true,
+      "dimensions": [
+        {
+          "key": "independent_boundary",
+          "name": "独立边界",
+          "weight": 0.3333333333333333,
+          "highText": "亲密中仍能保留安排、空间和边界",
+          "lowText": "更容易为了关系压缩自己的空间"
+        },
+        {
+          "key": "clear_observation",
+          "name": "清醒观察",
+          "weight": 0.3333333333333333,
+          "highText": "更看长期行动与一致性，不被一时表达带走",
+          "lowText": "更容易相信当下感受或替不一致找理由"
+        },
+        {
+          "key": "needs_exit",
+          "name": "需求表达与止损",
+          "weight": 0.3333333333333333,
+          "highText": "能说清需求，并在反复不合时采取行动",
+          "lowText": "更容易等待、回避表达或延后决定"
+        }
+      ],
+      "universalQuestions": [
+        {
+          "id": "TQ01",
+          "textSelf": "即使很喜欢一个人，我也会保留自己的生活安排。",
+          "textTarget": "即使很喜欢一个人，TA也会保留自己的生活安排。",
+          "reverse": false,
+          "dimensionKey": "independent_boundary"
+        },
+        {
+          "id": "TQ02",
+          "textSelf": "我需要独处或不方便时，会直接说出来。",
+          "textTarget": "TA需要独处或不方便时，会直接说出来。",
+          "reverse": false,
+          "dimensionKey": "independent_boundary"
+        },
+        {
+          "id": "TQ03",
+          "textSelf": "我不会因为关系亲近，就默认对方可以越过我的边界。",
+          "textTarget": "TA不会因为关系亲近，就默认别人可以越过自己的边界。",
+          "reverse": false,
+          "dimensionKey": "independent_boundary"
+        },
+        {
+          "id": "TQ04",
+          "textSelf": "我能接受两个人亲密，但不必事事绑定在一起。",
+          "textTarget": "TA能接受两个人亲密，但不必事事绑定在一起。",
+          "reverse": false,
+          "dimensionKey": "independent_boundary"
+        },
+        {
+          "id": "TQ05",
+          "textSelf": "为了配合喜欢的人，我经常临时放弃自己的重要安排。",
+          "textTarget": "为了配合喜欢的人，TA经常临时放弃自己的重要安排。",
+          "reverse": true,
+          "dimensionKey": "independent_boundary"
+        },
+        {
+          "id": "TQ06",
+          "textSelf": "比起一时说得好听，我更看对方之后有没有持续做到。",
+          "textTarget": "比起一时说得好听，TA更看别人之后有没有持续做到。",
+          "reverse": false,
+          "dimensionKey": "clear_observation"
+        },
+        {
+          "id": "TQ07",
+          "textSelf": "我会留意一个人对不同人的态度是否一致。",
+          "textTarget": "TA会留意一个人对不同人的态度是否一致。",
+          "reverse": false,
+          "dimensionKey": "clear_observation"
+        },
+        {
+          "id": "TQ08",
+          "textSelf": "有心动时，我也会观察现实上是否真的合适。",
+          "textTarget": "有心动时，TA也会观察现实上是否真的合适。",
+          "reverse": false,
+          "dimensionKey": "clear_observation"
+        },
+        {
+          "id": "TQ09",
+          "textSelf": "我不会因为别人都说“不错”，就忽略自己的真实感受。",
+          "textTarget": "TA不会因为别人都说“不错”，就忽略自己的真实感受。",
+          "reverse": false,
+          "dimensionKey": "clear_observation"
+        },
+        {
+          "id": "TQ10",
+          "textSelf": "发现话和行动对不上时，我还是会替对方找理由继续相信。",
+          "textTarget": "发现话和行动对不上时，TA还是会替对方找理由继续相信。",
+          "reverse": true,
+          "dimensionKey": "clear_observation"
+        }
+      ],
+      "stageQuestions": {
+        "pre_relationship": [
+          {
+            "id": "TQ11",
+            "textSelf": "暧昧让我不舒服时，我会直接问清彼此想法",
+            "textTarget": "暧昧让TA不舒服时，TA会直接问清彼此想法",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ12",
+            "textSelf": "对方一直含糊关系时，我不会无限等下去",
+            "textTarget": "别人一直含糊关系时，TA不会无限等下去",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ13",
+            "textSelf": "对方越过边界后，我会明确告诉TA哪里不可以",
+            "textTarget": "别人越过边界后，TA会明确告诉对方哪里不可以",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ14",
+            "textSelf": "即使很心动，发现核心价值观不合我也会降温",
+            "textTarget": "即使很心动，TA发现核心价值观不合也会降温",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ15",
+            "textSelf": "我不会为了维持暧昧而压住所有真实需求",
+            "textTarget": "TA不会为了维持暧昧而压住所有真实需求",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "TQ11",
+            "textSelf": "相处方式让我不舒服时，我会明确说出需求",
+            "textTarget": "相处方式让TA不舒服时，TA会明确说出需求",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ12",
+            "textSelf": "对方回避承诺时，我会给自己一个观察期限",
+            "textTarget": "对象回避承诺时，TA会给自己一个观察期限",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ13",
+            "textSelf": "对象越过边界后，我会说清后果",
+            "textTarget": "对象越过边界后，TA会说清后果",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ14",
+            "textSelf": "刚交往就发现核心不合时，我不会假装没事",
+            "textTarget": "刚交往就发现核心不合时，TA不会假装没事",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ15",
+            "textSelf": "我不会为了显得好相处而长期忍住需求",
+            "textTarget": "TA不会为了显得好相处而长期忍住需求",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "TQ11",
+            "textSelf": "长期不满出现时，我会选合适时间认真谈",
+            "textTarget": "长期不满出现时，TA会选合适时间认真谈",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ12",
+            "textSelf": "关键问题一直没改变时，我会重新评估关系",
+            "textTarget": "关键问题一直没改变时，TA会重新评估关系",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ13",
+            "textSelf": "同一边界被反复突破时，我会采取实际行动",
+            "textTarget": "同一边界被反复突破时，TA会采取实际行动",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ14",
+            "textSelf": "相爱但长期不适合时，我会面对这个事实",
+            "textTarget": "相爱但长期不适合时，TA会面对这个事实",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ15",
+            "textSelf": "我会把真正需要的相处方式讲清楚",
+            "textTarget": "TA会把真正需要的相处方式讲清楚",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "TQ11",
+            "textSelf": "共同生活的问题反复出现时，我会正式讨论改变方案",
+            "textTarget": "共同生活的问题反复出现时，TA会正式讨论改变方案",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ12",
+            "textSelf": "长期核心问题没改变时，我会评估分开所需准备",
+            "textTarget": "长期核心问题没改变时，TA会评估分开所需准备",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ13",
+            "textSelf": "长期边界被反复突破时，我会调整相处或生活安排",
+            "textTarget": "长期边界被反复突破时，TA会调整相处或生活安排",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ14",
+            "textSelf": "有很多共同投入但长期不适合时，我仍会正视问题",
+            "textTarget": "有很多共同投入但长期不适合时，TA仍会正视问题",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          },
+          {
+            "id": "TQ15",
+            "textSelf": "我会把共同生活中不能妥协的需求讲清楚",
+            "textTarget": "TA会把共同生活中不能妥协的需求讲清楚",
+            "reverse": false,
+            "dimensionKey": "needs_exit"
+          }
+        ]
+      },
+      "scenarios": {
+        "pre_relationship": [
+          {
+            "id": "TS1",
+            "textSelf": "暧昧很久不表态，你通常会：",
+            "textTarget": "暧昧很久不表态，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说清需求并给出观察期限"
+              },
+              {
+                "key": "B",
+                "text": "什么都不说继续等"
+              },
+              {
+                "key": "C",
+                "text": "用冷淡让对方猜"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS2",
+            "textSelf": "对方第一次越过边界，你通常会：",
+            "textTarget": "对方第一次越过边界，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "明确边界和后果并观察行动"
+              },
+              {
+                "key": "B",
+                "text": "为了和气当没发生"
+              },
+              {
+                "key": "C",
+                "text": "立刻公开羞辱对方"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS3",
+            "textSelf": "很心动但发现核心不合，你通常会：",
+            "textTarget": "很心动但发现核心不合，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "正视不合并做现实评估"
+              },
+              {
+                "key": "B",
+                "text": "只要喜欢就忽略问题"
+              },
+              {
+                "key": "C",
+                "text": "完全听外界替自己决定"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "TS1",
+            "textSelf": "刚交往但相处规则含糊，你通常会：",
+            "textTarget": "刚交往但相处规则含糊，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说清需求并给出观察期限"
+              },
+              {
+                "key": "B",
+                "text": "什么都不说继续等"
+              },
+              {
+                "key": "C",
+                "text": "用冷淡让对方猜"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS2",
+            "textSelf": "对象查看隐私或干涉安排，你通常会：",
+            "textTarget": "对象查看隐私或干涉安排，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "明确边界和后果并观察行动"
+              },
+              {
+                "key": "B",
+                "text": "为了和气当没发生"
+              },
+              {
+                "key": "C",
+                "text": "立刻公开羞辱对方"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS3",
+            "textSelf": "刚交往发现长期目标不同，你通常会：",
+            "textTarget": "刚交往发现长期目标不同，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "正视不合并做现实评估"
+              },
+              {
+                "key": "B",
+                "text": "只要喜欢就忽略问题"
+              },
+              {
+                "key": "C",
+                "text": "完全听外界替自己决定"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "TS1",
+            "textSelf": "稳定关系中需求长期没回应，你通常会：",
+            "textTarget": "稳定关系中需求长期没回应，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说清需求并给出观察期限"
+              },
+              {
+                "key": "B",
+                "text": "什么都不说继续等"
+              },
+              {
+                "key": "C",
+                "text": "用冷淡让对方猜"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS2",
+            "textSelf": "同一边界再次被突破，你通常会：",
+            "textTarget": "同一边界再次被突破，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "明确边界和后果并观察行动"
+              },
+              {
+                "key": "B",
+                "text": "为了和气当没发生"
+              },
+              {
+                "key": "C",
+                "text": "立刻公开羞辱对方"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS3",
+            "textSelf": "相爱但关键价值观长期冲突，你通常会：",
+            "textTarget": "相爱但关键价值观长期冲突，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "正视不合并做现实评估"
+              },
+              {
+                "key": "B",
+                "text": "只要喜欢就忽略问题"
+              },
+              {
+                "key": "C",
+                "text": "完全听外界替自己决定"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "TS1",
+            "textSelf": "共同生活问题反复没改变，你通常会：",
+            "textTarget": "共同生活问题反复没改变，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说清需求并给出观察期限"
+              },
+              {
+                "key": "B",
+                "text": "什么都不说继续等"
+              },
+              {
+                "key": "C",
+                "text": "用冷淡让对方猜"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS2",
+            "textSelf": "长期边界持续被突破，你通常会：",
+            "textTarget": "长期边界持续被突破，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "明确边界和后果并观察行动"
+              },
+              {
+                "key": "B",
+                "text": "为了和气当没发生"
+              },
+              {
+                "key": "C",
+                "text": "立刻公开羞辱对方"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "TS3",
+            "textSelf": "共同投入很多但核心方向不同，你通常会：",
+            "textTarget": "共同投入很多但核心方向不同，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "正视不合并做现实评估"
+              },
+              {
+                "key": "B",
+                "text": "只要喜欢就忽略问题"
+              },
+              {
+                "key": "C",
+                "text": "完全听外界替自己决定"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ]
+      },
+      "resultCopy": {
+        "attraction": "清醒、有边界、不会在喜欢里失去自己",
+        "caution": "观察期过长或止损过快时，可能让人感到距离感"
+      }
+    },
+    {
+      "key": "xie_xingfang",
+      "name": "谢杏芳型",
+      "label": "长期守护者",
+      "enabled": true,
+      "dimensions": [
+        {
+          "key": "long_commitment",
+          "name": "长期承诺",
+          "weight": 0.3333333333333333,
+          "highText": "重视长期稳定，不因一次波动否定全部",
+          "lowText": "更看重当下体验，关系低谷时更快抽离"
+        },
+        {
+          "key": "repair_tolerance",
+          "name": "容错修复",
+          "weight": 0.3333333333333333,
+          "highText": "愿意根据持续行动给出有限修复机会",
+          "lowText": "受伤后较难重新开放观察"
+        },
+        {
+          "key": "stable_maintenance",
+          "name": "稳定维护",
+          "weight": 0.3333333333333333,
+          "highText": "会主动维护连接、体面和共同稳定",
+          "lowText": "更倾向让关系自然发展，不主动维系"
+        }
+      ],
+      "universalQuestions": [
+        {
+          "id": "XQ01",
+          "textSelf": "我看重一个人长期是否稳定，而不只看一时热烈。",
+          "textTarget": "TA看重一个人长期是否稳定，而不只看一时热烈。",
+          "reverse": false,
+          "dimensionKey": "long_commitment"
+        },
+        {
+          "id": "XQ02",
+          "textSelf": "确认一段重要关系后，我不会因为一次不愉快就轻易放弃。",
+          "textTarget": "确认一段重要关系后，TA不会因为一次不愉快就轻易放弃。",
+          "reverse": false,
+          "dimensionKey": "long_commitment"
+        },
+        {
+          "id": "XQ03",
+          "textSelf": "做关系决定时，我会把过去的投入和整体相处一起考虑。",
+          "textTarget": "做关系决定时，TA会把过去的投入和整体相处一起考虑。",
+          "reverse": false,
+          "dimensionKey": "long_commitment"
+        },
+        {
+          "id": "XQ04",
+          "textSelf": "我愿意为长期稳定调整一些自己的习惯。",
+          "textTarget": "TA愿意为长期稳定调整一些自己的习惯。",
+          "reverse": false,
+          "dimensionKey": "long_commitment"
+        },
+        {
+          "id": "XQ05",
+          "textSelf": "关系刚进入低谷时，我很容易马上想结束。",
+          "textTarget": "关系刚进入低谷时，TA很容易马上想结束。",
+          "reverse": true,
+          "dimensionKey": "long_commitment"
+        },
+        {
+          "id": "XQ06",
+          "textSelf": "对方犯错后，如果有持续行动，我愿意重新观察。",
+          "textTarget": "别人犯错后，如果有持续行动，TA愿意重新观察。",
+          "reverse": false,
+          "dimensionKey": "repair_tolerance"
+        },
+        {
+          "id": "XQ07",
+          "textSelf": "发生冲突时，我会等情绪缓一点再谈清楚。",
+          "textTarget": "发生冲突时，TA会等情绪缓一点再谈清楚。",
+          "reverse": false,
+          "dimensionKey": "repair_tolerance"
+        },
+        {
+          "id": "XQ08",
+          "textSelf": "我能区分“一次做错”和“这个人一直不可靠”。",
+          "textTarget": "TA能区分“一次做错”和“这个人一直不可靠”。",
+          "reverse": false,
+          "dimensionKey": "repair_tolerance"
+        },
+        {
+          "id": "XQ09",
+          "textSelf": "修复关系时，我更看后续行动，不只听一句道歉。",
+          "textTarget": "修复关系时，TA更看后续行动，不只听一句道歉。",
+          "reverse": false,
+          "dimensionKey": "repair_tolerance"
+        },
+        {
+          "id": "XQ10",
+          "textSelf": "对方犯错后，即使持续改变，我也很少愿意再观察。",
+          "textTarget": "别人犯错后，即使持续改变，TA也很少愿意再观察。",
+          "reverse": true,
+          "dimensionKey": "repair_tolerance"
+        }
+      ],
+      "stageQuestions": {
+        "pre_relationship": [
+          {
+            "id": "XQ11",
+            "textSelf": "有小误会时，我愿意主动把话说开",
+            "textTarget": "有小误会时，TA愿意主动把话说开",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ12",
+            "textSelf": "对方一次没做好时，我会先看后续表现",
+            "textTarget": "别人一次没做好时，TA会先看后续表现",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ13",
+            "textSelf": "别人议论我们时，我会先和当事人确认",
+            "textTarget": "别人议论他们时，TA会先和当事人确认",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ14",
+            "textSelf": "对方压力大而暂时冷淡时，我愿意多观察一阵",
+            "textTarget": "别人压力大而暂时冷淡时，TA愿意多观察一阵",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ15",
+            "textSelf": "一次争执后，我不会马上否定之前所有相处",
+            "textTarget": "一次争执后，TA不会马上否定之前所有相处",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "XQ11",
+            "textSelf": "刚交往有摩擦时，我愿意一起找相处办法",
+            "textTarget": "刚交往有摩擦时，TA愿意一起找相处办法",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ12",
+            "textSelf": "对象犯一次错并认真改时，我愿意继续观察",
+            "textTarget": "对象犯一次错并认真改时，TA愿意继续观察",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ13",
+            "textSelf": "外界不看好时，我会先看两个人真实相处",
+            "textTarget": "外界不看好时，TA会先看两个人真实相处",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ14",
+            "textSelf": "对象处在低谷时，我愿意在合理范围内陪伴",
+            "textTarget": "对象处在低谷时，TA愿意在合理范围内陪伴",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ15",
+            "textSelf": "一次争执后，我会看能否建立更好的规则",
+            "textTarget": "一次争执后，TA会看能否建立更好的规则",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "XQ11",
+            "textSelf": "关系进入平淡期时，我会主动创造共同体验",
+            "textTarget": "关系进入平淡期时，TA会主动创造共同体验",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ12",
+            "textSelf": "对象犯错后有持续改变时，我愿意参与修复",
+            "textTarget": "对象犯错后有持续改变时，TA愿意参与修复",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ13",
+            "textSelf": "外界意见很多时，我会优先保护双方体面",
+            "textTarget": "外界意见很多时，TA会优先保护双方体面",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ14",
+            "textSelf": "对象处在低谷时，我愿意承担一部分现实压力",
+            "textTarget": "对象处在低谷时，TA愿意承担一部分现实压力",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ15",
+            "textSelf": "严重分歧后，我会综合长期表现再决定",
+            "textTarget": "严重分歧后，TA会综合长期表现再决定",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "XQ11",
+            "textSelf": "共同生活变得重复时，我会主动维持仪式和连接",
+            "textTarget": "共同生活变得重复时，TA会主动维持仪式和连接",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ12",
+            "textSelf": "对象犯错后有持续改变时，我愿意给长期修复机会",
+            "textTarget": "对象犯错后有持续改变时，TA愿意给长期修复机会",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ13",
+            "textSelf": "家人或外界施压时，我会先守住关系内部的沟通",
+            "textTarget": "家人或外界施压时，TA会先守住关系内部的沟通",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ14",
+            "textSelf": "家庭遇到低谷时，我愿意和对象一起扛一段时间",
+            "textTarget": "家庭遇到低谷时，TA愿意和对象一起扛一段时间",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          },
+          {
+            "id": "XQ15",
+            "textSelf": "重大分歧后，我会把共同投入和未来改变一起考虑",
+            "textTarget": "重大分歧后，TA会把共同投入和未来改变一起考虑",
+            "reverse": false,
+            "dimensionKey": "stable_maintenance"
+          }
+        ]
+      },
+      "scenarios": {
+        "pre_relationship": [
+          {
+            "id": "XS1",
+            "textSelf": "一次误会让互动冷下来，你通常会：",
+            "textTarget": "一次误会让互动冷下来，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "等情绪稳定后沟通并看后续行动"
+              },
+              {
+                "key": "B",
+                "text": "马上否定全部关系"
+              },
+              {
+                "key": "C",
+                "text": "表面没事但拒绝再沟通"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS2",
+            "textSelf": "对方一次失约后认真补救，你通常会：",
+            "textTarget": "对方一次失约后认真补救，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "给有限机会并观察改变"
+              },
+              {
+                "key": "B",
+                "text": "只听道歉立即当没事"
+              },
+              {
+                "key": "C",
+                "text": "无论如何永不再信任"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS3",
+            "textSelf": "外界议论两人不合适，你通常会：",
+            "textTarget": "外界议论两人不合适，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先保护内部沟通，再综合现实决定"
+              },
+              {
+                "key": "B",
+                "text": "完全听外界决定"
+              },
+              {
+                "key": "C",
+                "text": "为维护体面拒绝讨论问题"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "XS1",
+            "textSelf": "第一次严重争执，你通常会：",
+            "textTarget": "第一次严重争执，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "等情绪稳定后沟通并看后续行动"
+              },
+              {
+                "key": "B",
+                "text": "马上否定全部关系"
+              },
+              {
+                "key": "C",
+                "text": "表面没事但拒绝再沟通"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS2",
+            "textSelf": "对象犯错后持续改正，你通常会：",
+            "textTarget": "对象犯错后持续改正，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "给有限机会并观察改变"
+              },
+              {
+                "key": "B",
+                "text": "只听道歉立即当没事"
+              },
+              {
+                "key": "C",
+                "text": "无论如何永不再信任"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS3",
+            "textSelf": "朋友不看好刚开始的关系，你通常会：",
+            "textTarget": "朋友不看好刚开始的关系，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先保护内部沟通，再综合现实决定"
+              },
+              {
+                "key": "B",
+                "text": "完全听外界决定"
+              },
+              {
+                "key": "C",
+                "text": "为维护体面拒绝讨论问题"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "XS1",
+            "textSelf": "稳定关系出现低谷，你通常会：",
+            "textTarget": "稳定关系出现低谷，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "等情绪稳定后沟通并看后续行动"
+              },
+              {
+                "key": "B",
+                "text": "马上否定全部关系"
+              },
+              {
+                "key": "C",
+                "text": "表面没事但拒绝再沟通"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS2",
+            "textSelf": "信任受损后对方持续修复，你通常会：",
+            "textTarget": "信任受损后对方持续修复，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "给有限机会并观察改变"
+              },
+              {
+                "key": "B",
+                "text": "只听道歉立即当没事"
+              },
+              {
+                "key": "C",
+                "text": "无论如何永不再信任"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS3",
+            "textSelf": "外界对关系有很多评价，你通常会：",
+            "textTarget": "外界对关系有很多评价，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先保护内部沟通，再综合现实决定"
+              },
+              {
+                "key": "B",
+                "text": "完全听外界决定"
+              },
+              {
+                "key": "C",
+                "text": "为维护体面拒绝讨论问题"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "XS1",
+            "textSelf": "长期关系经历重大冲突，你通常会：",
+            "textTarget": "长期关系经历重大冲突，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "等情绪稳定后沟通并看后续行动"
+              },
+              {
+                "key": "B",
+                "text": "马上否定全部关系"
+              },
+              {
+                "key": "C",
+                "text": "表面没事但拒绝再沟通"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS2",
+            "textSelf": "长期关系受伤后对方持续修复，你通常会：",
+            "textTarget": "长期关系受伤后对方持续修复，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "给有限机会并观察改变"
+              },
+              {
+                "key": "B",
+                "text": "只听道歉立即当没事"
+              },
+              {
+                "key": "C",
+                "text": "无论如何永不再信任"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "XS3",
+            "textSelf": "家人和现实压力影响长期关系，你通常会：",
+            "textTarget": "家人和现实压力影响长期关系，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先保护内部沟通，再综合现实决定"
+              },
+              {
+                "key": "B",
+                "text": "完全听外界决定"
+              },
+              {
+                "key": "C",
+                "text": "为维护体面拒绝讨论问题"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ]
+      },
+      "resultCopy": {
+        "attraction": "稳定、重承诺、愿意给关系修复空间",
+        "caution": "容错过高时可能延迟面对反复发生的问题"
+      }
+    }
+  ]
+}

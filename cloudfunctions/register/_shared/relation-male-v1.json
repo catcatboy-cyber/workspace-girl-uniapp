@@ -1,0 +1,1689 @@
+{
+  "stages": [
+    {
+      "key": "pre_relationship",
+      "label": "还没在一起：刚认识、朋友或暧昧"
+    },
+    {
+      "key": "early_dating",
+      "label": "刚开始交往"
+    },
+    {
+      "key": "steady_relationship",
+      "label": "稳定交往"
+    },
+    {
+      "key": "long_term",
+      "label": "长期共同生活或婚姻"
+    }
+  ],
+  "screener": [
+    {
+      "id": "S01",
+      "textSelf": "临时计划被打乱时，你更自然的反应是？",
+      "textTarget": "临时计划被打乱时，TA更自然的反应是？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "先稳住局面，马上重排计划",
+          "textTarget": "先稳住局面，马上重排计划",
+          "voteFor": "steady_leader"
+        },
+        {
+          "key": "T",
+          "textSelf": "先听双方需求，再商量新方案",
+          "textTarget": "先听双方需求，再商量新方案",
+          "voteFor": "equal_partner"
+        },
+        {
+          "key": "X",
+          "textSelf": "先照顾情绪，让大家别太难受",
+          "textTarget": "先照顾情绪，让大家别太难受",
+          "voteFor": "long_term_guardian"
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "textSelf": "关系里遇到现实难题时，你更常做什么？",
+      "textTarget": "关系里遇到现实难题时，TA更常做什么？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "主动拆解任务并推进",
+          "textTarget": "主动拆解任务并推进",
+          "voteFor": "steady_leader"
+        },
+        {
+          "key": "T",
+          "textSelf": "把选择和边界谈清楚",
+          "textTarget": "把选择和边界谈清楚",
+          "voteFor": "equal_partner"
+        },
+        {
+          "key": "X",
+          "textSelf": "持续陪伴，把日常照顾好",
+          "textTarget": "持续陪伴，把日常照顾好",
+          "voteFor": "long_term_guardian"
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "textSelf": "两个人意见不同时，你更看重什么？",
+      "textTarget": "两个人意见不同时，TA更看重什么？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "尽快形成可执行决定",
+          "textTarget": "尽快形成可执行决定",
+          "voteFor": "steady_leader"
+        },
+        {
+          "key": "T",
+          "textSelf": "双方都被尊重并真心同意",
+          "textTarget": "双方都被尊重并真心同意",
+          "voteFor": "equal_partner"
+        },
+        {
+          "key": "X",
+          "textSelf": "别让冲突伤害彼此的感受",
+          "textTarget": "别让冲突伤害彼此的感受",
+          "voteFor": "long_term_guardian"
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "textSelf": "表达在意时，你更像哪一种？",
+      "textTarget": "表达在意时，TA更像哪一种？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "把未来安排和责任落实",
+          "textTarget": "把未来安排和责任落实",
+          "voteFor": "steady_leader"
+        },
+        {
+          "key": "T",
+          "textSelf": "给对方自由，也保持坦诚沟通",
+          "textTarget": "给对方自由，也保持坦诚沟通",
+          "voteFor": "equal_partner"
+        },
+        {
+          "key": "X",
+          "textSelf": "记住细节并长期陪在身边",
+          "textTarget": "记住细节并长期陪在身边",
+          "voteFor": "long_term_guardian"
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "textSelf": "对方陷入低谷时，你通常会？",
+      "textTarget": "对方陷入低谷时，TA通常会？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "接住现实问题，安排下一步",
+          "textTarget": "接住现实问题，安排下一步",
+          "voteFor": "steady_leader"
+        },
+        {
+          "key": "T",
+          "textSelf": "先问对方希望得到什么帮助",
+          "textTarget": "先问对方希望得到什么帮助",
+          "voteFor": "equal_partner"
+        },
+        {
+          "key": "X",
+          "textSelf": "耐心陪伴，持续照顾生活细节",
+          "textTarget": "耐心陪伴，持续照顾生活细节",
+          "voteFor": "long_term_guardian"
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "textSelf": "判断一个人是否可靠，你最看重？",
+      "textTarget": "判断TA是否可靠时，你最看重？",
+      "options": [
+        {
+          "key": "R",
+          "textSelf": "关键时刻能担当和拍板",
+          "textTarget": "关键时刻能担当和拍板",
+          "voteFor": "steady_leader"
+        },
+        {
+          "key": "T",
+          "textSelf": "尊重边界并愿意协商",
+          "textTarget": "尊重边界并愿意协商",
+          "voteFor": "equal_partner"
+        },
+        {
+          "key": "X",
+          "textSelf": "热情过去后仍稳定投入",
+          "textTarget": "热情过去后仍稳定投入",
+          "voteFor": "long_term_guardian"
+        }
+      ]
+    }
+  ],
+  "archetypes": [
+    {
+      "key": "steady_leader",
+      "name": "霍启刚型",
+      "label": "稳健共建派",
+      "enabled": true,
+      "dimensions": [
+        {
+          "key": "responsible_initiative",
+          "name": "主动担当",
+          "weight": 0.36,
+          "highText": "遇到现实问题会主动接住，并给出可执行的下一步。",
+          "lowText": "更习惯等双方都准备好，再决定由谁推进。"
+        },
+        {
+          "key": "shared_planning",
+          "name": "共同规划",
+          "weight": 0.32,
+          "highText": "会把时间、钱和未来安排放到桌面上一起商量。",
+          "lowText": "更看重当下感受，不急着把关系写进长期计划。"
+        },
+        {
+          "key": "steady_execution",
+          "name": "稳健落实",
+          "weight": 0.32,
+          "highText": "承诺后会持续跟进，较少只说不做。",
+          "lowText": "表达意愿较多，实际安排会随状态和环境变化。"
+        }
+      ],
+      "universalQuestions": [
+        {
+          "id": "SLQ01",
+          "textSelf": "临时出了状况时，我通常先处理最要紧的事，再解释来龙去脉。",
+          "textTarget": "临时出了状况时，TA通常先处理最要紧的事，再解释来龙去脉。",
+          "reverse": false,
+          "dimensionKey": "responsible_initiative"
+        },
+        {
+          "id": "SLQ02",
+          "textSelf": "需要两个人做决定时，我会明确提出方案，也会问对方想法。",
+          "textTarget": "需要两个人做决定时，TA会明确提出方案，也会问你的想法。",
+          "reverse": false,
+          "dimensionKey": "shared_planning"
+        },
+        {
+          "id": "SLQ03",
+          "textSelf": "答应过的安排，我会主动记住并按时兑现。",
+          "textTarget": "答应过的安排，TA会主动记住并按时兑现。",
+          "reverse": false,
+          "dimensionKey": "steady_execution"
+        },
+        {
+          "id": "SLQ04",
+          "textSelf": "关系遇到外部压力时，我愿意站出来承担自己的那一份。",
+          "textTarget": "关系遇到外部压力时，TA愿意站出来承担自己的那一份。",
+          "reverse": false,
+          "dimensionKey": "responsible_initiative"
+        },
+        {
+          "id": "SLQ05",
+          "textSelf": "谈到未来时，我能把想法说成具体的时间和步骤。",
+          "textTarget": "谈到未来时，TA能把想法说成具体的时间和步骤。",
+          "reverse": false,
+          "dimensionKey": "shared_planning"
+        },
+        {
+          "id": "SLQ06",
+          "textSelf": "事情没人推动时，我容易一直等到对方先开口。",
+          "textTarget": "事情没人推动时，TA容易一直等到你先开口。",
+          "reverse": true,
+          "dimensionKey": "responsible_initiative"
+        },
+        {
+          "id": "SLQ07",
+          "textSelf": "即使工作很忙，我也会提前说明并重新安排约定。",
+          "textTarget": "即使工作很忙，TA也会提前说明并重新安排约定。",
+          "reverse": false,
+          "dimensionKey": "steady_execution"
+        },
+        {
+          "id": "SLQ08",
+          "textSelf": "我愿意讨论预算、居住和家庭责任这类现实问题。",
+          "textTarget": "TA愿意和你讨论预算、居住和家庭责任这类现实问题。",
+          "reverse": false,
+          "dimensionKey": "shared_planning"
+        },
+        {
+          "id": "SLQ09",
+          "textSelf": "做了决定后，我会持续关注结果，而不是把任务丢给对方。",
+          "textTarget": "做了决定后，TA会持续关注结果，而不是把任务丢给你。",
+          "reverse": false,
+          "dimensionKey": "steady_execution"
+        },
+        {
+          "id": "SLQ10",
+          "textSelf": "我觉得真正的可靠，是困难时仍然能看到行动。",
+          "textTarget": "TA表现出的可靠，往往是在困难时仍然有行动。",
+          "reverse": false,
+          "dimensionKey": "responsible_initiative"
+        }
+      ],
+      "stageQuestions": {
+        "pre_relationship": [
+          {
+            "id": "SLQ11",
+            "textSelf": "我会主动提出下一次见面的具体安排。",
+            "textTarget": "TA会主动提出下一次见面的具体安排。",
+            "reverse": false,
+            "dimensionKey": "responsible_initiative"
+          },
+          {
+            "id": "SLQ12",
+            "textSelf": "我会尊重对方回复消息和安排生活的节奏。",
+            "textTarget": "TA会尊重你的回复节奏和生活安排。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ13",
+            "textSelf": "对方遇到麻烦时，我会提供力所能及的实际帮助。",
+            "textTarget": "你遇到麻烦时，TA会提供力所能及的实际帮助。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          },
+          {
+            "id": "SLQ14",
+            "textSelf": "暧昧不明时，我愿意在合适的时候说清自己的打算。",
+            "textTarget": "暧昧不明时，TA愿意在合适的时候说清自己的打算。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ15",
+            "textSelf": "一次约会变动后，我会给出新的可行时间。",
+            "textTarget": "一次约会变动后，TA会给出新的可行时间。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "SLQ11",
+            "textSelf": "我会主动商量见面频率，而不是临时想起才约。",
+            "textTarget": "TA会主动和你商量见面频率，而不是临时想起才约。",
+            "reverse": false,
+            "dimensionKey": "responsible_initiative"
+          },
+          {
+            "id": "SLQ12",
+            "textSelf": "第一次出现分歧时，我愿意把真实想法讲清楚。",
+            "textTarget": "第一次出现分歧时，TA愿意把真实想法和你讲清楚。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ13",
+            "textSelf": "我会留意对方在新关系中不自在的地方。",
+            "textTarget": "TA会留意你在新关系中不自在的地方。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          },
+          {
+            "id": "SLQ14",
+            "textSelf": "我不会要求对方立刻把全部时间和社交交给关系。",
+            "textTarget": "TA不会要求你立刻把全部时间和社交交给关系。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ15",
+            "textSelf": "说好的一次安排被打乱后，我会负责重新落地。",
+            "textTarget": "说好的一次安排被打乱后，TA会负责重新落地。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "SLQ11",
+            "textSelf": "我会定期和对方聊聊两个人最近过得怎么样。",
+            "textTarget": "TA会定期和你聊聊两个人最近过得怎么样。",
+            "reverse": false,
+            "dimensionKey": "responsible_initiative"
+          },
+          {
+            "id": "SLQ12",
+            "textSelf": "涉及钱、时间或家庭的安排，我会提前商量。",
+            "textTarget": "涉及钱、时间或家庭的安排，TA会提前和你商量。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ13",
+            "textSelf": "熟悉以后，我仍会回应对方的付出和情绪。",
+            "textTarget": "熟悉以后，TA仍会回应你的付出和情绪。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          },
+          {
+            "id": "SLQ14",
+            "textSelf": "出现重复矛盾时，我愿意一起调整具体做法。",
+            "textTarget": "出现重复矛盾时，TA愿意和你一起调整具体做法。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ15",
+            "textSelf": "对方忙到顾不上时，我能接住一部分现实事务。",
+            "textTarget": "你忙到顾不上时，TA能接住一部分现实事务。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "SLQ11",
+            "textSelf": "我愿意把家庭责任拆开谈清，而不是默认谁应该做。",
+            "textTarget": "TA愿意和你把家庭责任拆开谈清，而不是默认谁应该做。",
+            "reverse": false,
+            "dimensionKey": "responsible_initiative"
+          },
+          {
+            "id": "SLQ12",
+            "textSelf": "遇到照护、失业等压力时，我会和对方站在同一边。",
+            "textTarget": "遇到照护、失业等压力时，TA会和你站在同一边。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ13",
+            "textSelf": "多年相处后，我仍愿意安排只属于两个人的时间。",
+            "textTarget": "多年相处后，TA仍愿意安排只属于你们的时间。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          },
+          {
+            "id": "SLQ14",
+            "textSelf": "双方家庭有冲突时，我会先保护小家庭的共同决定。",
+            "textTarget": "双方家庭有冲突时，TA会先保护你们小家庭的共同决定。",
+            "reverse": false,
+            "dimensionKey": "shared_planning"
+          },
+          {
+            "id": "SLQ15",
+            "textSelf": "长期计划变化时，我会和对方重新商量，而不是单方面通知。",
+            "textTarget": "长期计划变化时，TA会和你重新商量，而不是单方面通知。",
+            "reverse": false,
+            "dimensionKey": "steady_execution"
+          }
+        ]
+      },
+      "scenarios": {
+        "pre_relationship": [
+          {
+            "id": "SLS1",
+            "textSelf": "两次约见都因为临时状况没成，你通常会：",
+            "textTarget": "两次约见都因为临时状况没成，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "主动给出两个新时间并确认对方是否方便"
+              },
+              {
+                "key": "B",
+                "text": "等对方再次提起"
+              },
+              {
+                "key": "C",
+                "text": "觉得没缘分，慢慢不联系"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS2",
+            "textSelf": "对方说最近工作压力很大，你通常会：",
+            "textTarget": "你说最近工作压力很大时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先问对方需要陪伴还是具体帮助"
+              },
+              {
+                "key": "B",
+                "text": "马上讲一套解决办法"
+              },
+              {
+                "key": "C",
+                "text": "暂时不打扰，等对方恢复"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS3",
+            "textSelf": "朋友起哄问你们是什么关系，你通常会：",
+            "textTarget": "朋友起哄问你们是什么关系时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "尊重双方节奏，私下再确认彼此想法"
+              },
+              {
+                "key": "B",
+                "text": "顺势替双方宣布关系"
+              },
+              {
+                "key": "C",
+                "text": "当众撇清，避免任何误会"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "SLS1",
+            "textSelf": "第一次因为迟到闹得不愉快，你通常会：",
+            "textTarget": "第一次因为迟到闹得不愉快时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说明原因、道歉，并一起约定下次怎么处理"
+              },
+              {
+                "key": "B",
+                "text": "买礼物哄好但不再提"
+              },
+              {
+                "key": "C",
+                "text": "觉得小事没必要解释"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS2",
+            "textSelf": "对方周末想和老朋友单独聚会，你通常会：",
+            "textTarget": "你周末想和老朋友单独聚会时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "支持对方去，并约好彼此的相处时间"
+              },
+              {
+                "key": "B",
+                "text": "要求带上自己才放心"
+              },
+              {
+                "key": "C",
+                "text": "嘴上同意但持续闹情绪"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS3",
+            "textSelf": "对方第一次在你面前情绪崩溃，你通常会：",
+            "textTarget": "你第一次在TA面前情绪崩溃时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先陪伴并问需要什么，再决定是否给建议"
+              },
+              {
+                "key": "B",
+                "text": "立刻分析是谁对谁错"
+              },
+              {
+                "key": "C",
+                "text": "转移话题，希望气氛快点恢复"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "SLS1",
+            "textSelf": "同一个家务问题吵了几次，你通常会：",
+            "textTarget": "同一个家务问题吵了几次时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "把任务和频率写清楚，试行后再调整"
+              },
+              {
+                "key": "B",
+                "text": "等谁看不下去谁就做"
+              },
+              {
+                "key": "C",
+                "text": "每次争吵时再临时分配"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS2",
+            "textSelf": "你们对一笔较大支出意见不同，你通常会：",
+            "textTarget": "你们对一笔较大支出意见不同时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说明优先级和底线，一起比较方案"
+              },
+              {
+                "key": "B",
+                "text": "坚持自己赚钱自己决定"
+              },
+              {
+                "key": "C",
+                "text": "先花了再告诉对方"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS3",
+            "textSelf": "对方连续几天状态很差，你通常会：",
+            "textTarget": "你连续几天状态很差时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "保持陪伴并询问是否需要外部帮助"
+              },
+              {
+                "key": "B",
+                "text": "催对方赶快振作"
+              },
+              {
+                "key": "C",
+                "text": "减少联系，避免被负面情绪影响"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "SLS1",
+            "textSelf": "一方突然需要暂停工作照顾家人，你通常会：",
+            "textTarget": "一方突然需要暂停工作照顾家人时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "一起重排收入、照护和休息安排，并定期复盘"
+              },
+              {
+                "key": "B",
+                "text": "认为谁的家人谁自己负责"
+              },
+              {
+                "key": "C",
+                "text": "先答应下来，以后再看能不能撑住"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS2",
+            "textSelf": "双方父母对你们的决定意见很大，你通常会：",
+            "textTarget": "双方父母对你们的决定意见很大时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先和伴侣形成共同方案，再分别沟通家人"
+              },
+              {
+                "key": "B",
+                "text": "让更强势的父母决定"
+              },
+              {
+                "key": "C",
+                "text": "要求伴侣独自处理自己的父母"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "SLS3",
+            "textSelf": "日子稳定但越来越像室友，你通常会：",
+            "textTarget": "日子稳定但越来越像室友时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "主动谈感受，并恢复固定约会或共同体验"
+              },
+              {
+                "key": "B",
+                "text": "认为长期关系本来就这样"
+              },
+              {
+                "key": "C",
+                "text": "用一次昂贵旅行解决所有问题"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ]
+      },
+      "resultCopy": {
+        "attraction": "遇事不躲、愿意把两个人的未来变成具体计划，也能在关键时刻稳住局面。",
+        "caution": "推进太快或习惯替双方做决定时，伴侣可能会觉得自己的节奏没有被听见。"
+      }
+    },
+    {
+      "key": "equal_partner",
+      "name": "袁弘型",
+      "label": "平等边界派",
+      "enabled": true,
+      "dimensions": [
+        {
+          "key": "mutual_respect",
+          "name": "平等尊重",
+          "weight": 0.36,
+          "highText": "会认真对待伴侣的观点，不用身份或付出来压过对方。",
+          "lowText": "冲突时更容易坚持自己的判断，希望对方配合。"
+        },
+        {
+          "key": "open_negotiation",
+          "name": "坦诚协商",
+          "weight": 0.34,
+          "highText": "分歧出现时愿意把需求说清楚，并寻找双方都能接受的办法。",
+          "lowText": "更可能回避讨论，或等情绪过去再说。"
+        },
+        {
+          "key": "clear_boundaries",
+          "name": "清晰边界",
+          "weight": 0.3,
+          "highText": "能兼顾亲密与独立，不把控制当作爱。",
+          "lowText": "关系靠近后更容易把彼此生活完全绑在一起。"
+        }
+      ],
+      "universalQuestions": [
+        {
+          "id": "EPQ01",
+          "textSelf": "意见不同时，我会先确认对方为什么这样想。",
+          "textTarget": "意见不同时，TA会先确认你为什么这样想。",
+          "reverse": false,
+          "dimensionKey": "mutual_respect"
+        },
+        {
+          "id": "EPQ02",
+          "textSelf": "我能直接说出自己的需要，不让对方靠猜。",
+          "textTarget": "TA能直接说出自己的需要，不让你靠猜。",
+          "reverse": false,
+          "dimensionKey": "open_negotiation"
+        },
+        {
+          "id": "EPQ03",
+          "textSelf": "进入关系后，我仍支持双方保留朋友、爱好和独处时间。",
+          "textTarget": "进入关系后，TA仍支持你们保留朋友、爱好和独处时间。",
+          "reverse": false,
+          "dimensionKey": "clear_boundaries"
+        },
+        {
+          "id": "EPQ04",
+          "textSelf": "对方拒绝一个安排时，我不会立刻理解成“不够爱”。",
+          "textTarget": "你拒绝一个安排时，TA不会立刻理解成“不够爱”。",
+          "reverse": false,
+          "dimensionKey": "clear_boundaries"
+        },
+        {
+          "id": "EPQ05",
+          "textSelf": "谁收入高、谁更忙，都不该自动拥有最后决定权。",
+          "textTarget": "不论谁收入高或更忙，TA都不会默认自己拥有最后决定权。",
+          "reverse": false,
+          "dimensionKey": "mutual_respect"
+        },
+        {
+          "id": "EPQ06",
+          "textSelf": "发生分歧时，我会用冷处理逼对方先让步。",
+          "textTarget": "发生分歧时，TA会用冷处理逼你先让步。",
+          "reverse": true,
+          "dimensionKey": "open_negotiation"
+        },
+        {
+          "id": "EPQ07",
+          "textSelf": "我愿意讨论家务、花钱和见家人如何分配。",
+          "textTarget": "TA愿意和你讨论家务、花钱和见家人如何分配。",
+          "reverse": false,
+          "dimensionKey": "open_negotiation"
+        },
+        {
+          "id": "EPQ08",
+          "textSelf": "我不会未经同意翻看对方手机或替对方回复消息。",
+          "textTarget": "TA不会未经同意翻看你的手机或替你回复消息。",
+          "reverse": false,
+          "dimensionKey": "clear_boundaries"
+        },
+        {
+          "id": "EPQ09",
+          "textSelf": "即使不同意，我也不会拿对方的短处开玩笑。",
+          "textTarget": "即使不同意，TA也不会拿你的短处开玩笑。",
+          "reverse": false,
+          "dimensionKey": "mutual_respect"
+        },
+        {
+          "id": "EPQ10",
+          "textSelf": "做共同决定时，我会确认两个人都是真心同意。",
+          "textTarget": "做共同决定时，TA会确认你们两个人都是真心同意。",
+          "reverse": false,
+          "dimensionKey": "mutual_respect"
+        }
+      ],
+      "stageQuestions": {
+        "pre_relationship": [
+          {
+            "id": "EPQ11",
+            "textSelf": "还没确定关系时，我会先确认双方都舒服的联系频率。",
+            "textTarget": "还没确定关系时，TA会先和你确认双方都舒服的联系频率。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          },
+          {
+            "id": "EPQ12",
+            "textSelf": "对方暂时不想确定关系时，我会尊重决定，也说清自己的边界。",
+            "textTarget": "你暂时不想确定关系时，TA会尊重决定，也说清自己的边界。",
+            "reverse": false,
+            "dimensionKey": "mutual_respect"
+          },
+          {
+            "id": "EPQ13",
+            "textSelf": "朋友起哄或追问时，我不会替对方公开关系。",
+            "textTarget": "朋友起哄或追问时，TA不会替你公开关系。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ14",
+            "textSelf": "约会方案有分歧时，我会给双方都能选择的备选项。",
+            "textTarget": "约会方案有分歧时，TA会给你们双方都能选择的备选项。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ15",
+            "textSelf": "我不会用频繁查岗来确认对方是否在意。",
+            "textTarget": "TA不会用频繁查岗来确认你是否在意。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "EPQ11",
+            "textSelf": "刚开始交往时，我会主动聊清彼此对公开关系的期待。",
+            "textTarget": "刚开始交往时，TA会主动和你聊清对公开关系的期待。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          },
+          {
+            "id": "EPQ12",
+            "textSelf": "对方需要独处时，我能尊重，不会故意冷落作为惩罚。",
+            "textTarget": "你需要独处时，TA能尊重，不会故意冷落你作为惩罚。",
+            "reverse": false,
+            "dimensionKey": "mutual_respect"
+          },
+          {
+            "id": "EPQ13",
+            "textSelf": "第一次争执时，我会谈具体行为，不给对方贴标签。",
+            "textTarget": "第一次争执时，TA会谈具体行为，不给你贴标签。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ14",
+            "textSelf": "见朋友或家人之前，我会先问对方是否准备好。",
+            "textTarget": "见朋友或家人之前，TA会先问你是否准备好。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ15",
+            "textSelf": "谁付钱、去哪约会，我愿意按双方实际情况商量。",
+            "textTarget": "谁付钱、去哪约会，TA愿意按你们实际情况商量。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "EPQ11",
+            "textSelf": "稳定交往后，我仍会认真听完不同意见再回应。",
+            "textTarget": "稳定交往后，TA仍会认真听完你的不同意见再回应。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          },
+          {
+            "id": "EPQ12",
+            "textSelf": "家务和共同开销不平衡时，我会直接协商调整。",
+            "textTarget": "家务和共同开销不平衡时，TA会直接和你协商调整。",
+            "reverse": false,
+            "dimensionKey": "mutual_respect"
+          },
+          {
+            "id": "EPQ13",
+            "textSelf": "我不会把共享定位、查手机当作亲密的必需品。",
+            "textTarget": "TA不会把共享定位、查手机当作亲密的必需品。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ14",
+            "textSelf": "重大决定前，我会确认对方不是因为怕冲突才同意。",
+            "textTarget": "重大决定前，TA会确认你不是因为怕冲突才同意。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ15",
+            "textSelf": "双方都很忙时，我会一起重排时间，而不是比较谁更辛苦。",
+            "textTarget": "双方都很忙时，TA会和你一起重排时间，而不是比较谁更辛苦。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "EPQ11",
+            "textSelf": "长期生活里，我认为家务和照护要按现实情况持续重分。",
+            "textTarget": "长期生活里，TA认为家务和照护要按现实情况持续重分。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          },
+          {
+            "id": "EPQ12",
+            "textSelf": "双方家庭提出要求时，我会先和伴侣形成共同决定。",
+            "textTarget": "双方家庭提出要求时，TA会先和你形成共同决定。",
+            "reverse": false,
+            "dimensionKey": "mutual_respect"
+          },
+          {
+            "id": "EPQ13",
+            "textSelf": "我支持伴侣保留自己的事业、朋友和个人空间。",
+            "textTarget": "TA支持你保留自己的事业、朋友和个人空间。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ14",
+            "textSelf": "收入差距变化时，我不会让赚钱多少变成关系里的权力大小。",
+            "textTarget": "收入差距变化时，TA不会让赚钱多少变成关系里的权力大小。",
+            "reverse": false,
+            "dimensionKey": "clear_boundaries"
+          },
+          {
+            "id": "EPQ15",
+            "textSelf": "长期计划要改变时，我会把影响和选择坦诚摆出来。",
+            "textTarget": "长期计划要改变时，TA会把影响和选择坦诚摆出来。",
+            "reverse": false,
+            "dimensionKey": "open_negotiation"
+          }
+        ]
+      },
+      "scenarios": {
+        "pre_relationship": [
+          {
+            "id": "EPS1",
+            "textSelf": "两次约见都因为临时状况没成，你通常会：",
+            "textTarget": "两次约见都因为临时状况没成，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "主动给出两个新时间并确认对方是否方便"
+              },
+              {
+                "key": "B",
+                "text": "等对方再次提起"
+              },
+              {
+                "key": "C",
+                "text": "觉得没缘分，慢慢不联系"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS2",
+            "textSelf": "对方说最近工作压力很大，你通常会：",
+            "textTarget": "你说最近工作压力很大时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先问对方需要陪伴还是具体帮助"
+              },
+              {
+                "key": "B",
+                "text": "马上讲一套解决办法"
+              },
+              {
+                "key": "C",
+                "text": "暂时不打扰，等对方恢复"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS3",
+            "textSelf": "朋友起哄问你们是什么关系，你通常会：",
+            "textTarget": "朋友起哄问你们是什么关系时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "尊重双方节奏，私下再确认彼此想法"
+              },
+              {
+                "key": "B",
+                "text": "顺势替双方宣布关系"
+              },
+              {
+                "key": "C",
+                "text": "当众撇清，避免任何误会"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "EPS1",
+            "textSelf": "第一次因为迟到闹得不愉快，你通常会：",
+            "textTarget": "第一次因为迟到闹得不愉快时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说明原因、道歉，并一起约定下次怎么处理"
+              },
+              {
+                "key": "B",
+                "text": "买礼物哄好但不再提"
+              },
+              {
+                "key": "C",
+                "text": "觉得小事没必要解释"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS2",
+            "textSelf": "对方周末想和老朋友单独聚会，你通常会：",
+            "textTarget": "你周末想和老朋友单独聚会时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "支持对方去，并约好彼此的相处时间"
+              },
+              {
+                "key": "B",
+                "text": "要求带上自己才放心"
+              },
+              {
+                "key": "C",
+                "text": "嘴上同意但持续闹情绪"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS3",
+            "textSelf": "对方第一次在你面前情绪崩溃，你通常会：",
+            "textTarget": "你第一次在TA面前情绪崩溃时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先陪伴并问需要什么，再决定是否给建议"
+              },
+              {
+                "key": "B",
+                "text": "立刻分析是谁对谁错"
+              },
+              {
+                "key": "C",
+                "text": "转移话题，希望气氛快点恢复"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "EPS1",
+            "textSelf": "同一个家务问题吵了几次，你通常会：",
+            "textTarget": "同一个家务问题吵了几次时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "把任务和频率写清楚，试行后再调整"
+              },
+              {
+                "key": "B",
+                "text": "等谁看不下去谁就做"
+              },
+              {
+                "key": "C",
+                "text": "每次争吵时再临时分配"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS2",
+            "textSelf": "你们对一笔较大支出意见不同，你通常会：",
+            "textTarget": "你们对一笔较大支出意见不同时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说明优先级和底线，一起比较方案"
+              },
+              {
+                "key": "B",
+                "text": "坚持自己赚钱自己决定"
+              },
+              {
+                "key": "C",
+                "text": "先花了再告诉对方"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS3",
+            "textSelf": "对方连续几天状态很差，你通常会：",
+            "textTarget": "你连续几天状态很差时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "保持陪伴并询问是否需要外部帮助"
+              },
+              {
+                "key": "B",
+                "text": "催对方赶快振作"
+              },
+              {
+                "key": "C",
+                "text": "减少联系，避免被负面情绪影响"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "EPS1",
+            "textSelf": "一方突然需要暂停工作照顾家人，你通常会：",
+            "textTarget": "一方突然需要暂停工作照顾家人时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "一起重排收入、照护和休息安排，并定期复盘"
+              },
+              {
+                "key": "B",
+                "text": "认为谁的家人谁自己负责"
+              },
+              {
+                "key": "C",
+                "text": "先答应下来，以后再看能不能撑住"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS2",
+            "textSelf": "双方父母对你们的决定意见很大，你通常会：",
+            "textTarget": "双方父母对你们的决定意见很大时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先和伴侣形成共同方案，再分别沟通家人"
+              },
+              {
+                "key": "B",
+                "text": "让更强势的父母决定"
+              },
+              {
+                "key": "C",
+                "text": "要求伴侣独自处理自己的父母"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "EPS3",
+            "textSelf": "日子稳定但越来越像室友，你通常会：",
+            "textTarget": "日子稳定但越来越像室友时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "主动谈感受，并恢复固定约会或共同体验"
+              },
+              {
+                "key": "B",
+                "text": "认为长期关系本来就这样"
+              },
+              {
+                "key": "C",
+                "text": "用一次昂贵旅行解决所有问题"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ]
+      },
+      "resultCopy": {
+        "attraction": "愿意把伴侣当作完整独立的人，能沟通、能让步，也尊重各自的空间和选择。",
+        "caution": "过度强调“各自负责”时，可能显得不够热烈，或在对方需要被坚定选择时显得保留。"
+      }
+    },
+    {
+      "key": "long_term_guardian",
+      "name": "杜江型",
+      "label": "长期守护派",
+      "enabled": true,
+      "dimensions": [
+        {
+          "key": "emotional_presence",
+          "name": "情绪在场",
+          "weight": 0.36,
+          "highText": "对方难受时能耐心陪伴，不急着评价或讲道理。",
+          "lowText": "更倾向直接解决问题，对情绪过程关注较少。"
+        },
+        {
+          "key": "daily_care",
+          "name": "日常照顾",
+          "weight": 0.32,
+          "highText": "会留意生活细节，并用实际行动让伴侣感到被放在心上。",
+          "lowText": "更习惯在重要日子表达，日常照顾相对随性。"
+        },
+        {
+          "key": "long_term_consistency",
+          "name": "长期稳定",
+          "weight": 0.32,
+          "highText": "热情过去后仍能保持联系、兑现和投入。",
+          "lowText": "投入程度更受忙碌、情绪和关系新鲜感影响。"
+        }
+      ],
+      "universalQuestions": [
+        {
+          "id": "LGQ01",
+          "textSelf": "对方情绪低落时，我愿意先陪着听完，再讨论怎么办。",
+          "textTarget": "你情绪低落时，TA愿意先陪着听完，再讨论怎么办。",
+          "reverse": false,
+          "dimensionKey": "emotional_presence"
+        },
+        {
+          "id": "LGQ02",
+          "textSelf": "我会记得对方生活里的小习惯，并在需要时主动照顾。",
+          "textTarget": "TA会记得你生活里的小习惯，并在需要时主动照顾。",
+          "reverse": false,
+          "dimensionKey": "daily_care"
+        },
+        {
+          "id": "LGQ03",
+          "textSelf": "关系稳定以后，我仍会主动安排相处时间。",
+          "textTarget": "关系稳定以后，TA仍会主动安排你们的相处时间。",
+          "reverse": false,
+          "dimensionKey": "long_term_consistency"
+        },
+        {
+          "id": "LGQ04",
+          "textSelf": "对方生病或遇到低谷时，我不会因为麻烦就躲开。",
+          "textTarget": "你生病或遇到低谷时，TA不会因为麻烦就躲开。",
+          "reverse": false,
+          "dimensionKey": "long_term_consistency"
+        },
+        {
+          "id": "LGQ05",
+          "textSelf": "我能分辨对方是想听建议，还是只想被理解。",
+          "textTarget": "TA能分辨你是想听建议，还是只想被理解。",
+          "reverse": false,
+          "dimensionKey": "emotional_presence"
+        },
+        {
+          "id": "LGQ06",
+          "textSelf": "很多日常小事，我觉得没必要特意回应或感谢。",
+          "textTarget": "很多日常小事，TA觉得没必要特意回应或感谢。",
+          "reverse": true,
+          "dimensionKey": "daily_care"
+        },
+        {
+          "id": "LGQ07",
+          "textSelf": "我会用固定的小行动表达在意，而不只在纪念日表现。",
+          "textTarget": "TA会用固定的小行动表达在意，而不只在纪念日表现。",
+          "reverse": false,
+          "dimensionKey": "daily_care"
+        },
+        {
+          "id": "LGQ08",
+          "textSelf": "忙碌时，我也会让对方知道我没有消失。",
+          "textTarget": "忙碌时，TA也会让你知道自己没有消失。",
+          "reverse": false,
+          "dimensionKey": "long_term_consistency"
+        },
+        {
+          "id": "LGQ09",
+          "textSelf": "对方说起烦恼时，我不会马上否定“这有什么好难过”。",
+          "textTarget": "你说起烦恼时，TA不会马上否定“这有什么好难过”。",
+          "reverse": false,
+          "dimensionKey": "emotional_presence"
+        },
+        {
+          "id": "LGQ10",
+          "textSelf": "我愿意为长期关系调整一些生活习惯。",
+          "textTarget": "TA愿意为长期关系调整一些生活习惯。",
+          "reverse": false,
+          "dimensionKey": "long_term_consistency"
+        }
+      ],
+      "stageQuestions": {
+        "pre_relationship": [
+          {
+            "id": "LGQ11",
+            "textSelf": "还没确定关系时，我会留意对方随口提过的喜好和不舒服。",
+            "textTarget": "还没确定关系时，TA会留意你随口提过的喜好和不舒服。",
+            "reverse": false,
+            "dimensionKey": "long_term_consistency"
+          },
+          {
+            "id": "LGQ12",
+            "textSelf": "对方最近状态不好时，我会保持关心，但不给压力。",
+            "textTarget": "你最近状态不好时，TA会保持关心，但不给你压力。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ13",
+            "textSelf": "一次见面取消后，我仍会温和确认对方是否还想再约。",
+            "textTarget": "一次见面取消后，TA仍会温和确认你是否还想再约。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          },
+          {
+            "id": "LGQ14",
+            "textSelf": "对方讲烦恼时，我愿意听完整，不急着展示自己更懂。",
+            "textTarget": "你讲烦恼时，TA愿意听完整，不急着展示自己更懂。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ15",
+            "textSelf": "即使关系还没定，我也不会忽冷忽热地吊着对方。",
+            "textTarget": "即使关系还没定，TA也不会忽冷忽热地吊着你。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "LGQ11",
+            "textSelf": "刚开始交往时，我会记住对方不适应的新变化。",
+            "textTarget": "刚开始交往时，TA会记住你不适应的新变化。",
+            "reverse": false,
+            "dimensionKey": "long_term_consistency"
+          },
+          {
+            "id": "LGQ12",
+            "textSelf": "对方生病时，我会持续问候并提供具体帮助。",
+            "textTarget": "你生病时，TA会持续问候并提供具体帮助。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ13",
+            "textSelf": "热恋期很忙时，我也会保持稳定回应。",
+            "textTarget": "热恋期很忙时，TA也会对你保持稳定回应。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          },
+          {
+            "id": "LGQ14",
+            "textSelf": "第一次发生矛盾后，我会留意对方是否还在难受。",
+            "textTarget": "第一次发生矛盾后，TA会留意你是否还在难受。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ15",
+            "textSelf": "我会在普通日子里表达在意，不只靠惊喜。",
+            "textTarget": "TA会在普通日子里表达对你的在意，不只靠惊喜。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "LGQ11",
+            "textSelf": "稳定交往后，我仍会关心对方今天过得怎么样。",
+            "textTarget": "稳定交往后，TA仍会关心你今天过得怎么样。",
+            "reverse": false,
+            "dimensionKey": "long_term_consistency"
+          },
+          {
+            "id": "LGQ12",
+            "textSelf": "对方长期疲惫时，我会主动分担一部分日常事务。",
+            "textTarget": "你长期疲惫时，TA会主动分担一部分日常事务。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ13",
+            "textSelf": "熟悉以后，我不会把对方的照顾当作理所当然。",
+            "textTarget": "熟悉以后，TA不会把你的照顾当作理所当然。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          },
+          {
+            "id": "LGQ14",
+            "textSelf": "对方情绪反复时，我能保持耐心，也会说出自己的承受范围。",
+            "textTarget": "你情绪反复时，TA能保持耐心，也会说出自己的承受范围。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ15",
+            "textSelf": "我会守住固定的相处习惯，让关系不被忙碌完全挤掉。",
+            "textTarget": "TA会守住固定的相处习惯，让你们的关系不被忙碌完全挤掉。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "LGQ11",
+            "textSelf": "长期生活里，我会持续留意伴侣身体和情绪的变化。",
+            "textTarget": "长期生活里，TA会持续留意你身体和情绪的变化。",
+            "reverse": false,
+            "dimensionKey": "long_term_consistency"
+          },
+          {
+            "id": "LGQ12",
+            "textSelf": "遇到照护压力时，我愿意分担，也会安排彼此休息。",
+            "textTarget": "遇到照护压力时，TA愿意分担，也会安排你们彼此休息。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ13",
+            "textSelf": "多年以后，我仍会用小行动让对方感到被珍惜。",
+            "textTarget": "多年以后，TA仍会用小行动让你感到被珍惜。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          },
+          {
+            "id": "LGQ14",
+            "textSelf": "生活进入低谷时，我不会只在开头热心几天。",
+            "textTarget": "生活进入低谷时，TA不会只在开头热心几天。",
+            "reverse": false,
+            "dimensionKey": "emotional_presence"
+          },
+          {
+            "id": "LGQ15",
+            "textSelf": "关系太像室友时，我会主动恢复交流和亲密时刻。",
+            "textTarget": "关系太像室友时，TA会主动恢复交流和亲密时刻。",
+            "reverse": false,
+            "dimensionKey": "daily_care"
+          }
+        ]
+      },
+      "scenarios": {
+        "pre_relationship": [
+          {
+            "id": "LGS1",
+            "textSelf": "两次约见都因为临时状况没成，你通常会：",
+            "textTarget": "两次约见都因为临时状况没成，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "主动给出两个新时间并确认对方是否方便"
+              },
+              {
+                "key": "B",
+                "text": "等对方再次提起"
+              },
+              {
+                "key": "C",
+                "text": "觉得没缘分，慢慢不联系"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS2",
+            "textSelf": "对方说最近工作压力很大，你通常会：",
+            "textTarget": "你说最近工作压力很大时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先问对方需要陪伴还是具体帮助"
+              },
+              {
+                "key": "B",
+                "text": "马上讲一套解决办法"
+              },
+              {
+                "key": "C",
+                "text": "暂时不打扰，等对方恢复"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS3",
+            "textSelf": "朋友起哄问你们是什么关系，你通常会：",
+            "textTarget": "朋友起哄问你们是什么关系时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "尊重双方节奏，私下再确认彼此想法"
+              },
+              {
+                "key": "B",
+                "text": "顺势替双方宣布关系"
+              },
+              {
+                "key": "C",
+                "text": "当众撇清，避免任何误会"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "early_dating": [
+          {
+            "id": "LGS1",
+            "textSelf": "第一次因为迟到闹得不愉快，你通常会：",
+            "textTarget": "第一次因为迟到闹得不愉快时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说明原因、道歉，并一起约定下次怎么处理"
+              },
+              {
+                "key": "B",
+                "text": "买礼物哄好但不再提"
+              },
+              {
+                "key": "C",
+                "text": "觉得小事没必要解释"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS2",
+            "textSelf": "对方周末想和老朋友单独聚会，你通常会：",
+            "textTarget": "你周末想和老朋友单独聚会时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "支持对方去，并约好彼此的相处时间"
+              },
+              {
+                "key": "B",
+                "text": "要求带上自己才放心"
+              },
+              {
+                "key": "C",
+                "text": "嘴上同意但持续闹情绪"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS3",
+            "textSelf": "对方第一次在你面前情绪崩溃，你通常会：",
+            "textTarget": "你第一次在TA面前情绪崩溃时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先陪伴并问需要什么，再决定是否给建议"
+              },
+              {
+                "key": "B",
+                "text": "立刻分析是谁对谁错"
+              },
+              {
+                "key": "C",
+                "text": "转移话题，希望气氛快点恢复"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "steady_relationship": [
+          {
+            "id": "LGS1",
+            "textSelf": "同一个家务问题吵了几次，你通常会：",
+            "textTarget": "同一个家务问题吵了几次时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "把任务和频率写清楚，试行后再调整"
+              },
+              {
+                "key": "B",
+                "text": "等谁看不下去谁就做"
+              },
+              {
+                "key": "C",
+                "text": "每次争吵时再临时分配"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS2",
+            "textSelf": "你们对一笔较大支出意见不同，你通常会：",
+            "textTarget": "你们对一笔较大支出意见不同时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "说明优先级和底线，一起比较方案"
+              },
+              {
+                "key": "B",
+                "text": "坚持自己赚钱自己决定"
+              },
+              {
+                "key": "C",
+                "text": "先花了再告诉对方"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS3",
+            "textSelf": "对方连续几天状态很差，你通常会：",
+            "textTarget": "你连续几天状态很差时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "保持陪伴并询问是否需要外部帮助"
+              },
+              {
+                "key": "B",
+                "text": "催对方赶快振作"
+              },
+              {
+                "key": "C",
+                "text": "减少联系，避免被负面情绪影响"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ],
+        "long_term": [
+          {
+            "id": "LGS1",
+            "textSelf": "一方突然需要暂停工作照顾家人，你通常会：",
+            "textTarget": "一方突然需要暂停工作照顾家人时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "一起重排收入、照护和休息安排，并定期复盘"
+              },
+              {
+                "key": "B",
+                "text": "认为谁的家人谁自己负责"
+              },
+              {
+                "key": "C",
+                "text": "先答应下来，以后再看能不能撑住"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS2",
+            "textSelf": "双方父母对你们的决定意见很大，你通常会：",
+            "textTarget": "双方父母对你们的决定意见很大时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "先和伴侣形成共同方案，再分别沟通家人"
+              },
+              {
+                "key": "B",
+                "text": "让更强势的父母决定"
+              },
+              {
+                "key": "C",
+                "text": "要求伴侣独自处理自己的父母"
+              }
+            ],
+            "typicalOptionKey": "A"
+          },
+          {
+            "id": "LGS3",
+            "textSelf": "日子稳定但越来越像室友，你通常会：",
+            "textTarget": "日子稳定但越来越像室友时，TA通常会：",
+            "options": [
+              {
+                "key": "A",
+                "text": "主动谈感受，并恢复固定约会或共同体验"
+              },
+              {
+                "key": "B",
+                "text": "认为长期关系本来就这样"
+              },
+              {
+                "key": "C",
+                "text": "用一次昂贵旅行解决所有问题"
+              }
+            ],
+            "typicalOptionKey": "A"
+          }
+        ]
+      },
+      "resultCopy": {
+        "attraction": "在日常细节里持续投入，能接住情绪，也愿意把照顾和陪伴变成长期习惯。",
+        "caution": "一味照顾而少说自己的需要，可能积累疲惫；对稳定的重视也可能让关系少一点新鲜变化。"
+      }
+    }
+  ]
+}

@@ -1,0 +1,3879 @@
+{
+  "dimensions": [
+    {
+      "key": "initiative",
+      "name": "主动推进",
+      "description": "主动聊天、邀约、定义关系和推进下一步"
+    },
+    {
+      "key": "warmth",
+      "name": "情绪温度",
+      "description": "回应、安慰、共情和让人感到被在意"
+    },
+    {
+      "key": "reliability",
+      "name": "兑现度",
+      "description": "承诺、守时、持续行动和关键时刻表现"
+    },
+    {
+      "key": "romance",
+      "name": "浪漫表达",
+      "description": "情话、仪式感、氛围和示好能力"
+    },
+    {
+      "key": "boundary",
+      "name": "边界清晰",
+      "description": "对暧昧范围、他人距离和关系立场的清晰程度"
+    }
+  ],
+  "questions": [
+    {
+      "id": "CQ01",
+      "textSelf": "你和喜欢的人聊天时，通常是谁先开始？",
+      "textTarget": "你们的聊天通常是谁先开始？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "大多数时候都是我主动找对方。",
+          "textTarget": "大多数时候都是 TA 主动找我。",
+          "scores": {
+            "initiative": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "我主动稍多，但对方也会主动。",
+          "textTarget": "TA 主动稍多，但我也会主动。",
+          "scores": {
+            "initiative": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "基本五五开。",
+          "textTarget": "基本五五开。",
+          "scores": {
+            "initiative": 50
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "主要是对方主动，我很少发起。",
+          "textTarget": "主要是我主动，TA 很少发起。",
+          "scores": {
+            "initiative": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ02",
+      "textSelf": "你想见对方时通常怎么做？",
+      "textTarget": "TA 想见你时通常怎么做？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "直接给出时间、地点，很快把见面定下来。",
+          "textTarget": "直接给出时间、地点，很快把见面定下来。",
+          "scores": {
+            "initiative": 100,
+            "reliability": 95,
+            "romance": 70
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "先问对方有没有空，再一起商量。",
+          "textTarget": "会先问我有没有空，再一起商量。",
+          "scores": {
+            "initiative": 70,
+            "reliability": 75,
+            "romance": 60
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "经常说“下次见”，但很少落实具体时间。",
+          "textTarget": "经常说“下次见”，但很少落实具体时间。",
+          "scores": {
+            "initiative": 45,
+            "reliability": 25,
+            "romance": 45
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "基本不主动提见面。",
+          "textTarget": "基本不主动提见面。",
+          "scores": {
+            "initiative": 10,
+            "reliability": 15,
+            "romance": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ03",
+      "textSelf": "你答应对方的事情，最后通常怎样？",
+      "textTarget": "TA 答应过你的事情，最后通常怎样？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "基本都能按约定完成。",
+          "textTarget": "基本都能按约定完成。",
+          "scores": {
+            "reliability": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "大部分做到，变动时会提前解释。",
+          "textTarget": "大部分做到，变动时会提前解释。",
+          "scores": {
+            "reliability": 80
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "要提醒很多次才会做。",
+          "textTarget": "要提醒很多次才会做。",
+          "scores": {
+            "reliability": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "经常不了了之或装作没说过。",
+          "textTarget": "经常不了了之或装作没说过。",
+          "scores": {
+            "reliability": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ04",
+      "textSelf": "对方情绪低落时，你更像哪种反应？",
+      "textTarget": "你情绪低落时，TA 更像哪种反应？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "先陪对方，再问需要安慰还是解决问题。",
+          "textTarget": "先陪我，再问需要安慰还是解决问题。",
+          "scores": {
+            "warmth": 100,
+            "reliability": 90
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "不太会说，但会用实际行动帮忙。",
+          "textTarget": "不太会说，但会用实际行动帮忙。",
+          "scores": {
+            "warmth": 65,
+            "reliability": 95
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "会说很多暖心的话，实际行动不一定跟上。",
+          "textTarget": "会说很多暖心的话，实际行动不一定跟上。",
+          "scores": {
+            "warmth": 90,
+            "reliability": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "容易回避情绪话题，简单问候后就消失。",
+          "textTarget": "容易回避情绪话题，简单问候后就消失。",
+          "scores": {
+            "warmth": 15,
+            "reliability": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ05",
+      "textSelf": "你表达好感的方式更接近？",
+      "textTarget": "TA 表达好感的方式更接近？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "直接说清楚，不太让对方猜。",
+          "textTarget": "直接说清楚，不太让我猜。",
+          "scores": {
+            "warmth": 75,
+            "romance": 70,
+            "boundary": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "很少说，但会持续照顾细节。",
+          "textTarget": "很少说，但会持续照顾细节。",
+          "scores": {
+            "warmth": 90,
+            "romance": 40,
+            "boundary": 85
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "很会营造暧昧和心动感，却不明确关系。",
+          "textTarget": "很会营造暧昧和心动感，却不明确关系。",
+          "scores": {
+            "warmth": 75,
+            "romance": 100,
+            "boundary": 20
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "对对方很好，但和普通朋友的界线不明显。",
+          "textTarget": "对我很好，但和普通朋友的界线不明显。",
+          "scores": {
+            "warmth": 65,
+            "romance": 35,
+            "boundary": 35
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ06",
+      "textSelf": "对方拒绝你一次邀约或请求时，你会？",
+      "textTarget": "当你拒绝 TA 一次邀约或请求时，TA 会？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "尊重对方的选择，之后自然地再找合适机会。",
+          "textTarget": "尊重我的选择，之后自然地再找合适机会。",
+          "scores": {
+            "warmth": 85,
+            "boundary": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "会问原因，但不会逼迫对方。",
+          "textTarget": "会问原因，但不会逼迫我。",
+          "scores": {
+            "warmth": 70,
+            "boundary": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "明显变冷，让对方猜我是不是生气了。",
+          "textTarget": "明显变冷，让我猜 TA 是不是生气了。",
+          "scores": {
+            "warmth": 25,
+            "boundary": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "继续追问或施压，希望对方改变答案。",
+          "textTarget": "继续追问或施压，希望我改变答案。",
+          "scores": {
+            "warmth": 20,
+            "boundary": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ07",
+      "textSelf": "在朋友或公开场合，你对对方的态度？",
+      "textTarget": "在朋友或公开场合，TA 对你的态度？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "会自然地照顾和维护对方，态度很明确。",
+          "textTarget": "会自然地照顾和维护我，态度很明确。",
+          "scores": {
+            "warmth": 85,
+            "romance": 65,
+            "boundary": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "私下亲近，公开场合比较克制。",
+          "textTarget": "私下亲近，公开场合比较克制。",
+          "scores": {
+            "warmth": 65,
+            "romance": 50,
+            "boundary": 80
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "和所有人都很热情，看不出对方是否特别。",
+          "textTarget": "和所有人都很热情，看不出我是否特别。",
+          "scores": {
+            "warmth": 80,
+            "romance": 60,
+            "boundary": 30
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "会刻意保持距离，不愿让别人误会。",
+          "textTarget": "会刻意保持距离，不愿让别人误会。",
+          "scores": {
+            "warmth": 20,
+            "romance": 15,
+            "boundary": 45
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ08",
+      "textSelf": "对方说过的小事，你记得怎么样？",
+      "textTarget": "TA 对你说过的小事记得怎么样？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "很多细节都记得，还会在之后主动提起。",
+          "textTarget": "很多细节都记得，还会在之后主动提起。",
+          "scores": {
+            "warmth": 100,
+            "reliability": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "重要的事记得，日常小事偶尔忘。",
+          "textTarget": "重要的事记得，日常小事偶尔忘。",
+          "scores": {
+            "warmth": 70,
+            "reliability": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "当时回应很热烈，过后经常不记得。",
+          "textTarget": "当时回应很热烈，过后经常不记得。",
+          "scores": {
+            "warmth": 75,
+            "reliability": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "很少表现出对对方生活细节的了解。",
+          "textTarget": "很少表现出对我生活细节的了解。",
+          "scores": {
+            "warmth": 20,
+            "reliability": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ09",
+      "textSelf": "你和其他可能暧昧对象的边界怎样？",
+      "textTarget": "TA 和其他可能暧昧对象的边界怎样？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "边界很清楚，也愿意主动让对方安心。",
+          "textTarget": "边界很清楚，也愿意主动让我安心。",
+          "scores": {
+            "boundary": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "大体清楚，但有些关系需要对方询问才解释。",
+          "textTarget": "大体清楚，但有些关系需要我询问才解释。",
+          "scores": {
+            "boundary": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "对很多人都亲近，认为自己只是性格好。",
+          "textTarget": "对很多人都亲近，认为自己只是性格好。",
+          "scores": {
+            "boundary": 25
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "经常回避这个话题，关系状态很模糊。",
+          "textTarget": "经常回避这个话题，关系状态很模糊。",
+          "scores": {
+            "boundary": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ10",
+      "textSelf": "谈到你们的未来时，你会？",
+      "textTarget": "TA 谈到你们的未来时？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "会主动讨论具体安排，并开始为它行动。",
+          "textTarget": "会主动讨论具体安排，并开始为它行动。",
+          "scores": {
+            "initiative": 100,
+            "reliability": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "对方提起时会认真回应，但较少主动规划。",
+          "textTarget": "我提起时会认真回应，但较少主动规划。",
+          "scores": {
+            "initiative": 65,
+            "reliability": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "会描述很好听的未来，却很少有下一步。",
+          "textTarget": "会描述很好听的未来，却很少有下一步。",
+          "scores": {
+            "initiative": 70,
+            "reliability": 25
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "经常转移话题，不愿谈关系走向。",
+          "textTarget": "经常转移话题，不愿谈关系走向。",
+          "scores": {
+            "initiative": 10,
+            "reliability": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ11",
+      "textSelf": "你的互动热度通常稳定吗？",
+      "textTarget": "TA 的互动热度通常稳定吗？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "比较稳定，不会无缘无故突然消失。",
+          "textTarget": "比较稳定，不会无缘无故突然消失。",
+          "scores": {
+            "warmth": 90,
+            "reliability": 95,
+            "romance": 60
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "忙的时候会变少，但会解释并恢复联系。",
+          "textTarget": "忙的时候会变少，但会解释并恢复联系。",
+          "scores": {
+            "warmth": 75,
+            "reliability": 80,
+            "romance": 45
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "热的时候非常热，冷的时候像换了一个人。",
+          "textTarget": "热的时候非常热，冷的时候像换了一个人。",
+          "scores": {
+            "warmth": 85,
+            "reliability": 25,
+            "romance": 90
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "整体偏淡，很少出现明显热度。",
+          "textTarget": "整体偏淡，很少出现明显热度。",
+          "scores": {
+            "warmth": 25,
+            "reliability": 30,
+            "romance": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ12",
+      "textSelf": "你觉得自己带给对方的感觉更接近？",
+      "textTarget": "用一句话形容 TA 带给你的感觉？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "稳，重要时候可以相信。",
+          "textTarget": "稳，重要时候可以相信。",
+          "scores": {
+            "initiative": 70,
+            "warmth": 65,
+            "reliability": 100,
+            "romance": 35,
+            "boundary": 90
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "暖，和我相处很舒服。",
+          "textTarget": "暖，和 TA 相处很舒服。",
+          "scores": {
+            "initiative": 55,
+            "warmth": 100,
+            "reliability": 80,
+            "romance": 50,
+            "boundary": 85
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "会撩，很容易让对方心动。",
+          "textTarget": "会撩，很容易让人心动。",
+          "scores": {
+            "initiative": 80,
+            "warmth": 85,
+            "reliability": 35,
+            "romance": 100,
+            "boundary": 25
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "难猜，对方总是不知道下一步在哪里。",
+          "textTarget": "难猜，总是不知道下一步在哪里。",
+          "scores": {
+            "initiative": 15,
+            "warmth": 25,
+            "reliability": 30,
+            "romance": 35,
+            "boundary": 20
+          }
+        }
+      ]
+    }
+  ],
+  "people": [
+    {
+      "key": "xi_men_qing",
+      "name": "西门庆",
+      "source": "《金瓶梅》",
+      "category": "classic",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 86,
+        "warmth": 55,
+        "reliability": 38,
+        "romance": 84,
+        "boundary": 27
+      },
+      "summary": "西门庆式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是西门庆身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 1,
+      "coverUrl": ""
+    },
+    {
+      "key": "jia_baoyu",
+      "name": "贾宝玉",
+      "source": "《红楼梦》",
+      "category": "classic",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 53,
+        "warmth": 84,
+        "reliability": 44,
+        "romance": 82,
+        "boundary": 36
+      },
+      "summary": "贾宝玉式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是贾宝玉身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 2,
+      "coverUrl": ""
+    },
+    {
+      "key": "sun_wukong_journey",
+      "name": "孙悟空",
+      "source": "《西游记》",
+      "category": "classic",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 86,
+        "warmth": 64,
+        "reliability": 69,
+        "romance": 36,
+        "boundary": 60
+      },
+      "summary": "孙悟空式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是孙悟空身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 3,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhuge_liang_romance",
+      "name": "诸葛亮",
+      "source": "《三国演义》",
+      "category": "classic",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 71,
+        "warmth": 67,
+        "reliability": 89,
+        "romance": 41,
+        "boundary": 79
+      },
+      "summary": "诸葛亮式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是诸葛亮身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 4,
+      "coverUrl": ""
+    },
+    {
+      "key": "lu_zhishen",
+      "name": "鲁智深",
+      "source": "《水浒传》",
+      "category": "classic",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 81,
+        "warmth": 76,
+        "reliability": 77,
+        "romance": 41,
+        "boundary": 58
+      },
+      "summary": "鲁智深式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是鲁智深身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 5,
+      "coverUrl": ""
+    },
+    {
+      "key": "xu_xian",
+      "name": "许仙",
+      "source": "《白蛇传》",
+      "category": "classic",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 44,
+        "warmth": 74,
+        "reliability": 63,
+        "romance": 83,
+        "boundary": 40
+      },
+      "summary": "许仙式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是许仙身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 6,
+      "coverUrl": ""
+    },
+    {
+      "key": "guo_jing",
+      "name": "郭靖",
+      "source": "《射雕英雄传》",
+      "category": "wuxia",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 55,
+        "warmth": 81,
+        "reliability": 91,
+        "romance": 58,
+        "boundary": 81
+      },
+      "summary": "郭靖式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是郭靖身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 7,
+      "coverUrl": ""
+    },
+    {
+      "key": "yang_guo",
+      "name": "杨过",
+      "source": "《神雕侠侣》",
+      "category": "wuxia",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 83,
+        "warmth": 76,
+        "reliability": 65,
+        "romance": 85,
+        "boundary": 49
+      },
+      "summary": "杨过式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是杨过身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 8,
+      "coverUrl": ""
+    },
+    {
+      "key": "linghu_chong",
+      "name": "令狐冲",
+      "source": "《笑傲江湖》",
+      "category": "wuxia",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 75,
+        "warmth": 84,
+        "reliability": 49,
+        "romance": 80,
+        "boundary": 44
+      },
+      "summary": "令狐冲式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是令狐冲身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 9,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhang_wuji",
+      "name": "张无忌",
+      "source": "《倚天屠龙记》",
+      "category": "wuxia",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 51,
+        "warmth": 84,
+        "reliability": 68,
+        "romance": 73,
+        "boundary": 40
+      },
+      "summary": "张无忌式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是张无忌身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 10,
+      "coverUrl": ""
+    },
+    {
+      "key": "qiao_feng",
+      "name": "乔峰",
+      "source": "《天龙八部》",
+      "category": "wuxia",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 84,
+        "warmth": 83,
+        "reliability": 93,
+        "romance": 51,
+        "boundary": 86
+      },
+      "summary": "乔峰式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是乔峰身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 11,
+      "coverUrl": ""
+    },
+    {
+      "key": "yue_buqun",
+      "name": "岳不群",
+      "source": "《笑傲江湖》",
+      "category": "wuxia",
+      "alignment": "villain",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 73,
+        "warmth": 41,
+        "reliability": 61,
+        "romance": 40,
+        "boundary": 81
+      },
+      "summary": "岳不群式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是岳不群身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 12,
+      "coverUrl": ""
+    },
+    {
+      "key": "wu_xie",
+      "name": "吴邪",
+      "source": "《盗墓笔记》",
+      "category": "tomb_raiding",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 68,
+        "warmth": 86,
+        "reliability": 75,
+        "romance": 60,
+        "boundary": 66
+      },
+      "summary": "吴邪式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是吴邪身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 13,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhang_qiling",
+      "name": "张起灵",
+      "source": "《盗墓笔记》",
+      "category": "tomb_raiding",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 49,
+        "warmth": 65,
+        "reliability": 77,
+        "romance": 35,
+        "boundary": 86
+      },
+      "summary": "张起灵式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是张起灵身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 14,
+      "coverUrl": ""
+    },
+    {
+      "key": "wang_pangzi",
+      "name": "王胖子",
+      "source": "《盗墓笔记》",
+      "category": "tomb_raiding",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 83,
+        "warmth": 86,
+        "reliability": 84,
+        "romance": 63,
+        "boundary": 48
+      },
+      "summary": "王胖子式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是王胖子身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 15,
+      "coverUrl": ""
+    },
+    {
+      "key": "hu_bayi",
+      "name": "胡八一",
+      "source": "《鬼吹灯》",
+      "category": "tomb_raiding",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 72,
+        "reliability": 91,
+        "romance": 54,
+        "boundary": 80
+      },
+      "summary": "胡八一式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是胡八一身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 16,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhe_gu_shao",
+      "name": "鹧鸪哨",
+      "source": "《鬼吹灯》",
+      "category": "tomb_raiding",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 85,
+        "warmth": 67,
+        "reliability": 91,
+        "romance": 48,
+        "boundary": 86
+      },
+      "summary": "鹧鸪哨式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是鹧鸪哨身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 17,
+      "coverUrl": ""
+    },
+    {
+      "key": "xiang_yunfeng",
+      "name": "项云峰",
+      "source": "《北派盗墓笔记》",
+      "category": "tomb_raiding",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 84,
+        "warmth": 63,
+        "reliability": 79,
+        "romance": 42,
+        "boundary": 76
+      },
+      "summary": "项云峰式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是项云峰身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 18,
+      "coverUrl": ""
+    },
+    {
+      "key": "qi_tongwei",
+      "name": "祁同伟",
+      "source": "《人民的名义》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 95,
+        "warmth": 46,
+        "reliability": 55,
+        "romance": 56,
+        "boundary": 65
+      },
+      "summary": "祁同伟式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是祁同伟身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 19,
+      "coverUrl": ""
+    },
+    {
+      "key": "gao_qiqiang",
+      "name": "高启强",
+      "source": "《狂飙》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 93,
+        "warmth": 75,
+        "reliability": 69,
+        "romance": 62,
+        "boundary": 48
+      },
+      "summary": "高启强式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是高启强身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 20,
+      "coverUrl": ""
+    },
+    {
+      "key": "mei_changsu",
+      "name": "梅长苏",
+      "source": "《琅琊榜》",
+      "category": "chinese_screen",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 78,
+        "warmth": 66,
+        "reliability": 81,
+        "romance": 43,
+        "boundary": 91
+      },
+      "summary": "梅长苏式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是梅长苏身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 21,
+      "coverUrl": ""
+    },
+    {
+      "key": "fan_xian",
+      "name": "范闲",
+      "source": "《庆余年》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 83,
+        "reliability": 76,
+        "romance": 72,
+        "boundary": 76
+      },
+      "summary": "范闲式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是范闲身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 22,
+      "coverUrl": ""
+    },
+    {
+      "key": "dongfang_qingcang",
+      "name": "东方青苍",
+      "source": "《苍兰诀》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 86,
+        "warmth": 60,
+        "reliability": 71,
+        "romance": 63,
+        "boundary": 81
+      },
+      "summary": "东方青苍式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是东方青苍身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 23,
+      "coverUrl": ""
+    },
+    {
+      "key": "xiao_nai",
+      "name": "肖奈",
+      "source": "《微微一笑很倾城》",
+      "category": "chinese_screen",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 80,
+        "warmth": 71,
+        "reliability": 84,
+        "romance": 66,
+        "boundary": 83
+      },
+      "summary": "肖奈式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是肖奈身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 24,
+      "coverUrl": ""
+    },
+    {
+      "key": "harry_potter",
+      "name": "哈利·波特",
+      "source": "《哈利·波特》",
+      "category": "international",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 85,
+        "warmth": 81,
+        "reliability": 80,
+        "romance": 56,
+        "boundary": 66
+      },
+      "summary": "哈利·波特式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是哈利·波特身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 25,
+      "coverUrl": ""
+    },
+    {
+      "key": "sherlock_holmes",
+      "name": "夏洛克·福尔摩斯",
+      "source": "《福尔摩斯探案集》",
+      "category": "international",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 73,
+        "warmth": 53,
+        "reliability": 70,
+        "romance": 34,
+        "boundary": 84
+      },
+      "summary": "夏洛克·福尔摩斯式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是夏洛克·福尔摩斯身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 26,
+      "coverUrl": ""
+    },
+    {
+      "key": "mr_darcy",
+      "name": "达西先生",
+      "source": "《傲慢与偏见》",
+      "category": "international",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 41,
+        "warmth": 73,
+        "reliability": 79,
+        "romance": 58,
+        "boundary": 83
+      },
+      "summary": "达西先生式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是达西先生身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 27,
+      "coverUrl": ""
+    },
+    {
+      "key": "jack_dawson",
+      "name": "杰克·道森",
+      "source": "《泰坦尼克号》",
+      "category": "international",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 95,
+        "warmth": 87,
+        "reliability": 67,
+        "romance": 84,
+        "boundary": 40
+      },
+      "summary": "杰克·道森式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是杰克·道森身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 28,
+      "coverUrl": ""
+    },
+    {
+      "key": "tony_stark",
+      "name": "托尼·斯塔克",
+      "source": "漫威电影宇宙",
+      "category": "international",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 95,
+        "warmth": 73,
+        "reliability": 56,
+        "romance": 75,
+        "boundary": 53
+      },
+      "summary": "托尼·斯塔克式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是托尼·斯塔克身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 29,
+      "coverUrl": ""
+    },
+    {
+      "key": "aragorn",
+      "name": "阿拉贡",
+      "source": "《指环王》",
+      "category": "international",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 79,
+        "warmth": 76,
+        "reliability": 91,
+        "romance": 58,
+        "boundary": 96
+      },
+      "summary": "阿拉贡式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是阿拉贡身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 30,
+      "coverUrl": ""
+    },
+    {
+      "key": "son_goku_db",
+      "name": "孙悟空（龙珠）",
+      "source": "《龙珠》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 88,
+        "warmth": 69,
+        "reliability": 74,
+        "romance": 46,
+        "boundary": 42
+      },
+      "summary": "孙悟空（龙珠）式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是孙悟空（龙珠）身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 31,
+      "coverUrl": ""
+    },
+    {
+      "key": "vegeta",
+      "name": "贝吉塔",
+      "source": "《龙珠》",
+      "category": "anime",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 93,
+        "warmth": 62,
+        "reliability": 73,
+        "romance": 46,
+        "boundary": 89
+      },
+      "summary": "贝吉塔式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是贝吉塔身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 32,
+      "coverUrl": ""
+    },
+    {
+      "key": "monkey_d_luffy",
+      "name": "蒙奇·D·路飞",
+      "source": "《海贼王》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 76,
+        "reliability": 85,
+        "romance": 49,
+        "boundary": 47
+      },
+      "summary": "蒙奇·D·路飞式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是蒙奇·D·路飞身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 33,
+      "coverUrl": ""
+    },
+    {
+      "key": "gojo_satoru",
+      "name": "五条悟",
+      "source": "《咒术回战》",
+      "category": "anime",
+      "alignment": "gray",
+      "gender": "male",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 69,
+        "reliability": 74,
+        "romance": 47,
+        "boundary": 86
+      },
+      "summary": "五条悟式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是五条悟身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 34,
+      "coverUrl": ""
+    },
+    {
+      "key": "uzumaki_naruto",
+      "name": "漩涡鸣人",
+      "source": "《火影忍者》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 89,
+        "warmth": 82,
+        "reliability": 76,
+        "romance": 56,
+        "boundary": 48
+      },
+      "summary": "漩涡鸣人式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是漩涡鸣人身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 35,
+      "coverUrl": ""
+    },
+    {
+      "key": "edogawa_conan",
+      "name": "江户川柯南",
+      "source": "《名侦探柯南》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "male",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 86,
+        "warmth": 65,
+        "reliability": 84,
+        "romance": 36,
+        "boundary": 84
+      },
+      "summary": "江户川柯南式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是江户川柯南身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 36,
+      "coverUrl": ""
+    },
+    {
+      "key": "pan_jinlian",
+      "name": "潘金莲",
+      "source": "《金瓶梅》",
+      "category": "classic",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 86,
+        "warmth": 55,
+        "reliability": 38,
+        "romance": 84,
+        "boundary": 27
+      },
+      "summary": "潘金莲式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是潘金莲身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 37,
+      "coverUrl": ""
+    },
+    {
+      "key": "lin_daiyu",
+      "name": "林黛玉",
+      "source": "《红楼梦》",
+      "category": "classic",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 44,
+        "warmth": 74,
+        "reliability": 63,
+        "romance": 83,
+        "boundary": 40
+      },
+      "summary": "林黛玉式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是林黛玉身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 38,
+      "coverUrl": ""
+    },
+    {
+      "key": "xue_baochai",
+      "name": "薛宝钗",
+      "source": "《红楼梦》",
+      "category": "classic",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 55,
+        "warmth": 81,
+        "reliability": 91,
+        "romance": 58,
+        "boundary": 81
+      },
+      "summary": "薛宝钗式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是薛宝钗身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 39,
+      "coverUrl": ""
+    },
+    {
+      "key": "wang_xifeng",
+      "name": "王熙凤",
+      "source": "《红楼梦》",
+      "category": "classic",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 85,
+        "warmth": 67,
+        "reliability": 91,
+        "romance": 48,
+        "boundary": 86
+      },
+      "summary": "王熙凤式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是王熙凤身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 40,
+      "coverUrl": ""
+    },
+    {
+      "key": "bai_suzhen",
+      "name": "白素贞",
+      "source": "《白蛇传》",
+      "category": "classic",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 83,
+        "reliability": 76,
+        "romance": 72,
+        "boundary": 76
+      },
+      "summary": "白素贞式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是白素贞身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 41,
+      "coverUrl": ""
+    },
+    {
+      "key": "hua_mulan_character",
+      "name": "花木兰",
+      "source": "《木兰辞》",
+      "category": "classic",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 86,
+        "warmth": 65,
+        "reliability": 84,
+        "romance": 36,
+        "boundary": 84
+      },
+      "summary": "花木兰式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是花木兰身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 42,
+      "coverUrl": ""
+    },
+    {
+      "key": "huang_rong",
+      "name": "黄蓉",
+      "source": "《射雕英雄传》",
+      "category": "wuxia",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 95,
+        "warmth": 87,
+        "reliability": 67,
+        "romance": 84,
+        "boundary": 40
+      },
+      "summary": "黄蓉式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是黄蓉身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 43,
+      "coverUrl": ""
+    },
+    {
+      "key": "xiaolongnu",
+      "name": "小龙女",
+      "source": "《神雕侠侣》",
+      "category": "wuxia",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 41,
+        "warmth": 73,
+        "reliability": 79,
+        "romance": 58,
+        "boundary": 83
+      },
+      "summary": "小龙女式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是小龙女身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 44,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhao_min",
+      "name": "赵敏",
+      "source": "《倚天屠龙记》",
+      "category": "wuxia",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 80,
+        "warmth": 71,
+        "reliability": 84,
+        "romance": 66,
+        "boundary": 83
+      },
+      "summary": "赵敏式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是赵敏身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 45,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhou_zhiruo",
+      "name": "周芷若",
+      "source": "《倚天屠龙记》",
+      "category": "wuxia",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 86,
+        "warmth": 60,
+        "reliability": 71,
+        "romance": 63,
+        "boundary": 81
+      },
+      "summary": "周芷若式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是周芷若身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 46,
+      "coverUrl": ""
+    },
+    {
+      "key": "ren_yingying",
+      "name": "任盈盈",
+      "source": "《笑傲江湖》",
+      "category": "wuxia",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 79,
+        "warmth": 76,
+        "reliability": 91,
+        "romance": 58,
+        "boundary": 96
+      },
+      "summary": "任盈盈式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是任盈盈身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 47,
+      "coverUrl": ""
+    },
+    {
+      "key": "cheng_lingsu",
+      "name": "程灵素",
+      "source": "《飞狐外传》",
+      "category": "wuxia",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 68,
+        "warmth": 86,
+        "reliability": 75,
+        "romance": 60,
+        "boundary": 66
+      },
+      "summary": "程灵素式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是程灵素身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 48,
+      "coverUrl": ""
+    },
+    {
+      "key": "a_ning",
+      "name": "阿宁",
+      "source": "《盗墓笔记》",
+      "category": "tomb_raiding",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 62,
+        "reliability": 73,
+        "romance": 46,
+        "boundary": 89
+      },
+      "summary": "阿宁式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是阿宁身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 49,
+      "coverUrl": ""
+    },
+    {
+      "key": "huo_xiuxiu",
+      "name": "霍秀秀",
+      "source": "《盗墓笔记》",
+      "category": "tomb_raiding",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 84,
+        "warmth": 83,
+        "reliability": 93,
+        "romance": 51,
+        "boundary": 86
+      },
+      "summary": "霍秀秀式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是霍秀秀身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 50,
+      "coverUrl": ""
+    },
+    {
+      "key": "yin_nanfeng",
+      "name": "尹南风",
+      "source": "《沙海》",
+      "category": "tomb_raiding",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 78,
+        "warmth": 66,
+        "reliability": 81,
+        "romance": 43,
+        "boundary": 91
+      },
+      "summary": "尹南风式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是尹南风身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 51,
+      "coverUrl": ""
+    },
+    {
+      "key": "shirley_yang",
+      "name": "Shirley杨",
+      "source": "《鬼吹灯》",
+      "category": "tomb_raiding",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 72,
+        "reliability": 91,
+        "romance": 54,
+        "boundary": 80
+      },
+      "summary": "Shirley杨式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是Shirley杨身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 52,
+      "coverUrl": ""
+    },
+    {
+      "key": "hong_guniang",
+      "name": "红姑娘",
+      "source": "《怒晴湘西》",
+      "category": "tomb_raiding",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 85,
+        "warmth": 81,
+        "reliability": 80,
+        "romance": 56,
+        "boundary": 66
+      },
+      "summary": "红姑娘式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是红姑娘身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 53,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhang_haixing",
+      "name": "张海杏",
+      "source": "《藏海花》",
+      "category": "tomb_raiding",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 73,
+        "warmth": 53,
+        "reliability": 70,
+        "romance": 34,
+        "boundary": 84
+      },
+      "summary": "张海杏式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是张海杏身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 54,
+      "coverUrl": ""
+    },
+    {
+      "key": "shen_meizhuang",
+      "name": "沈眉庄",
+      "source": "《甄嬛传》",
+      "category": "chinese_screen",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 71,
+        "warmth": 67,
+        "reliability": 89,
+        "romance": 41,
+        "boundary": 79
+      },
+      "summary": "沈眉庄式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是沈眉庄身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 55,
+      "coverUrl": ""
+    },
+    {
+      "key": "zhen_huan",
+      "name": "甄嬛",
+      "source": "《甄嬛传》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 93,
+        "warmth": 69,
+        "reliability": 74,
+        "romance": 47,
+        "boundary": 86
+      },
+      "summary": "甄嬛式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是甄嬛身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 56,
+      "coverUrl": ""
+    },
+    {
+      "key": "sheng_minglan",
+      "name": "盛明兰",
+      "source": "《知否知否应是绿肥红瘦》",
+      "category": "chinese_screen",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 84,
+        "warmth": 63,
+        "reliability": 79,
+        "romance": 42,
+        "boundary": 76
+      },
+      "summary": "盛明兰式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是盛明兰身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 57,
+      "coverUrl": ""
+    },
+    {
+      "key": "an_lingrong",
+      "name": "安陵容",
+      "source": "《甄嬛传》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 53,
+        "warmth": 84,
+        "reliability": 44,
+        "romance": 82,
+        "boundary": 36
+      },
+      "summary": "安陵容式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是安陵容身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 58,
+      "coverUrl": ""
+    },
+    {
+      "key": "xu_qin",
+      "name": "许沁",
+      "source": "《我的人间烟火》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 51,
+        "warmth": 84,
+        "reliability": 68,
+        "romance": 73,
+        "boundary": 40
+      },
+      "summary": "许沁式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是许沁身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 59,
+      "coverUrl": ""
+    },
+    {
+      "key": "huang_yimei",
+      "name": "黄亦玫",
+      "source": "《玫瑰的故事》",
+      "category": "chinese_screen",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 83,
+        "warmth": 76,
+        "reliability": 65,
+        "romance": 85,
+        "boundary": 49
+      },
+      "summary": "黄亦玫式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是黄亦玫身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 60,
+      "coverUrl": ""
+    },
+    {
+      "key": "hermione_granger",
+      "name": "赫敏·格兰杰",
+      "source": "《哈利·波特》",
+      "category": "international",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 5,
+      "profile": {
+        "initiative": 49,
+        "warmth": 65,
+        "reliability": 77,
+        "romance": 35,
+        "boundary": 86
+      },
+      "summary": "赫敏·格兰杰式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是赫敏·格兰杰身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 61,
+      "coverUrl": ""
+    },
+    {
+      "key": "elizabeth_bennet",
+      "name": "伊丽莎白·班纳特",
+      "source": "《傲慢与偏见》",
+      "category": "international",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 83,
+        "warmth": 86,
+        "reliability": 84,
+        "romance": 63,
+        "boundary": 48
+      },
+      "summary": "伊丽莎白·班纳特式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是伊丽莎白·班纳特身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 62,
+      "coverUrl": ""
+    },
+    {
+      "key": "wednesday_addams",
+      "name": "星期三·亚当斯",
+      "source": "《星期三》",
+      "category": "international",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 73,
+        "warmth": 41,
+        "reliability": 61,
+        "romance": 40,
+        "boundary": 81
+      },
+      "summary": "星期三·亚当斯式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是星期三·亚当斯身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 63,
+      "coverUrl": ""
+    },
+    {
+      "key": "daenerys",
+      "name": "丹妮莉丝",
+      "source": "《权力的游戏》",
+      "category": "international",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 95,
+        "warmth": 46,
+        "reliability": 55,
+        "romance": 56,
+        "boundary": 65
+      },
+      "summary": "丹妮莉丝式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是丹妮莉丝身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 64,
+      "coverUrl": ""
+    },
+    {
+      "key": "barbie",
+      "name": "芭比",
+      "source": "《芭比》",
+      "category": "international",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 89,
+        "warmth": 82,
+        "reliability": 76,
+        "romance": 56,
+        "boundary": 48
+      },
+      "summary": "芭比式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是芭比身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 65,
+      "coverUrl": ""
+    },
+    {
+      "key": "rose_dewitt",
+      "name": "露丝",
+      "source": "《泰坦尼克号》",
+      "category": "international",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "middle_age",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 75,
+        "warmth": 84,
+        "reliability": 49,
+        "romance": 80,
+        "boundary": 44
+      },
+      "summary": "露丝式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是露丝身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 66,
+      "coverUrl": ""
+    },
+    {
+      "key": "bulma",
+      "name": "布尔玛",
+      "source": "《龙珠》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 75,
+        "reliability": 69,
+        "romance": 62,
+        "boundary": 48
+      },
+      "summary": "布尔玛式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是布尔玛身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 67,
+      "coverUrl": ""
+    },
+    {
+      "key": "android_18",
+      "name": "人造人18号",
+      "source": "《龙珠》",
+      "category": "anime",
+      "alignment": "gray",
+      "gender": "female",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 86,
+        "warmth": 64,
+        "reliability": 69,
+        "romance": 36,
+        "boundary": 60
+      },
+      "summary": "人造人18号式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是人造人18号身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 68,
+      "coverUrl": ""
+    },
+    {
+      "key": "sailor_moon",
+      "name": "月野兔",
+      "source": "《美少女战士》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 95,
+        "warmth": 73,
+        "reliability": 56,
+        "romance": 75,
+        "boundary": 53
+      },
+      "summary": "月野兔式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是月野兔身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 69,
+      "coverUrl": ""
+    },
+    {
+      "key": "kamado_nezuko",
+      "name": "灶门祢豆子",
+      "source": "《鬼灭之刃》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 81,
+        "warmth": 76,
+        "reliability": 77,
+        "romance": 41,
+        "boundary": 58
+      },
+      "summary": "灶门祢豆子式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是灶门祢豆子身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 70,
+      "coverUrl": ""
+    },
+    {
+      "key": "mikasa_ackerman",
+      "name": "三笠·阿克曼",
+      "source": "《进击的巨人》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 93,
+        "warmth": 76,
+        "reliability": 85,
+        "romance": 49,
+        "boundary": 47
+      },
+      "summary": "三笠·阿克曼式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是三笠·阿克曼身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 71,
+      "coverUrl": ""
+    },
+    {
+      "key": "chihiro",
+      "name": "荻野千寻",
+      "source": "《千与千寻》",
+      "category": "anime",
+      "alignment": "heroic",
+      "gender": "female",
+      "audienceTags": [
+        "youth",
+        "all_age"
+      ],
+      "heatLevel": 4,
+      "profile": {
+        "initiative": 88,
+        "warmth": 69,
+        "reliability": 74,
+        "romance": 46,
+        "boundary": 42
+      },
+      "summary": "荻野千寻式人物风格：在关系里有鲜明的行动、情绪和边界表达。",
+      "attraction": "吸引点是荻野千寻身上辨识度很高的真性情与处事节奏。",
+      "caution": "别只看角色高光，也要观察这种风格在现实相处里是否让双方舒服。",
+      "enabled": true,
+      "sortOrder": 72,
+      "coverUrl": ""
+    }
+  ],
+  "resultCopy": {
+    "initiative": {
+      "high": "主动推进，不喜欢关系长期停在原地",
+      "low": "更习惯等待明确信号后再行动"
+    },
+    "warmth": {
+      "high": "情绪回应直接，容易让人感到被在意",
+      "low": "表达温度较克制，需要从行动中观察"
+    },
+    "reliability": {
+      "high": "重视承诺和持续行动",
+      "low": "容易受状态影响，需要观察是否长期兑现"
+    },
+    "romance": {
+      "high": "擅长制造心动和表达好感",
+      "low": "更偏实际，不一定主动营造浪漫氛围"
+    },
+    "boundary": {
+      "high": "关系立场和边界比较清楚",
+      "low": "互动范围可能较模糊，需要关注关系定义"
+    },
+    "shareTemplate": "测完才发现，{subject}最像{primary}（{primarySimilarity}%），第二像{secondary}（{secondarySimilarity}%）。"
+  },
+  "goldenAnswers": {
+    "pan_jinlian": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "C",
+      "CQ07": "D",
+      "CQ08": "C",
+      "CQ09": "C",
+      "CQ10": "C",
+      "CQ11": "C",
+      "CQ12": "C"
+    },
+    "cheng_lingsu": {
+      "CQ01": "B",
+      "CQ02": "C",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "C",
+      "CQ12": "B"
+    },
+    "bulma": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "B",
+      "CQ12": "C"
+    },
+    "lin_daiyu": {
+      "CQ01": "D",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "C",
+      "CQ10": "D",
+      "CQ11": "B",
+      "CQ12": "D"
+    },
+    "daenerys": {
+      "CQ01": "C",
+      "CQ02": "C",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "kamado_nezuko": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "D"
+    },
+    "elizabeth_bennet": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "C"
+    },
+    "sailor_moon": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "D",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "barbie": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "chihiro": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "C",
+      "CQ10": "B",
+      "CQ11": "D",
+      "CQ12": "D"
+    },
+    "xu_qin": {
+      "CQ01": "C",
+      "CQ02": "D",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "C",
+      "CQ06": "C",
+      "CQ07": "C",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "wednesday_addams": {
+      "CQ01": "A",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "C",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "D",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "an_lingrong": {
+      "CQ01": "B",
+      "CQ02": "C",
+      "CQ03": "C",
+      "CQ04": "D",
+      "CQ05": "C",
+      "CQ06": "B",
+      "CQ07": "C",
+      "CQ08": "C",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "a_ning": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "B",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "zhang_haixing": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "hermione_granger": {
+      "CQ01": "C",
+      "CQ02": "C",
+      "CQ03": "A",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "C",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "xiaolongnu": {
+      "CQ01": "C",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "D",
+      "CQ11": "B",
+      "CQ12": "C"
+    },
+    "rose_dewitt": {
+      "CQ01": "D",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "C",
+      "CQ12": "D"
+    },
+    "android_18": {
+      "CQ01": "A",
+      "CQ02": "C",
+      "CQ03": "D",
+      "CQ04": "C",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "B",
+      "CQ12": "D"
+    },
+    "shen_meizhuang": {
+      "CQ01": "B",
+      "CQ02": "D",
+      "CQ03": "A",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "yin_nanfeng": {
+      "CQ01": "B",
+      "CQ02": "C",
+      "CQ03": "D",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "C",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "hong_guniang": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "zhou_zhiruo": {
+      "CQ01": "B",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "sheng_minglan": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "bai_suzhen": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "huang_yimei": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "C",
+      "CQ07": "B",
+      "CQ08": "B",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "C",
+      "CQ12": "C"
+    },
+    "ren_yingying": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "huang_rong": {
+      "CQ01": "C",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "C",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "zhao_min": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "zhen_huan": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "D",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "xue_baochai": {
+      "CQ01": "D",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "B",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "shirley_yang": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "mikasa_ackerman": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "B",
+      "CQ05": "B",
+      "CQ06": "D",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "huo_xiuxiu": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "wang_xifeng": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "hua_mulan_character": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "B",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "mr_darcy": {
+      "CQ01": "D",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "xu_xian": {
+      "CQ01": "A",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "B",
+      "CQ08": "C",
+      "CQ09": "B",
+      "CQ10": "D",
+      "CQ11": "A",
+      "CQ12": "D"
+    },
+    "yue_buqun": {
+      "CQ01": "C",
+      "CQ02": "C",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "xiang_yunfeng": {
+      "CQ01": "C",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "B",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "sun_wukong_journey": {
+      "CQ01": "B",
+      "CQ02": "D",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "D",
+      "CQ07": "D",
+      "CQ08": "B",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "D"
+    },
+    "zhang_wuji": {
+      "CQ01": "B",
+      "CQ02": "C",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "D",
+      "CQ10": "B",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "zhang_qiling": {
+      "CQ01": "C",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "C",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "fan_xian": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "xi_men_qing": {
+      "CQ01": "A",
+      "CQ02": "C",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "D",
+      "CQ08": "C",
+      "CQ09": "D",
+      "CQ10": "C",
+      "CQ11": "C",
+      "CQ12": "D"
+    },
+    "yang_guo": {
+      "CQ01": "D",
+      "CQ02": "B",
+      "CQ03": "C",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "C",
+      "CQ12": "C"
+    },
+    "wu_xie": {
+      "CQ01": "C",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "C",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "son_goku_db": {
+      "CQ01": "B",
+      "CQ02": "C",
+      "CQ03": "D",
+      "CQ04": "D",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "jia_baoyu": {
+      "CQ01": "C",
+      "CQ02": "D",
+      "CQ03": "D",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "tony_stark": {
+      "CQ01": "A",
+      "CQ02": "C",
+      "CQ03": "B",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "C",
+      "CQ12": "C"
+    },
+    "lu_zhishen": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "D",
+      "CQ09": "B",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "linghu_chong": {
+      "CQ01": "D",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "D",
+      "CQ07": "A",
+      "CQ08": "D",
+      "CQ09": "D",
+      "CQ10": "C",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "xiao_nai": {
+      "CQ01": "B",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "dongfang_qingcang": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "C",
+      "CQ07": "B",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "qi_tongwei": {
+      "CQ01": "C",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "D",
+      "CQ05": "C",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "D",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "sherlock_holmes": {
+      "CQ01": "D",
+      "CQ02": "C",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "gao_qiqiang": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "jack_dawson": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "C",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "D",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "C"
+    },
+    "gojo_satoru": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "uzumaki_naruto": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "mei_changsu": {
+      "CQ01": "B",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "harry_potter": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "vegeta": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "D",
+      "CQ08": "D",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "zhuge_liang_romance": {
+      "CQ01": "D",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "D",
+      "CQ08": "B",
+      "CQ09": "D",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "aragorn": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "A",
+      "CQ10": "D",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "monkey_d_luffy": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "D",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "guo_jing": {
+      "CQ01": "B",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "wang_pangzi": {
+      "CQ01": "C",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "C",
+      "CQ06": "C",
+      "CQ07": "C",
+      "CQ08": "D",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "hu_bayi": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "qiao_feng": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "zhe_gu_shao": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "edogawa_conan": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "D",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    }
+  },
+  "calibrationSummary": {
+    "passed": true,
+    "seed": 20260814,
+    "iterations": 200000,
+    "genders": {
+      "female": {
+        "subjectGender": "female",
+        "seed": 20260814,
+        "iterations": 200000,
+        "passed": true,
+        "maxRatio": 0.13513,
+        "topFiveRatio": 0.47575,
+        "groupWinnerCounts": {
+          "classic": 6,
+          "wuxia": 6,
+          "anime": 6,
+          "international": 6,
+          "chinese_screen": 6,
+          "tomb_raiding": 6
+        },
+        "missingGolden": [],
+        "distribution": [
+          {
+            "personKey": "cheng_lingsu",
+            "count": 27026,
+            "ratio": 0.13513
+          },
+          {
+            "personKey": "xu_qin",
+            "count": 21734,
+            "ratio": 0.10867
+          },
+          {
+            "personKey": "hermione_granger",
+            "count": 16396,
+            "ratio": 0.08198
+          },
+          {
+            "personKey": "wednesday_addams",
+            "count": 15440,
+            "ratio": 0.0772
+          },
+          {
+            "personKey": "lin_daiyu",
+            "count": 14554,
+            "ratio": 0.07277
+          },
+          {
+            "personKey": "xiaolongnu",
+            "count": 14456,
+            "ratio": 0.07228
+          },
+          {
+            "personKey": "android_18",
+            "count": 14276,
+            "ratio": 0.07138
+          },
+          {
+            "personKey": "an_lingrong",
+            "count": 12235,
+            "ratio": 0.061175
+          },
+          {
+            "personKey": "chihiro",
+            "count": 11085,
+            "ratio": 0.055425
+          },
+          {
+            "personKey": "rose_dewitt",
+            "count": 9179,
+            "ratio": 0.045895
+          },
+          {
+            "personKey": "kamado_nezuko",
+            "count": 6616,
+            "ratio": 0.03308
+          },
+          {
+            "personKey": "daenerys",
+            "count": 5273,
+            "ratio": 0.026365
+          },
+          {
+            "personKey": "bulma",
+            "count": 4706,
+            "ratio": 0.02353
+          },
+          {
+            "personKey": "zhou_zhiruo",
+            "count": 4291,
+            "ratio": 0.021455
+          },
+          {
+            "personKey": "pan_jinlian",
+            "count": 3739,
+            "ratio": 0.018695
+          },
+          {
+            "personKey": "sailor_moon",
+            "count": 2940,
+            "ratio": 0.0147
+          },
+          {
+            "personKey": "zhang_haixing",
+            "count": 2726,
+            "ratio": 0.01363
+          },
+          {
+            "personKey": "hong_guniang",
+            "count": 2514,
+            "ratio": 0.01257
+          },
+          {
+            "personKey": "huang_yimei",
+            "count": 2216,
+            "ratio": 0.01108
+          },
+          {
+            "personKey": "sheng_minglan",
+            "count": 1664,
+            "ratio": 0.00832
+          },
+          {
+            "personKey": "elizabeth_bennet",
+            "count": 1060,
+            "ratio": 0.0053
+          },
+          {
+            "personKey": "shen_meizhuang",
+            "count": 1012,
+            "ratio": 0.00506
+          },
+          {
+            "personKey": "yin_nanfeng",
+            "count": 868,
+            "ratio": 0.00434
+          },
+          {
+            "personKey": "zhao_min",
+            "count": 734,
+            "ratio": 0.00367
+          },
+          {
+            "personKey": "bai_suzhen",
+            "count": 697,
+            "ratio": 0.003485
+          },
+          {
+            "personKey": "xue_baochai",
+            "count": 662,
+            "ratio": 0.00331
+          },
+          {
+            "personKey": "barbie",
+            "count": 509,
+            "ratio": 0.002545
+          },
+          {
+            "personKey": "zhen_huan",
+            "count": 490,
+            "ratio": 0.00245
+          },
+          {
+            "personKey": "mikasa_ackerman",
+            "count": 221,
+            "ratio": 0.001105
+          },
+          {
+            "personKey": "huo_xiuxiu",
+            "count": 162,
+            "ratio": 0.00081
+          },
+          {
+            "personKey": "ren_yingying",
+            "count": 143,
+            "ratio": 0.000715
+          },
+          {
+            "personKey": "huang_rong",
+            "count": 137,
+            "ratio": 0.000685
+          },
+          {
+            "personKey": "shirley_yang",
+            "count": 110,
+            "ratio": 0.00055
+          },
+          {
+            "personKey": "a_ning",
+            "count": 84,
+            "ratio": 0.00042
+          },
+          {
+            "personKey": "wang_xifeng",
+            "count": 36,
+            "ratio": 0.00018
+          },
+          {
+            "personKey": "hua_mulan_character",
+            "count": 9,
+            "ratio": 0.000045
+          }
+        ],
+        "reportChecksum": "876b23e970f487bc74b05e349b850bc45d4b74aa6d0824d711b00635613dbb67"
+      },
+      "male": {
+        "subjectGender": "male",
+        "seed": 20260815,
+        "iterations": 200000,
+        "passed": true,
+        "maxRatio": 0.13224,
+        "topFiveRatio": 0.47600000000000003,
+        "groupWinnerCounts": {
+          "international": 6,
+          "classic": 6,
+          "wuxia": 6,
+          "tomb_raiding": 6,
+          "chinese_screen": 6,
+          "anime": 6
+        },
+        "missingGolden": [],
+        "distribution": [
+          {
+            "personKey": "wu_xie",
+            "count": 26448,
+            "ratio": 0.13224
+          },
+          {
+            "personKey": "zhang_wuji",
+            "count": 21783,
+            "ratio": 0.108915
+          },
+          {
+            "personKey": "zhang_qiling",
+            "count": 16476,
+            "ratio": 0.08238
+          },
+          {
+            "personKey": "yue_buqun",
+            "count": 15825,
+            "ratio": 0.079125
+          },
+          {
+            "personKey": "mr_darcy",
+            "count": 14668,
+            "ratio": 0.07334
+          },
+          {
+            "personKey": "xu_xian",
+            "count": 14610,
+            "ratio": 0.07305
+          },
+          {
+            "personKey": "sun_wukong_journey",
+            "count": 14219,
+            "ratio": 0.071095
+          },
+          {
+            "personKey": "jia_baoyu",
+            "count": 12302,
+            "ratio": 0.06151
+          },
+          {
+            "personKey": "son_goku_db",
+            "count": 11247,
+            "ratio": 0.056235
+          },
+          {
+            "personKey": "linghu_chong",
+            "count": 9243,
+            "ratio": 0.046215
+          },
+          {
+            "personKey": "lu_zhishen",
+            "count": 6570,
+            "ratio": 0.03285
+          },
+          {
+            "personKey": "qi_tongwei",
+            "count": 5201,
+            "ratio": 0.026005
+          },
+          {
+            "personKey": "gao_qiqiang",
+            "count": 4821,
+            "ratio": 0.024105
+          },
+          {
+            "personKey": "dongfang_qingcang",
+            "count": 4278,
+            "ratio": 0.02139
+          },
+          {
+            "personKey": "xi_men_qing",
+            "count": 3575,
+            "ratio": 0.017875
+          },
+          {
+            "personKey": "tony_stark",
+            "count": 2990,
+            "ratio": 0.01495
+          },
+          {
+            "personKey": "sherlock_holmes",
+            "count": 2739,
+            "ratio": 0.013695
+          },
+          {
+            "personKey": "harry_potter",
+            "count": 2454,
+            "ratio": 0.01227
+          },
+          {
+            "personKey": "yang_guo",
+            "count": 2078,
+            "ratio": 0.01039
+          },
+          {
+            "personKey": "xiang_yunfeng",
+            "count": 1689,
+            "ratio": 0.008445
+          },
+          {
+            "personKey": "zhuge_liang_romance",
+            "count": 1067,
+            "ratio": 0.005335
+          },
+          {
+            "personKey": "wang_pangzi",
+            "count": 1044,
+            "ratio": 0.00522
+          },
+          {
+            "personKey": "mei_changsu",
+            "count": 862,
+            "ratio": 0.00431
+          },
+          {
+            "personKey": "xiao_nai",
+            "count": 713,
+            "ratio": 0.003565
+          },
+          {
+            "personKey": "guo_jing",
+            "count": 648,
+            "ratio": 0.00324
+          },
+          {
+            "personKey": "fan_xian",
+            "count": 571,
+            "ratio": 0.002855
+          },
+          {
+            "personKey": "uzumaki_naruto",
+            "count": 494,
+            "ratio": 0.00247
+          },
+          {
+            "personKey": "gojo_satoru",
+            "count": 478,
+            "ratio": 0.00239
+          },
+          {
+            "personKey": "monkey_d_luffy",
+            "count": 226,
+            "ratio": 0.00113
+          },
+          {
+            "personKey": "qiao_feng",
+            "count": 200,
+            "ratio": 0.001
+          },
+          {
+            "personKey": "jack_dawson",
+            "count": 139,
+            "ratio": 0.000695
+          },
+          {
+            "personKey": "aragorn",
+            "count": 120,
+            "ratio": 0.0006
+          },
+          {
+            "personKey": "hu_bayi",
+            "count": 97,
+            "ratio": 0.000485
+          },
+          {
+            "personKey": "vegeta",
+            "count": 87,
+            "ratio": 0.000435
+          },
+          {
+            "personKey": "zhe_gu_shao",
+            "count": 29,
+            "ratio": 0.000145
+          },
+          {
+            "personKey": "edogawa_conan",
+            "count": 9,
+            "ratio": 0.000045
+          }
+        ],
+        "reportChecksum": "96a075dceed3f05818ed4895208ec09f9825e87f04174c35b45131dd5c317c90"
+      }
+    },
+    "missingGolden": [],
+    "reportChecksum": "187747aff3b79b981bc3fd637badd6f0361d6a45658b8e42aac63b8791bf72f0"
+  }
+}
