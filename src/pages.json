@@ -86,6 +86,13 @@
       }
     },
     {
+      "path": "pages/referral/referral",
+      "style": {
+        "navigationBarTitleText": "我的邀请",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
       "path": "pages/token-usage/token-usage",
       "style": {
         "navigationBarTitleText": "Crush Credits 消费明细"

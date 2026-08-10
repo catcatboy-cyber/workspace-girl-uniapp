@@ -342,7 +342,12 @@ onShareAppMessage(() => {
   return { title: `来看看我和 ${caseFile.value?.name || 'TA'} 的关系分析`, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
-onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
+onShareTimeline(() => {
+  if (isReferralShareBlocked()) return {}
+  const path = appendReferralParams('/pages/index/index', 'we_card', 'timeline')
+  if (!path) return {}
+  return buildSafeTimelineShare({ query: path.split('?')[1] || '' })
+})
 
 onPullDownRefresh(async () => {
   await loadData()

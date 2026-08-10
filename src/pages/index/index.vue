@@ -513,7 +513,7 @@ import type { PendingPetEnergyFeedback, PetEnergySnapshot, PetMoodLevel } from '
 import { compareAssessments, buildObjectStatusCard, explainProblemLabel, explainStatusTag, mapEventSignal, buildTimelineStats } from '@/utils/insights'
 import { buildDivergingBars } from '@/utils/insights.ts'
 import { applyThemeChrome, getFontSizeMode, getThemeStyle } from '@/utils/theme'
-import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isInviteCodeReady, isReferralShareBlocked } from '@/utils/share'
+import { buildSafeTimelineShare, appendReferralParams, SAFE_SHARE_IMAGE, isReferralShareBlocked } from '@/utils/share'
 import { deriveCrushType, mapNextActionText } from '@/utils/crush-type.js'
 import { xianchiAlgorithm, hongluanTianxi, ZODIAC_TO_ZHI } from '@/utils/taohua'
 import { getPetById, getResolvedSpritesheetPath, getSelectedPetId, isCloudPet, isPetCachedLocally, downloadPetAssets, refreshDeliveredPetCatalog, setSelectedPetId } from '@/utils/pets.js'
@@ -2124,16 +2124,14 @@ onShareAppMessage(() => {
     params.push(`action=${encodeURIComponent(latestActionPlanPanel.value.text.slice(0, 150))}`)
   }
   let path = `/pages/quick-read/quick-read?${params.join('&')}`
-  if (isInviteCodeReady()) {
-    path = appendReferralParams(path, 'analysis_share', sceneKey.value)
-  }
+  path = appendReferralParams(path, 'analysis_share', sceneKey.value)
   return { title: shareTitle.value, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
 onShareTimeline(() => {
   if (isReferralShareBlocked()) return {}
-  if (!isInviteCodeReady()) return buildSafeTimelineShare()
   const path = appendReferralParams('/pages/index/index', 'analysis_share', 'timeline')
+  if (!path) return {}
   const query = path.includes('?') ? path.split('?')[1] : ''
   return buildSafeTimelineShare({ query })
 })

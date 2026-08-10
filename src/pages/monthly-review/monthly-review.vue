@@ -123,7 +123,12 @@ onShareAppMessage(() => {
   return { title: `我和 ${caseName.value || 'TA'} 的月度复盘`, path, imageUrl: SAFE_SHARE_IMAGE }
 })
 
-onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
+onShareTimeline(() => {
+  if (isReferralShareBlocked()) return {}
+  const path = appendReferralParams('/pages/index/index', 'monthly_review', 'timeline')
+  if (!path) return {}
+  return buildSafeTimelineShare({ query: path.split('?')[1] || '' })
+})
 
 async function loadData(options: { silent?: boolean } = {}) {
   const silent = Boolean(options.silent)

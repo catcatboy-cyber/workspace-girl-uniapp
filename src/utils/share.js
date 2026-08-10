@@ -109,7 +109,10 @@ export function isInviteCodeReady(extra = {}) {
 }
 
 export function isReferralShareBlocked(extra = {}) {
-  return Boolean(readCurrentUserId()) && !isInviteCodeReady(extra)
+  // P2-2：无当前用户身份（匿名/静默登录未完成/本地身份缺失）或邀请码未就绪时均视为 blocked，
+  // 避免生成没有 inviteCode 的归因链接，防止分享落地页形成无法归因的二次分享
+  if (!readCurrentUserId()) return true
+  return !isInviteCodeReady(extra)
 }
 
 const inviteCodeInflight = new Map()

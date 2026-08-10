@@ -103,7 +103,12 @@ onShareAppMessage(() => isReferralShareBlocked()
   ? {}
   : { title: 'Crush Master｜关系时间线', path: appendReferralParams('/pages/index/index', 'timeline'), imageUrl: SAFE_SHARE_IMAGE })
 
-onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
+onShareTimeline(() => {
+  if (isReferralShareBlocked()) return {}
+  const path = appendReferralParams('/pages/index/index', 'timeline', 'timeline')
+  if (!path) return {}
+  return buildSafeTimelineShare({ query: path.split('?')[1] || '' })
+})
 
 onPullDownRefresh(async () => {
   await loadData()

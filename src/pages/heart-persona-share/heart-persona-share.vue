@@ -133,7 +133,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
-import { getArchetypeSharedPreview, getCurrentUserId, waitForCurrentUserId } from '@/utils/api'
+import { getArchetypeSharedPreview, getCurrentUserId, prepareCurrentUserReferralShare, waitForCurrentUserId } from '@/utils/api'
 import { captureLandingContext } from '@/utils/landing'
 import { appendReferralParams } from '@/utils/share'
 import { ensureSilentWechatLogin } from '@/utils/silent-login'
@@ -304,18 +304,25 @@ onLoad((options: any) => {
   captureLandingContext(options || {})
   resultShareId.value = String(options?.resultShareId || '').trim()
   restoreSelection(options || {})
+  void prepareCurrentUserReferralShare()
   loadPreview()
 })
 
 onShow(() => {
+  void prepareCurrentUserReferralShare()
   const userId = getCurrentUserId() || ''
   if (userId && userId !== loadedForUserId && !loading.value) loadPreview()
 })
 
-onShareAppMessage(() => ({
-  title: `${share.value?.sharer?.displayName || '好友'}分享了一个${share.value?.displayTitle || '人物风格'}结果`,
-  path: appendReferralParams(sharePath(), 'heart_persona_result') || sharePath()
-}))
+onShareAppMessage(() => {
+  if (isReferralShareBlocked()) return {}
+  const path = appendReferralParams(sharePath(), 'heart_persona_result')
+  if (!path) return {}
+  return {
+    title: `${share.value?.sharer?.displayName || '好友'}分享了一个${share.value?.displayTitle || '人物风格'}结果`,
+    path
+  }
+})
 </script>
 
 <style scoped lang="scss">

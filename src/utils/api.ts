@@ -1166,6 +1166,8 @@ async function callArchetypeAdmin(action: string, payload: Record<string, any> =
 
 export const adminGetArchetypeReportOrders = (payload: Record<string, any> = {}) => callArchetypeAdmin('listArchetypeReportOrders', payload)
 export const adminReconcileArchetypeReportOrder = (outTradeNo: string, reason: string) => callArchetypeAdmin('reconcileArchetypeReportOrder', { outTradeNo, reason })
+export const adminQueryArchetypeReportRefund = (outTradeNo: string, reason: string) => callArchetypeAdmin('queryArchetypeReportRefund', { outTradeNo, reason })
+export const adminRequestArchetypeReportRefund = (orderId: string, reason: string, confirmText: string, refundReason = '5') => callArchetypeAdmin('requestArchetypeReportRefund', { orderId, reason, confirmText, refundReason })
 export const adminGetArchetypeReportRefundTasks = (payload: Record<string, any> = {}) => callArchetypeAdmin('listArchetypeReportRefundTasks', payload)
 export const adminUpdateArchetypeReportRefundTask = (taskId: string, nextStatus: 'processing' | 'dismissed', reason: string) => callArchetypeAdmin('updateArchetypeReportRefundTask', { taskId, nextStatus, reason })
 
@@ -1276,6 +1278,38 @@ export async function adminGrantReferralCompensation(payload: {
 }
 
 /** Admin: 删除用户及其所有关联数据 */
+export async function getReferralCommissionConfig() {
+  return callFunction({ name: 'adminManage', data: { action: 'getReferralCommissionConfig', ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
+export async function updateReferralCommissionConfig(config: Record<string, any>) {
+  return callFunction({ name: 'adminManage', data: { action: 'updateReferralCommissionConfig', config, ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
+export async function listReferralCommissions(params: Record<string, any> = {}) {
+  return callFunction({ name: 'adminManage', data: { action: 'listReferralCommissions', ...params, ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
+export async function listReferralCommissionReversals(params: Record<string, any> = {}) {
+  return callFunction({ name: 'adminManage', data: { action: 'listReferralCommissionReversals', ...params, ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
+export async function getReferralCommissionOverview() {
+  return callFunction({ name: 'adminManage', data: { action: 'getReferralCommissionOverview', ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
+export async function retryReferralCommissionJob(jobId: string) {
+  return callFunction({ name: 'adminManage', data: { action: 'retryReferralCommissionJob', jobId, ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
+export async function reverseReferralCommission(payload: { commissionId: string; refundAmountFen: number; confirmText: string; reason: string }) {
+  return callFunction({ name: 'adminManage', data: { action: 'reverseReferralCommission', ...payload, ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
+export async function markReferralCommissionWithdrawn(payload: { userId: string; amountFen: number; proof: string; businessId?: string }) {
+  return callFunction({ name: 'adminManage', data: { action: 'markReferralCommissionWithdrawn', ...payload, ...getBusinessAuthPayload() } }).then((res: any) => res.result)
+}
+
 export async function adminDeleteUser(targetUserId: string) {
   const res = await callFunction({
     name: 'adminManage',
@@ -1598,6 +1632,40 @@ export async function testAIConnection(data: {
 }
 
 // ==================== 内容安全 ====================
+
+export type ReferralCommissionSummary = {
+  inviteCount: number
+  paidInviteCount: number
+  totalEarnedFen: number
+  pendingFen: number
+  availableFen: number
+  withdrawnFen: number
+  reversedFen: number
+}
+
+export async function getMyReferralCommissionSummary() {
+  const res = await callFunction({
+    name: 'referralCommission',
+    data: { action: 'getSummary', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function listMyReferralCommissionLedger(params: { cursor?: string; limit?: number; status?: string } = {}) {
+  const res = await callFunction({
+    name: 'referralCommission',
+    data: { action: 'listLedger', ...params, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function listMyReferralInvitees(params: { cursor?: string; limit?: number; paidOnly?: boolean } = {}) {
+  const res = await callFunction({
+    name: 'referralCommission',
+    data: { action: 'listInvitees', ...params, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
 
 export type ContentSecurityResult = {
   pass: boolean

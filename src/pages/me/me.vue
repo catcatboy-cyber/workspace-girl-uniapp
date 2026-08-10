@@ -67,6 +67,16 @@
             <button class="btn btn-secondary btn-sm" @click="goTokenUsage">消费明细</button>
           </view>
       </view>
+      <view class="card-v2 referral-commission-entry" @click="goReferralCommission">
+        <view class="referral-commission-main">
+          <text class="section-title-v2">我的邀请</text>
+          <text class="card-text-v2">好友付费后获得分成，查看邀请人数和奖励明细。</text>
+        </view>
+        <view class="referral-commission-value">
+          <text>{{ commissionAvailableText }}</text>
+          <text class="referral-commission-arrow">→</text>
+        </view>
+      </view>
       <!-- 邀请到账通知 -->
       <view v-if="showReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissReferralNotice">
         <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ referralNoticeAmount }} Crush Credits →</text>
@@ -194,6 +204,7 @@ import {
   getSelfProfile,
   getSubscriptionConfig,
   getSubscriptionStatus,
+  getMyReferralCommissionSummary,
   prepareCurrentUserReferralShare,
   getTokenUsage,
   getVoiceUsage,
@@ -251,6 +262,8 @@ const subInviteCode = ref('')
 const subReferralCount = ref(0)
 const subReferralRewardTokens = ref(3000)
 const currentUserIsAdmin = ref(false)
+const commissionAvailableFen = ref(0)
+const commissionAvailableText = computed(() => `¥${(commissionAvailableFen.value / 100).toFixed(2)}`)
 const hasProfile = computed(() => hasUsableSelfProfile(currentSelfProfile.value))
 const heroProfileTags = computed(() => {
   if (!hasProfile.value) return ['完善后分析更贴合你']
@@ -346,22 +359,18 @@ const inviteShareReady = computed(() => isInviteCodeReady())
 
 onShareAppMessage(() => {
   if (isReferralShareBlocked()) return {}
-  if (!inviteShareReady.value) {
-    return { title: 'Crush Master｜读懂关系信号', path: '/pages/index/index', imageUrl: SAFE_SHARE_IMAGE }
-  }
+  const path = appendReferralParams('/pages/index/index', 'invite', 'me')
   return {
     title: 'Crush Master｜读懂关系信号',
-    path: appendReferralParams('/pages/index/index', 'invite', 'me'),
+    path,
     imageUrl: SAFE_SHARE_IMAGE
   }
 })
 
 onShareTimeline(() => {
   if (isReferralShareBlocked()) return {}
-  if (!inviteShareReady.value) {
-    return buildSafeTimelineShare({ query: '' })
-  }
   const path = appendReferralParams('/pages/index/index', 'invite', 'me_timeline')
+  if (!path) return {}
   const query = path.includes('?') ? path.split('?')[1] : ''
   return buildSafeTimelineShare({ query })
 })
@@ -545,8 +554,16 @@ onShow(() => {
   if (changed) loadSubscriptionStatus()
   if (changed) loadTokenUsage()
   if (changed) loadVoiceUsage()
+  void loadCommissionSummary()
   if (changed) lastDataVersion.value = dv
 })
+
+async function loadCommissionSummary() {
+  try {
+    const result = await getMyReferralCommissionSummary()
+    if (result?.success) commissionAvailableFen.value = Number(result.summary?.availableFen || 0)
+  } catch (_) {}
+}
 
 function syncTheme() {
   currentThemeId.value = getCurrentThemeId()
@@ -807,6 +824,10 @@ function goTokenUsage() {
   uni.navigateTo({ url: '/pages/token-usage/token-usage' })
 }
 
+function goReferralCommission() {
+  uni.navigateTo({ url: '/pages/referral/referral' })
+}
+
 function goSubscriptionPlan() {
   uni.navigateTo({ url: '/pages/subscription/subscription' })
 }
@@ -1007,6 +1028,10 @@ function goAbout() {
 .v2-mode .explain-item-v2:last-child { border-bottom: none; }
 .v2-mode .explain-item-title-v2 { display: block; font-size: $fs-body; font-weight: $fw-hero; color: var(--text-main, #111); }
 .v2-mode .explain-item-desc-v2 { display: block; font-size: $fs-caption; font-weight: $fw-body; color: var(--text-soft, #999); margin-top: 2rpx; line-height: 1.4; }
+.referral-commission-entry { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.referral-commission-main { flex: 1; min-width: 0; }
+.referral-commission-value { flex-shrink: 0; display: flex; align-items: center; gap: 10rpx; font-size: $fs-heading; font-weight: $fw-hero; letter-spacing: 0; }
+.referral-commission-arrow { font-size: $fs-heading; }
 .referral-notice { margin-bottom: 20rpx; padding: 22rpx 24rpx; background: var(--accent, #FFD93D); border: var(--border-width-strong, 3rpx) solid var(--border, #111); border-radius: var(--shape-radius-card, 0); box-shadow: var(--shadow-hard, 4rpx 4rpx 0 #111); }
 .referral-notice-text { display: block; font-size: $fs-body-lg; font-weight: $fw-heading; color: var(--text-main, #111); text-align: center; }
 </style>

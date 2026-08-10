@@ -146,7 +146,12 @@ onShareAppMessage(() => isReferralShareBlocked()
   ? {}
   : { title: 'TA已经把你设置为Crush了。', path: appendReferralParams('/pages/index/index', 'cases'), imageUrl: SAFE_SHARE_IMAGE })
 
-onShareTimeline(() => isReferralShareBlocked() ? {} : buildSafeTimelineShare())
+onShareTimeline(() => {
+  if (isReferralShareBlocked()) return {}
+  const path = appendReferralParams('/pages/index/index', 'cases', 'timeline')
+  if (!path) return {}
+  return buildSafeTimelineShare({ query: path.split('?')[1] || '' })
+})
 
 onPullDownRefresh(async () => {
   await loadData()
