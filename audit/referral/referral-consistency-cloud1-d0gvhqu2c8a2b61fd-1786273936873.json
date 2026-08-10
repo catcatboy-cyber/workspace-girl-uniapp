@@ -1,0 +1,466 @@
+{
+  "env": "cloud1-d0gvhqu2c8a2b61fd",
+  "mode": "dry-run",
+  "generatedAt": "2026-08-09T11:12:16.871Z",
+  "totals": {
+    "users": 77,
+    "claims": 40,
+    "referralGrants": 25
+  },
+  "emptyInviteCodes": {
+    "count": 0,
+    "sample": []
+  },
+  "duplicateInviteCodes": {
+    "count": 0,
+    "items": []
+  },
+  "oldSchemaClaims": {
+    "count": 35,
+    "sample": [
+      {
+        "id": "claim_1781942182104_sjpxxa",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1781944174760_a06ed8ef",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1781945458030_f83faa42",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782109072693_6e16da86",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782109180208_ce6b11e0",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782211490767_735d4f84",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782214113000_7a51a24a",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782214754829_bb448c9c",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782215084166_5d2c67f4",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782267851524_a1a60aa2",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782267894841_a179ecfd",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782269004321_731303c8",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782270131505_846142de",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782282849582_d4fbb666",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782283077151_42c9726b",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782285527564_b71fc77f",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782288521485_1e5a5c08",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782288928217_3e547f29",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782295729636_ea6f0195",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782295853571_f4c8e871",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782296978231_5a1f7923",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782298071991_35488b19",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782457868847_582d447d",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782457870365_69fb0a3f",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782459576206_63ea092f",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782792348952_27af66ff",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782793103552_2ed09e34",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782812913789_fb4af573",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782813292425_caa4245d",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782814104742_bb2e964e",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1782814121433_d362d304",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1783569240727_b1dd47fe",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1783570101554_41211947",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1784176003899_458344a6",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      },
+      {
+        "id": "user_1785501105277_dfc72895",
+        "schemaVersion": 0,
+        "status": "rewarded"
+      }
+    ]
+  },
+  "rewardedMissingGrant": {
+    "count": 8,
+    "items": [
+      {
+        "claimId": "user_1782792348952_27af66ff",
+        "inviteeUserId": "user_1782792348952_27af66ff",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      },
+      {
+        "claimId": "user_1782793103552_2ed09e34",
+        "inviteeUserId": "user_1782793103552_2ed09e34",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      },
+      {
+        "claimId": "user_1782812913789_fb4af573",
+        "inviteeUserId": "user_1782812913789_fb4af573",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      },
+      {
+        "claimId": "user_1782813292425_caa4245d",
+        "inviteeUserId": "user_1782813292425_caa4245d",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      },
+      {
+        "claimId": "user_1782814104742_bb2e964e",
+        "inviteeUserId": "user_1782814104742_bb2e964e",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      },
+      {
+        "claimId": "user_1782814121433_d362d304",
+        "inviteeUserId": "user_1782814121433_d362d304",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      },
+      {
+        "claimId": "user_1786170422548_a0c501b6",
+        "inviteeUserId": "user_1786170422548_a0c501b6",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      },
+      {
+        "claimId": "user_1786171412414_12a901fc",
+        "inviteeUserId": "user_1786171412414_12a901fc",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false
+      }
+    ]
+  },
+  "rewardedNoGrants": {
+    "count": 25,
+    "items": [
+      {
+        "claimId": "claim_1781942182104_sjpxxa",
+        "inviteeUserId": "user_1781942181740_160adcf7",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1781944174760_a06ed8ef",
+        "inviteeUserId": "user_1781944174760_a06ed8ef",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1781945458030_f83faa42",
+        "inviteeUserId": "user_1781945458030_f83faa42",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782109072693_6e16da86",
+        "inviteeUserId": "user_1782109072693_6e16da86",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782109180208_ce6b11e0",
+        "inviteeUserId": "user_1782109180208_ce6b11e0",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782211490767_735d4f84",
+        "inviteeUserId": "user_1782211490767_735d4f84",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782214113000_7a51a24a",
+        "inviteeUserId": "user_1782214113000_7a51a24a",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782214754829_bb448c9c",
+        "inviteeUserId": "user_1782214754829_bb448c9c",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782215084166_5d2c67f4",
+        "inviteeUserId": "user_1782215084166_5d2c67f4",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782267851524_a1a60aa2",
+        "inviteeUserId": "user_1782267851524_a1a60aa2",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782267894841_a179ecfd",
+        "inviteeUserId": "user_1782267894841_a179ecfd",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782269004321_731303c8",
+        "inviteeUserId": "user_1782269004321_731303c8",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782270131505_846142de",
+        "inviteeUserId": "user_1782270131505_846142de",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782282849582_d4fbb666",
+        "inviteeUserId": "user_1782282849582_d4fbb666",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782283077151_42c9726b",
+        "inviteeUserId": "user_1782283077151_42c9726b",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782285527564_b71fc77f",
+        "inviteeUserId": "user_1782285527564_b71fc77f",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782288521485_1e5a5c08",
+        "inviteeUserId": "user_1782288521485_1e5a5c08",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782288928217_3e547f29",
+        "inviteeUserId": "user_1782288928217_3e547f29",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782295729636_ea6f0195",
+        "inviteeUserId": "user_1782295729636_ea6f0195",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782295853571_f4c8e871",
+        "inviteeUserId": "user_1782295853571_f4c8e871",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782296978231_5a1f7923",
+        "inviteeUserId": "user_1782296978231_5a1f7923",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782298071991_35488b19",
+        "inviteeUserId": "user_1782298071991_35488b19",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782457868847_582d447d",
+        "inviteeUserId": "user_1782457868847_582d447d",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782457870365_69fb0a3f",
+        "inviteeUserId": "user_1782457870365_69fb0a3f",
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782459576206_63ea092f",
+        "inviteeUserId": "user_1782459576206_63ea092f",
+        "status": "rewarded"
+      }
+    ]
+  },
+  "partialGrants": {
+    "count": 8,
+    "items": [
+      {
+        "claimId": "user_1782792348952_27af66ff",
+        "inviteeUserId": "user_1782792348952_27af66ff",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782793103552_2ed09e34",
+        "inviteeUserId": "user_1782793103552_2ed09e34",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782812913789_fb4af573",
+        "inviteeUserId": "user_1782812913789_fb4af573",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782813292425_caa4245d",
+        "inviteeUserId": "user_1782813292425_caa4245d",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782814104742_bb2e964e",
+        "inviteeUserId": "user_1782814104742_bb2e964e",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1782814121433_d362d304",
+        "inviteeUserId": "user_1782814121433_d362d304",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1786170422548_a0c501b6",
+        "inviteeUserId": "user_1786170422548_a0c501b6",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      },
+      {
+        "claimId": "user_1786171412414_12a901fc",
+        "inviteeUserId": "user_1786171412414_12a901fc",
+        "hasInviterGrant": true,
+        "hasInviteeGrant": false,
+        "status": "rewarded"
+      }
+    ]
+  },
+  "grantWithoutClaim": {
+    "count": 0,
+    "items": []
+  },
+  "invitedByConflicts": {
+    "count": 0,
+    "items": []
+  },
+  "referralCountDrift": {
+    "count": 2,
+    "items": [
+      {
+        "inviterUserId": "user_1781275271141_bb65a720",
+        "storedReferralCount": null,
+        "rewardedClaims": 38
+      },
+      {
+        "inviterUserId": "audit_inviter_20260620",
+        "storedReferralCount": 0,
+        "rewardedClaims": 1
+      }
+    ]
+  },
+  "applied": []
+}
