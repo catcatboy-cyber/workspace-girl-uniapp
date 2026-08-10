@@ -10,7 +10,7 @@
     <view class="cs-top-bar">
       <view class="cs-brand">
         <text class="cs-brand-label">TODAY SIGNAL</text>
-        <text class="cs-brand-name">Crush Master</text>
+        <text class="cs-brand-name">CrushRadar</text>
       </view>
       <view class="cs-status-chip">
         <view class="cs-status-dot" :class="statusDotClass"></view>
