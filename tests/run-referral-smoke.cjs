@@ -145,6 +145,42 @@ function listVueFiles(root) {
 }
 
 async function main() {
+  await runCase('transaction document object response is supported', async () => {
+    const fake = createFakeCloudbase()
+    fake.__setTransactionDocumentShape('object')
+    setCurrentFakeCloudbase(fake)
+    const db = fake.init().database()
+    seedUser(fake.__store, 'u_inviter_tx', { inviteCode: 'TX001', extraTokens: 0 })
+    seedUser(fake.__store, 'u_invitee_tx', { inviteCode: 'TX002', extraTokens: 0 })
+    seedClaim(fake.__store, 'claim-tx', {
+      inviteeUserId: 'u_invitee_tx',
+      inviterUserId: '',
+      inviteCode: 'TX001',
+      status: 'pending_relation',
+      nextRunAt: new Date(0)
+    })
+
+    const { bindReferralRelationInTransaction } = loadShared()
+    const result = await bindReferralRelationInTransaction(db, {
+      claimId: 'claim-tx',
+      inviteeUserId: 'u_invitee_tx',
+      inviterUserId: 'u_inviter_tx',
+      inviteCode: 'TX001',
+      intentVersion: 1,
+      configSnapshot: {
+        requireFirstEvent: false,
+        inviterRewardTokens: 50,
+        inviteeRewardTokens: 100,
+        inviterTrialExtendDays: 3,
+        weeklyInviteCap: 100
+      }
+    })
+
+    assert.equal(result.ok, true)
+    assert.equal(fake.__store.getCollection('referral_claims').get('claim-tx').inviterUserId, 'u_inviter_tx')
+    assert.equal(fake.__store.getCollection('users').get('u_invitee_tx').invitedBy, 'u_inviter_tx')
+  })
+
   console.log('=== 邀请奖励异步结算冒烟测试 ===\n')
 
   console.log('1. 主链路只写意图，不在线发奖')
@@ -608,6 +644,14 @@ async function main() {
         assert.match(source, /isReferralShareBlocked/)
       }
 
+      const referralTimelinePages = listVueFiles(pagesRoot)
+        .filter((file) => fs.readFileSync(path.join(pagesRoot, file), 'utf8').includes('onShareTimeline'))
+      for (const page of referralTimelinePages) {
+        const source = fs.readFileSync(path.join(pagesRoot, page), 'utf8')
+        assert.match(source, /appendReferralParams/)
+        assert.doesNotMatch(source, /buildSafeTimelineShare\(\)\s*\)/)
+      }
+
       const analysisSheet = fs.readFileSync(path.join(projectRoot, 'src', 'components', 'AnalysisSheet.vue'), 'utf8')
       const indexPage = fs.readFileSync(path.join(pagesRoot, 'index', 'index.vue'), 'utf8')
       assert.match(analysisSheet, /shareReady/)
@@ -615,6 +659,49 @@ async function main() {
     } finally {
       loaded.restore()
     }
+  })
+
+  await runCase('P2-2 匿名/静默登录中/邀请码未加载不生成无归因分享链接', async () => {
+    const fakeUniFor = (storage) => ({
+      getStorageSync(key) { return storage.get(key) || '' },
+      setStorageSync(key, value) { storage.set(key, value) },
+      removeStorageSync(key) { storage.delete(key) }
+    })
+    // 1) 匿名：无任何本地身份
+    let storage = new Map()
+    let loaded = loadShareModule(fakeUniFor(storage))
+    try {
+      const share = loaded.exports
+      assert.equal(share.isReferralShareBlocked(), true, '匿名状态视为 blocked')
+      assert.equal(share.appendReferralParams('/pages/index/index', 'invite', 'referral_page'), '', '匿名状态不生成分享 path')
+    } finally { loaded.restore() }
+
+    // 2) 静默登录中：userId 已写入但身份信息未落库
+    storage = new Map([['userId', 'u_silent']])
+    loaded = loadShareModule(fakeUniFor(storage))
+    try {
+      const share = loaded.exports
+      assert.equal(share.isReferralShareBlocked(), true, '静默登录中视为 blocked')
+      assert.equal(share.appendReferralParams('/pages/index/index', 'invite', 'referral_page'), '')
+    } finally { loaded.restore() }
+
+    // 3) 登录完成但邀请码未加载
+    storage = new Map([['userId', 'u_silent'], ['currentUser', { id: 'u_silent', inviteCode: '' }]])
+    loaded = loadShareModule(fakeUniFor(storage))
+    try {
+      const share = loaded.exports
+      assert.equal(share.isReferralShareBlocked(), true, '邀请码未就绪视为 blocked')
+      assert.equal(share.appendReferralParams('/pages/index/index', 'invite', 'referral_page'), '')
+    } finally { loaded.restore() }
+
+    // 4) 邀请码准备完成 → 生成带 inviteCode 的归因链接
+    storage = new Map([['userId', 'u_silent'], ['currentUser', { id: 'u_silent', inviteCode: 'CODE42' }]])
+    loaded = loadShareModule(fakeUniFor(storage))
+    try {
+      const share = loaded.exports
+      assert.equal(share.isReferralShareBlocked(), false, '邀请码就绪后可分享')
+      assert.match(share.appendReferralParams('/pages/index/index', 'invite', 'referral_page'), /inviteCode=CODE42/)
+    } finally { loaded.restore() }
   })
 
   await runCase('T11 连续失败进入 failed', async () => {

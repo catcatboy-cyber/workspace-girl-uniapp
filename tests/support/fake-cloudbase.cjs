@@ -189,6 +189,11 @@ class FakeDocument {
   }
 
   async set(value) {
+    if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, '_id')) {
+      const error = new Error('不能更新_id的值')
+      error.code = 'INVALID_PARAM'
+      throw error
+    }
     const map = this.store.getCollection(this.name)
     map.set(this.id, { _id: this.id, ...clone(value) })
     return { created: 1, updated: 1 }
@@ -288,6 +293,7 @@ function createFakeCloudbase() {
   let currentAuthUserId = null
   const failures = []
   let injectedNow = null
+  let transactionDocumentShape = 'array'
 
   function ensureUser(userId) {
     if (!userId) return
@@ -385,7 +391,11 @@ function createFakeCloudbase() {
               maybeFail(`tx.doc.get:${name}`)
               maybeFail(`tx.doc.get:${name}:${id}`)
             }
-            return originalGet()
+            const result = await originalGet()
+            if (isTransaction && transactionDocumentShape === 'object') {
+              return { data: result.data?.[0] || null }
+            }
+            return result
           }
 
           document.update = async (patch) => {
@@ -513,6 +523,9 @@ function createFakeCloudbase() {
     },
     __setNow(value) {
       injectedNow = value == null ? null : new Date(value)
+    },
+    __setTransactionDocumentShape(shape) {
+      transactionDocumentShape = shape === 'object' ? 'object' : 'array'
     },
     __now() {
       return injectedNow ? new Date(injectedNow) : new Date()

@@ -1172,6 +1172,13 @@ async function main() {
     assert.equal(grantRecords[0].amountTokens, created.order.grantTokens)
     assert.equal(grantRecords[0].remark, `recharge_${created.order._id}`)
     assert.equal(fake.__store.dumpCollection('token_ledger_records').length, 0)
+    const commissionJobs = fake.__store.dumpCollection('referral_commission_jobs')
+      .filter((item) => item._id === `job_recharge_order_${created.order._id}`)
+    assert.equal(commissionJobs.length, 1)
+    assert.equal(commissionJobs[0].paidAmountFen, created.order.amountFen)
+    const repeatedJobs = fake.__store.dumpCollection('referral_commission_jobs')
+      .filter((item) => item._id === `job_recharge_order_${created.order._id}`)
+    assert.equal(repeatedJobs.length, 1)
   })
 
   await runCase('repairOrder repairs paid recharge order missing token grant', async () => {
@@ -1341,6 +1348,10 @@ async function main() {
     assert.equal(repeated.success, true)
     const afterRepeat = fake.__store.getCollection('users').get('user_paid_subscription_owner')
     assert.equal(afterRepeat.planExpiresAt, firstExpiresAt)
+    const subscriptionJobs = fake.__store.dumpCollection('referral_commission_jobs')
+      .filter((item) => item._id === 'job_recharge_order_order_paid_subscription_missing_entitlement')
+    assert.equal(subscriptionJobs.length, 1)
+    assert.equal(subscriptionJobs[0].orderType, 'subscription')
   })
 
   await runCase('getTokenAccount returns subscription token fields from users collection', async () => {
@@ -1464,8 +1475,8 @@ async function main() {
       extraTokens: 200
     })
     const db = fake.init().database()
+    // CloudBase 不允许 doc(id).set 的 payload 中带 _id（会报"不能更新_id的值"），夹具必须移除
     await db.collection('system_settings').doc('settings_subscription').set({
-      _id: 'settings_subscription',
       plans: {
         free: { monthlyTokens: 60 },
         pro: { monthlyTokens: 0 },
@@ -1474,7 +1485,6 @@ async function main() {
       featureEstTokens: { attachmentAnalysis: 100 }
     })
     await db.collection('system_settings').doc('settings_billing').set({
-      _id: 'settings_billing',
       modelPricing: [
         { modelId: '*', costMultiplier: 1 },
         { modelId: 'deepseek-chat', costMultiplier: 0.1 }
