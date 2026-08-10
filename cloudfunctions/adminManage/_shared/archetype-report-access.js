@@ -118,7 +118,15 @@ async function fulfillReportOrder(db, { outTradeNo, source, paymentEvidence = {}
   if (!tradeNo) throw Object.assign(new Error('缺少 outTradeNo'), { code: 'INVALID_ARGUMENT' })
   if (typeof db.runTransaction !== 'function') throw Object.assign(new Error('数据库事务不可用'), { code: 'TRANSACTION_UNAVAILABLE' })
 
-  return db.runTransaction(async (transaction) => {
+  let commissionConfigSnapshot = null
+  try {
+    const { getCommissionConfig } = require('./referral-commission')
+    commissionConfigSnapshot = await getCommissionConfig(db)
+  } catch (error) {
+    console.error('[referral-commission] report config snapshot failed', error)
+  }
+
+  const fulfillResult = await db.runTransaction(async (transaction) => {
     const order = await getOrderByTradeNo(transaction, tradeNo)
     if (!order) throw Object.assign(new Error('订单不存在'), { code: 'ORDER_NOT_FOUND' })
     if (order.status === 'fulfilled') return { fulfilled: true, alreadyFulfilled: true, duplicatePaid: order.duplicatePaid === true, order }
@@ -158,22 +166,41 @@ async function fulfillReportOrder(db, { outTradeNo, source, paymentEvidence = {}
     }
 
     const evidence = paymentEvidence && typeof paymentEvidence === 'object' ? paymentEvidence : {}
+    const actualPriceFen = Number.isInteger(Number(evidence.actualPriceFen)) ? Number(evidence.actualPriceFen) : Number(order.actualPriceFen || 0)
+    const paidAt = evidence.paidAt || order.paidAt || now
+    const transactionId = String(evidence.transactionId || order.transactionId || '')
     await transaction.collection('archetype_report_orders').doc(order._id).update({
       status: 'fulfilled',
       fulfillmentSource: String(source || ''),
       duplicatePaid,
-      actualPriceFen: Number.isInteger(Number(evidence.actualPriceFen)) ? Number(evidence.actualPriceFen) : order.actualPriceFen,
+      actualPriceFen,
       mchOrderNo: String(evidence.mchOrderNo || order.mchOrderNo || ''),
-      transactionId: String(evidence.transactionId || order.transactionId || ''),
+      transactionId,
       wxOrderIdVerified: String(evidence.wxOrderIdVerified || order.wxOrderIdVerified || ''),
-      paidAt: evidence.paidAt || order.paidAt || now,
+      paidAt,
       fulfilledAt: now,
       lastErrorCode: '',
       lastErrorMessage: '',
       updatedAt: now
     })
+    if (!duplicatePaid && actualPriceFen > 0) {
+      const { buildJob, omitDocumentId } = require('./referral-commission')
+      const job = buildJob({
+        source: 'archetype_report_order',
+        orderId: order._id,
+        orderType: 'prop',
+        userId: order.userId,
+        paidAmountFen: actualPriceFen,
+        paidAt,
+        transactionId,
+        commissionConfigSnapshot
+      })
+      const existingJob = firstDoc(await transaction.collection('referral_commission_jobs').doc(job._id).get())
+      if (!existingJob) await transaction.collection('referral_commission_jobs').doc(job._id).set(omitDocumentId(job))
+    }
     return { fulfilled: true, alreadyFulfilled: false, duplicatePaid, orderId: order._id, resultId: order.resultId }
   })
+  return fulfillResult
 }
 
 async function applyRefundNotification(db, payload, options = {}) {
@@ -190,6 +217,10 @@ async function applyRefundNotification(db, payload, options = {}) {
   if (String(payload?.OpenId || payload?.openid || '') !== String(order.openidSnapshot || '')) {
     throw Object.assign(new Error('退款 OpenId 不一致'), { code: 'REFUND_VALIDATION_FAILED' })
   }
+  const mchRefundId = String(payload?.MchRefundId || payload?.mchRefundId || '').trim()
+  if (order.refundOrderId && mchRefundId && String(order.refundOrderId) !== mchRefundId) {
+    throw Object.assign(new Error('退款单号不一致'), { code: 'REFUND_VALIDATION_FAILED' })
+  }
   if (order.wxOrderIdVerified && (!wxOrderId || String(order.wxOrderIdVerified) !== wxOrderId)) {
     throw Object.assign(new Error('退款微信订单号不一致'), { code: 'REFUND_VALIDATION_FAILED' })
   }
@@ -197,7 +228,7 @@ async function applyRefundNotification(db, payload, options = {}) {
   const notification = {
     wxRefundId,
     wxOrderId,
-    mchRefundId: String(payload?.MchRefundId || payload?.mchRefundId || ''),
+    mchRefundId,
     refundFeeFen,
     retCode,
     retMsg: String(payload?.RetMsg || payload?.retMsg || ''),
@@ -212,25 +243,92 @@ async function applyRefundNotification(db, payload, options = {}) {
   }
   if (retCode !== 0) {
     await db.collection('archetype_report_orders').doc(order._id).update({
+      refundRequestStatus: 'failed',
       refundFeeFen,
       refundStartAt: notification.refundStartAt,
       refundRetCode: retCode,
       refundRetMessage: notification.retMsg,
       refundRetryTimes: notification.retryTimes,
-      lastRefundNotification: notification,
+      // 订单创建时 lastRefundNotification 初始为 null，事务/普通 update 对 null 字段做对象合并会
+      // PathNotViable（Cannot create field ... in element {lastRefundNotification: null}），必须整体 set
+      lastRefundNotification: db.command.set(notification),
       updatedAt: new Date()
     })
     return { refunded: false, retCode }
   }
 
-  return db.runTransaction(async (transaction) => {
+  // 微信通知确认退款成功：统一走 finalizeOrderRefund 落库（回调与后台主动查单共用同一套事务逻辑）
+  return finalizeOrderRefund(db, {
+    outTradeNo,
+    wxRefundId,
+    mchRefundId: notification.mchRefundId,
+    wxOrderId,
+    refundFeeFen,
+    retCode,
+    retMsg: notification.retMsg,
+    refundStartAt: notification.refundStartAt,
+    refundSucceededAt: notification.refundSucceededAt,
+    wxpayRefundTransactionId: notification.wxpayRefundTransactionId,
+    retryTimes: notification.retryTimes,
+    revokePurchase: options.refundRevokesPurchase !== false,
+    source: 'wechat_notify'
+  })
+}
+
+/**
+ * 退款成功统一落库（幂等）：
+ * - 事务内：报告权益撤销（可选）、订单 status/refundRequestStatus -> refunded、退款任务 -> refunded
+ * - 事务外：佣金反转
+ * 供微信退款回调（applyRefundNotification）与后台主动查单（adminQueryArchetypeReportRefund）共用。
+ * 注意：lastRefundNotification 创建时初始为 null，必须 db.command.set 整体替换，否则事务内
+ * 对 null 字段做对象合并会 PathNotViable（Cannot create field ... in element {lastRefundNotification: null}）。
+ */
+async function finalizeOrderRefund(db, {
+  outTradeNo,
+  wxRefundId,
+  mchRefundId = '',
+  wxOrderId = '',
+  refundFeeFen,
+  retCode = 0,
+  retMsg = '',
+  refundStartAt = null,
+  refundSucceededAt = null,
+  wxpayRefundTransactionId = '',
+  retryTimes = 0,
+  revokePurchase = true,
+  source = 'wechat_notify'
+}) {
+  const refundResult = await db.runTransaction(async (transaction) => {
     const current = await getOrderByTradeNo(transaction, outTradeNo)
     if (!current) throw Object.assign(new Error('退款订单不存在'), { code: 'ORDER_NOT_FOUND' })
-    if (current.status === 'refunded' && current.wxRefundId === wxRefundId) return { refunded: true, duplicate: true }
+    if (current.status === 'refunded' && current.wxRefundId === wxRefundId) {
+      // 重复通知：补写冲正补偿 job（幂等，存在不覆盖），确保首次冲正失败时由 worker 兜底重试
+      try {
+        const { writeReversalJob } = require('./referral-commission')
+        await writeReversalJob(transaction, { source: 'archetype_report_order', orderId: current._id, refundAmountFen: refundFeeFen, reason: 'wechat_refund' })
+      } catch (error) {
+        console.error('[archetype-report-access] duplicate refund writeReversalJob failed', error)
+      }
+      return { refunded: true, duplicate: true }
+    }
     const now = new Date()
+    const notification = {
+      wxRefundId,
+      wxOrderId,
+      mchRefundId,
+      refundFeeFen,
+      retCode,
+      retMsg,
+      refundStartAt,
+      refundSucceededAt,
+      wxpayRefundTransactionId,
+      retryTimes,
+      receivedAt: now,
+      source
+    }
     const resultResponse = await transaction.collection('archetype_results').doc(current.resultId).get()
     const result = firstDoc(resultResponse)
-    if (options.refundRevokesPurchase !== false && String(result?.reportAccess?.purchaseOrderId || '') === String(current._id)) {
+    if (revokePurchase !== false && String(result?.reportAccess?.purchaseOrderId || '') === String(current._id)) {
       await transaction.collection('archetype_results').doc(current.resultId).update({
         reportAccess: {
           purchaseState: 'revoked',
@@ -244,26 +342,49 @@ async function applyRefundNotification(db, payload, options = {}) {
     }
     await transaction.collection('archetype_report_orders').doc(current._id).update({
       status: 'refunded',
+      refundRequestStatus: 'refunded',
       refundedAt: now,
       wxRefundId,
       ...(wxOrderId && !current.wxOrderIdVerified ? { wxOrderIdVerified: wxOrderId } : {}),
-      mchRefundId: notification.mchRefundId,
+      mchRefundId,
       refundFeeFen,
       refundRetCode: retCode,
-      refundRetMessage: notification.retMsg,
-      refundStartAt: notification.refundStartAt,
-      refundSucceededAt: notification.refundSucceededAt || now,
-      wxpayRefundTransactionId: notification.wxpayRefundTransactionId,
-      refundRetryTimes: notification.retryTimes,
-      lastRefundNotification: { ...notification, refundSucceededAt: notification.refundSucceededAt || now },
+      refundRetMessage: retMsg,
+      refundStartAt,
+      refundSucceededAt: refundSucceededAt || now,
+      wxpayRefundTransactionId,
+      refundRetryTimes: retryTimes,
+      lastRefundNotification: db.command.set({ ...notification, refundSucceededAt: refundSucceededAt || now }),
       updatedAt: now
     })
     const tasks = await transaction.collection('archetype_report_refund_tasks').where({ orderId: current._id }).get()
     for (const task of (tasks?.data || [])) {
       await transaction.collection('archetype_report_refund_tasks').doc(task._id).update({ status: 'refunded', updatedAt: now, handledAt: now })
     }
+    // 事务内写冲正补偿 job（幂等）：即使事务外立即冲正失败，worker 也能按固定 ID 兜底重试，避免永久漏冲
+    try {
+      const { writeReversalJob } = require('./referral-commission')
+      await writeReversalJob(transaction, { source: 'archetype_report_order', orderId: current._id, refundAmountFen: refundFeeFen, reason: 'wechat_refund' })
+    } catch (error) {
+      console.error('[archetype-report-access] finalize refund writeReversalJob failed', error)
+    }
     return { refunded: true, duplicate: false, orderId: current._id, resultId: current.resultId }
   })
+  if (refundResult.refunded && !refundResult.duplicate) {
+    try {
+      const { reverseCommissionForRefund } = require('./referral-commission')
+      refundResult.commissionReversal = await reverseCommissionForRefund(db, {
+        source: 'archetype_report_order',
+        orderId: refundResult.orderId,
+        refundAmountFen: refundFeeFen,
+        reason: 'wechat_refund'
+      })
+    } catch (error) {
+      console.error('[referral-commission] report refund reversal failed', error)
+      refundResult.commissionReversal = { success: false, reason: 'REVERSAL_FAILED' }
+    }
+  }
+  return refundResult
 }
 
 module.exports = {
@@ -275,5 +396,6 @@ module.exports = {
   resolveReportAccess,
   getOrderByTradeNo,
   fulfillReportOrder,
-  applyRefundNotification
+  applyRefundNotification,
+  finalizeOrderRefund
 }

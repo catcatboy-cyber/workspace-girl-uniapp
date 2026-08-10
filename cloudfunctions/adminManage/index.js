@@ -24,8 +24,8 @@ const {
   runCelebrityCalibrationDraft,
   publishArchetypeQuestionBank
 } = require('./_shared/archetype-bank')
-const { getOrderByTradeNo, fulfillReportOrder } = require('./_shared/archetype-report-access')
-const { queryOrder, notifyProvideGoods, validateQueriedOrder } = require('./_shared/heart-persona-virtual-pay')
+const { getOrderByTradeNo, fulfillReportOrder, finalizeOrderRefund } = require('./_shared/archetype-report-access')
+const { queryOrder, notifyProvideGoods, validateQueriedOrder, generateRefundOrderId, refundVirtualOrder } = require('./_shared/heart-persona-virtual-pay')
 const PROMPT_MODULE_KEYS = ['eventAssessment', 'weeklyReview', 'sideRead', 'attachmentAnalysis']
 const BUSINESS_PROMPT_LIMITS = {
   legacyGoal: 1600,
@@ -2127,7 +2127,22 @@ async function refundOrder(event = {}) {
     })
   }
 
-  return { success: true, orderId }
+  let commissionReversal = null
+  try {
+    // 登记冲正补偿 job 并立即尝试一次；失败后由 worker 按固定 ID 幂等重试，避免退款完成但佣金永久未冲正
+    const { enqueueCommissionReversal } = require('./_shared/referral-commission')
+    commissionReversal = await enqueueCommissionReversal(db, {
+      source: 'recharge_order',
+      orderId,
+      refundAmountFen: Number(order.amountFen || 0),
+      reason: String(event.reason || 'admin_refund')
+    })
+  } catch (error) {
+    console.error('[referral-commission] recharge refund reversal failed', error)
+    commissionReversal = { success: false, reason: 'REVERSAL_FAILED' }
+  }
+
+  return { success: true, orderId, commissionReversal }
 }
 
 async function listArchetypeReportOrders(event = {}) {
@@ -2173,11 +2188,108 @@ async function listArchetypeReportOrders(event = {}) {
       paidAt: order.paidAt,
       fulfilledAt: order.fulfilledAt,
       refundedAt: order.refundedAt,
+      refundRequestStatus: order.refundRequestStatus || '',
+      refundOrderId: order.refundOrderId || '',
+      requestedRefundFen: order.requestedRefundFen ?? null,
+      refundRequestedAt: order.refundRequestedAt || null,
+      refundRequestError: order.refundRequestError || '',
       auditTrail: Array.isArray(order.auditTrail) ? order.auditTrail : []
     })),
     total: Number(count?.total || 0),
     page,
     pageSize
+  }
+}
+
+async function requestArchetypeReportRefund(event = {}, adminUserId) {
+  const orderId = String(event.orderId || '').trim()
+  const outTradeNo = String(event.outTradeNo || '').trim()
+  const reason = String(event.reason || '').trim()
+  const confirmText = String(event.confirmText || '').trim()
+  if (!orderId && !outTradeNo) return { success: false, code: 'INVALID_ARGUMENT', message: '缺少报告订单 ID' }
+  if (!reason) return { success: false, code: 'INVALID_ARGUMENT', message: '退款原因必填' }
+  if (confirmText !== `确认退款 ${orderId || outTradeNo}`) return { success: false, code: 'CONFIRMATION_REQUIRED', message: '退款确认文本不匹配' }
+
+  let response = orderId ? await db.collection('archetype_report_orders').doc(orderId).get().catch(() => null) : null
+  let order = Array.isArray(response?.data) ? response.data[0] || null : response?.data || null
+  if (!order && outTradeNo) order = await getOrderByTradeNo(db, outTradeNo)
+  if (!order) return { success: false, code: 'ORDER_NOT_FOUND', message: '报告订单不存在' }
+  if (order.status === 'refunded' || order.refundRequestStatus === 'refunded') return { success: false, code: 'ALREADY_REFUNDED', message: '订单已退款' }
+  if (order.refundRequestStatus === 'processing' || order.refundRequestStatus === 'requesting') {
+    return { success: true, alreadyProcessing: true, refundOrderId: order.refundOrderId || generateRefundOrderId(order.outTradeNo) }
+  }
+  if (order.status !== 'fulfilled') return { success: false, code: 'ORDER_STATE_INVALID', message: '仅已发货订单可发起全额退款' }
+
+  const refundOrderId = order.refundOrderId || generateRefundOrderId(order.outTradeNo)
+  const now = new Date()
+  const auditTrail = [...(Array.isArray(order.auditTrail) ? order.auditTrail : []), {
+    action: 'request_wechat_refund',
+    adminUserId,
+    reason,
+    refundOrderId,
+    at: now
+  }].slice(-50)
+  try {
+    const orderDocId = String(order._id || orderId || outTradeNo || '').trim()
+    if (!orderDocId) throw Object.assign(new Error('退款订单缺少主键'), { code: 'ORDER_NOT_FOUND' })
+    await db.collection('archetype_report_orders').doc(orderDocId).update({
+      refundRequestStatus: 'requesting',
+      refundOrderId,
+      refundRequestReason: reason,
+      refundRequestedBy: adminUserId,
+      refundRequestError: '',
+      auditTrail,
+      updatedAt: now
+    })
+    const queried = await queryOrder({ outTradeNo: order.outTradeNo, openid: order.openidSnapshot, env: order.env })
+    const validation = validateQueriedOrder(queried, order)
+    if (!validation.valid || ![2, 3, 4].includes(validation.status)) {
+      throw Object.assign(new Error('微信订单当前不可退款'), { code: validation.code || 'ORDER_NOT_REFUNDABLE' })
+    }
+    const leftFee = Number(validation.order?.left_fee)
+    const paidFee = Number(validation.order?.paid_fee)
+    const expectedFee = Number(order.actualPriceFen || paidFee || order.origPriceFen)
+    if (!Number.isInteger(leftFee) || leftFee <= 0 || leftFee !== expectedFee) {
+      throw Object.assign(new Error('仅支持尚未部分退款的全额退款订单'), { code: 'PARTIAL_REFUND_UNSUPPORTED' })
+    }
+    const refundResponse = await refundVirtualOrder({
+      outTradeNo: order.outTradeNo,
+      openid: order.openidSnapshot,
+      env: order.env,
+      refundOrderId,
+      leftFee,
+      refundFee: leftFee,
+      bizMeta: JSON.stringify({ source: 'admin', orderId: order._id, adminUserId, reason }).slice(0, 1024),
+      refundReason: String(event.refundReason || '5'),
+      requestFrom: '1'
+    })
+    const acceptedAt = new Date()
+    await db.collection('archetype_report_orders').doc(order._id).update({
+      refundRequestStatus: 'processing',
+      requestedRefundFen: leftFee,
+      refundRequestedAt: acceptedAt,
+      refundAcceptedAt: acceptedAt,
+      refundRequestError: '',
+      refundApiResponse: {
+        errcode: Number(refundResponse.errcode || 0),
+        errmsg: String(refundResponse.errmsg || ''),
+        refundOrderId: refundResponse.refund_order_id || refundOrderId,
+        refundWxOrderId: refundResponse.refund_wx_order_id || '',
+        payOrderId: refundResponse.pay_order_id || order.outTradeNo,
+        payWxOrderId: refundResponse.pay_wx_order_id || ''
+      },
+      updatedAt: acceptedAt
+    })
+    const tasks = await db.collection('archetype_report_refund_tasks').where({ orderId: order._id }).get().catch(() => null)
+    for (const task of (tasks?.data || [])) {
+      if (task.status !== 'refunded') await db.collection('archetype_report_refund_tasks').doc(task._id).update({ status: 'processing', handledBy: adminUserId, handledAt: acceptedAt, handleNote: reason, updatedAt: acceptedAt })
+    }
+    return { success: true, status: 'processing', refundOrderId, requestedRefundFen: leftFee, message: '退款任务已提交，等待微信退款完成通知' }
+  } catch (error) {
+    const failedAt = new Date()
+    const failureMessage = String(error?.message || error?.errMsg || error?.code || '微信退款请求失败').slice(0, 300)
+    await db.collection('archetype_report_orders').doc(order._id).update({ refundRequestStatus: 'failed', refundRequestError: failureMessage, updatedAt: failedAt }).catch(() => {})
+    return { success: false, code: error?.code || 'WECHAT_REFUND_FAILED', message: failureMessage, retryable: true }
   }
 }
 
@@ -2247,6 +2359,96 @@ async function adminReconcileArchetypeReportOrder(event, adminUserId) {
     updatedAt: new Date()
   })
   return { success: true, fulfillment, warning: notifyWarning || undefined, querySummary: { errcode: response?.errcode, status: validation.status } }
+}
+
+/**
+ * 后台主动查询微信侧退款状态并同步本地。
+ * 微信虚拟支付退款是异步任务，且退款完成通知（xpay_refund_notify）可能丢失或已停止重试，
+ * 此接口用 query_order 主动确认：status 5（已退款）/ 8（用户退款完成）-> 按 finalizeOrderRefund
+ * 统一落库；7（退款失败）-> 标记异常；其他状态只记录查单结果，不改变本地退款状态。
+ */
+async function adminQueryArchetypeReportRefund(event, adminUserId) {
+  const outTradeNo = String(event.outTradeNo || '').trim()
+  const reason = String(event.reason || '').trim()
+  if (!outTradeNo) return { success: false, code: 'INVALID_ARGUMENT', message: '缺少 outTradeNo' }
+  if (!reason) return { success: false, code: 'INVALID_ARGUMENT', message: '人工查微信退款状态必须填写原因' }
+  const order = await getOrderByTradeNo(db, outTradeNo)
+  if (!order) return { success: false, code: 'ORDER_NOT_FOUND', message: '订单不存在' }
+  if (order.status === 'refunded' || order.refundRequestStatus === 'refunded') {
+    return { success: true, alreadyRefunded: true, message: '订单已是已退款状态' }
+  }
+  let response
+  try {
+    response = await queryOrder({ outTradeNo, openid: order.openidSnapshot, env: order.env })
+  } catch (error) {
+    return { success: false, code: 'WECHAT_QUERY_FAILED', message: error?.message || '微信查单失败' }
+  }
+  const status = Number(response?.order?.status)
+  const now = new Date()
+  const auditEntry = {
+    adminUserId,
+    action: 'wechat_query_refund',
+    reason,
+    beforeStatus: order.refundRequestStatus || order.status,
+    queriedStatus: status,
+    at: now
+  }
+  const auditTrail = [...(Array.isArray(order.auditTrail) ? order.auditTrail : []), auditEntry].slice(-50)
+
+  if (status === 5 || status === 8) {
+    const finalized = await finalizeOrderRefund(db, {
+      outTradeNo,
+      // query_order 不返回退款单号，用 query: 前缀占位（与真实 WxRefundId 区分，幂等判断不冲突）
+      wxRefundId: `query:${outTradeNo}:${now.getTime().toString(36)}`,
+      mchRefundId: order.refundOrderId || '',
+      refundFeeFen: Number(order.requestedRefundFen ?? order.actualPriceFen ?? response?.order?.paid_fee ?? order.origPriceFen) || 0,
+      retCode: 0,
+      retMsg: `admin query refund status=${status}`,
+      refundStartAt: order.refundStartAt || order.refundRequestedAt || null,
+      refundSucceededAt: now,
+      retryTimes: 0,
+      revokePurchase: true,
+      source: `admin_query:${adminUserId}`
+    })
+    if (finalized.refunded) {
+      const current = await getOrderByTradeNo(db, outTradeNo)
+      await db.collection('archetype_report_orders').doc(current._id).update({
+        auditTrail: [...(Array.isArray(current.auditTrail) ? current.auditTrail : []), { ...auditEntry, afterStatus: 'refunded' }].slice(-50),
+        updatedAt: now
+      })
+    }
+    return {
+      success: true,
+      refunded: finalized.refunded,
+      message: finalized.refunded ? '微信侧已退款，本地状态已同步为已退款' : '退款同步未完成',
+      querySummary: { errcode: response?.errcode, status }
+    }
+  }
+
+  if (status === 7) {
+    await db.collection('archetype_report_orders').doc(order._id).update({
+      refundRequestStatus: 'failed',
+      lastErrorCode: 'WECHAT_REFUND_FAILED',
+      lastErrorMessage: '微信退款失败（status=7）',
+      refundRetCode: 7,
+      auditTrail,
+      updatedAt: now
+    })
+    return { success: true, refundFailed: true, message: '微信侧退款失败（status=7），已标记异常' }
+  }
+
+  await db.collection('archetype_report_orders').doc(order._id).update({
+    lastQueryStatus: status,
+    lastQueryAt: now,
+    auditTrail,
+    updatedAt: now
+  })
+  return {
+    success: true,
+    pending: true,
+    message: `微信侧当前状态 ${status}，退款尚未完成`,
+    querySummary: { errcode: response?.errcode, status }
+  }
 }
 
 async function listArchetypeReportRefundTasks(event = {}) {
@@ -2529,6 +2731,177 @@ async function grantReferralCompensation(event = {}, adminUserId) {
   })
 }
 
+async function getReferralCommissionConfig() {
+  const { getCommissionConfig } = require('./_shared/referral-commission')
+  return { success: true, config: await getCommissionConfig(db) }
+}
+
+async function updateReferralCommissionConfig(event, adminUserId) {
+  const { ensureSubscriptionConfig } = require('./_shared/subscription')
+  const { normalizeCommissionConfig } = require('./_shared/referral-commission')
+  const existing = await ensureSubscriptionConfig(db)
+  const current = normalizeCommissionConfig(existing?.referral?.commission || {})
+  const incoming = event.config && typeof event.config === 'object' ? event.config : event
+  const requested = {
+    ...current,
+    enabled: incoming.enabled === undefined ? current.enabled : incoming.enabled === true,
+    payoutPaused: incoming.payoutPaused === undefined ? current.payoutPaused : incoming.payoutPaused === true,
+    mode: incoming.mode === undefined ? current.mode : incoming.mode,
+    rateBps: incoming.rateBps === undefined ? current.rateBps : Number(incoming.rateBps),
+    settlementDays: incoming.settlementDays === undefined ? current.settlementDays : Number(incoming.settlementDays),
+    includeSubscription: incoming.includeSubscription === undefined ? current.includeSubscription : incoming.includeSubscription !== false,
+    includeRecharge: incoming.includeRecharge === undefined ? current.includeRecharge : incoming.includeRecharge !== false,
+    includeProp: incoming.includeProp === undefined ? current.includeProp : incoming.includeProp !== false,
+    maxCommissionFenPerOrder: incoming.maxCommissionFenPerOrder === undefined ? current.maxCommissionFenPerOrder : Number(incoming.maxCommissionFenPerOrder),
+    maxCommissionFenPerInviterMonth: incoming.maxCommissionFenPerInviterMonth === undefined ? current.maxCommissionFenPerInviterMonth : Number(incoming.maxCommissionFenPerInviterMonth),
+    effectiveFrom: incoming.effectiveFrom === undefined ? current.effectiveFrom : incoming.effectiveFrom,
+    ruleVersion: current.ruleVersion + 1
+  }
+  if (requested.enabled && !current.enabled && !requested.effectiveFrom) requested.effectiveFrom = new Date()
+  if (!Number.isInteger(requested.rateBps) || requested.rateBps < 0 || requested.rateBps > 5000) return { success: false, message: 'rateBps 必须在 0..5000' }
+  if (!Number.isInteger(requested.settlementDays) || requested.settlementDays < 0 || requested.settlementDays > 30) return { success: false, message: 'settlementDays 必须在 0..30' }
+  if (!Number.isInteger(requested.maxCommissionFenPerOrder) || requested.maxCommissionFenPerOrder < 0) return { success: false, message: '单笔上限必须为非负整数' }
+  if (!Number.isInteger(requested.maxCommissionFenPerInviterMonth) || requested.maxCommissionFenPerInviterMonth < 0) return { success: false, message: '月度上限必须为非负整数' }
+  const commission = normalizeCommissionConfig(requested)
+  const referral = { ...(existing.referral || {}), commission }
+  await db.collection('system_settings').doc(existing._id).update({ referral, updatedAt: new Date(), updatedBy: adminUserId })
+  return { success: true, config: commission }
+}
+
+async function listReferralCommissions(event = {}) {
+  const page = Math.max(1, Number(event.page) || 1)
+  const pageSize = Math.max(1, Math.min(100, Number(event.pageSize) || 20))
+  const where = {}
+  if (event.status && event.status !== 'all') where.status = String(event.status)
+  if (event.productType && event.productType !== 'all') where.productType = String(event.productType)
+  if (event.inviterUserId) where.inviterUserId = String(event.inviterUserId)
+  if (event.inviteeUserId) where.inviteeUserId = String(event.inviteeUserId)
+  let query = db.collection('referral_commissions')
+  if (Object.keys(where).length) query = query.where(where)
+  const count = await query.count()
+  const { data = [] } = await query.orderBy('createdAt', 'desc').skip((page - 1) * pageSize).limit(pageSize).get()
+  const items = await Promise.all(data.map(async (item) => {
+    const jobKey = `job_${String(item.source || '')}_${String(item.orderId || '')}`
+    const jobResponse = jobKey.endsWith('_') ? null : await db.collection('referral_commission_jobs').doc(jobKey).get().catch(() => null)
+    const job = Array.isArray(jobResponse?.data) ? jobResponse.data[0] : jobResponse?.data
+    let order = null
+    if (String(item.productType || '') === 'prop' && item.orderId) {
+      const orderResponse = await db.collection('archetype_report_orders').doc(String(item.orderId)).get().catch(() => null)
+      order = Array.isArray(orderResponse?.data) ? orderResponse.data[0] || null : orderResponse?.data || null
+    }
+    return {
+      ...item,
+      jobId: job?._id || jobKey,
+      jobStatus: job?.status || '',
+      jobStatusReason: job?.statusReason || job?.lastErrorCode || '',
+      refundRequestStatus: order?.refundRequestStatus || '',
+      refundOrderId: order?.refundOrderId || '',
+      orderStatus: order?.status || '',
+      orderOutTradeNo: order?.outTradeNo || ''
+    }
+  }))
+  return { success: true, items, total: Number(count?.total || 0), page, pageSize }
+}
+
+async function listReferralCommissionReversals(event = {}) {
+  const page = Math.max(1, Number(event.page) || 1)
+  const pageSize = Math.max(1, Math.min(100, Number(event.pageSize) || 50))
+  const query = db.collection('commission_ledger').where({ type: 'commission_reversal' })
+  const count = await query.count()
+  const { data = [] } = await query.orderBy('createdAt', 'desc').skip((page - 1) * pageSize).limit(pageSize).get()
+  return { success: true, items: data, total: Number(count?.total || 0), page, pageSize }
+}
+
+async function getReferralCommissionOverview() {
+  // P2-1：财务统计不再用固定 1000 条上限，分页遍历全部数据避免统计失真
+  const { scanAll } = require('./_shared/referral-commission')
+  const [accountCount, claimCount, commissionCount] = await Promise.all([
+    db.collection('commission_accounts').count(),
+    db.collection('referral_claims').count(),
+    db.collection('referral_commissions').count()
+  ])
+  const [data, commissionRows] = await Promise.all([
+    scanAll(db, 'commission_accounts'),
+    scanAll(db, 'referral_commissions')
+  ])
+  const totals = data.reduce((result, item) => {
+    result.inviterCount++
+    result.pendingFen += Number(item.pendingFen || 0)
+    result.availableFen += Number(item.availableFen || 0)
+    result.withdrawnFen += Number(item.withdrawnFen || 0)
+    result.totalEarnedFen += Number(item.totalEarnedFen || 0)
+    return result
+  }, { inviterCount: 0, pendingFen: 0, availableFen: 0, withdrawnFen: 0, totalEarnedFen: 0 })
+  totals.inviterCount = Number(accountCount?.total || totals.inviterCount)
+  totals.inviteCount = Number(claimCount?.total || 0)
+  totals.commissionCount = Number(commissionCount?.total || 0)
+  totals.paidAmountFen = commissionRows.reduce((sum, item) => sum + Number(item.paidAmountFen || 0), 0)
+  totals.paidInviteCount = new Set(commissionRows.filter((item) => ['pending', 'available'].includes(item.status)).map((item) => String(item.inviteeUserId || '')).filter(Boolean)).size
+  return { success: true, overview: totals }
+}
+
+async function retryReferralCommissionJob(event = {}) {
+  const jobId = String(event.jobId || '').trim()
+  if (!jobId) return { success: false, message: '缺少 jobId' }
+  const response = await db.collection('referral_commission_jobs').doc(jobId).get()
+  const job = Array.isArray(response?.data) ? response.data[0] : response?.data
+  if (!job) return { success: false, message: '任务不存在' }
+  if (!['retry', 'needs_review'].includes(job.status)) return { success: false, message: '仅 retry/needs_review 可重试' }
+  const patch = { status: 'retry', attempts: 0, nextRunAt: new Date(), leaseOwner: '', leaseUntil: null, lastErrorCode: '', lastErrorMessage: '', updatedAt: new Date() }
+  if (!job.commissionConfigSnapshot) {
+    // 快照缺失（如 CONFIG_SNAPSHOT_UNAVAILABLE）：由管理员显式选择当前配置补结，worker 不会自行猜测
+    const { getCommissionConfig } = require('./_shared/referral-commission')
+    try {
+      patch.commissionConfigSnapshot = await getCommissionConfig(db)
+      patch.statusReason = 'MANUAL_RETRY_CURRENT_CONFIG'
+    } catch (error) {
+      return { success: false, message: '无法读取佣金配置，暂不能重试' }
+    }
+  }
+  await db.collection('referral_commission_jobs').doc(jobId).update(patch)
+  return { success: true }
+}
+
+async function reverseReferralCommission(event = {}) {
+  if (!String(event.confirmText || '').trim() || !String(event.reason || '').trim()) return { success: false, message: '必须提供 confirmText 和 reason' }
+  const { reverseCommissionForRefund } = require('./_shared/referral-commission')
+  return reverseCommissionForRefund(db, { commissionId: String(event.commissionId || '').trim(), refundAmountFen: Number(event.refundAmountFen), reason: String(event.reason) }, { manual: true })
+}
+
+async function markReferralCommissionWithdrawn(event = {}, adminUserId) {
+  const { getCommissionConfig } = require('./_shared/referral-commission')
+  const commissionConfig = await getCommissionConfig(db)
+  if (commissionConfig.payoutPaused) return { success: false, message: '分佣提现当前已暂停' }
+  const userId = String(event.userId || '').trim()
+  const amountFen = Number(event.amountFen)
+  const proof = String(event.proof || '').trim()
+  if (!userId || !Number.isInteger(amountFen) || amountFen <= 0 || !proof) return { success: false, message: 'userId、正整数金额和打款凭证必填' }
+  const businessId = `withdraw_${String(event.businessId || '').trim()}`
+  if (businessId === 'withdraw_') return { success: false, message: 'businessId 必填，用于防止重复扣款' }
+  const transaction = await db.startTransaction()
+  try {
+    const ledgerResponse = await transaction.collection('commission_ledger').doc(`ledger_${businessId}`).get()
+    const existingLedger = Array.isArray(ledgerResponse?.data) ? ledgerResponse.data[0] : ledgerResponse?.data
+    if (existingLedger) {
+      await transaction.rollback()
+      return { success: true, duplicate: true, businessId }
+    }
+    const response = await transaction.collection('commission_accounts').doc(userId).get()
+    const account = Array.isArray(response?.data) ? response.data[0] : response?.data
+    if (account?.payoutBlocked === true) { await transaction.rollback(); return { success: false, message: '账户处于风控冻结状态' } }
+    if (!account || Number(account.availableFen || 0) < amountFen) { await transaction.rollback(); return { success: false, message: '可用余额不足' } }
+    const ts = new Date()
+    await transaction.collection('commission_accounts').doc(userId).update({ availableFen: Number(account.availableFen || 0) - amountFen, withdrawnFen: Number(account.withdrawnFen || 0) + amountFen, updatedAt: ts })
+    // CloudBase 不允许 doc(id).set 的 payload 中带 _id（会报"不能更新_id的值"导致事务回滚），_id 由 doc 路径决定
+    await transaction.collection('commission_ledger').doc(`ledger_${businessId}`).set({ businessId, type: 'withdrawal', userId, amountFen: -amountFen, status: 'withdrawn', proof, adminUserId, createdAt: ts })
+    await transaction.commit()
+    return { success: true, businessId }
+  } catch (error) {
+    try { await transaction.rollback() } catch (_) {}
+    return { success: false, message: error?.message || '提现登记失败' }
+  }
+}
+
 exports.main = async (event = {}) => {
   try {
     const { userId, user } = await requireAdminUser()
@@ -2558,7 +2931,9 @@ exports.main = async (event = {}) => {
     if (action === 'listOrders') return await listOrders(event)
     if (action === 'refundOrder') return await refundOrder(event)
     if (action === 'listArchetypeReportOrders') return await listArchetypeReportOrders(event)
+    if (action === 'requestArchetypeReportRefund') return await requestArchetypeReportRefund(event, userId)
     if (action === 'reconcileArchetypeReportOrder') return await adminReconcileArchetypeReportOrder(event, userId)
+    if (action === 'queryArchetypeReportRefund') return await adminQueryArchetypeReportRefund(event, userId)
     if (action === 'listArchetypeReportRefundTasks') return await listArchetypeReportRefundTasks(event)
     if (action === 'updateArchetypeReportRefundTask') return await updateArchetypeReportRefundTask(event, userId)
     if (action === 'deleteUser') return await deleteUser(event, userId)
@@ -2566,6 +2941,14 @@ exports.main = async (event = {}) => {
     if (action === 'retryReferralClaim') return await retryReferralClaim(event, userId)
     if (action === 'recheckReferralClaim') return await recheckReferralClaim(event, userId)
     if (action === 'grantReferralCompensation') return await grantReferralCompensation(event, userId)
+    if (action === 'getReferralCommissionConfig') return await getReferralCommissionConfig()
+    if (action === 'updateReferralCommissionConfig') return await updateReferralCommissionConfig(event, userId)
+    if (action === 'listReferralCommissions') return await listReferralCommissions(event)
+    if (action === 'listReferralCommissionReversals') return await listReferralCommissionReversals(event)
+    if (action === 'getReferralCommissionOverview') return await getReferralCommissionOverview()
+    if (action === 'retryReferralCommissionJob') return await retryReferralCommissionJob(event)
+    if (action === 'reverseReferralCommission') return await reverseReferralCommission(event)
+    if (action === 'markReferralCommissionWithdrawn') return await markReferralCommissionWithdrawn(event, userId)
     if (action === 'getArchetypeQuestionBank') return await getArchetypeQuestionBankAdmin(db, event)
     if (action === 'seedArchetypeQuestionBanks') return await seedArchetypeQuestionBanks(db, event, userId)
     if (action === 'createArchetypeQuestionDraft') return await createArchetypeQuestionDraft(db, event, userId)

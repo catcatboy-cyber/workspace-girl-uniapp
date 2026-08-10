@@ -233,6 +233,115 @@ function decisionForSimilarity(value) {
   return { level: 'insufficient', label: '暂时别按这个类型下结论', text: '当前证据与该原型的匹配度有限，不要只凭标签决定去留，优先看对方持续、可验证的现实表现。' }
 }
 
+const STAGE_PRESENTATION = {
+  pre_relationship: {
+    shortLabel: '刚接触',
+    title: '刚接触：先看 TA 是否尊重你的节奏',
+    summary: '这个阶段不急着谈工资和父母态度，先看 TA 会不会因为回复慢、暂时不确定关系，就开始施压或情绪惩罚。',
+    question: '如果我需要慢一点确认关系，你会怎么想？'
+  },
+  early_dating: {
+    shortLabel: '刚交往',
+    title: '刚交往：看热情能不能稳定又平衡',
+    summary: '重点看 TA 是否稳定安排见面、愿意公开关系，也看高频联系会不会慢慢变成查岗和全天候要求。',
+    question: '我们都忙的时候，你觉得多久联系一次最舒服？'
+  },
+  steady_relationship: {
+    shortLabel: '稳定期',
+    title: '稳定期：看分歧之后还能不能合作',
+    summary: '甜蜜已经不是唯一重点。观察意见不同时，TA 是愿意听完、一起重分工，还是冷处理、翻旧账或替两个人拍板。',
+    question: '我们意见不一样时，你希望怎样一起做决定？'
+  },
+  long_term: {
+    shortLabel: '长期/婚姻',
+    title: '长期或婚姻：把“为你好”变成可讨论的方案',
+    summary: '此时再具体谈家庭边界、金钱、居住安排和家务分工。能落地很重要，但不能由一个人包办全部决定。',
+    question: '涉及家庭、金钱和居住安排时，最终怎样共同决定？'
+  }
+}
+
+function configuredText(value, fallback = '', maxLength = 500) {
+  return cleanPublicText(value, fallback, maxLength)
+}
+
+function buildStageGuidance(bankContent, archetype) {
+  const configured = archetype?.resultPage?.stageAdvice || {}
+  const caution = configuredText(archetype?.resultCopy?.caution)
+  return (Array.isArray(bankContent?.stages) ? bankContent.stages : []).map((stage) => {
+    const defaults = STAGE_PRESENTATION[stage?.key] || {
+      shortLabel: configuredText(stage?.label, '当前阶段', 20),
+      title: `${configuredText(stage?.label, '当前阶段', 40)}：观察持续、可验证的相处行为`,
+      summary: '先核对对方是否尊重边界、稳定兑现承诺，再决定要不要继续投入。',
+      question: '遇到分歧时，你希望我们怎样一起做决定？'
+    }
+    const item = configured?.[stage?.key] || {}
+    const summary = configuredText(item.summary, defaults.summary)
+    return {
+      key: configuredText(stage?.key, '', 40),
+      label: configuredText(stage?.label, defaults.shortLabel, 80),
+      shortLabel: configuredText(item.shortLabel, defaults.shortLabel, 20),
+      title: configuredText(item.title, defaults.title, 120),
+      summary: caution && !item.summary ? `${summary} 这类风格还要特别留意：${caution}` : summary,
+      question: configuredText(item.question, defaults.question, 160)
+    }
+  })
+}
+
+function buildTrafficSignals(resultPage, context = {}) {
+  const configured = resultPage?.trafficSignals || {}
+  const rows = [
+    {
+      level: 'green',
+      badge: '可继续',
+      title: '绿灯：尊重你的节奏，也愿意用行动回应',
+      text: configuredText(context.positive, 'TA 能表达投入，同时保留你的决定权。')
+    },
+    {
+      level: 'yellow',
+      badge: '要观察',
+      title: '黄灯：说得很明确，但兑现还不稳定',
+      text: configuredText(context.communication, '可以沟通，但要继续观察 TA 是否接受你的边界和节奏。')
+    },
+    {
+      level: 'red',
+      badge: '要回避',
+      title: '红灯：用付出、冷落或施压要求你服从',
+      text: configuredText(context.caution, '如果同类行为反复发生，不要只听解释，要优先保护自己的边界。')
+    }
+  ]
+  return rows.map((fallback) => {
+    const item = configured?.[fallback.level] || {}
+    return {
+      level: fallback.level,
+      badge: configuredText(item.badge, fallback.badge, 20),
+      title: configuredText(item.title, fallback.title, 120),
+      text: configuredText(item.text, fallback.text, 500)
+    }
+  })
+}
+
+function buildActionSteps(resultPage, context = {}) {
+  const configured = Array.isArray(resultPage?.actionSteps) ? resultPage.actionSteps : []
+  const defaults = [
+    {
+      title: '提出一个小边界',
+      text: '例如今晚想独处，观察 TA 是尊重、追问，还是立刻情绪化。'
+    },
+    {
+      title: '讨论一次真实分歧',
+      text: configuredText(context.communication, '不要只看甜的时候，看看意见不同时 TA 是否还能听完你的话。')
+    },
+    {
+      title: '对照行为，不对照承诺',
+      text: configuredText(context.caution, '连续观察一段时间：TA 说的尊重、投入和共同承担，有没有稳定发生。')
+    }
+  ]
+  return defaults.map((fallback, index) => ({
+    title: configuredText(configured[index]?.title, fallback.title, 80),
+    text: configuredText(configured[index]?.text, fallback.text, 500)
+  }))
+}
+
 function buildPreviewReport(result, bankContent, access) {
   const base = buildHistoryPreview(result, bankContent, 'preview')
   return {
@@ -278,6 +387,8 @@ function buildFullReport(result, bankContent, access) {
       .filter((item) => Number.isFinite(item.value))
       .sort((a, b) => b.value - a.value)
       .slice(0, 3)
+    const communicationAdvice = '把具体行为和感受说清楚，少用“你总是”这类定性表达，再观察对方是否愿意调整。'
+    const resultPage = archetype?.resultPage || {}
     return {
       ...base,
       exactSimilarity: result.similarity,
@@ -293,7 +404,17 @@ function buildFullReport(result, bankContent, access) {
       evidence,
       strengths: archetype?.resultCopy?.attraction ? [archetype.resultCopy.attraction] : [],
       watchSignals: archetype?.resultCopy?.caution ? [archetype.resultCopy.caution] : [],
-      communicationAdvice: '把具体行为和感受说清楚，少用“你总是”这类定性表达，再观察对方是否愿意调整。',
+      stageGuidance: buildStageGuidance(bankContent, archetype),
+      trafficSignals: buildTrafficSignals(resultPage, {
+        positive: archetype?.resultCopy?.attraction,
+        caution: archetype?.resultCopy?.caution,
+        communication: communicationAdvice
+      }),
+      actionSteps: buildActionSteps(resultPage, {
+        caution: archetype?.resultCopy?.caution,
+        communication: communicationAdvice
+      }),
+      communicationAdvice,
       decision: decisionForSimilarity(result.similarity)
     }
   }
@@ -321,6 +442,10 @@ function buildFullReport(result, bankContent, access) {
     }
   })
   const exactSimilarity = result?.similarities?.[result.primaryPersonKey] ?? result?.topFive?.[0]?.similarity ?? 0
+  const primaryPerson = personByKey.get(result.primaryPersonKey) || {}
+  const communicationAdvice = rankedDimensions.slice(-1)[0]?.key === 'boundary'
+    ? '先把关系边界和彼此期待说清楚，再看对方是否用行动回应。'
+    : '围绕最需要观察的具体行为沟通，不替对方找理由，也不只听口头承诺。'
   return {
     ...base,
     exactSimilarity,
@@ -333,13 +458,20 @@ function buildFullReport(result, bankContent, access) {
     })),
     dimensions: dimensionRows,
     resultCopy: bankContent?.resultCopy || {},
-    primaryDetail: publicPersonDetail(personByKey.get(result.primaryPersonKey)),
+    primaryDetail: publicPersonDetail(primaryPerson),
     evidence,
     strengths: rankedDimensions.slice(0, 2).map((item) => item.copy).filter(Boolean),
     watchSignals: rankedDimensions.slice(-2).reverse().map((item) => item.copy).filter(Boolean),
-    communicationAdvice: rankedDimensions.slice(-1)[0]?.key === 'boundary'
-      ? '先把关系边界和彼此期待说清楚，再看对方是否用行动回应。'
-      : '围绕最需要观察的具体行为沟通，不替对方找理由，也不只听口头承诺。',
+    trafficSignals: buildTrafficSignals(primaryPerson?.resultPage, {
+      positive: primaryPerson?.attraction || rankedDimensions[0]?.copy,
+      caution: primaryPerson?.caution || rankedDimensions.slice(-1)[0]?.copy,
+      communication: communicationAdvice
+    }),
+    actionSteps: buildActionSteps(primaryPerson?.resultPage, {
+      caution: primaryPerson?.caution || rankedDimensions.slice(-1)[0]?.copy,
+      communication: communicationAdvice
+    }),
+    communicationAdvice,
     decision: decisionForSimilarity(exactSimilarity)
   }
 }

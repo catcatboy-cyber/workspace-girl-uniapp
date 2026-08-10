@@ -129,8 +129,10 @@ function buildReferralIntentFields({
 }
 
 async function readDoc(db, collection, id) {
-  const { data } = await db.collection(collection).doc(id).get()
-  return data && data.length > 0 ? data[0] : null
+  const result = await db.collection(collection).doc(id).get()
+  const data = result?.data
+  if (Array.isArray(data)) return data.length > 0 ? data[0] : null
+  return data && typeof data === 'object' ? data : null
 }
 
 async function updateUserAttempt(db, userId, patch) {

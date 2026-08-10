@@ -152,6 +152,21 @@ async function fulfillPayment(db, order, transactionId) {
       updatedAt: now
     })
 
+    try {
+      const { enqueueCommissionJob } = require('./referral-commission')
+      await enqueueCommissionJob(db, {
+        source: 'recharge_order',
+        orderId,
+        orderType: order.productType,
+        userId: order.userId,
+        paidAmountFen: Number(latest.amountFen || order.amountFen || 0),
+        paidAt: latest.paidAt || now,
+        transactionId: transactionId || latest.transactionId || ''
+      })
+    } catch (commissionError) {
+      console.error('[referral-commission] recharge enqueue failed', commissionError)
+    }
+
     return {
       ...merged,
       fulfillmentStatus: 'succeeded',

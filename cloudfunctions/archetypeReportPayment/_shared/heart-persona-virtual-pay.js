@@ -45,6 +45,12 @@ function generateOutTradeNo() {
   return `HPR${Date.now().toString(36)}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32)
 }
 
+function generateRefundOrderId(outTradeNo) {
+  const tradeNo = String(outTradeNo || '').trim()
+  if (!tradeNo) throw paymentError('INVALID_ARGUMENT', '缺少退款对应的支付单号')
+  return `HPRR${crypto.createHash('sha256').update(tradeNo, 'utf8').digest('hex').slice(0, 28)}`
+}
+
 function buildGoodsSignData(order) {
   return {
     offerId: order.offerIdSnapshot,
@@ -155,6 +161,48 @@ async function notifyProvideGoods({ outTradeNo, env, request }) {
   return { success: true }
 }
 
+async function refundVirtualOrder({
+  outTradeNo,
+  openid,
+  env,
+  refundOrderId,
+  leftFee,
+  refundFee,
+  bizMeta = '',
+  refundReason = '5',
+  requestFrom = '1',
+  request
+}) {
+  const body = {
+    openid: String(openid || '').trim(),
+    order_id: String(outTradeNo || '').trim(),
+    refund_order_id: String(refundOrderId || '').trim(),
+    left_fee: Number(leftFee),
+    refund_fee: Number(refundFee),
+    biz_meta: String(bizMeta || '').slice(0, 1024),
+    refund_reason: String(refundReason),
+    req_from: String(requestFrom),
+    env: Number(env)
+  }
+  if (!body.openid || !body.order_id) throw paymentError('INVALID_ARGUMENT', '退款订单身份不完整')
+  if (!/^[A-Za-z0-9_-]{8,32}$/.test(body.refund_order_id)) throw paymentError('INVALID_ARGUMENT', '退款单号格式无效')
+  if (!Number.isInteger(body.left_fee) || body.left_fee <= 0) throw paymentError('INVALID_ARGUMENT', '剩余可退金额无效')
+  if (!Number.isInteger(body.refund_fee) || body.refund_fee <= 0 || body.refund_fee > body.left_fee) throw paymentError('INVALID_ARGUMENT', '退款金额无效')
+  if (!['0', '1', '2', '3', '4', '5'].includes(body.refund_reason)) throw paymentError('INVALID_ARGUMENT', '退款原因无效')
+  if (!['1', '2', '3'].includes(body.req_from)) throw paymentError('INVALID_ARGUMENT', '退款来源无效')
+  if (![0, 1].includes(body.env)) throw paymentError('INVALID_ARGUMENT', '退款环境无效')
+
+  const response = await postSigned('/xpay/refund_order', body, request)
+  if (response.statusCode < 200 || response.statusCode >= 300 || !response?.json) {
+    throw paymentError('WECHAT_REFUND_FAILED', '微信退款请求失败', { statusCode: response?.statusCode, raw: response?.raw || '' })
+  }
+  const errcode = Number(response.json.errcode || 0)
+  if (errcode !== 0 && errcode !== 268490014) {
+    throw paymentError('WECHAT_REFUND_FAILED', response.json.errmsg || '微信退款请求失败', { response: response.json })
+  }
+  return { ...response.json, accepted: true, alreadyProcessing: errcode === 268490014 }
+}
+
 function expectedEnvType(env) {
   return Number(env) === 1 ? 2 : 1
 }
@@ -202,11 +250,13 @@ module.exports = {
   isEnabled,
   serializeObject,
   generateOutTradeNo,
+  generateRefundOrderId,
   buildGoodsSignData,
   buildPaymentResponse,
   exchangeSessionKey,
   queryOrder,
   notifyProvideGoods,
+  refundVirtualOrder,
   validateQueriedOrder,
   validatePaymentConfiguration,
   _test: { getJsonByHttps, postSigned, expectedEnvType, resetToken: () => { tokenCache = { token: '', expiresAt: 0 } } }

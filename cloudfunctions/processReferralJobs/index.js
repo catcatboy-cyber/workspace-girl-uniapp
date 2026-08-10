@@ -7,6 +7,12 @@ const {
   recoverReferralIntents,
   processDueReferralClaims
 } = require('./_shared/referral-settlement')
+const {
+  recoverCommissionJobs,
+  processDueCommissionJobs,
+  releaseDueCommissions,
+  processDueReversalJobs
+} = require('./_shared/referral-commission')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -25,6 +31,14 @@ exports.main = async (event = {}) => {
       deadline,
       workerId
     })
+    const recoveredCommission = await recoverCommissionJobs(db, { limit: 50 })
+    const processedCommission = await processDueCommissionJobs(db, {
+      limit: 20,
+      deadline,
+      workerId
+    })
+    const releasedCommission = await releaseDueCommissions(db, { limit: 100, deadline })
+    const processedReversal = await processDueReversalJobs(db, { limit: 20, deadline })
 
     const result = {
       success: true,
@@ -36,6 +50,15 @@ exports.main = async (event = {}) => {
       rejected: processed.rejected || 0,
       needs_review: processed.needs_review || 0,
       paused: processed.paused || 0,
+      commissionRecovered: recoveredCommission.recovered || 0,
+      commissionSucceeded: processedCommission.succeeded || 0,
+      commissionRetried: processedCommission.retry || 0,
+      commissionNeedsReview: processedCommission.needs_review || 0,
+      commissionReleased: releasedCommission.released || 0,
+      reversalProcessed: processedReversal.scanned || 0,
+      reversalSucceeded: processedReversal.succeeded || 0,
+      reversalRetried: processedReversal.retry || 0,
+      reversalFailed: processedReversal.failed || 0,
       elapsedMs: Date.now() - startedAt
     }
     console.log('[referral-worker]', JSON.stringify({ event: 'batch_done', ...result }))

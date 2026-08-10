@@ -170,7 +170,21 @@ const DEFAULT_SUBSCRIPTION_CONFIG = {
     inviteeRewardLabel: '好友邀请奖励',
     weeklyInviteCap: 5,
     requireFirstEvent: true,
-    payoutPaused: false
+    payoutPaused: false,
+    commission: {
+      enabled: false,
+      payoutPaused: false,
+      mode: 'all_orders',
+      rateBps: 1000,
+      settlementDays: 7,
+      includeSubscription: true,
+      includeRecharge: true,
+      includeProp: true,
+      maxCommissionFenPerOrder: 10000,
+      maxCommissionFenPerInviterMonth: 100000,
+      effectiveFrom: null,
+      ruleVersion: 1
+    }
   }
 }
 
@@ -242,6 +256,17 @@ async function ensureSubscriptionConfig(db) {
         set(existing.referral, 'inviteeRewardTokens', (existing.referral.inviteeRewardCalls || 5) * 1000)
         set(existing.referral, 'payoutPaused', false)
         set(existing.referral, 'requireFirstEvent', true)
+        if (!existing.referral.commission || typeof existing.referral.commission !== 'object' || Array.isArray(existing.referral.commission)) {
+          existing.referral.commission = { ...DEFAULT_SUBSCRIPTION_CONFIG.referral.commission }
+          needsUpdate = true
+        } else {
+          for (const [key, value] of Object.entries(DEFAULT_SUBSCRIPTION_CONFIG.referral.commission)) {
+            if (existing.referral.commission[key] === undefined || existing.referral.commission[key] === null) {
+              existing.referral.commission[key] = Array.isArray(value) ? [...value] : value
+              needsUpdate = true
+            }
+          }
+        }
       }
       if (needsUpdate) {
         try {

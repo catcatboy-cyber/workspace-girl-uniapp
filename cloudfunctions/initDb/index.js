@@ -16,6 +16,12 @@ const COLLECTIONS = [
   'call_usage_records',
   'voice_usage',
   'recharge_orders',
+  'referral_claims',
+  'referral_commission_jobs',
+  'referral_commissions',
+  'commission_accounts',
+  'commission_ledger',
+  'commission_review_tasks',
   'archetype_question_banks',
   'archetype_results'
 ]
