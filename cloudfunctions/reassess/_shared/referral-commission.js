@@ -19,7 +19,9 @@ const REVERSAL_MAX_ATTEMPTS = 8
 const JOB_LEASE_MS = 2 * 60 * 1000
 const DEFAULT_BATCH = { recover: 50, process: 20, release: 100, reversal: 20 }
 const BACKOFF_MS = [60_000, 300_000, 1_800_000, 7_200_000, 43_200_000]
-const TERMINAL_REVERSAL_REASONS = ['COMMISSION_NOT_FOUND', 'ZERO_REVERSAL', 'INVALID_REFUND']
+// P1-4：COMMISSION_NOT_FOUND 不再是终态——退款可能先于佣金创建（分佣 job 尚未处理），
+// 冲正任务必须退避重试等待 worker 建佣金，8 次后转人工复核，否则佣金会永久漏冲
+const TERMINAL_REVERSAL_REASONS = ['ZERO_REVERSAL', 'INVALID_REFUND']
 
 let nowProvider = () => new Date()
 
@@ -262,6 +264,14 @@ async function createCommissionForPaidOrder(db, job, options = {}) {
   if (!config.enabled) return { success: false, reason: 'DISABLED' }
   if (!isIncluded(config, job.orderType)) return { success: false, reason: 'EXCLUDED_PRODUCT' }
   if (config.effectiveFrom && asDate(job.paidAt, now()) < config.effectiveFrom) return { success: false, reason: 'BEFORE_EFFECTIVE' }
+  // P1-4：源订单已退款时不得创建佣金（退款先于分佣 job 处理的场景）——订单已退款，佣金无意义
+  if (job.orderId) {
+    const sourceOrderCollection = job.source === 'recharge_order' ? RECHARGE_ORDERS : REPORT_ORDERS
+    const sourceOrder = await readDoc(db, sourceOrderCollection, job.orderId)
+    if (sourceOrder && normalizeStatus(sourceOrder.status) === 'refunded') {
+      return { success: false, reason: 'ORDER_REFUNDED' }
+    }
+  }
   const paidAmountFen = asInt(job.paidAmountFen, 0)
   if (paidAmountFen <= 0) return { success: false, reason: 'INVALID_AMOUNT' }
   const claim = await getRewardedClaimByInvitee(db, job.inviteeUserId)
@@ -336,7 +346,7 @@ async function processOneCommissionJob(db, job, options = {}) {
   if (!leased) return { result: 'skipped' }
   try {
     const result = await createCommissionForPaidOrder(db, leased)
-    if (result.success || ['DISABLED', 'EXCLUDED_PRODUCT', 'NO_VALID_RELATION', 'ZERO_COMMISSION', 'MONTHLY_CAP', 'BEFORE_EFFECTIVE'].includes(result.reason)) {
+    if (result.success || ['DISABLED', 'EXCLUDED_PRODUCT', 'NO_VALID_RELATION', 'ZERO_COMMISSION', 'MONTHLY_CAP', 'BEFORE_EFFECTIVE', 'ORDER_REFUNDED'].includes(result.reason)) {
       await finishJob(db, leased, { status: 'succeeded', statusReason: result.duplicate ? 'DUPLICATE' : result.reason || 'CREATED', lastErrorCode: '', lastErrorMessage: '' })
       return { result: 'succeeded', commission: result.commission }
     }

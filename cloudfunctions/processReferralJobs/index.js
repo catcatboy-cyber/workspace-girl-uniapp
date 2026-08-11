@@ -13,6 +13,7 @@ const {
   releaseDueCommissions,
   processDueReversalJobs
 } = require('./_shared/referral-commission')
+const { reconcileProcessingRefunds } = require('./_shared/payment-fulfillment')
 
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV })
 const db = app.database()
@@ -39,6 +40,8 @@ exports.main = async (event = {}) => {
     })
     const releasedCommission = await releaseDueCommissions(db, { limit: 100, deadline })
     const processedReversal = await processDueReversalJobs(db, { limit: 20, deadline })
+    // P1-3：自动退款对账（退款通知丢失/停止重试时兜底结算）
+    const reconciledRefunds = await reconcileProcessingRefunds(db, { limit: 20, minAgeMs: 5 * 60 * 1000, deadline })
 
     const result = {
       success: true,
@@ -59,6 +62,9 @@ exports.main = async (event = {}) => {
       reversalSucceeded: processedReversal.succeeded || 0,
       reversalRetried: processedReversal.retry || 0,
       reversalFailed: processedReversal.failed || 0,
+      refundReconcileScanned: reconciledRefunds.scanned || 0,
+      refundReconcileSettled: reconciledRefunds.settled || 0,
+      refundReconcileAnomaly: reconciledRefunds.anomaly || 0,
       elapsedMs: Date.now() - startedAt
     }
     console.log('[referral-worker]', JSON.stringify({ event: 'batch_done', ...result }))

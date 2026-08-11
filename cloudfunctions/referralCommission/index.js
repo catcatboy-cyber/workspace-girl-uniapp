@@ -35,6 +35,10 @@ exports.main = async (event = {}) => {
       })
       return { success: true, ...data }
     }
+    if (action === 'getSeedUserStatus') {
+      const { isSeedUser } = require('./_shared/seed-user')
+      return { success: true, isSeedUser: await isSeedUser(db, userId) }
+    }
     return { success: false, message: '未知操作' }
   } catch (error) {
     const authError = buildAuthErrorResponse(error)

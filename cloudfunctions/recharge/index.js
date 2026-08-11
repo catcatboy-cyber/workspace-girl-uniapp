@@ -608,11 +608,19 @@ async function createVirtualPayOrder(event) {
     const amountFen = Math.round(amountYuan * 100)
     const outTradeNo = vp.generateOutTradeNo('SUB')
 
+    // P1-5：创建订单时快照用户当前套餐（fromPlan），退款回退需要它；与 unifiedOrder 行为对齐
+    let fromPlan = ''
+    try {
+      const { data: userData } = await db.collection('users').doc(userId).get()
+      const user = (userData && userData.length > 0) ? userData[0] : null
+      if (user) fromPlan = user.plan || 'free'
+    } catch (_) { /* non-fatal */ }
+
     order = {
       userId, outTradeNo, productType: 'subscription',
       planKey, planName: planConfig.name, billingCycle, priceVariant,
       amountFen, amountYuan,
-      fromPlan: '', grantPlan: planKey,
+      fromPlan, grantPlan: planKey,
       grantDurationDays: billingCycle === 'annual' ? 365 : 30,
       status: 'pending', channel: 'virtual_pay',
       sandbox, createdAt: new Date(), updatedAt: new Date()

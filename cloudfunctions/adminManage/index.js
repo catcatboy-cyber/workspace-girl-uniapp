@@ -2060,10 +2060,19 @@ async function listOrders(event = {}) {
       status: item.status || 'pending',
       productType: item.productType || (item.type === 'subscription_upgrade' ? 'subscription' : 'recharge'),
       orderNo: item.orderNo || '',
+      outTradeNo: item.outTradeNo || '',
+      channel: item.channel || '',
+      sandbox: item.sandbox === true,
       grantTokens: item.grantTokens || 0,
       createdAt: item.createdAt,
       paidAt: item.paidAt || null,
       transactionId: item.transactionId || '',
+      fulfillmentStatus: item.fulfillmentStatus || '',
+      refundRequestStatus: item.refundRequestStatus || '',
+      refundOrderId: item.refundOrderId || '',
+      requestedRefundFen: item.requestedRefundFen ?? null,
+      refundRequestError: item.refundRequestError || '',
+      lastQueryStatus: item.lastQueryStatus ?? null,
       remark: item.remark || ''
     })),
     total,
@@ -2072,77 +2081,200 @@ async function listOrders(event = {}) {
   }
 }
 
-async function refundOrder(event = {}) {
+/**
+ * 充值/套餐退款。
+ * 默认走微信虚拟支付退款 API（/xpay/refund_order 启动任务 → processing，完成后由
+ * 退款回调/后台查单落库，见 settleRechargeRefund）；event.manual === true 时为线下已退款标记。
+ */
+async function refundOrder(event = {}, adminUserId) {
   const orderId = typeof event.orderId === 'string' ? event.orderId.trim() : ''
   if (!orderId) return { success: false, message: '缺少订单ID' }
 
   const orderRes = await db.collection('recharge_orders').doc(orderId).get()
-  const order = (orderRes.data && orderRes.data.length > 0) ? orderRes.data[0] : null
+  const order = Array.isArray(orderRes.data) ? orderRes.data[0] : orderRes.data
   if (!order) return { success: false, message: '订单不存在' }
   if (order.status !== 'paid') return { success: false, message: '仅已支付订单可退款' }
+  if (order.status === 'refunded' || order.refundRequestStatus === 'refunded') {
+    return { success: false, message: '订单已退款' }
+  }
 
+  const { settleRechargeRefund } = require('./_shared/payment-fulfillment')
+
+  // 线下已退款标记（人工在微信商户平台退款后，在系统内落库）
+  if (event.manual === true) {
+    const reason = String(event.reason || 'manual_refund')
+    const result = await settleRechargeRefund(db, order, { reason })
+    return { success: result.success, orderId, manual: true, message: result.success ? '已标记退款' : '标记失败', commissionReversal: result.commissionReversal }
+  }
+
+  // 退款任务已提交/处理中 → 幂等返回
+  if (order.refundRequestStatus === 'processing' || order.refundRequestStatus === 'requesting') {
+    return { success: true, alreadyProcessing: true, refundOrderId: order.refundOrderId || '' }
+  }
+
+  // refundReason 必须是微信枚举 0-5（传中文备注会触发 refundVirtualOrder 校验失败）；
+  // reason 为自由文本备注，落库用
+  const refundReason = String(event.refundReason || '5')
+  const reasonNote = String(event.reason || '').slice(0, 200)
+  const reason = reasonNote || refundReason
   const now = new Date()
-
   await db.collection('recharge_orders').doc(orderId).update({
-    status: 'refunded',
-    refundedAt: now
+    refundRequestStatus: 'requesting',
+    refundRequestReason: reason,
+    refundRequestedBy: adminUserId || '',
+    refundRequestError: '',
+    updatedAt: now
   })
 
-  // 查询用户（一次查询，供后续套餐回退 + token 扣除共用）
+  const { queryOrder, refundVirtualOrder, generateRefundOrderId } = require('./_shared/heart-persona-virtual-pay')
   const userRes = await db.collection('users').doc(order.userId).get()
   const user = Array.isArray(userRes.data) ? userRes.data[0] : userRes.data
-
-  // 退款时回退套餐升级
-  const isSubscription = order.productType === 'subscription' || order.type === 'subscription_upgrade'
-  if (isSubscription) {
-    const fromPlan = order.fromPlan || 'free'
-    if (user) {
-      console.log('[refundOrder] subscription revert userId=%s plan=%s → %s', order.userId, user.plan, fromPlan)
-      await db.collection('users').doc(order.userId).update({
-        plan: fromPlan,
-        planExpiresAt: null,
-        updatedAt: now
-      })
-    }
+  const openid = user?.openid || ''
+  if (!openid) {
+    await db.collection('recharge_orders').doc(orderId).update({ refundRequestStatus: 'failed', refundRequestError: '用户缺少 openid', updatedAt: new Date() }).catch(() => {})
+    return { success: false, code: 'OPENID_MISSING', message: '订单用户缺少 openid，无法发起微信退款，请用线下退款标记', manualOption: true }
   }
+  const env = order.sandbox === true ? 1 : 0
+  const refundOrderId = order.refundOrderId || generateRefundOrderId(order.outTradeNo || orderId)
 
-  // 扣除已发放的 Token（充值与订阅升级都可能发放）
-  const refundTokens = Number(order.grantTokens || 0)
-  if (refundTokens > 0) {
-    const currentExtraTokens = Number(user?.extraTokens || 0)
-    const deduction = Math.min(currentExtraTokens, refundTokens)
-    if (deduction > 0) {
-      await db.collection('users').doc(order.userId).update({
-        extraTokens: db.command.inc(-deduction)
-      })
-    }
-    await db.collection('call_usage_records').add({
-      userId: order.userId,
-      type: 'adjust',
-      source: 'refund',
-      amount: -deduction,
-      relatedOrderId: orderId,
-      remark: `refund: ${order.planName || order.productName || ''}`,
-      createdAt: now
-    })
-  }
-
-  let commissionReversal = null
   try {
-    // 登记冲正补偿 job 并立即尝试一次；失败后由 worker 按固定 ID 幂等重试，避免退款完成但佣金永久未冲正
-    const { enqueueCommissionReversal } = require('./_shared/referral-commission')
-    commissionReversal = await enqueueCommissionReversal(db, {
-      source: 'recharge_order',
-      orderId,
-      refundAmountFen: Number(order.amountFen || 0),
-      reason: String(event.reason || 'admin_refund')
+    // 微信查单验证已支付并取 left_fee（refund_order 需要当前剩余可退金额）
+    const queried = await queryOrder({ outTradeNo: order.outTradeNo, openid, env, wxOrderId: order.wxOrderId || '' })
+    const q = queried?.order
+    const wxStatus = Number(q?.status)
+    if (Number(queried?.errcode) !== 0 || ![2, 3, 4].includes(wxStatus)) {
+      throw Object.assign(new Error('微信订单当前不可退款'), { code: 'ORDER_NOT_REFUNDABLE' })
+    }
+    const leftFee = Number(q?.left_fee)
+    const paidFee = Number(q?.paid_fee)
+    const expectedFee = Number(order.amountFen || paidFee || 0)
+    if (!Number.isInteger(leftFee) || leftFee <= 0 || leftFee !== expectedFee) {
+      throw Object.assign(new Error('仅支持尚未部分退款的全额退款订单'), { code: 'PARTIAL_REFUND_UNSUPPORTED' })
+    }
+    const refundResponse = await refundVirtualOrder({
+      outTradeNo: order.outTradeNo,
+      openid,
+      env,
+      refundOrderId,
+      leftFee,
+      refundFee: leftFee,
+      bizMeta: JSON.stringify({ source: 'admin', orderId, adminUserId, reason }).slice(0, 1024),
+      refundReason,
+      requestFrom: '1'
     })
+    const acceptedAt = new Date()
+    await db.collection('recharge_orders').doc(orderId).update({
+      refundRequestStatus: 'processing',
+      requestedRefundFen: leftFee,
+      refundRequestedAt: acceptedAt,
+      refundAcceptedAt: acceptedAt,
+      refundRequestError: '',
+      refundApiResponse: {
+        errcode: Number(refundResponse.errcode || 0),
+        errmsg: String(refundResponse.errmsg || ''),
+        refundOrderId: refundResponse.refund_order_id || refundOrderId,
+        refundWxOrderId: refundResponse.refund_wx_order_id || ''
+      },
+      updatedAt: acceptedAt
+    })
+    return { success: true, status: 'processing', refundOrderId, requestedRefundFen: leftFee, message: '退款任务已提交，等待微信退款完成通知' }
   } catch (error) {
-    console.error('[referral-commission] recharge refund reversal failed', error)
-    commissionReversal = { success: false, reason: 'REVERSAL_FAILED' }
+    const failureMessage = String(error?.message || error?.errMsg || error?.code || '微信退款请求失败').slice(0, 300)
+    await db.collection('recharge_orders').doc(orderId).update({ refundRequestStatus: 'failed', refundRequestError: failureMessage, updatedAt: new Date() }).catch(() => {})
+    return { success: false, code: error?.code || 'WECHAT_REFUND_FAILED', message: failureMessage, retryable: true }
+  }
+}
+
+/**
+ * 后台主动查微信支付/退款状态并对账（对账恢复）：
+ * - 已支付未发货 → 补发货 fulfillPayment
+ * - 已退款（status 5/8）→ settleRechargeRefund 统一落库
+ * - 退款异常（status 7）→ 标记 anomaly
+ * 用于推送丢失/忽略导致的历史 pending 订单恢复。
+ */
+async function queryRechargeOrderPayment(event = {}, adminUserId) {
+  const orderId = typeof event.orderId === 'string' ? event.orderId.trim() : ''
+  const outTradeNo = typeof event.outTradeNo === 'string' ? event.outTradeNo.trim() : ''
+  const reason = typeof event.reason === 'string' ? event.reason.trim() : ''
+  if (!orderId && !outTradeNo) return { success: false, message: '缺少订单ID或单号' }
+  if (!reason) return { success: false, message: '人工查单必须填写原因' }
+
+  let order = null
+  if (orderId) {
+    const res = await db.collection('recharge_orders').doc(orderId).get()
+    order = Array.isArray(res.data) ? res.data[0] : res.data
+  } else {
+    const res = await db.collection('recharge_orders').where({ outTradeNo }).limit(1).get()
+    order = (res.data && res.data.length > 0) ? res.data[0] : null
+  }
+  if (!order) return { success: false, code: 'ORDER_NOT_FOUND', message: '订单不存在' }
+  if (order.status === 'refunded') return { success: true, order, alreadyRefunded: true }
+  // 退款任务在途（processing/requesting）时必须先查微信确认退款状态，不能短路返回 alreadyPaid
+  const refundInFlight = order.status === 'paid' && ['processing', 'requesting'].includes(order.refundRequestStatus)
+  if (!refundInFlight && order.status === 'paid' && order.fulfillmentStatus === 'succeeded') {
+    return { success: true, order, alreadyPaid: true }
   }
 
-  return { success: true, orderId, commissionReversal }
+  const userRes = await db.collection('users').doc(order.userId).get()
+  const user = Array.isArray(userRes.data) ? userRes.data[0] : userRes.data
+  const openid = user?.openid || ''
+  if (!openid) return { success: false, code: 'OPENID_MISSING', message: '订单用户缺少 openid，无法查单' }
+  const env = order.sandbox === true ? 1 : 0
+
+  const { queryOrder } = require('./_shared/heart-persona-virtual-pay')
+  let queried
+  try {
+    queried = await queryOrder({ outTradeNo: order.outTradeNo, openid, env, wxOrderId: order.wxOrderId || '' })
+  } catch (error) {
+    return { success: false, code: 'WECHAT_QUERY_FAILED', message: error?.message || '微信查单失败' }
+  }
+  const q = queried?.order
+  const wxStatus = Number(q?.status)
+  if (Number(queried?.errcode) !== 0 || !Number.isInteger(wxStatus)) {
+    return { success: false, code: 'WECHAT_QUERY_FAILED', message: '微信查单返回异常结构，请到商户后台核实' }
+  }
+  await db.collection('recharge_orders').doc(order._id).update({
+    lastQueryStatus: wxStatus,
+    lastQueryAt: new Date(),
+    updatedAt: new Date()
+  }).catch(() => {})
+
+  // 已退款/用户退款完成 → 统一落库
+  if ([5, 8].includes(wxStatus)) {
+    const { settleRechargeRefund } = require('./_shared/payment-fulfillment')
+    const settled = await settleRechargeRefund(db, order, { reason: `wechat_query:${reason}` })
+    if (!settled.success) {
+      const failureMessage = `退款结算失败: ${settled.reason || '未知原因'}`
+      await db.collection('recharge_orders').doc(order._id).update({
+        refundRequestError: failureMessage,
+        updatedAt: new Date()
+      }).catch(() => {})
+      return { success: false, code: 'REFUND_SETTLE_FAILED', wxStatus, message: failureMessage }
+    }
+    return { success: true, wxStatus, action: 'settled_refund', order: settled.order }
+  }
+  // 退款异常
+  if (wxStatus === 7) {
+    await db.collection('recharge_orders').doc(order._id).update({
+      refundRequestStatus: 'anomaly',
+      refundRequestError: `微信退款异常 status=${wxStatus}`,
+      updatedAt: new Date()
+    }).catch(() => {})
+    return { success: false, code: 'REFUND_ANOMALY', wxStatus, message: '微信侧退款状态异常，请到商户后台核实' }
+  }
+  // 已支付 → 补发货（退款任务在途时不得补发货：微信侧状态与本地退款流程矛盾，交人工核实）
+  const paidTime = Number(q?.paid_time || 0)
+  const isPaid = Number(queried?.errcode || 0) === 0 && q && paidTime > 0
+  if (isPaid && refundInFlight) {
+    return { success: false, code: 'REFUND_STATE_CONFLICT', wxStatus, message: `退款任务在途但微信查单显示已支付(status=${wxStatus})，请到商户后台核实` }
+  }
+  if (isPaid) {
+    const { fulfillPayment } = require('./_shared/payment-fulfillment')
+    const fulfilled = await fulfillPayment(db, { ...order, _id: order._id }, `query:${adminUserId || 'admin'}`)
+    await db.collection('recharge_orders').doc(order._id).update({ fulfillmentSource: 'query', updatedAt: new Date() }).catch(() => {})
+    return { success: true, wxStatus, action: 'fulfilled', order: fulfilled }
+  }
+  return { success: true, wxStatus, action: 'still_pending', order: { ...order, lastQueryStatus: wxStatus }, message: '微信侧尚未支付' }
 }
 
 async function listArchetypeReportOrders(event = {}) {
@@ -2768,6 +2900,45 @@ async function updateReferralCommissionConfig(event, adminUserId) {
   return { success: true, config: commission }
 }
 
+// ── 系统公告 ──
+
+async function createAnnouncement(event, adminUserId) {
+  const { createAnnouncement: create } = require('./_shared/announcement')
+  return create(db, event, adminUserId)
+}
+
+async function updateAnnouncementStatus(event, adminUserId) {
+  const { updateAnnouncementStatus: update } = require('./_shared/announcement')
+  return update(db, event, adminUserId)
+}
+
+async function removeAnnouncement(event) {
+  const { removeAnnouncement: remove } = require('./_shared/announcement')
+  return remove(db, event)
+}
+
+async function listAnnouncements(event) {
+  const { listAnnouncements: list } = require('./_shared/announcement')
+  return list(db, event)
+}
+
+// ── 种子用户（me 页【我的邀请】卡片可见性白名单） ──
+
+async function listSeedUsers(event) {
+  const { listSeedUsers: list } = require('./_shared/seed-user')
+  return list(db, event)
+}
+
+async function addSeedUser(event, adminUserId) {
+  const { addSeedUser: add } = require('./_shared/seed-user')
+  return add(db, event, adminUserId)
+}
+
+async function removeSeedUser(event) {
+  const { removeSeedUser: remove } = require('./_shared/seed-user')
+  return remove(db, event)
+}
+
 async function listReferralCommissions(event = {}) {
   const page = Math.max(1, Number(event.page) || 1)
   const pageSize = Math.max(1, Math.min(100, Number(event.pageSize) || 20))
@@ -2929,7 +3100,8 @@ exports.main = async (event = {}) => {
     if (action === 'setCustomPetPublic') return await setCustomPetPublic(event, userId)
     if (action === 'backfillCustomPetDeliveries') return await backfillCustomPetDeliveries(event)
     if (action === 'listOrders') return await listOrders(event)
-    if (action === 'refundOrder') return await refundOrder(event)
+    if (action === 'refundOrder') return await refundOrder(event, userId)
+    if (action === 'queryRechargeOrderPayment') return await queryRechargeOrderPayment(event, userId)
     if (action === 'listArchetypeReportOrders') return await listArchetypeReportOrders(event)
     if (action === 'requestArchetypeReportRefund') return await requestArchetypeReportRefund(event, userId)
     if (action === 'reconcileArchetypeReportOrder') return await adminReconcileArchetypeReportOrder(event, userId)
@@ -2946,6 +3118,13 @@ exports.main = async (event = {}) => {
     if (action === 'listReferralCommissions') return await listReferralCommissions(event)
     if (action === 'listReferralCommissionReversals') return await listReferralCommissionReversals(event)
     if (action === 'getReferralCommissionOverview') return await getReferralCommissionOverview()
+    if (action === 'createAnnouncement') return await createAnnouncement(event, userId)
+    if (action === 'updateAnnouncementStatus') return await updateAnnouncementStatus(event, userId)
+    if (action === 'removeAnnouncement') return await removeAnnouncement(event)
+    if (action === 'listAnnouncements') return await listAnnouncements(event)
+    if (action === 'listSeedUsers') return await listSeedUsers(event)
+    if (action === 'addSeedUser') return await addSeedUser(event, userId)
+    if (action === 'removeSeedUser') return await removeSeedUser(event)
     if (action === 'retryReferralCommissionJob') return await retryReferralCommissionJob(event)
     if (action === 'reverseReferralCommission') return await reverseReferralCommission(event)
     if (action === 'markReferralCommissionWithdrawn') return await markReferralCommissionWithdrawn(event, userId)

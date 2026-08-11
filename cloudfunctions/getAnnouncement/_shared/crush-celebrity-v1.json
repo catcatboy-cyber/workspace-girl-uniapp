@@ -1,0 +1,2313 @@
+{
+  "dimensions": [
+    {
+      "key": "initiative",
+      "name": "主动推进",
+      "description": "主动聊天、邀约、定义关系和推进下一步"
+    },
+    {
+      "key": "warmth",
+      "name": "情绪温度",
+      "description": "回应、安慰、共情和让人感到被在意"
+    },
+    {
+      "key": "reliability",
+      "name": "兑现度",
+      "description": "承诺、守时、持续行动和关键时刻表现"
+    },
+    {
+      "key": "romance",
+      "name": "浪漫表达",
+      "description": "情话、仪式感、氛围和示好能力"
+    },
+    {
+      "key": "boundary",
+      "name": "边界清晰",
+      "description": "对暧昧范围、他人距离和关系立场的清晰程度"
+    }
+  ],
+  "questions": [
+    {
+      "id": "CQ01",
+      "textSelf": "你和喜欢的人聊天时，通常是谁先开始？",
+      "textTarget": "你们的聊天通常是谁先开始？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "大多数时候都是我主动找对方。",
+          "textTarget": "大多数时候都是 TA 主动找我。",
+          "scores": {
+            "initiative": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "我主动稍多，但对方也会主动。",
+          "textTarget": "TA 主动稍多，但我也会主动。",
+          "scores": {
+            "initiative": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "基本五五开。",
+          "textTarget": "基本五五开。",
+          "scores": {
+            "initiative": 50
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "主要是对方主动，我很少发起。",
+          "textTarget": "主要是我主动，TA 很少发起。",
+          "scores": {
+            "initiative": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ02",
+      "textSelf": "你想见对方时通常怎么做？",
+      "textTarget": "TA 想见你时通常怎么做？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "直接给出时间、地点，很快把见面定下来。",
+          "textTarget": "直接给出时间、地点，很快把见面定下来。",
+          "scores": {
+            "initiative": 100,
+            "reliability": 95,
+            "romance": 70
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "先问对方有没有空，再一起商量。",
+          "textTarget": "会先问我有没有空，再一起商量。",
+          "scores": {
+            "initiative": 70,
+            "reliability": 75,
+            "romance": 60
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "经常说“下次见”，但很少落实具体时间。",
+          "textTarget": "经常说“下次见”，但很少落实具体时间。",
+          "scores": {
+            "initiative": 45,
+            "reliability": 25,
+            "romance": 45
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "基本不主动提见面。",
+          "textTarget": "基本不主动提见面。",
+          "scores": {
+            "initiative": 10,
+            "reliability": 15,
+            "romance": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ03",
+      "textSelf": "你答应对方的事情，最后通常怎样？",
+      "textTarget": "TA 答应过你的事情，最后通常怎样？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "基本都能按约定完成。",
+          "textTarget": "基本都能按约定完成。",
+          "scores": {
+            "reliability": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "大部分做到，变动时会提前解释。",
+          "textTarget": "大部分做到，变动时会提前解释。",
+          "scores": {
+            "reliability": 80
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "要提醒很多次才会做。",
+          "textTarget": "要提醒很多次才会做。",
+          "scores": {
+            "reliability": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "经常不了了之或装作没说过。",
+          "textTarget": "经常不了了之或装作没说过。",
+          "scores": {
+            "reliability": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ04",
+      "textSelf": "对方情绪低落时，你更像哪种反应？",
+      "textTarget": "你情绪低落时，TA 更像哪种反应？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "先陪对方，再问需要安慰还是解决问题。",
+          "textTarget": "先陪我，再问需要安慰还是解决问题。",
+          "scores": {
+            "warmth": 100,
+            "reliability": 90
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "不太会说，但会用实际行动帮忙。",
+          "textTarget": "不太会说，但会用实际行动帮忙。",
+          "scores": {
+            "warmth": 65,
+            "reliability": 95
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "会说很多暖心的话，实际行动不一定跟上。",
+          "textTarget": "会说很多暖心的话，实际行动不一定跟上。",
+          "scores": {
+            "warmth": 90,
+            "reliability": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "容易回避情绪话题，简单问候后就消失。",
+          "textTarget": "容易回避情绪话题，简单问候后就消失。",
+          "scores": {
+            "warmth": 15,
+            "reliability": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ05",
+      "textSelf": "你表达好感的方式更接近？",
+      "textTarget": "TA 表达好感的方式更接近？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "直接说清楚，不太让对方猜。",
+          "textTarget": "直接说清楚，不太让我猜。",
+          "scores": {
+            "warmth": 75,
+            "romance": 70,
+            "boundary": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "很少说，但会持续照顾细节。",
+          "textTarget": "很少说，但会持续照顾细节。",
+          "scores": {
+            "warmth": 90,
+            "romance": 40,
+            "boundary": 85
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "很会营造暧昧和心动感，却不明确关系。",
+          "textTarget": "很会营造暧昧和心动感，却不明确关系。",
+          "scores": {
+            "warmth": 75,
+            "romance": 100,
+            "boundary": 20
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "对对方很好，但和普通朋友的界线不明显。",
+          "textTarget": "对我很好，但和普通朋友的界线不明显。",
+          "scores": {
+            "warmth": 65,
+            "romance": 35,
+            "boundary": 35
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ06",
+      "textSelf": "对方拒绝你一次邀约或请求时，你会？",
+      "textTarget": "当你拒绝 TA 一次邀约或请求时，TA 会？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "尊重对方的选择，之后自然地再找合适机会。",
+          "textTarget": "尊重我的选择，之后自然地再找合适机会。",
+          "scores": {
+            "warmth": 85,
+            "boundary": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "会问原因，但不会逼迫对方。",
+          "textTarget": "会问原因，但不会逼迫我。",
+          "scores": {
+            "warmth": 70,
+            "boundary": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "明显变冷，让对方猜我是不是生气了。",
+          "textTarget": "明显变冷，让我猜 TA 是不是生气了。",
+          "scores": {
+            "warmth": 25,
+            "boundary": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "继续追问或施压，希望对方改变答案。",
+          "textTarget": "继续追问或施压，希望我改变答案。",
+          "scores": {
+            "warmth": 20,
+            "boundary": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ07",
+      "textSelf": "在朋友或公开场合，你对对方的态度？",
+      "textTarget": "在朋友或公开场合，TA 对你的态度？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "会自然地照顾和维护对方，态度很明确。",
+          "textTarget": "会自然地照顾和维护我，态度很明确。",
+          "scores": {
+            "warmth": 85,
+            "romance": 65,
+            "boundary": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "私下亲近，公开场合比较克制。",
+          "textTarget": "私下亲近，公开场合比较克制。",
+          "scores": {
+            "warmth": 65,
+            "romance": 50,
+            "boundary": 80
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "和所有人都很热情，看不出对方是否特别。",
+          "textTarget": "和所有人都很热情，看不出我是否特别。",
+          "scores": {
+            "warmth": 80,
+            "romance": 60,
+            "boundary": 30
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "会刻意保持距离，不愿让别人误会。",
+          "textTarget": "会刻意保持距离，不愿让别人误会。",
+          "scores": {
+            "warmth": 20,
+            "romance": 15,
+            "boundary": 45
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ08",
+      "textSelf": "对方说过的小事，你记得怎么样？",
+      "textTarget": "TA 对你说过的小事记得怎么样？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "很多细节都记得，还会在之后主动提起。",
+          "textTarget": "很多细节都记得，还会在之后主动提起。",
+          "scores": {
+            "warmth": 100,
+            "reliability": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "重要的事记得，日常小事偶尔忘。",
+          "textTarget": "重要的事记得，日常小事偶尔忘。",
+          "scores": {
+            "warmth": 70,
+            "reliability": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "当时回应很热烈，过后经常不记得。",
+          "textTarget": "当时回应很热烈，过后经常不记得。",
+          "scores": {
+            "warmth": 75,
+            "reliability": 35
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "很少表现出对对方生活细节的了解。",
+          "textTarget": "很少表现出对我生活细节的了解。",
+          "scores": {
+            "warmth": 20,
+            "reliability": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ09",
+      "textSelf": "你和其他可能暧昧对象的边界怎样？",
+      "textTarget": "TA 和其他可能暧昧对象的边界怎样？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "边界很清楚，也愿意主动让对方安心。",
+          "textTarget": "边界很清楚，也愿意主动让我安心。",
+          "scores": {
+            "boundary": 100
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "大体清楚，但有些关系需要对方询问才解释。",
+          "textTarget": "大体清楚，但有些关系需要我询问才解释。",
+          "scores": {
+            "boundary": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "对很多人都亲近，认为自己只是性格好。",
+          "textTarget": "对很多人都亲近，认为自己只是性格好。",
+          "scores": {
+            "boundary": 25
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "经常回避这个话题，关系状态很模糊。",
+          "textTarget": "经常回避这个话题，关系状态很模糊。",
+          "scores": {
+            "boundary": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ10",
+      "textSelf": "谈到你们的未来时，你会？",
+      "textTarget": "TA 谈到你们的未来时？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "会主动讨论具体安排，并开始为它行动。",
+          "textTarget": "会主动讨论具体安排，并开始为它行动。",
+          "scores": {
+            "initiative": 100,
+            "reliability": 95
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "对方提起时会认真回应，但较少主动规划。",
+          "textTarget": "我提起时会认真回应，但较少主动规划。",
+          "scores": {
+            "initiative": 65,
+            "reliability": 75
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "会描述很好听的未来，却很少有下一步。",
+          "textTarget": "会描述很好听的未来，却很少有下一步。",
+          "scores": {
+            "initiative": 70,
+            "reliability": 25
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "经常转移话题，不愿谈关系走向。",
+          "textTarget": "经常转移话题，不愿谈关系走向。",
+          "scores": {
+            "initiative": 10,
+            "reliability": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ11",
+      "textSelf": "你的互动热度通常稳定吗？",
+      "textTarget": "TA 的互动热度通常稳定吗？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "比较稳定，不会无缘无故突然消失。",
+          "textTarget": "比较稳定，不会无缘无故突然消失。",
+          "scores": {
+            "warmth": 90,
+            "reliability": 95,
+            "romance": 60
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "忙的时候会变少，但会解释并恢复联系。",
+          "textTarget": "忙的时候会变少，但会解释并恢复联系。",
+          "scores": {
+            "warmth": 75,
+            "reliability": 80,
+            "romance": 45
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "热的时候非常热，冷的时候像换了一个人。",
+          "textTarget": "热的时候非常热，冷的时候像换了一个人。",
+          "scores": {
+            "warmth": 85,
+            "reliability": 25,
+            "romance": 90
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "整体偏淡，很少出现明显热度。",
+          "textTarget": "整体偏淡，很少出现明显热度。",
+          "scores": {
+            "warmth": 25,
+            "reliability": 30,
+            "romance": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "CQ12",
+      "textSelf": "你觉得自己带给对方的感觉更接近？",
+      "textTarget": "用一句话形容 TA 带给你的感觉？",
+      "options": [
+        {
+          "key": "A",
+          "textSelf": "稳，重要时候可以相信。",
+          "textTarget": "稳，重要时候可以相信。",
+          "scores": {
+            "initiative": 70,
+            "warmth": 65,
+            "reliability": 100,
+            "romance": 35,
+            "boundary": 90
+          }
+        },
+        {
+          "key": "B",
+          "textSelf": "暖，和我相处很舒服。",
+          "textTarget": "暖，和 TA 相处很舒服。",
+          "scores": {
+            "initiative": 55,
+            "warmth": 100,
+            "reliability": 80,
+            "romance": 50,
+            "boundary": 85
+          }
+        },
+        {
+          "key": "C",
+          "textSelf": "会撩，很容易让对方心动。",
+          "textTarget": "会撩，很容易让人心动。",
+          "scores": {
+            "initiative": 80,
+            "warmth": 85,
+            "reliability": 35,
+            "romance": 100,
+            "boundary": 25
+          }
+        },
+        {
+          "key": "D",
+          "textSelf": "难猜，对方总是不知道下一步在哪里。",
+          "textTarget": "难猜，总是不知道下一步在哪里。",
+          "scores": {
+            "initiative": 15,
+            "warmth": 25,
+            "reliability": 30,
+            "romance": 35,
+            "boundary": 20
+          }
+        }
+      ]
+    }
+  ],
+  "people": [
+    {
+      "key": "wu_zetian",
+      "name": "武则天",
+      "era": "history",
+      "profile": {
+        "initiative": 90,
+        "warmth": 50,
+        "reliability": 83,
+        "romance": 40,
+        "boundary": 85
+      },
+      "enabled": true,
+      "sortOrder": 1,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "xiang_yu",
+      "name": "项羽",
+      "era": "history",
+      "profile": {
+        "initiative": 93,
+        "warmth": 74,
+        "reliability": 44,
+        "romance": 85,
+        "boundary": 45
+      },
+      "enabled": true,
+      "sortOrder": 2,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "zhao_yun",
+      "name": "赵云",
+      "era": "history",
+      "profile": {
+        "initiative": 65,
+        "warmth": 75,
+        "reliability": 91,
+        "romance": 40,
+        "boundary": 87
+      },
+      "enabled": true,
+      "sortOrder": 3,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "zhuge_liang",
+      "name": "诸葛亮",
+      "era": "history",
+      "profile": {
+        "initiative": 60,
+        "warmth": 63,
+        "reliability": 96,
+        "romance": 40,
+        "boundary": 85
+      },
+      "enabled": true,
+      "sortOrder": 4,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "li_qingzhao",
+      "name": "李清照",
+      "era": "history",
+      "profile": {
+        "initiative": 48,
+        "warmth": 87,
+        "reliability": 66,
+        "romance": 92,
+        "boundary": 68
+      },
+      "enabled": true,
+      "sortOrder": 5,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "wang_yangming",
+      "name": "王阳明",
+      "era": "history",
+      "profile": {
+        "initiative": 71,
+        "warmth": 66,
+        "reliability": 88,
+        "romance": 33,
+        "boundary": 89
+      },
+      "enabled": true,
+      "sortOrder": 6,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "su_shi",
+      "name": "苏轼",
+      "era": "history",
+      "profile": {
+        "initiative": 63,
+        "warmth": 91,
+        "reliability": 69,
+        "romance": 88,
+        "boundary": 61
+      },
+      "enabled": true,
+      "sortOrder": 7,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "li_bai",
+      "name": "李白",
+      "era": "history",
+      "profile": {
+        "initiative": 73,
+        "warmth": 78,
+        "reliability": 37,
+        "romance": 93,
+        "boundary": 36
+      },
+      "enabled": true,
+      "sortOrder": 8,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "hua_mulan",
+      "name": "花木兰",
+      "era": "history",
+      "profile": {
+        "initiative": 77,
+        "warmth": 64,
+        "reliability": 89,
+        "romance": 40,
+        "boundary": 87
+      },
+      "enabled": true,
+      "sortOrder": 9,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "wang_zhaojun",
+      "name": "王昭君",
+      "era": "history",
+      "profile": {
+        "initiative": 58,
+        "warmth": 83,
+        "reliability": 88,
+        "romance": 62,
+        "boundary": 85
+      },
+      "enabled": true,
+      "sortOrder": 10,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "cai_wenji",
+      "name": "蔡文姬",
+      "era": "history",
+      "profile": {
+        "initiative": 70,
+        "warmth": 78,
+        "reliability": 46,
+        "romance": 96,
+        "boundary": 38
+      },
+      "enabled": true,
+      "sortOrder": 11,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "cao_cao",
+      "name": "曹操",
+      "era": "history",
+      "profile": {
+        "initiative": 99,
+        "warmth": 47,
+        "reliability": 85,
+        "romance": 53,
+        "boundary": 73
+      },
+      "enabled": true,
+      "sortOrder": 12,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "zhuo_wenjun",
+      "name": "卓文君",
+      "era": "history",
+      "profile": {
+        "initiative": 52,
+        "warmth": 85,
+        "reliability": 87,
+        "romance": 70,
+        "boundary": 80
+      },
+      "enabled": true,
+      "sortOrder": 13,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "xin_qiji",
+      "name": "辛弃疾",
+      "era": "history",
+      "profile": {
+        "initiative": 90,
+        "warmth": 65,
+        "reliability": 87,
+        "romance": 64,
+        "boundary": 81
+      },
+      "enabled": true,
+      "sortOrder": 14,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "shangguan_waner",
+      "name": "上官婉儿",
+      "era": "history",
+      "profile": {
+        "initiative": 80,
+        "warmth": 57,
+        "reliability": 87,
+        "romance": 55,
+        "boundary": 86
+      },
+      "enabled": true,
+      "sortOrder": 15,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "ban_zhao",
+      "name": "班昭",
+      "era": "history",
+      "profile": {
+        "initiative": 71,
+        "warmth": 57,
+        "reliability": 90,
+        "romance": 55,
+        "boundary": 85
+      },
+      "enabled": true,
+      "sortOrder": 16,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "zhang_ailing",
+      "name": "张爱玲",
+      "era": "modern",
+      "profile": {
+        "initiative": 37,
+        "warmth": 55,
+        "reliability": 68,
+        "romance": 82,
+        "boundary": 95
+      },
+      "enabled": true,
+      "sortOrder": 17,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "lin_huiyin",
+      "name": "林徽因",
+      "era": "modern",
+      "profile": {
+        "initiative": 67,
+        "warmth": 77,
+        "reliability": 79,
+        "romance": 85,
+        "boundary": 77
+      },
+      "enabled": true,
+      "sortOrder": 18,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "xu_zhimo",
+      "name": "徐志摩",
+      "era": "modern",
+      "profile": {
+        "initiative": 80,
+        "warmth": 81,
+        "reliability": 47,
+        "romance": 95,
+        "boundary": 30
+      },
+      "enabled": true,
+      "sortOrder": 19,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "hu_shi",
+      "name": "胡适",
+      "era": "modern",
+      "profile": {
+        "initiative": 63,
+        "warmth": 62,
+        "reliability": 90,
+        "romance": 52,
+        "boundary": 88
+      },
+      "enabled": true,
+      "sortOrder": 20,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "song_qingling",
+      "name": "宋庆龄",
+      "era": "modern",
+      "profile": {
+        "initiative": 82,
+        "warmth": 77,
+        "reliability": 94,
+        "romance": 48,
+        "boundary": 89
+      },
+      "enabled": true,
+      "sortOrder": 21,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "lu_xun",
+      "name": "鲁迅",
+      "era": "modern",
+      "profile": {
+        "initiative": 77,
+        "warmth": 52,
+        "reliability": 85,
+        "romance": 40,
+        "boundary": 90
+      },
+      "enabled": true,
+      "sortOrder": 22,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "qian_zhongshu",
+      "name": "钱钟书",
+      "era": "modern",
+      "profile": {
+        "initiative": 50,
+        "warmth": 57,
+        "reliability": 88,
+        "romance": 70,
+        "boundary": 85
+      },
+      "enabled": true,
+      "sortOrder": 23,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "yang_jiang",
+      "name": "杨绛",
+      "era": "modern",
+      "profile": {
+        "initiative": 53,
+        "warmth": 77,
+        "reliability": 93,
+        "romance": 57,
+        "boundary": 89
+      },
+      "enabled": true,
+      "sortOrder": 24,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "lu_xiaoman",
+      "name": "陆小曼",
+      "era": "modern",
+      "profile": {
+        "initiative": 78,
+        "warmth": 75,
+        "reliability": 38,
+        "romance": 92,
+        "boundary": 45
+      },
+      "enabled": true,
+      "sortOrder": 25,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "liang_sicheng",
+      "name": "梁思成",
+      "era": "modern",
+      "profile": {
+        "initiative": 65,
+        "warmth": 64,
+        "reliability": 90,
+        "romance": 54,
+        "boundary": 87
+      },
+      "enabled": true,
+      "sortOrder": 26,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "bing_xin",
+      "name": "冰心",
+      "era": "modern",
+      "profile": {
+        "initiative": 58,
+        "warmth": 87,
+        "reliability": 86,
+        "romance": 63,
+        "boundary": 86
+      },
+      "enabled": true,
+      "sortOrder": 27,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "mei_lanfang",
+      "name": "梅兰芳",
+      "era": "modern",
+      "profile": {
+        "initiative": 79,
+        "warmth": 76,
+        "reliability": 91,
+        "romance": 77,
+        "boundary": 87
+      },
+      "enabled": true,
+      "sortOrder": 28,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "xiao_hong",
+      "name": "萧红",
+      "era": "modern",
+      "profile": {
+        "initiative": 67,
+        "warmth": 88,
+        "reliability": 47,
+        "romance": 93,
+        "boundary": 53
+      },
+      "enabled": true,
+      "sortOrder": 29,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "shen_congwen",
+      "name": "沈从文",
+      "era": "modern",
+      "profile": {
+        "initiative": 53,
+        "warmth": 84,
+        "reliability": 75,
+        "romance": 88,
+        "boundary": 67
+      },
+      "enabled": true,
+      "sortOrder": 30,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "deng_yingchao",
+      "name": "邓颖超",
+      "era": "modern",
+      "profile": {
+        "initiative": 88,
+        "warmth": 73,
+        "reliability": 43,
+        "romance": 88,
+        "boundary": 44
+      },
+      "enabled": true,
+      "sortOrder": 31,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "zhou_enlai",
+      "name": "周恩来",
+      "era": "modern",
+      "profile": {
+        "initiative": 85,
+        "warmth": 83,
+        "reliability": 95,
+        "romance": 53,
+        "boundary": 93
+      },
+      "enabled": true,
+      "sortOrder": 32,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "wang_fei",
+      "name": "王菲",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 49,
+        "warmth": 55,
+        "reliability": 67,
+        "romance": 83,
+        "boundary": 93
+      },
+      "enabled": true,
+      "sortOrder": 33,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "zhou_xun",
+      "name": "周迅",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 74,
+        "warmth": 90,
+        "reliability": 70,
+        "romance": 91,
+        "boundary": 57
+      },
+      "enabled": true,
+      "sortOrder": 34,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "liu_dehua",
+      "name": "刘德华",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 75,
+        "warmth": 81,
+        "reliability": 93,
+        "romance": 65,
+        "boundary": 89
+      },
+      "enabled": true,
+      "sortOrder": 35,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "zhou_jielun",
+      "name": "周杰伦",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 67,
+        "warmth": 60,
+        "reliability": 83,
+        "romance": 87,
+        "boundary": 81
+      },
+      "enabled": true,
+      "sortOrder": 36,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "zhang_manyu",
+      "name": "张曼玉",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 50,
+        "warmth": 72,
+        "reliability": 80,
+        "romance": 77,
+        "boundary": 90
+      },
+      "enabled": true,
+      "sortOrder": 37,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "liang_chaowei",
+      "name": "梁朝伟",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 33,
+        "warmth": 68,
+        "reliability": 87,
+        "romance": 73,
+        "boundary": 91
+      },
+      "enabled": true,
+      "sortOrder": 38,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "shu_qi",
+      "name": "舒淇",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 70,
+        "warmth": 83,
+        "reliability": 77,
+        "romance": 86,
+        "boundary": 83
+      },
+      "enabled": true,
+      "sortOrder": 39,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "gong_li",
+      "name": "巩俐",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 83,
+        "warmth": 67,
+        "reliability": 89,
+        "romance": 60,
+        "boundary": 92
+      },
+      "enabled": true,
+      "sortOrder": 40,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "mo_wenwei",
+      "name": "莫文蔚",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 75,
+        "warmth": 91,
+        "reliability": 87,
+        "romance": 85,
+        "boundary": 85
+      },
+      "enabled": true,
+      "sortOrder": 41,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "chen_yixun",
+      "name": "陈奕迅",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 73,
+        "warmth": 93,
+        "reliability": 67,
+        "romance": 86,
+        "boundary": 65
+      },
+      "enabled": true,
+      "sortOrder": 42,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "michelle_yeoh",
+      "name": "杨紫琼",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 87,
+        "warmth": 76,
+        "reliability": 93,
+        "romance": 53,
+        "boundary": 93
+      },
+      "enabled": true,
+      "sortOrder": 43,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "hu_ge",
+      "name": "胡歌",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 65,
+        "warmth": 78,
+        "reliability": 79,
+        "romance": 83,
+        "boundary": 85
+      },
+      "enabled": true,
+      "sortOrder": 44,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "takeshi_kaneshiro",
+      "name": "金城武",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 30,
+        "warmth": 65,
+        "reliability": 83,
+        "romance": 74,
+        "boundary": 93
+      },
+      "enabled": true,
+      "sortOrder": 45,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "leslie_cheung",
+      "name": "张国荣",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 87,
+        "warmth": 93,
+        "reliability": 73,
+        "romance": 95,
+        "boundary": 69
+      },
+      "enabled": true,
+      "sortOrder": 46,
+      "coverUrl": "",
+      "gender": "male"
+    },
+    {
+      "key": "brigitte_lin",
+      "name": "林青霞",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 80,
+        "warmth": 77,
+        "reliability": 85,
+        "romance": 73,
+        "boundary": 92
+      },
+      "enabled": true,
+      "sortOrder": 47,
+      "coverUrl": "",
+      "gender": "female"
+    },
+    {
+      "key": "cai_kangyong",
+      "name": "蔡康永",
+      "era": "contemporary",
+      "profile": {
+        "initiative": 63,
+        "warmth": 91,
+        "reliability": 87,
+        "romance": 67,
+        "boundary": 89
+      },
+      "enabled": true,
+      "sortOrder": 48,
+      "coverUrl": "",
+      "gender": "male"
+    }
+  ],
+  "resultCopy": {
+    "initiative": {
+      "high": "主动推进，不喜欢关系长期停在原地",
+      "low": "更习惯等待明确信号后再行动"
+    },
+    "warmth": {
+      "high": "情绪回应直接，容易让人感到被在意",
+      "low": "表达温度较克制，需要从行动中观察"
+    },
+    "reliability": {
+      "high": "重视承诺和持续行动",
+      "low": "容易受状态影响，需要观察是否长期兑现"
+    },
+    "romance": {
+      "high": "擅长制造心动和表达好感",
+      "low": "更偏实际，不一定主动营造浪漫氛围"
+    },
+    "boundary": {
+      "high": "关系立场和边界比较清楚",
+      "low": "互动范围可能较模糊，需要关注关系定义"
+    },
+    "shareTemplate": "我在 Crush 名人图鉴里测出{主体}像「{人物名}」{similarity}%，第二像「{第二人物名}」{secondarySimilarity}%。"
+  },
+  "goldenAnswers": {
+    "lin_huiyin": {
+      "CQ01": "B",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "C",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "cai_wenji": {
+      "CQ01": "D",
+      "CQ02": "C",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "D",
+      "CQ06": "D",
+      "CQ07": "B",
+      "CQ08": "C",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "B",
+      "CQ12": "C"
+    },
+    "zhuo_wenjun": {
+      "CQ01": "A",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "D",
+      "CQ06": "C",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "deng_yingchao": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "C",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "C",
+      "CQ08": "C",
+      "CQ09": "C",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "D"
+    },
+    "zhang_ailing": {
+      "CQ01": "C",
+      "CQ02": "D",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "C",
+      "CQ12": "D"
+    },
+    "xiao_hong": {
+      "CQ01": "D",
+      "CQ02": "D",
+      "CQ03": "D",
+      "CQ04": "A",
+      "CQ05": "C",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "C",
+      "CQ10": "C",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "hua_mulan": {
+      "CQ01": "B",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "B",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "brigitte_lin": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "C",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "ban_zhao": {
+      "CQ01": "D",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "D",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "lu_xiaoman": {
+      "CQ01": "D",
+      "CQ02": "C",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "wang_fei": {
+      "CQ01": "B",
+      "CQ02": "C",
+      "CQ03": "C",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "C",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "wang_zhaojun": {
+      "CQ01": "B",
+      "CQ02": "D",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "B",
+      "CQ08": "B",
+      "CQ09": "D",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "yang_jiang": {
+      "CQ01": "D",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "D",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "song_qingling": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "B",
+      "CQ05": "B",
+      "CQ06": "C",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "li_qingzhao": {
+      "CQ01": "C",
+      "CQ02": "A",
+      "CQ03": "C",
+      "CQ04": "D",
+      "CQ05": "C",
+      "CQ06": "C",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "C",
+      "CQ10": "D",
+      "CQ11": "B",
+      "CQ12": "B"
+    },
+    "shangguan_waner": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "D",
+      "CQ05": "C",
+      "CQ06": "A",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "C",
+      "CQ10": "A",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "zhou_xun": {
+      "CQ01": "B",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "A",
+      "CQ05": "C",
+      "CQ06": "B",
+      "CQ07": "B",
+      "CQ08": "C",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "C"
+    },
+    "bing_xin": {
+      "CQ01": "C",
+      "CQ02": "D",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "C",
+      "CQ08": "D",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "wu_zetian": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "B",
+      "CQ06": "C",
+      "CQ07": "C",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "zhang_manyu": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "C",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "C",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "gong_li": {
+      "CQ01": "A",
+      "CQ02": "C",
+      "CQ03": "B",
+      "CQ04": "C",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "shu_qi": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "C",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "B",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "C",
+      "CQ12": "B"
+    },
+    "michelle_yeoh": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "mo_wenwei": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "liang_sicheng": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "A",
+      "CQ06": "C",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "D",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "cao_cao": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "C",
+      "CQ07": "D",
+      "CQ08": "D",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "zhao_yun": {
+      "CQ01": "C",
+      "CQ02": "D",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "B",
+      "CQ08": "C",
+      "CQ09": "D",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "lu_xun": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "D",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "D",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "li_bai": {
+      "CQ01": "D",
+      "CQ02": "C",
+      "CQ03": "B",
+      "CQ04": "D",
+      "CQ05": "C",
+      "CQ06": "C",
+      "CQ07": "C",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "D"
+    },
+    "su_shi": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "B",
+      "CQ08": "C",
+      "CQ09": "B",
+      "CQ10": "D",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "takeshi_kaneshiro": {
+      "CQ01": "D",
+      "CQ02": "B",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "D",
+      "CQ11": "C",
+      "CQ12": "D"
+    },
+    "xin_qiji": {
+      "CQ01": "C",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "B",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "A"
+    },
+    "qian_zhongshu": {
+      "CQ01": "D",
+      "CQ02": "D",
+      "CQ03": "D",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "D",
+      "CQ10": "A",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "wang_yangming": {
+      "CQ01": "D",
+      "CQ02": "D",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "D",
+      "CQ08": "C",
+      "CQ09": "C",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "chen_yixun": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "C",
+      "CQ05": "D",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "D",
+      "CQ10": "D",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "shen_congwen": {
+      "CQ01": "D",
+      "CQ02": "D",
+      "CQ03": "A",
+      "CQ04": "C",
+      "CQ05": "A",
+      "CQ06": "D",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "C",
+      "CQ12": "C"
+    },
+    "cai_kangyong": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "A",
+      "CQ05": "B",
+      "CQ06": "D",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "B",
+      "CQ10": "D",
+      "CQ11": "A",
+      "CQ12": "B"
+    },
+    "xiang_yu": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "B",
+      "CQ04": "B",
+      "CQ05": "D",
+      "CQ06": "B",
+      "CQ07": "A",
+      "CQ08": "C",
+      "CQ09": "B",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "C"
+    },
+    "zhuge_liang": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "B",
+      "CQ06": "C",
+      "CQ07": "D",
+      "CQ08": "A",
+      "CQ09": "D",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "D"
+    },
+    "hu_shi": {
+      "CQ01": "B",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "D",
+      "CQ11": "D",
+      "CQ12": "A"
+    },
+    "zhou_jielun": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "A",
+      "CQ04": "D",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "B",
+      "CQ08": "D",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "hu_ge": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "C",
+      "CQ04": "C",
+      "CQ05": "A",
+      "CQ06": "B",
+      "CQ07": "C",
+      "CQ08": "C",
+      "CQ09": "A",
+      "CQ10": "C",
+      "CQ11": "D",
+      "CQ12": "B"
+    },
+    "liang_chaowei": {
+      "CQ01": "D",
+      "CQ02": "C",
+      "CQ03": "D",
+      "CQ04": "B",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "C",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "B",
+      "CQ11": "A",
+      "CQ12": "D"
+    },
+    "xu_zhimo": {
+      "CQ01": "C",
+      "CQ02": "B",
+      "CQ03": "D",
+      "CQ04": "A",
+      "CQ05": "C",
+      "CQ06": "D",
+      "CQ07": "C",
+      "CQ08": "B",
+      "CQ09": "C",
+      "CQ10": "B",
+      "CQ11": "C",
+      "CQ12": "A"
+    },
+    "liu_dehua": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "C",
+      "CQ04": "C",
+      "CQ05": "C",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "A",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "zhou_enlai": {
+      "CQ01": "B",
+      "CQ02": "A",
+      "CQ03": "D",
+      "CQ04": "C",
+      "CQ05": "B",
+      "CQ06": "A",
+      "CQ07": "B",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "B",
+      "CQ11": "B",
+      "CQ12": "A"
+    },
+    "leslie_cheung": {
+      "CQ01": "A",
+      "CQ02": "A",
+      "CQ03": "A",
+      "CQ04": "A",
+      "CQ05": "C",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "B",
+      "CQ09": "B",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "C"
+    },
+    "mei_lanfang": {
+      "CQ01": "A",
+      "CQ02": "B",
+      "CQ03": "C",
+      "CQ04": "A",
+      "CQ05": "A",
+      "CQ06": "A",
+      "CQ07": "A",
+      "CQ08": "A",
+      "CQ09": "A",
+      "CQ10": "A",
+      "CQ11": "A",
+      "CQ12": "C"
+    }
+  },
+  "calibrationSummary": {
+    "passed": true,
+    "seed": 20260804,
+    "iterations": 200000,
+    "genders": {
+      "female": {
+        "subjectGender": "female",
+        "seed": 20260804,
+        "iterations": 200000,
+        "passed": true,
+        "maxRatio": 0.11516,
+        "topFiveRatio": 0.43667500000000004,
+        "groupWinnerCounts": {
+          "modern": 8,
+          "history": 8,
+          "contemporary": 8
+        },
+        "missingGolden": [],
+        "distribution": [
+          {
+            "personKey": "deng_yingchao",
+            "count": 23032,
+            "ratio": 0.11516
+          },
+          {
+            "personKey": "ban_zhao",
+            "count": 19614,
+            "ratio": 0.09807
+          },
+          {
+            "personKey": "cai_wenji",
+            "count": 17599,
+            "ratio": 0.087995
+          },
+          {
+            "personKey": "lu_xiaoman",
+            "count": 14073,
+            "ratio": 0.070365
+          },
+          {
+            "personKey": "hua_mulan",
+            "count": 13017,
+            "ratio": 0.065085
+          },
+          {
+            "personKey": "wang_zhaojun",
+            "count": 12973,
+            "ratio": 0.064865
+          },
+          {
+            "personKey": "xiao_hong",
+            "count": 12701,
+            "ratio": 0.063505
+          },
+          {
+            "personKey": "li_qingzhao",
+            "count": 12143,
+            "ratio": 0.060715
+          },
+          {
+            "personKey": "zhuo_wenjun",
+            "count": 12134,
+            "ratio": 0.06067
+          },
+          {
+            "personKey": "shangguan_waner",
+            "count": 9077,
+            "ratio": 0.045385
+          },
+          {
+            "personKey": "wang_fei",
+            "count": 9073,
+            "ratio": 0.045365
+          },
+          {
+            "personKey": "zhou_xun",
+            "count": 7911,
+            "ratio": 0.039555
+          },
+          {
+            "personKey": "zhang_ailing",
+            "count": 7843,
+            "ratio": 0.039215
+          },
+          {
+            "personKey": "wu_zetian",
+            "count": 7088,
+            "ratio": 0.03544
+          },
+          {
+            "personKey": "lin_huiyin",
+            "count": 7021,
+            "ratio": 0.035105
+          },
+          {
+            "personKey": "bing_xin",
+            "count": 5600,
+            "ratio": 0.028
+          },
+          {
+            "personKey": "yang_jiang",
+            "count": 2882,
+            "ratio": 0.01441
+          },
+          {
+            "personKey": "zhang_manyu",
+            "count": 2508,
+            "ratio": 0.01254
+          },
+          {
+            "personKey": "brigitte_lin",
+            "count": 1243,
+            "ratio": 0.006215
+          },
+          {
+            "personKey": "song_qingling",
+            "count": 1162,
+            "ratio": 0.00581
+          },
+          {
+            "personKey": "shu_qi",
+            "count": 663,
+            "ratio": 0.003315
+          },
+          {
+            "personKey": "gong_li",
+            "count": 486,
+            "ratio": 0.00243
+          },
+          {
+            "personKey": "michelle_yeoh",
+            "count": 143,
+            "ratio": 0.000715
+          },
+          {
+            "personKey": "mo_wenwei",
+            "count": 14,
+            "ratio": 0.00007
+          }
+        ],
+        "reportChecksum": "e351eec5c3a864b9aa97fb09544c39917a995413ce07fc87c7ccf5c703e01f41"
+      },
+      "male": {
+        "subjectGender": "male",
+        "seed": 20260805,
+        "iterations": 200000,
+        "passed": true,
+        "maxRatio": 0.14571,
+        "topFiveRatio": 0.5254949999999999,
+        "groupWinnerCounts": {
+          "modern": 8,
+          "history": 8,
+          "contemporary": 8
+        },
+        "missingGolden": [],
+        "distribution": [
+          {
+            "personKey": "li_bai",
+            "count": 29142,
+            "ratio": 0.14571
+          },
+          {
+            "personKey": "xiang_yu",
+            "count": 24623,
+            "ratio": 0.123115
+          },
+          {
+            "personKey": "shen_congwen",
+            "count": 21986,
+            "ratio": 0.10993
+          },
+          {
+            "personKey": "liang_sicheng",
+            "count": 14888,
+            "ratio": 0.07444
+          },
+          {
+            "personKey": "su_shi",
+            "count": 14460,
+            "ratio": 0.0723
+          },
+          {
+            "personKey": "zhao_yun",
+            "count": 12323,
+            "ratio": 0.061615
+          },
+          {
+            "personKey": "qian_zhongshu",
+            "count": 10497,
+            "ratio": 0.052485
+          },
+          {
+            "personKey": "xin_qiji",
+            "count": 9653,
+            "ratio": 0.048265
+          },
+          {
+            "personKey": "lu_xun",
+            "count": 9320,
+            "ratio": 0.0466
+          },
+          {
+            "personKey": "hu_shi",
+            "count": 8924,
+            "ratio": 0.04462
+          },
+          {
+            "personKey": "chen_yixun",
+            "count": 8555,
+            "ratio": 0.042775
+          },
+          {
+            "personKey": "cao_cao",
+            "count": 7262,
+            "ratio": 0.03631
+          },
+          {
+            "personKey": "takeshi_kaneshiro",
+            "count": 6527,
+            "ratio": 0.032635
+          },
+          {
+            "personKey": "zhuge_liang",
+            "count": 6442,
+            "ratio": 0.03221
+          },
+          {
+            "personKey": "wang_yangming",
+            "count": 5780,
+            "ratio": 0.0289
+          },
+          {
+            "personKey": "hu_ge",
+            "count": 3100,
+            "ratio": 0.0155
+          },
+          {
+            "personKey": "cai_kangyong",
+            "count": 2574,
+            "ratio": 0.01287
+          },
+          {
+            "personKey": "xu_zhimo",
+            "count": 2011,
+            "ratio": 0.010055
+          },
+          {
+            "personKey": "liu_dehua",
+            "count": 728,
+            "ratio": 0.00364
+          },
+          {
+            "personKey": "liang_chaowei",
+            "count": 652,
+            "ratio": 0.00326
+          },
+          {
+            "personKey": "zhou_jielun",
+            "count": 245,
+            "ratio": 0.001225
+          },
+          {
+            "personKey": "zhou_enlai",
+            "count": 217,
+            "ratio": 0.001085
+          },
+          {
+            "personKey": "leslie_cheung",
+            "count": 58,
+            "ratio": 0.00029
+          },
+          {
+            "personKey": "mei_lanfang",
+            "count": 33,
+            "ratio": 0.000165
+          }
+        ],
+        "reportChecksum": "a4d15201b989295483552a9f8f9fe0da9fbfc0cf18871326f87949373d77967b"
+      }
+    },
+    "missingGolden": [],
+    "reportChecksum": "590473c242cba9f203b52fb39e6f5966b41cb5e3af16fe7e02b093a822f791d3"
+  }
+}

@@ -23,7 +23,8 @@ const COLLECTIONS = [
   'commission_ledger',
   'commission_review_tasks',
   'archetype_question_banks',
-  'archetype_results'
+  'archetype_results',
+  'system_announcements'
 ]
 
 function normalizeDoc(res) {
