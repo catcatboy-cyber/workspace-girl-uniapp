@@ -7,6 +7,7 @@
       </view>
       <button class="ghost-btn wide-btn" :disabled="ordersLoading" @click="loadOrders">{{ ordersLoading ? '加载中' : '刷新' }}</button>
     </view>
+    <view v-if="notice" class="ok-alert">{{ notice }}</view>
     <!-- 状态筛选 -->
     <view style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
       <button v-for="s in orderStatusOptions" :key="s.value"
@@ -52,15 +53,25 @@
           <text>金额：¥{{ expandedOrder?.amountYuan }}（{{ expandedOrder?.amountFen || 0 }}分）</text>
           <text>Crush Credits：{{ (expandedOrder?.grantTokens || 0).toLocaleString() }}</text>
           <text>状态：{{ orderStatusLabel(expandedOrder?.status) }}</text>
+          <text v-if="expandedOrder?.refundRequestStatus && expandedOrder?.refundRequestStatus !== 'refunded'">退款状态：{{ refundStatusLabel(expandedOrder.refundRequestStatus) }}</text>
+          <text v-if="expandedOrder?.refundOrderId">退款单号：{{ expandedOrder.refundOrderId }}</text>
+          <text v-if="expandedOrder?.refundRequestError">退款错误：{{ expandedOrder.refundRequestError }}</text>
           <text>创建时间：{{ formatDateTime(expandedOrder?.createdAt) }}</text>
           <text v-if="expandedOrder?.paidAt">支付时间：{{ formatDateTime(expandedOrder.paidAt) }}</text>
           <text v-if="expandedOrder?.transactionId">微信流水：{{ expandedOrder.transactionId }}</text>
           <text v-if="expandedOrder?.remark">备注：{{ expandedOrder.remark }}</text>
         </view>
-        <view v-if="expandedOrder?.status === 'paid'" style="margin-top:12px;">
-          <button class="small-btn danger" :disabled="refundingOrderId === expandedOrderId" @click="doRefundOrder(expandedOrderId)">
-            {{ refundingOrderId === expandedOrderId ? '退款中...' : '退款' }}
+        <view v-if="expandedOrder?.status === 'paid'" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="small-btn danger" :disabled="refundingOrderId === expandedOrderId || queryingOrderId === expandedOrderId" @click="doRefundOrder(expandedOrderId)">
+            {{ refundingOrderId === expandedOrderId ? '退款中...' : '微信退款' }}
           </button>
+          <button class="small-btn" :disabled="refundingOrderId === expandedOrderId || queryingOrderId === expandedOrderId" @click="doManualRefund(expandedOrderId)">线下退款标记</button>
+          <button class="small-btn" :disabled="refundingOrderId === expandedOrderId || queryingOrderId === expandedOrderId" @click="doQueryOrder(expandedOrderId)">
+            {{ queryingOrderId === expandedOrderId ? '查单中...' : '查微信状态' }}
+          </button>
+        </view>
+        <view v-if="expandedOrder?.refundRequestStatus === 'processing'" style="margin-top:12px;">
+          <button class="small-btn" :disabled="queryingOrderId === expandedOrderId" @click="doQueryOrder(expandedOrderId)">刷新退款状态</button>
         </view>
       </view>
     </view>
@@ -78,7 +89,7 @@
 // 注意：原代码里 orders 的 <view v-if="activeTab==='orders'"> 被误嵌在 customPet 面板内，
 // 两个 v-if 永不同时成立，导致「订单管理」整个 tab 从不渲染。抽成独立兄弟组件后修复。
 import { ref, computed, onMounted } from 'vue'
-import { adminGetOrders, adminRefundOrder } from '@/utils/api'
+import { adminGetOrders, adminRefundOrder, adminQueryRechargeOrderPayment } from '@/utils/api'
 import { aiLabel } from '@/utils/labels'
 
 const emit = defineEmits<{ error: [string] }>()
@@ -91,6 +102,8 @@ const orderPageSize = 20
 const orderStatusFilter = ref('all')
 const expandedOrderId = ref('')
 const refundingOrderId = ref('')
+const queryingOrderId = ref('')
+const notice = ref('')
 
 const orderStatusOptions = [
   { value: 'all', label: '全部' },
@@ -134,23 +147,77 @@ async function loadOrders() {
   }
 }
 
+function refundStatusLabel(status: string) {
+  const map: Record<string, string> = { requesting: '提交中', processing: '退款中', refunded: '已退款', failed: '失败', anomaly: '异常' }
+  return map[status] || status
+}
+
 async function doRefundOrder(orderId: string) {
   if (!orderId || refundingOrderId.value) return
+  const confirmed = await new Promise<boolean>((resolve) => {
+    uni.showModal({ title: '微信退款', content: '将向微信发起退款，退款完成后自动撤销权益与奖励。确认继续？', success: (res: any) => resolve(!!res?.confirm), fail: () => resolve(false) })
+  })
+  if (!confirmed) return
   refundingOrderId.value = orderId
   try {
     const result = await adminRefundOrder(orderId)
     if (result?.success) {
-      const order = orders.value.find((o: any) => o._id === orderId)
-      if (order) order.status = 'refunded'
-      expandedOrderId.value = ''
+      notice.value = result?.message || '退款任务已提交，等待微信处理'
       emit('error', '')
+      await loadOrders()
     } else {
-      emit('error', result?.message || '退款失败')
+      emit('error', result?.message || '退款失败' + (result?.manualOption ? '（可尝试线下退款标记）' : ''))
     }
   } catch (e: any) {
     emit('error', e?.message || '退款失败')
   } finally {
     refundingOrderId.value = ''
+  }
+}
+
+async function doManualRefund(orderId: string) {
+  if (!orderId || refundingOrderId.value) return
+  const confirmed = await new Promise<boolean>((resolve) => {
+    uni.showModal({ title: '线下退款标记', content: '确认已在微信商户平台完成线下退款？标记后系统将撤销权益与奖励。', success: (res: any) => resolve(!!res?.confirm), fail: () => resolve(false) })
+  })
+  if (!confirmed) return
+  refundingOrderId.value = orderId
+  try {
+    const result = await adminRefundOrder(orderId, { manual: true, reason: 'admin_manual_refund' })
+    if (result?.success) {
+      notice.value = '已标记线下退款，权益与奖励已撤销'
+      emit('error', '')
+      await loadOrders()
+    } else {
+      emit('error', result?.message || '标记失败')
+    }
+  } catch (e: any) {
+    emit('error', e?.message || '标记失败')
+  } finally {
+    refundingOrderId.value = ''
+  }
+}
+
+async function doQueryOrder(orderId: string) {
+  if (!orderId || queryingOrderId.value) return
+  queryingOrderId.value = orderId
+  try {
+    const result = await adminQueryRechargeOrderPayment(orderId, 'admin_reconcile')
+    if (result?.success) {
+      if (result?.action === 'fulfilled') notice.value = '微信侧已支付，已补发货'
+      else if (result?.action === 'settled_refund') notice.value = '微信侧已退款，已结算'
+      else if (result?.alreadyPaid) notice.value = '订单已支付且已发货'
+      else notice.value = result?.message || '查单完成'
+      emit('error', '')
+      await loadOrders()
+    } else {
+      emit('error', result?.message || '查单失败')
+      await loadOrders()
+    }
+  } catch (e: any) {
+    emit('error', e?.message || '查单失败')
+  } finally {
+    queryingOrderId.value = ''
   }
 }
 
@@ -189,6 +256,7 @@ button { margin: 0; }
 .table-header { color: #68766f; background: #f3f7f4; font-weight: 700; }
 .table-row.selected { background: #edf7f2; }
 .empty { padding: 22px; color: #68766f; background: #f4f7f4; border-radius: 8px; }
+.ok-alert { padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; color: #1d6b4a; background: #e6f6ee; font-size: 13px; }
 /* 订单专属 */
 .order-detail { padding: 16px; margin-top: 8px; background: #fbfdfb; border-radius: 8px; border: 1px solid rgba(23, 35, 31, 0.08); }
 .order-detail-grid { display: flex; flex-direction: column; gap: 6px; font-size: 34rpx; color: #555; }

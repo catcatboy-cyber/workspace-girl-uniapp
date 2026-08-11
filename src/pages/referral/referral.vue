@@ -1,6 +1,10 @@
 <template>
   <view class="page v2-mode" :style="themeVars">
-    <view v-if="loadingSummary" class="hero-skeleton" />
+    <view v-if="accessBlocked" class="blocked-state">
+      <text class="blocked-title">邀请功能暂未开放</text>
+      <text class="blocked-copy">该功能仅对受邀用户开放，敬请期待。</text>
+    </view>
+    <view v-else-if="loadingSummary" class="hero-skeleton" />
     <view v-else class="hero-block-v2">
       <view class="hero-tag-v2">
         <image class="tag-icon" src="/static/icons/taohua/sparkles.svg" mode="aspectFit" />
@@ -100,7 +104,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { getMyReferralCommissionSummary, listMyReferralCommissionLedger, listMyReferralInvitees, prepareCurrentUserReferralShare } from '@/utils/api'
+import { getMyReferralCommissionSummary, getSeedUserStatus, listMyReferralCommissionLedger, listMyReferralInvitees, prepareCurrentUserReferralShare } from '@/utils/api'
 import { appendReferralParams, buildSafeTimelineShare, isReferralShareBlocked, SAFE_SHARE_IMAGE } from '@/utils/share'
 import { getThemeStyle } from '@/utils/theme'
 
@@ -178,17 +182,44 @@ async function refreshAll() { await Promise.allSettled([loadSummary(), loadInvit
 function selectFilter(value: string) { if (ledgerStatus.value === value) return; ledgerStatus.value = value; void loadLedger(true) }
 function copyInviteLink() { const path = appendReferralParams('/pages/index/index', 'invite', 'referral_page'); if (!path) return uni.showToast({ title: '邀请码尚未准备好', icon: 'none' }); uni.setClipboardData({ data: path }) }
 
-onShow(() => { themeVars.value = getThemeStyle(); if (!initialized.value) { initialized.value = true; void refreshAll() } })
+// 页面级守卫：非种子用户禁止访问（H5 手动输 URL / 未来其他入口兜底）
+const accessBlocked = ref(false)
+let accessChecked = false
+
+async function checkSeedAccess() {
+  try {
+    const result = await getSeedUserStatus()
+    accessBlocked.value = result?.success ? result.isSeedUser !== true : true
+  } catch (_) {
+    accessBlocked.value = true
+  }
+}
+
+onShow(() => {
+  themeVars.value = getThemeStyle()
+  if (!accessChecked) {
+    accessChecked = true
+    void checkSeedAccess().then(() => {
+      if (!accessBlocked.value && !initialized.value) {
+        initialized.value = true
+        void refreshAll()
+      }
+    })
+  }
+})
 onPullDownRefresh(async () => { await refreshAll(); uni.stopPullDownRefresh() })
 onReachBottom(() => { if (activeTab.value === 'invitees') void loadInvitees(); else void loadLedger() })
-onShareAppMessage(() => isReferralShareBlocked() ? {} : ({ title: '来测测你的关系信号，完成后还能一起解锁更多内容', path: appendReferralParams('/pages/index/index', 'invite', 'referral_page'), imageUrl: SAFE_SHARE_IMAGE }))
-onShareTimeline(() => { if (isReferralShareBlocked()) return {}; const path = appendReferralParams('/pages/index/index', 'invite', 'referral_timeline'); return buildSafeTimelineShare({ query: path.includes('?') ? path.split('?')[1] : '' }) })
+onShareAppMessage(() => accessBlocked.value || isReferralShareBlocked() ? {} : ({ title: '来测测你的关系信号，完成后还能一起解锁更多内容', path: appendReferralParams('/pages/index/index', 'invite', 'referral_page'), imageUrl: SAFE_SHARE_IMAGE }))
+onShareTimeline(() => { if (accessBlocked.value || isReferralShareBlocked()) return {}; const path = appendReferralParams('/pages/index/index', 'invite', 'referral_timeline'); return buildSafeTimelineShare({ query: path.includes('?') ? path.split('?')[1] : '' }) })
 </script>
 
 <style scoped lang="scss">
 @import "@/styles/campus-pop.scss";
 
 .page { min-height: 100vh; padding: 24rpx 24rpx 80rpx; background: var(--app-bg, #FFFDF5); color: var(--text-main, #111); box-sizing: border-box; }
+.blocked-state { padding: 80rpx 40rpx; text-align: center; }
+.blocked-title { display: block; font-size: $fs-heading; font-weight: $fw-hero; }
+.blocked-copy { display: block; margin-top: 16rpx; font-size: $fs-body; color: var(--text-muted, #666); }
 .hero-block-v2 { @include hero-block-v2; }
 .hero-tag-v2 { @include tag-v2; @include tag-v2-black; gap: 8rpx; }
 .tag-icon, .inline-icon, .button-icon { width: 32rpx; height: 32rpx; flex-shrink: 0; }

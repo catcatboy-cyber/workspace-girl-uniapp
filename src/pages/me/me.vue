@@ -67,7 +67,7 @@
             <button class="btn btn-secondary btn-sm" @click="goTokenUsage">消费明细</button>
           </view>
       </view>
-      <view class="card-v2 referral-commission-entry" @click="goReferralCommission">
+      <view v-if="isSeedUser" class="card-v2 referral-commission-entry" @click="goReferralCommission">
         <view class="referral-commission-main">
           <text class="section-title-v2">我的邀请</text>
           <text class="card-text-v2">好友付费后获得分成，查看邀请人数和奖励明细。</text>
@@ -205,6 +205,7 @@ import {
   getSubscriptionConfig,
   getSubscriptionStatus,
   getMyReferralCommissionSummary,
+  getSeedUserStatus,
   prepareCurrentUserReferralShare,
   getTokenUsage,
   getVoiceUsage,
@@ -555,8 +556,20 @@ onShow(() => {
   if (changed) loadTokenUsage()
   if (changed) loadVoiceUsage()
   void loadCommissionSummary()
+  void loadSeedUserStatus()
   if (changed) lastDataVersion.value = dv
 })
+
+const isSeedUser = ref(false)
+
+async function loadSeedUserStatus() {
+  try {
+    const result = await getSeedUserStatus()
+    isSeedUser.value = result?.success ? result.isSeedUser === true : false
+  } catch (_) {
+    isSeedUser.value = false
+  }
+}
 
 async function loadCommissionSummary() {
   try {

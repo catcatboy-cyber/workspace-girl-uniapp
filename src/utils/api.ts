@@ -1009,10 +1009,18 @@ export async function adminGetOrders(params: { status?: string; page?: number; p
   return res.result
 }
 
-export async function adminRefundOrder(orderId: string) {
+export async function adminRefundOrder(orderId: string, options: { manual?: boolean; reason?: string } = {}) {
   const res = await callFunction({
     name: 'adminManage',
-    data: { action: 'refundOrder', orderId, ...getBusinessAuthPayload() }
+    data: { action: 'refundOrder', orderId, manual: options.manual === true, reason: options.reason || '', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminQueryRechargeOrderPayment(orderId: string, reason: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'queryRechargeOrderPayment', orderId, reason, ...getBusinessAuthPayload() }
   })
   return res.result
 }
@@ -1641,6 +1649,84 @@ export type ReferralCommissionSummary = {
   availableFen: number
   withdrawnFen: number
   reversedFen: number
+}
+
+// ── 系统公告 ──
+
+export async function getActiveAnnouncements() {
+  const res = await callFunction({
+    name: 'getAnnouncement',
+    data: { ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminListAnnouncements(params: { page?: number; pageSize?: number; status?: string } = {}) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'listAnnouncements', page: params.page || 1, pageSize: params.pageSize || 20, status: params.status || 'all', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminCreateAnnouncement(params: { announcementId?: string; title: string; content: string; targetType: 'all' | 'user'; targetUserId?: string; expiresAt?: string | null }) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'createAnnouncement', ...params, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminUpdateAnnouncementStatus(announcementId: string, status: 'active' | 'disabled') {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'updateAnnouncementStatus', announcementId, status, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminRemoveAnnouncement(announcementId: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'removeAnnouncement', announcementId, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+// ── 种子用户 ──
+
+export async function getSeedUserStatus() {
+  const res = await callFunction({
+    name: 'referralCommission',
+    data: { action: 'getSeedUserStatus', ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminListSeedUsers(params: { page?: number; pageSize?: number } = {}) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'listSeedUsers', page: params.page || 1, pageSize: params.pageSize || 20, ...getBusinessAuthPayload() }
+  })
+  return res.result
+}
+
+export async function adminAddSeedUser(userId: string, note: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    // 注意：getBusinessAuthPayload 展开必须在前——它返回的 userId 字段是当前登录管理员，
+    // 展开在后会覆盖业务参数 userId（曾导致添加任何用户都变成管理员自己）
+    data: { action: 'addSeedUser', ...getBusinessAuthPayload(), userId, note }
+  })
+  return res.result
+}
+
+export async function adminRemoveSeedUser(userId: string) {
+  const res = await callFunction({
+    name: 'adminManage',
+    data: { action: 'removeSeedUser', ...getBusinessAuthPayload(), userId }
+  })
+  return res.result
 }
 
 export async function getMyReferralCommissionSummary() {

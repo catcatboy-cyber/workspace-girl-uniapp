@@ -29,6 +29,8 @@
           <view :class="['sidebar-item', activeTab === 'feedback' ? 'active' : '']" @click="activeTab = 'feedback'"><image class="sidebar-icon" src="/static/icons/taohua/bubble.svg" mode="aspectFit" /><text>反馈管理</text></view>
           <view :class="['sidebar-item', activeTab === 'customPet' ? 'active' : '']" @click="activeTab = 'customPet'">🐾 宠物需求</view>
           <view :class="['sidebar-item', activeTab === 'archetypeQuestions' ? 'active' : '']" @click="activeTab = 'archetypeQuestions'">🧩 题库管理</view>
+          <view :class="['sidebar-item', activeTab === 'announcements' ? 'active' : '']" @click="activeTab = 'announcements'">📢 公告管理</view>
+          <view :class="['sidebar-item', activeTab === 'seedUsers' ? 'active' : '']" @click="activeTab = 'seedUsers'">🌟 种子用户</view>
         </view>
       </view>
       <view class="admin-main">
@@ -94,10 +96,10 @@
                 <view v-else class="user-list-avatar user-list-avatar-fallback">{{ (user.nickname || user.email || user.id).slice(0, 1) }}</view>
                 <view class="user-account-copy">
                   <text class="user-account-name">{{ user.nickname || user.email || user.phone || user.id }}</text>
-                  <text v-if="user.nickname" class="user-account-id mono">{{ user.email || user.phone || user.id }}</text>
+                  <text v-if="user.nickname" selectable class="user-account-id mono">{{ user.email || user.phone || user.id }}</text>
                 </view>
               </view>
-              <text class="mono" style="font-size:20rpx;word-break:break-all;">{{ user.openid || '-' }}</text>
+              <text selectable class="mono" style="font-size:20rpx;word-break:break-all;">{{ user.openid || '-' }}</text>
               <text style="font-size:22rpx;color:#999;">{{ formatDateTime(user.createdAt) }}</text>
               <text :class="['plan-tag', planTagClass(user)]">{{ user.planLabel || '免费版' }}</text>
               <text>{{ user.caseCount }}</text>
@@ -124,11 +126,11 @@
             </view>
             <view class="detail-line">
               <text class="detail-label">用户 ID</text>
-              <text class="detail-value mono">{{ selectedDetail.user.id }}</text>
+              <text selectable class="detail-value mono">{{ selectedDetail.user.id }}</text>
             </view>
             <view class="detail-line">
               <text class="detail-label">OpenID</text>
-              <text class="detail-value mono">{{ selectedDetail.user.openid || '-' }}</text>
+              <text selectable class="detail-value mono">{{ selectedDetail.user.openid || '-' }}</text>
             </view>
             <view class="detail-line">
               <text class="detail-label">登录方式</text>
@@ -148,7 +150,7 @@
             </view>
             <view v-if="selectedDetail.user.landingShareId" class="detail-line">
               <text class="detail-label">分享ID</text>
-              <text class="detail-value mono" style="font-size:18rpx;">{{ selectedDetail.user.landingShareId }}</text>
+              <text selectable class="detail-value mono" style="font-size:18rpx;">{{ selectedDetail.user.landingShareId }}</text>
             </view>
             <view v-if="selectedDetail.user.landingInviteCode" class="detail-line">
               <text class="detail-label">邀请码</text>
@@ -634,6 +636,8 @@
 
       <OrdersPanel v-if="activeTab === 'orders'" @error="errorMessage = $event" />
       <ArchetypeReportOrdersPanel v-if="activeTab === 'reportOrders'" @error="errorMessage = $event" />
+      <AnnouncementsPanel v-if="activeTab === 'announcements'" @error="errorMessage = $event" />
+      <SeedUsersPanel v-if="activeTab === 'seedUsers'" @error="errorMessage = $event" />
 
       <LoginLogsPanel v-if="activeTab === 'loginLogs'" @error="errorMessage = $event" />
       <ReferralClaimsPanel v-if="activeTab === 'referralClaims'" />
@@ -670,6 +674,8 @@ import LoginLogsPanel from './components/panels/LoginLogsPanel.vue'
 import ReferralClaimsPanel from './components/panels/ReferralClaimsPanel.vue'
 import ArchetypeQuestionBankPanel from './components/panels/ArchetypeQuestionBankPanel.vue'
 import ArchetypeReportOrdersPanel from './components/panels/ArchetypeReportOrdersPanel.vue'
+import AnnouncementsPanel from './components/panels/AnnouncementsPanel.vue'
+import SeedUsersPanel from './components/panels/SeedUsersPanel.vue'
 
 type AdminSelfProfile = {
   nickname?: string
@@ -2101,6 +2107,8 @@ button {
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .empty {

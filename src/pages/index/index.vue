@@ -4,6 +4,8 @@
     <view v-if="loading" class="loading">LOADING...</view>
 
     <block v-if="!loading">
+      <!-- 系统公告（全员/指定用户，easycom 自动注册） -->
+      <AnnouncementBanner />
       <!-- 邀请到账通知 -->
       <view v-if="showIndexReferralNotice" class="referral-notice" style="margin-bottom:8rpx;" @click="dismissIndexReferralNotice">
         <text class="referral-notice-text">🎉 邀请成功！已获得 +{{ indexReferralNoticeAmount }} Crush Credits →</text>
@@ -482,6 +484,7 @@ import { onHide, onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, 
 import AssessmentForm from '@/components/AssessmentForm.vue'
 import PetSpeakSheet from '@/components/PetSpeakSheet.vue'
 import CampusSignalHome from '@/components/CampusSignalHome.vue'
+import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
 import ActionGuideSheet from '@/components/ActionGuideSheet.vue'
 import AnalysisSheet from '@/components/AnalysisSheet.vue'
 import BalanceSheet from '@/components/BalanceSheet.vue'
