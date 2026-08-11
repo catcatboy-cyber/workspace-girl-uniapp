@@ -14,6 +14,7 @@
     "test:archetypes": "node tests/run-relation-heroine-rules.cjs && node tests/run-crush-celebrity-rules.cjs && node tests/run-dimension-character-rules.cjs && node tests/run-archetype-integration-rules.cjs && node tests/run-archetype-subscription-migration.cjs && node tests/run-archetype-bank-transactions.cjs && node tests/run-archetype-result-cloudfunctions.cjs",
     "test:archetype-calibration": "node tests/run-portrait-calibration.cjs && node tests/run-dimension-character-calibration.cjs",
     "test:archetype-report-payment": "node tests/run-archetype-report-projection.cjs && node tests/run-archetype-report-payment.cjs && node tests/run-content-sec-callback-router.cjs && node tests/run-archetype-report-refund.cjs",
+    "test:recharge-refund": "node tests/run-recharge-refund.cjs",
     "test:archetype-share": "node tests/run-archetype-share-security.cjs && node tests/run-archetype-share-quick-save.cjs && node tests/run-archetype-share-routing.cjs && node tests/run-archetype-share-ui-contract.cjs && node tests/run-heart-persona-index-manager.cjs",
     "calibrate:portrait-banks": "node scripts/calibrate-portrait-banks.cjs",
     "cloud:archetype:indexes:audit": "node scripts/manage-archetype-cloud.cjs audit-indexes",
@@ -54,7 +55,9 @@
     "build:mp-alipay": "uni build -p mp-alipay",
     "build:mp-baidu": "uni build -p mp-baidu",
     "build:mp-toutiao": "uni build -p mp-toutiao",
-    "build:mp-weixin": "uni build -p mp-weixin && node scripts/postbuild-mp-weixin.cjs"
+    "build:mp-weixin": "uni build -p mp-weixin && node scripts/postbuild-mp-weixin.cjs",
+    "test:announcement": "node tests/run-announcement.cjs",
+    "test:seed-user": "node tests/run-seed-user.cjs"
   },
   "dependencies": {
     "@cloudbase/adapter-wx_mp": "^1.3.1",
