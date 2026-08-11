@@ -252,6 +252,37 @@ async function main() {
   const excludedSummary = await commission.getUserCommissionSummary(excludedDb, 'big-inviter')
   assert.equal(excludedSummary.rule.includeRecharge, false, '配置关闭的产品如实返回 false')
 
+  // P1-4 回归：源订单已退款时不得创建佣金（退款先于分佣 job 处理）
+  const refundedFake = createFakeCloudbase()
+  const refundedDb = refundedFake.init().database()
+  seed(refundedFake.__store, 'system_settings', 'settings_subscription', {
+    referral: { commission: { enabled: true, rateBps: 1000, settlementDays: 7, mode: 'all_orders' } }
+  })
+  seed(refundedFake.__store, 'users', 'rf-inviter', {})
+  seed(refundedFake.__store, 'referral_claims', 'rf-invitee', { inviteeUserId: 'rf-invitee', inviterUserId: 'rf-inviter', status: 'rewarded' })
+  seed(refundedFake.__store, 'recharge_orders', 'rf-order', { _id: 'rf-order', status: 'refunded', userId: 'rf-invitee', amountFen: 1000, productType: 'recharge' })
+  const refundedSnapshot = await commission.getCommissionConfig(refundedDb)
+  const refundedResult = await commission.createCommissionForPaidOrder(refundedDb, commission.buildJob({
+    source: 'recharge_order', orderId: 'rf-order', orderType: 'recharge', userId: 'rf-invitee',
+    paidAmountFen: 1000, commissionConfigSnapshot: refundedSnapshot
+  }))
+  assert.equal(refundedResult.reason, 'ORDER_REFUNDED', '源订单已退款时拒绝建佣金')
+  assert.equal(refundedFake.__store.getCollection('referral_commissions').size, 0)
+
+  // P1-4 回归：COMMISSION_NOT_FOUND 不再终态——冲正任务退避重试而非 done
+  const notFoundFake = createFakeCloudbase()
+  const notFoundDb = notFoundFake.init().database()
+  seed(notFoundFake.__store, 'commission_reversal_jobs', 'reversal_ghost', {
+    _id: 'reversal_ghost', commissionId: 'ghost', source: 'recharge_order', orderId: 'ghost-order',
+    refundAmountFen: 1000, reason: 'refund', status: 'pending', attempts: 0, nextRunAt: baseTime
+  })
+  const processedGhost = await commission.processDueReversalJobs(notFoundDb, { limit: 10 })
+  assert.equal(processedGhost.succeeded, 0, 'COMMISSION_NOT_FOUND 不视为成功')
+  assert.equal(processedGhost.retry, 1, 'COMMISSION_NOT_FOUND 退避重试')
+  const ghostJob = notFoundFake.__store.getCollection('commission_reversal_jobs').get('reversal_ghost')
+  assert.equal(ghostJob.status, 'pending', '重试后保持 pending 等待佣金创建')
+  assert.equal(ghostJob.attempts, 1)
+
   commission.setNowProvider(() => new Date())
   console.log('referral commission tests passed')
 }

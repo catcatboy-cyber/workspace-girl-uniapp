@@ -24,4 +24,36 @@ const token = 'token'
 const query = { timestamp: '1', nonce: '2' }
 query.signature = crypto.createHash('sha1').update([token, query.timestamp, query.nonce].sort().join('')).digest('hex')
 assert.equal(callback.verifyMessageSignature(token, query), true)
+
+// ── 充值/套餐（现金单）发货推送验单 ──
+const fakeUsersDb = { collection: () => ({ doc: () => ({ get: async () => ({ data: [{ openid: 'openid1' }] }) }) }) }
+const rcOrder = { _id: 'rc1', userId: 'u1', productType: 'recharge', planId: 'p9_9', amountFen: 290, sandbox: true }
+const rcAttach = JSON.stringify({ userId: 'u1', productType: 'recharge', planId: 'p9_9' })
+const rcPayload = { MsgType: 'event', Event: 'xpay_goods_deliver_notify', OpenId: 'openid1', Env: '1', GoodsInfo: { ProductId: 'p9_9', Quantity: '290', OrigPrice: '290', ActualPrice: '290', Attach: rcAttach }, WeChatPayInfo: { PaidTime: '1780000000', TransactionId: 'tx-1' } }
+
+async function runRechargeValidationTests() {
+  assert.equal((await callback.validateRechargeDeliveryPayload(rcPayload, rcOrder, fakeUsersDb)).valid, true, '充值发货推送 happy path')
+  assert.equal((await callback.validateRechargeDeliveryPayload({ ...rcPayload, Env: '0' }, rcOrder, fakeUsersDb)).valid, false, 'Env 不匹配必须失败')
+  assert.equal((await callback.validateRechargeDeliveryPayload({ ...rcPayload, OpenId: 'other' }, rcOrder, fakeUsersDb)).valid, false, 'OpenId 不匹配必须失败')
+  assert.equal((await callback.validateRechargeDeliveryPayload({ ...rcPayload, GoodsInfo: { ...rcPayload.GoodsInfo, ActualPrice: '999' } }, rcOrder, fakeUsersDb)).valid, false, '金额被篡改必须失败')
+  assert.equal((await callback.validateRechargeDeliveryPayload({ ...rcPayload, GoodsInfo: { ...rcPayload.GoodsInfo, Attach: 'tampered' } }, rcOrder, fakeUsersDb)).valid, false, 'Attach 不匹配必须失败')
+
+  // 套餐订单：attach 按 planKey/billingCycle 重建
+  const subOrder = { userId: 'u2', productType: 'subscription', planKey: 'pro', billingCycle: 'monthly', amountFen: 1900, sandbox: true }
+  const subAttach = JSON.stringify({ userId: 'u2', productType: 'subscription', planKey: 'pro', billingCycle: 'monthly' })
+  const subPayload = { ...rcPayload, GoodsInfo: { ...rcPayload.GoodsInfo, Quantity: '1900', OrigPrice: '1900', ActualPrice: '1900', Attach: subAttach } }
+  assert.equal((await callback.validateRechargeDeliveryPayload(subPayload, subOrder, fakeUsersDb)).valid, true, '套餐发货推送 happy path')
+
+  // 用户 openid 查询失败时跳过 OpenId 校验，不阻断
+  const brokenDb = { collection: () => ({ doc: () => ({ get: async () => { throw new Error('no db') } }) }) }
+  assert.equal((await callback.validateRechargeDeliveryPayload({ ...rcPayload, OpenId: 'anything' }, rcOrder, brokenDb)).valid, true, '用户 openid 缺失时 OpenId 校验降级')
+
+  // 已履约订单校验 transactionId 一致性
+  const fulfilledOrder = { ...rcOrder, transactionId: 'tx-1' }
+  assert.equal((await callback.validateRechargeDeliveryPayload(rcPayload, fulfilledOrder, fakeUsersDb)).valid, true, '已履约订单 transactionId 一致')
+  assert.equal((await callback.validateRechargeDeliveryPayload({ ...rcPayload, WeChatPayInfo: { ...rcPayload.WeChatPayInfo, TransactionId: 'tx-EVIL' } }, fulfilledOrder, fakeUsersDb)).valid, false, '已履约订单 transactionId 被篡改必须失败')
+}
+
+runRechargeValidationTests().catch((e) => { console.error(e); process.exitCode = 1 })
+
 console.log('content security callback router tests passed')

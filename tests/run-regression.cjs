@@ -1399,7 +1399,8 @@ async function main() {
 
     const adminManage = loadFunction('adminManage')
     asUser(fake, 'admin_refund_operator')
-    const result = await adminManage({ action: 'refundOrder', orderId: 'order_refund_grant_tokens' })
+    // 默认路径现为微信退款 API（需 openid，测试无网络）；线下退款标记（manual）保留即时结算语义
+    const result = await adminManage({ action: 'refundOrder', orderId: 'order_refund_grant_tokens', manual: true })
 
     assert.equal(result.success, true)
     const user = fake.__store.dumpCollection('users').find((item) => item._id === 'user_refund_owner')

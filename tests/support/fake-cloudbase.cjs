@@ -26,6 +26,9 @@ function toComparable(value) {
 }
 
 function matchesCondition(left, right) {
+  if (right && typeof right === 'object' && right.__op === 'exists') {
+    return right.value ? left !== undefined : left === undefined
+  }
   if (right && typeof right === 'object' && right.__op === 'in' && Array.isArray(right.values)) {
     return right.values.some((value) => valuesEqual(left, value))
   }
@@ -138,6 +141,38 @@ class FakeQuery {
   async count() {
     const data = await this._filterData()
     return { total: data.length }
+  }
+
+  async update(patch) {
+    const map = this.store.getCollection(this.name)
+    const data = await this._filterData()
+    const cloned = clone(patch)
+    let updated = 0
+    for (const item of data) {
+      const current = map.get(item._id)
+      if (!current) continue
+      // CAS 模拟：写入前用当前 store 值重新验证查询条件。
+      // 真实 CloudBase 的条件更新在数据库端原子评估；并发下过滤快照可能过期，
+      // 重验保证"并发抢占"（如 pending→paid 条件更新）只有一个调用成功。
+      if (this.query && !Object.entries(this.query).every(([key, value]) => matchesCondition(current[key], value))) {
+        continue
+      }
+      const values = {}
+      for (const [key, value] of Object.entries(cloned)) {
+        if (value && typeof value === 'object' && value.__op === 'inc') {
+          values[key] = (current[key] || 0) + value.amount
+        } else if (value && typeof value === 'object' && value.__op === 'push') {
+          values[key] = [...(Array.isArray(current[key]) ? current[key] : []), ...value.values]
+        } else if (value && typeof value === 'object' && value.__op === 'set') {
+          values[key] = value.value
+        } else {
+          values[key] = value
+        }
+      }
+      map.set(item._id, { ...current, ...values })
+      updated += 1
+    }
+    return { updated }
   }
 
   async remove() {
@@ -331,6 +366,9 @@ function createFakeCloudbase() {
     const isTransaction = Boolean(options.isTransaction)
     return {
       command: {
+        exists(value) {
+          return { __op: 'exists', value: Boolean(value) }
+        },
         all(values) {
           return { __op: 'all', values: [...values] }
         },
@@ -364,6 +402,10 @@ function createFakeCloudbase() {
         set(value) {
           return { __op: 'set', value }
         }
+      },
+      async createCollection(name) {
+        if (!targetStore.collections.has(name)) targetStore.collections.set(name, new Map())
+        return { ok: true }
       },
       collection(name) {
         const collection = new FakeCollection(targetStore, name)

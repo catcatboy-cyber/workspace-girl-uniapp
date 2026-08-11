@@ -126,6 +126,86 @@ async function main() {
   assert.equal(overview.overview.inviterCount, 42)
   assert.equal(overview.overview.commissionCount, 1200)
 
+  // ── 充值/套餐退款与对账（闭环 ②③）──
+  // 线下退款标记：manual=true → 直接结算（refunded + 扣 token + 冲正 job）
+  seed(fake.__store, 'users', 'refund-user', { openid: '', extraTokens: 5000, plan: 'free' })
+  seed(fake.__store, 'recharge_orders', 'rc-refund-1', {
+    _id: 'rc-refund-1', userId: 'refund-user', outTradeNo: 'RCrefund001', productType: 'recharge',
+    planId: 'p9_9', amountFen: 290, grantTokens: 300000, status: 'paid',
+    channel: 'virtual_pay', sandbox: true, paidAt: new Date(), createdAt: new Date()
+  })
+  const manualRefund = await main({ action: 'refundOrder', orderId: 'rc-refund-1', manual: true, reason: '线下已退' })
+  assert.equal(manualRefund.success, true)
+  assert.equal(manualRefund.manual, true)
+  assert.equal(fake.__store.getCollection('recharge_orders').get('rc-refund-1').status, 'refunded')
+  assert.equal(fake.__store.getCollection('users').get('refund-user').extraTokens, 5000 - 300000 < 0 ? 0 : 5000 - 300000, 'token 扣回（不足时扣到 0）')
+  assert.ok(fake.__store.getCollection('commission_reversal_jobs').has('reversal_commission_recharge_order_rc-refund-1'), '冲正补偿 job 写入')
+  // 重复线下标记：已退款订单被拒（settle 层幂等已在 run-recharge-refund 覆盖）
+  const manualDup = await main({ action: 'refundOrder', orderId: 'rc-refund-1', manual: true })
+  assert.equal(manualDup.success, false)
+  assert.match(String(manualDup.message || ''), /退款/)
+
+  // 微信退款发起：用户缺 openid → OPENID_MISSING + manualOption
+  seed(fake.__store, 'users', 'refund-noid', { openid: '', extraTokens: 100, plan: 'free' })
+  seed(fake.__store, 'recharge_orders', 'rc-noid-1', {
+    _id: 'rc-noid-1', userId: 'refund-noid', outTradeNo: 'RCnoid001', productType: 'recharge',
+    planId: 'p9_9', amountFen: 290, grantTokens: 300000, status: 'paid',
+    channel: 'virtual_pay', sandbox: true, paidAt: new Date(), createdAt: new Date()
+  })
+  const noOpenid = await main({ action: 'refundOrder', orderId: 'rc-noid-1' })
+  assert.equal(noOpenid.success, false)
+  assert.equal(noOpenid.code, 'OPENID_MISSING')
+  assert.equal(noOpenid.manualOption, true)
+  assert.equal(fake.__store.getCollection('recharge_orders').get('rc-noid-1').status, 'paid', 'OPENID_MISSING 不改变支付状态')
+
+  // 微信退款发起：有 openid 但微信查单失败（测试环境无网络）→ failed + retryable，订单状态不被破坏
+  seed(fake.__store, 'users', 'refund-user2', { openid: 'openid-2', extraTokens: 100, plan: 'free' })
+  seed(fake.__store, 'recharge_orders', 'rc-refund-2', {
+    _id: 'rc-refund-2', userId: 'refund-user2', outTradeNo: 'RCrefund002', productType: 'recharge',
+    planId: 'p9_9', amountFen: 290, grantTokens: 300000, status: 'paid', fulfillmentStatus: 'succeeded',
+    channel: 'virtual_pay', sandbox: true, paidAt: new Date(), createdAt: new Date()
+  })
+  const wxRefundFail = await main({ action: 'refundOrder', orderId: 'rc-refund-2' })
+  assert.equal(wxRefundFail.success, false)
+  assert.equal(wxRefundFail.retryable, true)
+  const afterFail = fake.__store.getCollection('recharge_orders').get('rc-refund-2')
+  assert.equal(afterFail.status, 'paid', '微信退款失败不改变支付状态')
+  assert.equal(afterFail.refundRequestStatus, 'failed')
+  assert.ok(afterFail.refundRequestError, '记录失败原因')
+
+  // 查单对账：缺 openid → OPENID_MISSING
+  const queryNoOpenid = await main({ action: 'queryRechargeOrderPayment', orderId: 'rc-noid-1', reason: '对账' })
+  assert.equal(queryNoOpenid.success, false)
+  assert.equal(queryNoOpenid.code, 'OPENID_MISSING')
+  // 查单对账：有 openid 但微信查单失败 → WECHAT_QUERY_FAILED，不破坏状态
+  seed(fake.__store, 'users', 'refund-user3', { openid: 'openid-3', extraTokens: 100, plan: 'free' })
+  seed(fake.__store, 'recharge_orders', 'rc-query-1', {
+    _id: 'rc-query-1', userId: 'refund-user3', outTradeNo: 'RCquery001', productType: 'recharge',
+    planId: 'p9_9', amountFen: 290, grantTokens: 300000, status: 'pending',
+    channel: 'virtual_pay', sandbox: true, createdAt: new Date()
+  })
+  const queryFail = await main({ action: 'queryRechargeOrderPayment', orderId: 'rc-query-1', reason: '对账' })
+  assert.equal(queryFail.success, false)
+  assert.equal(queryFail.code, 'WECHAT_QUERY_FAILED')
+  assert.equal(fake.__store.getCollection('recharge_orders').get('rc-query-1').status, 'pending', '查单失败不破坏状态')
+  // 查单对账：已履约订单 → alreadyPaid
+  const queryAlreadyPaid = await main({ action: 'queryRechargeOrderPayment', orderId: 'rc-refund-2', reason: '对账' })
+  assert.equal(queryAlreadyPaid.success, true)
+  assert.equal(queryAlreadyPaid.alreadyPaid, true)
+  // 退款在途 + 已发货 → 不得短路 alreadyPaid，必须查微信（无网络 → WECHAT_QUERY_FAILED 而非 alreadyPaid）
+  seed(fake.__store, 'recharge_orders', 'rc-refund-2', {
+    _id: 'rc-refund-2', userId: 'refund-user2', outTradeNo: 'RCrefund002', productType: 'recharge',
+    planId: 'p9_9', amountFen: 290, grantTokens: 300000, status: 'paid', fulfillmentStatus: 'succeeded',
+    refundRequestStatus: 'processing', refundOrderId: 'refund-rc-2',
+    channel: 'virtual_pay', sandbox: true, paidAt: new Date(), createdAt: new Date()
+  })
+  const queryRefundInFlight = await main({ action: 'queryRechargeOrderPayment', orderId: 'rc-refund-2', reason: '对账' })
+  assert.equal(queryRefundInFlight.success, false, '退款在途不短路 alreadyPaid')
+  assert.equal(queryRefundInFlight.code, 'WECHAT_QUERY_FAILED', '退款在途必须真正查微信')
+  // 查单对账：缺少原因 → 拒绝
+  const queryNoReason = await main({ action: 'queryRechargeOrderPayment', orderId: 'rc-query-1' })
+  assert.equal(queryNoReason.success, false)
+
   console.log('admin withdrawal tests passed')
 }
 
